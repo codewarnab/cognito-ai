@@ -44,6 +44,89 @@ body {
   font-weight: 400;
 }
 
+/* History Search CTA */
+.history-cta {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.history-button {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.history-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.history-button:active {
+  transform: translateY(0);
+}
+
+.status-container {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-ok {
+  background: rgba(76, 175, 80, 0.3);
+  border: 1px solid rgba(76, 175, 80, 0.5);
+  color: #c8e6c9;
+}
+
+.status-warn {
+  background: rgba(255, 152, 0, 0.3);
+  border: 1px solid rgba(255, 152, 0, 0.5);
+  color: #ffe0b2;
+}
+
+.status-paused {
+  background: rgba(244, 67, 54, 0.3);
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  color: #ffcdd2;
+}
+
+.error-message {
+  font-size: 12px;
+  color: #ffcdd2;
+  text-align: center;
+}
+
+.error-message a {
+  color: white;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.error-message a:hover {
+  text-decoration: none;
+}
+
 /* Form */
 .prompt-form {
   display: flex;
