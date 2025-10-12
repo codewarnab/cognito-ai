@@ -4,6 +4,7 @@
 
 import { openDb, QUEUE_STORE } from './database';
 import { updateQueueStats } from './settings';
+import { isUrlBeingProcessed } from './processing-state';
 import type { BgQueueRecord } from './types';
 
 // Configuration
@@ -13,6 +14,39 @@ const BACKOFF_MAX_MS = 6 * 60 * 60 * 1000; // 6 hours
 const MAX_ATTEMPTS = 8;
 const BACKOFF_JITTER_MIN = 0.5;
 const BACKOFF_JITTER_MAX = 1.5;
+
+// Recently indexed pages cache (URL -> timestamp)
+const recentlyIndexedCache = new Map<string, number>();
+const RECENTLY_INDEXED_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Clean up expired entries from recently indexed cache
+ */
+function cleanupRecentlyIndexedCache(): void {
+    const now = Date.now();
+    for (const [url, timestamp] of recentlyIndexedCache.entries()) {
+        if (now - timestamp > RECENTLY_INDEXED_TTL_MS) {
+            recentlyIndexedCache.delete(url);
+        }
+    }
+}
+
+/**
+ * Check if a URL was recently indexed
+ */
+export function wasRecentlyIndexed(url: string): boolean {
+    cleanupRecentlyIndexedCache();
+    const timestamp = recentlyIndexedCache.get(url);
+    if (!timestamp) return false;
+    return (Date.now() - timestamp) < RECENTLY_INDEXED_TTL_MS;
+}
+
+/**
+ * Mark a URL as recently indexed
+ */
+export function markAsRecentlyIndexed(url: string): void {
+    recentlyIndexedCache.set(url, Date.now());
+}
 
 /**
  * Generate coalesce key for time bucketing
@@ -41,6 +75,23 @@ export async function enqueuePageSeen(
     payload?: BgQueueRecord['payload'],
     source: BgQueueRecord['source'] = 'content'
 ): Promise<string> {
+    // Check if URL was recently indexed
+    if (wasRecentlyIndexed(url)) {
+        console.log(`[Queue] Skipping enqueue - URL was recently indexed: ${url}`);
+        // Return existing coalesce key
+        const now = Date.now();
+        return getCoalesceKey(url, now);
+    }
+
+    // Check if URL is currently being processed
+    // Use the processing-state module to avoid circular dependency
+    if (isUrlBeingProcessed(url)) {
+        console.log(`[Queue] Skipping enqueue - URL is currently being processed: ${url}`);
+        // Return existing coalesce key
+        const now = Date.now();
+        return getCoalesceKey(url, now);
+    }
+
     const database = await openDb();
     const now = Date.now();
     const id = getCoalesceKey(url, now);
@@ -125,18 +176,32 @@ export async function markSuccess(id: string): Promise<void> {
 
     return new Promise((resolve, reject) => {
         const tx = database.transaction([QUEUE_STORE], 'readwrite');
-
-        // Delete from queue
         const queueStore = tx.objectStore(QUEUE_STORE);
-        const deleteRequest = queueStore.delete(id);
 
-        deleteRequest.onsuccess = async () => {
-            // Update stats
-            await updateQueueStats('successes', 1);
-            resolve();
+        // Get the record first to extract the URL
+        const getRequest = queueStore.get(id);
+
+        getRequest.onsuccess = async () => {
+            const record = getRequest.result as BgQueueRecord | undefined;
+
+            // Delete from queue
+            const deleteRequest = queueStore.delete(id);
+
+            deleteRequest.onsuccess = async () => {
+                // Mark URL as recently indexed if record exists
+                if (record) {
+                    markAsRecentlyIndexed(record.url);
+                }
+
+                // Update stats
+                await updateQueueStats('successes', 1);
+                resolve();
+            };
+
+            deleteRequest.onerror = () => reject(deleteRequest.error);
         };
 
-        deleteRequest.onerror = () => reject(deleteRequest.error);
+        getRequest.onerror = () => reject(getRequest.error);
     });
 }
 
@@ -213,6 +278,7 @@ export async function getQueueStats(): Promise<{
     failed: number;
     total: number;
     oldestPending?: { url: string; title?: string; age: number };
+    failedItems?: Array<{ url: string; title?: string; attempts: number }>;
 }> {
     const database = await openDb();
 
@@ -229,11 +295,17 @@ export async function getQueueStats(): Promise<{
             let failed = 0;
             let oldestPending: { url: string; title?: string; age: number } | undefined;
             let oldestTime = now;
+            const failedItems: Array<{ url: string; title?: string; attempts: number }> = [];
 
             for (const record of records) {
                 if (record.nextAttemptAt === Number.MAX_SAFE_INTEGER) {
                     // Dead letter (permanently failed)
                     failed++;
+                    failedItems.push({
+                        url: record.url,
+                        title: record.title,
+                        attempts: record.attempt,
+                    });
                 } else if (record.nextAttemptAt <= now) {
                     // Ready for processing
                     pending++;
@@ -256,6 +328,7 @@ export async function getQueueStats(): Promise<{
                 failed,
                 total: records.length,
                 oldestPending,
+                failedItems: failedItems.length > 0 ? failedItems : undefined,
             });
         };
 

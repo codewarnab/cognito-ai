@@ -302,25 +302,6 @@ You are running in a Chrome extension side panel.`,
 
   return (
     <div className="sidepanel-container">
-      {/* Header */}
-      <div className="sidepanel-header">
-        <div className="header-title">
-          <h1>🤖 Chrome AI Assistant</h1>
-          <p className="subtitle">Powered by on-device AI</p>
-        </div>
-
-        <div className="header-actions">
-          <button
-            className="icon-button"
-            onClick={handleClearChat}
-            title="Clear Chat"
-            aria-label="Clear all chat messages"
-          >
-            �️
-          </button>
-        </div>
-      </div>
-
       {/* Tab Navigation */}
       <div className="tab-navigation">
         <button

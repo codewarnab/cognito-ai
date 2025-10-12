@@ -22,12 +22,14 @@ export default function HistoryPage() {
     const [inputValue, setInputValue] = useState('');
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+    const [isStatusExpanded, setIsStatusExpanded] = useState(false);
     const [indexStats, setIndexStats] = useState<{ docCount: number; approxBytes: number } | null>(null);
     const [queueStats, setQueueStats] = useState<{
         pending: number;
         failed: number;
         total: number;
         oldestPending?: { url: string; title?: string; age: number };
+        failedItems?: Array<{ url: string; title?: string; attempts: number }>;
     } | null>(null);
     const [processingStatus, setProcessingStatus] = useState<{
         isProcessing: boolean;
@@ -180,7 +182,7 @@ export default function HistoryPage() {
 
         const query = inputValue.trim();
         setInputValue('');
-        
+
         try {
             await sendMessage(query);
         } catch (err) {
@@ -259,19 +261,16 @@ export default function HistoryPage() {
     // Render
     return (
         <div className="history-page history-chat-container">
-            {/* Header with title and settings icon */}
-            <div className="history-chat-header">
-                <h1 className="history-header-title">💬 Chat with History</h1>
-                <button
-                    type="button"
-                    className="history-settings-button"
-                    onClick={() => setShowSettingsDrawer(true)}
-                    aria-label="Open settings"
-                    title="Settings"
-                >
-                    ⚙️
-                </button>
-            </div>
+            {/* Floating Settings Icon */}
+            <button
+                type="button"
+                className="history-settings-button-floating"
+                onClick={() => setShowSettingsDrawer(true)}
+                aria-label="Open settings"
+                title="Settings"
+            >
+                ⚙️
+            </button>
 
             {/* Banners */}
             {paused && (
@@ -305,46 +304,51 @@ export default function HistoryPage() {
                     queueStats={queueStats}
                     processingStatus={processingStatus}
                     indexStats={indexStats}
+                    onExpandChange={setIsStatusExpanded}
                 />
             )}
 
-            {/* Chat Messages */}
-            <div className="history-chat-messages">
-                <HistoryMessageList
-                    messages={messages}
-                    isLoading={isLoading}
-                    onCopy={handleCopy}
-                />
-                <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Form */}
-            <form onSubmit={handleSubmit} className="history-chat-input-form">
-                <div className="history-chat-input-container">
-                    <textarea
-                        className="history-chat-input"
-                        placeholder="Ask me anything about your browsing history..."
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSubmit(e);
-                            }
-                        }}
-                        rows={2}
-                        disabled={!ragModelReady || isLoading}
+            {/* Chat Messages - Hidden when status is expanded */}
+            {!isStatusExpanded && (
+                <div className="history-chat-messages">
+                    <HistoryMessageList
+                        messages={messages}
+                        isLoading={isLoading}
+                        onCopy={handleCopy}
                     />
-                    <button
-                        type="submit"
-                        className="history-chat-send-button"
-                        disabled={!inputValue.trim() || !ragModelReady || isLoading}
-                        aria-label="Send message"
-                    >
-                        {isLoading ? '⏳' : '📤'}
-                    </button>
+                    <div ref={messagesEndRef} />
                 </div>
-            </form>
+            )}
+
+            {/* Input Form - Hidden when status is expanded */}
+            {!isStatusExpanded && (
+                <form onSubmit={handleSubmit} className="history-chat-input-form">
+                    <div className="history-chat-input-container">
+                        <textarea
+                            className="history-chat-input"
+                            placeholder="Ask me anything about your browsing history..."
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSubmit(e);
+                                }
+                            }}
+                            rows={2}
+                            disabled={!ragModelReady || isLoading}
+                        />
+                        <button
+                            type="submit"
+                            className="history-chat-send-button"
+                            disabled={!inputValue.trim() || !ragModelReady || isLoading}
+                            aria-label="Send message"
+                        >
+                            {isLoading ? '⏳' : '📤'}
+                        </button>
+                    </div>
+                </form>
+            )}
 
             {/* Settings Drawer */}
             <SettingsDrawer

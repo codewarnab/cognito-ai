@@ -1,0 +1,44 @@
+/* Tab Navigation styles */
+
+.tab-navigation {
+    display: flex;
+    background: var(--color-surface);
+    border-bottom: 2px solid var(--color-border);
+    padding: 0;
+    position: relative;
+    z-index: 9;
+}
+
+.tab-button {
+    flex: 1;
+    padding: var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    opacity: 0.6;
+}
+
+.tab-button:hover {
+    opacity: 0.8;
+    background: rgba(18, 100, 255, 0.05);
+}
+
+.tab-button.active {
+    opacity: 1;
+    color: var(--color-secondary);
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--color-secondary);
+}

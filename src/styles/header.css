@@ -1,0 +1,30 @@
+/* Header styles */
+
+.sidepanel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: linear-gradient(135deg, var(--color-secondary) 0%, #0a4cbd 100%);
+    color: var(--white-stream);
+    box-shadow: var(--shadow-md);
+    position: relative;
+    z-index: 10;
+}
+
+.header-title h1 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 var(--spacing-xs) 0;
+}
+
+.subtitle {
+    font-size: 12px;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}

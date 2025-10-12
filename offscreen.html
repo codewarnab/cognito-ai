@@ -11,41 +11,8 @@
     <h1>Offscreen Document</h1>
     <p>This document runs background workers for embeddings and search.</p>
 
-    <!-- Placeholder for offscreen script -->
-    <script>
-        console.log('[Offscreen] Document loaded');
-
-        // Notify background that worker is ready
-        chrome.runtime.sendMessage({ type: 'WorkerReady' });
-
-        // Listen for messages from background
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            console.log('[Offscreen] Message received:', message);
-
-            if (message.type === 'InitWorker') {
-                console.log('[Offscreen] Init worker requested');
-                // TODO: Initialize embedding model
-                sendResponse({ type: 'WorkerReady' });
-            }
-
-            if (message.type === 'ProcessBatch') {
-                console.log('[Offscreen] Process batch:', message.jobs.length, 'jobs');
-                // TODO: Process jobs and generate embeddings
-
-                // Mock success response for now
-                sendResponse({
-                    type: 'BatchResult',
-                    ok: true,
-                    results: message.jobs.map(job => ({
-                        id: job.url,
-                        url: job.url
-                    }))
-                });
-            }
-
-            return true; // Keep channel open for async response
-        });
-    </script>
+    <!-- Offscreen script -->
+    <script src="offscreen.js"></script>
 </body>
 
 </html>

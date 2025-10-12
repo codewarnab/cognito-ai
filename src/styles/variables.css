@@ -1,0 +1,50 @@
+/* CSS Variables - Brand Colors and Design Tokens */
+:root {
+    /* Brand Colors */
+    --green-pulse: #C6FE1E;
+    --blue-stride: #1264FF;
+    --eclipse-black: #0D0D0D;
+    --dodo-mist: #F6F7F9;
+    --white-stream: #FFFFFF;
+
+    /* Semantic colors */
+    --color-primary: var(--green-pulse);
+    --color-secondary: var(--blue-stride);
+    --color-text: var(--eclipse-black);
+    --color-background: var(--white-stream);
+    --color-surface: var(--dodo-mist);
+    --color-border: rgba(13, 13, 13, 0.1);
+
+    /* Status colors */
+    --color-success: #4caf50;
+    --color-warning: #ff9800;
+    --color-error: #f44336;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-text: var(--white-stream);
+        --color-background: #1a1a1a;
+        --color-surface: #2a2a2a;
+        --color-border: rgba(255, 255, 255, 0.1);
+    }
+}

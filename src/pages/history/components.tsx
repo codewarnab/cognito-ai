@@ -1134,6 +1134,7 @@ interface ProcessingStatusDropdownProps {
         failed: number;
         total: number;
         oldestPending?: { url: string; title?: string; age: number };
+        failedItems?: Array<{ url: string; title?: string; attempts: number }>;
     } | null;
     processingStatus: {
         isProcessing: boolean;
@@ -1145,14 +1146,22 @@ interface ProcessingStatusDropdownProps {
         docCount: number;
         approxBytes: number;
     } | null;
+    onExpandChange?: (expanded: boolean) => void;
 }
 
 export function ProcessingStatusDropdown({
     queueStats,
     processingStatus,
-    indexStats
+    indexStats,
+    onExpandChange
 }: ProcessingStatusDropdownProps) {
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const handleToggle = () => {
+        const newExpanded = !isExpanded;
+        setIsExpanded(newExpanded);
+        onExpandChange?.(newExpanded);
+    };
 
     if (!queueStats && !processingStatus && !indexStats) return null;
 
@@ -1161,7 +1170,7 @@ export function ProcessingStatusDropdown({
             <button
                 type="button"
                 className="history-status-toggle"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={handleToggle}
                 aria-expanded={isExpanded}
             >
                 <span className="history-status-toggle-icon">
@@ -1199,6 +1208,7 @@ interface ProcessingStatusProps {
         failed: number;
         total: number;
         oldestPending?: { url: string; title?: string; age: number };
+        failedItems?: Array<{ url: string; title?: string; attempts: number }>;
     } | null;
     processingStatus: {
         isProcessing: boolean;
@@ -1233,16 +1243,47 @@ export function ProcessingStatus({ queueStats, processingStatus, indexStats }: P
         return `${ms}ms`;
     };
 
+    const formatEstimatedTime = (ms: number) => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+
+        if (hours > 0) return `~${hours}h ${minutes % 60}m`;
+        if (minutes > 0) return `~${minutes}m ${seconds % 60}s`;
+        if (seconds > 0) return `~${seconds}s`;
+        return '<1s';
+    };
+
     const truncateUrl = (url: string, maxLength = 50) => {
         if (url.length <= maxLength) return url;
         return url.substring(0, maxLength - 3) + '...';
     };
+
+    // Calculate estimated time remaining
+    // Average processing time per page: ~2-5 seconds (let's use 3 seconds as estimate)
+    const AVG_PROCESSING_TIME_MS = 3000;
+    let estimatedTimeRemaining = 0;
+
+    if (processingStatus?.isProcessing && queueStats) {
+        // Time for current batch to finish
+        const currentBatchRemaining = processingStatus.processingCount * AVG_PROCESSING_TIME_MS;
+        // Time for pending queue
+        const pendingTime = queueStats.pending * AVG_PROCESSING_TIME_MS;
+        estimatedTimeRemaining = currentBatchRemaining + pendingTime;
+    } else if (queueStats && queueStats.pending > 0) {
+        estimatedTimeRemaining = queueStats.pending * AVG_PROCESSING_TIME_MS;
+    }
 
     return (
         <div className="processing-status-container">
             <div className="processing-status-card">
                 <div className="processing-status-header">
                     <h3>📊 Processing Status</h3>
+                    {estimatedTimeRemaining > 0 && (
+                        <div className="processing-time-estimate">
+                            ⏱️ Est. {formatEstimatedTime(estimatedTimeRemaining)} remaining
+                        </div>
+                    )}
                 </div>
 
                 <div className="processing-status-grid">
@@ -1289,16 +1330,47 @@ export function ProcessingStatus({ queueStats, processingStatus, indexStats }: P
                     <div className="processing-current">
                         <div className="processing-current-header">
                             <span className="processing-spinner">⏳</span>
-                            <strong>Currently processing:</strong>
+                            <strong>Currently Processing ({processingStatus.currentBatch.length}):</strong>
                         </div>
                         <div className="processing-current-list">
                             {processingStatus.currentBatch.map((job, index) => (
                                 <div key={index} className="processing-current-item">
-                                    <div className="processing-item-title">
-                                        {job.title || 'Untitled'}
+                                    <div className="processing-item-number">{index + 1}.</div>
+                                    <div className="processing-item-content">
+                                        <div className="processing-item-title">
+                                            {job.title || 'Untitled'}
+                                        </div>
+                                        <div className="processing-item-url" title={job.url}>
+                                            {truncateUrl(job.url, 60)}
+                                        </div>
                                     </div>
-                                    <div className="processing-item-url" title={job.url}>
-                                        {truncateUrl(job.url)}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Failed Pages List */}
+                {queueStats && queueStats.failedItems && queueStats.failedItems.length > 0 && (
+                    <div className="processing-failed">
+                        <div className="processing-failed-header">
+                            <span className="processing-failed-icon">❌</span>
+                            <strong>Failed Pages ({queueStats.failedItems.length}):</strong>
+                        </div>
+                        <div className="processing-failed-list">
+                            {queueStats.failedItems.map((job, index) => (
+                                <div key={index} className="processing-failed-item">
+                                    <div className="processing-item-number">{index + 1}.</div>
+                                    <div className="processing-item-content">
+                                        <div className="processing-item-title">
+                                            {job.title || 'Untitled'}
+                                        </div>
+                                        <div className="processing-item-url" title={job.url}>
+                                            {truncateUrl(job.url, 60)}
+                                        </div>
+                                        <div className="processing-item-attempts">
+                                            Attempts: {job.attempts}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -1325,7 +1397,7 @@ export function ProcessingStatus({ queueStats, processingStatus, indexStats }: P
                 )}
 
                 {/* Idle State */}
-                {queueStats && queueStats.pending === 0 && !processingStatus?.isProcessing && (
+                {queueStats && queueStats.pending === 0 && queueStats.failed === 0 && !processingStatus?.isProcessing && (
                     <div className="processing-idle">
                         <span className="processing-idle-icon">✅</span>
                         <span>All caught up! No pages in queue.</span>
