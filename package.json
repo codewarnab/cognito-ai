@@ -43,6 +43,15 @@
       "tabs",
       "sidePanel"
     ],
+    "commands": {
+      "_execute_side_panel": {
+        "suggested_key": {
+          "default": "Ctrl+Shift+H",
+          "mac": "Command+Shift+H"
+        },
+        "description": "Open History Search side panel"
+      }
+    },
     "host_permissions": [
       "<all_urls>"
     ],

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { MessageList } from "./components/ChatMessage";
 import { saveChatMessage, loadChatHistory, clearChatHistory } from "./db";
 import type { ChatMessage } from "./db";
+import HistoryPage from '~pages/history/index';
+import './pages/history/history.css';
 import "./sidepanel.css";
 
 interface PromptAPIStatus {
@@ -10,7 +12,10 @@ interface PromptAPIStatus {
   downloadProgress: number
 }
 
+type TabType = 'chat' | 'history';
+
 function SidePanel() {
+  const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,8 +31,10 @@ function SidePanel() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+    if (activeTab === 'chat') {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, loading, activeTab]);
 
   // Initialize Prompt API and load chat history
   useEffect(() => {
@@ -48,7 +55,7 @@ function SidePanel() {
         if (availability === 'available' || availability === undefined) {
           console.log('[SidePanel] Prompt API is available and model is ready.');
           setPromptAPIStatus({ available: 'downloaded', downloading: false, downloadProgress: 100 });
-          
+
           const newSession = await window.LanguageModel.create({
             expectedInputs: [{ type: "text", languages: ["en"] }],
             expectedOutputs: [{ type: "text", languages: ["en"] }],
@@ -58,7 +65,7 @@ Always respond clearly, concisely, and in English.
 Focus on practical, developer-friendly solutions and examples.
 You are running in a Chrome extension side panel.`
           });
-          
+
           setSession(newSession);
           return;
         }
@@ -75,7 +82,7 @@ You are running in a Chrome extension side panel.`
 
         if (availability === 'downloading') {
           setPromptAPIStatus({ available: 'downloading', downloading: true, downloadProgress: 0 });
-          
+
           const newSession = await window.LanguageModel.create({
             expectedInputs: [{ type: "text", languages: ["en"] }],
             expectedOutputs: [{ type: "text", languages: ["en"] }],
@@ -96,7 +103,7 @@ You are running in a Chrome extension side panel.`,
               });
             }
           });
-          
+
           setSession(newSession);
           setPromptAPIStatus({ available: 'downloaded', downloading: false, downloadProgress: 100 });
         }
@@ -131,7 +138,7 @@ You are running in a Chrome extension side panel.`,
       if (useStreaming) {
         // Use streaming API
         const stream = session.promptStreaming(userMessage);
-        
+
         // Create a placeholder assistant message
         const assistantMsg = await saveChatMessage({
           role: 'assistant',
@@ -143,9 +150,9 @@ You are running in a Chrome extension side panel.`,
         for await (const chunk of stream) {
           assistantContent += chunk;
           // Update the message in state
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === assistantMsg.id 
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMsg.id
                 ? { ...msg, content: assistantContent }
                 : msg
             )
@@ -157,16 +164,16 @@ You are running in a Chrome extension side panel.`,
           role: 'assistant',
           content: assistantContent
         });
-        
+
         // Remove the placeholder and add the final message
         const finalMsg = await saveChatMessage({
           role: 'assistant',
           content: assistantContent
         });
-        
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === assistantMsg.id 
+
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === assistantMsg.id
               ? finalMsg
               : msg
           )
@@ -184,7 +191,7 @@ You are running in a Chrome extension side panel.`,
       }
     } catch (error: any) {
       console.error('[SidePanel] Error getting AI response:', error);
-      
+
       const errorMsg = await saveChatMessage({
         role: 'assistant',
         content: `Error: ${error.message || 'Failed to get AI response'}`,
@@ -224,7 +231,7 @@ You are running in a Chrome extension side panel.`,
 
       if (useStreaming) {
         const stream = session.promptStreaming(lastUserMessageRef.current);
-        
+
         const assistantMsg = await saveChatMessage({
           role: 'assistant',
           content: '',
@@ -234,9 +241,9 @@ You are running in a Chrome extension side panel.`,
 
         for await (const chunk of stream) {
           assistantContent += chunk;
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === assistantMsg.id 
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === assistantMsg.id
                 ? { ...msg, content: assistantContent }
                 : msg
             )
@@ -248,10 +255,10 @@ You are running in a Chrome extension side panel.`,
           content: assistantContent,
           metadata: { regenerated: true }
         });
-        
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === assistantMsg.id 
+
+        setMessages(prev =>
+          prev.map(msg =>
+            msg.id === assistantMsg.id
               ? finalMsg
               : msg
           )
@@ -269,7 +276,7 @@ You are running in a Chrome extension side panel.`,
       }
     } catch (error: any) {
       console.error('[SidePanel] Error regenerating response:', error);
-      
+
       const errorMsg = await saveChatMessage({
         role: 'assistant',
         content: `Error: ${error.message || 'Failed to regenerate response'}`,
@@ -290,12 +297,7 @@ You are running in a Chrome extension side panel.`,
   };
 
   const openHistory = async () => {
-    const url = chrome.runtime.getURL("tabs/history.html");
-    try {
-      await chrome.tabs.create({ url });
-    } catch (error) {
-      console.error('[SidePanel] Failed to open history:', error);
-    }
+    setActiveTab('history');
   };
 
   return (
@@ -306,102 +308,118 @@ You are running in a Chrome extension side panel.`,
           <h1>🤖 Chrome AI Assistant</h1>
           <p className="subtitle">Powered by on-device AI</p>
         </div>
-        
+
         <div className="header-actions">
-          <button 
-            className="icon-button" 
-            onClick={openHistory}
-            title="Open History Search"
-            aria-label="Open history search page"
-          >
-            🔍
-          </button>
-          
-          <button 
+          <button
             className="icon-button"
             onClick={handleClearChat}
             title="Clear Chat"
             aria-label="Clear all chat messages"
           >
-            🗑️
+            �️
           </button>
         </div>
       </div>
 
-      {/* Status Messages */}
-      {(promptAPIStatus.downloading || promptAPIStatus.available === 'downloading') && (
-        <div className="status-banner downloading">
-          <p>Downloading Gemini Nano model... {promptAPIStatus.downloadProgress}%</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${promptAPIStatus.downloadProgress}%` }}
+      {/* Tab Navigation */}
+      <div className="tab-navigation">
+        <button
+          className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          💬 Chat
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          � History
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'chat' ? (
+        <>
+          {/* Status Messages */}
+          {(promptAPIStatus.downloading || promptAPIStatus.available === 'downloading') && (
+            <div className="status-banner downloading">
+              <p>Downloading Gemini Nano model... {promptAPIStatus.downloadProgress}%</p>
+              <div className="progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${promptAPIStatus.downloadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {promptAPIStatus.available === 'no' && (
+            <div className="status-banner error">
+              Chrome Prompt API is not available. Please use Chrome Canary 128+ with AI features enabled.
+            </div>
+          )}
+
+          {promptAPIStatus.available === 'readily' && (
+            <div className="status-banner warning">
+              Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
+            </div>
+          )}
+
+          {/* Messages Container */}
+          <div className="messages-container">
+            <MessageList
+              messages={messages}
+              isLoading={loading}
+              onCopy={handleCopy}
+              onRegenerate={handleRegenerate}
             />
+            <div ref={messagesEndRef} />
           </div>
+
+          {/* Input Form */}
+          <form onSubmit={handleSubmit} className="input-form">
+            <div className="form-controls">
+              <label className="toggle-container">
+                <input
+                  type="checkbox"
+                  checked={useStreaming}
+                  onChange={(e) => setUseStreaming(e.target.checked)}
+                />
+                <span className="toggle-label">Stream responses</span>
+              </label>
+            </div>
+
+            <div className="input-container">
+              <textarea
+                className="message-input"
+                placeholder="Ask me anything..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+                rows={2}
+                disabled={!session || loading}
+              />
+              <button
+                type="submit"
+                className="send-button"
+                disabled={!inputValue.trim() || !session || loading}
+                aria-label="Send message"
+              >
+                {loading ? '⏳' : '📤'}
+              </button>
+            </div>
+          </form>
+        </>
+      ) : (
+        <div className="history-tab-content">
+          <HistoryPage />
         </div>
       )}
-
-      {promptAPIStatus.available === 'no' && (
-        <div className="status-banner error">
-          Chrome Prompt API is not available. Please use Chrome Canary 128+ with AI features enabled.
-        </div>
-      )}
-
-      {promptAPIStatus.available === 'readily' && (
-        <div className="status-banner warning">
-          Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
-        </div>
-      )}
-
-      {/* Messages Container */}
-      <div className="messages-container">
-        <MessageList 
-          messages={messages}
-          isLoading={loading}
-          onCopy={handleCopy}
-          onRegenerate={handleRegenerate}
-        />
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="input-form">
-        <div className="form-controls">
-          <label className="toggle-container">
-            <input
-              type="checkbox"
-              checked={useStreaming}
-              onChange={(e) => setUseStreaming(e.target.checked)}
-            />
-            <span className="toggle-label">Stream responses</span>
-          </label>
-        </div>
-        
-        <div className="input-container">
-          <textarea
-            className="message-input"
-            placeholder="Ask me anything..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
-            rows={2}
-            disabled={!session || loading}
-          />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!inputValue.trim() || !session || loading}
-            aria-label="Send message"
-          >
-            {loading ? '⏳' : '📤'}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

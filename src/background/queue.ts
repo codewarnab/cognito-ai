@@ -204,3 +204,61 @@ export async function clearQueue(): Promise<void> {
         request.onerror = () => reject(request.error);
     });
 }
+
+/**
+ * Get queue statistics
+ */
+export async function getQueueStats(): Promise<{
+    pending: number;
+    failed: number;
+    total: number;
+    oldestPending?: { url: string; title?: string; age: number };
+}> {
+    const database = await openDb();
+
+    return new Promise((resolve, reject) => {
+        const tx = database.transaction([QUEUE_STORE], 'readonly');
+        const store = tx.objectStore(QUEUE_STORE);
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+            const records = request.result as BgQueueRecord[];
+            const now = Date.now();
+
+            let pending = 0;
+            let failed = 0;
+            let oldestPending: { url: string; title?: string; age: number } | undefined;
+            let oldestTime = now;
+
+            for (const record of records) {
+                if (record.nextAttemptAt === Number.MAX_SAFE_INTEGER) {
+                    // Dead letter (permanently failed)
+                    failed++;
+                } else if (record.nextAttemptAt <= now) {
+                    // Ready for processing
+                    pending++;
+                    if (record.firstEnqueuedAt < oldestTime) {
+                        oldestTime = record.firstEnqueuedAt;
+                        oldestPending = {
+                            url: record.url,
+                            title: record.title,
+                            age: now - record.firstEnqueuedAt,
+                        };
+                    }
+                } else {
+                    // Scheduled for future retry
+                    pending++;
+                }
+            }
+
+            resolve({
+                pending,
+                failed,
+                total: records.length,
+                oldestPending,
+            });
+        };
+
+        request.onerror = () => reject(request.error);
+    });
+}

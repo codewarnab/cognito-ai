@@ -149,18 +149,14 @@ Focus on practical, developer-friendly solutions and examples.
   }, [promptAPIStatus.available])
 
   const openHistory = async () => {
-    const url = chrome.runtime.getURL("tabs/history.html")
     try {
-      const win = window.open(url, "_blank")
-      if (!win) throw new Error("popup-blocked")
-      setOpenError(false)
-    } catch (_) {
-      try {
-        await chrome.tabs.create({ url })
-        setOpenError(false)
-      } catch {
-        setOpenError(true)
-      }
+      // Open the side panel
+      const window = await chrome.windows.getCurrent();
+      await chrome.sidePanel.open({ windowId: window.id });
+      setOpenError(false);
+    } catch (error) {
+      console.error('[Popup] Failed to open side panel:', error);
+      setOpenError(true);
     }
   }
 

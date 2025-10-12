@@ -886,3 +886,452 @@ export function LoadingSkeleton({ count = 3 }: { count?: number }) {
         </div>
     );
 }
+
+// ============================================================================
+// History Chat Message Components
+// ============================================================================
+
+interface HistoryChatMessageProps {
+    message: {
+        id: string;
+        role: 'user' | 'assistant';
+        content: string;
+        sources?: Array<{
+            url: string;
+            title?: string;
+            snippet?: string;
+            score?: number;
+        }>;
+        timestamp: number;
+        metadata?: {
+            error?: boolean;
+            streaming?: boolean;
+        };
+    };
+    onCopy?: (content: string) => void;
+}
+
+export function HistoryChatMessage({ message, onCopy }: HistoryChatMessageProps) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        if (onCopy) {
+            onCopy(message.content);
+        } else {
+            try {
+                await navigator.clipboard.writeText(message.content);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const formatTime = (timestamp: number) => {
+        const date = new Date(timestamp);
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+
+        if (isToday) {
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    };
+
+    return (
+        <div className={`history-chat-message ${message.role}`}>
+            <div className="history-message-header">
+                <span className="history-message-role">
+                    {message.role === 'user' ? '👤 You' : '🤖 Assistant'}
+                </span>
+                <span className="history-message-time">{formatTime(message.timestamp)}</span>
+            </div>
+
+            <div className={`history-message-content ${message.metadata?.error ? 'error' : ''}`}>
+                {message.content}
+            </div>
+
+            {/* Source citations */}
+            {message.role === 'assistant' && message.sources && message.sources.length > 0 && (
+                <div className="history-message-sources">
+                    <div className="history-sources-label">Sources:</div>
+                    <div className="history-sources-list">
+                        {message.sources.map((source, index) => (
+                            <a
+                                key={index}
+                                href={source.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="history-source-citation"
+                                title={source.title || source.url}
+                            >
+                                [{index + 1}] {source.title || 'Untitled'}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Actions */}
+            {message.role === 'assistant' && !message.metadata?.error && (
+                <div className="history-message-actions">
+                    <button
+                        type="button"
+                        className="history-button history-button-sm"
+                        onClick={handleCopy}
+                        title="Copy message"
+                    >
+                        {copied ? '✓ Copied' : '📋 Copy'}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+interface HistoryMessageListProps {
+    messages: Array<{
+        id: string;
+        role: 'user' | 'assistant';
+        content: string;
+        sources?: Array<{
+            url: string;
+            title?: string;
+            snippet?: string;
+            score?: number;
+        }>;
+        timestamp: number;
+        metadata?: {
+            error?: boolean;
+            streaming?: boolean;
+        };
+    }>;
+    isLoading?: boolean;
+    onCopy?: (content: string) => void;
+}
+
+export function HistoryMessageList({ messages, isLoading, onCopy }: HistoryMessageListProps) {
+    return (
+        <div className="history-message-list">
+            {messages.length === 0 && !isLoading && (
+                <div className="history-chat-empty">
+                    <div className="history-empty-icon">💬</div>
+                    <h2 className="history-empty-title">Ask me anything about your browsing history</h2>
+                    <p className="history-empty-message">
+                        Try questions like "where did I read about CDC?" or "show me articles about AI"
+                    </p>
+                </div>
+            )}
+
+            {messages.map((message) => (
+                <HistoryChatMessage key={message.id} message={message} onCopy={onCopy} />
+            ))}
+
+            {isLoading && (
+                <div className="history-chat-message assistant">
+                    <div className="history-message-header">
+                        <span className="history-message-role">🤖 Assistant</span>
+                    </div>
+                    <div className="history-message-content">
+                        <div className="history-typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ============================================================================
+// Settings Drawer Component
+// ============================================================================
+
+interface SettingsDrawerProps {
+    open: boolean;
+    onClose: () => void;
+    paused: boolean;
+    domainAllowlist: string[];
+    domainDenylist: string[];
+    onPauseToggle: (paused: boolean) => void;
+    onAllowlistUpdate: (domains: string[]) => void;
+    onDenylistUpdate: (domains: string[]) => void;
+    onDeleteAllData: (alsoRemoveModel: boolean) => void;
+    disabled?: boolean;
+}
+
+export function SettingsDrawer({
+    open,
+    onClose,
+    paused,
+    domainAllowlist,
+    domainDenylist,
+    onPauseToggle,
+    onAllowlistUpdate,
+    onDenylistUpdate,
+    onDeleteAllData,
+    disabled = false
+}: SettingsDrawerProps) {
+    if (!open) return null;
+
+    return (
+        <>
+            {/* Backdrop */}
+            <div className="history-settings-overlay" onClick={onClose} />
+
+            {/* Drawer */}
+            <div className="history-settings-drawer">
+                <div className="history-drawer-header">
+                    <h2>Settings</h2>
+                    <button
+                        type="button"
+                        className="history-drawer-close"
+                        onClick={onClose}
+                        aria-label="Close settings"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div className="history-drawer-content">
+                    <PrivacyControls
+                        paused={paused}
+                        domainAllowlist={domainAllowlist}
+                        domainDenylist={domainDenylist}
+                        onPauseToggle={onPauseToggle}
+                        onAllowlistUpdate={onAllowlistUpdate}
+                        onDenylistUpdate={onDenylistUpdate}
+                        onDeleteAllData={onDeleteAllData}
+                        disabled={disabled}
+                    />
+                </div>
+            </div>
+        </>
+    );
+}
+
+// ============================================================================
+// Processing Status Dropdown Component
+// ============================================================================
+
+interface ProcessingStatusDropdownProps {
+    queueStats: {
+        pending: number;
+        failed: number;
+        total: number;
+        oldestPending?: { url: string; title?: string; age: number };
+    } | null;
+    processingStatus: {
+        isProcessing: boolean;
+        currentBatch: Array<{ url: string; title?: string }>;
+        processingCount: number;
+        processingDuration: number;
+    } | null;
+    indexStats: {
+        docCount: number;
+        approxBytes: number;
+    } | null;
+}
+
+export function ProcessingStatusDropdown({
+    queueStats,
+    processingStatus,
+    indexStats
+}: ProcessingStatusDropdownProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    if (!queueStats && !processingStatus && !indexStats) return null;
+
+    return (
+        <div className="history-status-dropdown">
+            <button
+                type="button"
+                className="history-status-toggle"
+                onClick={() => setIsExpanded(!isExpanded)}
+                aria-expanded={isExpanded}
+            >
+                <span className="history-status-toggle-icon">
+                    {isExpanded ? '▼' : '▶'}
+                </span>
+                <span className="history-status-toggle-text">Processing Status</span>
+                {processingStatus?.isProcessing && (
+                    <span className="history-status-badge">Processing</span>
+                )}
+                {queueStats && queueStats.pending > 0 && !processingStatus?.isProcessing && (
+                    <span className="history-status-badge">{queueStats.pending} pending</span>
+                )}
+            </button>
+
+            {isExpanded && (
+                <div className="history-status-content">
+                    <ProcessingStatus
+                        queueStats={queueStats}
+                        processingStatus={processingStatus}
+                        indexStats={indexStats}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ============================================================================
+// Processing Status Component
+// ============================================================================
+
+interface ProcessingStatusProps {
+    queueStats: {
+        pending: number;
+        failed: number;
+        total: number;
+        oldestPending?: { url: string; title?: string; age: number };
+    } | null;
+    processingStatus: {
+        isProcessing: boolean;
+        currentBatch: Array<{ url: string; title?: string }>;
+        processingCount: number;
+        processingDuration: number;
+    } | null;
+    indexStats: {
+        docCount: number;
+        approxBytes: number;
+    } | null;
+}
+
+export function ProcessingStatus({ queueStats, processingStatus, indexStats }: ProcessingStatusProps) {
+    if (!queueStats && !processingStatus) return null;
+
+    const formatAge = (ms: number) => {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (days > 0) return `${days}d ${hours % 24}h ago`;
+        if (hours > 0) return `${hours}h ${minutes % 60}m ago`;
+        if (minutes > 0) return `${minutes}m ${seconds % 60}s ago`;
+        return `${seconds}s ago`;
+    };
+
+    const formatDuration = (ms: number) => {
+        const seconds = Math.floor(ms / 1000);
+        if (seconds > 0) return `${seconds}s`;
+        return `${ms}ms`;
+    };
+
+    const truncateUrl = (url: string, maxLength = 50) => {
+        if (url.length <= maxLength) return url;
+        return url.substring(0, maxLength - 3) + '...';
+    };
+
+    return (
+        <div className="processing-status-container">
+            <div className="processing-status-card">
+                <div className="processing-status-header">
+                    <h3>📊 Processing Status</h3>
+                </div>
+
+                <div className="processing-status-grid">
+                    {/* Index Stats */}
+                    {indexStats && (
+                        <div className="processing-stat">
+                            <div className="stat-label">Indexed Pages</div>
+                            <div className="stat-value">{indexStats.docCount.toLocaleString()}</div>
+                            <div className="stat-subtitle">{(indexStats.approxBytes / 1024).toFixed(1)} KB</div>
+                        </div>
+                    )}
+
+                    {/* Queue Stats */}
+                    {queueStats && (
+                        <>
+                            <div className="processing-stat">
+                                <div className="stat-label">Queue</div>
+                                <div className="stat-value">{queueStats.pending.toLocaleString()}</div>
+                                <div className="stat-subtitle">pending pages</div>
+                            </div>
+
+                            {queueStats.failed > 0 && (
+                                <div className="processing-stat warning">
+                                    <div className="stat-label">Failed</div>
+                                    <div className="stat-value">{queueStats.failed.toLocaleString()}</div>
+                                    <div className="stat-subtitle">max retries</div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Processing Status */}
+                    {processingStatus && processingStatus.isProcessing && (
+                        <div className="processing-stat active">
+                            <div className="stat-label">🔄 Processing</div>
+                            <div className="stat-value">{processingStatus.processingCount}</div>
+                            <div className="stat-subtitle">{formatDuration(processingStatus.processingDuration)}</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Currently Processing Pages */}
+                {processingStatus && processingStatus.isProcessing && processingStatus.currentBatch.length > 0 && (
+                    <div className="processing-current">
+                        <div className="processing-current-header">
+                            <span className="processing-spinner">⏳</span>
+                            <strong>Currently processing:</strong>
+                        </div>
+                        <div className="processing-current-list">
+                            {processingStatus.currentBatch.map((job, index) => (
+                                <div key={index} className="processing-current-item">
+                                    <div className="processing-item-title">
+                                        {job.title || 'Untitled'}
+                                    </div>
+                                    <div className="processing-item-url" title={job.url}>
+                                        {truncateUrl(job.url)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Oldest Pending */}
+                {queueStats && queueStats.oldestPending && queueStats.pending > 0 && !processingStatus?.isProcessing && (
+                    <div className="processing-oldest">
+                        <div className="processing-oldest-label">⏰ Next in queue:</div>
+                        <div className="processing-oldest-item">
+                            <div className="processing-item-title">
+                                {queueStats.oldestPending.title || 'Untitled'}
+                            </div>
+                            <div className="processing-item-url" title={queueStats.oldestPending.url}>
+                                {truncateUrl(queueStats.oldestPending.url)}
+                            </div>
+                            <div className="processing-item-age">
+                                Queued {formatAge(queueStats.oldestPending.age)}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Idle State */}
+                {queueStats && queueStats.pending === 0 && !processingStatus?.isProcessing && (
+                    <div className="processing-idle">
+                        <span className="processing-idle-icon">✅</span>
+                        <span>All caught up! No pages in queue.</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

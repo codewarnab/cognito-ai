@@ -43,13 +43,16 @@ export type BgMsgFromContent =
     | { type: 'CheckModelReady' }
     | { type: 'GetModelDebugInfo' }
     | { type: 'GetIndexStats' }
+    | { type: 'GetQueueStats' }
+    | { type: 'GetProcessingStatus' }
     | { type: 'GET_SETTINGS' }
     | { type: 'SET_PAUSED'; paused: boolean }
     | { type: 'UPDATE_FILTERS'; allowlist?: string[]; denylist?: string[] }
     | { type: 'CLEAR_INDEX' }
     | { type: 'settings:update'; payload: Partial<Settings> }
     | { type: 'privacy:wipe'; alsoRemoveModel?: boolean; delayMs?: number }
-    | { type: 'privacy:wipe:cancel' };
+    | { type: 'privacy:wipe:cancel' }
+    | { type: 'HistoryRAGSearch'; query: string; topK?: number };
 
 export type BgMsgToContent =
     | { type: 'Ack'; id?: string }

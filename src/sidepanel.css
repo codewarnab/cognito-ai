@@ -5,7 +5,7 @@
   --eclipse-black: #0D0D0D;
   --dodo-mist: #F6F7F9;
   --white-stream: #FFFFFF;
-  
+
   /* Semantic colors */
   --color-primary: var(--green-pulse);
   --color-secondary: var(--blue-stride);
@@ -13,25 +13,25 @@
   --color-background: var(--white-stream);
   --color-surface: var(--dodo-mist);
   --color-border: rgba(13, 13, 13, 0.1);
-  
+
   /* Status colors */
   --color-success: #4caf50;
   --color-warning: #ff9800;
   --color-error: #f44336;
-  
+
   /* Spacing */
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
   --spacing-xl: 32px;
-  
+
   /* Border radius */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -98,6 +98,50 @@
 .header-actions {
   display: flex;
   gap: var(--spacing-sm);
+}
+
+/* Tab Navigation */
+.tab-navigation {
+  display: flex;
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-border);
+  padding: 0;
+  position: relative;
+  z-index: 9;
+}
+
+.tab-button {
+  flex: 1;
+  padding: var(--spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  opacity: 0.6;
+}
+
+.tab-button:hover {
+  opacity: 0.8;
+  background: rgba(18, 100, 255, 0.05);
+}
+
+.tab-button.active {
+  opacity: 1;
+  color: var(--color-secondary);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-secondary);
 }
 
 .icon-button {
@@ -231,9 +275,12 @@
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-10px);
   }
@@ -362,10 +409,14 @@
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
     opacity: 0.5;
   }
+
   30% {
     transform: translateY(-10px);
     opacity: 1;
@@ -482,6 +533,7 @@
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -493,14 +545,156 @@
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
   }
 }
 
+/* History Tab Content */
+.history-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--color-background);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Override history page styles for side panel integration */
+.history-tab-content .history-page {
+  min-height: unset;
+  height: 100%;
+  background-color: var(--color-background);
+  overflow: hidden;
+}
+
+/* Remove duplicate header padding - we have the main sidepanel header */
+.history-tab-content .history-header {
+  position: static;
+  padding: var(--spacing-md);
+  margin: 0;
+  background-color: transparent;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: none;
+}
+
+/* Make header title smaller to fit side panel */
+.history-tab-content .history-header-title {
+  font-size: 1.125rem;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Adjust search input for side panel width */
+.history-tab-content .history-search-input {
+  font-size: 0.875rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Make filters more compact */
+.history-tab-content .history-filters {
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.history-tab-content .history-filter-chip {
+  padding: 4px var(--spacing-sm);
+  font-size: 0.75rem;
+}
+
+/* Adjust results container to fit side panel */
+.history-tab-content .history-results {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Make result items more compact */
+.history-tab-content .history-result-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.history-tab-content .history-result-header {
+  padding: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+.history-tab-content .history-result-item {
+  padding: var(--spacing-sm);
+}
+
+.history-tab-content .history-result-title {
+  font-size: 0.875rem;
+  margin-bottom: 2px;
+}
+
+.history-tab-content .history-result-url {
+  font-size: 0.75rem;
+}
+
+.history-tab-content .history-result-snippet {
+  font-size: 0.8125rem;
+}
+
+/* Adjust buttons for side panel */
+.history-tab-content button {
+  font-size: 0.875rem;
+}
+
+/* Make privacy controls more compact */
+.history-tab-content .history-privacy-controls {
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Ensure proper scrolling behavior */
+.history-tab-content .history-results-container {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Match color scheme with side panel */
+.history-tab-content .history-page {
+  color: var(--color-text);
+}
+
+.history-tab-content .history-header {
+  background: transparent;
+  border-bottom-color: var(--color-border);
+}
+
+/* Reduce excessive spacing for side panel */
+.history-tab-content .history-stats,
+.history-tab-content .history-banner,
+.history-tab-content .history-loading {
+  padding: var(--spacing-sm);
+  margin: var(--spacing-sm);
+  font-size: 0.875rem;
+}
+
+/* Make sure scrollbars match side panel design */
+.history-tab-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history-tab-content::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+.history-tab-content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+.history-tab-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text);
+  opacity: 0.3;
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -515,22 +709,20 @@
   .sidepanel-header {
     padding: var(--spacing-sm);
   }
-  
+
   .header-title h1 {
     font-size: 16px;
   }
-  
+
   .messages-container {
     padding: var(--spacing-sm);
   }
-  
+
   .message-content {
     max-width: 90%;
   }
-  
+
   .input-form {
     padding: var(--spacing-sm);
   }
 }
-
-

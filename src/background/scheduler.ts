@@ -16,6 +16,20 @@ const PROCESS_BATCH_SIZE_IDLE = 24;
 const PROCESS_TIME_BUDGET_MS = 250;
 
 let isProcessing = false;
+let currentBatch: Array<{ url: string; title?: string }> = [];
+let currentBatchStartTime = 0;
+
+/**
+ * Get current processing status
+ */
+export function getProcessingStatus() {
+    return {
+        isProcessing,
+        currentBatch: currentBatch.map(job => ({ url: job.url, title: job.title })),
+        processingCount: currentBatch.length,
+        processingDuration: isProcessing ? Date.now() - currentBatchStartTime : 0,
+    };
+}
 
 /**
  * Get batch size based on system state
@@ -43,16 +57,19 @@ export async function runSchedulerTick(): Promise<void> {
 
     try {
         isProcessing = true;
+        currentBatchStartTime = Date.now();
         const startTime = Date.now();
 
         // Check gates
         if (await isPaused()) {
             console.log('[Scheduler] Processing paused');
+            currentBatch = [];
             return;
         }
 
         if (!(await isModelReady())) {
             console.log('[Scheduler] Model not ready');
+            currentBatch = [];
             return;
         }
 
@@ -65,6 +82,7 @@ export async function runSchedulerTick(): Promise<void> {
 
         if (jobs.length === 0) {
             console.log('[Scheduler] No jobs to process');
+            currentBatch = [];
             await closeOffscreenIfIdle();
             return;
         }
@@ -75,6 +93,7 @@ export async function runSchedulerTick(): Promise<void> {
 
         if (filteredJobs.length === 0) {
             console.log('[Scheduler] All jobs blocked by privacy settings');
+            currentBatch = [];
             // Mark blocked jobs as done (skip them)
             for (const job of jobs) {
                 await markSuccess(job.id);
@@ -82,6 +101,9 @@ export async function runSchedulerTick(): Promise<void> {
             await closeOffscreenIfIdle();
             return;
         }
+
+        // Update current batch
+        currentBatch = filteredJobs.map(job => ({ url: job.url, title: job.title }));
 
         console.log(`[Scheduler] Processing ${filteredJobs.length} jobs (${jobs.length - filteredJobs.length} blocked)`);
 
@@ -176,6 +198,9 @@ export async function runSchedulerTick(): Promise<void> {
         const elapsed = Date.now() - startTime;
         console.log(`[Scheduler] Tick completed in ${elapsed}ms`);
 
+        // Clear current batch
+        currentBatch = [];
+
         // Check if we should continue processing (respect time budget)
         if (elapsed < PROCESS_TIME_BUDGET_MS && jobs.length === batchSize) {
             // More work might be available, schedule another tick soon
@@ -183,6 +208,7 @@ export async function runSchedulerTick(): Promise<void> {
         }
     } catch (error) {
         console.error('[Scheduler] Tick error:', error);
+        currentBatch = [];
     } finally {
         isProcessing = false;
     }

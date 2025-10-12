@@ -485,3 +485,11 @@ export async function rebuildFromPages(): Promise<void> {
         throw error;
     }
 }
+
+/**
+ * Get the current MiniSearch instance
+ * Returns null if the index hasn't been initialized yet
+ */
+export function getMiniSearchInstance(): MiniSearch<MiniSearchDoc> | null {
+    return state.index;
+}

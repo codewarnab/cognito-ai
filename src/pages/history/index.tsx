@@ -1,36 +1,42 @@
 /**
- * History Search Page
- * On-device semantic search for browsing history
+ * History RAG Chat Interface
+ * Chat-based interface powered by Chrome AI (Gemini Nano) with RAG
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSettings } from './useSettings';
-import { useHistorySearch } from './useHistorySearch';
-import { useKeyboardNav } from './useKeyboardNav';
-import { useVirtualWindow } from './useVirtualWindow';
-import type { DateRange, Toast, HistoryResultGroup } from './types';
+import { useHistoryRAG } from './useHistoryRAG';
+import type { Toast } from './types';
 import {
     HeaderBar,
-    SearchInput,
-    FiltersBar,
-    PrivacyControls,
-    ResultsSummary,
-    ResultGroup,
-    EmptyState,
     ToastContainer,
     Banner,
-    LoadingSkeleton,
+    HistoryMessageList,
+    SettingsDrawer,
+    ProcessingStatusDropdown,
 } from './components';
 import './history.css';
 
 export default function HistoryPage() {
     // State
-    const [query, setQuery] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange>({ start: null, end: null });
-    const [domains, setDomains] = useState<string[]>([]);
+    const [inputValue, setInputValue] = useState('');
     const [toasts, setToasts] = useState<Toast[]>([]);
-    const [groupsWithExpansion, setGroupsWithExpansion] = useState<HistoryResultGroup[]>([]);
+    const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
     const [indexStats, setIndexStats] = useState<{ docCount: number; approxBytes: number } | null>(null);
+    const [queueStats, setQueueStats] = useState<{
+        pending: number;
+        failed: number;
+        total: number;
+        oldestPending?: { url: string; title?: string; age: number };
+    } | null>(null);
+    const [processingStatus, setProcessingStatus] = useState<{
+        isProcessing: boolean;
+        currentBatch: Array<{ url: string; title?: string }>;
+        processingCount: number;
+        processingDuration: number;
+    } | null>(null);
+
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Settings hook
     const {
@@ -45,23 +51,22 @@ export default function HistoryPage() {
         clearIndex
     } = useSettings();
 
-    // Search hook
-    const { groups, total, isSearching, error: searchError, refresh } = useHistorySearch({
-        query,
-        dateRange,
-        domains,
-        limit: 200,
+    // RAG hook
+    const {
+        messages,
+        isLoading,
+        error: ragError,
+        sendMessage,
+        clearMessages,
+        modelReady: ragModelReady
+    } = useHistoryRAG({
+        topK: 10
     });
 
-    // Sync groups with expansion state
+    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
-        setGroupsWithExpansion(
-            groups.map((group, index) => ({
-                ...group,
-                isExpanded: groupsWithExpansion[index]?.isExpanded || false,
-            }))
-        );
-    }, [groups]);
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, isLoading]);
 
     // Toast management
     const addToast = useCallback((message: string, type: Toast['type'] = 'info', duration = 5000) => {
@@ -148,15 +153,13 @@ export default function HistoryPage() {
                 };
                 setToasts((prev) => [...prev, undoToast]);
 
-                // Hide results immediately for privacy
-                setQuery('');
-                setDomains([]);
-                setDateRange({ start: null, end: null });
+                // Clear chat messages for privacy
+                clearMessages();
             } catch (err) {
                 addToast('Failed to delete data', 'error');
             }
         },
-        [addToast, closeToast]
+        [addToast, closeToast, clearMessages]
     );
 
     // Handler: Clear index
@@ -164,107 +167,49 @@ export default function HistoryPage() {
         try {
             await clearIndex();
             addToast('Index cleared successfully', 'success');
-            setQuery('');
-            setDomains([]);
-            setDateRange({ start: null, end: null });
+            clearMessages();
         } catch (err) {
             addToast('Failed to clear index', 'error');
         }
-    }, [clearIndex, addToast]);
+    }, [clearIndex, addToast, clearMessages]);
 
-    // Handler: Open item
-    const handleOpenItem = useCallback((url: string, newTab = true, background = false) => {
-        if (newTab) {
-            chrome.tabs.create({ url, active: !background });
-        } else {
-            chrome.tabs.update({ url });
+    // Handler: Submit message
+    const handleSubmit = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!inputValue.trim() || isLoading || !ragModelReady) return;
+
+        const query = inputValue.trim();
+        setInputValue('');
+        
+        try {
+            await sendMessage(query);
+        } catch (err) {
+            console.error('[HistoryPage] Error sending message:', err);
         }
-    }, []);
+    }, [inputValue, isLoading, ragModelReady, sendMessage]);
 
-    // Handler: Open group
-    const handleOpenGroup = useCallback(
-        (groupIndex: number) => {
-            const group = groupsWithExpansion[groupIndex];
-            if (!group) return;
-
-            group.items.forEach((item, index) => {
-                chrome.tabs.create({ url: item.url, active: index === 0 });
-            });
-
-            addToast(`Opened ${group.items.length} tabs from ${group.domain}`, 'info');
-        },
-        [groupsWithExpansion, addToast]
-    );
-
-    // Handler: Toggle expand group
-    const handleToggleExpand = useCallback((groupIndex: number) => {
-        setGroupsWithExpansion((prev) =>
-            prev.map((group, index) =>
-                index === groupIndex ? { ...group, isExpanded: !group.isExpanded } : group
-            )
-        );
-    }, []);
-
-    // Handler: Clear filters
-    const handleClearFilters = useCallback(() => {
-        setDomains([]);
-        setDateRange({ start: null, end: null });
-    }, []);
-
-    // Keyboard navigation
-    const {
-        focusedGroupIndex,
-        focusedItemIndex,
-        setFocusedGroupIndex,
-        setFocusedItemIndex,
-        resetFocus,
-        handleKeyDown,
-    } = useKeyboardNav({
-        groups: groupsWithExpansion,
-        onOpenItem: handleOpenItem,
-        onOpenGroup: handleOpenGroup,
-        onToggleExpand: handleToggleExpand,
-        enabled: !isSearching && groupsWithExpansion.length > 0,
-    });
-
-    // Virtualization (optional, for very large result sets)
-    const containerHeight = 600; // Adjust based on viewport
-    const { virtualItems, totalHeight, scrollToIndex, measurementRef } = useVirtualWindow({
-        groups: groupsWithExpansion,
-        containerHeight,
-        itemHeight: 120,
-        overscan: 3,
-    });
-
-    // Determine empty state type
-    const emptyStateType = useMemo(() => {
-        if (!modelReady) return 'model-not-ready';
-        if (paused) return 'paused';
-        if (!query.trim()) return 'no-query';
-        if (query.trim() && !isSearching && groupsWithExpansion.length === 0) return 'no-results';
-        return null;
-    }, [modelReady, paused, query, isSearching, groupsWithExpansion.length]);
+    // Handler: Copy message
+    const handleCopy = useCallback(async (content: string) => {
+        try {
+            await navigator.clipboard.writeText(content);
+            addToast('Copied to clipboard', 'success', 2000);
+        } catch (err) {
+            addToast('Failed to copy', 'error', 2000);
+        }
+    }, [addToast]);
 
     // Show errors via toast
     useEffect(() => {
-        if (searchError) {
-            addToast(searchError, 'error');
+        if (ragError) {
+            addToast(ragError, 'error');
         }
-    }, [searchError, addToast]);
+    }, [ragError, addToast]);
 
     useEffect(() => {
         if (settingsError) {
             addToast(settingsError, 'error');
         }
     }, [settingsError, addToast]);
-
-    // Focus first result after search completes
-    useEffect(() => {
-        if (!isSearching && groupsWithExpansion.length > 0 && focusedGroupIndex === -1) {
-            setFocusedGroupIndex(0);
-            setFocusedItemIndex(0);
-        }
-    }, [isSearching, groupsWithExpansion.length, focusedGroupIndex, setFocusedGroupIndex, setFocusedItemIndex]);
 
     // Fetch index stats on mount and periodically
     useEffect(() => {
@@ -285,48 +230,54 @@ export default function HistoryPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Debug click events
-    const handlePageClick = (e: React.MouseEvent) => {
-        console.log('Page clicked:', e.target, e.currentTarget);
-    };
+    // Fetch queue stats and processing status periodically
+    useEffect(() => {
+        const fetchQueueAndProcessing = async () => {
+            try {
+                // Fetch queue stats
+                const queueResponse = await chrome.runtime.sendMessage({ type: 'GetQueueStats' });
+                if (queueResponse && queueResponse.stats) {
+                    setQueueStats(queueResponse.stats);
+                }
+
+                // Fetch processing status
+                const processingResponse = await chrome.runtime.sendMessage({ type: 'GetProcessingStatus' });
+                if (processingResponse && processingResponse.status) {
+                    setProcessingStatus(processingResponse.status);
+                }
+            } catch (err) {
+                console.error('Failed to fetch queue/processing stats:', err);
+            }
+        };
+
+        fetchQueueAndProcessing();
+        const interval = setInterval(fetchQueueAndProcessing, 2000); // Update every 2 seconds for more real-time feel
+
+        return () => clearInterval(interval);
+    }, []);
 
     // Render
     return (
-        <div className="history-page" onKeyDown={handleKeyDown} onClick={handlePageClick} style={{ pointerEvents: 'auto' }}>
-            {/* Header */}
-            <HeaderBar title="🔍 History Search">
-                <SearchInput
-                    value={query}
-                    onChange={setQuery}
-                    placeholder="Search your browsing history..."
-                    disabled={!modelReady || settingsLoading}
-                />
+        <div className="history-page history-chat-container">
+            {/* Header with title and settings icon */}
+            <div className="history-chat-header">
+                <h1 className="history-header-title">💬 Chat with History</h1>
+                <button
+                    type="button"
+                    className="history-settings-button"
+                    onClick={() => setShowSettingsDrawer(true)}
+                    aria-label="Open settings"
+                    title="Settings"
+                >
+                    ⚙️
+                </button>
+            </div>
 
-                <FiltersBar
-                    dateRange={dateRange}
-                    domains={domains}
-                    onDateChange={setDateRange}
-                    onDomainsChange={setDomains}
-                    disabled={!modelReady || settingsLoading}
-                />
-
-                <PrivacyControls
-                    paused={paused}
-                    domainAllowlist={domainAllowlist || []}
-                    domainDenylist={domainDenylist || []}
-                    onPauseToggle={handlePauseToggle}
-                    onAllowlistUpdate={handleAllowlistUpdate}
-                    onDenylistUpdate={handleDenylistUpdate}
-                    onDeleteAllData={handleDeleteAllData}
-                    disabled={settingsLoading || isSearching}
-                />
-            </HeaderBar>
-
-            {/* Paused banner */}
+            {/* Banners */}
             {paused && (
                 <Banner
                     type="warning"
-                    message="History collection is paused. You can still search existing data."
+                    message="History collection is paused. You can still chat about existing data."
                     action={{
                         label: 'Resume',
                         onClick: () => handlePauseToggle(false),
@@ -334,92 +285,80 @@ export default function HistoryPage() {
                 />
             )}
 
-            {/* Model not ready banner */}
-            {!modelReady && (
+            {!ragModelReady && !modelReady && (
                 <Banner
                     type="info"
-                    message="Setting up the AI model for search. This may take a few moments..."
+                    message="Setting up the AI model. This may take a few moments..."
                 />
             )}
 
-            {/* Empty index banner */}
             {modelReady && indexStats && indexStats.docCount === 0 && (
                 <Banner
                     type="info"
-                    message={`Your search index is empty (0 pages indexed). Browse some websites to start building your searchable history!`}
+                    message="Your search index is empty. Browse some websites to start building your history!"
                 />
             )}
 
-            {/* Index stats banner */}
-            {modelReady && indexStats && indexStats.docCount > 0 && (
-                <Banner
-                    type="info"
-                    message={`Search index: ${indexStats.docCount} pages indexed (${(indexStats.approxBytes / 1024).toFixed(1)} KB)`}
+            {/* Processing Status Dropdown */}
+            {modelReady && (
+                <ProcessingStatusDropdown
+                    queueStats={queueStats}
+                    processingStatus={processingStatus}
+                    indexStats={indexStats}
                 />
             )}
 
-            {/* Main content */}
-            <main role="main">
-                {emptyStateType ? (
-                    <EmptyState type={emptyStateType} onResume={paused ? () => handlePauseToggle(false) : undefined} />
-                ) : (
-                    <>
-                        {/* Results summary */}
-                        {query.trim() && !isSearching && groupsWithExpansion.length > 0 && (
-                            <ResultsSummary
-                                total={total}
-                                groupCount={groupsWithExpansion.length}
-                                activeFilters={{ dateRange, domains }}
-                                onClearFilters={handleClearFilters}
-                            />
-                        )}
+            {/* Chat Messages */}
+            <div className="history-chat-messages">
+                <HistoryMessageList
+                    messages={messages}
+                    isLoading={isLoading}
+                    onCopy={handleCopy}
+                />
+                <div ref={messagesEndRef} />
+            </div>
 
-                        {/* Loading state */}
-                        {isSearching && <LoadingSkeleton count={5} />}
+            {/* Input Form */}
+            <form onSubmit={handleSubmit} className="history-chat-input-form">
+                <div className="history-chat-input-container">
+                    <textarea
+                        className="history-chat-input"
+                        placeholder="Ask me anything about your browsing history..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSubmit(e);
+                            }
+                        }}
+                        rows={2}
+                        disabled={!ragModelReady || isLoading}
+                    />
+                    <button
+                        type="submit"
+                        className="history-chat-send-button"
+                        disabled={!inputValue.trim() || !ragModelReady || isLoading}
+                        aria-label="Send message"
+                    >
+                        {isLoading ? '⏳' : '📤'}
+                    </button>
+                </div>
+            </form>
 
-                        {/* Results list */}
-                        {!isSearching && groupsWithExpansion.length > 0 && (
-                            <div
-                                ref={measurementRef}
-                                className="history-results-container"
-                                role="list"
-                                aria-label="Search results"
-                                aria-live="polite"
-                                style={{ maxHeight: `${containerHeight}px`, overflowY: 'auto' }}
-                            >
-                                <div className="history-results-list" style={{ height: `${totalHeight}px`, position: 'relative' }}>
-                                    {virtualItems.map((virtualItem) => (
-                                        <div
-                                            key={virtualItem.index}
-                                            style={{
-                                                position: 'absolute',
-                                                top: `${virtualItem.offsetTop}px`,
-                                                left: 0,
-                                                right: 0,
-                                            }}
-                                        >
-                                            <ResultGroup
-                                                group={virtualItem.group}
-                                                groupIndex={virtualItem.index}
-                                                focusedItemIndex={
-                                                    focusedGroupIndex === virtualItem.index ? focusedItemIndex : -1
-                                                }
-                                                onToggleExpand={() => handleToggleExpand(virtualItem.index)}
-                                                onOpenGroup={() => handleOpenGroup(virtualItem.index)}
-                                                onItemClick={handleOpenItem}
-                                                onItemFocus={(itemIndex) => {
-                                                    setFocusedGroupIndex(virtualItem.index);
-                                                    setFocusedItemIndex(itemIndex);
-                                                }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </>
-                )}
-            </main>
+            {/* Settings Drawer */}
+            <SettingsDrawer
+                open={showSettingsDrawer}
+                onClose={() => setShowSettingsDrawer(false)}
+                paused={paused}
+                domainAllowlist={domainAllowlist || []}
+                domainDenylist={domainDenylist || []}
+                onPauseToggle={handlePauseToggle}
+                onAllowlistUpdate={handleAllowlistUpdate}
+                onDenylistUpdate={handleDenylistUpdate}
+                onDeleteAllData={handleDeleteAllData}
+                disabled={settingsLoading || isLoading}
+            />
 
             {/* Toast notifications */}
             <ToastContainer toasts={toasts} onClose={closeToast} />
