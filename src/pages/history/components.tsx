@@ -50,7 +50,10 @@ export function SearchInput({
         }
     };
 
-    const handleClear = () => {
+    const handleClear = (e: React.MouseEvent) => {
+        console.log('Clear button clicked');
+        e.preventDefault();
+        e.stopPropagation();
         onChange('');
     };
 
@@ -611,7 +614,10 @@ interface ResultItemProps {
 }
 
 export function ResultItem({ item, focused, onClick, onFocus }: ResultItemProps) {
-    const handleClick = () => {
+    const handleClick = (e: React.MouseEvent) => {
+        console.log('Result item clicked:', item.url);
+        e.preventDefault();
+        e.stopPropagation();
         onClick(item.url);
     };
 
@@ -671,10 +677,15 @@ export function ResultGroup({
                 className="history-group-header"
                 role="button"
                 tabIndex={0}
-                onClick={onToggleExpand}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleExpand();
+                }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
+                        e.stopPropagation();
                         onToggleExpand();
                     }
                 }}

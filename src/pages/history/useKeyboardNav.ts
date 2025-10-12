@@ -51,6 +51,17 @@ export function useKeyboardNav(options: UseKeyboardNavOptions): UseKeyboardNavRe
         (e: React.KeyboardEvent) => {
             if (!enabled || groups.length === 0) return;
 
+            // Don't intercept keyboard events when user is typing in an input field
+            const target = e.target as HTMLElement;
+            if (
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.tagName === 'SELECT' ||
+                target.isContentEditable
+            ) {
+                return;
+            }
+
             const currentGroups = groupsRef.current;
 
             switch (e.key) {

@@ -83,6 +83,9 @@
     font-family: var(--history-font-family);
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 /* Header */
@@ -119,6 +122,9 @@
     background-color: var(--history-surface);
     color: var(--history-text-primary);
     transition: border-color var(--history-transition-fast), box-shadow var(--history-transition-fast);
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
 }
 
 .history-search-input:focus {
@@ -143,6 +149,9 @@
     cursor: pointer;
     border-radius: var(--history-radius-sm);
     transition: background-color var(--history-transition-fast);
+    z-index: 3;
+    pointer-events: auto;
+    user-select: none;
 }
 
 .history-search-clear:hover {
@@ -185,6 +194,10 @@
     cursor: pointer;
     transition: all var(--history-transition-fast);
     white-space: nowrap;
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+    user-select: none;
 }
 
 .history-filter-chip:hover {
@@ -265,6 +278,10 @@
     font-weight: 500;
     cursor: pointer;
     transition: all var(--history-transition-fast);
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+    user-select: none;
 }
 
 .history-button:hover:not(:disabled) {
@@ -316,6 +333,8 @@
     flex: 1;
     overflow-y: auto;
     position: relative;
+    pointer-events: auto;
+    z-index: 1;
 }
 
 .history-results-list {
@@ -330,6 +349,9 @@
     border-radius: var(--history-radius-lg);
     overflow: hidden;
     transition: box-shadow var(--history-transition-fast);
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .history-result-group:hover {
@@ -349,6 +371,9 @@
     border-bottom: 1px solid var(--history-border);
     cursor: pointer;
     transition: background-color var(--history-transition-fast);
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
 }
 
 .history-group-header:hover {
@@ -397,6 +422,9 @@
     border-bottom: 1px solid var(--history-border);
     transition: background-color var(--history-transition-fast);
     cursor: pointer;
+    position: relative;
+    z-index: 1;
+    pointer-events: auto;
 }
 
 .history-result-item:last-child {
@@ -669,6 +697,34 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border-width: 0;
+}
+
+/* Ensure all interactive elements are clickable */
+button, input, select, textarea, [role="button"], [tabindex] {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Fix for any potential overlay issues */
+.history-page * {
+    pointer-events: auto;
+}
+
+/* Ensure clickable elements have proper cursor */
+.history-page button,
+.history-page [role="button"],
+.history-page [tabindex],
+.history-page input,
+.history-page select,
+.history-page textarea {
+    cursor: pointer;
+}
+
+.history-page input[type="text"],
+.history-page input[type="search"],
+.history-page textarea {
+    cursor: text;
 }
 
 /* Focus visible (modern browsers) */

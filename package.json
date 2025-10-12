@@ -40,7 +40,8 @@
       "unlimitedStorage",
       "scripting",
       "alarms",
-      "tabs"
+      "tabs",
+      "sidePanel"
     ],
     "host_permissions": [
       "<all_urls>"
@@ -53,7 +54,18 @@
         "matches": [
           "<all_urls>"
         ]
+      },
+      {
+        "resources": [
+          "models/1.0.0/*"
+        ],
+        "matches": [
+          "<all_urls>"
+        ]
       }
-    ]
+    ],
+    "side_panel": {
+      "default_path": "sidepanel.html"
+    }
   }
 }

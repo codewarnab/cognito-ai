@@ -144,13 +144,31 @@ async function handleMiniSearchAction(message: BridgeMessage): Promise<any> {
 /**
  * Handle messages from background
  */
-chrome.runtime.onMessage.addListener((message: BridgeMessage, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
+    // Handle legacy 'type' field messages synchronously (for backward compatibility)
+    if (message.type === 'ProcessBatch') {
+        // Handle ProcessBatch message from scheduler
+        sendResponse({
+            type: 'BatchResult',
+            ok: true,
+            results: message.jobs?.map((job: any) => ({
+                id: job.url, // Use URL as ID for now
+                url: job.url
+            })) || []
+        });
+        return false; // Indicates synchronous response
+    }
+
     (async () => {
         try {
+
+            // Convert to BridgeMessage format if needed
+            const bridgeMessage = message as BridgeMessage;
+
             // Handle PING action directly (check if worker is ready)
-            if (message.action === 'PING') {
+            if (bridgeMessage.action === 'PING') {
                 const response: BridgeResponse = {
-                    requestId: message.requestId,
+                    requestId: bridgeMessage.requestId,
                     ok: true,
                     result: {
                         now: Date.now(),
@@ -164,11 +182,11 @@ chrome.runtime.onMessage.addListener((message: BridgeMessage, sender, sendRespon
             }
 
             // Handle CLOSE action - terminate worker and close offscreen
-            if (message.action === 'CLOSE') {
+            if (bridgeMessage.action === 'CLOSE') {
                 terminateWorker();
 
                 const response: BridgeResponse = {
-                    requestId: message.requestId,
+                    requestId: bridgeMessage.requestId,
                     ok: true,
                     result: { closed: true },
                     final: true
@@ -181,10 +199,10 @@ chrome.runtime.onMessage.addListener((message: BridgeMessage, sender, sendRespon
             }
 
             // Handle MiniSearch actions directly in offscreen context
-            if (message.action.startsWith('MINISEARCH_')) {
-                const result = await handleMiniSearchAction(message);
+            if (bridgeMessage.action && bridgeMessage.action.startsWith('MINISEARCH_')) {
+                const result = await handleMiniSearchAction(bridgeMessage);
                 const response: BridgeResponse = {
-                    requestId: message.requestId,
+                    requestId: bridgeMessage.requestId,
                     ok: true,
                     result,
                     final: true
@@ -201,10 +219,10 @@ chrome.runtime.onMessage.addListener((message: BridgeMessage, sender, sendRespon
             }
 
             // Handle INIT_MODEL to track readiness
-            if (message.action === 'INIT_MODEL') {
+            if (bridgeMessage.action === 'INIT_MODEL') {
                 // Listen for initialization response to set ready flag
                 const initHandler = (event: MessageEvent<BridgeResponse>) => {
-                    if (event.data.requestId === message.requestId && event.data.ok) {
+                    if (event.data.requestId === bridgeMessage.requestId && event.data.ok) {
                         workerReady = true;
                         worker?.removeEventListener('message', initHandler);
                     }
@@ -213,14 +231,14 @@ chrome.runtime.onMessage.addListener((message: BridgeMessage, sender, sendRespon
             }
 
             // Forward message to worker
-            worker.postMessage(message);
+            worker.postMessage(bridgeMessage);
 
         } catch (error) {
             console.error('[Offscreen Bridge] Error handling message:', error);
 
             // Send error response
             const errorResponse: BridgeResponse = {
-                requestId: message.requestId,
+                requestId: message.requestId || 'unknown',
                 ok: false,
                 error: {
                     code: 'BRIDGE_ERROR',

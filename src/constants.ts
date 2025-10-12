@@ -45,7 +45,10 @@ export const QUEUE_STATUS = {
 } as const;
 
 // Model download and caching
-export const MODEL_BASE_URL = 'https://cdn.example.com/models'; // TODO: Replace with actual CDN URL
+// Load from local extension bundle instead of CDN
+export const MODEL_BASE_URL = typeof chrome !== 'undefined' && chrome.runtime
+    ? chrome.runtime.getURL('models')
+    : 'models'; // Fallback for non-extension context
 export const MODEL_VERSION = '1.0.0';
 export const MODEL_CACHE_PREFIX = 'model/';
 

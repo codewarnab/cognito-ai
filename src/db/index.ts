@@ -82,6 +82,21 @@ export interface Settings {
     lastMiniSearchPersistAt?: number;
 }
 
+/**
+ * Chat message record for side panel chat UI
+ */
+export interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+    metadata?: {
+        streaming?: boolean;
+        error?: boolean;
+        regenerated?: boolean;
+    };
+}
+
 // ============================================================================
 // Dexie Database Class
 // ============================================================================
@@ -93,6 +108,7 @@ export class AppDB extends Dexie {
     miniSearchIndex!: Table<MiniSearchIndexRecord, number>;
     settings!: Table<SettingRecord, string>;
     queue!: Table<QueueItem, string>;
+    chatMessages!: Table<ChatMessage, string>;
 
     constructor() {
         super('HistorySearchDB');
@@ -151,6 +167,17 @@ export class AppDB extends Dexie {
             await tx.table('chunks').toCollection().modify((chunk: any) => {
                 chunk.lastAccessed = chunk.createdAt ?? Date.now();
             });
+        });
+
+        // Version 5: Add chatMessages table for side panel chat
+        this.version(5).stores({
+            pages: 'pageId, url, domain, firstSeen, lastUpdated, lastAccessed',
+            chunks: 'chunkId, url, pageId, chunkIndex, tokenLength, createdAt, lastAccessed',
+            images: 'imageId, pageUrl, pageId',
+            settings: 'key',
+            miniSearchIndex: 'version',
+            queue: 'id, type, status, priority, createdAt, updatedAt',
+            chatMessages: 'id, role, timestamp'
         });
     }
 }
@@ -848,4 +875,58 @@ export async function wipeAllData(alsoRemoveModel: boolean = false): Promise<voi
     }
 
     console.log('Data wipe completed');
+}
+
+// ============================================================================
+// Chat Message APIs
+// ============================================================================
+
+/**
+ * Save a chat message to the database
+ */
+export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
+    const db = await openDb();
+    
+    const chatMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        ...message
+    };
+    
+    await db.chatMessages.add(chatMessage);
+    return chatMessage;
+}
+
+/**
+ * Load chat history from the database
+ * Returns messages sorted by timestamp (oldest first)
+ */
+export async function loadChatHistory(limit?: number): Promise<ChatMessage[]> {
+    const db = await openDb();
+    
+    let query = db.chatMessages.orderBy('timestamp');
+    
+    if (limit) {
+        // Get the last N messages
+        const allMessages = await query.toArray();
+        return allMessages.slice(-limit);
+    }
+    
+    return await query.toArray();
+}
+
+/**
+ * Clear all chat history
+ */
+export async function clearChatHistory(): Promise<void> {
+    const db = await openDb();
+    await db.chatMessages.clear();
+}
+
+/**
+ * Delete a specific chat message
+ */
+export async function deleteChatMessage(id: string): Promise<void> {
+    const db = await openDb();
+    await db.chatMessages.delete(id);
 }

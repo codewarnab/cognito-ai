@@ -30,6 +30,7 @@ export default function HistoryPage() {
     const [domains, setDomains] = useState<string[]>([]);
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [groupsWithExpansion, setGroupsWithExpansion] = useState<HistoryResultGroup[]>([]);
+    const [indexStats, setIndexStats] = useState<{ docCount: number; approxBytes: number } | null>(null);
 
     // Settings hook
     const {
@@ -265,9 +266,33 @@ export default function HistoryPage() {
         }
     }, [isSearching, groupsWithExpansion.length, focusedGroupIndex, setFocusedGroupIndex, setFocusedItemIndex]);
 
+    // Fetch index stats on mount and periodically
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const response = await chrome.runtime.sendMessage({ type: 'GetIndexStats' });
+                if (response && response.stats) {
+                    setIndexStats(response.stats);
+                }
+            } catch (err) {
+                console.error('Failed to fetch index stats:', err);
+            }
+        };
+
+        fetchStats();
+        const interval = setInterval(fetchStats, 10000); // Update every 10 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    // Debug click events
+    const handlePageClick = (e: React.MouseEvent) => {
+        console.log('Page clicked:', e.target, e.currentTarget);
+    };
+
     // Render
     return (
-        <div className="history-page" onKeyDown={handleKeyDown}>
+        <div className="history-page" onKeyDown={handleKeyDown} onClick={handlePageClick} style={{ pointerEvents: 'auto' }}>
             {/* Header */}
             <HeaderBar title="🔍 History Search">
                 <SearchInput
@@ -314,6 +339,22 @@ export default function HistoryPage() {
                 <Banner
                     type="info"
                     message="Setting up the AI model for search. This may take a few moments..."
+                />
+            )}
+
+            {/* Empty index banner */}
+            {modelReady && indexStats && indexStats.docCount === 0 && (
+                <Banner
+                    type="info"
+                    message={`Your search index is empty (0 pages indexed). Browse some websites to start building your searchable history!`}
+                />
+            )}
+
+            {/* Index stats banner */}
+            {modelReady && indexStats && indexStats.docCount > 0 && (
+                <Banner
+                    type="info"
+                    message={`Search index: ${indexStats.docCount} pages indexed (${(indexStats.approxBytes / 1024).toFixed(1)} KB)`}
                 />
             )}
 
