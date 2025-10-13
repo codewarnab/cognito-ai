@@ -1,7 +1,9 @@
 onlyBuiltDependencies:
   - '@parcel/watcher'
+  - '@scarf/scarf'
   - '@swc/core'
   - esbuild
   - lmdb
   - msgpackr-extract
+  - protobufjs
   - sharp

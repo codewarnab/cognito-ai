@@ -1,413 +1,257 @@
-import { useState, useEffect, useRef } from "react";
-import { MessageList } from "./components/ChatMessage";
-import { saveChatMessage, loadChatHistory, clearChatHistory } from "./db";
-import type { ChatMessage } from "./db";
+/**
+ * CopilotKit-powered Side Panel with Custom UI
+ * Uses external Gemini runtime via CopilotKit
+ */
+
+import { useState, useRef, useEffect } from "react";
+import { CopilotKit } from "@copilotkit/react-core";
+import { useCopilotChat, useCopilotReadable, useCopilotAction } from "@copilotkit/react-core";
+import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
+import { CopilotChatWindow } from "./components/CopilotChatWindow";
+import { COPILOT_RUNTIME_URL, COPILOT_RUNTIME_URL_DEFAULT } from "./constants";
+import "./styles/copilot.css";
 import "./sidepanel.css";
 
-interface PromptAPIStatus {
-  available: 'readily' | 'downloading' | 'no' | 'downloaded'
-  downloading: boolean
-  downloadProgress: number
-}
-
-function SidePanel() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [inputValue, setInputValue] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [session, setSession] = useState<any | null>(null);
-  const [promptAPIStatus, setPromptAPIStatus] = useState<PromptAPIStatus>({
-    available: 'no',
-    downloading: false,
-    downloadProgress: 0
-  });
-  const [useStreaming, setUseStreaming] = useState(true);
+/**
+ * Inner component that uses CopilotKit hooks
+ * Must be wrapped by CopilotKit provider
+ */
+function CopilotChatContent() {
+  const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const lastUserMessageRef = useRef<string>("");
 
-  // Auto-scroll to bottom when new messages arrive
+  // Use CopilotKit chat hook for custom UI
+  const {
+    visibleMessages,
+    isLoading,
+    appendMessage,
+  } = useCopilotChat();
+
+  // Filter out empty messages
+  const messages = visibleMessages.filter(message => {
+    const content = (message as any).content || (message as any).text || '';
+    return content && typeof content === 'string' && content.trim().length > 0;
+  });
+
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages]);
 
-  // Initialize Prompt API and load chat history
-  useEffect(() => {
-    const init = async () => {
-      // Load persisted chat history
-      try {
-        const history = await loadChatHistory();
-        setMessages(history);
-      } catch (error) {
-        console.error('[SidePanel] Failed to load chat history:', error);
+  // Provide extension context to the AI
+  useCopilotReadable({
+    description: "Chrome extension context and capabilities",
+    value: {
+      extensionName: "Chrome AI Assistant",
+      capabilities: [
+        "Tab management",
+        "Browsing history access",
+        "Chat history persistence",
+        "Side panel interface"
+      ],
+      currentContext: {
+        platform: "Chrome Extension",
+        location: "Side Panel"
       }
+    }
+  });
 
-      // Initialize Prompt API
+  // Action: Get active tab info
+  useCopilotAction({
+    name: "getActiveTab",
+    description: "Get information about the currently active browser tab",
+    parameters: [],
+    handler: async () => {
       try {
-        const availability = await window.LanguageModel.availability();
-        console.log('[SidePanel] LanguageModel availability:', availability);
-
-        if (availability === 'available' || availability === undefined) {
-          console.log('[SidePanel] Prompt API is available and model is ready.');
-          setPromptAPIStatus({ available: 'downloaded', downloading: false, downloadProgress: 100 });
-
-          const newSession = await window.LanguageModel.create({
-            expectedInputs: [{ type: "text", languages: ["en"] }],
-            expectedOutputs: [{ type: "text", languages: ["en"] }],
-            systemInstruction: `You are a helpful AI assistant built for a Chrome AI hackathon.
-The user will ask questions or request help in English.
-Always respond clearly, concisely, and in English.
-Focus on practical, developer-friendly solutions and examples.
-You are running in a Chrome extension side panel.`
-          });
-
-          setSession(newSession);
-          return;
-        }
-
-        if (availability === 'no') {
-          setPromptAPIStatus({ available: 'no', downloading: false, downloadProgress: 0 });
-          return;
-        }
-
-        if (availability === 'readily') {
-          setPromptAPIStatus({ available: 'readily', downloading: false, downloadProgress: 0 });
-          return;
-        }
-
-        if (availability === 'downloading') {
-          setPromptAPIStatus({ available: 'downloading', downloading: true, downloadProgress: 0 });
-
-          const newSession = await window.LanguageModel.create({
-            expectedInputs: [{ type: "text", languages: ["en"] }],
-            expectedOutputs: [{ type: "text", languages: ["en"] }],
-            systemInstruction: `You are a helpful AI assistant built for a Chrome AI hackathon.
-The user will ask questions or request help in English.
-Always respond clearly, concisely, and in English.
-Focus on practical, developer-friendly solutions and examples.
-You are running in a Chrome extension side panel.`,
-            monitor(m) {
-              m.addEventListener('downloadprogress', (e: any) => {
-                const progress = Math.round((e.loaded || 0) * 100);
-                console.log('[SidePanel] Download progress:', progress, '%');
-                setPromptAPIStatus({
-                  available: 'downloading',
-                  downloading: progress < 100,
-                  downloadProgress: progress
-                });
-              });
-            }
-          });
-
-          setSession(newSession);
-          setPromptAPIStatus({ available: 'downloaded', downloading: false, downloadProgress: 100 });
-        }
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        return {
+          title: tab.title,
+          url: tab.url,
+          id: tab.id
+        };
       } catch (error) {
-        console.error('[SidePanel] Error initializing Prompt API:', error);
-        setPromptAPIStatus({ available: 'no', downloading: false, downloadProgress: 0 });
+        console.error('[CopilotAction] Error getting active tab:', error);
+        return { error: "Failed to get active tab info" };
       }
-    };
+    }
+  });
 
-    init();
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || !session || loading) return;
-
-    const userMessage = inputValue.trim();
-    lastUserMessageRef.current = userMessage;
-    setInputValue("");
-    setLoading(true);
-
-    try {
-      // Save user message
-      const savedUserMsg = await saveChatMessage({
-        role: 'user',
-        content: userMessage
-      });
-      setMessages(prev => [...prev, savedUserMsg]);
-
-      let assistantContent = "";
-
-      if (useStreaming) {
-        // Use streaming API
-        const stream = session.promptStreaming(userMessage);
-
-        // Create a placeholder assistant message
-        const assistantMsg = await saveChatMessage({
-          role: 'assistant',
-          content: '',
-          metadata: { streaming: true }
-        });
-        setMessages(prev => [...prev, assistantMsg]);
-
-        for await (const chunk of stream) {
-          assistantContent += chunk;
-          // Update the message in state
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === assistantMsg.id
-                ? { ...msg, content: assistantContent }
-                : msg
-            )
-          );
-        }
-
-        // Update the message in database with final content
-        await saveChatMessage({
-          role: 'assistant',
-          content: assistantContent
-        });
-
-        // Remove the placeholder and add the final message
-        const finalMsg = await saveChatMessage({
-          role: 'assistant',
-          content: assistantContent
-        });
-
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === assistantMsg.id
-              ? finalMsg
-              : msg
-          )
+  // Action: Search tabs
+  useCopilotAction({
+    name: "searchTabs",
+    description: "Search through all open browser tabs by title or URL",
+    parameters: [
+      {
+        name: "query",
+        type: "string",
+        description: "Search query to match against tab titles and URLs",
+        required: true
+      }
+    ],
+    handler: async ({ query }) => {
+      try {
+        const tabs = await chrome.tabs.query({});
+        const matchingTabs = tabs.filter(tab => 
+          tab.title?.toLowerCase().includes(query.toLowerCase()) ||
+          tab.url?.toLowerCase().includes(query.toLowerCase())
         );
-      } else {
-        // Use non-streaming API
-        const result = await session.prompt(userMessage);
-        assistantContent = result;
-
-        const assistantMsg = await saveChatMessage({
-          role: 'assistant',
-          content: assistantContent
-        });
-        setMessages(prev => [...prev, assistantMsg]);
-      }
-    } catch (error: any) {
-      console.error('[SidePanel] Error getting AI response:', error);
-
-      const errorMsg = await saveChatMessage({
-        role: 'assistant',
-        content: `Error: ${error.message || 'Failed to get AI response'}`,
-        metadata: { error: true }
-      });
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleClearChat = async () => {
-    if (window.confirm('Are you sure you want to clear all chat history?')) {
-      try {
-        await clearChatHistory();
-        setMessages([]);
+        return {
+          found: matchingTabs.length,
+          tabs: matchingTabs.map(t => ({
+            id: t.id,
+            title: t.title,
+            url: t.url
+          }))
+        };
       } catch (error) {
-        console.error('[SidePanel] Error clearing chat:', error);
+        console.error('[CopilotAction] Error searching tabs:', error);
+        return { error: "Failed to search tabs" };
       }
     }
-  };
+  });
 
-  const handleRegenerate = async (messageId: string) => {
-    if (!session || loading || !lastUserMessageRef.current) return;
+  // Action: Open new tab
+  useCopilotAction({
+    name: "openTab",
+    description: "Open a new browser tab with the specified URL",
+    parameters: [
+      {
+        name: "url",
+        type: "string",
+        description: "The URL to open in a new tab",
+        required: true
+      }
+    ],
+    handler: async ({ url }) => {
+      try {
+        const tab = await chrome.tabs.create({ url });
+        return {
+          success: true,
+          tabId: tab.id,
+          url: tab.url
+        };
+      } catch (error) {
+        console.error('[CopilotAction] Error opening tab:', error);
+        return { error: "Failed to open tab" };
+      }
+    }
+  });
 
-    // Find the message to regenerate and remove it along with subsequent messages
-    const messageIndex = messages.findIndex(msg => msg.id === messageId);
-    if (messageIndex === -1) return;
-
-    // Remove from state
-    setMessages(prev => prev.slice(0, messageIndex));
-
-    setLoading(true);
-
-    try {
-      let assistantContent = "";
-
-      if (useStreaming) {
-        const stream = session.promptStreaming(lastUserMessageRef.current);
-
-        const assistantMsg = await saveChatMessage({
-          role: 'assistant',
-          content: '',
-          metadata: { streaming: true, regenerated: true }
-        });
-        setMessages(prev => [...prev, assistantMsg]);
-
-        for await (const chunk of stream) {
-          assistantContent += chunk;
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === assistantMsg.id
-                ? { ...msg, content: assistantContent }
-                : msg
-            )
-          );
+  // Action: Get selected text from active tab
+  useCopilotAction({
+    name: "getSelectedText",
+    description: "Get the currently selected text from the active browser tab",
+    parameters: [],
+    handler: async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab.id) {
+          return { error: "No active tab" };
         }
 
-        const finalMsg = await saveChatMessage({
-          role: 'assistant',
-          content: assistantContent,
-          metadata: { regenerated: true }
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => window.getSelection()?.toString() || ""
         });
 
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.id === assistantMsg.id
-              ? finalMsg
-              : msg
-          )
-        );
-      } else {
-        const result = await session.prompt(lastUserMessageRef.current);
-        assistantContent = result;
-
-        const assistantMsg = await saveChatMessage({
-          role: 'assistant',
-          content: assistantContent,
-          metadata: { regenerated: true }
-        });
-        setMessages(prev => [...prev, assistantMsg]);
+        const selectedText = results[0]?.result || "";
+        return {
+          success: true,
+          selectedText,
+          length: selectedText.length
+        };
+      } catch (error) {
+        console.error('[CopilotAction] Error getting selected text:', error);
+        return { error: "Failed to get selected text. Make sure you have permission." };
       }
-    } catch (error: any) {
-      console.error('[SidePanel] Error regenerating response:', error);
-
-      const errorMsg = await saveChatMessage({
-        role: 'assistant',
-        content: `Error: ${error.message || 'Failed to regenerate response'}`,
-        metadata: { error: true }
-      });
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setLoading(false);
     }
+  });
+
+  // Handle sending messages
+  const handleSendMessage = async () => {
+    const trimmedInput = input.trim();
+    
+    if (!trimmedInput || isLoading) {
+      return;
+    }
+
+    setInput('');
+
+    await appendMessage(new TextMessage({
+      content: trimmedInput,
+      role: Role.User
+    }));
   };
 
-  const handleCopy = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-    } catch (err) {
-      console.error('[SidePanel] Failed to copy:', err);
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim().length > 0) {
+        handleSendMessage();
+      }
     }
   };
 
   return (
-    <div className="sidepanel-container">
-      {/* Status Messages */}
-      {(promptAPIStatus.downloading || promptAPIStatus.available === 'downloading') && (
-        <div className="status-banner downloading">
-          <p>Downloading Gemini Nano model... {promptAPIStatus.downloadProgress}%</p>
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${promptAPIStatus.downloadProgress}%` }}
-            />
+    <CopilotChatWindow
+      messages={messages}
+      input={input}
+      setInput={setInput}
+      onSendMessage={handleSendMessage}
+      onKeyPress={handleKeyPress}
+      isLoading={isLoading}
+      messagesEndRef={messagesEndRef}
+    />
+  );
+}
+
+/**
+ * Main Side Panel component with CopilotKit provider
+ */
+function SidePanel() {
+  // Check if runtime URL is configured
+  const isConfigured = COPILOT_RUNTIME_URL !== COPILOT_RUNTIME_URL_DEFAULT;
+
+  if (!isConfigured) {
+    return (
+      <div className="sidepanel-container">
+        <div className="configuration-prompt">
+          <div className="config-icon">⚙️</div>
+          <h2>CopilotKit Configuration Required</h2>
+          <p>
+            To use the AI assistant, please configure your CopilotKit runtime URL.
+          </p>
+          <div className="config-instructions">
+            <h3>Setup Instructions:</h3>
+            <ol>
+              <li>Deploy your CopilotKit runtime with Gemini</li>
+              <li>Open <code>src/constants.ts</code></li>
+              <li>Update <code>COPILOT_RUNTIME_URL</code> with your runtime endpoint</li>
+              <li>Reload the extension</li>
+            </ol>
           </div>
+          <p className="config-note">
+            📝 Example: <code>https://your-runtime.example.com/api/copilotkit</code>
+          </p>
         </div>
-      )}
-
-      {promptAPIStatus.available === 'no' && (
-        <div className="status-banner error">
-          Chrome Prompt API is not available. Please use Chrome Canary 128+ with AI features enabled.
-        </div>
-      )}
-
-      {promptAPIStatus.available === 'readily' && (
-        <div className="status-banner warning">
-          Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
-        </div>
-      )}
-
-      {/* Messages Container */}
-      <div className="messages-container">
-        <MessageList
-          messages={messages}
-          isLoading={loading}
-          onCopy={handleCopy}
-          onRegenerate={handleRegenerate}
-        />
-        <div ref={messagesEndRef} />
       </div>
+    );
+  }
 
-      {/* Input Form */}
-      <form onSubmit={handleSubmit} className="input-form">
-        <div className="form-controls">
-          <label className="toggle-container">
-            <input
-              type="checkbox"
-              checked={useStreaming}
-              onChange={(e) => setUseStreaming(e.target.checked)}
-            />
-            <span className="toggle-label">Stream responses</span>
-          </label>
-        </div>
-
-        <div className="input-container">
-          <textarea
-            className="message-input"
-            placeholder="Ask me anything..."
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit(e);
-              }
-            }}
-            rows={2}
-            disabled={!session || loading}
-          />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!inputValue.trim() || !session || loading}
-            aria-label="Send message"
-          >
-            {loading ? '⏳' : '📤'}
-          </button>
-        </div>
-      </form>
-    </div>
+  return (
+    <CopilotKit 
+      runtimeUrl={COPILOT_RUNTIME_URL}
+    >
+      <CopilotChatContent />
+    </CopilotKit>
   );
 }
 
 export default SidePanel;
 
-// TypeScript declarations for Chrome Prompt API
+// TypeScript declarations
 declare global {
   interface Window {
-    LanguageModel?: {
-      availability: () => Promise<'available' | 'readily' | 'downloading' | 'no' | undefined>
-      params: () => Promise<{
-        defaultTopK: number
-        maxTopK: number
-        defaultTemperature: number
-        maxTemperature: number
-      }>
-      create: (options?: {
-        topK?: number
-        temperature?: number
-        signal?: AbortSignal
-        expectedInputs?: Array<{
-          type: string
-          languages: string[]
-        }>
-        expectedOutputs?: Array<{
-          type: string
-          languages: string[]
-        }>
-        systemInstruction?: string
-        initialPrompts?: Array<{
-          role: 'system' | 'user' | 'assistant'
-          content: string
-        }>
-        monitor?: (monitor: {
-          addEventListener: (event: 'downloadprogress', listener: (e: { loaded: number }) => void) => void
-        }) => void
-      }) => Promise<{
-        prompt: (text: string, options?: { signal?: AbortSignal }) => Promise<string>
-        promptStreaming: (text: string, options?: { signal?: AbortSignal }) => ReadableStream<string>
-        destroy: () => void
-        clone: (options?: { signal?: AbortSignal }) => Promise<any>
-      }>
-    }
+    chrome: typeof chrome;
   }
 }

@@ -13,6 +13,9 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@copilotkit/react-core": "^1.10.6",
+    "@copilotkit/react-ui": "^1.10.6",
+    "@copilotkit/runtime-client-gql": "^1.10.6",
     "dexie": "^4.2.1",
     "plasmo": "0.90.5",
     "react": "18.2.0",
@@ -38,7 +41,14 @@
       "unlimitedStorage",
       "tabs",
       "sidePanel",
-      "alarms"
+      "alarms",
+      "scripting",
+      "activeTab"
+    ],
+    "host_permissions": [
+      "https://backend-4khk5owpk-arnab-mondals-projects.vercel.app/*",
+      "http://localhost:3000/*",
+      "https://*/*"
     ],
     "commands": {
       "_execute_side_panel": {

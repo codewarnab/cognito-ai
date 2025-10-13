@@ -17,3 +17,11 @@ export const CHROME_AI_LIMITS = {
     /** Maximum output tokens per response */
     MAX_OUTPUT_TOKENS: 1024,
 } as const;
+
+/**
+ * CopilotKit Configuration
+ * Edit this URL to point to your hosted Copilot Runtime endpoint
+ * Example: "https://your-runtime.example.com/api/copilotkit"
+ */
+export const COPILOT_RUNTIME_URL = "https://backend-dun-eta-47.vercel.app/api" as string; // TODO: Edit this URL
+export const COPILOT_RUNTIME_URL_DEFAULT = "https://backend-dun-eta-47.vercel.app/";
