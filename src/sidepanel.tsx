@@ -8,8 +8,10 @@ import { CopilotKit } from "@copilotkit/react-core";
 import { useCopilotChat, useCopilotReadable } from "@copilotkit/react-core";
 import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
+import { McpManager } from "./components/McpManager";
 import { COPILOT_RUNTIME_URL, COPILOT_RUNTIME_URL_DEFAULT } from "./constants";
 import "./styles/copilot.css";
+import "./styles/mcp.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -21,49 +23,12 @@ import { useRegisterAllActions } from "./actions/registerAll";
 function CopilotChatContent() {
   const log = createLogger("SidePanel-CopilotKit");
   const [input, setInput] = useState('');
+  const [showMcp, setShowMcp] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Register modular Copilot actions
   useRegisterAllActions();
 
-  // Helper: normalize URL for comparison (ignore hash, www, trailing slash)
-  const normalizeUrl = (inputUrl: string) => {
-    try {
-      const u = new URL(inputUrl);
-      const hostname = u.hostname.replace(/^www\./i, '');
-      const pathname = u.pathname === '/' ? '' : u.pathname.replace(/\/$/, '');
-      const hashless = `${u.protocol}//${hostname}${u.port ? ':' + u.port : ''}${pathname}${u.search}`;
-      return hashless.toLowerCase();
-    } catch {
-      return inputUrl.toLowerCase();
-    }
-  };
-
-  const urlsEqual = (a?: string, b?: string) => {
-    if (!a || !b) return false;
-    return normalizeUrl(a) === normalizeUrl(b);
-  };
-
-  // Helper: focus a tab (and its window)
-  const focusTab = async (tab: chrome.tabs.Tab) => {
-    if (tab.id) {
-      await chrome.tabs.update(tab.id, { active: true });
-    }
-    if (tab.windowId !== undefined) {
-      await chrome.windows.update(tab.windowId, { focused: true });
-    }
-  };
-
-  // Guard: track recently-opened URLs to avoid racing duplicate opens
-  const recentlyOpenedRef = useRef<Record<string, number>>({});
-  const isRecentlyOpened = (key: string, windowMs = 5000) => {
-    const ts = recentlyOpenedRef.current[key];
-    const now = Date.now();
-    return Boolean(ts && now - ts < windowMs);
-  };
-  const markOpened = (key: string) => {
-    recentlyOpenedRef.current[key] = Date.now();
-  };
 
   // Use CopilotKit chat hook for custom UI
   const {
@@ -93,11 +58,13 @@ function CopilotChatContent() {
       behaviorGuidelines: [
         "Directly execute required steps with available tools; avoid requesting user confirmation.",
         "After each action, validate success by inspecting the DOM, URL, titles, or selected text.",
-        "If a step fails, attempt an alternative method automatically and report what you tried.",
+        "If a step fails, DO NOT retry it immediately. Wait for user confirmation or try a different approach.",
+        "NEVER retry the same action with the same parameters repeatedly - this creates infinite loops.",
+        "If you get a 'Duplicate action blocked' or 'Frame removed' error, STOP and report to the user.",
         "Only ask for input when information is missing and cannot be inferred.",
         "Return a concise final summary of what was done and the verified result.",
         "Do not try to open new tab with same url twice",
-        
+        "If navigation causes errors, STOP - don't retry navigation repeatedly.",
       ],
       capabilities: [
         "getActiveTab",
@@ -176,6 +143,11 @@ function CopilotChatContent() {
     }
   };
 
+  // Render MCP Manager or Chat Window
+  if (showMcp) {
+    return <McpManager onBack={() => setShowMcp(false)} />;
+  }
+
   return (
     <CopilotChatWindow
       messages={messages}
@@ -184,6 +156,7 @@ function CopilotChatContent() {
       onSendMessage={handleSendMessage}
       onKeyPress={handleKeyPress}
       onClearChat={handleClearChat}
+      onSettingsClick={() => setShowMcp(true)}
       isLoading={isLoading}
       messagesEndRef={messagesEndRef}
     />

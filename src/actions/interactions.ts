@@ -1,14 +1,41 @@
 import { useCopilotAction } from "@copilotkit/react-core";
 import { createLogger } from "../logger";
+import { useRef } from "react";
 
 export function registerInteractionActions() {
   const log = createLogger("Actions-Interactions");
+  
+  // Prevent rapid repeated actions (debounce mechanism)
+  const lastActionRef = useRef<{ name: string; params: string; timestamp: number } | null>(null);
+  const DEBOUNCE_MS = 2000; // 2 second debounce
+
+  const isDuplicateAction = (actionName: string, params: any): boolean => {
+    const paramsStr = JSON.stringify(params);
+    const now = Date.now();
+    
+    if (lastActionRef.current) {
+      const { name, params: lastParams, timestamp } = lastActionRef.current;
+      const timeSince = now - timestamp;
+      
+      if (name === actionName && lastParams === paramsStr && timeSince < DEBOUNCE_MS) {
+        log.warn(`Duplicate ${actionName} blocked (too soon: ${timeSince}ms)`, params);
+        return true;
+      }
+    }
+    
+    lastActionRef.current = { name: actionName, params: paramsStr, timestamp: now };
+    return false;
+  };
 
   useCopilotAction({
     name: "clickElement",
     description: "Click an element on the active page by selector, text, or aria-label.",
     parameters: [ { name: "selector", type: "string", description: "CSS selector or text/aria-label", required: true } ],
     handler: async ({ selector }) => {
+      if (isDuplicateAction("clickElement", { selector })) {
+        return { error: "Duplicate action blocked - please wait before retrying", blocked: true };
+      }
+      
       try {
         log.info("clickElement", { selector });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -38,6 +65,14 @@ export function registerInteractionActions() {
         else log.warn("clickElement failed", result);
         return result || { error: "Failed to execute click" };
       } catch (error) {
+        const errorMsg = (error as Error)?.message || String(error);
+        
+        // Don't retry if frame was removed (page is navigating)
+        if (errorMsg.includes('Frame with ID') || errorMsg.includes('was removed')) {
+          log.warn('[CopilotAction] Frame removed during click - page may be navigating', { selector });
+          return { error: "Page is navigating - action cancelled to prevent loops", frameRemoved: true };
+        }
+        
         log.error('[CopilotAction] Error clicking element:', error);
         return { error: "Failed to click element. Make sure you have permission to access this page." };
       }
@@ -101,6 +136,10 @@ export function registerInteractionActions() {
       { name: "value", type: "string", description: "Text value to fill", required: true }
     ],
     handler: async ({ selector, value }) => {
+      if (isDuplicateAction("fillInput", { selector, value })) {
+        return { error: "Duplicate action blocked - please wait before retrying", blocked: true };
+      }
+      
       try {
         log.info("fillInput", { selector, length: value?.length });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -125,6 +164,14 @@ export function registerInteractionActions() {
         if (result?.success) log.info("fillInput success", result.field);
         return result || { error: "Failed to fill input" };
       } catch (error) {
+        const errorMsg = (error as Error)?.message || String(error);
+        
+        // Don't retry if frame was removed (page is navigating)
+        if (errorMsg.includes('Frame with ID') || errorMsg.includes('was removed')) {
+          log.warn('[CopilotAction] Frame removed during fillInput - page may be navigating', { selector });
+          return { error: "Page is navigating - action cancelled to prevent loops", frameRemoved: true };
+        }
+        
         log.error('[CopilotAction] Error filling input:', error);
         return { error: "Failed to fill input field. Make sure you have permission to access this page." };
       }

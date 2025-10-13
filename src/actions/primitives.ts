@@ -1,16 +1,43 @@
 import { useCopilotAction } from "@copilotkit/react-core";
 import { createLogger } from "../logger";
 import { useActionHelpers } from "./useActionHelpers";
+import { useRef } from "react";
 
 export function registerPrimitiveActions() {
   const log = createLogger("Actions-Primitives");
   const { urlsEqual, focusTab } = useActionHelpers();
+  
+  // Prevent rapid repeated actions (debounce mechanism)
+  const lastActionRef = useRef<{ name: string; params: string; timestamp: number } | null>(null);
+  const DEBOUNCE_MS = 2000; // 2 second debounce
+
+  const isDuplicateAction = (actionName: string, params: any): boolean => {
+    const paramsStr = JSON.stringify(params);
+    const now = Date.now();
+    
+    if (lastActionRef.current) {
+      const { name, params: lastParams, timestamp } = lastActionRef.current;
+      const timeSince = now - timestamp;
+      
+      if (name === actionName && lastParams === paramsStr && timeSince < DEBOUNCE_MS) {
+        log.warn(`Duplicate ${actionName} blocked (too soon: ${timeSince}ms)`, params);
+        return true;
+      }
+    }
+    
+    lastActionRef.current = { name: actionName, params: paramsStr, timestamp: now };
+    return false;
+  };
 
   useCopilotAction({
     name: "navigateTo",
     description: "Navigate to a URL. If already on it, reload. If another tab has it, switch to it.",
     parameters: [ { name: "url", type: "string", description: "Absolute URL", required: true } ],
     handler: async ({ url }) => {
+      if (isDuplicateAction("navigateTo", { url })) {
+        return { error: "Duplicate navigation blocked - please wait before retrying", blocked: true };
+      }
+      
       try {
         log.info("navigateTo", { url });
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });

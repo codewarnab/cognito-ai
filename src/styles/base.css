@@ -7,6 +7,16 @@
     box-sizing: border-box;
 }
 
+/* Ensure dark background on html and body */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #1a1a1a;
+    height: 100%;
+    overflow: hidden;
+}
+
 /* Side Panel Container */
 .sidepanel-container {
     display: flex;
