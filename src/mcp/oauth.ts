@@ -4,6 +4,7 @@
  * for Notion's hosted MCP server (no client secret)
  */
 
+import { buffer } from 'node:stream/consumers';
 import { NOTION_CONFIG } from '../constants';
 import type { NotionOAuthTokens } from './types';
 
@@ -78,27 +79,30 @@ async function buildAuthUrl(state: string, codeVerifier: string): Promise<string
  */
 async function exchangeCodeForTokens(
     code: string,
-    codeVerifier: string,
     redirectUri?: string
 ): Promise<NotionOAuthTokens> {
-    const params = new URLSearchParams({
+    const credentials = Buffer.from(`${NOTION_CONFIG.OAUTH_CLIENT_ID}:${NOTION_CONFIG.OAUTH_CLIENT_SECRET}`).toString('base64');
+    console.log('[OAuth] Notion oauth client id:', NOTION_CONFIG.OAUTH_CLIENT_ID);
+    console.log('[OAuth] Notion oauth client secret:', NOTION_CONFIG.OAUTH_CLIENT_SECRET);
+    console.log('[OAuth] Notion oauth credentials:', credentials);
+    // Create JSON body for OAuth token exchange
+    const requestBody = {
         grant_type: 'authorization_code',
         code: code,
-        client_id: NOTION_CONFIG.OAUTH_CLIENT_ID,
-        code_verifier: codeVerifier
-    });
+        redirect_uri: redirectUri || 'https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/'
+    };
 
-    // Include redirect_uri if provided
-    if (redirectUri) {
-        params.append('redirect_uri', redirectUri);
-    }
+    console.log('[OAuth] Exchange code for tokens body:', requestBody);
+    console.log('[OAuth] Exchange code for tokens URL:', NOTION_CONFIG.OAUTH_TOKEN_URL);
 
     const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/json',
+            'Notion-Version': '2022-06-28'
         },
-        body: params.toString()
+        body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -138,6 +142,7 @@ async function refreshAccessToken(refreshToken: string): Promise<NotionOAuthToke
         refresh_token: refreshToken,
         client_id: NOTION_CONFIG.OAUTH_CLIENT_ID
     });
+    
 
     const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
         method: 'POST',
@@ -213,5 +218,5 @@ export {
     isTokenExpired,
     storeTokens,
     getStoredTokens,
-    clearTokens
-};
+    clearTokens,
+}

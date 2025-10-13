@@ -43,7 +43,9 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                     newStatus.state === 'connecting' ||
                     newStatus.state === 'token-refresh') {
                     setIsAuthenticated(true)
-                } else if (newStatus.state === 'disconnected' || newStatus.state === 'needs-auth') {
+                } else if (newStatus.state === 'disconnected' || 
+                           newStatus.state === 'needs-auth' || 
+                           newStatus.state === 'invalid-token') {
                     setIsAuthenticated(false)
                     setIsEnabled(false)
                 }
@@ -75,6 +77,11 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                     currentStatus.state === 'connecting' ||
                     currentStatus.state === 'token-refresh') {
                     setIsAuthenticated(true)
+                } else if (currentStatus.state === 'disconnected' || 
+                           currentStatus.state === 'needs-auth' || 
+                           currentStatus.state === 'invalid-token') {
+                    setIsAuthenticated(false)
+                    setIsEnabled(false)
                 }
 
                 if (currentStatus.state === 'connected') {

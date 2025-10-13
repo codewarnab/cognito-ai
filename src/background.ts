@@ -17,7 +17,7 @@ import {
     isTokenExpired,
     storeTokens,
     getStoredTokens,
-    clearTokens
+    clearTokens,
 } from './mcp/oauth';
 import type {
     NotionOAuthTokens,
@@ -46,54 +46,48 @@ let isEnabled = false;
 /**
  * Validate MCP client ID format (should be short alphanumeric, NOT a UUID)
  */
-function validateMcpClientId(): void {
-    const clientId = NOTION_CONFIG.OAUTH_CLIENT_ID;
+// function validateMcpClientId(): void {
+//     const clientId = NOTION_CONFIG.OAUTH_CLIENT_ID;
 
-    // Check if it looks like a UUID (with hyphens)
-    if (clientId.includes('-') || clientId.length > 30) {
-        throw new Error(
-            'Invalid MCP client ID: appears to be an integration UUID. ' +
-            'Use the MCP client ID from https://developers.notion.com/docs/mcp ' +
-            '(short format like "Oh46dYkUrzferlRE")'
-        );
-    }
+//     // Check if it looks like a UUID (with hyphens)
+//     if (clientId.includes('-') || clientId.length > 30) {
+//         throw new Error(
+//             'Invalid MCP client ID: appears to be an integration UUID. ' +
+//             'Use the MCP client ID from https://developers.notion.com/docs/mcp ' +
+//             '(short format like "Oh46dYkUrzferlRE")'
+//         );
+//     }
 
-    // Check endpoints are correct
-    if (NOTION_CONFIG.OAUTH_AUTH_URL.includes('api.notion.com')) {
-        throw new Error(
-            'Invalid OAuth endpoint: using api.notion.com instead of mcp.notion.com. ' +
-            'Update NOTION_CONFIG to use MCP endpoints.'
-        );
-    }
-}
+//     // Check endpoints are correct
+//     if (NOTION_CONFIG.OAUTH_AUTH_URL.includes('api.notion.com')) {
+//         throw new Error(
+//             'Invalid OAuth endpoint: using api.notion.com instead of mcp.notion.com. ' +
+//             'Update NOTION_CONFIG to use MCP endpoints.'
+//         );
+//     }
+// }
 
 /**
- * Start OAuth flow for Notion MCP with PKCE
+ * Start OAuth flow for Notion MCP
  */
 async function startNotionAuth(): Promise<NotionMcpResponse> {
     try {
-        console.log('[Background] Starting Notion MCP OAuth flow (PKCE)');
-
-        // Validate configuration before starting
-        validateMcpClientId();
+        console.log('[Background] Starting Notion OAuth flow');
 
         // Generate state for CSRF protection
         const state = generateState();
 
-        // Generate PKCE code verifier
-        const codeVerifier = createCodeVerifier();
-
-        // Store both in memory for the callback
+        // Store state in memory for the callback
         oauthState = {
             state,
-            codeVerifier,
+            codeVerifier: '', // Not needed for standard OAuth
             created_at: Date.now()
         };
 
-        // Build authorization URL with PKCE challenge
-        const authUrl = await buildAuthUrl(state, codeVerifier);
+        // Build authorization URL using standard Notion OAuth format
+        const authUrl = `${NOTION_CONFIG.OAUTH_AUTH_URL}?client_id=${NOTION_CONFIG.OAUTH_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(NOTION_CONFIG.OAUTH_REDIRECT_URI)}&state=${state}`;
 
-        console.log('[Background] Launching OAuth with MCP URL:', authUrl);
+        console.log('[Background] Launching OAuth with URL:', authUrl);
 
         // Launch OAuth flow using Chrome Identity API
         const redirectUrl = await chrome.identity.launchWebAuthFlow({
@@ -121,14 +115,12 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
             throw new Error('State mismatch - possible CSRF attack');
         }
 
-        console.log('[Background] Exchanging code for tokens (PKCE)');
+        console.log('[Background] Exchanging code for tokens');
 
-        // Exchange code for tokens using PKCE
-        // Note: Notion MCP uses PKCE and may not require redirect_uri in token exchange
+        // Exchange code for tokens
         const tokens = await exchangeCodeForTokens(
             code,
-            oauthState.codeVerifier
-            // Omitting redirect_uri - not needed for PKCE with code_verifier
+            NOTION_CONFIG.OAUTH_REDIRECT_URI
         );
 
         // Store tokens
@@ -214,10 +206,10 @@ async function ensureValidToken(): Promise<string | null> {
 
     // Check if token is expired
     if (isTokenExpired(notionTokens)) {
-        const refreshed = await refreshNotionToken();
-        if (!refreshed) {
-            return null;
-        }
+        // const refreshed = await refreshNotionToken();
+        // if (!refreshed) {
+        //     return null;
+        // }
     }
 
     return notionTokens.access_token;
@@ -252,9 +244,12 @@ async function connectNotionMcp(): Promise<NotionMcpResponse> {
                     notionStatus = status;
                     broadcastStatusUpdate();
 
-                    // Handle token expiry
+                    // Handle token expiry (but not format errors)
                     if (status.state === 'needs-auth') {
-                        handleTokenExpiry();
+                        // handleTokenExpiry();
+                    } else if (status.state === 'invalid-token') {
+                        // Token format is invalid - clear tokens and require re-auth
+                        // handleInvalidToken();
                     }
                 },
                 onMessage: (message) => {
@@ -310,6 +305,30 @@ async function handleTokenExpiry(): Promise<void> {
     if (refreshed && isEnabled) {
         await connectNotionMcp();
     }
+}
+
+/**
+ * Handle invalid token format - clear tokens and require re-auth
+ */
+async function handleInvalidToken(): Promise<void> {
+    console.log('[Background] Handling invalid token format');
+
+    // Disconnect current client
+    if (notionMcpClient) {
+        notionMcpClient.disconnect();
+        notionMcpClient = null;
+    }
+
+    // Clear invalid tokens - don't try to refresh
+    await clearTokens();
+    notionTokens = null;
+    notionStatus = {
+        state: 'invalid-token',
+        error: 'Invalid token format - please re-authenticate'
+    };
+    isEnabled = false;
+    await chrome.storage.local.set({ 'mcp.notion.enabled': false });
+    broadcastStatusUpdate();
 }
 
 /**

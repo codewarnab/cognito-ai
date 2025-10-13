@@ -77,46 +77,21 @@ class McpSSEClient {
      * Connect using fetch and ReadableStream (MV3 compatible)
      */
     private async connectWithFetch(): Promise<void> {
-        console.log('[NotionMCP] Connecting to SSE endpoint:', this.sseUrl);
-        console.log('[NotionMCP] Using access token (first 20 chars):', this.accessToken.substring(0, 20) + '...');
-        
         const response = await fetch(this.sseUrl, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${this.accessToken}`,
                 'Accept': 'text/event-stream, application/json',
-                'Cache-Control': 'no-cache',
-                'MCP-Protocol-Version': '2025-06-18'
+                'Cache-Control': 'no-cache'
             }
         });
 
-        console.log('[NotionMCP] SSE response status:', response.status);
-        console.log('[NotionMCP] SSE response headers:', Object.fromEntries(response.headers.entries()));
-
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[NotionMCP] SSE connection failed:', response.status, errorText);
-            
             if (response.status === 401) {
-                // Parse error to distinguish between format and expiry issues
-                let errorData;
-                try {
-                    errorData = JSON.parse(errorText);
-                } catch {
-                    errorData = { error: 'unknown', error_description: errorText };
-                }
-                
-                if (errorData.error === 'invalid_token' && errorData.error_description?.includes('Invalid token format')) {
-                    // Token format is wrong - don't try to refresh, need re-auth
-                    this.updateStatus('invalid-token', 'Invalid token format - please re-authenticate');
-                    throw new Error(`Invalid token format: ${errorData.error_description}`);
-                } else {
-                    // Token expired or other auth issue - might be refreshable
-                    this.updateStatus('needs-auth', 'Token expired or invalid');
-                    throw new Error(`Authentication required: ${errorText}`);
-                }
+                this.updateStatus('needs-auth', 'Token expired or invalid');
+                throw new Error('Authentication required');
             }
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         if (!response.body) {

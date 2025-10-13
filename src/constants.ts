@@ -23,8 +23,8 @@ export const CHROME_AI_LIMITS = {
  * Edit this URL to point to your hosted Copilot Runtime endpoint
  * Example: "https://your-runtime.example.com/api/copilotkit"
  */
-export const COPILOT_RUNTIME_URL = "https://backend-dun-eta-47.vercel.app/api" as string; // TODO: Edit this URL
-export const COPILOT_RUNTIME_URL_DEFAULT = "https://backend-dun-eta-47.vercel.app/";
+export const COPILOT_RUNTIME_URL = " http://localhost:3000/api" as string; // TODO: Edit this URL
+export const COPILOT_RUNTIME_URL_DEFAULT = " http://localhost:3000/";
 
 /**
  * Notion MCP Configuration
@@ -38,21 +38,26 @@ export const COPILOT_RUNTIME_URL_DEFAULT = "https://backend-dun-eta-47.vercel.ap
  * NOT a UUID like "28bd872b-594c-805a-a31a-0037c381dd8c".
  */
 export const NOTION_CONFIG = {
+
+    OAUTH_CLIENT_ID: process.env.PLASMO_PUBLIC_NOTION_MCP_CLIENT_ID || "28bd872b-594c-805a-a31a-0037c381dd8c",
+
     /** 
-     * Notion MCP OAuth Client ID (short format, NOT integration UUID)
-     * Get from: https://developers.notion.com/docs/mcp
-     * Example: "Oh46dYkUrzferlRE"
+     * Notion OAuth Client Secret (for introspection endpoint)
+     * Required for token introspection API calls
      */
-    OAUTH_CLIENT_ID: process.env.PLASMO_PUBLIC_NOTION_MCP_CLIENT_ID || "Oh46dYkUrzferlRE",
+    OAUTH_CLIENT_SECRET: process.env.PLASMO_PUBLIC_NOTION_OAUTH_CLIENT_SECRET || "secret_lheRg1aOlf1OoVsiEod0ld39xne6aGlyf7o5wYQakqh",
 
     /** OAuth redirect URI - Chrome extension identity redirect */
     OAUTH_REDIRECT_URI: "https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/",
 
-    /** OAuth authorization endpoint - MCP hosted (PKCE) */
+    /** OAuth authorization endpoint - Standard Notion OAuth */
     OAUTH_AUTH_URL: "https://mcp.notion.com/authorize",
 
-    /** OAuth token endpoint - MCP hosted (PKCE) */
+    /** OAuth token endpoint - Standard Notion OAuth */
     OAUTH_TOKEN_URL: "https://mcp.notion.com/token",
+
+    /** OAuth token introspection endpoint */
+    OAUTH_INTROSPECT_URL: "https://api.notion.com/v1/oauth/introspect",
 
     /** MCP resource identifier for OAuth scope */
     MCP_RESOURCE: "https://mcp.notion.com/",

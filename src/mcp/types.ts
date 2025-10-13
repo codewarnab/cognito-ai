@@ -12,7 +12,8 @@ export type McpConnectionState =
     | 'connecting'        // Attempting SSE connection
     | 'connected'         // Fully connected and operational
     | 'error'             // Connection error
-    | 'token-refresh';    // Refreshing expired token
+    | 'token-refresh'     // Refreshing expired token
+    | 'invalid-token';    // Token format is invalid, needs re-auth
 
 /**
  * OAuth tokens stored in chrome.storage

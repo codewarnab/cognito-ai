@@ -1,6 +1,6 @@
 /**
  * CopilotKit-powered Side Panel with Custom UI
- * Uses external Gemini runtime via CopilotKit
+ * Uses CopilotCloud with MCP server integration via setMcpServers
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -9,9 +9,11 @@ import { useCopilotChat, useCopilotReadable } from "@copilotkit/react-core";
 import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
-import { COPILOT_RUNTIME_URL, COPILOT_RUNTIME_URL_DEFAULT } from "./constants";
+import McpServerManager from "./components/McpServerManager";
+import { ToolRenderer } from "./components/ToolRenderer";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
+import "./styles/mcp-tools.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -28,7 +30,6 @@ function CopilotChatContent() {
 
   // Register modular Copilot actions
   useRegisterAllActions();
-
 
   // Use CopilotKit chat hook for custom UI
   const {
@@ -51,7 +52,7 @@ function CopilotChatContent() {
 
   // Provide extension context and execution behavior to the AI
   useCopilotReadable({
-    description: "Autonomous Chrome extension agent. When the user asks for something, perform the necessary actions end-to-end and report the outcome. Do not ask the user to verify — you must verify results yourself (by reading page state, selected text, or re-checking the tab) and then summarize what changed, including any follow-up you executed.",
+    description: "Autonomous Chrome extension agent with MCP server integration. When the user asks for something, perform the necessary actions end-to-end and report the outcome. Do not ask the user to verify — you must verify results yourself (by reading page state, selected text, or re-checking the tab) and then summarize what changed, including any follow-up you executed. You have access to MCP tools for extended functionality.",
     value: {
       extensionName: "Chrome AI Assistant",
       executionMode: "autonomous",
@@ -65,6 +66,8 @@ function CopilotChatContent() {
         "Return a concise final summary of what was done and the verified result.",
         "Do not try to open new tab with same url twice",
         "If navigation causes errors, STOP - don't retry navigation repeatedly.",
+        "When MCP tools are available (e.g., Notion), use them when relevant to the user's request.",
+        "You can search, create, and update Notion pages when the user asks about Notion-related tasks.",
       ],
       capabilities: [
         "getActiveTab",
@@ -90,8 +93,16 @@ function CopilotChatContent() {
         "Automate page interactions through natural language",
         "Autonomously verify effects of actions before responding",
         "Chat history persistence",
-        "Side panel interface"
+        "Side panel interface",
+        "MCP Server Integration",
+        "Notion MCP tools - search, create, and update Notion pages and databases when authenticated",
+        "Access to external tools via Model Context Protocol (MCP) servers",
       ],
+      mcpIntegration: {
+        enabled: true,
+        availableServers: ["Notion MCP (when authenticated)"],
+        instructions: "Use MCP tools when the user requests operations related to connected services like Notion. MCP tools will be automatically available through the CopilotKit integration.",
+      },
       currentContext: {
         platform: "Chrome Extension",
         location: "Side Panel",
@@ -149,57 +160,36 @@ function CopilotChatContent() {
   }
 
   return (
-    <CopilotChatWindow
-      messages={messages}
-      input={input}
-      setInput={setInput}
-      onSendMessage={handleSendMessage}
-      onKeyPress={handleKeyPress}
-      onClearChat={handleClearChat}
-      onSettingsClick={() => setShowMcp(true)}
-      isLoading={isLoading}
-      messagesEndRef={messagesEndRef}
-    />
+    <>
+      {/* Setup MCP server connections using setMcpServers */}
+      <McpServerManager />
+
+      {/* Render MCP tool calls */}
+      <ToolRenderer />
+
+      <CopilotChatWindow
+        messages={messages}
+        input={input}
+        setInput={setInput}
+        onSendMessage={handleSendMessage}
+        onKeyPress={handleKeyPress}
+        onClearChat={handleClearChat}
+        onSettingsClick={() => setShowMcp(true)}
+        isLoading={isLoading}
+        messagesEndRef={messagesEndRef}
+      />
+    </>
   );
 }
 
 /**
  * Main Side Panel component with CopilotKit provider
+ * Now using CopilotCloud with MCP server support via setMcpServers
  */
 function SidePanel() {
-  // Check if runtime URL is configured
-  const isConfigured = COPILOT_RUNTIME_URL !== COPILOT_RUNTIME_URL_DEFAULT;
-
-  if (!isConfigured) {
-    return (
-      <div className="sidepanel-container">
-        <div className="configuration-prompt">
-          <div className="config-icon">⚙️</div>
-          <h2>CopilotKit Configuration Required</h2>
-          <p>
-            To use the AI assistant, please configure your CopilotKit runtime URL.
-          </p>
-          <div className="config-instructions">
-            <h3>Setup Instructions:</h3>
-            <ol>
-              <li>Deploy your CopilotKit runtime with Gemini</li>
-              <li>Open <code>src/constants.ts</code></li>
-              <li>Update <code>COPILOT_RUNTIME_URL</code> with your runtime endpoint</li>
-              <li>Reload the extension</li>
-            </ol>
-          </div>
-          <p className="config-note">
-            📝 Example: <code>https://your-runtime.example.com/api/copilotkit</code>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <CopilotKit
-      runtimeUrl={COPILOT_RUNTIME_URL}
-    >
+    <CopilotKit publicApiKey="ck_pub_0f2b859676875143d926df3e2a9a3a7a">
+      {/* CopilotCloud integration with MCP server support */}
       <CopilotChatContent />
     </CopilotKit>
   );
