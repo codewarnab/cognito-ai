@@ -44,12 +44,26 @@ function CopilotChatContent() {
     value: {
       extensionName: "Chrome AI Assistant",
       capabilities: [
+        "getActiveTab",
+        "searchTabs",
+        "openTab",
+        "getSelectedText",
+        "readPageContent",
+        "clickElement",
+        "scrollPage",
+        "fillInput",
         "Tab management",
-        'Read current tab title and URL',
-        'Search open tabs',
+        "Read current tab title and URL",
+        "Search open tabs",
         "Open new tabs",
         "Read selected text on page",
-        'read current tab content (with permission)',
+        "Read current tab content (with permission)",
+        "Read full page content from active tab",
+        "Click elements on page (buttons, links, any clickable element)",
+        "Scroll page (up, down, top, bottom, or to specific element)",
+        "Fill form inputs and text fields",
+        "Interact with page elements using CSS selectors or text",
+        "Automate page interactions through natural language",
         "Chat history persistence",
         "Side panel interface"
       ],
@@ -329,8 +343,8 @@ function CopilotChatContent() {
 
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          args: [direction, amount || 500, selector],
-          func: (dir: string, amt: number, sel?: string) => {
+          args: [direction, amount || 500, selector || null],
+          func: (dir: string, amt: number, sel: string | null) => {
             const beforeScroll = window.scrollY;
 
             switch (dir.toLowerCase()) {

@@ -43,12 +43,14 @@
       "sidePanel",
       "alarms",
       "scripting",
-      "activeTab"
+      "activeTab",
+      "webNavigation"
     ],
     "host_permissions": [
       "https://backend-4khk5owpk-arnab-mondals-projects.vercel.app/*",
       "http://localhost:3000/*",
-      "https://*/*"
+      "https://*/*",
+      "http://*/*"
     ],
     "commands": {
       "_execute_side_panel": {
