@@ -18,6 +18,7 @@ interface CopilotChatWindowProps {
     setInput: (value: string) => void;
     onSendMessage: () => void;
     onKeyPress: (e: React.KeyboardEvent) => void;
+    onClearChat: () => void;
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
@@ -28,6 +29,7 @@ export function CopilotChatWindow({
     setInput,
     onSendMessage,
     onKeyPress,
+    onClearChat,
     isLoading,
     messagesEndRef,
 }: CopilotChatWindowProps) {
@@ -41,6 +43,14 @@ export function CopilotChatWindow({
                         <h3>AI Assistant</h3>
                         <p>Powered by CopilotKit</p>
                     </div>
+                    <button
+                        className="copilot-clear-button"
+                        onClick={onClearChat}
+                        title="Clear chat history"
+                        disabled={messages.length === 0}
+                    >
+                        🗑️ Clear
+                    </button>
                 </div>
             </div>
 

@@ -24,6 +24,32 @@
     gap: 12px;
 }
 
+.copilot-clear-button {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.copilot-clear-button:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+}
+
+.copilot-clear-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .copilot-avatar {
     width: 32px;
     height: 32px;
