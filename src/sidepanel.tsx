@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { MessageList } from "./components/ChatMessage";
 import { saveChatMessage, loadChatHistory, clearChatHistory } from "./db";
 import type { ChatMessage } from "./db";
-import HistoryPage from '~pages/history/index';
-import './pages/history/history.css';
 import "./sidepanel.css";
 
 interface PromptAPIStatus {
@@ -12,10 +10,7 @@ interface PromptAPIStatus {
   downloadProgress: number
 }
 
-type TabType = 'chat' | 'history';
-
 function SidePanel() {
-  const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,10 +26,8 @@ function SidePanel() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (activeTab === 'chat') {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, loading, activeTab]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   // Initialize Prompt API and load chat history
   useEffect(() => {
@@ -296,111 +289,82 @@ You are running in a Chrome extension side panel.`,
     }
   };
 
-  const openHistory = async () => {
-    setActiveTab('history');
-  };
-
   return (
     <div className="sidepanel-container">
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
-        <button
-          className={`tab-button ${activeTab === 'chat' ? 'active' : ''}`}
-          onClick={() => setActiveTab('chat')}
-        >
-          💬 Chat
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          � History
-        </button>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'chat' ? (
-        <>
-          {/* Status Messages */}
-          {(promptAPIStatus.downloading || promptAPIStatus.available === 'downloading') && (
-            <div className="status-banner downloading">
-              <p>Downloading Gemini Nano model... {promptAPIStatus.downloadProgress}%</p>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${promptAPIStatus.downloadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {promptAPIStatus.available === 'no' && (
-            <div className="status-banner error">
-              Chrome Prompt API is not available. Please use Chrome Canary 128+ with AI features enabled.
-            </div>
-          )}
-
-          {promptAPIStatus.available === 'readily' && (
-            <div className="status-banner warning">
-              Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
-            </div>
-          )}
-
-          {/* Messages Container */}
-          <div className="messages-container">
-            <MessageList
-              messages={messages}
-              isLoading={loading}
-              onCopy={handleCopy}
-              onRegenerate={handleRegenerate}
+      {/* Status Messages */}
+      {(promptAPIStatus.downloading || promptAPIStatus.available === 'downloading') && (
+        <div className="status-banner downloading">
+          <p>Downloading Gemini Nano model... {promptAPIStatus.downloadProgress}%</p>
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: `${promptAPIStatus.downloadProgress}%` }}
             />
-            <div ref={messagesEndRef} />
           </div>
-
-          {/* Input Form */}
-          <form onSubmit={handleSubmit} className="input-form">
-            <div className="form-controls">
-              <label className="toggle-container">
-                <input
-                  type="checkbox"
-                  checked={useStreaming}
-                  onChange={(e) => setUseStreaming(e.target.checked)}
-                />
-                <span className="toggle-label">Stream responses</span>
-              </label>
-            </div>
-
-            <div className="input-container">
-              <textarea
-                className="message-input"
-                placeholder="Ask me anything..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit(e);
-                  }
-                }}
-                rows={2}
-                disabled={!session || loading}
-              />
-              <button
-                type="submit"
-                className="send-button"
-                disabled={!inputValue.trim() || !session || loading}
-                aria-label="Send message"
-              >
-                {loading ? '⏳' : '📤'}
-              </button>
-            </div>
-          </form>
-        </>
-      ) : (
-        <div className="history-tab-content">
-          <HistoryPage />
         </div>
       )}
+
+      {promptAPIStatus.available === 'no' && (
+        <div className="status-banner error">
+          Chrome Prompt API is not available. Please use Chrome Canary 128+ with AI features enabled.
+        </div>
+      )}
+
+      {promptAPIStatus.available === 'readily' && (
+        <div className="status-banner warning">
+          Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
+        </div>
+      )}
+
+      {/* Messages Container */}
+      <div className="messages-container">
+        <MessageList
+          messages={messages}
+          isLoading={loading}
+          onCopy={handleCopy}
+          onRegenerate={handleRegenerate}
+        />
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Form */}
+      <form onSubmit={handleSubmit} className="input-form">
+        <div className="form-controls">
+          <label className="toggle-container">
+            <input
+              type="checkbox"
+              checked={useStreaming}
+              onChange={(e) => setUseStreaming(e.target.checked)}
+            />
+            <span className="toggle-label">Stream responses</span>
+          </label>
+        </div>
+
+        <div className="input-container">
+          <textarea
+            className="message-input"
+            placeholder="Ask me anything..."
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            rows={2}
+            disabled={!session || loading}
+          />
+          <button
+            type="submit"
+            className="send-button"
+            disabled={!inputValue.trim() || !session || loading}
+            aria-label="Send message"
+          >
+            {loading ? '⏳' : '📤'}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -447,5 +411,3 @@ declare global {
     }
   }
 }
-
-

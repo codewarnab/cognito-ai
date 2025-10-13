@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "dexie": "^4.2.1",
-    "minisearch": "^7.2.0",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0"
@@ -36,12 +35,10 @@
   "manifest": {
     "permissions": [
       "storage",
-      "offscreen",
       "unlimitedStorage",
-      "scripting",
-      "alarms",
       "tabs",
-      "sidePanel"
+      "sidePanel",
+      "alarms"
     ],
     "commands": {
       "_execute_side_panel": {
@@ -49,30 +46,9 @@
           "default": "Ctrl+Shift+H",
           "mac": "Command+Shift+H"
         },
-        "description": "Open History Search side panel"
+        "description": "Open AI Chat side panel"
       }
     },
-    "host_permissions": [
-      "<all_urls>"
-    ],
-    "web_accessible_resources": [
-      {
-        "resources": [
-          "offscreen.html"
-        ],
-        "matches": [
-          "<all_urls>"
-        ]
-      },
-      {
-        "resources": [
-          "models/1.0.0/*"
-        ],
-        "matches": [
-          "<all_urls>"
-        ]
-      }
-    ],
     "side_panel": {
       "default_path": "sidepanel.html"
     }

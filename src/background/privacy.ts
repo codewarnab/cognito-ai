@@ -3,7 +3,6 @@
  */
 
 import { wipeAllData } from '../db/index';
-import { closeOffscreenIfIdle } from './offscreen-lifecycle';
 
 const WIPE_ALARM_NAME = 'privacy:wipe';
 
@@ -59,11 +58,13 @@ export async function executeWipe(alsoRemoveModel: boolean): Promise<void> {
     isWiping = true;
 
     try {
-        // Close offscreen document
-        await closeOffscreenIfIdle();
+        // Wipe all data from IndexedDB
+        await wipeAllData();
 
-        // Wipe all data
-        await wipeAllData(alsoRemoveModel);
+        // Clear chrome.storage.local if requested
+        if (alsoRemoveModel) {
+            await chrome.storage.local.clear();
+        }
 
         // Clear pending wipe state
         await chrome.storage.local.remove(['pendingWipe', 'wipeRemoveModel']);

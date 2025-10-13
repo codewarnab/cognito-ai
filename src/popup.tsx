@@ -6,11 +6,6 @@ export const config = {
   matches: ["<all_urls>"]
 }
 
-interface Status {
-  paused: boolean
-  modelReady: boolean
-  error: boolean
-}
 
 interface PromptAPIStatus {
   available: 'readily' | 'downloading' | 'no' | 'downloaded'
@@ -22,8 +17,6 @@ function IndexPopup() {
   const [prompt, setPrompt] = useState("")
   const [response, setResponse] = useState("")
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<Status | null>(null)
-  const [openError, setOpenError] = useState(false)
   const [promptAPIStatus, setPromptAPIStatus] = useState<PromptAPIStatus>({
     available: 'no',
     downloading: false,
@@ -129,37 +122,6 @@ Focus on practical, developer-friendly solutions and examples.
     initPromptAPI()
   }, [])
 
-  // Read status from storage with timeout and sync with Prompt API status
-  useEffect(() => {
-    const withTimeout = (p: Promise<any>, ms = 150) => Promise.race([
-      p, new Promise((res) => setTimeout(() => res(undefined), ms))
-    ])
-
-      ; (async () => {
-        try {
-          const st = await withTimeout(chrome.storage.local.get(["paused", "modelVersion", "modelReady"]))
-          const paused = Boolean(st?.paused)
-          // Use Prompt API status if available, otherwise fall back to storage
-          const modelReady = promptAPIStatus.available === 'downloaded' || Boolean(st?.modelReady) || Boolean(st?.modelVersion)
-          setStatus({ paused, modelReady, error: false })
-        } catch {
-          setStatus({ paused: false, modelReady: false, error: true })
-        }
-      })()
-  }, [promptAPIStatus.available])
-
-  const openHistory = async () => {
-    try {
-      // Open the side panel
-      const window = await chrome.windows.getCurrent();
-      await chrome.sidePanel.open({ windowId: window.id });
-      setOpenError(false);
-    } catch (error) {
-      console.error('[Popup] Failed to open side panel:', error);
-      setOpenError(true);
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim()) return
@@ -223,36 +185,6 @@ Focus on practical, developer-friendly solutions and examples.
             Chrome AI is supported but there's not enough disk space to download the model. Please free up some space.
           </div>
         )}
-
-        {/* History Search CTA and Status */}
-        <div className="history-cta">
-          <button
-            onClick={openHistory}
-            className="history-button"
-            aria-label="Open History Search page"
-          >
-            🔍 Open History Search
-          </button>
-
-          {status && (
-            <div className="status-container">
-              <span className={`status-pill ${status.modelReady ? 'status-ok' : 'status-warn'}`}>
-                {status.error ? "Unknown" : status.modelReady ? "Model ready" : "Model downloading"}
-              </span>
-              {status.paused && (
-                <span className="status-pill status-paused">
-                  Paused
-                </span>
-              )}
-            </div>
-          )}
-
-          {openError && (
-            <div className="error-message">
-              Couldn't open History Search. <a href="#" onClick={(e) => { e.preventDefault(); openHistory(); }}>Try again</a>
-            </div>
-          )}
-        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="prompt-form">

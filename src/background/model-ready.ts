@@ -1,59 +1,45 @@
 /**
- * Model Readiness Gating - Local Model Loader Wrapper
+ * Model Readiness - Simplified for Chrome Built-in AI
  * 
- * Wraps the modelBootstrap service to provide compatibility with existing background.ts code
+ * Since we're using Chrome's built-in Gemini Nano, we don't need
+ * complex model loading. This module provides compatibility stubs.
  */
-
-import { modelBootstrap } from '../services/modelBootstrap';
-import { localModelLoader } from '../services/localModelLoader';
 
 // ============================================================================
 // Public API Functions
 // ============================================================================
 
 /**
- * Handle model retry alarm (no-op for local models)
+ * Handle model retry alarm (no-op since we don't load models)
  */
 export async function handleModelRetryAlarm(): Promise<void> {
-    console.log('[Model Ready] Retry alarm triggered (no-op for bundled models)');
+    console.log('[Model Ready] Retry alarm triggered (no-op for Chrome built-in AI)');
 }
 
 /**
- * Ensure model is ready, throw if not
+ * Ensure model is ready
  */
 export async function ensureModelReady(): Promise<void> {
-    const ready = await modelBootstrap.isReady();
-    if (!ready) {
-        throw new Error('Model not ready. Initialize model system first.');
-    }
-}
-
-/**
- * Get URL for a model asset
- */
-export async function getModelCacheUrl(assetPath: string): Promise<string> {
-    return localModelLoader.getAssetUrl(assetPath);
+    // Chrome AI availability is checked in the UI
+    console.log('[Model Ready] Using Chrome built-in AI');
 }
 
 /**
  * Check if model is ready
+ * For Chrome built-in AI, this always returns true
  */
 export async function isModelReady(): Promise<boolean> {
-    return await modelBootstrap.isReady();
+    return true;
 }
 
 /**
  * Get model debug info
  */
 export async function getModelDebugInfo(): Promise<any> {
-    const info = await modelBootstrap.getModelInfo();
-    const urls = modelBootstrap.getModelUrls();
-
     return {
-        ...info,
-        urls,
-        type: 'bundled-local',
-        message: 'Using bundled local model files'
+        type: 'chrome-builtin-ai',
+        message: 'Using Chrome Gemini Nano (built-in AI)',
+        ready: true
     };
 }
 
@@ -61,27 +47,19 @@ export async function getModelDebugInfo(): Promise<any> {
  * Initialize model system on extension install/startup
  */
 export async function initializeModelSystem(reason: string): Promise<void> {
-    console.log(`[Model Ready] Initializing model system (${reason})`);
-
-    try {
-        await modelBootstrap.initialize();
-        console.log('[Model Ready] ✅ Model system initialized successfully');
-    } catch (error) {
-        console.error('[Model Ready] ❌ Model initialization failed:', error);
-        throw error;
-    }
+    console.log(`[Model Ready] Initialized for Chrome built-in AI (${reason})`);
 }
 
 /**
- * Get model URLs for workers
+ * Get model URLs (no-op for built-in AI)
  */
 export function getModelUrls() {
-    return modelBootstrap.getModelUrls();
+    return {};
 }
 
 /**
- * Reset model state (for debugging)
+ * Reset model state (no-op for built-in AI)
  */
 export async function resetModelState(): Promise<void> {
-    await modelBootstrap.reset();
+    console.log('[Model Ready] Reset not needed for Chrome built-in AI');
 }
