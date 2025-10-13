@@ -1,127 +1,81 @@
-<!-- dbca26b8-73e5-4a9f-b028-57481dfb7925 e4a4a2dc-5678-4876-bbe7-78fa7f852104 -->
-# Notion MCP (Hosted SSE + OAuth) — Implementation Plan
+<!-- dbca26b8-73e5-4a9f-b028-57481dfb7925 a73b38c0-f5ab-4a89-8a74-3108929cfaa8 -->
+# Notion MCP (Hosted SSE + PKCE OAuth) — Corrected Implementation Plan
 
-### Scope
+### Problem Recap
 
-- Integrate Notion’s hosted MCP server via SSE using OAuth — no manual token entry.
-- Background owns OAuth + token rotation + SSE lifecycle; UI triggers connect and shows status.
-- Works inside Chrome MV3 extension; persists across sessions; auto-reconnects.
+- Current code targets `api.notion.com/v1/oauth/*` using a client secret. That installs a custom Notion integration and yields tokens that are not valid for the hosted MCP server.
+- The correct flow must use `https://mcp.notion.com/authorize` with PKCE (no client secret) and exchange at `https://mcp.notion.com/token`. The `client_id` is the MCP client id (short id like `Oh46dYkUrzferlRE`), not an integration UUID.
 
-### Architecture
+### Target Behavior
 
-- UI: `src/components/McpManager.tsx`, `src/components/McpServerCard.tsx`
-- Add “Connect Notion” and “Enable” controls; show statuses (Disconnected, Connecting, Connected, Error, Needs Auth).
-- Background: `src/background.ts`
-- Implement `chrome.identity.launchWebAuthFlow` for Notion OAuth.
-- Store `access_token`, `refresh_token`, `expires_at` in `chrome.storage.local` (access token short-lived, refresh stored; mark with createdAt/issuer).
-- Refresh flow via Notion token endpoint; rotate on 401.
-- Host MCP SSE client (Notion hosted endpoint) and expose status + request/response via `chrome.runtime.onMessage` and/or `chrome.runtime.Port`.
-- MCP Client: `src/mcp/notionClient.ts`
-- Thin wrapper over hosted MCP SSE: connect, send `initialize`, `tools/list`, `tools/call`, `resources/read`, `prompts/list`, etc., with Bearer token in `Authorization`.
-- Reconnect with exponential backoff; propagate events to background.
-- Config/Secrets: `src/constants.ts`
-- Add NOTION_OAUTH_CLIENT_ID, NOTION_OAUTH_REDIRECT_ID (Chrome extension ID redirect), NOTION_OAUTH_SCOPES, NOTION_MCP_SSE_URL, TOKEN_AUDIENCE/ISSUER.
-- Read from env at build or fallback to placeholder for local dev.
+- “Connect” launches Notion MCP install/auth (the page that says “Connect with Notion MCP”).
+- On success, we receive a code on the extension redirect, exchange at MCP token endpoint using `code_verifier` (no secret), store token in background, then connect SSE with Bearer token.
+- UI (`McpManager`/`McpServerCard`) remains button-only; no manual tokens.
 
-### OAuth Flow (No manual token entry)
+### Edits (by file)
 
-1. UI clicks “Connect Notion” → send `mcp/notion/auth/start` to background.
-2. Background builds auth URL (Notion OAuth, response_type=code, PKCE) and calls `launchWebAuthFlow` interactive.
-3. Receive redirect URL → exchange code for tokens (fetch to Notion token endpoint) from background.
-4. Persist tokens in `chrome.storage.local` (space: `oauth.notion`).
-5. Background notifies UI: status `authenticated`.
+- `src/constants.ts`
+- Replace OAuth endpoints:
+- `OAUTH_AUTH_URL = 'https://mcp.notion.com/authorize'`
+- `OAUTH_TOKEN_URL = 'https://mcp.notion.com/token'`
+- Replace `OAUTH_CLIENT_ID` with your MCP client id (short form). Remove `OAUTH_CLIENT_SECRET` usage entirely.
+- Keep `MCP_SSE_URL = 'https://mcp.notion.com/sse'` and `MCP_BASE_URL = 'https://mcp.notion.com/mcp'`.
+- Add `MCP_RESOURCE = 'https://mcp.notion.com/'`.
 
-### SSE Connection Lifecycle
+- `src/mcp/oauth.ts` (new or update)
+- Add PKCE helpers:
+- `createCodeVerifier()`, `createCodeChallenge(verifier)` (SHA-256 → base64url).
+- `buildAuthUrl(state)` builds:
+- `https://mcp.notion.com/authorize?response_type=code&client_id=<id>&redirect_uri=<ext_redirect>&code_challenge=<challenge>&code_challenge_method=S256&resource=https%3A%2F%2Fmcp.notion.com%2F&state=<state>`
+- `exchangeCodeForTokens(code, redirectUri)` POST to `https://mcp.notion.com/token` with JSON:
+- `{ grant_type: 'authorization_code', code, redirect_uri, client_id, code_verifier }`
+- Token type: `{ access_token, token_type, expires_in, refresh_token? }` — persist refresh only if present.
 
-- Preconditions: valid `access_token`.
-- Connect to `NOTION_MCP_SSE_URL` with `Authorization: Bearer <access_token>`.
-- On open → send MCP `initialize` (client info, capabilities), then `tools/list` to verify.
-- On 401 or expired → refresh token and retry (debounced); if refresh fails → clear tokens and set `needs_auth`.
-- Heartbeat/ping; auto-reconnect with capped exponential backoff (e.g., 0.5s → 30s).
-- Expose status updates to UI via runtime messages; include last error.
+- `src/background.ts`
+- Use the new PKCE-based builders; drop any secret usage.
+- Save `code_verifier` in memory (and `state`) between `launchWebAuthFlow` start and callback.
+- After exchange, set status `authenticated` and allow “Enable” to connect SSE.
+- On SSE 401/invalid token, clear access token and set status `needs-auth` (refresh only if MCP provides a refresh token endpoint/contract).
 
-### UI Wiring
+- `src/mcp/notionClient.ts`
+- No protocol change; ensure it sends `Authorization: Bearer <access_token>` to `MCP_SSE_URL` and posts to `MCP_BASE_URL` for requests. Reconnect on network errors; surface `needs-auth` on 401.
 
-- `McpServerCard` gets new props/callbacks or uses message bus to query background for server status.
-- Buttons:
-- “Connect” → triggers OAuth start.
-- “Enable” toggle → starts/stops SSE client in background.
-- “Disconnect” → stops client and clears tokens (optional).
-- Visuals: use `StatusBadge` for state, respect styles in `src/styles/mcp.css`.
+- `manifest.json` (MV3 build template)
+- Ensure permissions: `identity`.
+- `host_permissions`: `https://mcp.notion.com/*`, `https://www.notion.so/*` (install UI), and `https://api.notion.com/*` only if still needed elsewhere.
+- Confirm redirect URI `https://<EXT_ID>.chromiumapp.org/` is registered in the Notion MCP client console.
 
-### Messaging Contract
+### Guardrails & UX
 
-- Messages from UI to BG:
-- `mcp/notion/auth/start`
-- `mcp/notion/enable` { enabled: boolean }
-- `mcp/notion/status/get`
-- `mcp/notion/tool/call` { name, arguments }
-- Messages from BG to UI (broadcast):
-- `mcp/notion/status` { state: 'unauth'|'auth'|'connecting'|'connected'|'error', error? }
+- Never expose tokens to UI; background only.
+- Detect misconfiguration: if `client_id` looks like UUID (integration id) or auth URL is `api.notion.com`, log a clear error and surface `status.error = 'Use MCP client id and endpoints'`.
+- If user is mid-connection and closes the popup, show `connecting…` then fallback to `needs-auth` after timeout.
 
-### Storage & Security
+### Validation Checklist
 
-- Use `chrome.storage.local` for `refresh_token`, `expires_at`, `workspace_id`.
-- Keep `access_token` in memory in background; only persist if needed with short TTL.
-- Never expose tokens to UI; UI only gets status booleans and errors.
-- Implement `storage.migrations` key to handle future schema changes.
+- Clicking Connect opens “Connect with Notion MCP” (not custom integration page).
+- Redirect hits extension identity URL and returns a `code`.
+- Exchange at `mcp.notion.com/token` without secret succeeds.
+- Enabling connects SSE; `initialize` and `tools/list` succeed.
+- 401 from SSE transitions to `needs-auth` and requires reconnect.
 
-### Error Handling & Telemetry
+### Notes from Docs
 
-- Centralize errors in background with structured logs via `src/logger.ts`.
-- Map common errors: network, 401, invalid_scope, consent_required.
+- Notion MCP OAuth: `developers.notion.com/docs/mcp` and “Get started with MCP”.
+- CopilotKit MCP client guidance confirms PKCE-only and background storage patterns.
 
-### Build/Permissions
+### Implementation Risks
 
-- Update `manifest.json` (MV3) to include:
-- `identity` permission (for `launchWebAuthFlow`).
-- `externally_connectable` (if required by Notion’s redirect pattern) or register extension redirect URI in Notion app.
-- `host_permissions` for Notion OAuth/token endpoints, MCP SSE base URL.
-
-### Testing Plan
-
-- Happy path: Connect → Enable → tool list → call simple tool.
-- Token expiry: simulate expires_at in past → refresh → reconnect.
-- Revoked consent: Notion returns 401 → clear tokens → UI shows Needs Auth.
-- Offline: SSE backoff; UI shows Connecting.
-
-### Minimal API Surfaces (illustrative snippets)
-
-- Start auth from UI:
-- UI: `chrome.runtime.sendMessage({ type: 'mcp/notion/auth/start' })`
-- Background handles auth complete, stores tokens, emits status.
-- Enable connection:
-- UI: `chrome.runtime.sendMessage({ type: 'mcp/notion/enable', enabled: true })`
-
-### Files to Add/Update
-
-- Add `src/mcp/notionClient.ts` — SSE client wrapper.
-- Update `src/background.ts` — OAuth, token store, SSE lifecycle, messaging.
-- Update `src/components/McpServerCard.tsx` — buttons, status.
-- Update `src/components/McpManager.tsx` — pass props or keep as-is if card self-manages.
-- Add `src/styles/mcp.css` — minor status styles if missing.
-- Update `src/constants.ts` — Notion config + endpoints.
-
-### External Docs + Alignment
-
-- Notion MCP: `developers.notion.com/docs/mcp`
-- Notion MCP getting started: `developers.notion.com/docs/get-started-with-mcp`
-- CopilotKit MCP guide (client-side patterns): `docs.copilotkit.ai/direct-to-llm/guides/model-context-protocol?cli=do-it-manually`
-
-### Rollout & Safeguards
-
-- Feature flag in storage: `mcp.features.notion`.
-- Graceful fallback: if auth fails or SSE unavailable, UI remains disabled.
-- Clear tokens button (dev only, hidden behind debug flag).
+- Using the integration UUID will lead to the wrong page; add a config assertion for MCP client id format.
+- If your MCP app hasn’t registered the extension redirect, auth will fail; provide actionable error.
 
 ### To-dos
 
-- [ ] Update manifest for identity + host permissions
-- [ ] Add Notion OAuth/MCP constants in constants.ts
-- [ ] Implement Notion OAuth with PKCE in background.ts
-- [ ] Add secure token storage and refresh logic
-- [ ] Create Notion MCP SSE client wrapper
-- [ ] Wire background messaging + SSE lifecycle
-- [ ] Update McpServerCard for connect/enable/status
-- [ ] Add/update mcp.css for statuses
-- [ ] Implement manual tests for auth, refresh, reconnect
+- [ ] Point constants to mcp.notion.com; set MCP client id
+- [ ] Add PKCE helpers and state in oauth.ts
+- [ ] Exchange code at mcp.notion.com/token without secret
+- [ ] Wire background to PKCE flow; store verifier/state
+- [ ] Use MCP token to connect SSE; handle 401→needs-auth
+- [ ] Ensure identity + host_permissions for MCP/Notion
+- [ ] Add runtime checks for wrong client id/endpoints
+- [ ] Test happy path and misconfig (wrong client id)

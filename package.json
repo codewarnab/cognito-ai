@@ -44,13 +44,17 @@
       "alarms",
       "scripting",
       "activeTab",
-      "webNavigation"
+      "webNavigation",
+      "identity"
     ],
     "host_permissions": [
       "https://backend-4khk5owpk-arnab-mondals-projects.vercel.app/*",
       "http://localhost:3000/*",
       "https://*/*",
-      "http://*/*"
+      "http://*/*",
+      "https://api.notion.com/*",
+      "https://mcp.notion.com/*",
+      "https://www.notion.so/*"
     ],
     "commands": {
       "_execute_side_panel": {
