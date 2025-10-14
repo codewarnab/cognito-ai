@@ -10,6 +10,7 @@ import { useCopilotChat } from "@copilotkit/react-core";
 import { useEffect, useState } from "react";
 import { createLogger } from "../logger";
 import type { NotionMcpStatus } from "../mcp/types";
+import { ServerCapabilitiesSchema } from "@modelcontextprotocol/sdk/types";
 
 const log = createLogger("McpServerManager");
 
@@ -105,6 +106,10 @@ function McpServerManager() {
         apiKey: notionAccessToken
       });
     }
+
+    // servers.push({
+    //   endpoint:"https://backend.composio.dev/v3/mcp/19801b97-232a-461c-a723-cd276e1a41af/mcp?include_composio_helper_actions=true",
+    // });
 
     // Update CopilotKit with configured servers
     console.log('[McpServerManager] Setting MCP servers:', servers.length, 'servers');

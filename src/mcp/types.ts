@@ -165,6 +165,7 @@ export type NotionMcpMessageType =
     | 'mcp/notion/disconnect'
     | 'mcp/notion/status/get'
     | 'mcp/notion/status/update'
+    | 'mcp/notion/health/check'
     | 'mcp/notion/tool/call'
     | 'mcp/notion/tools/list'
     | 'mcp/notion/resource/read';

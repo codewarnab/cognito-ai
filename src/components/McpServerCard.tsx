@@ -25,6 +25,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
     const [showDisableConfirm, setShowDisableConfirm] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [healthCheckStatus, setHealthCheckStatus] = useState<string>('')
 
     const isNotion = id === 'notion'
 
@@ -109,21 +110,52 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
 
         if (checked) {
             setIsLoading(true)
+            setHealthCheckStatus('Enabling...')
             try {
                 const response = await sendMessage({ type: 'mcp/notion/enable' })
                 if (response.success) {
                     setIsEnabled(true)
+                    setHealthCheckStatus('✓ Connected and verified')
+                    // Clear success message after 3 seconds
+                    setTimeout(() => setHealthCheckStatus(''), 3000)
                 } else {
+                    setHealthCheckStatus('')
                     alert(response.error || 'Failed to enable server')
                 }
             } catch (error) {
                 console.error('Enable error:', error)
+                setHealthCheckStatus('')
                 alert('Failed to enable server')
             } finally {
                 setIsLoading(false)
             }
         } else {
             setShowDisableConfirm(true)
+        }
+    }
+
+    const handleHealthCheck = async () => {
+        if (!isNotion || !isEnabled) return
+
+        setIsLoading(true)
+        setHealthCheckStatus('Checking...')
+        try {
+            const response = await sendMessage({ type: 'mcp/notion/health/check' })
+            if (response.success) {
+                const toolCount = response.data?.toolCount || 0
+                setHealthCheckStatus(`✓ Healthy (${toolCount} tools available)`)
+                console.log('[HealthCheck] Success:', response.data)
+            } else {
+                setHealthCheckStatus(`✗ Failed: ${response.error}`)
+                console.error('[HealthCheck] Failed:', response.error)
+            }
+        } catch (error) {
+            console.error('Health check error:', error)
+            setHealthCheckStatus('✗ Health check failed')
+        } finally {
+            setIsLoading(false)
+            // Clear status after 5 seconds
+            setTimeout(() => setHealthCheckStatus(''), 5000)
         }
     }
 
@@ -241,15 +273,36 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                             {status.error}
                         </span>
                     )}
+                    {isNotion && healthCheckStatus && (
+                        <span className="mcp-card__health-status" style={{ 
+                            fontSize: '12px', 
+                            color: healthCheckStatus.startsWith('✓') ? '#10b981' : healthCheckStatus.startsWith('✗') ? '#ef4444' : '#6b7280',
+                            fontWeight: 500
+                        }}>
+                            {healthCheckStatus}
+                        </span>
+                    )}
                     <div className="mcp-card__actions">
                         {isAuthenticated ? (
-                            <button
-                                className="btn btn--secondary btn--sm"
-                                onClick={handleLogout}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Loading...' : 'Logout'}
-                            </button>
+                            <>
+                                {isNotion && isEnabled && (
+                                    <button
+                                        className="btn btn--secondary btn--sm"
+                                        onClick={handleHealthCheck}
+                                        disabled={isLoading}
+                                        title="Check server health"
+                                    >
+                                        {isLoading && healthCheckStatus.includes('Checking') ? 'Checking...' : 'Health Check'}
+                                    </button>
+                                )}
+                                <button
+                                    className="btn btn--secondary btn--sm"
+                                    onClick={handleLogout}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading && !healthCheckStatus.includes('Checking') ? 'Loading...' : 'Logout'}
+                                </button>
+                            </>
                         ) : (
                             <button
                                 className="btn btn--primary btn--sm"

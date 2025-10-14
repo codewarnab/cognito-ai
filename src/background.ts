@@ -7,6 +7,8 @@
  * - Notion MCP OAuth and SSE connection
  */
 
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { McpSSEClient } from './mcp/notionClient';
 import {
     registerDynamicClient,
@@ -386,14 +388,42 @@ async function enableNotionMcp(): Promise<NotionMcpResponse> {
     // Store enabled state
     await chrome.storage.local.set({ 'mcp.notion.enabled': true });
 
-    // If already connected, nothing to do
+    // If already connected, perform health check
     if (notionMcpClient && notionStatus.state === 'connected') {
-        return { success: true, data: notionStatus };
+        console.log('[Background] Already connected, performing health check');
+        const healthCheck = await performHealthCheck();
+        
+        if (healthCheck.success) {
+            return { success: true, data: notionStatus };
+        } else {
+            console.warn('[Background] Health check failed, reconnecting...', healthCheck.error);
+            // Health check failed, try to reconnect
+            disconnectNotionMcp();
+        }
     }
 
     // If authenticated, connect
     if (notionTokens || await getStoredTokens()) {
-        return await connectNotionMcp();
+        const connectResult = await connectNotionMcp();
+        
+        // If connection successful, perform health check
+        if (connectResult.success && notionMcpClient) {
+            console.log('[Background] Connection successful, performing health check');
+            const healthCheck = await performHealthCheck();
+            
+            if (!healthCheck.success) {
+                console.warn('[Background] Health check failed after connection:', healthCheck.error);
+                notionStatus = {
+                    ...notionStatus,
+                    error: `Connected but health check failed: ${healthCheck.error}`
+                };
+                broadcastStatusUpdate();
+            } else {
+                console.log('[Background] Health check passed:', healthCheck.data);
+            }
+        }
+        
+        return connectResult;
     }
 
     // Otherwise, need auth
@@ -434,6 +464,132 @@ async function disconnectNotionAuth(): Promise<NotionMcpResponse> {
  */
 function getNotionStatus(): NotionMcpStatus {
     return notionStatus;
+}
+
+/**
+ * Perform health check on Notion MCP connection using official MCP SDK
+ * Validates connection and retrieves available tools
+ * Similar to: https://modelcontextprotocol.io/docs/tools/clients
+ */
+async function performHealthCheck(): Promise<NotionMcpResponse> {
+    let client: Client | undefined = undefined;
+    
+    try {
+        console.log('[Background] Performing Notion MCP health check with SDK');
+
+        // Get access token
+        const accessToken = await ensureValidToken();
+        if (!accessToken) {
+            return {
+                success: false,
+                error: 'No valid access token available'
+            };
+        }
+
+        const url = new URL(NOTION_CONFIG.MCP_SSE_URL);
+        
+        try {
+            // Create MCP client
+            client = new Client({
+                name: 'chrome-ai-health-check',
+                version: '1.0.0'
+            }, {
+                capabilities: {
+                    roots: { listChanged: true }
+                }
+            });
+
+            console.log('[Background] Connecting to MCP server with SSE transport...');
+
+            // Create SSE transport with authorization
+            // Use requestInit to add Authorization header to POST requests
+            const transport = new SSEClientTransport(url, {
+                requestInit: {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Accept': 'application/json, text/event-stream'
+                    }
+                },
+                // Use custom fetch to add Authorization header to SSE connection
+                fetch: async (input, init) => {
+                    const headers = new Headers(init?.headers);
+                    headers.set('Authorization', `Bearer ${accessToken}`);
+                    headers.set('Accept', 'text/event-stream, application/json');
+                    
+                    return fetch(input, {
+                        ...init,
+                        headers
+                    });
+                }
+            });
+
+            // Connect to the server
+            await client.connect(transport);
+            console.log('[Background] Connected using SSE transport');
+
+            // Get tools from the connected client
+            const toolsResponse = await client.listTools();
+            console.log('[Background] Tools response:', toolsResponse);
+
+            // Disconnect after getting tools
+            await client.close();
+
+            if (toolsResponse && toolsResponse.tools) {
+                const toolCount = toolsResponse.tools.length;
+                console.log('[Background] Health check passed. Tools available:', toolCount);
+
+                return {
+                    success: true,
+                    data: {
+                        state: 'connected',
+                        tools: toolsResponse.tools.map(tool => ({
+                            name: tool.name,
+                            description: tool.description,
+                            inputSchema: tool.inputSchema
+                        })),
+                        toolCount: toolCount
+                    }
+                };
+            } else {
+                return {
+                    success: false,
+                    error: 'No tools available from server'
+                };
+            }
+        } catch (transportError) {
+            console.error('[Background] Health check failed:', transportError);
+            
+            // Clean up client if exists
+            if (client) {
+                try {
+                    await client.close();
+                } catch (closeError) {
+                    console.error('[Background] Error closing client:', closeError);
+                }
+            }
+
+            return {
+                success: false,
+                error: transportError instanceof Error ? transportError.message : 'Connection failed'
+            };
+        }
+    } catch (error) {
+        console.error('[Background] Health check error:', error);
+        
+        // Clean up client if exists
+        if (client) {
+            try {
+                await client.close();
+            } catch (closeError) {
+                console.error('[Background] Error closing client:', closeError);
+            }
+        }
+
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Health check failed'
+        };
+    }
 }
 
 /**
@@ -504,6 +660,10 @@ chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendRes
                         message.payload?.name,
                         message.payload?.arguments
                     );
+                    break;
+
+                case 'mcp/notion/health/check':
+                    response = await performHealthCheck();
                     break;
 
                 default:
