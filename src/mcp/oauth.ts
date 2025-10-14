@@ -9,6 +9,72 @@ import { NOTION_CONFIG } from '../constants';
 import type { NotionOAuthTokens } from './types';
 
 /**
+ * Dynamic client credentials from registration
+ */
+interface DynamicClientCredentials {
+    client_id: string;
+    client_secret: string;
+    redirect_uris: string[];
+    client_name: string;
+    grant_types: string[];
+    response_types: string[];
+    token_endpoint_auth_method: string;
+    registration_client_uri?: string;
+    client_id_issued_at?: number;
+    created_at: number;
+}
+
+/**
+ * Register a dynamic client with Notion MCP OAuth server
+ * This is called before starting the OAuth flow
+ */
+async function registerDynamicClient(redirectUri: string): Promise<DynamicClientCredentials> {
+    const registrationPayload = {
+        client_name: "Chrome AI Extension - Notion MCP",
+        redirect_uris: [redirectUri],
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"],
+        scope: "read write",
+        token_endpoint_auth_method: "client_secret_basic"
+    };
+
+    console.log('[OAuth] Registering dynamic client with payload:', registrationPayload);
+
+    const response = await fetch(NOTION_CONFIG.OAUTH_REGISTER_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(registrationPayload)
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Client registration failed: ${response.status} ${error}`);
+    }
+
+    const data = await response.json();
+
+    console.log('[OAuth] Client registered successfully:', {
+        client_id: data.client_id,
+        redirect_uris: data.redirect_uris
+    });
+
+    return {
+        client_id: data.client_id,
+        client_secret: data.client_secret,
+        redirect_uris: data.redirect_uris,
+        client_name: data.client_name,
+        grant_types: data.grant_types,
+        response_types: data.response_types,
+        token_endpoint_auth_method: data.token_endpoint_auth_method,
+        registration_client_uri: data.registration_client_uri,
+        client_id_issued_at: data.client_id_issued_at,
+        created_at: Date.now()
+    };
+}
+
+/**
  * Generate a random string for state parameter (CSRF protection)
  */
 function generateRandomString(length: number): string {
@@ -55,18 +121,14 @@ function base64UrlEncode(buffer: Uint8Array): string {
 }
 
 /**
- * Build Notion MCP OAuth authorization URL with PKCE
+ * Build Notion MCP OAuth authorization URL (standard OAuth, no PKCE)
  */
-async function buildAuthUrl(state: string, codeVerifier: string): Promise<string> {
-    const codeChallenge = await createCodeChallenge(codeVerifier);
-
+function buildAuthUrl(clientId: string, redirectUri: string, state: string): string {
     const params = new URLSearchParams({
         response_type: 'code',
-        client_id: NOTION_CONFIG.OAUTH_CLIENT_ID,
-        redirect_uri: NOTION_CONFIG.OAUTH_REDIRECT_URI,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256',
-        resource: NOTION_CONFIG.MCP_RESOURCE,
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        owner: 'user',
         state: state
     });
 
@@ -74,22 +136,23 @@ async function buildAuthUrl(state: string, codeVerifier: string): Promise<string
 }
 
 /**
- * Exchange authorization code for tokens using PKCE
- * No client secret required - uses code_verifier instead
+ * Exchange authorization code for tokens using dynamic client credentials
  */
 async function exchangeCodeForTokens(
     code: string,
-    redirectUri?: string
+    clientId: string,
+    clientSecret: string,
+    redirectUri: string
 ): Promise<NotionOAuthTokens> {
-    const credentials = Buffer.from(`${NOTION_CONFIG.OAUTH_CLIENT_ID}:${NOTION_CONFIG.OAUTH_CLIENT_SECRET}`).toString('base64');
-    console.log('[OAuth] Notion oauth client id:', NOTION_CONFIG.OAUTH_CLIENT_ID);
-    console.log('[OAuth] Notion oauth client secret:', NOTION_CONFIG.OAUTH_CLIENT_SECRET);
-    console.log('[OAuth] Notion oauth credentials:', credentials);
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    
+    console.log('[OAuth] Exchange code for tokens with client:', clientId);
+    
     // Create x-www-form-urlencoded body for OAuth token exchange
     const params = new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
-        redirect_uri: redirectUri || 'https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/'
+        redirect_uri: redirectUri
     });
 
     console.log('[OAuth] Exchange code for tokens body (urlencoded):', params.toString());
@@ -118,7 +181,7 @@ async function exchangeCodeForTokens(
 
     return {
         access_token: data.access_token,
-        refresh_token: data.refresh_token, // May be undefined for MCP
+        refresh_token: data.refresh_token,
         token_type: data.token_type || 'Bearer',
         expires_at: expiresAt,
         workspace_id: data.workspace_id,
@@ -132,22 +195,26 @@ async function exchangeCodeForTokens(
 }
 
 /**
- * Refresh access token using refresh token
- * NOTE: Notion MCP may not support refresh tokens.
- * If refresh fails, the user will need to re-authenticate.
+ * Refresh access token using refresh token and dynamic client credentials
  */
-async function refreshAccessToken(refreshToken: string): Promise<NotionOAuthTokens> {
+async function refreshAccessToken(
+    refreshToken: string,
+    clientId: string,
+    clientSecret: string
+): Promise<NotionOAuthTokens> {
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    
     const params = new URLSearchParams({
         grant_type: 'refresh_token',
-        refresh_token: refreshToken,
-        client_id: NOTION_CONFIG.OAUTH_CLIENT_ID
+        refresh_token: refreshToken
     });
-    
 
     const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Authorization': `Basic ${credentials}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Notion-Version': '2022-06-28'
         },
         body: params.toString()
     });
@@ -164,7 +231,7 @@ async function refreshAccessToken(refreshToken: string): Promise<NotionOAuthToke
 
     return {
         access_token: data.access_token,
-        refresh_token: data.refresh_token || refreshToken, // Keep old refresh token if not provided
+        refresh_token: data.refresh_token || refreshToken,
         token_type: data.token_type || 'Bearer',
         expires_at: expiresAt,
         workspace_id: data.workspace_id,
@@ -208,7 +275,32 @@ async function clearTokens(): Promise<void> {
     await chrome.storage.local.remove(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.tokens`);
 }
 
+/**
+ * Store dynamic client credentials in chrome.storage.local
+ */
+async function storeClientCredentials(credentials: DynamicClientCredentials): Promise<void> {
+    await chrome.storage.local.set({
+        [`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`]: credentials
+    });
+}
+
+/**
+ * Retrieve dynamic client credentials from chrome.storage.local
+ */
+async function getStoredClientCredentials(): Promise<DynamicClientCredentials | null> {
+    const result = await chrome.storage.local.get(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`);
+    return result[`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`] || null;
+}
+
+/**
+ * Clear stored client credentials
+ */
+async function clearClientCredentials(): Promise<void> {
+    await chrome.storage.local.remove(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`);
+}
+
 export {
+    registerDynamicClient,
     generateState,
     createCodeVerifier,
     createCodeChallenge,
@@ -219,4 +311,9 @@ export {
     storeTokens,
     getStoredTokens,
     clearTokens,
-}
+    storeClientCredentials,
+    getStoredClientCredentials,
+    clearClientCredentials,
+};
+
+export type { DynamicClientCredentials };

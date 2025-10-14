@@ -19,11 +19,10 @@ import type {
  */
 class McpSSEClient {
     private sseUrl: string;
-    private baseUrl: string;
     private accessToken: string;
     private sessionId: string | null = null; // MCP session ID from initialization
     private sseSessionId: string | null = null; // SSE stream session ID for resumability
-    private messageEndpoint: string | null = null;
+    private messageEndpoint: string | null = null; // POST endpoint from SSE 'endpoint' event
     private eventSource: EventSource | null = null;
     private reconnectAttempts = 0;
     private reconnectTimeout: number | null = null;
@@ -42,7 +41,6 @@ class McpSSEClient {
 
     constructor(
         sseUrl: string,
-        baseUrl: string,
         accessToken: string,
         callbacks: {
             onStatusChange: (status: NotionMcpStatus) => void;
@@ -50,7 +48,6 @@ class McpSSEClient {
         }
     ) {
         this.sseUrl = sseUrl;
-        this.baseUrl = baseUrl;
         this.accessToken = accessToken;
         this.onStatusChange = callbacks.onStatusChange;
         this.onMessage = callbacks.onMessage;
@@ -168,15 +165,20 @@ class McpSSEClient {
                         const data = line.slice(6).trim();
                         if (data === '[DONE]') continue;
 
-                        // Handle endpoint event - extract SSE session ID (for resumability)
+                        // Handle endpoint event - extract message endpoint for POST requests
                         if (currentEvent === 'endpoint') {
-                            // data format: /sse/message?sessionId=...
-                            const match = data.match(/sessionId=([a-f0-9]+)/);
+                            // Per MCP spec: server sends endpoint URI for client to use for POST requests
+                            // data format: /sse/message?sessionId=... (relative URI)
+                            this.messageEndpoint = data;
+                            
+                            // Extract session ID if present
+                            const match = data.match(/sessionId=([a-f0-9-]+)/);
                             if (match) {
                                 this.sseSessionId = match[1];
-                                this.messageEndpoint = data;
-                                console.log('[NotionMCP] SSE Session ID extracted:', this.sseSessionId);
                             }
+                            
+                            console.log('[NotionMCP] Message endpoint received:', this.messageEndpoint);
+                            console.log('[NotionMCP] SSE Session ID:', this.sseSessionId);
                             currentEvent = null;
                             continue;
                         }
@@ -228,6 +230,24 @@ class McpSSEClient {
     }
 
     /**
+     * Get the full POST endpoint URL
+     */
+    private getPostUrl(): string {
+        if (!this.messageEndpoint) {
+            throw new Error('Message endpoint not available. SSE connection may not be established.');
+        }
+        
+        // If endpoint is relative, construct full URL
+        if (this.messageEndpoint.startsWith('/')) {
+            const url = new URL(this.sseUrl);
+            return `${url.origin}${this.messageEndpoint}`;
+        }
+        
+        // If endpoint is already absolute, use it as-is
+        return this.messageEndpoint;
+    }
+
+    /**
      * Send a notification (no response expected)
      */
     async sendNotification(method: string, params?: any): Promise<void> {
@@ -241,7 +261,7 @@ class McpSSEClient {
         const headers: Record<string, string> = {
             'Authorization': `Bearer ${this.accessToken}`,
             'Content-Type': 'application/json',
-            'Accept': 'application/json, text/event-stream', // Required by MCP spec
+            'Accept': 'application/json, text/event-stream',
             'MCP-Protocol-Version': '2025-06-18'
         };
 
@@ -250,8 +270,12 @@ class McpSSEClient {
             headers['Mcp-Session-Id'] = this.sessionId;
         }
 
+        // Per MCP spec: use the endpoint from SSE 'endpoint' event for POST requests
+        const postUrl = this.getPostUrl();
+        console.log('[NotionMCP] Sending notification to:', postUrl);
+
         // Send notification - no response expected (should return 202 Accepted)
-        const response = await fetch(this.baseUrl, {
+        const response = await fetch(postUrl, {
             method: 'POST',
             headers,
             body: JSON.stringify(message)
@@ -267,17 +291,10 @@ class McpSSEClient {
     }
 
     /**
-     * Send a request over SSE (via POST to separate endpoint if needed)
-     * Note: Traditional SSE is read-only. For bidirectional, we'd need WebSocket or separate POST endpoint.
-     * For now, we'll use a hybrid approach: SSE for receiving, POST to base MCP URL for sending.
+     * Send a request over SSE (via POST to endpoint from SSE 'endpoint' event)
+     * Per MCP spec: SSE for receiving, POST to endpoint provided by server for sending
      */
     async sendRequest(method: string, params?: any, options?: { skipSessionId?: boolean }): Promise<any> {
-        // Wait for session ID to be available (unless this is initialization)
-        const isInitialize = method === 'initialize';
-        if (!isInitialize && !this.sessionId) {
-            throw new Error('Session ID not available. Ensure SSE connection is established first.');
-        }
-
         const id = ++this.messageId;
         const message: McpMessage = {
             jsonrpc: '2.0',
@@ -294,16 +311,21 @@ class McpSSEClient {
                 'Authorization': `Bearer ${this.accessToken}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json, text/event-stream',
-                'MCP-Protocol-Version': '2025-06-18' // Latest protocol version
+                'MCP-Protocol-Version': '2025-06-18'
             };
 
-            // Only include session ID for non-initialization requests
+            // Include session ID if available
+            const isInitialize = method === 'initialize';
             if (!isInitialize && this.sessionId) {
                 headers['Mcp-Session-Id'] = this.sessionId;
             }
 
-            // Send via POST to the base MCP endpoint (not /sse)
-            fetch(this.baseUrl, {
+            // Per MCP spec: use the endpoint from SSE 'endpoint' event for POST requests
+            const postUrl = this.getPostUrl();
+            console.log('[NotionMCP] Sending request to:', postUrl, 'Method:', method);
+
+            // Send via POST to the message endpoint (from SSE endpoint event)
+            fetch(postUrl, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify(message)
@@ -374,11 +396,30 @@ class McpSSEClient {
     }
 
     /**
+     * Wait for message endpoint to be available
+     */
+    private async waitForEndpoint(timeoutMs: number = 10000): Promise<void> {
+        const startTime = Date.now();
+        while (!this.messageEndpoint) {
+            if (Date.now() - startTime > timeoutMs) {
+                throw new Error('Timeout waiting for message endpoint from SSE');
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
+    /**
      * Initialize the MCP connection
+     * Must be called AFTER SSE connection is established and endpoint event is received
      */
     async initialize(): Promise<void> {
+        // Per MCP spec: Wait for SSE 'endpoint' event before sending requests
+        console.log('[NotionMCP] Waiting for message endpoint from SSE...');
+        await this.waitForEndpoint();
+        console.log('[NotionMCP] Message endpoint ready, sending initialize request');
+
         const params: McpInitializeRequest['params'] = {
-            protocolVersion: '2025-06-18', // Latest MCP protocol version
+            protocolVersion: '2025-06-18',
             capabilities: {
                 experimental: {},
                 roots: { listChanged: true }
@@ -389,7 +430,7 @@ class McpSSEClient {
             }
         };
 
-        // Send initialize request (without session ID)
+        // Send initialize request
         // Session ID will be extracted from response headers
         const result = await this.sendRequest('initialize', params);
         console.log('[NotionMCP] Initialized:', result);

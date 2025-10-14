@@ -28,33 +28,23 @@ export const COPILOT_RUNTIME_URL_DEFAULT = " http://localhost:3000/";
 
 /**
  * Notion MCP Configuration
- * OAuth (PKCE) and SSE endpoint settings for Notion hosted MCP server
+ * OAuth with Dynamic Client Registration for Notion hosted MCP server
  * 
- * IMPORTANT: This uses Notion's MCP OAuth flow (PKCE, no client secret)
- * NOT the custom integration OAuth flow.
- * 
- * Get your MCP client ID from the Notion MCP developer portal.
- * It should be a short alphanumeric string (e.g., "Oh46dYkUrzferlRE"),
- * NOT a UUID like "28bd872b-594c-805a-a31a-0037c381dd8c".
+ * IMPORTANT: This uses dynamic client registration (RFC 7591)
+ * Client credentials are obtained at runtime when the user clicks "Connect"
  */
 export const NOTION_CONFIG = {
-
-    OAUTH_CLIENT_ID: process.env.PLASMO_PUBLIC_NOTION_MCP_CLIENT_ID || "28bd872b-594c-805a-a31a-0037c381dd8c",
-
-    /** 
-     * Notion OAuth Client Secret (for introspection endpoint)
-     * Required for token introspection API calls
-     */
-    OAUTH_CLIENT_SECRET: process.env.PLASMO_PUBLIC_NOTION_OAUTH_CLIENT_SECRET || "secret_lheRg1aOlf1OoVsiEod0ld39xne6aGlyf7o5wYQakqh",
-
     /** OAuth redirect URI - Chrome extension identity redirect */
     OAUTH_REDIRECT_URI: "https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/",
+
+    /** OAuth dynamic client registration endpoint */
+    OAUTH_REGISTER_URL: "https://mcp.notion.com/register",
 
     /** OAuth authorization endpoint - Standard Notion OAuth */
     OAUTH_AUTH_URL: "https://mcp.notion.com/authorize",
 
     /** OAuth token endpoint - Standard Notion OAuth */
-    OAUTH_TOKEN_URL: "https://api.notion.com/v1/oauth/token",
+    OAUTH_TOKEN_URL: "https://mcp.notion.com/token",
 
     /** OAuth token introspection endpoint */
     OAUTH_INTROSPECT_URL: "https://api.notion.com/v1/oauth/introspect",
@@ -62,10 +52,7 @@ export const NOTION_CONFIG = {
     /** MCP resource identifier for OAuth scope */
     MCP_RESOURCE: "https://mcp.notion.com/",
 
-    /** Notion MCP base endpoint (for HTTP POST requests) */
-    MCP_BASE_URL: "https://mcp.notion.com/mcp",
-
-    /** Notion MCP SSE endpoint (for receiving events) */
+    /** Notion MCP SSE endpoint (for establishing SSE connection and receiving events) */
     MCP_SSE_URL: "https://mcp.notion.com/sse",
 
     /** Token storage key prefix */

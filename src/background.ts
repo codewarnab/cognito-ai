@@ -9,6 +9,7 @@
 
 import { McpSSEClient } from './mcp/notionClient';
 import {
+    registerDynamicClient,
     generateState,
     createCodeVerifier,
     buildAuthUrl,
@@ -18,6 +19,10 @@ import {
     storeTokens,
     getStoredTokens,
     clearTokens,
+    storeClientCredentials,
+    getStoredClientCredentials,
+    clearClientCredentials,
+    type DynamicClientCredentials
 } from './mcp/oauth';
 import type {
     NotionOAuthTokens,
@@ -35,6 +40,7 @@ import { NOTION_CONFIG } from './constants';
 
 let notionMcpClient: McpSSEClient | null = null;
 let notionTokens: NotionOAuthTokens | null = null;
+let notionClientCredentials: DynamicClientCredentials | null = null;
 let oauthState: OAuthState | null = null;
 let notionStatus: NotionMcpStatus = { state: 'disconnected' };
 let isEnabled = false;
@@ -68,13 +74,26 @@ let isEnabled = false;
 // }
 
 /**
- * Start OAuth flow for Notion MCP
+ * Start OAuth flow for Notion MCP with dynamic client registration
  */
 async function startNotionAuth(): Promise<NotionMcpResponse> {
     try {
-        console.log('[Background] Starting Notion OAuth flow');
+        console.log('[Background] Starting Notion OAuth flow with dynamic client registration');
 
-        // Generate state for CSRF protection
+        // Step 1: Register a dynamic client
+        console.log('[Background] Registering dynamic client...');
+        notionStatus = { state: 'registering' };
+        broadcastStatusUpdate();
+
+        const clientCredentials = await registerDynamicClient(NOTION_CONFIG.OAUTH_REDIRECT_URI);
+        
+        // Store client credentials
+        notionClientCredentials = clientCredentials;
+        await storeClientCredentials(clientCredentials);
+
+        console.log('[Background] Dynamic client registered:', clientCredentials.client_id);
+
+        // Step 2: Generate state for CSRF protection
         const state = generateState();
 
         // Store state in memory for the callback
@@ -84,12 +103,20 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
             created_at: Date.now()
         };
 
-        // Build authorization URL using standard Notion OAuth format
-        const authUrl = `${NOTION_CONFIG.OAUTH_AUTH_URL}?client_id=${NOTION_CONFIG.OAUTH_CLIENT_ID}&response_type=code&owner=user&redirect_uri=${encodeURIComponent(NOTION_CONFIG.OAUTH_REDIRECT_URI)}&state=${state}`;
+        // Step 3: Build authorization URL using the dynamic client ID
+        const authUrl = buildAuthUrl(
+            clientCredentials.client_id,
+            NOTION_CONFIG.OAUTH_REDIRECT_URI,
+            state
+        );
 
         console.log('[Background] Launching OAuth with URL:', authUrl);
 
-        // Launch OAuth flow using Chrome Identity API
+        // Update status
+        notionStatus = { state: 'authorizing' };
+        broadcastStatusUpdate();
+
+        // Step 4: Launch OAuth flow using Chrome Identity API
         const redirectUrl = await chrome.identity.launchWebAuthFlow({
             url: authUrl,
             interactive: true
@@ -101,7 +128,7 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
 
         console.log('[Background] OAuth redirect URL:', redirectUrl);
 
-        // Extract code and state from redirect URL
+        // Step 5: Extract code and state from redirect URL
         const url = new URL(redirectUrl);
         const code = url.searchParams.get('code');
         const returnedState = url.searchParams.get('state');
@@ -117,9 +144,11 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
 
         console.log('[Background] Exchanging code for tokens');
 
-        // Exchange code for tokens
+        // Step 6: Exchange code for tokens using dynamic client credentials
         const tokens = await exchangeCodeForTokens(
             code,
+            clientCredentials.client_id,
+            clientCredentials.client_secret,
             NOTION_CONFIG.OAUTH_REDIRECT_URI
         );
 
@@ -163,12 +192,28 @@ async function refreshNotionToken(): Promise<boolean> {
         return false;
     }
 
+    // Load client credentials if not in memory
+    if (!notionClientCredentials) {
+        notionClientCredentials = await getStoredClientCredentials();
+    }
+
+    if (!notionClientCredentials) {
+        console.error('[Background] No client credentials available for token refresh');
+        notionStatus = { state: 'needs-auth', error: 'No client credentials' };
+        broadcastStatusUpdate();
+        return false;
+    }
+
     try {
         console.log('[Background] Refreshing Notion token');
         notionStatus = { state: 'token-refresh' };
         broadcastStatusUpdate();
 
-        const newTokens = await refreshAccessToken(notionTokens.refresh_token);
+        const newTokens = await refreshAccessToken(
+            notionTokens.refresh_token,
+            notionClientCredentials.client_id,
+            notionClientCredentials.client_secret
+        );
         notionTokens = newTokens;
         await storeTokens(newTokens);
 
@@ -237,7 +282,6 @@ async function connectNotionMcp(): Promise<NotionMcpResponse> {
         // Create SSE client
         notionMcpClient = new McpSSEClient(
             NOTION_CONFIG.MCP_SSE_URL,
-            NOTION_CONFIG.MCP_BASE_URL,
             accessToken,
             {
                 onStatusChange: (status) => {
@@ -319,9 +363,11 @@ async function handleInvalidToken(): Promise<void> {
         notionMcpClient = null;
     }
 
-    // Clear invalid tokens - don't try to refresh
+    // Clear invalid tokens and client credentials - don't try to refresh
     await clearTokens();
+    await clearClientCredentials();
     notionTokens = null;
+    notionClientCredentials = null;
     notionStatus = {
         state: 'invalid-token',
         error: 'Invalid token format - please re-authenticate'
@@ -373,7 +419,9 @@ async function disableNotionMcp(): Promise<NotionMcpResponse> {
 async function disconnectNotionAuth(): Promise<NotionMcpResponse> {
     disconnectNotionMcp();
     await clearTokens();
+    await clearClientCredentials();
     notionTokens = null;
+    notionClientCredentials = null;
     notionStatus = { state: 'disconnected' };
     isEnabled = false;
     await chrome.storage.local.set({ 'mcp.notion.enabled': false });
@@ -492,8 +540,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
         // If enabled, try to restore connection
         if (isEnabled) {
             const tokens = await getStoredTokens();
-            if (tokens) {
+            const credentials = await getStoredClientCredentials();
+            if (tokens && credentials) {
                 notionTokens = tokens;
+                notionClientCredentials = credentials;
                 await connectNotionMcp();
             }
         }
@@ -517,8 +567,10 @@ chrome.runtime.onStartup.addListener(async () => {
     // If enabled, try to restore connection
     if (isEnabled) {
         const tokens = await getStoredTokens();
-        if (tokens) {
+        const credentials = await getStoredClientCredentials();
+        if (tokens && credentials) {
             notionTokens = tokens;
+            notionClientCredentials = credentials;
             await connectNotionMcp();
         }
     }

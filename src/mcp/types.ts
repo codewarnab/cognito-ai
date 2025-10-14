@@ -8,6 +8,8 @@
 export type McpConnectionState =
     | 'disconnected'      // Not connected, no auth
     | 'needs-auth'        // Needs OAuth authentication
+    | 'registering'       // Registering dynamic OAuth client
+    | 'authorizing'       // Authorizing with OAuth provider
     | 'authenticated'     // OAuth complete, not connected
     | 'connecting'        // Attempting SSE connection
     | 'connected'         // Fully connected and operational
