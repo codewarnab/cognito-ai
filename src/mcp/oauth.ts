@@ -85,24 +85,24 @@ async function exchangeCodeForTokens(
     console.log('[OAuth] Notion oauth client id:', NOTION_CONFIG.OAUTH_CLIENT_ID);
     console.log('[OAuth] Notion oauth client secret:', NOTION_CONFIG.OAUTH_CLIENT_SECRET);
     console.log('[OAuth] Notion oauth credentials:', credentials);
-    // Create JSON body for OAuth token exchange
-    const requestBody = {
+    // Create x-www-form-urlencoded body for OAuth token exchange
+    const params = new URLSearchParams({
         grant_type: 'authorization_code',
         code: code,
         redirect_uri: redirectUri || 'https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/'
-    };
+    });
 
-    console.log('[OAuth] Exchange code for tokens body:', requestBody);
+    console.log('[OAuth] Exchange code for tokens body (urlencoded):', params.toString());
     console.log('[OAuth] Exchange code for tokens URL:', NOTION_CONFIG.OAUTH_TOKEN_URL);
 
     const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
         method: 'POST',
         headers: {
             'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
             'Notion-Version': '2022-06-28'
         },
-        body: JSON.stringify(requestBody)
+        body: params.toString()
     });
 
     if (!response.ok) {

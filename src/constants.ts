@@ -54,7 +54,7 @@ export const NOTION_CONFIG = {
     OAUTH_AUTH_URL: "https://mcp.notion.com/authorize",
 
     /** OAuth token endpoint - Standard Notion OAuth */
-    OAUTH_TOKEN_URL: "https://mcp.notion.com/token",
+    OAUTH_TOKEN_URL: "https://api.notion.com/v1/oauth/token",
 
     /** OAuth token introspection endpoint */
     OAUTH_INTROSPECT_URL: "https://api.notion.com/v1/oauth/introspect",
