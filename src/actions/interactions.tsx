@@ -139,7 +139,7 @@ export function registerInteractionActions() {
     },
     render: ({ args, status, result }) => {
       if (status === "inProgress") {
-        const scrollInfo = args.direction === "to-element" && args.selector 
+        const scrollInfo = args.direction === "to-element" && args.selector
           ? `to ${args.selector}`
           : args.amount ? `${args.direction} ${args.amount}px` : args.direction;
         return <ToolCard title="Scrolling Page" subtitle={scrollInfo} state="loading" icon="📜" />;
@@ -220,8 +220,8 @@ export function registerInteractionActions() {
             </ToolCard>
           );
         }
-        const maskedValue = result.filledWith?.includes('password') || args.selector?.includes('password') 
-          ? '••••••' 
+        const maskedValue = result.filledWith?.includes('password') || args.selector?.includes('password')
+          ? '••••••'
           : result.filledWith;
         return (
           <ToolCard title="Input Filled" subtitle={`Field: ${result.field?.placeholder || result.field?.name || args.selector}`} state="success" icon="✍️">
@@ -397,10 +397,10 @@ export function registerInteractionActions() {
         }
         const charCount = result.text?.length || 0;
         return (
-          <ToolCard 
-            title="Text Extracted" 
-            subtitle={`${charCount} characters${result.count ? ` from ${result.count} elements` : ''}`} 
-            state="success" 
+          <ToolCard
+            title="Text Extracted"
+            subtitle={`${charCount} characters${result.count ? ` from ${result.count} elements` : ''}`}
+            state="success"
             icon="📋"
           >
             {result.truncated && <Badge label="truncated" variant="warning" />}
@@ -412,6 +412,253 @@ export function registerInteractionActions() {
             )}
           </ToolCard>
         );
+      }
+      return null;
+    },
+  });
+
+  // ===========================
+  // Advanced Interaction Actions
+  // ===========================
+
+  useFrontendTool({
+    name: "typeText",
+    description: "Type text into an input field by selector",
+    parameters: [
+      { name: "selector", type: "string", description: "CSS selector for input element", required: true },
+      { name: "text", type: "string", description: "Text to type", required: true },
+      { name: "clearFirst", type: "boolean", description: "Clear field before typing", required: false }
+    ],
+    handler: async ({ selector, text, clearFirst }) => {
+      if (!shouldProcess("typeText", { selector, text })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("typeText", { selector, textLength: text.length });
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab.id) return { error: "No active tab" };
+
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          args: [selector, text, clearFirst],
+          func: (sel: string, txt: string, clear: boolean) => {
+            const element = document.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement;
+            if (!element) {
+              return { success: false, error: `Element not found: ${sel}` };
+            }
+
+            if (clear) {
+              element.value = '';
+            }
+
+            element.value = txt;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return { success: true, typed: txt.length };
+          }
+        });
+
+        return results[0]?.result || { error: "Failed to type text" };
+      } catch (error) {
+        log.error('[FrontendTool] Error typing text:', error);
+        return { error: "Failed to type text" };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Typing Text" subtitle={args.selector} state="loading" icon="⌨️" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Type Failed" subtitle={result.error} state="error" icon="⌨️" />;
+        }
+        return <ToolCard title="Text Typed" subtitle={`${result.typed} characters`} state="success" icon="⌨️" />;
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "scrollIntoView",
+    description: "Scroll an element into view",
+    parameters: [
+      { name: "selector", type: "string", description: "CSS selector", required: true },
+      { name: "block", type: "string", description: "Vertical alignment: 'start'|'center'|'end'|'nearest'", required: false }
+    ],
+    handler: async ({ selector, block }) => {
+      if (!shouldProcess("scrollIntoView", { selector })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("scrollIntoView", { selector });
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab.id) return { error: "No active tab" };
+
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          args: [selector, block || 'nearest'],
+          func: (sel: string, blk: ScrollLogicalPosition) => {
+            const element = document.querySelector(sel);
+            if (!element) {
+              return { success: false, error: `Element not found: ${sel}` };
+            }
+
+            element.scrollIntoView({ behavior: 'smooth', block: blk });
+            return { success: true };
+          }
+        });
+
+        return results[0]?.result || { error: "Failed to scroll" };
+      } catch (error) {
+        log.error('[FrontendTool] Error scrolling:', error);
+        return { error: "Failed to scroll element into view" };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Scrolling to Element" subtitle={args.selector} state="loading" icon="🔍" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Scroll Failed" subtitle={result.error} state="error" icon="🔍" />;
+        }
+        return <ToolCard title="Scrolled to Element" subtitle={args.selector} state="success" icon="🔍" />;
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "fillByLabel",
+    description: "Fill an input field by its label text",
+    parameters: [
+      { name: "label", type: "string", description: "Label text (case-insensitive)", required: true },
+      { name: "value", type: "string", description: "Value to fill", required: true }
+    ],
+    handler: async ({ label, value }) => {
+      if (!shouldProcess("fillByLabel", { label, value })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("fillByLabel", { label });
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab.id) return { error: "No active tab" };
+
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          args: [label, value],
+          func: (lbl: string, val: string) => {
+            const normalizedLabel = lbl.toLowerCase().trim();
+
+            // Find label element
+            const labels = Array.from(document.querySelectorAll('label'));
+            const labelEl = labels.find(l =>
+              l.textContent?.toLowerCase().trim().includes(normalizedLabel)
+            );
+
+            if (!labelEl) {
+              return { success: false, error: `Label not found: ${lbl}` };
+            }
+
+            // Find associated input
+            let input: HTMLInputElement | HTMLTextAreaElement | null = null;
+            if (labelEl.htmlFor) {
+              input = document.getElementById(labelEl.htmlFor) as HTMLInputElement;
+            } else {
+              input = labelEl.querySelector('input, textarea');
+            }
+
+            if (!input) {
+              return { success: false, error: `Input not found for label: ${lbl}` };
+            }
+
+            input.value = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return { success: true, fieldId: input.id || input.name };
+          }
+        });
+
+        return results[0]?.result || { error: "Failed to fill field" };
+      } catch (error) {
+        log.error('[FrontendTool] Error filling by label:', error);
+        return { error: "Failed to fill field by label" };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Filling Field" subtitle={`Label: ${args.label}`} state="loading" icon="📝" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Fill Failed" subtitle={result.error} state="error" icon="📝" />;
+        }
+        return <ToolCard title="Field Filled" subtitle={`Label: ${args.label}`} state="success" icon="📝" />;
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "fillByPlaceholder",
+    description: "Fill an input field by its placeholder text",
+    parameters: [
+      { name: "placeholder", type: "string", description: "Placeholder text (case-insensitive)", required: true },
+      { name: "value", type: "string", description: "Value to fill", required: true }
+    ],
+    handler: async ({ placeholder, value }) => {
+      if (!shouldProcess("fillByPlaceholder", { placeholder, value })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("fillByPlaceholder", { placeholder });
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab.id) return { error: "No active tab" };
+
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          args: [placeholder, value],
+          func: (ph: string, val: string) => {
+            const normalizedPh = ph.toLowerCase().trim();
+
+            const inputs = Array.from(document.querySelectorAll('input, textarea')) as Array<HTMLInputElement | HTMLTextAreaElement>;
+            const input = inputs.find(i =>
+              i.placeholder?.toLowerCase().includes(normalizedPh)
+            );
+
+            if (!input) {
+              return { success: false, error: `Input with placeholder not found: ${ph}` };
+            }
+
+            input.value = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+
+            return { success: true, fieldId: input.id || input.name };
+          }
+        });
+
+        return results[0]?.result || { error: "Failed to fill field" };
+      } catch (error) {
+        log.error('[FrontendTool] Error filling by placeholder:', error);
+        return { error: "Failed to fill field by placeholder" };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Filling Field" subtitle={`Placeholder: ${args.placeholder}`} state="loading" icon="📝" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Fill Failed" subtitle={result.error} state="error" icon="📝" />;
+        }
+        return <ToolCard title="Field Filled" subtitle={`Placeholder: ${args.placeholder}`} state="success" icon="📝" />;
       }
       return null;
     },

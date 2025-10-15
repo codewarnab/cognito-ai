@@ -10,7 +10,8 @@
     "package": "plasmo package",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "postinstall": "node scripts/patch-vfile.js"
   },
   "dependencies": {
     "@copilotkit/react-core": "^1.10.6",
@@ -21,6 +22,9 @@
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-markdown": "^10.1.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
@@ -31,9 +35,13 @@
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
     "@vitest/ui": "^3.2.4",
+    "autoprefixer": "^10.4.21",
     "happy-dom": "^19.0.2",
     "jsdom": "^27.0.0",
+    "patch-package": "^8.0.1",
+    "postcss": "^8.1.0",
     "prettier": "3.2.4",
+    "tailwindcss": "^4.1.14",
     "typescript": "5.3.3",
     "vitest": "^3.2.4"
   },
@@ -47,7 +55,20 @@
       "scripting",
       "activeTab",
       "webNavigation",
-      "identity"
+      "identity",
+      "downloads",
+      "downloads.shelf",
+      "debugger",
+      "declarativeNetRequest",
+      "declarativeNetRequestWithHostAccess",
+      "clipboardRead",
+      "clipboardWrite",
+      "notifications",
+      "cookies"
+    ],
+    "optional_permissions": [
+      "tabCapture",
+      "desktopCapture"
     ],
     "host_permissions": [
       "https://backend-4khk5owpk-arnab-mondals-projects.vercel.app/*",

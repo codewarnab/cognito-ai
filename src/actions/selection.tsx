@@ -4,6 +4,93 @@ import { createLogger } from "../logger";
 import { shouldProcess } from "./useActionDeduper";
 import { ToolCard, CodeBlock } from "../components/ui/ToolCard";
 
+// ===========================
+// Query Utilities
+// ===========================
+
+/**
+ * Query element by text content (case-insensitive)
+ */
+export function queryByText(text: string, container: Document | Element = document): Element | null {
+  const normalizedText = text.toLowerCase().trim();
+  const walker = document.createTreeWalker(
+    container,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
+
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    const textContent = node.textContent?.toLowerCase().trim() || '';
+    if (textContent.includes(normalizedText)) {
+      return node.parentElement;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Query element by ARIA role and optional accessible name
+ */
+export function queryByRole(
+  role: string,
+  options: { name?: string } = {}
+): Element | null {
+  const elements = document.querySelectorAll(`[role="${role}"]`);
+
+  for (const el of Array.from(elements)) {
+    if (!options.name) {
+      return el;
+    }
+
+    // Check aria-label
+    const ariaLabel = el.getAttribute('aria-label');
+    if (ariaLabel?.toLowerCase().includes(options.name.toLowerCase())) {
+      return el;
+    }
+
+    // Check aria-labelledby
+    const labelledBy = el.getAttribute('aria-labelledby');
+    if (labelledBy) {
+      const labelEl = document.getElementById(labelledBy);
+      if (labelEl?.textContent?.toLowerCase().includes(options.name.toLowerCase())) {
+        return el;
+      }
+    }
+
+    // Check text content
+    if (el.textContent?.toLowerCase().includes(options.name.toLowerCase())) {
+      return el;
+    }
+  }
+
+  // Fallback: check implicit roles
+  const implicitSelectors: Record<string, string> = {
+    button: 'button, input[type="button"], input[type="submit"]',
+    link: 'a[href]',
+    textbox: 'input[type="text"], input:not([type]), textarea',
+    checkbox: 'input[type="checkbox"]',
+    radio: 'input[type="radio"]',
+    heading: 'h1, h2, h3, h4, h5, h6',
+  };
+
+  const selector = implicitSelectors[role.toLowerCase()];
+  if (selector) {
+    const implicitElements = document.querySelectorAll(selector);
+    for (const el of Array.from(implicitElements)) {
+      if (!options.name) {
+        return el;
+      }
+      if (el.textContent?.toLowerCase().includes(options.name.toLowerCase())) {
+        return el;
+      }
+    }
+  }
+
+  return null;
+}
+
 export function registerSelectionActions() {
   const log = createLogger("Actions-Selection");
 

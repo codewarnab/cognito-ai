@@ -142,4 +142,242 @@ export function registerTabActions() {
       return null;
     },
   });
+
+  // ===========================
+  // Smart Navigation Actions
+  // ===========================
+
+  useFrontendTool({
+    name: "ensureAtUrl",
+    description: "Ensure the active tab is at a specific URL. Navigates or reuses existing tab if same origin.",
+    parameters: [
+      { name: "url", type: "string", description: "Target URL", required: true },
+      { name: "reuse", type: "boolean", description: "Reuse existing tab with same origin", required: false },
+      { name: "waitFor", type: "string", description: "Wait strategy: 'load' or 'networkidle'", required: false },
+      { name: "retries", type: "number", description: "Number of retries on failure", required: false }
+    ],
+    handler: async ({ url, reuse = true, waitFor = 'load', retries = 2 }) => {
+      if (!shouldProcess("ensureAtUrl", { url })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("ensureAtUrl", { url, reuse, waitFor, retries });
+
+        const targetUrl = new URL(url);
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!activeTab?.id) {
+          return { error: "No active tab" };
+        }
+
+        // Check if already at URL
+        if (urlsEqual(activeTab.url || '', url)) {
+          return {
+            success: true,
+            navigated: false,
+            tabId: activeTab.id,
+            finalUrl: activeTab.url
+          };
+        }
+
+        // Check if we should reuse existing tab with same origin
+        if (reuse && activeTab.url) {
+          try {
+            const currentUrl = new URL(activeTab.url);
+            if (currentUrl.origin === targetUrl.origin) {
+              // Same origin, update URL
+              await chrome.tabs.update(activeTab.id, { url });
+
+              // Wait for navigation
+              await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
+
+              return {
+                success: true,
+                navigated: true,
+                reused: true,
+                tabId: activeTab.id,
+                finalUrl: url
+              };
+            }
+          } catch (e) {
+            // Invalid URL, proceed with normal navigation
+          }
+        }
+
+        // Check for existing tab with this URL
+        const allTabs = await chrome.tabs.query({});
+        const existing = allTabs.find(t => t.id !== activeTab.id && urlsEqual(t.url || '', url));
+
+        if (existing) {
+          await focusTab(existing);
+          return {
+            success: true,
+            navigated: false,
+            reused: true,
+            tabId: existing.id,
+            finalUrl: existing.url
+          };
+        }
+
+        // Navigate active tab
+        await chrome.tabs.update(activeTab.id, { url });
+        await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
+
+        const updatedTab = await chrome.tabs.get(activeTab.id);
+
+        return {
+          success: true,
+          navigated: true,
+          tabId: activeTab.id,
+          finalUrl: updatedTab.url
+        };
+      } catch (error) {
+        log.error('[FrontendTool] Error ensuring at URL:', error);
+        return { error: `Failed to ensure at URL: ${(error as Error).message}` };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Navigating to URL" subtitle={args.url} state="loading" icon="🧭" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Navigation Failed" subtitle={result.error} state="error" icon="🧭" />;
+        }
+        const action = result.navigated ? "Navigated" : result.reused ? "Reused existing tab" : "Already at URL";
+        return <ToolCard title={action} subtitle={result.finalUrl} state="success" icon="🧭" />;
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "goAndWait",
+    description: "Navigate to URL (or pattern) and wait for page load/network idle",
+    parameters: [
+      { name: "url", type: "string", description: "URL to navigate to", required: true },
+      { name: "waitFor", type: "string", description: "Wait strategy: 'load' or 'networkidle'", required: false },
+      { name: "timeoutMs", type: "number", description: "Timeout in milliseconds", required: false }
+    ],
+    handler: async ({ url, waitFor = 'load', timeoutMs = 30000 }) => {
+      if (!shouldProcess("goAndWait", { url })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.info("goAndWait", { url, waitFor, timeoutMs });
+
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!activeTab?.id) {
+          return { error: "No active tab" };
+        }
+
+        // Navigate
+        await chrome.tabs.update(activeTab.id, { url });
+
+        // Wait with timeout
+        const waitPromise = waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Navigation timeout')), timeoutMs)
+        );
+
+        await Promise.race([waitPromise, timeoutPromise]);
+
+        // Get final URL
+        const updatedTab = await chrome.tabs.get(activeTab.id);
+
+        return {
+          success: true,
+          finalUrl: updatedTab.url,
+          title: updatedTab.title
+        };
+      } catch (error) {
+        log.error('[FrontendTool] Error in goAndWait:', error);
+        return { error: `Navigation failed: ${(error as Error).message}` };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Navigating and Waiting" subtitle={args.url} state="loading" icon="⏳" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Navigation Failed" subtitle={result.error} state="error" icon="⏳" />;
+        }
+        return (
+          <ToolCard title="Navigation Complete" subtitle={result.finalUrl} state="success" icon="⏳">
+            {result.title && <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>{result.title}</div>}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
+  });
+}
+
+/**
+ * Wait for navigation to complete
+ */
+async function waitForNavigation(
+  tabId: number,
+  strategy: 'load' | 'networkidle'
+): Promise<void> {
+  if (strategy === 'load') {
+    // Wait for tab to finish loading
+    return new Promise((resolve) => {
+      const listener = (
+        updatedTabId: number,
+        changeInfo: chrome.tabs.TabChangeInfo
+      ) => {
+        if (updatedTabId === tabId && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve();
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+    });
+  } else {
+    // Network idle strategy - wait for no network activity for 500ms
+    // This requires debugger API
+    return new Promise((resolve, reject) => {
+      let idleTimeout: NodeJS.Timeout;
+
+      const cleanup = () => {
+        clearTimeout(idleTimeout);
+        chrome.debugger.onEvent.removeListener(listener);
+        chrome.debugger.detach({ tabId }).catch(() => { });
+      };
+
+      const listener = (
+        source: chrome.debugger.Debuggee,
+        method: string
+      ) => {
+        if (source.tabId !== tabId) return;
+
+        if (method === 'Network.loadingFinished' || method === 'Network.loadingFailed') {
+          clearTimeout(idleTimeout);
+          idleTimeout = setTimeout(() => {
+            cleanup();
+            resolve();
+          }, 500);
+        }
+      };
+
+      chrome.debugger.attach({ tabId }, "1.3")
+        .then(() => chrome.debugger.sendCommand({ tabId }, "Network.enable"))
+        .then(() => {
+          chrome.debugger.onEvent.addListener(listener);
+          idleTimeout = setTimeout(() => {
+            cleanup();
+            resolve();
+          }, 500);
+        })
+        .catch((error) => {
+          cleanup();
+          reject(error);
+        });
+    });
+  }
 }

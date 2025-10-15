@@ -4,6 +4,9 @@
  */
 
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 
 interface Message {
     id?: string;
@@ -94,9 +97,9 @@ export function CopilotChatWindow({
                 {messages.length === 0 ? (
                     <div className="copilot-empty-state">
                         <div className="copilot-empty-icon">🤖</div>
-                        <p>👋 Hi! I'm your AI assistant.</p>
+                        <p>👋 Hi! I'm your autonomous AI assistant.</p>
                         <p className="copilot-empty-subtitle">
-                            I can help you with browsing, tab management, and more.
+                            I can browse, click, fill forms, manage tabs, and execute tasks end-to-end. Just tell me what you need!
                         </p>
                     </div>
                 ) : (
@@ -116,7 +119,15 @@ export function CopilotChatWindow({
 
                                 <div className={`copilot-message-bubble copilot-message-bubble-${message.role || 'assistant'}`}>
                                     <div className="copilot-message-content">
-                                        {message.content || message.text || ''}
+                                        {message.role === 'assistant' ? (
+                                            <div className="markdown-content">
+                                                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                    {message.content || message.text || ''}
+                                                </ReactMarkdown>
+                                            </div>
+                                        ) : (
+                                            message.content || message.text || ''
+                                        )}
                                     </div>
                                 </div>
 

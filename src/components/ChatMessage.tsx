@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import type { ChatMessage as ChatMessageType } from '../db';
 
 interface ChatMessageProps {
@@ -13,7 +16,7 @@ interface ChatMessageProps {
  */
 export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps) {
     const [copied, setCopied] = useState(false);
-    
+
     const handleCopy = async () => {
         if (onCopy) {
             onCopy(message.content);
@@ -27,20 +30,20 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
-    
+
     const formatTime = (timestamp: number) => {
         const date = new Date(timestamp);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
-        
+
         if (isToday) {
-            return date.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
                 minute: '2-digit',
-                hour12: true 
+                hour12: true
             });
         }
-        
+
         return date.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -49,7 +52,7 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
             hour12: true
         });
     };
-    
+
     return (
         <div className={`chat-message ${message.role}`}>
             <div className="message-header">
@@ -58,14 +61,22 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                 </span>
                 <span className="message-time">{formatTime(message.timestamp)}</span>
             </div>
-            
+
             <div className={`message-content ${message.metadata?.error ? 'error' : ''}`}>
-                {message.content}
+                {message.role === 'assistant' ? (
+                    <div className="markdown-content">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                            {message.content}
+                        </ReactMarkdown>
+                    </div>
+                ) : (
+                    message.content
+                )}
             </div>
-            
+
             {message.role === 'assistant' && (
                 <div className="message-actions">
-                    <button 
+                    <button
                         className="action-button"
                         onClick={handleCopy}
                         title="Copy message"
@@ -73,9 +84,9 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                     >
                         {copied ? '✓ Copied' : '📋 Copy'}
                     </button>
-                    
+
                     {onRegenerate && !message.metadata?.error && (
-                        <button 
+                        <button
                             className="action-button"
                             onClick={onRegenerate}
                             title="Regenerate response"
@@ -111,16 +122,16 @@ export function MessageList({ messages, isLoading, onCopy, onRegenerate }: Messa
                     <p>Ask me anything about Chrome AI, web development, or general questions!</p>
                 </div>
             )}
-            
+
             {messages.map((message) => (
-                <ChatMessage 
+                <ChatMessage
                     key={message.id}
                     message={message}
                     onCopy={onCopy}
                     onRegenerate={onRegenerate ? () => onRegenerate(message.id) : undefined}
                 />
             ))}
-            
+
             {isLoading && (
                 <div className="chat-message assistant">
                     <div className="message-header">
