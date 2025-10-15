@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect } from "react";
 import { CopilotKit } from "@copilotkit/react-core";
 import { useCopilotChat, useCopilotReadable } from "@copilotkit/react-core";
-import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
+import { TextMessage, Role, ActionExecutionMessage, ResultMessage } from "@copilotkit/runtime-client-gql";
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import McpServerManager from "./components/McpServerManager";
@@ -17,6 +17,10 @@ import "./styles/mcp-tools.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
+import { db } from "./db";
+
+// Import the messages context hook for persistence
+import { useCopilotMessagesContext } from "@copilotkit/react-core";
 
 /**
  * Inner component that uses CopilotKit hooks
@@ -38,6 +42,9 @@ function CopilotChatContent() {
     isLoading,
     appendMessage,
   } = useCopilotChat();
+
+  // Use messages context for persistence
+  const { messages: allMessages, setMessages } = useCopilotMessagesContext();
 
   // Extract recent actions from messages for context
   const recentActions = visibleMessages
@@ -71,6 +78,64 @@ function CopilotChatContent() {
     const interval = setInterval(updateTabContext, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  // Load messages from IndexedDB on mount
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const storedMessages = await db.chatMessages.orderBy('timestamp').toArray();
+        if (storedMessages.length > 0) {
+          log.info("Loading chat history from DB", { count: storedMessages.length });
+          
+          // Convert DB messages to CopilotKit message format
+          const copilotMessages = storedMessages.map((msg) => {
+            return new TextMessage({
+              id: msg.id,
+              role: msg.role === 'user' ? Role.User : Role.Assistant,
+              content: msg.content,
+              createdAt: new Date(msg.timestamp).toISOString(),
+            });
+          });
+          
+          setMessages(copilotMessages);
+        }
+      } catch (error) {
+        log.error("Failed to load chat history", error);
+      }
+    };
+    
+    loadMessages();
+  }, []); // Only run once on mount
+
+  // Save messages to IndexedDB when they change
+  useEffect(() => {
+    const saveMessages = async () => {
+      if (allMessages.length === 0) return;
+      
+      try {
+        // Clear existing messages and save new ones
+        await db.chatMessages.clear();
+        
+        const dbMessages = allMessages
+          .filter((msg: any) => msg.content && msg.content.trim().length > 0)
+          .map((msg: any) => ({
+            id: msg.id,
+            role: msg.role === Role.User ? 'user' as const : 'assistant' as const,
+            content: msg.content,
+            timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
+          }));
+        
+        if (dbMessages.length > 0) {
+          await db.chatMessages.bulkAdd(dbMessages);
+          log.info("Saved chat history to DB", { count: dbMessages.length });
+        }
+      } catch (error) {
+        log.error("Failed to save chat history", error);
+      }
+    };
+    
+    saveMessages();
+  }, [JSON.stringify(allMessages)]); // Save when messages change
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -249,15 +314,18 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
   // Handle clearing all messages
   const handleClearChat = async () => {
-    if (window.confirm('Are you sure you want to clear the chat history?')) {
-      // Delete all visible messages
-      for (const message of visibleMessages) {
-        try {
-          await deleteMessage(message.id);
-        } catch (error) {
-          console.error('[ClearChat] Error deleting message:', error);
-        }
-      }
+    try {
+      log.info("Clearing chat history");
+      
+      // Clear CopilotKit messages
+      setMessages([]);
+      
+      // Clear IndexedDB messages
+      await db.chatMessages.clear();
+      
+      log.info("Chat history cleared successfully");
+    } catch (error) {
+      log.error("Failed to clear chat history", error);
     }
   };
 
