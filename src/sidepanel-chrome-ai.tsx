@@ -23,6 +23,7 @@ function SidePanel() {
   const [useStreaming, setUseStreaming] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastUserMessageRef = useRef<string>("");
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -118,6 +119,10 @@ You are running in a Chrome extension side panel.`,
     setInputValue("");
     setLoading(true);
 
+    // Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       // Save user message
       const savedUserMsg = await saveChatMessage({
@@ -129,8 +134,8 @@ You are running in a Chrome extension side panel.`,
       let assistantContent = "";
 
       if (useStreaming) {
-        // Use streaming API
-        const stream = session.promptStreaming(userMessage);
+        // Use streaming API with abort signal
+        const stream = session.promptStreaming(userMessage, { signal: abortController.signal });
 
         // Create a placeholder assistant message
         const assistantMsg = await saveChatMessage({
@@ -141,6 +146,11 @@ You are running in a Chrome extension side panel.`,
         setMessages(prev => [...prev, assistantMsg]);
 
         for await (const chunk of stream) {
+          // Check if aborted
+          if (abortController.signal.aborted) {
+            break;
+          }
+
           assistantContent += chunk;
           // Update the message in state
           setMessages(prev =>
@@ -172,8 +182,8 @@ You are running in a Chrome extension side panel.`,
           )
         );
       } else {
-        // Use non-streaming API
-        const result = await session.prompt(userMessage);
+        // Use non-streaming API with abort signal
+        const result = await session.prompt(userMessage, { signal: abortController.signal });
         assistantContent = result;
 
         const assistantMsg = await saveChatMessage({
@@ -185,13 +195,27 @@ You are running in a Chrome extension side panel.`,
     } catch (error: any) {
       console.error('[SidePanel] Error getting AI response:', error);
 
-      const errorMsg = await saveChatMessage({
-        role: 'assistant',
-        content: `Error: ${error.message || 'Failed to get AI response'}`,
-        metadata: { error: true }
-      });
-      setMessages(prev => [...prev, errorMsg]);
+      // Don't show error if it was aborted by user
+      if (error.name === 'AbortError') {
+        console.log('[SidePanel] Request was cancelled by user');
+      } else {
+        const errorMsg = await saveChatMessage({
+          role: 'assistant',
+          content: `Error: ${error.message || 'Failed to get AI response'}`,
+          metadata: { error: true }
+        });
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
+      setLoading(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
       setLoading(false);
     }
   };
@@ -219,11 +243,15 @@ You are running in a Chrome extension side panel.`,
 
     setLoading(true);
 
+    // Create new AbortController for regeneration
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     try {
       let assistantContent = "";
 
       if (useStreaming) {
-        const stream = session.promptStreaming(lastUserMessageRef.current);
+        const stream = session.promptStreaming(lastUserMessageRef.current, { signal: abortController.signal });
 
         const assistantMsg = await saveChatMessage({
           role: 'assistant',
@@ -233,6 +261,11 @@ You are running in a Chrome extension side panel.`,
         setMessages(prev => [...prev, assistantMsg]);
 
         for await (const chunk of stream) {
+          // Check if aborted
+          if (abortController.signal.aborted) {
+            break;
+          }
+
           assistantContent += chunk;
           setMessages(prev =>
             prev.map(msg =>
@@ -257,7 +290,7 @@ You are running in a Chrome extension side panel.`,
           )
         );
       } else {
-        const result = await session.prompt(lastUserMessageRef.current);
+        const result = await session.prompt(lastUserMessageRef.current, { signal: abortController.signal });
         assistantContent = result;
 
         const assistantMsg = await saveChatMessage({
@@ -270,14 +303,18 @@ You are running in a Chrome extension side panel.`,
     } catch (error: any) {
       console.error('[SidePanel] Error regenerating response:', error);
 
-      const errorMsg = await saveChatMessage({
-        role: 'assistant',
-        content: `Error: ${error.message || 'Failed to regenerate response'}`,
-        metadata: { error: true }
-      });
-      setMessages(prev => [...prev, errorMsg]);
+      // Don't show error if it was aborted by user
+      if (error.name !== 'AbortError') {
+        const errorMsg = await saveChatMessage({
+          role: 'assistant',
+          content: `Error: ${error.message || 'Failed to regenerate response'}`,
+          metadata: { error: true }
+        });
+        setMessages(prev => [...prev, errorMsg]);
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -355,14 +392,26 @@ You are running in a Chrome extension side panel.`,
             rows={2}
             disabled={!session || loading}
           />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!inputValue.trim() || !session || loading}
-            aria-label="Send message"
-          >
-            {loading ? '⏳' : '📤'}
-          </button>
+          {loading ? (
+            <button
+              type="button"
+              className="stop-button"
+              onClick={handleStop}
+              aria-label="Stop generation"
+              title="Stop generation"
+            >
+              ⏹️
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="send-button"
+              disabled={!inputValue.trim() || !session}
+              aria-label="Send message"
+            >
+              📤
+            </button>
+          )}
         </div>
       </form>
     </div>

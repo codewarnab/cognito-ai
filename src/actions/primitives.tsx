@@ -112,6 +112,7 @@ export function registerPrimitiveActions() {
       }
     },
     render: ({ args, status, result }) => {
+      console.log("Render navigateTo", { args, status, result });
       if (status === "inProgress") {
         return <ToolCard title="Navigating" subtitle={args.url} state="loading" icon="🧭" />;
       }

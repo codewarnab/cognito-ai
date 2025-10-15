@@ -441,7 +441,7 @@ export function registerInteractionActions() {
 
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          args: [selector, text, clearFirst],
+          args: [selector, text, clearFirst ?? false],
           func: (sel: string, txt: string, clear: boolean) => {
             const element = document.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement;
             if (!element) {
@@ -721,10 +721,10 @@ export function registerInteractionActions() {
                 const a = h3.closest("a") as HTMLAnchorElement | null;
                 if (!a || !a.href) continue;
                 const { href, hostname, path } = normalize(a.href);
-                
+
                 // Skip Google internal links
                 if (hostname.includes("google.")) continue;
-                
+
                 const snippetEl =
                   h3.closest("div.g")?.querySelector(".VwiC3b, .Uroaid, .g7W9Dc") ||
                   h3.parentElement?.parentElement?.querySelector(".VwiC3b");
@@ -765,7 +765,7 @@ export function registerInteractionActions() {
                 if (items.length >= limit) break;
                 const { href, hostname, path } = normalize((a as HTMLAnchorElement).href);
                 if (hostname.includes("bing.")) continue;
-                
+
                 const snippetEl = (a as HTMLElement).closest("li.b_algo")?.querySelector(".b_caption p");
                 items.push({
                   rank: items.length + 1,
@@ -778,11 +778,11 @@ export function registerInteractionActions() {
               }
             }
 
-            return { 
-              success: true, 
+            return {
+              success: true,
               engine: url.includes("bing.") ? "bing" : url.includes("google.") ? "google" : "unknown",
-              count: items.length, 
-              results: items 
+              count: items.length,
+              results: items
             };
           }
         });
@@ -808,10 +808,10 @@ export function registerInteractionActions() {
           return <ToolCard title="Parse Failed" subtitle={result.error} state="error" icon="🔍" />;
         }
         return (
-          <ToolCard 
-            title="Search Results Parsed" 
-            subtitle={`${result.count} results from ${result.engine}`} 
-            state="success" 
+          <ToolCard
+            title="Search Results Parsed"
+            subtitle={`${result.count} results from ${result.engine}`}
+            state="success"
             icon="🔍"
           >
             <div style={{ fontSize: '12px', marginTop: '8px' }}>
@@ -925,10 +925,10 @@ export function registerInteractionActions() {
           return <ToolCard title="Open Failed" subtitle={result.error} state="error" icon="🔗" />;
         }
         return (
-          <ToolCard 
-            title="Search Result Opened" 
-            subtitle={result.title || result.url} 
-            state="success" 
+          <ToolCard
+            title="Search Result Opened"
+            subtitle={result.title || result.url}
+            state="success"
             icon="🔗"
           >
             <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>

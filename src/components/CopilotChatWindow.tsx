@@ -13,6 +13,7 @@ interface Message {
     role?: 'user' | 'assistant' | string;
     content?: string;
     text?: string;
+    generativeUI?: () => React.ReactElement | null;
 }
 
 interface CopilotChatWindowProps {
@@ -25,6 +26,7 @@ interface CopilotChatWindowProps {
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onSettingsClick?: () => void;
+    onStop?: () => void;
 }
 
 export function CopilotChatWindow({
@@ -37,6 +39,7 @@ export function CopilotChatWindow({
     isLoading,
     messagesEndRef,
     onSettingsClick,
+    onStop,
 }: CopilotChatWindowProps) {
     return (
         <div className="copilot-chat-window">
@@ -129,6 +132,12 @@ export function CopilotChatWindow({
                                             message.content || message.text || ''
                                         )}
                                     </div>
+                                    {/* Render generative UI from useFrontendAction/useFrontendTool render functions */}
+                                    {message.role === 'assistant' && message.generativeUI && (
+                                        <div className="copilot-generative-ui">
+                                            {message.generativeUI()}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {message.role === 'user' && (
@@ -167,24 +176,34 @@ export function CopilotChatWindow({
                         className="copilot-input"
                         disabled={isLoading}
                     />
-                    <button
-                        onClick={onSendMessage}
-                        disabled={!input.trim() || isLoading}
-                        className="copilot-send-button"
-                        title="Send message"
-                    >
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
+                    {isLoading && onStop ? (
+                        <button
+                            onClick={onStop}
+                            className="copilot-stop-button"
+                            title="Stop generation"
                         >
-                            <path d="M22 2L11 13" />
-                            <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                        </svg>
-                    </button>
+                            ⏹️
+                        </button>
+                    ) : (
+                        <button
+                            onClick={onSendMessage}
+                            disabled={!input.trim() || isLoading}
+                            className="copilot-send-button"
+                            title="Send message"
+                        >
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <path d="M22 2L11 13" />
+                                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

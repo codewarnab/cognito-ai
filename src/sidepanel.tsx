@@ -27,7 +27,7 @@ function CopilotChatContent() {
   const [input, setInput] = useState('');
   const [showMcp, setShowMcp] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [currentTab, setCurrentTab] = useState<{url?: string, title?: string}>({});
+  const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
 
   // Register modular Copilot actions
   useRegisterAllActions();
@@ -37,6 +37,7 @@ function CopilotChatContent() {
     visibleMessages,
     isLoading,
     appendMessage,
+    stopGeneration,
   } = useCopilotChat();
 
   // Extract recent actions from messages for context
@@ -88,7 +89,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     value: {
       extensionName: "Chrome AI Assistant",
       executionMode: "max-autonomy",
-      
+
       behaviorGuidelines: [
         "NON-REFUSAL POLICY: Attempt any safe, legal request using tools. Only refuse illegal/unsafe/missing-credential tasks.",
         "CONTEXT-FIRST APPROACH: ALWAYS check the current page context before searching externally. If user asks 'who is this?' while on a profile page, read THAT page. Don't blindly search Google.",
@@ -107,7 +108,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
       toolPlaybook: [
         "ANSWERING QUESTIONS: For ANY knowledge question (who/what/where/when/why/how), use SMART CONTEXT-AWARE WORKFLOW below. NEVER say you cannot answer.",
-        
+
         "SMART QUESTION ANSWERING WORKFLOW - CONTEXT-AWARE:",
         "  Step 0: ALWAYS check current page context first using getActiveTab",
         "    - If user asks 'who is this person?' or similar contextual questions, check if current page is relevant:",
@@ -117,7 +118,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         "      • Irrelevant page (e.g., blank, unrelated site) → proceed to Step 1",
         "    - If current page URL/title suggests it contains the answer, readPageContent FIRST before searching",
         "    - Only proceed to web search if current page doesn't have relevant information",
-        
+
         "  Step 1: If current page doesn't answer the question, navigateTo 'https://www.google.com/search?q=' + encodeURIComponent(query)",
         "  Step 2: getSearchResults(maxResults=10) - extracts structured list with rank, title, href, hostname, path, snippet",
         "  Step 3: INTELLIGENTLY SELECT the best result based on the query intent:",
@@ -130,14 +131,14 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         "    - navigateTo(url=result.href) for direct URL navigation",
         "  Step 5: readPageContent to extract the answer",
         "  Step 6: SUGGEST smart follow-ups based on findings (visit other results, related searches, deeper dives)",
-        
+
         "CONTEXT AWARENESS - CRITICAL:",
         "  - ALWAYS consider the current page before searching externally",
         "  - If user asks 'who is this?', 'what is this?', 'explain this' → check current page FIRST",
         "  - If current page is a profile/about page/article → extract info directly, no search needed",
         "  - If user provides context like 'on this page', 'here', 'this person' → MUST check current page",
         "  - Use getActiveTab to see URL/title, then decide: read current page OR search web",
-        
+
         "NAVIGATION: Use 'navigateTo' for URL changes; it auto-reuses tabs and waits for load. Don't navigate twice to same URL.",
         "DOM INSPECTION: Use 'readPageContent' to get page structure before interactions; use 'getSelectedText' for highlighted content.",
         "INTERACTION SEQUENCE: (1) Verify element exists via readPageContent, (2) scrollPage if needed, (3) clickElement/fillInput/pressKey with selector or text, (4) validate via readPageContent/getActiveTab.",
@@ -148,7 +149,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         "MCP TOOLS: When authenticated, use Notion MCP for search/create/update operations on Notion content.",
         "FOLLOW-UP SUGGESTIONS: Analyze search results for URLs, profiles, and related topics. Suggest 1-2 actions such as 'Visit their website?', 'Check their GitHub?', 'Search for recent projects?', or 'Find tutorials?'. Make suggestions specific and actionable.",
         "CONTEXT EXTRACTION: From search results, identify personal/company websites (domains), social profiles (GitHub/Twitter/LinkedIn URLs), related topics to suggest further searches, and content type (article/tutorial/news) to tailor follow-ups.",
-        
+
         "TOOL SELECTION GUIDE:",
         "  - Use getSearchResults when on a Google/Bing search page to parse structured results",
         "  - Use openSearchResult to navigate by rank after getSearchResults",
@@ -205,12 +206,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         availableServers: ["Notion MCP (when authenticated)"],
         instructions: "Use MCP tools when the user requests operations related to connected services like Notion. MCP tools will be automatically available through the CopilotKit integration.",
       },
-      
+
       currentContext: {
         platform: "Chrome Extension",
         location: "Side Panel",
         runMode: "execute-verify-report",
-        activeTab: currentTab.url && currentTab.title 
+        activeTab: currentTab.url && currentTab.title
           ? { url: currentTab.url, title: currentTab.title }
           : undefined,
         recentActions: recentActions.length > 0 ? recentActions : undefined,
@@ -282,6 +283,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         onKeyPress={handleKeyPress}
         onClearChat={handleClearChat}
         onSettingsClick={() => setShowMcp(true)}
+        onStop={stopGeneration}
         isLoading={isLoading}
         messagesEndRef={messagesEndRef}
       />

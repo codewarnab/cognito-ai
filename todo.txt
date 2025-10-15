@@ -2,3 +2,5 @@ Connection Strategy - How to manage SSE connections?
 a) Persistent connections (keep SSE streams alive)
 b) On-demand connections (connect only when tools are needed)
 c) Per-request connections (simplest, may be slower)
+https://www.copilotkit.ai/examples/ai-research
+https://www.copilotkit.ai/examples/travel-planner
