@@ -86,6 +86,7 @@ export function registerPrimitiveActions() {
       { name: "url", type: "string", description: "Absolute URL", required: true }
     ],
     handler: async ({ url }) => {
+      console.log("Hi i am from navigateTo")
       if (!shouldProcess("navigateTo", { url })) {
         return { skipped: true, reason: "duplicate" };
       }
