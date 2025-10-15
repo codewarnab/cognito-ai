@@ -47,33 +47,7 @@ let oauthState: OAuthState | null = null;
 let notionStatus: NotionMcpStatus = { state: 'disconnected' };
 let isEnabled = false;
 
-// ============================================================================
-// Notion MCP OAuth Functions
-// ============================================================================
 
-/**
- * Validate MCP client ID format (should be short alphanumeric, NOT a UUID)
- */
-// function validateMcpClientId(): void {
-//     const clientId = NOTION_CONFIG.OAUTH_CLIENT_ID;
-
-//     // Check if it looks like a UUID (with hyphens)
-//     if (clientId.includes('-') || clientId.length > 30) {
-//         throw new Error(
-//             'Invalid MCP client ID: appears to be an integration UUID. ' +
-//             'Use the MCP client ID from https://developers.notion.com/docs/mcp ' +
-//             '(short format like "Oh46dYkUrzferlRE")'
-//         );
-//     }
-
-//     // Check endpoints are correct
-//     if (NOTION_CONFIG.OAUTH_AUTH_URL.includes('api.notion.com')) {
-//         throw new Error(
-//             'Invalid OAuth endpoint: using api.notion.com instead of mcp.notion.com. ' +
-//             'Update NOTION_CONFIG to use MCP endpoints.'
-//         );
-//     }
-// }
 
 /**
  * Start OAuth flow for Notion MCP with dynamic client registration
@@ -751,101 +725,6 @@ if (chrome.action) {
     });
 }
 
-// ============================================================================
-// Browser Actions Event Listeners
-// ============================================================================
-
-/**
- * Downloads event listener
- * Listen for download state changes to support trackDownload functionality
- */
-chrome.downloads.onChanged.addListener((downloadDelta) => {
-    console.log('[Background] Download changed:', downloadDelta);
-
-    // The actual tracking is handled in downloads.ts via its own listeners
-    // This is just for logging and potential future enhancements
-
-    if (downloadDelta.state?.current === 'complete') {
-        console.log('[Background] Download completed:', downloadDelta.id);
-    } else if (downloadDelta.state?.current === 'interrupted') {
-        console.log('[Background] Download interrupted:', downloadDelta.id, downloadDelta.error);
-    }
-});
-
-/**
- * Debugger detach event listener
- * Clean up when debugger is detached
- */
-chrome.debugger.onDetach.addListener((source, reason) => {
-    console.log('[Background] Debugger detached from tab:', source.tabId, 'reason:', reason);
-
-    // Clean up any tab-specific state if needed
-    // Most cleanup is handled in debugger.ts withDebugger function
-});
-
-/**
- * Debugger event listener
- * Handle debugger events for network capture and other operations
- */
-chrome.debugger.onEvent.addListener((source, method, params) => {
-    // Events are primarily handled by active capture operations in network.ts
-    // This global listener is for logging and potential future enhancements
-
-    if (method === 'Network.requestWillBeSent' || method === 'Network.responseReceived') {
-        console.log('[Background] Network event:', method, source.tabId);
-    }
-});
-
-/**
- * Tab removal handler - cleanup resources
- */
-chrome.tabs.onRemoved.addListener(async (tabId) => {
-    console.log('[Background] Tab removed:', tabId);
-
-    // Clean up any network rules associated with this tab
-    try {
-        const existingRules = await chrome.declarativeNetRequest.getSessionRules();
-        const tabRuleIds = existingRules
-            .filter((rule) => rule.condition.tabIds?.includes(tabId))
-            .map((rule) => rule.id);
-
-        if (tabRuleIds.length > 0) {
-            await chrome.declarativeNetRequest.updateSessionRules({
-                removeRuleIds: tabRuleIds,
-            });
-            console.log('[Background] Cleaned up network rules for tab:', tabId);
-        }
-    } catch (error) {
-        console.error('[Background] Error cleaning up tab rules:', error);
-    }
-});
-
-/**
- * Alarm listener for periodic cleanup tasks
- */
-chrome.alarms.onAlarm.addListener((alarm) => {
-    console.log('[Background] Alarm triggered:', alarm.name);
-
-    if (alarm.name === 'cleanup-expired-sessions') {
-        // Perform periodic cleanup of expired sessions, old downloads, etc.
-        console.log('[Background] Running periodic cleanup...');
-
-        // Clean up any stale debugger attachments
-        chrome.debugger.getTargets().then((targets) => {
-            targets.forEach((target) => {
-                if (target.attached && target.tabId !== undefined) {
-                    // Check if tab still exists
-                    chrome.tabs.get(target.tabId).catch(() => {
-                        // Tab doesn't exist, detach debugger
-                        chrome.debugger.detach({ tabId: target.tabId! }).catch(() => { });
-                    });
-                }
-            });
-        }).catch((error) => {
-            console.error('[Background] Error during cleanup:', error);
-        });
-    }
-});
 
 // Create cleanup alarm (runs every hour)
 chrome.alarms.create('cleanup-expired-sessions', {

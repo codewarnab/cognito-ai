@@ -324,60 +324,18 @@ async function waitForNavigation(
   tabId: number,
   strategy: 'load' | 'networkidle'
 ): Promise<void> {
-  if (strategy === 'load') {
-    // Wait for tab to finish loading
-    return new Promise((resolve) => {
-      const listener = (
-        updatedTabId: number,
-        changeInfo: chrome.tabs.TabChangeInfo
-      ) => {
-        if (updatedTabId === tabId && changeInfo.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(listener);
-          resolve();
-        }
-      };
-      chrome.tabs.onUpdated.addListener(listener);
-    });
-  } else {
-    // Network idle strategy - wait for no network activity for 500ms
-    // This requires debugger API
-    return new Promise((resolve, reject) => {
-      let idleTimeout: NodeJS.Timeout;
-
-      const cleanup = () => {
-        clearTimeout(idleTimeout);
-        chrome.debugger.onEvent.removeListener(listener);
-        chrome.debugger.detach({ tabId }).catch(() => { });
-      };
-
-      const listener = (
-        source: chrome.debugger.Debuggee,
-        method: string
-      ) => {
-        if (source.tabId !== tabId) return;
-
-        if (method === 'Network.loadingFinished' || method === 'Network.loadingFailed') {
-          clearTimeout(idleTimeout);
-          idleTimeout = setTimeout(() => {
-            cleanup();
-            resolve();
-          }, 500);
-        }
-      };
-
-      chrome.debugger.attach({ tabId }, "1.3")
-        .then(() => chrome.debugger.sendCommand({ tabId }, "Network.enable"))
-        .then(() => {
-          chrome.debugger.onEvent.addListener(listener);
-          idleTimeout = setTimeout(() => {
-            cleanup();
-            resolve();
-          }, 500);
-        })
-        .catch((error) => {
-          cleanup();
-          reject(error);
-        });
-    });
-  }
+  // Both strategies now use the same 'load' approach
+  // Network idle strategy has been removed (requires debugger API)
+  return new Promise((resolve) => {
+    const listener = (
+      updatedTabId: number,
+      changeInfo: chrome.tabs.TabChangeInfo
+    ) => {
+      if (updatedTabId === tabId && changeInfo.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(listener);
+        resolve();
+      }
+    };
+    chrome.tabs.onUpdated.addListener(listener);
+  });
 }
