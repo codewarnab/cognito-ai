@@ -31,7 +31,7 @@ export function ToolRenderer() {
                 />
             );
         },
-    });
+    } as any);
 
     // This component doesn't render anything directly
     return null;

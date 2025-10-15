@@ -1,41 +1,23 @@
-import { useCopilotAction } from "@copilotkit/react-core";
+import React from "react";
+import { useFrontendTool } from "@copilotkit/react-core";
 import { createLogger } from "../logger";
-import { useRef } from "react";
+import { shouldProcess } from "./useActionDeduper";
+import { ToolCard, CodeBlock, Keycap, Badge } from "../components/ui/ToolCard";
 
 export function registerInteractionActions() {
   const log = createLogger("Actions-Interactions");
-  
-  // Prevent rapid repeated actions (debounce mechanism)
-  const lastActionRef = useRef<{ name: string; params: string; timestamp: number } | null>(null);
-  const DEBOUNCE_MS = 2000; // 2 second debounce
 
-  const isDuplicateAction = (actionName: string, params: any): boolean => {
-    const paramsStr = JSON.stringify(params);
-    const now = Date.now();
-    
-    if (lastActionRef.current) {
-      const { name, params: lastParams, timestamp } = lastActionRef.current;
-      const timeSince = now - timestamp;
-      
-      if (name === actionName && lastParams === paramsStr && timeSince < DEBOUNCE_MS) {
-        log.warn(`Duplicate ${actionName} blocked (too soon: ${timeSince}ms)`, params);
-        return true;
-      }
-    }
-    
-    lastActionRef.current = { name: actionName, params: paramsStr, timestamp: now };
-    return false;
-  };
-
-  useCopilotAction({
+  useFrontendTool({
     name: "clickElement",
     description: "Click an element on the active page by selector, text, or aria-label.",
-    parameters: [ { name: "selector", type: "string", description: "CSS selector or text/aria-label", required: true } ],
+    parameters: [
+      { name: "selector", type: "string", description: "CSS selector or text/aria-label", required: true }
+    ],
     handler: async ({ selector }) => {
-      if (isDuplicateAction("clickElement", { selector })) {
-        return { error: "Duplicate action blocked - please wait before retrying", blocked: true };
+      if (!shouldProcess("clickElement", { selector })) {
+        return { skipped: true, reason: "duplicate" };
       }
-      
+
       try {
         log.info("clickElement", { selector });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -66,28 +48,57 @@ export function registerInteractionActions() {
         return result || { error: "Failed to execute click" };
       } catch (error) {
         const errorMsg = (error as Error)?.message || String(error);
-        
+
         // Don't retry if frame was removed (page is navigating)
         if (errorMsg.includes('Frame with ID') || errorMsg.includes('was removed')) {
-          log.warn('[CopilotAction] Frame removed during click - page may be navigating', { selector });
+          log.warn('[FrontendTool] Frame removed during click - page may be navigating', { selector });
           return { error: "Page is navigating - action cancelled to prevent loops", frameRemoved: true };
         }
-        
-        log.error('[CopilotAction] Error clicking element:', error);
+
+        log.error('[FrontendTool] Error clicking element:', error);
         return { error: "Failed to click element. Make sure you have permission to access this page." };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Clicking Element" subtitle={args.selector} state="loading" icon="👆" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return (
+            <ToolCard title="Click Failed" subtitle={result.error} state="error" icon="👆">
+              {result.suggestion && <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>{result.suggestion}</div>}
+            </ToolCard>
+          );
+        }
+        return (
+          <ToolCard title="Element Clicked" subtitle={result.message || 'Click successful'} state="success" icon="👆">
+            {result.clicked && (
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                <Badge label={result.clicked.tagName} variant="default" />
+                {result.clicked.text && <div style={{ marginTop: '4px', opacity: 0.7 }}>{result.clicked.text}</div>}
+              </div>
+            )}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "scrollPage",
     description: "Scroll page up/down/top/bottom or to a specific element.",
     parameters: [
-      { name: "direction", type: "string", description: "'up'|'down'|'top'|'bottom'|'to-element'", required: true },
+      { name: "direction", type: "string", description: "Scroll direction: 'up'|'down'|'top'|'bottom'|'to-element'", required: true },
       { name: "amount", type: "number", description: "Pixels to scroll (for up/down). Default 500", required: false },
       { name: "selector", type: "string", description: "CSS selector for 'to-element'", required: false }
     ],
     handler: async ({ direction, amount, selector }) => {
+      if (!shouldProcess("scrollPage", { direction, amount, selector })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       try {
         log.debug("scrollPage", { direction, amount, selector });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -122,13 +133,34 @@ export function registerInteractionActions() {
         log.info("scrollPage result", result);
         return result || { success: true, message: `Scrolling ${direction}` };
       } catch (error) {
-        log.error('[CopilotAction] Error scrolling page:', error);
+        log.error('[FrontendTool] Error scrolling page:', error);
         return { error: "Failed to scroll page. Make sure you have permission to access this page." };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        const scrollInfo = args.direction === "to-element" && args.selector 
+          ? `to ${args.selector}`
+          : args.amount ? `${args.direction} ${args.amount}px` : args.direction;
+        return <ToolCard title="Scrolling Page" subtitle={scrollInfo} state="loading" icon="📜" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Scroll Failed" subtitle={result.error} state="error" icon="📜" />;
+        }
+        return (
+          <ToolCard title="Page Scrolled" subtitle={result.message || `Scrolled ${result.direction}`} state="success" icon="📜">
+            {result.scrollDistance !== undefined && (
+              <Badge label={`${result.scrollDistance}px`} variant="success" />
+            )}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "fillInput",
     description: "Fill a text input, textarea, or form field on the page.",
     parameters: [
@@ -136,10 +168,10 @@ export function registerInteractionActions() {
       { name: "value", type: "string", description: "Text value to fill", required: true }
     ],
     handler: async ({ selector, value }) => {
-      if (isDuplicateAction("fillInput", { selector, value })) {
-        return { error: "Duplicate action blocked - please wait before retrying", blocked: true };
+      if (!shouldProcess("fillInput", { selector, value })) {
+        return { skipped: true, reason: "duplicate" };
       }
-      
+
       try {
         log.info("fillInput", { selector, length: value?.length });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -165,24 +197,56 @@ export function registerInteractionActions() {
         return result || { error: "Failed to fill input" };
       } catch (error) {
         const errorMsg = (error as Error)?.message || String(error);
-        
+
         // Don't retry if frame was removed (page is navigating)
         if (errorMsg.includes('Frame with ID') || errorMsg.includes('was removed')) {
-          log.warn('[CopilotAction] Frame removed during fillInput - page may be navigating', { selector });
+          log.warn('[FrontendTool] Frame removed during fillInput - page may be navigating', { selector });
           return { error: "Page is navigating - action cancelled to prevent loops", frameRemoved: true };
         }
-        
-        log.error('[CopilotAction] Error filling input:', error);
+
+        log.error('[FrontendTool] Error filling input:', error);
         return { error: "Failed to fill input field. Make sure you have permission to access this page." };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Filling Input" subtitle={args.selector} state="loading" icon="✍️" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return (
+            <ToolCard title="Fill Failed" subtitle={result.error} state="error" icon="✍️">
+              {result.suggestion && <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>{result.suggestion}</div>}
+            </ToolCard>
+          );
+        }
+        const maskedValue = result.filledWith?.includes('password') || args.selector?.includes('password') 
+          ? '••••••' 
+          : result.filledWith;
+        return (
+          <ToolCard title="Input Filled" subtitle={`Field: ${result.field?.placeholder || result.field?.name || args.selector}`} state="success" icon="✍️">
+            <div style={{ fontSize: '12px', marginTop: '4px' }}>
+              <Badge label={result.field?.tagName || 'INPUT'} variant="default" />
+              {maskedValue && <div style={{ marginTop: '4px', opacity: 0.7 }}>Value: {maskedValue}</div>}
+            </div>
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "focusElement",
     description: "Focus an element by selector.",
-    parameters: [ { name: "selector", type: "string", description: "Element selector", required: true } ],
+    parameters: [
+      { name: "selector", type: "string", description: "Element selector", required: true }
+    ],
     handler: async ({ selector }) => {
+      if (!shouldProcess("focusElement", { selector })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       try {
         log.debug("focusElement", { selector });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -199,17 +263,36 @@ export function registerInteractionActions() {
         });
         return results[0]?.result || { error: "No result" };
       } catch (error) {
-        log.error('[CopilotAction] Error focusing element:', error);
+        log.error('[FrontendTool] Error focusing element:', error);
         return { error: "Failed to focus element" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Focusing Element" subtitle={args.selector} state="loading" icon="🎯" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Focus Failed" subtitle={result.error} state="error" icon="🎯" />;
+        }
+        return <ToolCard title="Element Focused" subtitle={args.selector} state="success" icon="🎯" />;
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "pressKey",
     description: "Dispatch keyboard events to active element or a target selector.",
-    parameters: [ { name: "key", type: "string", description: "Key to press (e.g., Enter)", required: true }, { name: "selector", type: "string", description: "Optional target selector", required: false } ],
+    parameters: [
+      { name: "key", type: "string", description: "Key to press (e.g., Enter)", required: true },
+      { name: "selector", type: "string", description: "Optional target selector", required: false }
+    ],
     handler: async ({ key, selector }) => {
+      if (!shouldProcess("pressKey", { key, selector })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       try {
         log.debug("pressKey", { key, selector });
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -231,13 +314,34 @@ export function registerInteractionActions() {
         });
         return results[0]?.result || { error: "No result" };
       } catch (error) {
-        log.error('[CopilotAction] Error pressing key:', error);
+        log.error('[FrontendTool] Error pressing key:', error);
         return { error: "Failed to press key" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return (
+          <ToolCard title="Pressing Key" subtitle={args.selector || 'active element'} state="loading" icon="⌨️">
+            <Keycap keyName={args.key} />
+          </ToolCard>
+        );
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Key Press Failed" subtitle={result.error} state="error" icon="⌨️" />;
+        }
+        return (
+          <ToolCard title="Key Pressed" state="success" icon="⌨️">
+            <Keycap keyName={args.key} />
+            {args.selector && <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>Target: {args.selector}</div>}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "extractText",
     description: "Extract text from page or selected elements.",
     parameters: [
@@ -246,6 +350,10 @@ export function registerInteractionActions() {
       { name: "limit", type: "number", description: "Max characters (default 5000)", required: false }
     ],
     handler: async ({ selector, all, limit }) => {
+      if (!shouldProcess("extractText", { selector, all, limit })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       const max = typeof limit === 'number' && limit > 0 ? limit : 5000;
       try {
         log.debug("extractText", { selector, all, max });
@@ -275,9 +383,37 @@ export function registerInteractionActions() {
         });
         return results[0]?.result || { error: "No result" };
       } catch (error) {
-        log.error('[CopilotAction] Error extracting text:', error);
+        log.error('[FrontendTool] Error extracting text:', error);
         return { error: "Failed to extract text" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Extracting Text" subtitle={args.selector || 'entire page'} state="loading" icon="📋" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Extraction Failed" subtitle={result.error} state="error" icon="📋" />;
+        }
+        const charCount = result.text?.length || 0;
+        return (
+          <ToolCard 
+            title="Text Extracted" 
+            subtitle={`${charCount} characters${result.count ? ` from ${result.count} elements` : ''}`} 
+            state="success" 
+            icon="📋"
+          >
+            {result.truncated && <Badge label="truncated" variant="warning" />}
+            {result.text && (
+              <details className="tool-details">
+                <summary>View text</summary>
+                <CodeBlock code={result.text.substring(0, 500) + (result.text.length > 500 ? '...' : '')} />
+              </details>
+            )}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 }

@@ -1,43 +1,25 @@
-import { useCopilotAction } from "@copilotkit/react-core";
+import React from "react";
+import { useFrontendTool } from "@copilotkit/react-core";
 import { createLogger } from "../logger";
 import { useActionHelpers } from "./useActionHelpers";
-import { useRef } from "react";
+import { shouldProcess } from "./useActionDeduper";
+import { ToolCard, Badge } from "../components/ui/ToolCard";
 
 export function registerPrimitiveActions() {
   const log = createLogger("Actions-Primitives");
   const { urlsEqual, focusTab } = useActionHelpers();
-  
-  // Prevent rapid repeated actions (debounce mechanism)
-  const lastActionRef = useRef<{ name: string; params: string; timestamp: number } | null>(null);
-  const DEBOUNCE_MS = 2000; // 2 second debounce
 
-  const isDuplicateAction = (actionName: string, params: any): boolean => {
-    const paramsStr = JSON.stringify(params);
-    const now = Date.now();
-    
-    if (lastActionRef.current) {
-      const { name, params: lastParams, timestamp } = lastActionRef.current;
-      const timeSince = now - timestamp;
-      
-      if (name === actionName && lastParams === paramsStr && timeSince < DEBOUNCE_MS) {
-        log.warn(`Duplicate ${actionName} blocked (too soon: ${timeSince}ms)`, params);
-        return true;
-      }
-    }
-    
-    lastActionRef.current = { name: actionName, params: paramsStr, timestamp: now };
-    return false;
-  };
-
-  useCopilotAction({
+  useFrontendTool({
     name: "navigateTo",
     description: "Navigate to a URL. If already on it, reload. If another tab has it, switch to it.",
-    parameters: [ { name: "url", type: "string", description: "Absolute URL", required: true } ],
+    parameters: [
+      { name: "url", type: "string", description: "Absolute URL", required: true }
+    ],
     handler: async ({ url }) => {
-      if (isDuplicateAction("navigateTo", { url })) {
-        return { error: "Duplicate navigation blocked - please wait before retrying", blocked: true };
+      if (!shouldProcess("navigateTo", { url })) {
+        return { skipped: true, reason: "duplicate" };
       }
-      
+
       try {
         log.info("navigateTo", { url });
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -55,17 +37,40 @@ export function registerPrimitiveActions() {
         await chrome.tabs.update(activeTab.id, { url });
         return { success: true, navigated: true, tabId: activeTab.id, url };
       } catch (error) {
-        log.error('[CopilotAction] Error navigating:', error);
+        log.error('[FrontendTool] Error navigating:', error);
         return { error: "Failed to navigate" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Navigating" subtitle={args.url} state="loading" icon="🧭" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Navigation Failed" subtitle={result.error} state="error" icon="🧭" />;
+        }
+        const action = result.reloaded ? "reloaded" : result.switched ? "switched" : "navigated";
+        return (
+          <ToolCard title="Navigation Complete" subtitle={result.url} state="success" icon="🧭">
+            <Badge label={action} variant="success" />
+          </ToolCard>
+        );
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "waitForPageLoad",
     description: "Wait until document.readyState is 'complete' or timeout",
-    parameters: [ { name: "timeoutMs", type: "number", description: "Timeout (default 10000)", required: false } ],
+    parameters: [
+      { name: "timeoutMs", type: "number", description: "Timeout in milliseconds (default 10000)", required: false }
+    ],
     handler: async ({ timeoutMs }) => {
+      if (!shouldProcess("waitForPageLoad", { timeoutMs })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       const timeout = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : 10000;
       try {
         log.debug("waitForPageLoad", { timeout });
@@ -87,21 +92,41 @@ export function registerPrimitiveActions() {
         });
         return results[0]?.result || { error: "No result" };
       } catch (error) {
-        log.error('[CopilotAction] Error waiting for page load:', error);
+        log.error('[FrontendTool] Error waiting for page load:', error);
         return { error: "Failed waiting for page load" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        const timeoutSec = ((args.timeoutMs || 10000) / 1000).toFixed(1);
+        return <ToolCard title="Waiting for Page Load" subtitle={`Timeout: ${timeoutSec}s`} state="loading" icon="⏳" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Wait Failed" subtitle={result.error} state="error" icon="⏳" />;
+        }
+        if (result.timeout) {
+          return <ToolCard title="Page Load Timeout" subtitle={`State: ${result.state}`} state="error" icon="⏳" />;
+        }
+        return <ToolCard title="Page Loaded" subtitle="Document is ready" state="success" icon="⏳" />;
+      }
+      return null;
+    },
   });
 
-  useCopilotAction({
+  useFrontendTool({
     name: "waitForSelector",
     description: "Wait for an element matching selector to exist (optionally visible)",
     parameters: [
       { name: "selector", type: "string", description: "CSS selector", required: true },
-      { name: "timeoutMs", type: "number", description: "Timeout (default 10000)", required: false },
-      { name: "visibleOnly", type: "boolean", description: "If true, require visibility", required: false }
+      { name: "timeoutMs", type: "number", description: "Timeout in milliseconds (default 10000)", required: false },
+      { name: "visibleOnly", type: "boolean", description: "If true, require element to be visible", required: false }
     ],
     handler: async ({ selector, timeoutMs, visibleOnly }) => {
+      if (!shouldProcess("waitForSelector", { selector, timeoutMs, visibleOnly })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
       const timeout = typeof timeoutMs === 'number' && timeoutMs > 0 ? timeoutMs : 10000;
       const requireVisible = Boolean(visibleOnly);
       try {
@@ -137,9 +162,30 @@ export function registerPrimitiveActions() {
         });
         return results[0]?.result || { error: "No result" };
       } catch (error) {
-        log.error('[CopilotAction] Error waiting for selector:', error);
+        log.error('[FrontendTool] Error waiting for selector:', error);
         return { error: "Failed waiting for selector" };
       }
-    }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        const timeoutSec = ((args.timeoutMs || 10000) / 1000).toFixed(1);
+        return (
+          <ToolCard title="Waiting for Element" subtitle={args.selector} state="loading" icon="🎯">
+            {args.visibleOnly && <Badge label="visible only" variant="default" />}
+            <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>Timeout: {timeoutSec}s</div>
+          </ToolCard>
+        );
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Wait Failed" subtitle={result.error} state="error" icon="🎯" />;
+        }
+        if (result.timeout) {
+          return <ToolCard title="Element Not Found" subtitle={`Selector: ${args.selector}`} state="error" icon="🎯" />;
+        }
+        return <ToolCard title="Element Found" subtitle={args.selector} state="success" icon="🎯" />;
+      }
+      return null;
+    },
   });
 }
