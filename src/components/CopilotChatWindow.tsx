@@ -7,6 +7,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import { VoiceInput } from '../audio/VoiceInput';
 
 interface Message {
     id?: string;
@@ -18,13 +19,15 @@ interface Message {
 interface CopilotChatWindowProps {
     messages: Message[];
     input: string;
-    setInput: (value: string) => void;
+    setInput: React.Dispatch<React.SetStateAction<string>>;
     onSendMessage: () => void;
     onKeyPress: (e: React.KeyboardEvent) => void;
     onClearChat: () => void;
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onSettingsClick?: () => void;
+    onThreadsClick?: () => void;
+    onNewThreadClick?: () => void;
 }
 
 export function CopilotChatWindow({
@@ -37,6 +40,8 @@ export function CopilotChatWindow({
     isLoading,
     messagesEndRef,
     onSettingsClick,
+    onThreadsClick,
+    onNewThreadClick,
 }: CopilotChatWindowProps) {
     return (
         <div className="copilot-chat-window">
@@ -49,6 +54,44 @@ export function CopilotChatWindow({
                         <p>Powered by CopilotKit</p>
                     </div>
                     <div className="copilot-header-actions">
+                        {onThreadsClick && (
+                            <button
+                                className="threads-button"
+                                onClick={onThreadsClick}
+                                title="Chat History"
+                                aria-label="View chat history"
+                            >
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                            </button>
+                        )}
+                        {onNewThreadClick && (
+                            <button
+                                className="threads-button"
+                                onClick={onNewThreadClick}
+                                title="New Chat"
+                                aria-label="Start new chat"
+                            >
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                            </button>
+                        )}
                         {onSettingsClick && (
                             <button
                                 className="copilot-settings-button"
@@ -167,24 +210,31 @@ export function CopilotChatWindow({
                         className="copilot-input"
                         disabled={isLoading}
                     />
-                    <button
-                        onClick={onSendMessage}
-                        disabled={!input.trim() || isLoading}
-                        className="copilot-send-button"
-                        title="Send message"
-                    >
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
+                    <div className="copilot-input-actions">
+                        <VoiceInput
+                            onTranscript={(text) => setInput(text)}
+                            onRecordingComplete={onSendMessage}
+                            className="copilot-voice-input"
+                        />
+                        <button
+                            onClick={onSendMessage}
+                            disabled={!input.trim() || isLoading}
+                            className="copilot-send-button"
+                            title="Send message"
                         >
-                            <path d="M22 2L11 13" />
-                            <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                        </svg>
-                    </button>
+                            <svg
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                            >
+                                <path d="M22 2L11 13" />
+                                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

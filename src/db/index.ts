@@ -25,10 +25,21 @@ export interface Settings {
 }
 
 /**
+ * Chat thread record
+ */
+export interface ChatThread {
+    id: string;
+    title: string;
+    createdAt: number;
+    updatedAt: number;
+}
+
+/**
  * Chat message record for side panel chat UI
  */
 export interface ChatMessage {
     id: string;
+    threadId: string;
     role: 'user' | 'assistant';
     content: string;
     timestamp: number;
@@ -46,6 +57,7 @@ export interface ChatMessage {
 export class AppDB extends Dexie {
     settings!: Table<SettingRecord, string>;
     chatMessages!: Table<ChatMessage, string>;
+    chatThreads!: Table<ChatThread, string>;
 
     constructor() {
         super('ChatDB');
@@ -54,6 +66,13 @@ export class AppDB extends Dexie {
         this.version(1).stores({
             settings: 'key',
             chatMessages: 'id, timestamp'
+        });
+
+        // Version 2: Add threads support
+        this.version(2).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp',
+            chatThreads: 'id, createdAt, updatedAt'
         });
     }
 }
@@ -106,6 +125,57 @@ export async function updateSettings(updates: Partial<Settings>): Promise<void> 
 }
 
 // ============================================================================
+// Chat Threads API
+// ============================================================================
+
+/**
+ * Create a new chat thread
+ */
+export async function createThread(firstMessage?: string): Promise<ChatThread> {
+    const thread: ChatThread = {
+        id: crypto.randomUUID(),
+        title: firstMessage 
+            ? (firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : ''))
+            : 'New Chat',
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    };
+    await db.chatThreads.add(thread);
+    return thread;
+}
+
+/**
+ * Get all threads ordered by most recent
+ */
+export async function getAllThreads(): Promise<ChatThread[]> {
+    return await db.chatThreads.orderBy('updatedAt').reverse().toArray();
+}
+
+/**
+ * Get a specific thread
+ */
+export async function getThread(threadId: string): Promise<ChatThread | undefined> {
+    return await db.chatThreads.get(threadId);
+}
+
+/**
+ * Update thread's updatedAt timestamp
+ */
+export async function updateThreadTimestamp(threadId: string): Promise<void> {
+    await db.chatThreads.update(threadId, { updatedAt: Date.now() });
+}
+
+/**
+ * Delete a thread and all its messages
+ */
+export async function deleteThread(threadId: string): Promise<void> {
+    await db.transaction('rw', [db.chatThreads, db.chatMessages], async () => {
+        await db.chatThreads.delete(threadId);
+        await db.chatMessages.where('threadId').equals(threadId).delete();
+    });
+}
+
+// ============================================================================
 // Chat Messages API
 // ============================================================================
 
@@ -119,18 +189,32 @@ export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timesta
         timestamp: Date.now()
     };
     await db.chatMessages.add(fullMessage);
+    
+    // Update thread timestamp
+    await updateThreadTimestamp(message.threadId);
+    
     return fullMessage;
 }
 
 /**
- * Load chat history (all messages ordered by timestamp)
+ * Load chat history for a specific thread
  */
-export async function loadChatHistory(): Promise<ChatMessage[]> {
-    return await db.chatMessages.orderBy('timestamp').toArray();
+export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
+    return await db.chatMessages
+        .where('threadId')
+        .equals(threadId)
+        .sortBy('timestamp');
 }
 
 /**
- * Clear all chat messages
+ * Clear all chat messages for a specific thread
+ */
+export async function clearThreadMessages(threadId: string): Promise<void> {
+    await db.chatMessages.where('threadId').equals(threadId).delete();
+}
+
+/**
+ * Clear all chat messages (legacy - clears all threads)
  */
 export async function clearChatHistory(): Promise<void> {
     await db.chatMessages.clear();
@@ -151,9 +235,10 @@ export async function deleteChatMessage(id: string): Promise<void> {
  * Clear all data from the database
  */
 export async function wipeAllData(): Promise<void> {
-    await db.transaction('rw', [db.settings, db.chatMessages], async () => {
+    await db.transaction('rw', [db.settings, db.chatMessages, db.chatThreads], async () => {
         await db.settings.clear();
         await db.chatMessages.clear();
+        await db.chatThreads.clear();
     });
 }
 
@@ -163,15 +248,18 @@ export async function wipeAllData(): Promise<void> {
 export async function getDBStats(): Promise<{
     chatMessageCount: number;
     settingsCount: number;
+    threadCount: number;
 }> {
-    const [chatMessageCount, settingsCount] = await Promise.all([
+    const [chatMessageCount, settingsCount, threadCount] = await Promise.all([
         db.chatMessages.count(),
-        db.settings.count()
+        db.settings.count(),
+        db.chatThreads.count()
     ]);
 
     return {
         chatMessageCount,
-        settingsCount
+        settingsCount,
+        threadCount
     };
 }
 

@@ -1,0 +1,315 @@
+/**
+ * Voice Input Styles
+ * Microphone button, recording animations, and status indicators
+ */
+
+/* Voice Input Container */
+.voice-input {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Microphone Button */
+.voice-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--bg-secondary, #2a2a2a);
+  border: 2px solid var(--border-color, #404040);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  overflow: visible;
+}
+
+.voice-button:hover {
+  background: var(--bg-hover, #333);
+  border-color: var(--primary-color, #007acc);
+  transform: scale(1.05);
+}
+
+.voice-button:active {
+  transform: scale(0.95);
+}
+
+.voice-button.recording {
+  background: #dc2626;
+  border-color: #ef4444;
+  animation: recording-pulse 1.5s ease-in-out infinite;
+}
+
+.voice-button.recording.countdown-active {
+  animation: none;
+  background: #f59e0b;
+  border-color: #fbbf24;
+}
+
+.voice-button.error {
+  background: #dc2626;
+  border-color: #ef4444;
+}
+
+.voice-button.checking {
+  background: #f59e0b;
+  border-color: #fbbf24;
+  cursor: wait;
+}
+
+/* Microphone Icon */
+.microphone-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #ffffff);
+  z-index: 1;
+}
+
+.microphone-icon .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.voice-button.recording .microphone-icon {
+  color: #ffffff;
+}
+
+/* Pulse Ring Animation */
+.pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  opacity: 0;
+}
+
+.pulse-ring-delay {
+  animation-delay: 0.75s;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes recording-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Countdown Overlay */
+.countdown-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.countdown-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+  animation: countdown-pulse 1s ease-in-out infinite;
+  line-height: 1;
+}
+
+@keyframes countdown-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.95;
+  }
+}
+
+/* Countdown Ring */
+.countdown-ring {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 44px;
+  height: 44px;
+  pointer-events: none;
+  z-index: 5;
+  transform: rotate(-90deg);
+}
+
+.countdown-ring circle {
+  stroke: #fbbf24;
+  transition: stroke-dasharray 0.1s linear;
+}
+
+/* Voice Error */
+.voice-error,
+.voice-input-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  animation: shake 0.5s ease-in-out;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  white-space: nowrap;
+  z-index: 1000;
+}
+
+.voice-error-icon {
+  font-size: 16px;
+}
+
+.voice-error-text {
+  font-size: 12px;
+  color: #fca5a5;
+  font-weight: 500;
+  flex: 1;
+}
+
+.voice-settings-button {
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 4px;
+  color: #fca5a5;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.voice-settings-button:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* Recording Indicator Dot */
+.recording-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  margin-left: 8px;
+  animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .voice-status {
+    min-width: calc(100vw - 40px);
+    max-width: calc(100vw - 40px);
+  }
+  
+  .voice-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .microphone-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Dark Mode Adjustments */
+@media (prefers-color-scheme: dark) {
+  .voice-button {
+    background: #1e1e1e;
+    border-color: #333;
+  }
+  
+  .voice-button:hover {
+    background: #2a2a2a;
+  }
+  
+  .voice-status {
+    background: #1a1a1a;
+    border-color: #333;
+  }
+  
+  .interim-transcript,
+  .silence-indicator {
+    background: #0f0f0f;
+  }
+}
+
+/* Accessibility */
+.voice-button:focus-visible {
+  outline: 2px solid var(--primary-color, #007acc);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-button,
+  .pulse-ring,
+  .voice-status,
+  .transcript-text {
+    animation: none;
+  }
+  
+  .voice-button.recording {
+    animation: none;
+  }
+}

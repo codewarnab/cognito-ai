@@ -11,13 +11,19 @@ import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import McpServerManager from "./components/McpServerManager";
 import { ToolRenderer } from "./components/ToolRenderer";
+import { ThreadList } from "./components/ThreadList";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
-import { db } from "./db";
+import { 
+  db, 
+  createThread, 
+  loadThreadMessages, 
+  clearThreadMessages 
+} from "./db";
 
 // Import the messages context hook for persistence
 import { useCopilotMessagesContext } from "@copilotkit/react-core";
@@ -30,8 +36,10 @@ function CopilotChatContent() {
   const log = createLogger("SidePanel-CopilotKit");
   const [input, setInput] = useState('');
   const [showMcp, setShowMcp] = useState(false);
+  const [showThreads, setShowThreads] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentTab, setCurrentTab] = useState<{url?: string, title?: string}>({});
+  const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
 
   // Register modular Copilot actions
   useRegisterAllActions();
@@ -79,13 +87,21 @@ function CopilotChatContent() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load messages from IndexedDB on mount
+  // Load messages from IndexedDB on mount or thread change
   useEffect(() => {
     const loadMessages = async () => {
       try {
-        const storedMessages = await db.chatMessages.orderBy('timestamp').toArray();
+        if (!currentThreadId) {
+          // Create a new thread if none exists
+          const thread = await createThread();
+          setCurrentThreadId(thread.id);
+          log.info("Created new thread", { threadId: thread.id });
+          return;
+        }
+
+        const storedMessages = await loadThreadMessages(currentThreadId);
         if (storedMessages.length > 0) {
-          log.info("Loading chat history from DB", { count: storedMessages.length });
+          log.info("Loading thread messages from DB", { threadId: currentThreadId, count: storedMessages.length });
           
           // Convert DB messages to CopilotKit message format
           const copilotMessages = storedMessages.map((msg) => {
@@ -100,26 +116,27 @@ function CopilotChatContent() {
           setMessages(copilotMessages);
         }
       } catch (error) {
-        log.error("Failed to load chat history", error);
+        log.error("Failed to load thread messages", error);
       }
     };
     
     loadMessages();
-  }, []); // Only run once on mount
+  }, [currentThreadId]); // Reload when thread changes
 
   // Save messages to IndexedDB when they change
   useEffect(() => {
     const saveMessages = async () => {
-      if (allMessages.length === 0) return;
+      if (allMessages.length === 0 || !currentThreadId) return;
       
       try {
-        // Clear existing messages and save new ones
-        await db.chatMessages.clear();
+        // Clear existing messages for this thread and save new ones
+        await clearThreadMessages(currentThreadId);
         
         const dbMessages = allMessages
           .filter((msg: any) => msg.content && msg.content.trim().length > 0)
           .map((msg: any) => ({
             id: msg.id,
+            threadId: currentThreadId,
             role: msg.role === Role.User ? 'user' as const : 'assistant' as const,
             content: msg.content,
             timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
@@ -127,15 +144,15 @@ function CopilotChatContent() {
         
         if (dbMessages.length > 0) {
           await db.chatMessages.bulkAdd(dbMessages);
-          log.info("Saved chat history to DB", { count: dbMessages.length });
+          log.info("Saved thread messages to DB", { threadId: currentThreadId, count: dbMessages.length });
         }
       } catch (error) {
-        log.error("Failed to save chat history", error);
+        log.error("Failed to save thread messages", error);
       }
     };
     
     saveMessages();
-  }, [JSON.stringify(allMessages)]); // Save when messages change
+  }, [JSON.stringify(allMessages), currentThreadId]); // Save when messages or thread changes
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -294,6 +311,21 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     }
 
     log.info("SendMessage", { length: trimmedInput.length });
+    
+    // Update thread title if this is the first message
+    if (currentThreadId && allMessages.length === 0) {
+      try {
+        const title = trimmedInput.slice(0, 40) + (trimmedInput.length > 40 ? '...' : '');
+        await db.chatThreads.update(currentThreadId, { 
+          title,
+          updatedAt: Date.now() 
+        });
+        log.info("Updated thread title", { threadId: currentThreadId, title });
+      } catch (error) {
+        log.error("Failed to update thread title", error);
+      }
+    }
+    
     setInput('');
 
     await appendMessage(new TextMessage({
@@ -312,26 +344,56 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     }
   };
 
-  // Handle clearing all messages
+  // Handle clearing all messages for current thread
   const handleClearChat = async () => {
+    if (!currentThreadId) return;
+    
     try {
-      log.info("Clearing chat history");
+      log.info("Clearing thread messages", { threadId: currentThreadId });
       
       // Clear CopilotKit messages
       setMessages([]);
       
-      // Clear IndexedDB messages
-      await db.chatMessages.clear();
+      // Clear IndexedDB messages for this thread
+      await clearThreadMessages(currentThreadId);
       
-      log.info("Chat history cleared successfully");
+      log.info("Thread messages cleared successfully");
     } catch (error) {
-      log.error("Failed to clear chat history", error);
+      log.error("Failed to clear thread messages", error);
     }
   };
 
-  // Render MCP Manager or Chat Window
+  // Handle creating a new thread
+  const handleNewThread = async () => {
+    try {
+      const thread = await createThread();
+      setCurrentThreadId(thread.id);
+      setMessages([]);
+      log.info("Created new thread", { threadId: thread.id });
+    } catch (error) {
+      log.error("Failed to create new thread", error);
+    }
+  };
+
+  // Handle selecting a thread
+  const handleThreadSelect = async (threadId: string) => {
+    setCurrentThreadId(threadId);
+  };
+
+  // Render MCP Manager or Thread List or Chat Window
   if (showMcp) {
     return <McpManager onBack={() => setShowMcp(false)} />;
+  }
+
+  if (showThreads) {
+    return (
+      <ThreadList
+        currentThreadId={currentThreadId}
+        onThreadSelect={handleThreadSelect}
+        onNewThread={handleNewThread}
+        onBack={() => setShowThreads(false)}
+      />
+    );
   }
 
   return (
@@ -350,6 +412,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         onKeyPress={handleKeyPress}
         onClearChat={handleClearChat}
         onSettingsClick={() => setShowMcp(true)}
+        onThreadsClick={() => setShowThreads(true)}
+        onNewThreadClick={handleNewThread}
         isLoading={isLoading}
         messagesEndRef={messagesEndRef}
       />

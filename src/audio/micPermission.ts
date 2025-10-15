@@ -1,0 +1,137 @@
+/**
+ * Microphone Permission Helper
+ * Handles requesting and checking microphone access
+ */
+
+import { createLogger } from '../logger';
+
+const log = createLogger('MicPermission');
+
+export interface MicPermissionResult {
+  granted: boolean;
+  error?: string;
+  errorType?: 'not-allowed' | 'not-found' | 'not-supported' | 'unknown';
+}
+
+/**
+ * Request microphone permission from the user
+ */
+export async function requestMicrophonePermission(): Promise<MicPermissionResult> {
+  try {
+    // Check if getUserMedia is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      log.warn('getUserMedia not supported');
+      return {
+        granted: false,
+        error: 'Microphone access is not supported in this browser',
+        errorType: 'not-supported',
+      };
+    }
+
+    // Request microphone access
+    log.info('Requesting microphone permission...');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    // Stop the stream immediately - we just needed permission
+    stream.getTracks().forEach(track => track.stop());
+    
+    log.info('Microphone permission granted');
+    return { granted: true };
+    
+  } catch (error: any) {
+    log.error('Microphone permission error', error);
+    
+    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+      return {
+        granted: false,
+        error: 'Microphone access was denied. Please allow microphone access in your browser settings.',
+        errorType: 'not-allowed',
+      };
+    }
+    
+    if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      return {
+        granted: false,
+        error: 'No microphone found. Please connect a microphone and try again.',
+        errorType: 'not-found',
+      };
+    }
+    
+    return {
+      granted: false,
+      error: error.message || 'Failed to access microphone',
+      errorType: 'unknown',
+    };
+  }
+}
+
+/**
+ * Check if microphone permission is already granted
+ */
+export async function checkMicrophonePermission(): Promise<'granted' | 'denied' | 'prompt' | 'unsupported'> {
+  try {
+    // Check if Permissions API is available
+    if (!navigator.permissions || !navigator.permissions.query) {
+      log.warn('Permissions API not supported, will need to request directly');
+      return 'prompt';
+    }
+
+    // Query microphone permission status
+    const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+    log.info('Microphone permission status:', result.state);
+    
+    return result.state as 'granted' | 'denied' | 'prompt';
+    
+  } catch (error) {
+    log.warn('Could not check microphone permission', error);
+    return 'prompt';
+  }
+}
+
+/**
+ * Open browser settings to enable microphone
+ */
+export function openMicrophoneSettings() {
+  // In Chrome extensions, we can't directly open settings
+  // But we can provide instructions to the user
+  const instructions = `
+To enable microphone access:
+
+1. Click the lock icon (🔒) or site settings icon in the address bar
+2. Find "Microphone" in the permissions list
+3. Change it to "Allow"
+4. Refresh the page or restart the extension
+
+Alternatively:
+- Go to chrome://settings/content/microphone
+- Make sure microphone access is allowed for this extension
+  `.trim();
+  
+  log.info('Microphone settings instructions:', instructions);
+  return instructions;
+}
+
+/**
+ * Request permission with user-friendly UI
+ */
+export async function requestMicrophoneWithUI(): Promise<MicPermissionResult> {
+  // First check if already granted
+  const status = await checkMicrophonePermission();
+  
+  if (status === 'granted') {
+    log.info('Microphone permission already granted');
+    return { granted: true };
+  }
+  
+  if (status === 'denied') {
+    log.warn('Microphone permission was previously denied');
+    return {
+      granted: false,
+      error: 'Microphone access was previously denied. Please enable it in browser settings.',
+      errorType: 'not-allowed',
+    };
+  }
+  
+  // Request permission
+  return requestMicrophonePermission();
+}
