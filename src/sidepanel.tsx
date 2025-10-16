@@ -61,6 +61,14 @@ function CopilotChatContent() {
     return typeof content === 'string' && content.trim().length > 0;
   });
 
+  // Map SDK messages to UI message shape expected by CopilotChatWindow
+  const uiMessages = messages.map((m: any) => ({
+    id: m.id,
+    role: (m.role as 'user' | 'assistant') ?? (m.sender as 'user' | 'assistant') ?? 'assistant',
+    content: typeof m.content === 'string' ? m.content : String(m.content ?? ''),
+    generativeUI: m.generativeUI,
+  }));
+
   // Track current tab context
   useEffect(() => {
     const updateTabContext = async () => {
@@ -428,7 +436,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
       <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
 
       <CopilotChatWindow
-        messages={messages}
+        messages={uiMessages}
         input={input}
         setInput={setInput}
         onSendMessage={handleSendMessage}

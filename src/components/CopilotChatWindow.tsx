@@ -9,10 +9,10 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 
 interface Message {
-	id?: string;
-	role: 'user' | 'assistant';
-	content: string;
-	generativeUI?: () => React.ReactElement | null;
+    id?: string;
+    role: 'user' | 'assistant';
+    content: string;
+    generativeUI?: () => React.ReactElement | null;
 }
 
 interface CopilotChatWindowProps {

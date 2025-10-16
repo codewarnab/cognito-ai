@@ -1,4 +1,4 @@
-import { registerTabActions } from "./tabs";
+import { registerTabActions } from "./tabs/index";
 import { registerSelectionActions } from "./selection";
 import { registerInteractionActions } from "./interactions";
 import { registerPrimitiveActions } from "./primitives/index";
