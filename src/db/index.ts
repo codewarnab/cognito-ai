@@ -103,6 +103,34 @@ export async function setSetting(key: string, value: any): Promise<void> {
 }
 
 /**
+ * Get the last active thread ID
+ */
+export async function getLastActiveThreadId(): Promise<string | null> {
+    return await getSetting<string>('lastActiveThreadId') || null;
+}
+
+/**
+ * Set the last active thread ID
+ */
+export async function setLastActiveThreadId(threadId: string): Promise<void> {
+    await setSetting('lastActiveThreadId', threadId);
+}
+
+/**
+ * Get the browser session ID (changes on restart)
+ */
+export async function getBrowserSessionId(): Promise<string | null> {
+    return await getSetting<string>('browserSessionId') || null;
+}
+
+/**
+ * Set the browser session ID
+ */
+export async function setBrowserSessionId(sessionId: string): Promise<void> {
+    await setSetting('browserSessionId', sessionId);
+}
+
+/**
  * Get all settings as a single object
  */
 export async function getAllSettings(): Promise<Settings> {

@@ -23,7 +23,11 @@ import {
   createThread, 
   loadThreadMessages, 
   clearThreadMessages,
-  updateThreadTitle
+  updateThreadTitle,
+  getLastActiveThreadId,
+  setLastActiveThreadId,
+  getBrowserSessionId,
+  setBrowserSessionId
 } from "./db";
 import { generateThreadTitle } from "./utils/summarizer";
 
@@ -42,6 +46,7 @@ function CopilotChatContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentTab, setCurrentTab] = useState<{url?: string, title?: string}>({});
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+  const sessionIdRef = useRef<string>(Date.now().toString());
 
   // Register modular Copilot actions
   useRegisterAllActions();
@@ -94,9 +99,40 @@ function CopilotChatContent() {
     const loadMessages = async () => {
       try {
         if (!currentThreadId) {
-          // Create a new thread if none exists
+          // Use the session ID from ref (generated once per panel mount)
+          const currentSessionId = sessionIdRef.current;
+          const savedSessionId = await getBrowserSessionId();
+          
+          // Check if this is a new browser session (browser restart)
+          const isBrowserRestart = !savedSessionId || Math.abs(parseInt(currentSessionId) - parseInt(savedSessionId)) > 60000;
+          
+          if (isBrowserRestart) {
+            // Browser was restarted (more than 1 minute gap) - create a new thread
+            log.info("Browser restart detected - creating new thread");
+            const thread = await createThread();
+            setCurrentThreadId(thread.id);
+            await setLastActiveThreadId(thread.id);
+            await setBrowserSessionId(currentSessionId);
+            log.info("Created new thread for new session", { threadId: thread.id });
+            return;
+          }
+          
+          // Panel was just closed/reopened - try to restore last active thread
+          const lastThreadId = await getLastActiveThreadId();
+          
+          if (lastThreadId) {
+            log.info("Restoring last active thread", { threadId: lastThreadId });
+            setCurrentThreadId(lastThreadId);
+            // Update session timestamp to keep session alive
+            await setBrowserSessionId(currentSessionId);
+            return;
+          }
+          
+          // No last thread found - create a new one
           const thread = await createThread();
           setCurrentThreadId(thread.id);
+          await setLastActiveThreadId(thread.id);
+          await setBrowserSessionId(currentSessionId);
           log.info("Created new thread", { threadId: thread.id });
           return;
         }
@@ -117,6 +153,10 @@ function CopilotChatContent() {
           
           setMessages(copilotMessages);
         }
+        
+        // Update the last active thread whenever thread changes
+        await setLastActiveThreadId(currentThreadId);
+        
       } catch (error) {
         log.error("Failed to load thread messages", error);
       }
@@ -378,6 +418,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
       const thread = await createThread();
       setCurrentThreadId(thread.id);
       setMessages([]);
+      await setLastActiveThreadId(thread.id);
       log.info("Created new thread", { threadId: thread.id });
     } catch (error) {
       log.error("Failed to create new thread", error);
@@ -387,6 +428,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
   // Handle selecting a thread
   const handleThreadSelect = async (threadId: string) => {
     setCurrentThreadId(threadId);
+    await setLastActiveThreadId(threadId);
   };
 
   // Render MCP Manager or Thread List or Chat Window
