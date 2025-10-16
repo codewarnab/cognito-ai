@@ -315,17 +315,423 @@ export function registerTabActions() {
       return null;
     },
   });
+
+
+  useFrontendTool({
+    name: "organizeTabsByContext",
+    description: "Intelligently organize tabs by analyzing their content and context. Groups related tabs together even if they're from different websites. For example, all tabs about 'React hooks' will be grouped together regardless of whether they're from GitHub, StackOverflow, or documentation sites.",
+    parameters: [
+      {
+        name: "maxGroups",
+        type: "number",
+        description: "Maximum number of groups to create (default: 5)",
+        required: false
+      }
+    ],
+    handler: async ({ maxGroups = 5 }) => {
+      if (!shouldProcess("organizeTabsByContext", { maxGroups })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.debug("organizeTabsByContext invoked", { maxGroups });
+
+        // Check if Tab Groups API is available
+        if (!chrome.tabs.group || !chrome.tabGroups) {
+          log.error("Tab Groups API not available");
+          return {
+            error: "Tab Groups API not available. This feature requires Chrome 89 or later.",
+            details: "chrome.tabGroups is undefined"
+          };
+        }
+
+        // Get all tabs
+        const tabs = await chrome.tabs.query({});
+
+        // Filter out special URLs
+        const validTabs = tabs.filter(tab => {
+          if (!tab.url) return false;
+          try {
+            const url = new URL(tab.url);
+            return url.protocol !== 'chrome:' && url.protocol !== 'chrome-extension:';
+          } catch {
+            return false;
+          }
+        });
+
+        if (validTabs.length === 0) {
+          return { error: "No valid tabs to organize" };
+        }
+
+        // Prepare tab information for AI analysis
+        const tabsInfo = validTabs.map(tab => ({
+          id: tab.id!,
+          title: tab.title || '',
+          url: tab.url || '',
+          domain: new URL(tab.url!).hostname
+        }));
+
+        // Return a special marker that tells CopilotKit to use AI for grouping
+        // The AI will analyze the tabs and suggest groups
+        return {
+          needsAIAnalysis: true,
+          tabs: tabsInfo,
+          maxGroups,
+          message: "Please analyze these tabs and group them by topic/context. Consider the title, URL, and domain to identify related work or research. Return a JSON array of groups where each group has: {name: string, description: string, tabIds: number[]}. Group tabs that are related to the same topic, project, or research, even if they're from different websites."
+        };
+
+      } catch (error) {
+        log.error('[FrontendTool] Error organizing tabs by context:', error);
+        return { error: "Failed to organize tabs by context", details: String(error) };
+      }
+    },
+    render: ({ status, result, args }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Analyzing Tabs" subtitle="AI is analyzing tab content and context..." state="loading" icon="🧠" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Organization Failed" subtitle={result.error} state="error" icon="🧠" />;
+        }
+        if (result.needsAIAnalysis) {
+          return (
+            <ToolCard title="Tabs Ready for Analysis" subtitle={`${result.tabs.length} tabs prepared`} state="success" icon="🧠">
+              <div style={{ fontSize: '12px', marginTop: '8px', opacity: 0.8 }}>
+                AI will now analyze and group these tabs by context...
+              </div>
+            </ToolCard>
+          );
+        }
+        if (result.groups) {
+          return (
+            <ToolCard
+              title="Tabs Organized by Context"
+              subtitle={`Created ${result.groups.length} contextual group(s)`}
+              state="success"
+              icon="🧠"
+            >
+              {result.groups.length > 0 && (
+                <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                  {result.groups.map((group: any, idx: number) => (
+                    <div key={idx} style={{
+                      padding: '8px',
+                      marginBottom: '6px',
+                      background: 'rgba(0,0,0,0.05)',
+                      borderRadius: '4px'
+                    }}>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>{group.name}</div>
+                      {group.description && (
+                        <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px' }}>
+                          {group.description}
+                        </div>
+                      )}
+                      <div style={{ opacity: 0.6 }}>{group.tabCount} tab(s)</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ToolCard>
+          );
+        }
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "applyTabGroups",
+    description: "Apply AI-suggested tab groups. This is called after organizeTabsByContext with the AI's grouping suggestions.",
+    parameters: [
+      {
+        name: "groups",
+        type: "object",
+        description: "Array of group objects with name, description, and tabIds",
+        required: true
+      }
+    ],
+    handler: async ({ groups }) => {
+      if (!shouldProcess("applyTabGroups", { groups })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.debug("applyTabGroups invoked", { groupCount: Array.isArray(groups) ? groups.length : 0 });
+
+        // Check if Tab Groups API is available
+        if (!chrome.tabs.group || !chrome.tabGroups) {
+          return { error: "Tab Groups API not available" };
+        }
+
+        const groupsArray = Array.isArray(groups) ? groups : [];
+        const colors: chrome.tabGroups.ColorEnum[] = ['blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange', 'grey'];
+        const createdGroups = [];
+
+        for (let i = 0; i < groupsArray.length; i++) {
+          const group = groupsArray[i];
+
+          if (!group.tabIds || !Array.isArray(group.tabIds) || group.tabIds.length === 0) {
+            log.debug("Skipping group with no tabs", { group });
+            continue;
+          }
+
+          try {
+            // Create the group
+            const groupId = await chrome.tabs.group({ tabIds: group.tabIds });
+
+            // Update with name and color
+            await chrome.tabGroups.update(groupId, {
+              title: group.name || `Group ${i + 1}`,
+              color: colors[i % colors.length],
+              collapsed: true
+            });
+
+            createdGroups.push({
+              name: group.name,
+              description: group.description,
+              tabCount: group.tabIds.length,
+              groupId
+            });
+
+            log.info("Created contextual tab group", {
+              name: group.name,
+              tabCount: group.tabIds.length
+            });
+
+          } catch (groupError) {
+            log.error("Failed to create group", { group, error: String(groupError) });
+          }
+        }
+
+        return {
+          success: true,
+          groupsCreated: createdGroups.length,
+          groups: createdGroups
+        };
+
+      } catch (error) {
+        log.error('[FrontendTool] Error applying tab groups:', error);
+        return { error: "Failed to apply tab groups", details: String(error) };
+      }
+    },
+    render: ({ status, result }) => {
+      if (status === "inProgress") {
+        return <ToolCard title="Applying Groups" subtitle="Creating tab groups..." state="loading" icon="✨" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Failed to Apply Groups" subtitle={result.error} state="error" icon="✨" />;
+        }
+        return (
+          <ToolCard
+            title="Groups Applied"
+            subtitle={`Successfully created ${result.groupsCreated} group(s)`}
+            state="success"
+            icon="✨"
+          >
+            {result.groups && result.groups.length > 0 && (
+              <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                {result.groups.map((group: any, idx: number) => (
+                  <div key={idx} style={{
+                    padding: '8px',
+                    marginBottom: '6px',
+                    background: 'rgba(0,0,0,0.05)',
+                    borderRadius: '4px'
+                  }}>
+                    <div style={{ fontWeight: 600, marginBottom: '2px' }}>{group.name}</div>
+                    {group.description && (
+                      <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px' }}>
+                        {group.description}
+                      </div>
+                    )}
+                    <div style={{ opacity: 0.6 }}>{group.tabCount} tab(s)</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
+  });
+
+  useFrontendTool({
+    name: "ungroupTabs",
+    description: "Ungroup tabs by removing them from their tab groups. Can ungroup all tabs, specific groups by name/ID, or tabs from multiple groups at once. Tabs remain open but are no longer grouped.",
+    parameters: [
+      {
+        name: "groupIds",
+        type: "object",
+        description: "Optional array of group IDs to ungroup. If not provided, ungroups ALL tab groups. Can be group IDs (numbers) or group names (strings).",
+        required: false
+      },
+      {
+        name: "ungroupAll",
+        type: "boolean",
+        description: "If true, ungroups all tab groups at once. Default is true if no groupIds specified.",
+        required: false
+      }
+    ],
+    handler: async ({ groupIds, ungroupAll = true }) => {
+      if (!shouldProcess("ungroupTabs", { groupIds, ungroupAll })) {
+        return { skipped: true, reason: "duplicate" };
+      }
+
+      try {
+        log.debug("ungroupTabs invoked", { groupIds, ungroupAll });
+
+        // Check if Tab Groups API is available
+        if (!chrome.tabs.group || !chrome.tabGroups) {
+          log.error("Tab Groups API not available");
+          return {
+            error: "Tab Groups API not available. This feature requires Chrome 89 or later.",
+            details: "chrome.tabGroups is undefined"
+          };
+        }
+
+        let targetGroupIds: number[] = [];
+        let ungroupedGroups: { id: number; title: string; tabCount: number }[] = [];
+
+        // Determine which groups to ungroup
+        if (ungroupAll && !groupIds) {
+          // Ungroup all groups
+          const allGroups = await chrome.tabGroups.query({});
+          targetGroupIds = allGroups.map(g => g.id);
+          log.debug("Ungrouping all groups", { count: targetGroupIds.length });
+        } else if (groupIds && Array.isArray(groupIds)) {
+          // Ungroup specific groups
+          const allGroups = await chrome.tabGroups.query({});
+
+          for (const groupIdOrName of groupIds) {
+            if (typeof groupIdOrName === 'number') {
+              // It's a group ID
+              targetGroupIds.push(groupIdOrName);
+            } else if (typeof groupIdOrName === 'string') {
+              // It's a group name - find the group by title
+              const matchingGroup = allGroups.find(g =>
+                g.title?.toLowerCase().includes(groupIdOrName.toLowerCase())
+              );
+              if (matchingGroup) {
+                targetGroupIds.push(matchingGroup.id);
+              } else {
+                log.warn("Group not found by name", { name: groupIdOrName });
+              }
+            }
+          }
+          log.debug("Ungrouping specific groups", { targetGroupIds });
+        } else {
+          return { error: "Invalid parameters. Provide groupIds array or set ungroupAll to true." };
+        }
+
+        if (targetGroupIds.length === 0) {
+          return {
+            success: true,
+            message: "No groups to ungroup",
+            ungroupedCount: 0,
+            groups: []
+          };
+        }
+
+        // Get tabs for each group before ungrouping
+        for (const groupId of targetGroupIds) {
+          try {
+            // Get group info
+            const groupInfo = await chrome.tabGroups.get(groupId);
+
+            // Get tabs in this group
+            const tabsInGroup = await chrome.tabs.query({ groupId });
+
+            // Ungroup the tabs
+            const tabIds = tabsInGroup.map(t => t.id!).filter(id => id !== undefined);
+            if (tabIds.length > 0) {
+              await chrome.tabs.ungroup(tabIds);
+
+              ungroupedGroups.push({
+                id: groupId,
+                title: groupInfo.title || `Group ${groupId}`,
+                tabCount: tabIds.length
+              });
+
+              log.info("Ungrouped tabs", {
+                groupId,
+                groupTitle: groupInfo.title,
+                tabCount: tabIds.length
+              });
+            }
+          } catch (groupError) {
+            log.error("Failed to ungroup", { groupId, error: String(groupError) });
+            // Continue with other groups even if one fails
+          }
+        }
+
+        return {
+          success: true,
+          ungroupedCount: ungroupedGroups.length,
+          totalTabsUngrouped: ungroupedGroups.reduce((sum, g) => sum + g.tabCount, 0),
+          groups: ungroupedGroups
+        };
+
+      } catch (error) {
+        log.error('[FrontendTool] Error ungrouping tabs:', error);
+        return { error: "Failed to ungroup tabs", details: String(error) };
+      }
+    },
+    render: ({ args, status, result }) => {
+      if (status === "inProgress") {
+        const subtitle = args.ungroupAll ? "Ungrouping all groups..." :
+          args.groupIds ? `Ungrouping ${Array.isArray(args.groupIds) ? args.groupIds.length : 1} group(s)...` :
+            "Ungrouping...";
+        return <ToolCard title="Ungrouping Tabs" subtitle={subtitle} state="loading" icon="🔓" />;
+      }
+      if (status === "complete" && result) {
+        if (result.error) {
+          return <ToolCard title="Ungroup Failed" subtitle={result.error} state="error" icon="🔓" />;
+        }
+
+        if (result.ungroupedCount === 0) {
+          return <ToolCard title="No Groups to Ungroup" subtitle={result.message} state="success" icon="🔓" />;
+        }
+
+        return (
+          <ToolCard
+            title="Tabs Ungrouped"
+            subtitle={`Ungrouped ${result.ungroupedCount} group(s), ${result.totalTabsUngrouped} tab(s) freed`}
+            state="success"
+            icon="🔓"
+          >
+            {result.groups && result.groups.length > 0 && (
+              <div style={{ fontSize: '12px', marginTop: '8px' }}>
+                {result.groups.map((group: any, idx: number) => (
+                  <div key={idx} style={{
+                    padding: '6px 8px',
+                    marginBottom: '4px',
+                    background: 'rgba(0,0,0,0.05)',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{ fontWeight: 500 }}>{group.title}</span>
+                    <span style={{ opacity: 0.6 }}>{group.tabCount} tab(s)</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ToolCard>
+        );
+      }
+      return null;
+    },
+  });
 }
 
-/**
- * Wait for navigation to complete
- */
+
+
 async function waitForNavigation(
   tabId: number,
   strategy: 'load' | 'networkidle'
 ): Promise<void> {
   // Both strategies now use the same 'load' approach
-  // Network idle strategy has been removed (requires debugger API)
   return new Promise((resolve) => {
     const listener = (
       updatedTabId: number,

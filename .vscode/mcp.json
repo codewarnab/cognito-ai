@@ -1,7 +1,11 @@
 {
   "servers": {
     "CopilotKit MCP": {
-      "url": "https://mcp.copilotkit.ai/sse"
+    "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mcp.copilotkit.ai"
+      ]
     }
   }
 }

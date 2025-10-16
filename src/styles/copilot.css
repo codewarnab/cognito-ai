@@ -389,6 +389,22 @@
     }
 }
 
+/* Markdown Content Styles for Copilot */
+.markdown-content a {
+    color: var(--color-secondary, #1264FF);
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.markdown-content a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.markdown-content a:visited {
+    color: var(--color-secondary, #1264FF);
+}
+
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
     .copilot-chat-window {
@@ -401,6 +417,14 @@
         --border-color: #404040;
         --primary-color: #3b82f6;
         --primary-hover: #2563eb;
+    }
+    
+    .markdown-content a {
+        color: var(--color-secondary, #1264FF);
+    }
+    
+    .markdown-content a:hover {
+        opacity: 0.8;
     }
 }
 
