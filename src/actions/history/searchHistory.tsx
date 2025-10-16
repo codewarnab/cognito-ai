@@ -6,6 +6,15 @@ import { ToolCard } from "../../components/ui/ToolCard";
 
 const log = createLogger("Actions-History-Search");
 
+interface HistorySearchResult {
+    id: string;
+    title: string;
+    url: string;
+    lastVisitTime?: number;
+    visitCount: number;
+    typedCount: number;
+}
+
 export function useSearchHistory() {
     useFrontendTool({
         name: "searchHistory",
@@ -94,8 +103,8 @@ export function useSearchHistory() {
                     >
                         {result.results && result.results.length > 0 && (
                             <div style={{ marginTop: '8px' }}>
-                                {result.results.map((item: any, idx: number) => (
-                                    <div key={idx} style={{
+                                {result.results.map((item: HistorySearchResult, idx: number) => (
+                                    <div key={item.id} style={{
                                         padding: '8px',
                                         marginBottom: '6px',
                                         background: 'rgba(0,0,0,0.03)',

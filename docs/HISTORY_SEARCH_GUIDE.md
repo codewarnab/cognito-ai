@@ -49,8 +49,8 @@ The AI automatically detects when your question is about past browsing and:
    - "yesterday" → last 24 hours
    - "last week" → last 7 days (168 hours)
    - "recently" → last 48 hours
-   - "this morning" → last 12 hours
-   - "today" → current day
+   - "this morning" → from local start-of-day (00:00) to 12:00 local; if current time is before 12:00, from local start-of-day (00:00) to now
+   - "today" → since local midnight (00:00) of the current day
 
 2. **Searches Intelligently**: Uses relevant keywords from your question to search history
 
@@ -61,6 +61,7 @@ The AI automatically detects when your question is about past browsing and:
 ## Privacy
 
 - All history searches happen **locally** in your browser
+- User queries are processed by CopilotKit Cloud; no browsing history is sent to external servers, only your questions
 - No history data is sent to external servers
 - The AI only accesses history when relevant to your queries
 - You maintain full control over your browser history through Chrome's settings
@@ -120,7 +121,7 @@ The history search is naturally integrated into the AI's workflow:
 
 **User:** "Show me what I browsed this morning"
 
-**AI:** *Uses getRecentHistory with 12-hour window, displays chronological list of pages*
+**AI:** *Uses getRecentHistory for the local calendar morning window (from local midnight to 12:00, or to now if before noon), and displays a chronological list of pages*
 
 ---
 

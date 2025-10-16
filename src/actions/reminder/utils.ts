@@ -10,18 +10,46 @@ export function parseDateTimeToEpoch(dateTimeStr: string): number {
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Check if a time is specified
-        const timeMatch = str.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
-        if (timeMatch) {
-            let hours = parseInt(timeMatch[1], 10);
-            const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-            const meridiem = timeMatch[3]?.toLowerCase();
+		// Check if a time is specified (explicit patterns only):
+		// - "at 9", "at 9:30", "9am", "9:30 am", "14:00"
+		// Avoid matching stray numbers like "2" in "2 days"
+		const timeMatch = str.match(/\b(?:(at)\s*)?(\d{1,2})(?::([0-5]\d))?(?:\s*(am|pm))?\b/i);
+		if (timeMatch) {
+			const hasAt = !!timeMatch[1];
+			let hours = parseInt(timeMatch[2], 10);
+			const minutes = timeMatch[3] ? parseInt(timeMatch[3], 10) : 0;
+			const meridiem = timeMatch[4] ? timeMatch[4].toLowerCase() : undefined;
 
-            if (meridiem === "pm" && hours < 12) hours += 12;
-            if (meridiem === "am" && hours === 12) hours = 0;
+			// Require the time to be explicit: must include either leading "at", a meridiem, or a colon with minutes
+			const isExplicit = hasAt || !!meridiem || typeof timeMatch[3] !== "undefined";
+			let isValid = isExplicit && minutes >= 0 && minutes <= 59;
 
-            tomorrow.setHours(hours, minutes, 0, 0);
-        } else {
+			if (isValid) {
+				if (meridiem) {
+					// 12-hour clock must be 1-12
+					if (hours < 1 || hours > 12) {
+						isValid = false;
+					} else {
+						// convert to 24-hour
+						if (meridiem === "pm" && hours < 12) hours += 12;
+						if (meridiem === "am" && hours === 12) hours = 0;
+					}
+				} else {
+					// 24-hour clock must be 0-23
+					if (hours < 0 || hours > 23) {
+						isValid = false;
+					}
+				}
+			}
+
+			if (isValid) {
+				tomorrow.setHours(hours, minutes, 0, 0);
+			} else {
+				// Invalid/ambiguous time -> ignore and use default below
+				// no-op here, default set after this block
+			}
+		} 
+		if (!timeMatch || (timeMatch && !(!!timeMatch[1] || !!timeMatch[4] || typeof timeMatch[3] !== "undefined"))) {
             // Default to 9:00 AM
             tomorrow.setHours(9, 0, 0, 0);
         }
@@ -29,12 +57,30 @@ export function parseDateTimeToEpoch(dateTimeStr: string): number {
         return tomorrow.getTime();
     }
 
-    // Handle "in X hours/minutes/days"
-    const inMatch = str.match(/in\s+(\d+)\s+(minute|hour|day)s?/i);
-    if (inMatch) {
-        const amount = parseInt(inMatch[1], 10);
-        const unit = inMatch[2].toLowerCase();
-        const future = new Date(now);
+	// Handle "in X hours/minutes/days"
+	const inMatch = str.match(/in\s+(\d+)\s+(minute|hour|day)s?/i);
+	if (inMatch) {
+		const amount = parseInt(inMatch[1], 10);
+		const unit = inMatch[2].toLowerCase();
+
+		// Validate parsed amount: must be > 0 and within sensible bounds per unit
+		// Minutes: <= 60, Hours: <= 720 (30 days), Days: <= 3650 (~10 years)
+		if (!Number.isFinite(amount) || amount <= 0) {
+			const tomorrowDefault = new Date(now);
+			tomorrowDefault.setDate(tomorrowDefault.getDate() + 1);
+			tomorrowDefault.setHours(9, 0, 0, 0);
+			return tomorrowDefault.getTime();
+		}
+		const upperBounds: Record<string, number> = { minute: 60, hour: 720, day: 3650 };
+		const maxForUnit = upperBounds[unit];
+		if (typeof maxForUnit === "number" && amount > maxForUnit) {
+			const tomorrowDefault = new Date(now);
+			tomorrowDefault.setDate(tomorrowDefault.getDate() + 1);
+			tomorrowDefault.setHours(9, 0, 0, 0);
+			return tomorrowDefault.getTime();
+		}
+
+		const future = new Date(now);
 
         switch (unit) {
             case "minute":
@@ -85,9 +131,6 @@ export function parseDateTimeToEpoch(dateTimeStr: string): number {
         // Fall through
     }
 
-    // Default: tomorrow at 9 AM
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(9, 0, 0, 0);
-    return tomorrow.getTime();
+    // If we reach here, parsing failed; do not silently default
+    throw new Error(`Unable to parse date/time string: ${dateTimeStr}`);
 }

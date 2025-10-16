@@ -22,7 +22,7 @@ export function registerFormInteractions() {
             try {
                 log.info("fillByLabel", { label });
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (!tab.id) return { error: "No active tab" };
+                if (tab.id == null) return { error: "No active tab" };
 
                 const results = await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
@@ -52,9 +52,17 @@ export function registerFormInteractions() {
                             return { success: false, error: `Input not found for label: ${lbl}` };
                         }
 
-                        input.value = val;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
+						// Use the native value setter to ensure React-controlled inputs update correctly
+						const proto = Object.getPrototypeOf(input);
+						const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+						if (descriptor && typeof descriptor.set === 'function') {
+							descriptor.set.call(input, val);
+						} else {
+							// Fallback in case the descriptor/setter is unavailable
+							(input as any).value = val;
+						}
+						input.dispatchEvent(new Event('input', { bubbles: true }));
+						input.dispatchEvent(new Event('change', { bubbles: true }));
 
                         return { success: true, fieldId: input.id || input.name };
                     }
@@ -63,7 +71,12 @@ export function registerFormInteractions() {
                 return results[0]?.result || { error: "Failed to fill field" };
             } catch (error) {
                 log.error('[FrontendTool] Error filling by label:', error);
-                return { error: "Failed to fill field by label" };
+                return {
+                    error: "Failed to fill field by label",
+                    details: error instanceof Error
+                        ? { message: error.message, stack: error.stack }
+                        : String(error)
+                };
             }
         },
         render: ({ args, status, result }) => {
@@ -95,7 +108,7 @@ export function registerFormInteractions() {
             try {
                 log.info("fillByPlaceholder", { placeholder });
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (!tab.id) return { error: "No active tab" };
+                if (tab.id == null) return { error: "No active tab" };
 
                 const results = await chrome.scripting.executeScript({
                     target: { tabId: tab.id },
@@ -112,9 +125,17 @@ export function registerFormInteractions() {
                             return { success: false, error: `Input with placeholder not found: ${ph}` };
                         }
 
-                        input.value = val;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
-                        input.dispatchEvent(new Event('change', { bubbles: true }));
+						// Use the native value setter to ensure React-controlled inputs update correctly
+						const proto = Object.getPrototypeOf(input);
+						const descriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+						if (descriptor && typeof descriptor.set === 'function') {
+							descriptor.set.call(input, val);
+						} else {
+							// Fallback in case the descriptor/setter is unavailable
+							(input as any).value = val;
+						}
+						input.dispatchEvent(new Event('input', { bubbles: true }));
+						input.dispatchEvent(new Event('change', { bubbles: true }));
 
                         return { success: true, fieldId: input.id || input.name };
                     }
@@ -123,7 +144,12 @@ export function registerFormInteractions() {
                 return results[0]?.result || { error: "Failed to fill field" };
             } catch (error) {
                 log.error('[FrontendTool] Error filling by placeholder:', error);
-                return { error: "Failed to fill field by placeholder" };
+                return {
+                    error: "Failed to fill field by placeholder",
+                    details: error instanceof Error
+                        ? { message: error.message, stack: error.stack }
+                        : String(error)
+                };
             }
         },
         render: ({ args, status, result }) => {

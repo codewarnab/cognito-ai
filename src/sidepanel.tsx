@@ -51,14 +51,14 @@ function CopilotChatContent() {
     .slice(-3)
     .map((msg: any, idx: number) => ({
       tool: 'action',
-      outcome: (msg.content || msg.text || '').slice(0, 100),
+      outcome: (msg.content || '').slice(0, 100),
       secondsAgo: (3 - idx) * 10, // Approximate time
     }));
 
   // Filter out empty messages
   const messages = visibleMessages.filter(message => {
-    const content = (message as any).content || (message as any).text || '';
-    return content && typeof content === 'string' && content.trim().length > 0;
+    const content = (message as any).content || '';
+    return typeof content === 'string' && content.trim().length > 0;
   });
 
   // Track current tab context
@@ -432,7 +432,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         input={input}
         setInput={setInput}
         onSendMessage={handleSendMessage}
-        onKeyPress={handleKeyPress}
+        onKeyDown={handleKeyPress}
         onClearChat={handleClearChat}
         onSettingsClick={() => setShowMcp(true)}
         onMemoryClick={() => setShowMemory(true)}

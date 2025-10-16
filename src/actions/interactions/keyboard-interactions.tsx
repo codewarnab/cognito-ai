@@ -27,14 +27,26 @@ export function registerKeyboardInteractions() {
                     target: { tabId: tab.id },
                     args: [key, selector || null],
                     func: (k: string, sel: string | null) => {
-                        const target = sel ? (document.querySelector(sel) as HTMLElement | null) : (document.activeElement as HTMLElement | null);
+                        const target = (sel ? document.querySelector(sel) : document.activeElement) as Element | null;
                         if (!target) return { success: false, error: 'Target element not found or no active element' };
-                        target.focus();
-                        const opts = { key: k, bubbles: true, cancelable: true } as KeyboardEventInit;
-                        const kd = new KeyboardEvent('keydown', opts);
-                        const kp = new KeyboardEvent('keypress', opts);
-                        const ku = new KeyboardEvent('keyup', opts);
-                        target.dispatchEvent(kd); target.dispatchEvent(kp); target.dispatchEvent(ku);
+
+                        const focusable = target as HTMLElement;
+                        if (typeof focusable.focus === 'function') focusable.focus();
+
+                        const base: KeyboardEventInit = {
+                            key: k,
+                            code: k,
+                            bubbles: true,
+                            cancelable: true
+                        };
+
+                        const keydown = new KeyboardEvent('keydown', base);
+                        const keypress = new KeyboardEvent('keypress', base);
+                        const keyup = new KeyboardEvent('keyup', base);
+
+                        target.dispatchEvent(keydown);
+                        target.dispatchEvent(keypress);
+                        target.dispatchEvent(keyup);
                         return { success: true };
                     }
                 });
@@ -89,20 +101,33 @@ export function registerKeyboardInteractions() {
                     target: { tabId: tab.id },
                     args: [selector, text, clearFirst ?? false],
                     func: (sel: string, txt: string, clear: boolean) => {
-                        const element = document.querySelector(sel) as HTMLInputElement | HTMLTextAreaElement;
-                        if (!element) {
-                            return { success: false, error: `Element not found: ${sel}` };
+                        const el = document.querySelector(sel) as HTMLElement | null;
+                        if (!el) return { success: false, error: 'Element not found' };
+
+                        const focusable = el as HTMLElement;
+                        if (typeof focusable.focus === 'function') focusable.focus();
+
+                        const dispatchInputLike = (target: Element) => {
+                            target.dispatchEvent(new Event('input', { bubbles: true }));
+                            target.dispatchEvent(new Event('change', { bubbles: true }));
+                        };
+
+                        if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+                            if (clear) el.value = '';
+                            el.value = (clear ? '' : el.value) + txt;
+                            dispatchInputLike(el);
+                            return { success: true, typed: txt.length };
                         }
 
-                        if (clear) {
-                            element.value = '';
+                        if ((el as HTMLElement).isContentEditable) {
+                            const ce = el as HTMLElement;
+                            if (clear) ce.innerText = '';
+                            ce.innerText = (clear ? '' : ce.innerText) + txt;
+                            dispatchInputLike(ce);
+                            return { success: true, typed: txt.length };
                         }
 
-                        element.value = txt;
-                        element.dispatchEvent(new Event('input', { bubbles: true }));
-                        element.dispatchEvent(new Event('change', { bubbles: true }));
-
-                        return { success: true, typed: txt.length };
+                        return { success: false, error: 'Unsupported element type' };
                     }
                 });
 

@@ -9,11 +9,10 @@ import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 
 interface Message {
-    id?: string;
-    role?: 'user' | 'assistant' | string;
-    content?: string;
-    text?: string;
-    generativeUI?: () => React.ReactElement | null;
+	id?: string;
+	role: 'user' | 'assistant';
+	content: string;
+	generativeUI?: () => React.ReactElement | null;
 }
 
 interface CopilotChatWindowProps {
@@ -21,7 +20,7 @@ interface CopilotChatWindowProps {
     input: string;
     setInput: (value: string) => void;
     onSendMessage: () => void;
-    onKeyPress: (e: React.KeyboardEvent) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
     onClearChat: () => void;
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
@@ -35,7 +34,7 @@ export function CopilotChatWindow({
     input,
     setInput,
     onSendMessage,
-    onKeyPress,
+    onKeyDown,
     onClearChat,
     isLoading,
     messagesEndRef,
@@ -118,30 +117,30 @@ export function CopilotChatWindow({
                         </p>
                     </div>
                 ) : (
-                    messages
-                        .filter(message => {
-                            const content = message.content || message.text || '';
-                            return content && typeof content === 'string' && content.trim().length > 0;
-                        })
+						messages
+							.filter(message => {
+								const content = message.content;
+								return typeof content === 'string' && content.trim().length > 0;
+							})
                         .map((message, index) => (
                             <div
-                                key={message.id || index}
-                                className={`copilot-message copilot-message-${message.role || 'assistant'}`}
+									key={message.id || index}
+									className={`copilot-message copilot-message-${message.role}`}
                             >
                                 {message.role === 'assistant' && (
                                     <div className="copilot-message-avatar">🤖</div>
                                 )}
 
-                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role || 'assistant'}`}>
+									<div className={`copilot-message-bubble copilot-message-bubble-${message.role}`}>
                                     <div className="copilot-message-content">
                                         {message.role === 'assistant' ? (
                                             <div className="markdown-content">
                                                 <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                    {message.content || message.text || ''}
+														{message.content}
                                                 </ReactMarkdown>
                                             </div>
                                         ) : (
-                                            message.content || message.text || ''
+												message.content
                                         )}
                                     </div>
                                     {/* Render generative UI from useFrontendAction/useFrontendTool render functions */}
@@ -161,18 +160,22 @@ export function CopilotChatWindow({
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                    <div className="copilot-message copilot-message-assistant">
-                        <div className="copilot-message-avatar">🤖</div>
-                        <div className="copilot-message-bubble copilot-message-bubble-assistant">
-                            <div className="copilot-loading">
-                                <div className="copilot-loading-dot" style={{ animationDelay: '0ms' }}></div>
-                                <div className="copilot-loading-dot" style={{ animationDelay: '150ms' }}></div>
-                                <div className="copilot-loading-dot" style={{ animationDelay: '300ms' }}></div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
+                    <div
+                        className="copilot-message copilot-message-assistant"
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Assistant is typing"
+                    >
+                         <div className="copilot-message-avatar">🤖</div>
+                         <div className="copilot-message-bubble copilot-message-bubble-assistant">
+                             <div className="copilot-loading">
+                                 <div className="copilot-loading-dot" style={{ animationDelay: '0ms' }}></div>
+                                 <div className="copilot-loading-dot" style={{ animationDelay: '150ms' }}></div>
+                                 <div className="copilot-loading-dot" style={{ animationDelay: '300ms' }}></div>
+                             </div>
+                         </div>
+                     </div>
+                 )}
                 <div ref={messagesEndRef} />
             </div>
 
@@ -183,7 +186,7 @@ export function CopilotChatWindow({
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={onKeyPress}
+                        onKeyDown={onKeyDown}
                         placeholder="Ask me anything..."
                         className="copilot-input"
                         disabled={isLoading}

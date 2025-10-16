@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-
+import React, { useState, useId } from "react";
 interface ReminderTimePickerProps {
     initialTitle: string;
     initialWhen: number; // epoch ms
@@ -24,13 +23,24 @@ export function ReminderTimePicker({
         const minutes = String(d.getMinutes()).padStart(2, "0");
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     });
+    const [error, setError] = useState("");
+    const datetimeInputId = useId();
 
     const handleConfirm = () => {
-        const when = new Date(dateTime).getTime();
-        if (isNaN(when) || when <= Date.now()) {
-            alert("Please select a future date and time");
+        // Validate title first
+        if (!title.trim()) {
+            setError("Title is required.");
             return;
         }
+
+        const when = new Date(dateTime).getTime();
+        const now = Date.now();
+        if (isNaN(when) || when <= now) {
+            setError("Please select a valid future date and time.");
+            return;
+        }
+
+        setError("");
         onConfirm(title, when);
     };
 
@@ -85,17 +95,20 @@ export function ReminderTimePicker({
             </div>
 
             <div style={{ marginBottom: "var(--spacing-md)" }}>
-                <div
+                <label
+                    htmlFor={datetimeInputId}
                     style={{
                         fontSize: "14px",
                         fontWeight: 600,
                         marginBottom: "var(--spacing-xs)",
                         color: "var(--color-text)",
+                        display: "block",
                     }}
                 >
                     Date & Time
-                </div>
+                </label>
                 <input
+                    id={datetimeInputId}
                     type="datetime-local"
                     value={dateTime}
                     onChange={(e) => setDateTime(e.target.value)}
@@ -112,6 +125,21 @@ export function ReminderTimePicker({
                 />
             </div>
 
+            {error && (
+                <p
+                    role="alert"
+                    aria-live="polite"
+                    style={{
+                        color: "var(--color-error)",
+                        marginTop: "var(--spacing-sm)",
+                        marginBottom: "var(--spacing-sm)",
+                        fontSize: "12px",
+                    }}
+                >
+                    {error}
+                </p>
+            )}
+
             <div
                 style={{
                     display: "flex",
@@ -120,6 +148,7 @@ export function ReminderTimePicker({
                 }}
             >
                 <button
+                    type="button"
                     onClick={onCancel}
                     style={{
                         padding: "var(--spacing-sm) var(--spacing-md)",
@@ -136,6 +165,7 @@ export function ReminderTimePicker({
                 </button>
                 <button
                     onClick={handleConfirm}
+                    type="button"
                     style={{
                         padding: "var(--spacing-sm) var(--spacing-md)",
                         border: "none",

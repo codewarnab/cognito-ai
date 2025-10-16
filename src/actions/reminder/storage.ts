@@ -4,8 +4,56 @@ import type { Reminder } from "./types";
  * Get all reminders from Chrome storage
  */
 export async function getAllReminders(): Promise<Record<string, Reminder>> {
-    const { reminders = {} } = await chrome.storage.local.get("reminders");
-    return reminders;
+    try {
+        const result = await chrome.storage.local.get("reminders");
+        const rawReminders = (result && (result as any).reminders) ?? {};
+
+        if (typeof rawReminders !== "object" || rawReminders === null) {
+            console.warn("Expected reminders to be an object, received:", rawReminders);
+            return {};
+        }
+
+        const sanitized: Record<string, Reminder> = {};
+        for (const [key, value] of Object.entries(rawReminders as Record<string, unknown>)) {
+            if (typeof key !== "string") {
+                console.warn("Skipping reminder with non-string key:", key);
+                continue;
+            }
+            if (isReminder(value)) {
+                sanitized[key] = value;
+            } else {
+                console.warn("Skipping malformed reminder entry:", { key, value });
+            }
+        }
+
+        return sanitized;
+    } catch (error) {
+        console.error("Failed to read reminders from chrome.storage.local:", error);
+        return {};
+    }
+}
+
+function isReminder(candidate: unknown): candidate is Reminder {
+    if (candidate === null || typeof candidate !== "object") {
+        return false;
+    }
+    const r = candidate as Record<string, unknown>;
+    const hasRequiredFields =
+        typeof r.id === "string" &&
+        typeof r.title === "string" &&
+        typeof r.when === "number" &&
+        typeof r.createdAt === "number";
+
+    if (!hasRequiredFields) {
+        return false;
+    }
+
+    const optionalFieldsAreValid =
+        (r.url === undefined || typeof r.url === "string") &&
+        (r.generatedTitle === undefined || typeof r.generatedTitle === "string") &&
+        (r.generatedDescription === undefined || typeof r.generatedDescription === "string");
+
+    return optionalFieldsAreValid;
 }
 
 /**

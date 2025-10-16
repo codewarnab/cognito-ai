@@ -20,7 +20,12 @@ export function registerTabActions() {
 
       try {
         log.debug("getActiveTab invoked");
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tabs || tabs.length === 0 || !tabs[0]) {
+          log.warn("No active tab found in current window");
+          return { error: "No active tab" };
+        }
+        const tab = tabs[0];
         return { title: tab.title, url: tab.url, id: tab.id };
       } catch (error) {
         log.error('[FrontendTool] Error getting active tab:', error);
@@ -162,9 +167,26 @@ export function registerTabActions() {
       }
 
       try {
-        log.info("ensureAtUrl", { url, reuse, waitFor, retries });
+        // validate retries
+        let retriesValidated = 0;
+        if (typeof retries === 'number' && Number.isFinite(retries)) {
+          retriesValidated = Math.max(0, Math.floor(retries));
+        }
 
-        const targetUrl = new URL(url);
+        const totalAttempts = retriesValidated + 1;
+
+        log.info("ensureAtUrl", { url, reuse, waitFor, retries: retriesValidated, totalAttempts });
+
+        let targetUrl: URL;
+        try {
+          targetUrl = new URL(url);
+        } catch (e) {
+          log.warn("ensureAtUrl received invalid URL", {
+            url,
+            error: e instanceof Error ? e.message : String(e)
+          });
+          return { error: "Invalid URL" };
+        }
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
         if (!activeTab?.id) {
@@ -181,60 +203,94 @@ export function registerTabActions() {
           };
         }
 
-        // Check if we should reuse existing tab with same origin
-        if (reuse && activeTab.url) {
+        // Helper: sleep with exponential backoff and jitter
+        const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+        let lastError: unknown = null;
+        for (let attempt = 1; attempt <= totalAttempts; attempt++) {
           try {
-            const currentUrl = new URL(activeTab.url);
-            if (currentUrl.origin === targetUrl.origin) {
-              // Same origin, update URL
-              await chrome.tabs.update(activeTab.id, { url });
+            // Check if we should reuse existing tab with same origin
+            if (reuse && activeTab.url) {
+              try {
+                const currentUrl = new URL(activeTab.url);
+                if (currentUrl.origin === targetUrl.origin) {
+                  // Same origin, update URL
+                  await chrome.tabs.update(activeTab.id, { url });
 
-              // Wait for navigation
-              await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
+                  // Wait for navigation
+                  await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
 
+                  return {
+                    success: true,
+                    navigated: true,
+                    reused: true,
+                    tabId: activeTab.id,
+                    finalUrl: url,
+                    attempt
+                  };
+                }
+              } catch (_) {
+                // Invalid URL or origin check failed; fall through to normal navigation
+              }
+            }
+
+            // Check for existing tab with this URL
+            const allTabs = await chrome.tabs.query({});
+            const existing = allTabs.find(t => t.id !== activeTab.id && urlsEqual(t.url || '', url));
+
+            if (existing) {
+              await focusTab(existing);
               return {
                 success: true,
-                navigated: true,
+                navigated: false,
                 reused: true,
-                tabId: activeTab.id,
-                finalUrl: url
+                tabId: existing.id,
+                finalUrl: existing.url,
+                attempt
               };
             }
-          } catch (e) {
-            // Invalid URL, proceed with normal navigation
+
+            // Navigate active tab
+            await chrome.tabs.update(activeTab.id, { url });
+            await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
+
+            const updatedTab = await chrome.tabs.get(activeTab.id);
+
+            return {
+              success: true,
+              navigated: true,
+              tabId: activeTab.id,
+              finalUrl: updatedTab.url,
+              attempt
+            };
+          } catch (attemptError) {
+            lastError = attemptError;
+            const remaining = totalAttempts - attempt;
+            if (remaining <= 0) break;
+            // exponential backoff with jitter: 300ms * 2^(attempt-1) +/- 20%
+            const base = 300 * Math.pow(2, attempt - 1);
+            const jitter = base * (0.2 * (Math.random() - 0.5) * 2);
+            const delay = Math.max(100, Math.floor(base + jitter));
+            log.warn('ensureAtUrl attempt failed; will retry', {
+              attempt,
+              remaining,
+              delayMs: delay,
+              error: attemptError instanceof Error ? attemptError.message : String(attemptError)
+            });
+            await sleep(delay);
           }
         }
 
-        // Check for existing tab with this URL
-        const allTabs = await chrome.tabs.query({});
-        const existing = allTabs.find(t => t.id !== activeTab.id && urlsEqual(t.url || '', url));
-
-        if (existing) {
-          await focusTab(existing);
-          return {
-            success: true,
-            navigated: false,
-            reused: true,
-            tabId: existing.id,
-            finalUrl: existing.url
-          };
-        }
-
-        // Navigate active tab
-        await chrome.tabs.update(activeTab.id, { url });
-        await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
-
-        const updatedTab = await chrome.tabs.get(activeTab.id);
-
-        return {
-          success: true,
-          navigated: true,
-          tabId: activeTab.id,
-          finalUrl: updatedTab.url
-        };
+        // If we get here, all attempts failed
+        throw lastError instanceof Error ? lastError : new Error('Unknown error after retries');
       } catch (error) {
-        log.error('[FrontendTool] Error ensuring at URL:', error);
-        return { error: `Failed to ensure at URL: ${(error as Error).message}` };
+        log.error('[FrontendTool] Error ensuring at URL:', {
+          error,
+          message: error instanceof Error ? error.message : String(error)
+        });
+        return {
+          error: `Failed to ensure at URL after retries: ${error instanceof Error ? error.message : String(error)}`
+        };
       }
     },
     render: ({ args, status, result }) => {
@@ -277,13 +333,8 @@ export function registerTabActions() {
         // Navigate
         await chrome.tabs.update(activeTab.id, { url });
 
-        // Wait with timeout
-        const waitPromise = waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle');
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Navigation timeout')), timeoutMs)
-        );
-
-        await Promise.race([waitPromise, timeoutPromise]);
+        // Wait with timeout handled inside waitForNavigation
+        await waitForNavigation(activeTab.id, waitFor as 'load' | 'networkidle', timeoutMs);
 
         // Get final URL
         const updatedTab = await chrome.tabs.get(activeTab.id);
@@ -729,19 +780,63 @@ export function registerTabActions() {
 
 async function waitForNavigation(
   tabId: number,
-  strategy: 'load' | 'networkidle'
+  strategy: 'load' | 'networkidle',
+  timeoutMs: number = 30000
 ): Promise<void> {
-  // Both strategies now use the same 'load' approach
-  return new Promise((resolve) => {
-    const listener = (
-      updatedTabId: number,
-      changeInfo: chrome.tabs.TabChangeInfo
-    ) => {
-      if (updatedTabId === tabId && changeInfo.status === 'complete') {
-        chrome.tabs.onUpdated.removeListener(listener);
-        resolve();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let idleTimer: number | undefined;
+
+    const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      try { chrome.tabs.onUpdated.removeListener(onUpdated as any); } catch {}
+      try { chrome.tabs.onRemoved.removeListener(onRemoved as any); } catch {}
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      if (idleTimer) clearTimeout(idleTimer as any);
+    };
+
+    const resolveAndClean = () => {
+      cleanup();
+      resolve();
+    };
+
+    const rejectAndClean = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+
+    const onRemoved = (removedTabId: number) => {
+      if (removedTabId === tabId) {
+        rejectAndClean(new Error('Navigation aborted: tab was closed'));
       }
     };
-    chrome.tabs.onUpdated.addListener(listener);
+
+    const onUpdated = (
+      updatedTabId: number,
+      changeInfo: chrome.tabs.TabChangeInfo,
+      _tab?: chrome.tabs.Tab
+    ) => {
+      if (updatedTabId !== tabId) return;
+
+      if (changeInfo.status === 'complete') {
+        if (strategy === 'networkidle') {
+          if (idleTimer) clearTimeout(idleTimer as any);
+          // Approximate network idle with a short quiet period after load completes
+          idleTimer = setTimeout(() => {
+            resolveAndClean();
+          }, 1000) as unknown as number;
+        } else {
+          resolveAndClean();
+        }
+      }
+    };
+
+    const timeoutHandle = setTimeout(() => {
+      rejectAndClean(new Error('Navigation timed out'));
+    }, Math.max(0, timeoutMs)) as unknown as number;
+
+    chrome.tabs.onUpdated.addListener(onUpdated as any);
+    chrome.tabs.onRemoved.addListener(onRemoved as any);
   });
 }

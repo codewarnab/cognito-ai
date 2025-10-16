@@ -35,14 +35,15 @@ export async function withTimeout<T>(
     timeoutMs: number,
     errorMessage = "Operation timed out"
 ): Promise<T> {
-    return Promise.race([
-        promise,
-        new Promise<T>((_, reject) =>
-            setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
-        ),
-    ]);
-}
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
+    });
 
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+        clearTimeout(timeoutId);
+    });
+}
 /**
  * Inject and execute a function in the content script context
  */
@@ -57,12 +58,12 @@ export async function injectContent<T>(
         args,
     });
 
-    if (!results || results.length === 0) {
-        throw new Error("Script injection failed: no results");
+    if (chrome.runtime.lastError) {
+        throw new Error(`Script injection error: ${chrome.runtime.lastError.message}`);
     }
 
-    if (results[0].result === undefined && chrome.runtime.lastError) {
-        throw new Error(`Script injection error: ${chrome.runtime.lastError.message}`);
+    if (!results || results.length === 0) {
+        throw new Error("Script injection failed: no results");
     }
 
     return results[0].result as T;

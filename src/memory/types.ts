@@ -14,7 +14,7 @@ export interface StoredMemory {
   source: MemorySource;
   createdAt: number;
   updatedAt: number;
-  confidence?: number; // 0-1
+  confidence?: Confidence; // 0-1 branded
   pinned?: boolean;
 }
 
@@ -34,11 +34,19 @@ export function isMemorySource(value: unknown): value is MemorySource {
  * Example: "User Name" -> "user.name"
  */
 export function canonicalizeKey(key: string): string {
-  return key
+  const normalized = key
     .toLowerCase()
     .trim()
     .replace(/\s+/g, ".")
-    .replace(/[^a-z0-9._-]/g, "");
+    .replace(/[^a-z0-9._-]/g, "")
+    .replace(/\.+/g, ".") // collapse consecutive dots
+    .replace(/^\.+|\.+$/g, ""); // trim leading/trailing dots
+
+  if (normalized.length === 0) {
+    throw new Error("canonicalizeKey: key is empty after normalization");
+  }
+
+  return normalized;
 }
 
 /**
@@ -66,11 +74,11 @@ export function createMemory(
  * Detection patterns for extracting memories from text
  */
 export const DETECTION_PATTERNS = {
-  name: /(?:my name is|call me|i'm|i am)\s+([a-z]+(?:\s+[a-z]+)*)/i,
+  name: /(?:my name is|call me|i'm|i am)\s+([\p{L}][\p{L}\s'-]*)/iu,
   email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/,
   phone: /\+?\d{1,3}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/,
-  profession: /(?:i am a|i work as|my job is|i'm a)\s+([a-z\s]+)/i,
-  location: /(?:i live in|i'm in|i'm from|located in)\s+([a-z\s,]+)/i,
+  profession: /(?:i am a|i work as|my job is|i'm a)\s+([\p{L}\s'-]+)/iu,
+  location: /(?:i live in|i'm in|i'm from|located in)\s+([\p{L}\s,'-]+)/iu,
   behavioral: /(?:never|always|don't|do not)\s+(.+)/i,
 };
 
@@ -109,6 +117,17 @@ export function detectMemories(text: string): DetectedMemory[] {
     });
   }
 
+  // Phone detection
+  const phoneMatch = text.match(DETECTION_PATTERNS.phone);
+  if (phoneMatch) {
+    detected.push({
+      key: "user.phone",
+      value: phoneMatch[0],
+      category: "fact",
+      pattern: "phone",
+    });
+  }
+
   // Profession detection
   const professionMatch = text.match(DETECTION_PATTERNS.profession);
   if (professionMatch) {
@@ -143,5 +162,36 @@ export function detectMemories(text: string): DetectedMemory[] {
   }
 
   return detected;
+}
+
+/**
+ * Branded Confidence type to guarantee values are within [0, 1].
+ */
+export type Confidence = number & { __brand: "Confidence" };
+
+/**
+ * Runtime validator/factory for Confidence. Returns a branded value only if in range [0, 1].
+ * If clamp is true, out-of-range inputs are clamped; otherwise an Error is thrown.
+ */
+export function createConfidence(value: number, options?: { clamp?: boolean }): Confidence {
+  const clamp = options?.clamp === true;
+  if (Number.isNaN(value) || !Number.isFinite(value)) {
+    throw new Error("Confidence must be a finite number");
+  }
+  let v = value;
+  if (v < 0 || v > 1) {
+    if (!clamp) {
+      throw new Error("Confidence must be between 0 and 1 inclusive");
+    }
+    v = Math.min(1, Math.max(0, v));
+  }
+  return v as Confidence;
+}
+
+/**
+ * Type guard for Confidence branded values.
+ */
+export function isConfidence(value: unknown): value is Confidence {
+  return typeof value === "number" && value >= 0 && value <= 1;
 }
 

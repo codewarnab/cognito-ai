@@ -35,7 +35,18 @@ export function useGetRecentHistory() {
                 const now = Date.now();
                 const startTime = now - (Number(hours) * 60 * 60 * 1000);
 
-                const results = await chrome.history.search({
+				// Feature-detect Chrome History API to avoid runtime exceptions in unsupported contexts
+				const hasHistorySearch = typeof window !== 'undefined'
+					&& (window as any).chrome
+					&& chrome.history
+					&& typeof chrome.history.search === 'function';
+
+				if (!hasHistorySearch) {
+					log.warn('chrome.history.search API unavailable');
+					return { error: "Chrome history API is unavailable", details: "window.chrome.history.search not available in this context" };
+				}
+
+				const results = await chrome.history.search({
                     text: '',
                     startTime,
                     maxResults: Number(maxResults)
@@ -85,8 +96,8 @@ export function useGetRecentHistory() {
                     >
                         {result.results && result.results.length > 0 && (
                             <div style={{ marginTop: '8px' }}>
-                                {result.results.slice(0, 15).map((item: any, idx: number) => (
-                                    <div key={idx} style={{
+							{result.results.slice(0, 15).map((item: any, idx: number) => (
+								<div key={item.id} style={{
                                         padding: '8px',
                                         marginBottom: '6px',
                                         background: 'rgba(0,0,0,0.03)',

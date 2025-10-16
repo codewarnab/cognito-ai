@@ -655,6 +655,33 @@ chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendRes
 // Runtime Listeners
 // ============================================================================
 
+// Global notification click handler for reminders
+chrome.notifications.onClicked.addListener(async (notificationId) => {
+    try {
+        if (!notificationId.startsWith('reminder:')) {
+            return;
+        }
+
+        const id = notificationId.split(':')[1];
+        const { reminders = {} } = await chrome.storage.local.get('reminders');
+        const reminder: Reminder | undefined = reminders[id];
+
+        if (reminder?.url) {
+            await chrome.tabs.create({ url: reminder.url });
+        }
+
+        // Cleanup: remove reminder and clear notification
+        if (reminders[id]) {
+            delete reminders[id];
+            await chrome.storage.local.set({ reminders });
+        }
+
+        chrome.notifications.clear(notificationId);
+    } catch (error) {
+        console.error('[Background] Error handling notification click:', error);
+    }
+});
+
 /**
  * Extension install/update handler
  */
@@ -773,7 +800,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         const notificationTitle = reminder.generatedTitle || '⏰ Reminder';
         const notificationMessage = reminder.generatedDescription || reminder.title;
 
-        chrome.notifications.create(id, {
+        // Use a namespaced notification ID to distinguish reminders
+        chrome.notifications.create(`reminder:${id}`, {
             type: 'basic',
             iconUrl: simpleIcon,
             title: notificationTitle,
@@ -787,19 +815,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
             message: notificationMessage
         });
 
-        // Clean up: remove the reminder from storage
-        delete reminders[id];
-        await chrome.storage.local.set({ reminders });
-
-        // Optional: If there's a URL, add a button to open it
-        if (reminder.url) {
-            chrome.notifications.onClicked.addListener(function openUrl(notificationId) {
-                if (notificationId === id) {
-                    chrome.tabs.create({ url: reminder.url });
-                    chrome.notifications.onClicked.removeListener(openUrl);
-                }
-            });
-        }
+        // Do not remove the reminder here; it will be removed by the global
+        // notification click handler to avoid race conditions and ensure the
+        // click handler has access to the stored reminder data.
     } catch (error) {
         console.error('[Background] Error handling reminder alarm:', error);
     }

@@ -24,9 +24,28 @@ export function useGetUrlVisits() {
             }
 
             try {
-                log.info("getUrlVisits", { url });
+                // Normalize and validate URL input before calling the Chrome API
+                const normalizedUrl = typeof url === "string" ? url.trim() : String(url ?? "");
 
-                const visits = await chrome.history.getVisits({ url: String(url) });
+                if (!normalizedUrl) {
+                    log.warn("getUrlVisits: missing or empty url", { url });
+                    return { success: false, error: "URL is required", details: "Provide a non-empty URL string" };
+                }
+
+                // Validate URL format using the URL constructor; return a clear error if invalid
+                let validatedUrl = normalizedUrl;
+                try {
+                    // Throws if not a valid absolute URL
+                    // eslint-disable-next-line no-new
+                    new URL(validatedUrl);
+                } catch (_) {
+                    log.warn("getUrlVisits: invalid URL format", { url: normalizedUrl });
+                    return { success: false, error: "Invalid URL format", details: `Value provided: ${normalizedUrl}` };
+                }
+
+                log.info("getUrlVisits", { url: validatedUrl });
+
+                const visits = await chrome.history.getVisits({ url: validatedUrl });
 
                 const formattedVisits = visits.map(visit => ({
                     visitId: visit.visitId,
@@ -37,7 +56,7 @@ export function useGetUrlVisits() {
 
                 return {
                     success: true,
-                    url,
+                    url: validatedUrl,
                     visitCount: formattedVisits.length,
                     visits: formattedVisits
                 };
@@ -72,8 +91,8 @@ export function useGetUrlVisits() {
                         </div>
                         {result.visits && result.visits.length > 0 && (
                             <div style={{ fontSize: '12px' }}>
-                                {result.visits.slice(0, 10).map((visit: any, idx: number) => (
-                                    <div key={idx} style={{
+									{result.visits.slice(0, 10).map((visit: any, idx: number) => (
+										<div key={visit.visitId} style={{
                                         padding: '6px 8px',
                                         marginBottom: '4px',
                                         background: 'rgba(0,0,0,0.03)',

@@ -13,11 +13,17 @@ import { ToolCard, CodeBlock } from "../components/ui/ToolCard";
  */
 export function queryByText(text: string, container: Document | Element = document): Element | null {
   const normalizedText = text.toLowerCase().trim();
-  const walker = document.createTreeWalker(
-    container,
-    NodeFilter.SHOW_TEXT,
-    null
-  );
+  const walker = 'createTreeWalker' in container
+    ? (container as Document).createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        null
+      )
+    : document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        null
+      );
 
   let node: Node | null;
   while ((node = walker.nextNode())) {
@@ -167,7 +173,23 @@ export function registerSelectionActions() {
         });
         const pageData = results[0]?.result;
         if (!pageData) return { error: "Failed to extract page content" };
-        return { success: true, title: pageData.title, url: pageData.url, content: pageData.content, contentLength: pageData.content.length };
+
+        // Normalize and validate the limit parameter
+        const numericLimit = Number(limit);
+        const normalizedLimit = Number.isFinite(numericLimit) ? Math.max(0, Math.floor(numericLimit)) : undefined;
+
+        // Apply truncation when limit is a positive number; otherwise keep original content
+        const truncatedContent = normalizedLimit && normalizedLimit > 0
+          ? pageData.content.slice(0, normalizedLimit)
+          : pageData.content;
+
+        return {
+          success: true,
+          title: pageData.title,
+          url: pageData.url,
+          content: truncatedContent,
+          contentLength: truncatedContent.length
+        };
       } catch (error) {
         log.error('[FrontendTool] Error reading page content:', error);
         return { error: "Failed to read page content. Make sure you have permission to access this page." };

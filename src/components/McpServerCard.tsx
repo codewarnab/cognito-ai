@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react"
+﻿import React, { useState, useEffect, useRef } from "react"
 import { StatusBadge } from "./ui/StatusBadge"
 import { Toggle } from "./ui/Toggle"
 import { ConfirmDialog } from "./ui/ConfirmDialog"
@@ -26,6 +26,21 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     const [showDisableConfirm, setShowDisableConfirm] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [healthCheckStatus, setHealthCheckStatus] = useState<string>('')
+
+	// Store timeout IDs to avoid state updates after unmount
+	const clearSuccessTimeoutRef = useRef<number | null>(null)
+	const clearHealthStatusTimeoutRef = useRef<number | null>(null)
+
+	useEffect(() => {
+		return () => {
+			if (clearSuccessTimeoutRef.current !== null) {
+				clearTimeout(clearSuccessTimeoutRef.current)
+			}
+			if (clearHealthStatusTimeoutRef.current !== null) {
+				clearTimeout(clearHealthStatusTimeoutRef.current)
+			}
+		}
+	}, [])
 
     const isNotion = id === 'notion'
 
@@ -94,13 +109,44 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         }
     }
 
-    const sendMessage = (message: NotionMcpMessage): Promise<NotionMcpResponse> => {
-        return new Promise((resolve) => {
-            chrome.runtime.sendMessage(message, (response) => {
-                resolve(response || { success: false, error: 'No response' })
-            })
-        })
-    }
+	const sendMessage = (message: NotionMcpMessage): Promise<NotionMcpResponse> => {
+		return new Promise((resolve, reject) => {
+			let settled = false
+			// Short timeout to avoid hanging promises if callback is never invoked
+			const timeoutId = setTimeout(() => {
+				if (settled) return
+				settled = true
+				reject(new Error('Timeout: No response from background script'))
+			}, 5000)
+
+			try {
+				chrome.runtime.sendMessage(message, (response) => {
+					if (settled) return
+					settled = true
+					clearTimeout(timeoutId)
+
+					const lastError = chrome.runtime.lastError
+					if (lastError) {
+						const errorMessage = lastError.message || 'Unknown runtime error'
+						reject({ success: false, error: `chrome.runtime.lastError: ${errorMessage}` })
+						return
+					}
+
+					if (response === undefined) {
+						resolve({ success: false, error: 'No response' })
+						return
+					}
+
+					resolve(response as NotionMcpResponse)
+				})
+			} catch (err) {
+				if (settled) return
+				settled = true
+				clearTimeout(timeoutId)
+				reject(err)
+			}
+		})
+	}
 
     const handleToggle = async (checked: boolean) => {
         if (!isNotion) {
@@ -117,7 +163,10 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                     setIsEnabled(true)
                     setHealthCheckStatus('✓ Connected and verified')
                     // Clear success message after 3 seconds
-                    setTimeout(() => setHealthCheckStatus(''), 3000)
+					if (clearSuccessTimeoutRef.current !== null) {
+						clearTimeout(clearSuccessTimeoutRef.current)
+					}
+					clearSuccessTimeoutRef.current = window.setTimeout(() => setHealthCheckStatus(''), 3000)
                 } else {
                     setHealthCheckStatus('')
                     alert(response.error || 'Failed to enable server')
@@ -155,7 +204,10 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         } finally {
             setIsLoading(false)
             // Clear status after 5 seconds
-            setTimeout(() => setHealthCheckStatus(''), 5000)
+				if (clearHealthStatusTimeoutRef.current !== null) {
+					clearTimeout(clearHealthStatusTimeoutRef.current)
+				}
+				clearHealthStatusTimeoutRef.current = window.setTimeout(() => setHealthCheckStatus(''), 5000)
         }
     }
 
@@ -319,7 +371,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
             <ConfirmDialog
                 isOpen={showLogoutConfirm}
                 title="Logout from Server"
-                message={`Are you sure you want to logout from ? You will need to re-authenticate to use this server.`}
+                message={`Are you sure you want to logout from ${name}? You will need to re-authenticate to use this server.`}
                 confirmLabel="Logout"
                 cancelLabel="Cancel"
                 variant="warning"
@@ -330,7 +382,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
             <ConfirmDialog
                 isOpen={showDisableConfirm}
                 title="Disable Server"
-                message={`Are you sure you want to disable ?`}
+                message={`Are you sure you want to disable ${name}?`}
                 confirmLabel="Disable"
                 cancelLabel="Cancel"
                 variant="default"
