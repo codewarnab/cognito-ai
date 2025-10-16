@@ -245,9 +245,8 @@ export function CopilotChatWindow({
                         <VoiceInput
                             onTranscript={(text) => setInput(text)}
                             onRecordingComplete={(finalText) => {
-                                // Send directly with the voice text
-                                setInput(''); // Clear input immediately
-                                onSendMessage(finalText); // Pass text directly
+                                onSendMessage(finalText);
+                                setInput('');
                             }}
                             className="copilot-voice-input"
                         />

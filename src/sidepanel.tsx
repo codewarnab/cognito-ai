@@ -526,15 +526,21 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     // Inline Copilot actions have been refactored into modular registrations via useRegisterAllActions()
 
     // Handle sending messages
-    const handleSendMessage = async () => {
-        const trimmedInput = input.trim();
+    const handleSendMessage = async (messageText?: string) => {
+        // Use provided messageText or fall back to input state
+        const textToSend = messageText !== undefined ? messageText : input;
+        const trimmedInput = textToSend.trim();
 
         if (!trimmedInput || isLoading) {
             return;
         }
 
-        log.info("SendMessage", { length: trimmedInput.length });
-        setInput('');
+        log.info("SendMessage", { length: trimmedInput.length, fromVoice: messageText !== undefined });
+        
+        // Only clear input if we're using the input state (not voice input)
+        if (messageText === undefined) {
+            setInput('');
+        }
 
         await appendMessage(new TextMessage({
             content: trimmedInput,
@@ -610,7 +616,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     return (
         <>
             {/* Setup MCP server connections using setMcpServers */}
-            <McpServerManager />
 
             {/* Render MCP tool calls */}
             <ToolRenderer />
