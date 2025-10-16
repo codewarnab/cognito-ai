@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ChatThread } from '../db';
 import { getAllThreads, deleteThread } from '../db';
 import { createLogger } from '../logger';
+import { SummarizerStatus } from './SummarizerStatus';
 
 const log = createLogger('ThreadList');
 
@@ -68,7 +69,10 @@ export function ThreadList({ currentThreadId, onThreadSelect, onNewThread, onBac
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
                     </svg>
                 </button>
-                <h2>Chat History</h2>
+                <div className="thread-list-header-content">
+                    <h2>Chat History</h2>
+                    <SummarizerStatus />
+                </div>
             </div>
 
             <button onClick={onNewThread} className="new-thread-button">

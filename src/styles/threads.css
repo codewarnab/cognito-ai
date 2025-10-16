@@ -16,6 +16,13 @@
   background: var(--bg-secondary);
 }
 
+.thread-list-header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
 .thread-list-header h2 {
   margin: 0;
   font-size: 18px;

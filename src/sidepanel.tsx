@@ -22,8 +22,10 @@ import {
   db, 
   createThread, 
   loadThreadMessages, 
-  clearThreadMessages 
+  clearThreadMessages,
+  updateThreadTitle
 } from "./db";
+import { generateThreadTitle } from "./utils/summarizer";
 
 // Import the messages context hook for persistence
 import { useCopilotMessagesContext } from "@copilotkit/react-core";
@@ -315,11 +317,18 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     // Update thread title if this is the first message
     if (currentThreadId && allMessages.length === 0) {
       try {
-        const title = trimmedInput.slice(0, 40) + (trimmedInput.length > 40 ? '...' : '');
-        await db.chatThreads.update(currentThreadId, { 
-          title,
-          updatedAt: Date.now() 
+        log.info("Attempting to generate thread title using Summarizer API");
+        
+        // Generate title using Summarizer API with fallback
+        const title = await generateThreadTitle(trimmedInput, {
+          maxLength: 40,
+          context: 'This is the first message of a chat conversation',
+          onDownloadProgress: (progress) => {
+            log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
+          }
         });
+        
+        await updateThreadTitle(currentThreadId, title);
         log.info("Updated thread title", { threadId: currentThreadId, title });
       } catch (error) {
         log.error("Failed to update thread title", error);
@@ -399,7 +408,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
   return (
     <>
       {/* Setup MCP server connections using setMcpServers */}
-      <McpServerManager />
+
 
       {/* Render MCP tool calls */}
       <ToolRenderer />

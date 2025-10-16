@@ -27,8 +27,8 @@ export function VoiceInput({
   onInterimTranscript,
   onRecordingComplete,
   className = '',
-  lang = 'en-US',
-  silenceTimeout = 5000,
+  lang = 'en-IN',
+  silenceTimeout = 3000,
 }: VoiceInputProps) {
   const [permissionStatus, setPermissionStatus] = useState<'unknown' | 'checking' | 'granted' | 'denied'>('unknown');
   

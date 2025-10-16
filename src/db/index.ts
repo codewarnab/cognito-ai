@@ -145,6 +145,16 @@ export async function createThread(firstMessage?: string): Promise<ChatThread> {
 }
 
 /**
+ * Update thread title
+ */
+export async function updateThreadTitle(threadId: string, title: string): Promise<void> {
+    await db.chatThreads.update(threadId, { 
+        title,
+        updatedAt: Date.now() 
+    });
+}
+
+/**
  * Get all threads ordered by most recent
  */
 export async function getAllThreads(): Promise<ChatThread[]> {
