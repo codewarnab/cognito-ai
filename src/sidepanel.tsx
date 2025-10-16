@@ -47,6 +47,7 @@ function CopilotChatContent() {
   const [currentTab, setCurrentTab] = useState<{url?: string, title?: string}>({});
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const sessionIdRef = useRef<string>(Date.now().toString());
+  const titleGeneratedRef = useRef<Set<string>>(new Set()); // Track which threads have generated titles
 
   // Register modular Copilot actions
   useRegisterAllActions();
@@ -187,6 +188,42 @@ function CopilotChatContent() {
         if (dbMessages.length > 0) {
           await db.chatMessages.bulkAdd(dbMessages);
           log.info("Saved thread messages to DB", { threadId: currentThreadId, count: dbMessages.length });
+        }
+
+        // Generate thread title after every assistant response (non-blocking)
+        if (allMessages.length >= 2) {
+          const lastMessage = allMessages[allMessages.length - 1];
+          
+          // Check if the last message is from the assistant
+          if (lastMessage && (lastMessage as any).role === Role.Assistant) {
+            log.info("Generating thread title after assistant response");
+            
+            // Get all user and assistant messages for full context
+            const userMessages = allMessages.filter((msg: any) => msg.role === Role.User);
+            const assistantMessages = allMessages.filter((msg: any) => msg.role === Role.Assistant);
+            
+            if (userMessages.length > 0 && assistantMessages.length > 0) {
+              // Combine ALL user and assistant messages for comprehensive context
+              const conversationContext = allMessages
+                .filter((msg: any) => msg.role === Role.User || msg.role === Role.Assistant)
+                .map((msg: any) => `${msg.role === Role.User ? 'User' : 'Assistant'}: ${msg.content}`)
+                .join('\n\n');
+              
+              // Generate title asynchronously (don't block)
+              generateThreadTitle(conversationContext, {
+                maxLength: 40,
+                context: 'This is a chat conversation. Generate a concise headline summarizing the main topic.',
+                onDownloadProgress: (progress) => {
+                  log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
+                }
+              }).then(title => {
+                updateThreadTitle(currentThreadId, title);
+                log.info("Updated thread title in background", { threadId: currentThreadId, title });
+              }).catch(error => {
+                log.error("Failed to generate thread title in background", error);
+              });
+            }
+          }
         }
       } catch (error) {
         log.error("Failed to save thread messages", error);
@@ -354,27 +391,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
     log.info("SendMessage", { length: trimmedInput.length });
     
-    // Update thread title if this is the first message
-    if (currentThreadId && allMessages.length === 0) {
-      try {
-        log.info("Attempting to generate thread title using Summarizer API");
-        
-        // Generate title using Summarizer API with fallback
-        const title = await generateThreadTitle(trimmedInput, {
-          maxLength: 40,
-          context: 'This is the first message of a chat conversation',
-          onDownloadProgress: (progress) => {
-            log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
-          }
-        });
-        
-        await updateThreadTitle(currentThreadId, title);
-        log.info("Updated thread title", { threadId: currentThreadId, title });
-      } catch (error) {
-        log.error("Failed to update thread title", error);
-      }
-    }
-    
     setInput('');
 
     await appendMessage(new TextMessage({
@@ -478,7 +494,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
  */
 function SidePanel() {
   return (
-    <CopilotKit publicApiKey="ck_pub_0f2b859676875143d926df3e2a9a3a7a">
+    <CopilotKit publicApiKey="ck_pub_24deaca9abcf4242366fcfbb0d615ef0">
       {/* CopilotCloud integration with MCP server support */}
       <CopilotChatContent />
     </CopilotKit>

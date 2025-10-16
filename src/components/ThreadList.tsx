@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import type { ChatThread } from '../db';
 import { getAllThreads, deleteThread } from '../db';
 import { createLogger } from '../logger';
-import { SummarizerStatus } from './SummarizerStatus';
-
 const log = createLogger('ThreadList');
 
 interface ThreadListProps {
@@ -71,7 +69,6 @@ export function ThreadList({ currentThreadId, onThreadSelect, onNewThread, onBac
                 </button>
                 <div className="thread-list-header-content">
                     <h2>Chat History</h2>
-                    <SummarizerStatus />
                 </div>
             </div>
 

@@ -87,8 +87,8 @@ export async function createSummarizer(options: SummarizerOptions = {}) {
             sharedContext
         };
 
-                // Add download monitor if callback provided
-        if (onDownloadProgress && await checkSummarizerAvailability() === 'after-download') {
+        // Add download monitor if callback provided
+        if (onDownloadProgress && availability === 'downloadable') {
             summarizerOptions.monitor = (m: any) => {
                 m.addEventListener('downloadprogress', (e: any) => {
                     const progress = e.loaded || 0;
@@ -108,39 +108,6 @@ export async function createSummarizer(options: SummarizerOptions = {}) {
     }
 }
 
-/**
- * Check if the Summarizer API is available
- * 
- * @returns The availability status
- */
-export async function checkSummarizerAvailability(): Promise<SummarizerAvailability> {
-    try {
-        // Check if API exists
-        if (!('Summarizer' in window)) {
-            log.info('Summarizer API not available in this browser');
-            return 'no';
-        }
-
-        // Check availability status
-        const availability = await window.Summarizer.availability();
-        
-        log.info('Summarizer availability check:', availability);
-
-        switch (availability) {
-            case 'available':
-                return 'readily';
-            case 'downloadable':
-            case 'downloading':
-                return 'after-download';
-            case 'unavailable':
-            default:
-                return 'no';
-        }
-    } catch (error) {
-        log.error('Error checking summarizer availability:', error);
-        return 'no';
-    }
-}
 
 /**
  * Generate a headline/title from text using the Summarizer API
@@ -164,15 +131,6 @@ export async function generateHeadline(
     } = options;
 
     try {
-        // Check availability first
-        log.info('Checking Summarizer API availability');
-        const availability = await checkSummarizerAvailability();
-        log.info('Summarizer availability status:', availability);
-        
-        if (availability === 'no') {
-            log.info('Summarizer not available, using fallback');
-            return null;
-        }
 
         // Clean the text - remove HTML and extra whitespace
         const cleanText = text
@@ -238,12 +196,6 @@ export async function generateHeadlineStreaming(
     const { context, onDownloadProgress } = options;
 
     try {
-        const availability = await checkSummarizerAvailability();
-        
-        if (availability === 'no') {
-            log.info('Summarizer not available for streaming');
-            return;
-        }
 
         const cleanText = text
             .replace(/<[^>]*>/g, '')
@@ -331,54 +283,4 @@ export async function generateThreadTitle(
 
     log.info('Generated AI title:', headline);
     return headline;
-}
-
-/**
- * Debug function to test Summarizer API availability and functionality
- */
-export async function debugSummarizerAPI(): Promise<void> {
-    log.info('=== Summarizer API Debug ===');
-    
-    try {
-        // Check if Summarizer exists
-        log.info('1. Checking if window.Summarizer exists:', 'Summarizer' in window);
-        
-        if (!('Summarizer' in window)) {
-            log.error('Summarizer API not found on window object');
-            return;
-        }
-
-        // Check availability
-        log.info('2. Calling Summarizer.availability()...');
-        const availability = await window.Summarizer.availability();
-        log.info('3. Availability result:', availability);
-
-        // Try to create a summarizer
-        if (availability === 'available' || availability === 'downloadable') {
-            log.info('4. Attempting to create summarizer...');
-            const summarizer = await window.Summarizer.create({
-                type: 'headline',
-                format: 'plain-text',
-                length: 'short'
-            });
-            log.info('5. Summarizer created successfully!');
-
-            // Test summarization
-            const testText = 'Tell me about Attack on Titan anime series';
-            log.info('6. Testing summarization with:', testText);
-            const result = await summarizer.summarize(testText);
-            log.info('7. Summarization result:', result);
-
-            // Cleanup
-            summarizer.destroy();
-            log.info('8. Summarizer destroyed');
-        } else {
-            log.warn('Summarizer not available for testing');
-        }
-
-    } catch (error) {
-        log.error('Debug test failed:', error);
-    }
-    
-    log.info('=== Debug Complete ===');
 }

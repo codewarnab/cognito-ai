@@ -97,17 +97,6 @@
   color: #ef4444;
 }
 
-/* Summarizer status in header */
-.summarizer-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Summarizer status in thread list */
-.thread-list-header .summarizer-status {
-  margin-top: 2px;
-}
 
 .thread-list-header .status-badge {
   font-size: 10px;
