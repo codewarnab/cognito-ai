@@ -11,12 +11,15 @@ import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import McpServerManager from "./components/McpServerManager";
 import { ToolRenderer } from "./components/ToolRenderer";
+import { MemoryPanel } from "./components/MemoryPanel";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
+import "./styles/memory.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
+import { getBehavioralPreferences } from "./memory/store";
 
 /**
  * Inner component that uses CopilotKit hooks
@@ -26,8 +29,10 @@ function CopilotChatContent() {
   const log = createLogger("SidePanel-CopilotKit");
   const [input, setInput] = useState('');
   const [showMcp, setShowMcp] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
+  const [behavioralPreferences, setBehavioralPreferences] = useState<Record<string, unknown>>({});
 
   // Register modular Copilot actions
   useRegisterAllActions();
@@ -70,6 +75,22 @@ function CopilotChatContent() {
     };
     updateTabContext();
     const interval = setInterval(updateTabContext, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load behavioral preferences for context injection
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await getBehavioralPreferences();
+        setBehavioralPreferences(prefs);
+      } catch (error) {
+        log.error("Failed to load behavioral preferences", error);
+      }
+    };
+    loadPreferences();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadPreferences, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -215,6 +236,54 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         "  - Use 'listReminders' to show active upcoming reminders",
         "  - Use 'cancelReminder' to remove a reminder by title or ID",
         "  - Example suggestions: 'Would you like me to set a reminder to apply for this job tomorrow at 9 AM?'",
+
+        "MEMORY SYSTEM - SAVE & RECALL:",
+        "  - I have a memory system to remember facts and behavioral preferences across sessions",
+        "  - BEHAVIORAL PREFERENCES are injected into my context automatically (I know them without fetching)",
+        "  - OTHER FACTS require calling memory tools to retrieve",
+        
+        "  RETRIEVING MEMORIES:",
+        "  - To get a specific fact: call getMemory({ key: 'user.name' })",
+        "  - To get multiple memories: call listMemories({ category: 'fact' }) or listMemories({ category: 'behavior' })",
+        "  - User can ask: 'What do you remember about me?' → call listMemories()",
+        
+        "  SAVING MEMORIES - CONSENT REQUIRED:",
+        "  - CRITICAL: I must ALWAYS ask user consent BEFORE saving: 'Do you want me to remember this?'",
+        "  - ONLY save after user explicitly says Yes/Confirm/Sure",
+        "  - To save after consent: call saveMemory({ category, key, value, source })",
+        "  - Categories: 'fact' (name, email, preferences, credentials) or 'behavior' (rules like 'never ask about X', 'always do Y')",
+        "  - Keys are auto-canonicalized: 'User Name' → 'user.name'",
+        
+        "  SUGGESTING SAVES - POST-TASK:",
+        "  - After completing tasks, if I discover useful info (emails, API keys, preferences, etc.), I should suggest saving",
+        "  - Use suggestSaveMemory({ key, value, category, reason }) to suggest",
+        "  - Then ASK: 'I found your email (user@example.com). Do you want me to remember this for future tasks?'",
+        "  - Wait for consent before calling saveMemory",
+        
+        "  DETECTION & PROACTIVE SUGGESTIONS:",
+        "  - When user shares personal info in conversation, I should notice and suggest saving:",
+        "    * 'My name is John' → Suggest saving user.name = 'John'",
+        "    * 'My email is john@example.com' → Suggest saving user.email",
+        "    * 'I work as a developer' → Suggest saving user.profession",
+        "    * 'Never ask me about newsletters' → Suggest saving behavior.no-newsletters",
+        "  - Always phrase as a question: 'Would you like me to remember that your name is John?'",
+        
+        "  CONSENT WORKFLOW:",
+        "  - Step 1: Detect save-worthy info",
+        "  - Step 2: Ask user: 'Do you want me to remember this?'",
+        "  - Step 3a: If Yes → call saveMemory and confirm 'Saved! You can ask me to list or delete memories anytime.'",
+        "  - Step 3b: If No → acknowledge and move on",
+        "  - Step 3c: If user says 'never ask about this' → save a behavioral rule to not suggest that key again",
+        
+        "  DELETING MEMORIES:",
+        "  - User can ask to forget: 'Forget my email' → call deleteMemory({ key: 'user.email' })",
+        "  - Confirm deletion: 'I've forgotten your email.'",
+        
+        "  EXAMPLES:",
+        "  - User: 'My name is Alice' → Me: 'Nice to meet you, Alice! Would you like me to remember your name for future conversations?'",
+        "  - User: 'Yes' → Me: [calls saveMemory] 'Got it! I'll remember your name. You can ask me to list or delete memories anytime.'",
+        "  - User: 'What do you know about me?' → Me: [calls listMemories] 'I remember: your name is Alice, your email is...'",
+        "  - User: 'Forget my name' → Me: [calls deleteMemory] 'Done! I've forgotten your name.'",
       ],
 
       errorRecovery: [
@@ -270,6 +339,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         "organizeTabsByDomain - Simple grouping by website domain",
         "applyTabGroups - Apply AI-suggested groups to browser tabs",
         "ungroupTabs - Ungroup tabs (remove from groups). Can ungroup all groups or specific groups by name/ID. Supports multiple groups at once.",
+        "MEMORY TOOLS:",
+        "saveMemory - Save information to persistent memory (facts or behavioral preferences). REQUIRES user consent first!",
+        "getMemory - Retrieve a specific memory by key",
+        "listMemories - List all memories or filter by category (fact/behavior)",
+        "deleteMemory - Delete a memory by key",
+        "suggestSaveMemory - Suggest saving info after tasks (use to prompt user for consent)",
       ],
       mcpIntegration: {
         enabled: true,
@@ -285,6 +360,10 @@ When blocked by permissions or technical limits, try fallback approaches and exp
           ? { url: currentTab.url, title: currentTab.title }
           : undefined,
         recentActions: recentActions.length > 0 ? recentActions : undefined,
+        behavioralPreferences: Object.keys(behavioralPreferences).length > 0
+          ? behavioralPreferences
+          : undefined,
+        memoryGuidance: "Behavioral preferences are shown above. For other facts (user.name, user.email, etc.), I must call getMemory or listMemories to retrieve them. I can ask users if they want me to remember info by calling suggestSaveMemory first, then saveMemory after consent.",
       }
     }
   });
@@ -345,6 +424,9 @@ When blocked by permissions or technical limits, try fallback approaches and exp
       {/* Render MCP tool calls */}
       <ToolRenderer />
 
+      {/* Memory Panel */}
+      <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
+
       <CopilotChatWindow
         messages={messages}
         input={input}
@@ -353,6 +435,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
         onKeyPress={handleKeyPress}
         onClearChat={handleClearChat}
         onSettingsClick={() => setShowMcp(true)}
+        onMemoryClick={() => setShowMemory(true)}
         onStop={stopGeneration}
         isLoading={isLoading}
         messagesEndRef={messagesEndRef}

@@ -26,6 +26,7 @@ interface CopilotChatWindowProps {
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onSettingsClick?: () => void;
+    onMemoryClick?: () => void;
     onStop?: () => void;
 }
 
@@ -39,6 +40,7 @@ export function CopilotChatWindow({
     isLoading,
     messagesEndRef,
     onSettingsClick,
+    onMemoryClick,
     onStop,
 }: CopilotChatWindowProps) {
     return (
@@ -52,6 +54,16 @@ export function CopilotChatWindow({
                         <p>Powered by CopilotKit</p>
                     </div>
                     <div className="copilot-header-actions">
+                        {onMemoryClick && (
+                            <button
+                                className="copilot-memory-button"
+                                onClick={onMemoryClick}
+                                title="Memory Management"
+                                aria-label="Open memory panel"
+                            >
+                                💾
+                            </button>
+                        )}
                         {onSettingsClick && (
                             <button
                                 className="copilot-settings-button"

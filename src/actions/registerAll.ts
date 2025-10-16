@@ -1,9 +1,10 @@
 import { registerTabActions } from "./tabs";
 import { registerSelectionActions } from "./selection";
 import { registerInteractionActions } from "./interactions";
-import { registerPrimitiveActions } from "./primitives";
-import { registerHistoryActions } from "./history";
-import { registerReminderActions } from "./reminders";
+import { registerPrimitiveActions } from "./primitives/index";
+import { registerHistoryActions } from "./history/index";
+import { registerReminderActions } from "./reminder/index";
+import { registerMemoryActions } from "./memory/index";
 
 export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
@@ -14,4 +15,5 @@ export function useRegisterAllActions() {
   registerPrimitiveActions();
   registerHistoryActions();
   registerReminderActions();
+  registerMemoryActions();
 }
