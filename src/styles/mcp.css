@@ -3,7 +3,8 @@
 .mcp-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
+    max-height: 100vh;
     background: #1a1a1a;
     color: #ffffff;
     overflow: hidden;
@@ -51,13 +52,122 @@
     color: #ffffff;
 }
 
+/* Search Bar */
+.mcp-search-container {
+    padding: 16px 20px;
+    background: #1a1a1a;
+    border-bottom: 1px solid #404040;
+}
+
+.mcp-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #262626;
+    border: 1px solid #404040;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.mcp-search-wrapper:focus-within {
+    background: #2a2a2a;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.mcp-search-icon {
+    position: absolute;
+    left: 14px;
+    color: #a3a3a3;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.mcp-search-wrapper:focus-within .mcp-search-icon {
+    color: #3b82f6;
+}
+
+.mcp-search-input {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+}
+
+.mcp-search-input::placeholder {
+    color: #737373;
+}
+
+.mcp-search-clear {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #a3a3a3;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mcp-search-clear:hover {
+    background: #404040;
+    color: #ffffff;
+}
+
+.mcp-search-clear:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* No Results State */
+.mcp-no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.mcp-no-results svg {
+    color: #525252;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.mcp-no-results-text {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #d4d4d4;
+}
+
+.mcp-no-results-subtext {
+    margin: 0;
+    font-size: 14px;
+    color: #737373;
+}
+
 /* Content */
 .mcp-content {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 20px;
     background: #1a1a1a;
     min-height: 0;
+    max-height: calc(100vh - 145px);
+    /* Subtract header height (65px) + search bar height (80px) */
 }
 
 /* Server List */

@@ -31,7 +31,8 @@
     gap: 8px;
 }
 
-.copilot-settings-button {
+.copilot-settings-button,
+.copilot-memory-button {
     padding: 6px;
     background: transparent;
     border: 1px solid transparent;
@@ -44,15 +45,21 @@
     justify-content: center;
 }
 
-.copilot-settings-button:hover {
+.copilot-settings-button:hover,
+.copilot-memory-button:hover {
     background: #f3f4f6;
     border-color: #d1d5db;
     color: #374151;
 }
 
-.copilot-settings-button:focus-visible {
+.copilot-settings-button:focus-visible,
+.copilot-memory-button:focus-visible {
     outline: 2px solid var(--primary, #3b82f6);
     outline-offset: 2px;
+}
+
+.copilot-memory-button {
+    font-size: 18px;
 }
 
 .copilot-clear-button {
@@ -184,6 +191,13 @@
     word-break: break-word;
 }
 
+/* Generative UI Container */
+.copilot-generative-ui {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
 /* Loading Animation */
 .copilot-loading {
     display: flex;
@@ -291,28 +305,150 @@
     height: 40px;
     flex-shrink: 0;
     border: none;
-    border-radius: 8px;
-    background: var(--primary-color, #3b82f6);
+    border-radius: 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 4px 12px rgba(59, 130, 246, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.copilot-send-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    transition: left 0.5s ease;
+}
+
+.copilot-send-button:hover:not(:disabled)::before {
+    left: 100%;
 }
 
 .copilot-send-button:hover:not(:disabled) {
-    background: var(--primary-hover, #2563eb);
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #4b92ff 0%, #3b73ff 100%);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+        0 8px 24px rgba(59, 130, 246, 0.4),
+        0 0 0 4px rgba(59, 130, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .copilot-send-button:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+        0 2px 8px rgba(59, 130, 246, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .copilot-send-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+}
+
+.copilot-stop-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 4px 12px rgba(255, 68, 68, 0.3),
+        0 0 0 0 rgba(255, 68, 68, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: pulseGlowCopilot 2s ease-in-out infinite;
+}
+
+.copilot-stop-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    transition: left 0.5s ease;
+}
+
+.copilot-stop-button:hover::before {
+    left: 100%;
+}
+
+.copilot-stop-button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow:
+        0 8px 24px rgba(255, 68, 68, 0.4),
+        0 0 0 4px rgba(255, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #ff5555 0%, #dd0000 100%);
+}
+
+.copilot-stop-button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+        0 2px 8px rgba(255, 68, 68, 0.3),
+        inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pulseGlowCopilot {
+
+    0%,
+    100% {
+        box-shadow:
+            0 4px 12px rgba(255, 68, 68, 0.3),
+            0 0 0 0 rgba(255, 68, 68, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    50% {
+        box-shadow:
+            0 4px 16px rgba(255, 68, 68, 0.4),
+            0 0 0 8px rgba(255, 68, 68, 0),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Markdown Content Styles for Copilot */
+.markdown-content a {
+    color: var(--color-secondary, #1264FF);
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.markdown-content a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.markdown-content a:visited {
+    color: var(--color-secondary, #1264FF);
 }
 
 /* Dark Mode Support */
@@ -327,6 +463,14 @@
         --border-color: #404040;
         --primary-color: #3b82f6;
         --primary-hover: #2563eb;
+    }
+    
+    .markdown-content a {
+        color: var(--color-secondary, #1264FF);
+    }
+    
+    .markdown-content a:hover {
+        opacity: 0.8;
     }
 }
 

@@ -1,6 +1,7 @@
 /**
  * Custom CopilotKit Chat Window Component
  * Adapted for Chrome Extension Side Panel
+ * MERGED VERSION: Voice Input + Stop Button + Thread Management + Memory Panel
  */
 
 import React from 'react';
@@ -11,23 +12,25 @@ import { VoiceInput } from '../audio/VoiceInput';
 
 interface Message {
     id?: string;
-    role?: 'user' | 'assistant' | string;
-    content?: string;
-    text?: string;
+    role: 'user' | 'assistant';
+    content: string;
+    generativeUI?: () => React.ReactElement | null;
 }
 
 interface CopilotChatWindowProps {
     messages: Message[];
     input: string;
-    setInput: React.Dispatch<React.SetStateAction<string>>;
+    setInput: (value: string) => void;
     onSendMessage: (messageText?: string) => void;
-    onKeyPress: (e: React.KeyboardEvent) => void;
+    onKeyDown: (e: React.KeyboardEvent) => void;
     onClearChat: () => void;
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
+    onMemoryClick?: () => void;
+    onStop?: () => void;
 }
 
 export function CopilotChatWindow({
@@ -35,13 +38,15 @@ export function CopilotChatWindow({
     input,
     setInput,
     onSendMessage,
-    onKeyPress,
+    onKeyDown,
     onClearChat,
     isLoading,
     messagesEndRef,
     onSettingsClick,
     onThreadsClick,
     onNewThreadClick,
+    onMemoryClick,
+    onStop,
 }: CopilotChatWindowProps) {
     return (
         <div className="copilot-chat-window">
@@ -54,6 +59,7 @@ export function CopilotChatWindow({
                         <p>Powered by CopilotKit</p>
                     </div>
                     <div className="copilot-header-actions">
+                        {/* Thread History Button */}
                         {onThreadsClick && (
                             <button
                                 className="threads-button"
@@ -69,10 +75,11 @@ export function CopilotChatWindow({
                                     stroke="currentColor"
                                     strokeWidth="2"
                                 >
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                                 </svg>
                             </button>
                         )}
+                        {/* New Thread Button */}
                         {onNewThreadClick && (
                             <button
                                 className="threads-button"
@@ -88,10 +95,22 @@ export function CopilotChatWindow({
                                     stroke="currentColor"
                                     strokeWidth="2"
                                 >
-                                    <path d="M12 5v14M5 12h14"/>
+                                    <path d="M12 5v14M5 12h14" />
                                 </svg>
                             </button>
                         )}
+                        {/* Memory Button */}
+                        {onMemoryClick && (
+                            <button
+                                className="copilot-memory-button"
+                                onClick={onMemoryClick}
+                                title="Memory Management"
+                                aria-label="Open memory panel"
+                            >
+                                💾
+                            </button>
+                        )}
+                        {/* Settings Button */}
                         {onSettingsClick && (
                             <button
                                 className="copilot-settings-button"
@@ -123,6 +142,7 @@ export function CopilotChatWindow({
                                 </svg>
                             </button>
                         )}
+                        {/* Clear Button */}
                         <button
                             className="copilot-clear-button"
                             onClick={onClearChat}
@@ -148,30 +168,36 @@ export function CopilotChatWindow({
                 ) : (
                     messages
                         .filter(message => {
-                            const content = message.content || message.text || '';
-                            return content && typeof content === 'string' && content.trim().length > 0;
+                            const content = message.content;
+                            return typeof content === 'string' && content.trim().length > 0;
                         })
                         .map((message, index) => (
                             <div
                                 key={message.id || index}
-                                className={`copilot-message copilot-message-${message.role || 'assistant'}`}
+                                className={`copilot-message copilot-message-${message.role}`}
                             >
                                 {message.role === 'assistant' && (
                                     <div className="copilot-message-avatar">🤖</div>
                                 )}
 
-                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role || 'assistant'}`}>
+                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role}`}>
                                     <div className="copilot-message-content">
                                         {message.role === 'assistant' ? (
                                             <div className="markdown-content">
                                                 <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                    {message.content || message.text || ''}
+                                                    {message.content}
                                                 </ReactMarkdown>
                                             </div>
                                         ) : (
-                                            message.content || message.text || ''
+                                            message.content
                                         )}
                                     </div>
+                                    {/* Render generative UI from useFrontendAction/useFrontendTool render functions */}
+                                    {message.role === 'assistant' && message.generativeUI && (
+                                        <div className="copilot-generative-ui">
+                                            {message.generativeUI()}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {message.role === 'user' && (
@@ -183,7 +209,12 @@ export function CopilotChatWindow({
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                    <div className="copilot-message copilot-message-assistant">
+                    <div
+                        className="copilot-message copilot-message-assistant"
+                        role="status"
+                        aria-live="polite"
+                        aria-label="Assistant is typing"
+                    >
                         <div className="copilot-message-avatar">🤖</div>
                         <div className="copilot-message-bubble copilot-message-bubble-assistant">
                             <div className="copilot-loading">
@@ -194,7 +225,6 @@ export function CopilotChatWindow({
                         </div>
                     </div>
                 )}
-
                 <div ref={messagesEndRef} />
             </div>
 
@@ -205,12 +235,13 @@ export function CopilotChatWindow({
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={onKeyPress}
+                        onKeyDown={onKeyDown}
                         placeholder="Ask me anything..."
                         className="copilot-input"
                         disabled={isLoading}
                     />
                     <div className="copilot-input-actions">
+                        {/* Voice Input */}
                         <VoiceInput
                             onTranscript={(text) => setInput(text)}
                             onRecordingComplete={(finalText) => {
@@ -220,24 +251,35 @@ export function CopilotChatWindow({
                             }}
                             className="copilot-voice-input"
                         />
-                        <button
-                            onClick={() => onSendMessage()}
-                            disabled={!input.trim() || isLoading}
-                            className="copilot-send-button"
-                            title="Send message"
-                        >
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
+                        {/* Conditional Stop/Send Button */}
+                        {isLoading && onStop ? (
+                            <button
+                                onClick={onStop}
+                                className="copilot-stop-button"
+                                title="Stop generation"
                             >
-                                <path d="M22 2L11 13" />
-                                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                            </svg>
-                        </button>
+                                ⏹️
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => onSendMessage()}
+                                disabled={!input.trim() || isLoading}
+                                className="copilot-send-button"
+                                title="Send message"
+                            >
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path d="M22 2L11 13" />
+                                    <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

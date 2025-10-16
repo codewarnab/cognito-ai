@@ -655,6 +655,33 @@ chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendRes
 // Runtime Listeners
 // ============================================================================
 
+// Global notification click handler for reminders
+chrome.notifications.onClicked.addListener(async (notificationId) => {
+    try {
+        if (!notificationId.startsWith('reminder:')) {
+            return;
+        }
+
+        const id = notificationId.split(':')[1];
+        const { reminders = {} } = await chrome.storage.local.get('reminders');
+        const reminder: Reminder | undefined = reminders[id];
+
+        if (reminder?.url) {
+            await chrome.tabs.create({ url: reminder.url });
+        }
+
+        // Cleanup: remove reminder and clear notification
+        if (reminders[id]) {
+            delete reminders[id];
+            await chrome.storage.local.set({ reminders });
+        }
+
+        chrome.notifications.clear(notificationId);
+    } catch (error) {
+        console.error('[Background] Error handling notification click:', error);
+    }
+});
+
 /**
  * Extension install/update handler
  */
@@ -729,6 +756,71 @@ if (chrome.action) {
 // Create cleanup alarm (runs every hour)
 chrome.alarms.create('cleanup-expired-sessions', {
     periodInMinutes: 60
+});
+
+// ============================================================================
+// Reminder Alarms Handler
+// ============================================================================
+
+interface Reminder {
+    id: string;
+    title: string;
+    when: number;
+    url?: string;
+    createdAt: number;
+    generatedTitle?: string;
+    generatedDescription?: string;
+}
+
+/**
+ * Handle reminder alarms - show notification when reminder fires
+ */
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    // Only handle reminder alarms
+    if (!alarm.name.startsWith('reminder:')) {
+        return;
+    }
+
+    const id = alarm.name.split(':')[1];
+    console.log('[Background] Reminder alarm fired:', id);
+
+    try {
+        // Get the reminder from storage
+        const { reminders = {} } = await chrome.storage.local.get('reminders');
+        const reminder: Reminder | undefined = reminders[id];
+
+        if (!reminder) {
+            console.warn('[Background] Reminder not found:', id);
+            return;
+        }
+
+        // Create notification with AI-generated content or fallback to original title
+        const simpleIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        const notificationTitle = reminder.generatedTitle || '⏰ Reminder';
+        const notificationMessage = reminder.generatedDescription || reminder.title;
+
+        // Use a namespaced notification ID to distinguish reminders
+        chrome.notifications.create(`reminder:${id}`, {
+            type: 'basic',
+            iconUrl: simpleIcon,
+            title: notificationTitle,
+            message: notificationMessage,
+            priority: 2,
+            requireInteraction: false
+        });
+
+        console.log('[Background] Reminder notification created:', {
+            title: notificationTitle,
+            message: notificationMessage
+        });
+
+        // Do not remove the reminder here; it will be removed by the global
+        // notification click handler to avoid race conditions and ensure the
+        // click handler has access to the stored reminder data.
+    } catch (error) {
+        console.error('[Background] Error handling reminder alarm:', error);
+    }
 });
 
 // ============================================================================
