@@ -20,7 +20,7 @@ interface CopilotChatWindowProps {
     messages: Message[];
     input: string;
     setInput: React.Dispatch<React.SetStateAction<string>>;
-    onSendMessage: () => void;
+    onSendMessage: (messageText?: string) => void;
     onKeyPress: (e: React.KeyboardEvent) => void;
     onClearChat: () => void;
     isLoading: boolean;
@@ -213,11 +213,15 @@ export function CopilotChatWindow({
                     <div className="copilot-input-actions">
                         <VoiceInput
                             onTranscript={(text) => setInput(text)}
-                            onRecordingComplete={onSendMessage}
+                            onRecordingComplete={(finalText) => {
+                                // Send directly with the voice text
+                                setInput(''); // Clear input immediately
+                                onSendMessage(finalText); // Pass text directly
+                            }}
                             className="copilot-voice-input"
                         />
                         <button
-                            onClick={onSendMessage}
+                            onClick={() => onSendMessage()}
                             disabled={!input.trim() || isLoading}
                             className="copilot-send-button"
                             title="Send message"

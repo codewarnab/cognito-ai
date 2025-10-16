@@ -105,18 +105,18 @@ function CopilotChatContent() {
           const savedSessionId = await getBrowserSessionId();
           
           // Check if this is a new browser session (browser restart)
-          const isBrowserRestart = !savedSessionId || Math.abs(parseInt(currentSessionId) - parseInt(savedSessionId)) > 60000;
-          
-          if (isBrowserRestart) {
-            // Browser was restarted (more than 1 minute gap) - create a new thread
-            log.info("Browser restart detected - creating new thread");
-            const thread = await createThread();
-            setCurrentThreadId(thread.id);
-            await setLastActiveThreadId(thread.id);
-            await setBrowserSessionId(currentSessionId);
-            log.info("Created new thread for new session", { threadId: thread.id });
-            return;
-          }
+          //const isBrowserRestart = !savedSessionId || Math.abs(parseInt(currentSessionId) - parseInt(savedSessionId)) > 60000;
+          //
+          //if (isBrowserRestart) {
+          //  // Browser was restarted (more than 1 minute gap) - create a new thread
+          //  log.info("Browser restart detected - creating new thread");
+          //  const thread = await createThread();
+          //  setCurrentThreadId(thread.id);
+          //  await setLastActiveThreadId(thread.id);
+          //  await setBrowserSessionId(currentSessionId);
+          //  log.info("Created new thread for new session", { threadId: thread.id });
+          //  return;
+          //}
           
           // Panel was just closed/reopened - try to restore last active thread
           const lastThreadId = await getLastActiveThreadId();
@@ -382,19 +382,19 @@ When blocked by permissions or technical limits, try fallback approaches and exp
   // Inline Copilot actions have been refactored into modular registrations via useRegisterAllActions()
 
   // Handle sending messages
-  const handleSendMessage = async () => {
-    const trimmedInput = input.trim();
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || input.trim();
 
-    if (!trimmedInput || isLoading) {
+    if (!textToSend || isLoading) {
       return;
     }
 
-    log.info("SendMessage", { length: trimmedInput.length });
+    log.info("SendMessage", { length: textToSend.length });
     
     setInput('');
 
     await appendMessage(new TextMessage({
-      content: trimmedInput,
+      content: textToSend,
       role: Role.User
     }));
   };

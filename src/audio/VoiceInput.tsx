@@ -15,7 +15,7 @@ interface VoiceInputProps {
   onTranscript: (text: string) => void;
   onRecordingChange?: (isRecording: boolean) => void;
   onInterimTranscript?: (text: string) => void;
-  onRecordingComplete?: () => void;
+  onRecordingComplete?: (finalText: string) => void; // Pass the text directly
   className?: string;
   lang?: string;
   silenceTimeout?: number;
@@ -52,10 +52,11 @@ export function VoiceInput({
     onFinalTranscript: (finalText: string) => {
       if (finalText.trim()) {
         log.info('Final transcript received', { text: finalText });
-        onTranscript(finalText.trim());
+        const cleanText = finalText.trim();
+        onTranscript(cleanText);
         resetTranscript();
-        // Trigger auto-send immediately
-        onRecordingComplete?.();
+        // Trigger auto-send with the text
+        onRecordingComplete?.(cleanText);
       }
     },
   });
