@@ -6,7 +6,8 @@
   "author": "dev@codewarnab.in",
   "scripts": {
     "dev": "plasmo dev",
-    "build": "plasmo build",
+    "dev:setup": "node scripts/copy-offscreen.js",
+    "build": "plasmo build && node scripts/copy-offscreen.js",
     "package": "plasmo package",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -49,6 +50,9 @@
     "vitest": "^3.2.4"
   },
   "manifest": {
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+    },
     "permissions": [
       "storage",
       "unlimitedStorage",
@@ -61,6 +65,7 @@
       "webNavigation",
       "identity",
       "notifications",
+      "offscreen",
       "cookies",
       "history"
     ],

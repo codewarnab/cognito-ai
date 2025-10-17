@@ -830,3 +830,80 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 console.log('[Background] Service worker loaded - CopilotKit powered extension ready');
 console.log('[Background] Browser actions event listeners initialized');
 
+// ============================================================================
+// Offscreen Document: Summarizer Broker
+// ============================================================================
+
+// Ensure a single offscreen document exists
+async function ensureOffscreenDocument(): Promise<void> {
+    try {
+        // Chrome 116+ has chrome.offscreen.hasDocument
+        // Fallback: try creating and ignore if already exists
+        const hasDoc: boolean = typeof chrome.offscreen?.hasDocument === 'function'
+            ? await chrome.offscreen.hasDocument()
+            : false;
+
+        if (!hasDoc) {
+            await chrome.offscreen.createDocument({
+                url: 'offscreen.html',
+                // Using IFRAME_SCRIPTING is appropriate for running DOM APIs & scripts
+                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
+                justification: 'Run Chrome Summarizer API in an isolated offscreen document'
+            });
+            console.log('[Background] Offscreen document created');
+        }
+    } catch (error) {
+        // Some Chrome versions throw if a document already exists
+        console.warn('[Background] ensureOffscreenDocument warning:', error);
+    }
+}
+
+type SummarizeAvailabilityMessage = { type: 'summarize:availability' };
+type SummarizeRequestMessage = {
+    type: 'summarize:request';
+    payload: {
+        requestId: string;
+        text: string;
+        options?: {
+            type?: 'key-points' | 'tldr' | 'teaser' | 'headline';
+            format?: 'markdown' | 'plain-text';
+            length?: 'short' | 'medium' | 'long';
+            sharedContext?: string;
+        };
+        context?: string;
+    };
+};
+
+// Wire summarize messages coming from UI to the offscreen document
+chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
+    if (message?.type === 'summarize:availability') {
+        (async () => {
+            await ensureOffscreenDocument();
+            try {
+                const res = await chrome.runtime.sendMessage({ type: 'offscreen/summarize/availability' });
+                sendResponse(res);
+            } catch (error) {
+                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
+            }
+        })();
+        return true;
+    }
+
+    if (message?.type === 'summarize:request') {
+        (async () => {
+            const msg = message as SummarizeRequestMessage;
+            await ensureOffscreenDocument();
+            try {
+                const res = await chrome.runtime.sendMessage({
+                    type: 'offscreen/summarize/request',
+                    payload: msg.payload
+                });
+                sendResponse(res);
+            } catch (error) {
+                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
+            }
+        })();
+        return true;
+    }
+});
+

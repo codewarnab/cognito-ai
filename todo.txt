@@ -4,3 +4,5 @@ b) On-demand connections (connect only when tools are needed)
 c) Per-request connections (simplest, may be slower)
 https://www.copilotkit.ai/examples/ai-research
 https://www.copilotkit.ai/examples/travel-planner
+https://github.com/cupcakearmy/ora?tab=readme-ov-file
+

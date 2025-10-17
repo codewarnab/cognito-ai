@@ -563,6 +563,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
         if (window.confirm('Are you sure you want to clear the chat history for this thread?')) {
             try {
+                // Abort any ongoing streaming request first
+                if (isLoading) {
+                    log.info("Aborting ongoing generation for chat clear");
+                    stopGeneration();
+                }
+
                 log.info("Clearing thread messages", { threadId: currentThreadId });
 
                 // Clear CopilotKit messages
@@ -581,6 +587,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     // Handle creating a new thread
     const handleNewThread = async () => {
         try {
+            // Abort any ongoing streaming request first
+            if (isLoading) {
+                log.info("Aborting ongoing generation for new thread");
+                stopGeneration();
+            }
+
             const thread = await createThread();
             setCurrentThreadId(thread.id);
             setMessages([]);
@@ -593,6 +605,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
     // Handle selecting a thread
     const handleThreadSelect = async (threadId: string) => {
+        // Abort any ongoing streaming request first
+        if (isLoading) {
+            log.info("Aborting ongoing generation for thread switch");
+            stopGeneration();
+        }
+
         setCurrentThreadId(threadId);
         await setLastActiveThreadId(threadId);
     };
@@ -648,7 +666,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
  */
 function SidePanel() {
     return (
-        <CopilotKit publicApiKey="ck_pub_0f2b859676875143d926df3e2a9a3a7a">
+        <CopilotKit runtimeUrl="https://backend-dun-eta-47.vercel.app/api">
             {/* CopilotCloud integration with MCP server support */}
             <CopilotChatContent />
         </CopilotKit>
