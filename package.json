@@ -5,7 +5,7 @@
   "description": "super powerful and private ",
   "author": "dev@codewarnab.in",
   "scripts": {
-    "dev": "plasmo dev",
+    "dev": "plasmo dev && node scripts/copy-offscreen.js",
     "dev:setup": "node scripts/copy-offscreen.js",
     "build": "plasmo build && node scripts/copy-offscreen.js",
     "package": "plasmo package",
