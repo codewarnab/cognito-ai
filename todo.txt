@@ -6,3 +6,22 @@ https://www.copilotkit.ai/examples/ai-research
 https://www.copilotkit.ai/examples/travel-planner
 https://github.com/cupcakearmy/ora?tab=readme-ov-file
 
+
+
+
+tool renderer in ui
+history, memory, remainder, tabs (useOpenTab add new tab param)
+search using chrome search api, also add permision for that and microphone
+improve organise tab by context
+select and fill inputs
+interaction tool
+
+DELETE ALL COPILOTKIT REFERENCES (ANY AND ALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL)
+
+Get accessibility api working
+
+mcp auth , tools (integration with mcp)
+ui improvements
+floating action button to select tables
+onboarding
+settings page - api key, voice settings, etc
