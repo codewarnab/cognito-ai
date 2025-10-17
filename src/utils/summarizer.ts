@@ -60,52 +60,9 @@ declare global {
 /**
  * Create a summarizer instance
  */
-export async function createSummarizer(options: SummarizerOptions = {}) {
-    const {
-        type = 'headline',
-        format = 'plain-text',
-        length = 'short',
-        sharedContext,
-        onDownloadProgress
-    } = options;
-
-    try {
-        if (!window.Summarizer) {
-            throw new Error('Summarizer API not available');
-        }
-        
-        // Check availability
-        const availability = await window.Summarizer.availability();
-        if (availability === 'unavailable') {
-            throw new Error('Summarizer API is not available on this device');
-        }
-
-        const summarizerOptions: any = {
-            type,
-            format,
-            length,
-            sharedContext
-        };
-
-        // Add download monitor if callback provided
-        if (onDownloadProgress && availability === 'downloadable') {
-            summarizerOptions.monitor = (m: any) => {
-                m.addEventListener('downloadprogress', (e: any) => {
-                    const progress = e.loaded || 0;
-                    onDownloadProgress(progress);
-                    log.info(`Model download progress: ${(progress * 100).toFixed(1)}%`);
-                });
-            };
-        }
-
-        const summarizer = await window.Summarizer.create(summarizerOptions);
-        log.info('Summarizer created successfully', { type, format, length });
-        
-        return summarizer;
-    } catch (error) {
-        log.error('Error creating summarizer:', error);
-        throw error;
-    }
+export async function createSummarizer(_options: SummarizerOptions = {}) {
+    // This function is no longer used directly; summarization now runs in offscreen.
+    throw new Error('createSummarizer is not available in UI context. Use generateThreadTitle which proxies to offscreen.');
 }
 
 
@@ -130,39 +87,53 @@ export async function generateHeadline(
         onDownloadProgress
     } = options;
 
+    // Clean the text - remove HTML and extra whitespace
+    const cleanText = text
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/\s+/g, ' ')     // Normalize whitespace
+        .trim();
+
+    if (!cleanText || cleanText.length < 10) {
+        log.warn('Text too short to summarize');
+        return null;
+    }
+
+    log.info('Requesting offscreen summarize for headline generation');
+
+    // Subscribe to progress events for this requestId
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const progressListener = (msg: any) => {
+        if (msg?.type === 'summarize:progress' && msg?.payload?.requestId === requestId) {
+            const loaded = typeof msg.payload.loaded === 'number' ? msg.payload.loaded : 0;
+            onDownloadProgress?.(loaded);
+            log.info(`Model download progress: ${(loaded * 100).toFixed(1)}%`);
+        }
+    };
+    chrome.runtime.onMessage.addListener(progressListener);
+
     try {
+        const response = await chrome.runtime.sendMessage({
+            type: 'summarize:request',
+            payload: {
+                requestId,
+                text: cleanText,
+                options: {
+                    type: 'headline',
+                    format: 'plain-text',
+                    length: 'short',
+                    sharedContext: context
+                },
+                context
+            }
+        });
 
-        // Clean the text - remove HTML and extra whitespace
-        const cleanText = text
-            .replace(/<[^>]*>/g, '') // Remove HTML tags
-            .replace(/\s+/g, ' ')     // Normalize whitespace
-            .trim();
-
-        if (!cleanText || cleanText.length < 10) {
-            log.warn('Text too short to summarize');
+        if (!response?.ok) {
+            log.warn('Offscreen summarizer error', response);
             return null;
         }
 
-        log.info('Creating summarizer for headline generation');
-        
-        // Create summarizer with headline type
-        const summarizer = await createSummarizer({
-            type: 'headline',
-            format: 'plain-text',
-            length: 'short', // 12 words max
-            sharedContext: context,
-            onDownloadProgress
-        });
-
-        log.info('Generating headline from text:', cleanText.slice(0, 100));
-
-        // Generate summary
-        const headline = await summarizer.summarize(cleanText);
-        
+        const headline = String(response.summary || '');
         log.info('Raw headline generated:', headline);
-
-        // Clean up the summarizer
-        summarizer.destroy();
 
         // Truncate if needed
         const finalHeadline = headline.length > maxLength 
@@ -171,10 +142,11 @@ export async function generateHeadline(
 
         log.info('Final headline:', finalHeadline);
         return finalHeadline;
-
     } catch (error) {
-        log.error('Error generating headline:', error);
+        log.error('Error generating headline via offscreen:', error);
         return null;
+    } finally {
+        chrome.runtime.onMessage.removeListener(progressListener);
     }
 }
 
@@ -193,37 +165,13 @@ export async function generateHeadlineStreaming(
         onDownloadProgress?: (progress: number) => void;
     } = {}
 ): Promise<void> {
-    const { context, onDownloadProgress } = options;
-
-    try {
-
-        const cleanText = text
-            .replace(/<[^>]*>/g, '')
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        if (!cleanText || cleanText.length < 10) {
-            return;
-        }
-
-        const summarizer = await createSummarizer({
-            type: 'headline',
-            format: 'plain-text',
-            length: 'short',
-            sharedContext: context,
-            onDownloadProgress
-        });
-
-        const stream = summarizer.summarizeStreaming(cleanText);
-        
-        for await (const chunk of stream) {
-            onChunk(chunk);
-        }
-
-        summarizer.destroy();
-
-    } catch (error) {
-        log.error('Error in streaming headline generation:', error);
+    // Temporary non-streaming fallback using offscreen batch API
+    const result = await generateHeadline(text, {
+        context: options.context,
+        onDownloadProgress: options.onDownloadProgress
+    });
+    if (result) {
+        onChunk(result);
     }
 }
 
