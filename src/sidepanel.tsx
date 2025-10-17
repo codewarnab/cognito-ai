@@ -1,17 +1,7 @@
-/**
- * CopilotKit-powered Side Panel with Custom UI
- * Uses CopilotCloud with MCP server integration via setMcpServers
- * MERGED VERSION: Includes Thread Management, Memory System, History Search, Reminders, Tab Organization
- */
-
 import { useState, useRef, useEffect } from "react";
-import { CopilotKit } from "@copilotkit/react-core";
-import { useCopilotChat, useCopilotReadable, useCopilotMessagesContext } from "@copilotkit/react-core";
-import { TextMessage, Role } from "@copilotkit/runtime-client-gql";
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
-import McpServerManager from "./components/McpServerManager";
-import { ToolRenderer } from "./components/ToolRenderer";
+import { ToolUIProvider } from "./ai/ToolUIContext";
 import { ThreadList } from "./components/ThreadList";
 import { MemoryPanel } from "./components/MemoryPanel";
 import "./styles/copilot.css";
@@ -20,7 +10,7 @@ import "./styles/mcp-tools.css";
 import "./styles/memory.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
-import { useRegisterAllActions } from "./actions/registerAll";
+import { useOpenTabTool } from "./actions/tabs/openTabTool";
 import {
     db,
     createThread,
@@ -30,17 +20,24 @@ import {
     getLastActiveThreadId,
     setLastActiveThreadId,
     getBrowserSessionId,
-    setBrowserSessionId
+    setBrowserSessionId,
+    type ChatMessage
 } from "./db";
 import { generateThreadTitle } from "./utils/summarizer";
 import { getBehavioralPreferences } from "./memory/store";
+import { useAIChat } from "./ai/useAIChat";
+import type { UIMessage } from "ai";
 
 /**
- * Inner component that uses CopilotKit hooks
- * Must be wrapped by CopilotKit provider
+ * Inner component that uses AI SDK v5
+ * Uses custom ChromeExtensionTransport for service worker communication
  */
-function CopilotChatContent() {
-    const log = createLogger("SidePanel-CopilotKit");
+function AIChatContent() {
+    const log = createLogger("SidePanel-AI-SDK");
+    
+    // Register AI SDK v5 tools
+    useOpenTabTool();
+    
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
@@ -51,43 +48,26 @@ function CopilotChatContent() {
     const [behavioralPreferences, setBehavioralPreferences] = useState<Record<string, unknown>>({});
     const sessionIdRef = useRef<string>(Date.now().toString());
 
-    // Register modular Copilot actions
-    useRegisterAllActions();
-
-    // Use CopilotKit chat hook for custom UI
-    const {
-        visibleMessages,
-        isLoading,
-        appendMessage,
-        stopGeneration,
-    } = useCopilotChat();
-
-    // Use messages context for persistence
-    const { messages: allMessages, setMessages } = useCopilotMessagesContext();
-
-    // Extract recent actions from messages for context
-    const recentActions = visibleMessages
-        .filter((msg: any) => msg.role === 'assistant')
-        .slice(-3)
-        .map((msg: any, idx: number) => ({
-            tool: 'action',
-            outcome: (msg.content || msg.text || '').slice(0, 100),
-            secondsAgo: (3 - idx) * 10, // Approximate time
-        }));
-
-    // Filter out empty messages
-    const messages = visibleMessages.filter(message => {
-        const content = (message as any).content || (message as any).text || '';
-        return content && typeof content === 'string' && content.trim().length > 0;
+    // Use AI SDK v5 chat hook with ChromeExtensionTransport
+    const aiChat = useAIChat({
+        threadId: currentThreadId || 'default',
+        onError: (error) => {
+            log.error('AI Chat error', error);
+        },
+        onFinish: (result) => {
+            log.info('AI response finished', { messageId: result.message.id });
+        },
     });
 
-    // Map SDK messages to UI message shape expected by CopilotChatWindow
-    const uiMessages = messages.map((m: any) => ({
-        id: m.id,
-        role: (m.role as 'user' | 'assistant') ?? (m.sender as 'user' | 'assistant') ?? 'assistant',
-        content: typeof m.content === 'string' ? m.content : String(m.content ?? ''),
-        generativeUI: m.generativeUI,
-    }));
+    const {
+        messages,
+        sendMessage,
+        status,
+        stop,
+        setMessages,
+    } = aiChat;
+
+    const isLoading = status === 'submitted' || status === 'streaming';
 
     // Track current tab context
     useEffect(() => {
@@ -154,17 +134,15 @@ function CopilotChatContent() {
                 if (storedMessages.length > 0) {
                     log.info("Loading thread messages from DB", { threadId: currentThreadId, count: storedMessages.length });
 
-                    // Convert DB messages to CopilotKit message format
-                    const copilotMessages = storedMessages.map((msg) => {
-                        return new TextMessage({
-                            id: msg.id,
-                            role: msg.role === 'user' ? Role.User : Role.Assistant,
-                            content: msg.content,
-                            createdAt: new Date(msg.timestamp).toISOString(),
-                        });
-                    });
+                    // Convert DB messages to AI SDK v5 UIMessage format
+                    const uiMessages: UIMessage[] = storedMessages.map((msg: ChatMessage) => ({
+                        id: msg.id,
+                        role: msg.role,
+                        parts: [{ type: 'text', text: msg.content }],
+                        createdAt: new Date(msg.timestamp),
+                    }));
 
-                    setMessages(copilotMessages);
+                    setMessages(uiMessages);
                 }
 
                 // Update the last active thread whenever thread changes
@@ -181,21 +159,36 @@ function CopilotChatContent() {
     // Save messages to IndexedDB when they change
     useEffect(() => {
         const saveMessages = async () => {
-            if (allMessages.length === 0 || !currentThreadId) return;
+            if (messages.length === 0 || !currentThreadId) return;
 
             try {
                 // Clear existing messages for this thread and save new ones
                 await clearThreadMessages(currentThreadId);
 
-                const dbMessages = allMessages
-                    .filter((msg: any) => msg.content && msg.content.trim().length > 0)
-                    .map((msg: any) => ({
-                        id: msg.id,
-                        threadId: currentThreadId,
-                        role: msg.role === Role.User ? 'user' as const : 'assistant' as const,
-                        content: msg.content,
-                        timestamp: msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now(),
-                    }));
+                // Convert AI SDK v5 UIMessage to DB format
+                const dbMessages: ChatMessage[] = messages
+                    .filter((msg) => {
+                        // Extract text from parts
+                        const text = msg.parts
+                            ?.filter((part: any) => part.type === 'text')
+                            .map((part: any) => part.text)
+                            .join('');
+                        return text && text.trim().length > 0;
+                    })
+                    .map((msg) => {
+                        const text = msg.parts
+                            ?.filter((part: any) => part.type === 'text')
+                            .map((part: any) => part.text)
+                            .join('') || '';
+
+                        return {
+                            id: msg.id,
+                            threadId: currentThreadId,
+                            role: msg.role as 'user' | 'assistant',
+                            content: text,
+                            timestamp: (msg as any).createdAt ? new Date((msg as any).createdAt).getTime() : Date.now(),
+                        };
+                    });
 
                 if (dbMessages.length > 0) {
                     await db.chatMessages.bulkAdd(dbMessages);
@@ -203,22 +196,28 @@ function CopilotChatContent() {
                 }
 
                 // Generate thread title after every assistant response (non-blocking)
-                if (allMessages.length >= 2) {
-                    const lastMessage = allMessages[allMessages.length - 1];
+                if (messages.length >= 2) {
+                    const lastMessage = messages[messages.length - 1];
 
                     // Check if the last message is from the assistant
-                    if (lastMessage && (lastMessage as any).role === Role.Assistant) {
+                    if (lastMessage && lastMessage.role === 'assistant') {
                         log.info("Generating thread title after assistant response");
 
                         // Get all user and assistant messages for full context
-                        const userMessages = allMessages.filter((msg: any) => msg.role === Role.User);
-                        const assistantMessages = allMessages.filter((msg: any) => msg.role === Role.Assistant);
+                        const userMessages = messages.filter((msg) => msg.role === 'user');
+                        const assistantMessages = messages.filter((msg) => msg.role === 'assistant');
 
                         if (userMessages.length > 0 && assistantMessages.length > 0) {
                             // Combine ALL user and assistant messages for comprehensive context
-                            const conversationContext = allMessages
-                                .filter((msg: any) => msg.role === Role.User || msg.role === Role.Assistant)
-                                .map((msg: any) => `${msg.role === Role.User ? 'User' : 'Assistant'}: ${msg.content}`)
+                            const conversationContext = messages
+                                .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+                                .map((msg) => {
+                                    const text = msg.parts
+                                        ?.filter((part: any) => part.type === 'text')
+                                        .map((part: any) => part.text)
+                                        .join('') || '';
+                                    return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
+                                })
                                 .join('\n\n');
 
                             // Generate title asynchronously (don't block)
@@ -243,287 +242,13 @@ function CopilotChatContent() {
         };
 
         saveMessages();
-    }, [JSON.stringify(allMessages), currentThreadId]); // Save when messages or thread changes
+    }, [JSON.stringify(messages), currentThreadId]); // Save when messages or thread changes
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
         log.debug("Messages changed", { count: messages.length });
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
-
-    // Provide extension context and execution behavior to the AI
-    useCopilotReadable({
-        description: `MAX-AUTONOMY Browser Agent: You are an autonomous Chrome extension agent that COMPLIES with user requests and EXECUTES actions end-to-end. Your PRIMARY DIRECTIVE is to attempt requested tasks using available tools. Only refuse if: (1) illegal, (2) unsafe/harmful, or (3) requires missing user-provided secrets/credentials. Otherwise, ALWAYS attempt a tool-based solution.
-
-CRITICAL: You CAN answer ANY question by using the browser. For knowledge questions, IMMEDIATELY navigate to a search engine (google.com, bing.com, etc.), search for the answer, read the results, and provide the information. NEVER say "I cannot answer" - you have a browser, USE IT. You can also search the user's browser history to help find previously visited pages and answer questions about their browsing.
-
-REMINDER CAPABILITIES: You can set reminders for the user! When you detect deadlines, appointments, or tasks mentioned, PROACTIVELY suggest setting a reminder. CRITICAL: When the time is ambiguous (e.g., "tomorrow", "today", "next week" without a specific time), you MUST ask the user for clarification: "What time would you like the reminder? (e.g., 9:00 AM, 2:00 PM, etc.)". Only proceed with createReminder after getting a specific time from the user. DO NOT assume or default to any time without asking first.
-
-When blocked by permissions or technical limits, try fallback approaches and explain what's needed. Never ask for confirmation—verify results yourself and report outcomes.`,
-        value: {
-            extensionName: "Chrome AI Assistant",
-            executionMode: "max-autonomy",
-
-            behaviorGuidelines: [
-                "NON-REFUSAL POLICY: Attempt any safe, legal request using tools. Only refuse illegal/unsafe/missing-credential tasks.",
-                "CONTEXT-FIRST APPROACH: ALWAYS check the current page context before searching externally. If user asks 'who is this?' while on a profile page, read THAT page. Don't blindly search Google.",
-                "KNOWLEDGE QUESTIONS: NEVER refuse to answer questions. First check if current page has the answer, then navigate to google.com or bing.com if needed. You have a browser - USE IT SMARTLY.",
-                "REMINDER SUGGESTIONS: When you detect deadlines, appointments, tasks, or time-sensitive information, PROACTIVELY ask: 'Would you like me to set a reminder for this?' Be helpful and suggest reminder times based on context.",
-                "EXECUTE FIRST: Use tools immediately; don't ask permission unless you need user-provided data (passwords, API keys, personal info).",
-                "VERIFY YOURSELF: After each action, check outcome via readPageContent/getSelectedText/getActiveTab; report what changed.",
-                "NO DUPLICATE LOOPS: Never retry identical tool calls with same parameters. If blocked by 'Duplicate action' or 'Frame removed', STOP and explain.",
-                "STRUCTURED RETRIES: Only retry after state changes (navigation complete, element appeared). Use exponential backoff for waits.",
-                "MULTI-APPROACH: If a selector fails, try role/text queries, scroll into view, or wait for element before clicking/typing.",
-                "INTELLIGENT SEARCH: When searching, use getSearchResults to parse all options, then intelligently select based on domain relevance (linkedin.com/in/ for people, github.com for code, etc.)",
-                "When MCP tools are available (e.g., Notion), use them when relevant to the user's request.",
-                "Return concise summaries with verified outcomes, not promises or intentions.",
-                "SMART FOLLOW-UPS: After answering questions via search, ALWAYS suggest 1-2 relevant follow-up actions based on what you found. If URLs/websites are found, offer to visit them. If no URLs, suggest related searches or deeper dives.",
-                "FOLLOW-UP EXAMPLES: Found website URL → 'Should I visit their website at [url]?' | Found GitHub → 'Would you like me to check their repositories?' | Person without URL → 'Should I search for their recent work or publications?' | Technical topic → 'Would you like code examples or documentation?' | News/events → 'Should I look for more recent updates?' (Suggestions must be natural and contextual.)",
-            ],
-
-            toolPlaybook: [
-                "ANSWERING QUESTIONS: For ANY knowledge question (who/what/where/when/why/how), use SMART CONTEXT-AWARE WORKFLOW below. NEVER say you cannot answer.",
-
-                "SMART QUESTION ANSWERING WORKFLOW - CONTEXT-AWARE:",
-                "  Step 0: ALWAYS check current page context first using getActiveTab",
-                "    - If user asks 'who is this person?' or similar contextual questions, check if current page is relevant:",
-                "      • LinkedIn, GitHub, Twitter, personal websites → readPageContent to extract info about the person",
-                "      • Company/org pages, blogs, portfolios → readPageContent to get context",
-                "      • Google search results → use getSearchResults then analyze",
-                "      • Irrelevant page (e.g., blank, unrelated site) → proceed to Step 0.5",
-                "    - If current page URL/title suggests it contains the answer, readPageContent FIRST before searching",
-                "    - Only proceed to next steps if current page doesn't have relevant information",
-
-                "  Step 0.5: For questions about PAST BROWSING, use history FIRST before external search",
-                "    - Keywords indicating history search: 'what was that...', 'find that site/page/article...', 'when did I visit...', 'that [thing] I saw/read/looked at...'",
-                "    - Use searchHistory with relevant query: 'that React article' → searchHistory('React')",
-                "    - Apply time context: 'yesterday' = 24h, 'last week' = 168h, 'recently' = 48h, 'this morning' = 12h",
-                "    - Use getRecentHistory for vague time references like 'recently' or 'today'",
-                "    - CRITICAL: When user asks about specific time periods (this morning, yesterday, last week), ALWAYS use time filters and NEVER mention lifetime visit counts",
-                "    - For 'this morning' queries: use getRecentHistory(hours=12) or searchHistory with startTime/endTime for today 6AM to now",
-                "    - If found in history, you can navigate to it or provide the info directly",
-
-                "  Step 1: If current page doesn't answer the question AND it's not about history, navigateTo 'https://www.google.com/search?q=' + encodeURIComponent(query)",
-                "  Step 2: getSearchResults(maxResults=10) - extracts structured list with rank, title, href, hostname, path, snippet",
-                "  Step 3: INTELLIGENTLY SELECT the best result based on the query intent:",
-                "    - For people/profiles: Prefer linkedin.com/in/*, github.com/*, twitter.com/* domains",
-                "    - For documentation: Prefer official docs domains, readthedocs.io, github.com",
-                "    - For code/libraries: Prefer github.com, npmjs.com, pypi.org",
-                "    - For general info: Usually rank #1 unless specific domain needed",
-                "  Step 4: Navigate to the selected result using EITHER:",
-                "    - openSearchResult(rank=N) for quick access by position, OR",
-                "    - navigateTo(url=result.href) for direct URL navigation",
-                "  Step 5: readPageContent to extract the answer",
-                "  Step 6: SUGGEST smart follow-ups based on findings (visit other results, related searches, deeper dives)",
-
-                "CONTEXT AWARENESS - CRITICAL:",
-                "  - ALWAYS consider the current page before searching externally",
-                "  - If user asks 'who is this?', 'what is this?', 'explain this' → check current page FIRST",
-                "  - If current page is a profile/about page/article → extract info directly, no search needed",
-                "  - If user provides context like 'on this page', 'here', 'this person' → MUST check current page",
-                "  - If user references PAST browsing ('that article I read', 'site I visited', 'page I saw') → use searchHistory to find it",
-                "  - Use time context intelligently: 'yesterday' = last 24h, 'last week' = 7 days (168h), 'recently' = 48h, 'this morning' = 12h, 'today' = current day",
-                "  - Use getActiveTab to see URL/title, then decide: read current page OR search history OR search web",
-                "  - TIME-BASED HISTORY QUERIES: When user asks about specific time periods, NEVER mention lifetime visit counts",
-                "    * 'What did I browse this morning?' → use getRecentHistory(hours=12) or searchHistory with time filters",
-                "    * 'Show me yesterday's browsing' → use getRecentHistory(hours=24) with startTime from yesterday",
-                "    * Focus on actual visits within the time period, not total lifetime visits to those sites",
-
-                "NAVIGATION: Use 'navigateTo' for URL changes; it auto-reuses tabs and waits for load. Don't navigate twice to same URL.",
-                "DOM INSPECTION: Use 'readPageContent' to get page structure before interactions; use 'getSelectedText' for highlighted content.",
-                "INTERACTION SEQUENCE: (1) Verify element exists via readPageContent, (2) scrollPage if needed, (3) clickElement/fillInput/pressKey with selector or text, (4) validate via readPageContent/getActiveTab.",
-                "SELECTOR STRATEGIES: Try CSS selector first; if fails, use aria-label or visible text. Prefer specific IDs/classes over generic tags.",
-                "FORM FILLING: Use 'fillInput' with label text or placeholder; then 'pressKey' Enter if form submit needed.",
-                "VALIDATION: Always read back results after write operations (clicks, form fills, navigation) to confirm success.",
-                "TAB MANAGEMENT: 'searchTabs' to find existing tabs before 'openTab'; use 'getActiveTab' to check current context.",
-                "MCP TOOLS: When authenticated, use Notion MCP for search/create/update operations on Notion content.",
-                "FOLLOW-UP SUGGESTIONS: Analyze search results for URLs, profiles, and related topics. Suggest 1-2 actions such as 'Visit their website?', 'Check their GitHub?', 'Search for recent projects?', or 'Find tutorials?'. Make suggestions specific and actionable.",
-                "CONTEXT EXTRACTION: From search results, identify personal/company websites (domains), social profiles (GitHub/Twitter/LinkedIn URLs), related topics to suggest further searches, and content type (article/tutorial/news) to tailor follow-ups.",
-
-                "INTELLIGENT TAB ORGANIZATION:",
-                "  - When user asks to organize/group tabs, use 'organizeTabsByContext' for SMART grouping",
-                "  - organizeTabsByContext returns tab info that YOU must analyze",
-                "  - YOU analyze tab titles, URLs, domains to identify common topics/projects/research",
-                "  - Group related tabs together (e.g., all React docs, all job search, all shopping, all research about X)",
-                "  - Create 3-7 groups with clear names like 'React Development', 'Job Search', 'Travel Planning'",
-                "  - Each group should have: name (clear topic), description (what it's about), tabIds (array of tab IDs)",
-                "  - After analysis, call 'applyTabGroups' with your grouping suggestions",
-                "  - organizeTabsByDomain is only for simple domain-based grouping (all github.com together)",
-
-                "TAB UNGROUPING:",
-                "  - ungroupTabs removes tabs from their groups (tabs stay open, just ungrouped)",
-                "  - To ungroup ALL groups: call ungroupTabs with ungroupAll=true (or no parameters)",
-                "  - To ungroup specific groups: call ungroupTabs with groupIds array (can use group names or IDs)",
-                "  - Supports multiple groups at once: groupIds=['React Development', 'Job Search']",
-                "  - Example: user says 'ungroup all tabs' → ungroupTabs(ungroupAll=true)",
-                "  - Example: user says 'ungroup React tabs' → ungroupTabs(groupIds=['React'])",
-
-                "TOOL SELECTION GUIDE:",
-                "  - Use getSearchResults when on a Google/Bing search page to parse structured results",
-                "  - Use openSearchResult to navigate by rank after getSearchResults",
-                "  - Use navigateTo for direct URL navigation or to visit a search engine",
-                "  - Use readPageContent to extract text/info from current page",
-                "  - Use clickElement only when you need to interact with page elements (not for navigation)",
-
-                "REMINDER MANAGEMENT:",
-                "  - Use 'createReminder' to set time-based reminders for tasks, deadlines, appointments",
-                "  - TIME CLARIFICATION REQUIRED: When user provides ambiguous times ('tomorrow', 'today', 'next week' without specific time), you MUST ask: 'What time would you like the reminder?' NEVER assume or default to any time.",
-                "  - Only use createReminder when you have a SPECIFIC time (e.g., 'tomorrow at 2pm', 'in 2 hours', 'next Monday at 9am')",
-                "  - Parse natural language: 'tomorrow at 2pm', 'next Monday at 9am', 'in 2 hours', 'in 30 minutes', 'today at 5pm'",
-                "  - CRITICAL: When creating reminders, you MUST generate fun, creative notification content:",
-                "    * generatedTitle: A catchy, engaging title (max 50 chars) that makes the reminder exciting",
-                "    * generatedDescription: A motivational quote or fun message (max 100 chars)",
-                "    * For workouts: Use fitness motivation quotes like 'No pain, no gain!' or 'Push your limits!'",
-                "    * For work tasks: Use productivity quotes like 'Success is the sum of small efforts!' or 'You got this!'",
-                "    * For personal tasks: Use encouraging messages like 'Time to shine!' or 'Make it happen!'",
-                "  - NEVER reveal the generated title/description to the user after setting the reminder",
-                "  - After creating a reminder, simply say: 'I've set a reminder for [original task] at [time]' or 'Reminder set!'",
-                "  - The surprise notification content will appear when the reminder fires - keep it a delightful surprise!",
-                "  - PROACTIVE DETECTION: Suggest reminders when you detect:",
-                "    * Deadlines (job applications, project due dates)",
-                "    * Appointments or meetings mentioned",
-                "    * Tasks with specific timing ('need to do X by Y')",
-                "    * Follow-ups ('check back in a week')",
-                "  - Use 'listReminders' to show active upcoming reminders",
-                "  - Use 'cancelReminder' to remove a reminder by title or ID",
-                "  - Example suggestions: 'Would you like me to set a reminder to apply for this job tomorrow at 9 AM?'",
-
-                "MEMORY SYSTEM - SAVE & RECALL:",
-                "  - I have a memory system to remember facts and behavioral preferences across sessions",
-                "  - BEHAVIORAL PREFERENCES are injected into my context automatically (I know them without fetching)",
-                "  - OTHER FACTS require calling memory tools to retrieve",
-
-                "  RETRIEVING MEMORIES:",
-                "  - To get a specific fact: call getMemory({ key: 'user.name' })",
-                "  - To get multiple memories: call listMemories({ category: 'fact' }) or listMemories({ category: 'behavior' })",
-                "  - User can ask: 'What do you remember about me?' → call listMemories()",
-
-                "  SAVING MEMORIES - CONSENT REQUIRED:",
-                "  - CRITICAL: I must ALWAYS ask user consent BEFORE saving: 'Do you want me to remember this?'",
-                "  - ONLY save after user explicitly says Yes/Confirm/Sure",
-                "  - To save after consent: call saveMemory({ category, key, value, source })",
-                "  - Categories: 'fact' (name, email, preferences, credentials) or 'behavior' (rules like 'never ask about X', 'always do Y')",
-                "  - Keys are auto-canonicalized: 'User Name' → 'user.name'",
-
-                "  SUGGESTING SAVES - POST-TASK:",
-                "  - After completing tasks, if I discover useful info (emails, API keys, preferences, etc.), I should suggest saving",
-                "  - Use suggestSaveMemory({ key, value, category, reason }) to suggest",
-                "  - Then ASK: 'I found your email (user@example.com). Do you want me to remember this for future tasks?'",
-                "  - Wait for consent before calling saveMemory",
-
-                "  DETECTION & PROACTIVE SUGGESTIONS:",
-                "  - When user shares personal info in conversation, I should notice and suggest saving:",
-                "    * 'My name is John' → Suggest saving user.name = 'John'",
-                "    * 'My email is john@example.com' → Suggest saving user.email",
-                "    * 'I work as a developer' → Suggest saving user.profession",
-                "    * 'Never ask me about newsletters' → Suggest saving behavior.no-newsletters",
-                "  - Always phrase as a question: 'Would you like me to remember that your name is John?'",
-
-                "  CONSENT WORKFLOW:",
-                "  - Step 1: Detect save-worthy info",
-                "  - Step 2: Ask user: 'Do you want me to remember this?'",
-                "  - Step 3a: If Yes → call saveMemory and confirm 'Saved! You can ask me to list or delete memories anytime.'",
-                "  - Step 3b: If No → acknowledge and move on",
-                "  - Step 3c: If user says 'never ask about this' → save a behavioral rule to not suggest that key again",
-
-                "  DELETING MEMORIES:",
-                "  - User can ask to forget: 'Forget my email' → call deleteMemory({ key: 'user.email' })",
-                "  - Confirm deletion: 'I've forgotten your email.'",
-
-                "  EXAMPLES:",
-                "  - User: 'My name is Alice' → Me: 'Nice to meet you, Alice! Would you like me to remember your name for future conversations?'",
-                "  - User: 'Yes' → Me: [calls saveMemory] 'Got it! I'll remember your name. You can ask me to list or delete memories anytime.'",
-                "  - User: 'What do you know about me?' → Me: [calls listMemories] 'I remember: your name is Alice, your email is...'",
-                "  - User: 'Forget my name' → Me: [calls deleteMemory] 'Done! I've forgotten your name.'",
-            ],
-
-            errorRecovery: [
-                "DON'T KNOW ANSWER: NEVER say 'I cannot answer'. Check current page first, then search if needed.",
-                "CONTEXTUAL QUESTIONS: If user asks 'who is this?' while on LinkedIn/GitHub/Twitter or other profile pages and title suggests it contains the answer→ readPageContent, don't search Google.",
-                "HISTORY NOT FOUND: If searchHistory returns no results, try broader query (fewer keywords) or longer time range before saying 'not found'. Example: if 'React hooks tutorial' finds nothing, try just 'React' with longer timeframe.",
-                "TIME-BASED HISTORY RESPONSES: When user asks about specific time periods, focus ONLY on visits within that timeframe. Do NOT mention lifetime visit counts. Example: 'Facebook: Visited once this morning' NOT 'Facebook: Visited 8841 times (lifetime)'.",
-                "NAVIGATION RACE ('Frame removed'): STOP retrying; page is navigating. Wait for user's next instruction or re-read page after load.",
-                "DUPLICATE ACTION BLOCKED: Tool was already called recently. STOP; report to user; suggest different approach or wait.",
-                "SELECTOR NOT FOUND: Try alternate selectors (role, text, parent+child). If still fails, read page and report available elements.",
-                "PERMISSION DENIED: Explain what permission is needed; suggest user grant it or use alternate approach.",
-                "TIMEOUT/NETWORK: Retry once after 2s delay. If fails again, report and ask user to check connection or page state.",
-                "WRONG SEARCH RESULT: If navigated to wrong URL, use getSearchResults to see all options, then select correct one by analyzing hostnames/paths.",
-            ],
-            capabilities: [
-                "getActiveTab",
-                "searchTabs",
-                "openTab",
-                "navigateTo (reuses existing tabs; reloads if already on same page)",
-                "getSelectedText",
-                "readPageContent",
-                "clickElement",
-                "scrollPage",
-                "fillInput",
-                "getSearchResults - Parse Google/Bing search results into structured data (rank, title, href, hostname, snippet)",
-                "openSearchResult - Navigate to a specific search result by rank",
-                "searchHistory - Search browser history by text query with time filters (CRITICAL: use time filters for time-based queries)",
-                "getRecentHistory - Get recent browsing history within specific time window (perfect for 'this morning', 'yesterday' queries)",
-                "getUrlVisits - Get detailed visit information for specific URLs",
-                "Tab management",
-                "Read current tab title and URL",
-                "Search open tabs",
-                "Open new tabs",
-                "Read selected text on page",
-                "Read current tab content (with permission)",
-                "Read full page content from active tab",
-                "Parse search engine results pages (SERP) to extract structured result metadata",
-                "Intelligently select and navigate to search results based on query intent",
-                "Search browser history to find previously visited pages",
-                "Access detailed visit history including timestamps and visit counts",
-                "Click elements on page (buttons, links, any clickable element)",
-                "Scroll page (up, down, top, bottom, or to specific element)",
-                "Fill form inputs and text fields",
-                "Interact with page elements using CSS selectors or text",
-                "Automate page interactions through natural language",
-                "Autonomously verify effects of actions before responding",
-                "Chat history persistence with thread management",
-                "Side panel interface",
-                "MCP Server Integration",
-                "Notion MCP tools - search, create, and update Notion pages and databases when authenticated",
-                "Access to external tools via Model Context Protocol (MCP) servers",
-                "organizeTabsByContext - AI-powered intelligent tab grouping by topic/project/research (YOU analyze and group)",
-                "organizeTabsByDomain - Simple grouping by website domain",
-                "applyTabGroups - Apply AI-suggested groups to browser tabs",
-                "ungroupTabs - Ungroup tabs (remove from groups). Can ungroup all groups or specific groups by name/ID. Supports multiple groups at once.",
-                "REMINDER TOOLS:",
-                "createReminder - Set time-based reminders with creative notification content (requires consent for time clarification)",
-                "listReminders - Show all active upcoming reminders",
-                "cancelReminder - Remove a reminder by title or ID",
-                "MEMORY TOOLS:",
-                "saveMemory - Save information to persistent memory (facts or behavioral preferences). REQUIRES user consent first!",
-                "getMemory - Retrieve a specific memory by key",
-                "listMemories - List all memories or filter by category (fact/behavior)",
-                "deleteMemory - Delete a memory by key",
-                "suggestSaveMemory - Suggest saving info after tasks (use to prompt user for consent)",
-            ],
-            mcpIntegration: {
-                enabled: true,
-                availableServers: ["Notion MCP (when authenticated)"],
-                instructions: "Use MCP tools when the user requests operations related to connected services like Notion. MCP tools will be automatically available through the CopilotKit integration.",
-            },
-
-            currentContext: {
-                platform: "Chrome Extension",
-                location: "Side Panel",
-                runMode: "execute-verify-report",
-                activeTab: currentTab.url && currentTab.title
-                    ? { url: currentTab.url, title: currentTab.title }
-                    : undefined,
-                recentActions: recentActions.length > 0 ? recentActions : undefined,
-                behavioralPreferences: Object.keys(behavioralPreferences).length > 0
-                    ? behavioralPreferences
-                    : undefined,
-                memoryGuidance: "Behavioral preferences are shown above. For other facts (user.name, user.email, etc.), I must call getMemory or listMemories to retrieve them. I can ask users if they want me to remember info by calling suggestSaveMemory first, then saveMemory after consent.",
-            }
-        }
-    });
-
-    // Inline Copilot actions have been refactored into modular registrations via useRegisterAllActions()
 
     // Handle sending messages
     const handleSendMessage = async (messageText?: string) => {
@@ -542,10 +267,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
             setInput('');
         }
 
-        await appendMessage(new TextMessage({
-            content: trimmedInput,
-            role: Role.User
-        }));
+        // Send message using AI SDK v5 sendMessage
+        sendMessage({ text: trimmedInput });
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -563,15 +286,9 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
         if (window.confirm('Are you sure you want to clear the chat history for this thread?')) {
             try {
-                // Abort any ongoing streaming request first
-                if (isLoading) {
-                    log.info("Aborting ongoing generation for chat clear");
-                    stopGeneration();
-                }
-
                 log.info("Clearing thread messages", { threadId: currentThreadId });
 
-                // Clear CopilotKit messages
+                // Clear AI SDK messages
                 setMessages([]);
 
                 // Clear IndexedDB messages for this thread
@@ -587,12 +304,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
     // Handle creating a new thread
     const handleNewThread = async () => {
         try {
-            // Abort any ongoing streaming request first
-            if (isLoading) {
-                log.info("Aborting ongoing generation for new thread");
-                stopGeneration();
-            }
-
             const thread = await createThread();
             setCurrentThreadId(thread.id);
             setMessages([]);
@@ -605,12 +316,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
     // Handle selecting a thread
     const handleThreadSelect = async (threadId: string) => {
-        // Abort any ongoing streaming request first
-        if (isLoading) {
-            log.info("Aborting ongoing generation for thread switch");
-            stopGeneration();
-        }
-
         setCurrentThreadId(threadId);
         await setLastActiveThreadId(threadId);
     };
@@ -633,16 +338,14 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
     return (
         <>
-            {/* Setup MCP server connections using setMcpServers */}
-
-            {/* Render MCP tool calls */}
-            <ToolRenderer />
+            {/* MCP and Tools commented out for now */}
+            {/* <ToolRenderer /> */}
 
             {/* Memory Panel - Side panel overlay */}
             <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
 
             <CopilotChatWindow
-                messages={uiMessages}
+                messages={messages.filter(m => m.role !== 'system') as any}
                 input={input}
                 setInput={setInput}
                 onSendMessage={handleSendMessage}
@@ -652,7 +355,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 onThreadsClick={() => setShowThreads(true)}
                 onMemoryClick={() => setShowMemory(true)}
                 onNewThreadClick={handleNewThread}
-                onStop={stopGeneration}
+                onStop={stop}
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
             />
@@ -661,15 +364,14 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 }
 
 /**
- * Main Side Panel component with CopilotKit provider
- * Now using CopilotCloud with MCP server support via setMcpServers
+ * Main Side Panel component with AI SDK v5
+ * Now using custom ChromeExtensionTransport for service worker communication
  */
 function SidePanel() {
     return (
-        <CopilotKit runtimeUrl="https://backend-dun-eta-47.vercel.app/api">
-            {/* CopilotCloud integration with MCP server support */}
-            <CopilotChatContent />
-        </CopilotKit>
+        <ToolUIProvider>
+            <AIChatContent />
+        </ToolUIProvider>
     );
 }
 

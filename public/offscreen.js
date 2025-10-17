@@ -51,7 +51,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 }
 
                 creating = true;
+                /*
                 const summarizer = await window.Summarizer.create(summarizerOptions);
+                */
                 creating = false;
                 ready = true;
 

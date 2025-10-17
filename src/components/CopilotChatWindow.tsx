@@ -1,7 +1,7 @@
 /**
- * Custom CopilotKit Chat Window Component
- * Adapted for Chrome Extension Side Panel
- * MERGED VERSION: Voice Input + Stop Button + Thread Management + Memory Panel
+ * AI Chat Window Component
+ * Adapted for Chrome Extension Side Panel with AI SDK v5
+ * Features: Voice Input + Stop Button + Thread Management + Memory Panel
  */
 
 import React from 'react';
@@ -13,8 +13,7 @@ import { VoiceInput } from '../audio/VoiceInput';
 interface Message {
     id?: string;
     role: 'user' | 'assistant';
-    content: string;
-    generativeUI?: () => React.ReactElement | null;
+    parts?: Array<{ type: string; text?: string; [key: string]: any }>;
 }
 
 interface CopilotChatWindowProps {
@@ -32,6 +31,16 @@ interface CopilotChatWindowProps {
     onMemoryClick?: () => void;
     onStop?: () => void;
 }
+
+// Helper to extract text content from AI SDK v5 parts array
+const getMessageContent = (message: Message): string => {
+    if (!message.parts || message.parts.length === 0) return '';
+    
+    return message.parts
+        .filter((part: any) => part.type === 'text')
+        .map((part: any) => part.text)
+        .join('');
+};
 
 export function CopilotChatWindow({
     messages,
@@ -56,7 +65,7 @@ export function CopilotChatWindow({
                     <div className="copilot-avatar">🤖</div>
                     <div className="copilot-title">
                         <h3>AI Assistant</h3>
-                        <p>Powered by CopilotKit</p>
+                        <p>Powered by AI SDK v5</p>
                     </div>
                     <div className="copilot-header-actions">
                         {/* Thread History Button */}
@@ -168,7 +177,7 @@ export function CopilotChatWindow({
                 ) : (
                     messages
                         .filter(message => {
-                            const content = message.content;
+                            const content = getMessageContent(message);
                             return typeof content === 'string' && content.trim().length > 0;
                         })
                         .map((message, index) => (
@@ -185,19 +194,13 @@ export function CopilotChatWindow({
                                         {message.role === 'assistant' ? (
                                             <div className="markdown-content">
                                                 <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                    {message.content}
+                                                    {getMessageContent(message)}
                                                 </ReactMarkdown>
                                             </div>
                                         ) : (
-                                            message.content
+                                            getMessageContent(message)
                                         )}
                                     </div>
-                                    {/* Render generative UI from useFrontendAction/useFrontendTool render functions */}
-                                    {message.role === 'assistant' && message.generativeUI && (
-                                        <div className="copilot-generative-ui">
-                                            {message.generativeUI()}
-                                        </div>
-                                    )}
                                 </div>
 
                                 {message.role === 'user' && (

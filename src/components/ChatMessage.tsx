@@ -2,10 +2,11 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import type { ChatMessage as ChatMessageType } from '../db';
+import type { UIMessage } from 'ai';
+import { ToolPartRenderer } from './ToolPartRenderer';
 
 interface ChatMessageProps {
-    message: ChatMessageType;
+    message: UIMessage;
     onCopy?: (content: string) => void;
     onRegenerate?: () => void;
 }
@@ -13,16 +14,37 @@ interface ChatMessageProps {
 /**
  * Individual chat message component
  * Displays a single message with role-based styling
+ * Updated to use AI SDK v5 UIMessage type
  */
 export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps) {
     const [copied, setCopied] = useState(false);
 
+    // Extract text content from parts array
+    const getTextContent = (message: UIMessage): string => {
+        if (!message.parts || message.parts.length === 0) return '';
+        
+        return message.parts
+            .filter((part: any) => part.type === 'text')
+            .map((part: any) => part.text)
+            .join('');
+    };
+
+    // Check if message has tool calls
+    const hasToolCalls = (message: UIMessage): boolean => {
+        if (!message.parts || message.parts.length === 0) return false;
+        
+        return message.parts.some((part: any) => 
+            part.type?.startsWith('tool-') || part.type === 'dynamic-tool'
+        );
+    };
+
     const handleCopy = async () => {
+        const content = getTextContent(message);
         if (onCopy) {
-            onCopy(message.content);
+            onCopy(content);
         } else {
             try {
-                await navigator.clipboard.writeText(message.content);
+                await navigator.clipboard.writeText(content);
             } catch (err) {
                 console.error('Failed to copy message:', err);
             }
@@ -31,8 +53,10 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const formatTime = (timestamp: number) => {
-        const date = new Date(timestamp);
+    const formatTime = (createdAt?: Date) => {
+        if (!createdAt) return '';
+        
+        const date = createdAt instanceof Date ? createdAt : new Date(createdAt);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
 
@@ -53,26 +77,49 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
         });
     };
 
+    const content = getTextContent(message);
+    const isError = (message as any).metadata?.error;
+    const hasTools = hasToolCalls(message);
+
     return (
         <div className={`chat-message ${message.role}`}>
             <div className="message-header">
                 <span className="message-role">
                     {message.role === 'user' ? '👤 You' : '🤖 Assistant'}
                 </span>
-                <span className="message-time">{formatTime(message.timestamp)}</span>
+                <span className="message-time">{formatTime((message as any).createdAt)}</span>
             </div>
 
-            <div className={`message-content ${message.metadata?.error ? 'error' : ''}`}>
-                {message.role === 'assistant' ? (
-                    <div className="markdown-content">
-                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                            {message.content}
-                        </ReactMarkdown>
-                    </div>
-                ) : (
-                    message.content
-                )}
-            </div>
+            {/* Render text content */}
+            {content && (
+                <div className={`message-content ${isError ? 'error' : ''}`}>
+                    {message.role === 'assistant' ? (
+                        <div className="markdown-content">
+                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                {content}
+                            </ReactMarkdown>
+                        </div>
+                    ) : (
+                        content
+                    )}
+                </div>
+            )}
+
+            {/* Render tool calls */}
+            {hasTools && message.parts && (
+                <div className="message-tools">
+                    {message.parts
+                        .filter((part: any) => part.type?.startsWith('tool-') || part.type === 'dynamic-tool')
+                        .map((part: any, index: number) => (
+                            <ToolPartRenderer
+                                key={part.toolCallId || `${message.id}-tool-${index}`}
+                                part={part}
+                                messageId={message.id}
+                            />
+                        ))
+                    }
+                </div>
+            )}
 
             {message.role === 'assistant' && (
                 <div className="message-actions">
@@ -85,7 +132,7 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                         {copied ? '✓ Copied' : '📋 Copy'}
                     </button>
 
-                    {onRegenerate && !message.metadata?.error && (
+                    {onRegenerate && !isError && (
                         <button
                             className="action-button"
                             onClick={onRegenerate}
@@ -102,7 +149,7 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
 }
 
 interface MessageListProps {
-    messages: ChatMessageType[];
+    messages: UIMessage[];
     isLoading?: boolean;
     onCopy?: (content: string) => void;
     onRegenerate?: (messageId: string) => void;
