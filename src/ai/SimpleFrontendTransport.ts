@@ -1,0 +1,108 @@
+/**
+ * Simple Frontend Transport for AI SDK v5
+ * Calls AI logic directly from the frontend
+ * No service worker communication needed
+ */
+
+import type { UIMessage } from 'ai';
+import { streamAIResponse } from './aiLogic';
+import { createLogger } from '../logger';
+import { loadThreadMessages } from '../db';
+
+const log = createLogger('SimpleFrontendTransport');
+
+/**
+ * Simple transport implementation
+ * Directly calls AI logic from the frontend
+ */
+export class SimpleFrontendTransport {
+  private abortControllers = new Map<string, AbortController>();
+
+  /**
+   * Send messages to AI and get streaming response
+   */
+  async sendMessages(params: {
+    chatId: string;
+    messages: UIMessage[];
+    abortSignal: AbortSignal;
+  }): Promise<ReadableStream> {
+    const { chatId, messages, abortSignal } = params;
+
+    log.info('Sending messages', { chatId, count: messages.length });
+
+    // Create abort controller for this request
+    const abortController = new AbortController();
+    this.abortControllers.set(chatId, abortController);
+
+    // Handle abort signal from caller
+    abortSignal?.addEventListener('abort', () => {
+      log.info('Stream aborted by caller', { chatId });
+      abortController.abort();
+      this.abortControllers.delete(chatId);
+    });
+
+    try {
+      // Get the stream from AI logic
+      const uiMessageStream = await streamAIResponse({
+        messages,
+        abortSignal: abortController.signal,
+        onError: (error) => {
+          log.error('AI response error', error);
+        },
+      });
+
+      // Return the stream as ReadableStream
+      return uiMessageStream;
+    } catch (error) {
+      log.error('Transport error', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get messages by thread ID from IndexedDB
+   */
+  async getMessagesById(params: { chatId: string }): Promise<UIMessage[]> {
+    try {
+      const dbMessages = await loadThreadMessages(params.chatId);
+
+      // Convert ChatMessage to UIMessage format
+      const uiMessages: UIMessage[] = dbMessages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        parts: [
+          {
+            type: 'text' as const,
+            text: msg.content,
+          }
+        ],
+      }));
+
+      log.info('Loaded messages from DB', { chatId: params.chatId, count: uiMessages.length });
+      return uiMessages;
+    } catch (error) {
+      log.error('Error loading messages', error);
+      return [];
+    }
+  }
+
+  /**
+   * Cleanup method
+   */
+  cleanup(id: string) {
+    const controller = this.abortControllers.get(id);
+    if (controller) {
+      controller.abort();
+      this.abortControllers.delete(id);
+      log.info('Cleaned up transport', { id });
+    }
+  }
+
+  /**
+   * Reconnect to an existing stream (not implemented for frontend)
+   */
+  async reconnectToStream(params: { chatId: string }): Promise<ReadableStream> {
+    log.warn('Stream reconnection not implemented', params);
+    throw new Error('Stream reconnection not supported in simple frontend transport');
+  }
+}

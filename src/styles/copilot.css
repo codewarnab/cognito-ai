@@ -31,6 +31,14 @@
     gap: 8px;
 }
 
+/* Tool calls in messages */
+.message-tools {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .copilot-settings-button,
 .copilot-memory-button {
     padding: 6px;
