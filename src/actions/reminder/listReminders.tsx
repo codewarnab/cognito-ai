@@ -1,48 +1,65 @@
-import React from "react";
-import { useFrontendTool } from "@copilotkit/react-core";
+import { z } from 'zod';
+import { useEffect } from 'react';
 import { createLogger } from "../../logger";
 import { ToolCard } from "../../components/ui/ToolCard";
+import { registerTool } from '../../ai/toolRegistryUtils';
+import { useToolUI } from '../../ai/ToolUIContext';
 import { getActiveReminders } from "./storage";
+import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger("Actions-Reminders-List");
 
 export function useListRemindersAction() {
-    useFrontendTool({
-        name: "listReminders",
-        description: "List all active reminders that are scheduled",
-        parameters: [],
-        handler: async () => {
-            try {
-                const activeReminders = await getActiveReminders();
+    const { registerToolUI, unregisterToolUI } = useToolUI();
 
-                const formattedReminders = activeReminders.map((r) => ({
-                    id: r.id,
-                    title: r.title,
-                    when: new Date(r.when).toLocaleString(),
-                    url: r.url,
-                }));
+    useEffect(() => {
+        log.info('🔧 Registering listReminders tool...');
 
-                return {
-                    count: formattedReminders.length,
-                    reminders: formattedReminders,
-                };
-            } catch (error) {
-                log.error("Failed to list reminders:", error);
-                return { error: "Failed to list reminders" };
-            }
-        },
-        render: ({ status, result }) => {
-            if (status === "inProgress") {
+        registerTool({
+            name: "listReminders",
+            description: "List all active reminders that are scheduled",
+            parameters: z.object({}),
+            execute: async () => {
+                try {
+                    log.info("TOOL CALL: listReminders");
+                    const activeReminders = await getActiveReminders();
+
+                    const formattedReminders = activeReminders.map((r) => ({
+                        id: r.id,
+                        title: r.title,
+                        when: new Date(r.when).toLocaleString(),
+                        url: r.url,
+                    }));
+
+                    log.info('✅ Listed reminders', { count: formattedReminders.length });
+
+                    return {
+                        count: formattedReminders.length,
+                        reminders: formattedReminders,
+                    };
+                } catch (error) {
+                    log.error('[Tool] Error listing reminders:', error);
+                    return { error: "Failed to list reminders" };
+                }
+            },
+        });
+
+        // Register the UI renderer for this tool
+        registerToolUI('listReminders', (state: ToolUIState) => {
+            const { state: toolState, output } = state;
+
+            if (toolState === 'input-streaming' || toolState === 'input-available') {
                 return (
                     <ToolCard title="Loading Reminders" state="loading" icon="📋" />
                 );
             }
-            if (status === "complete" && result) {
-                if (result.error) {
+
+            if (toolState === 'output-available' && output) {
+                if (output.error) {
                     return (
                         <ToolCard
                             title="Failed to Load Reminders"
-                            subtitle={result.error}
+                            subtitle={output.error}
                             state="error"
                             icon="📋"
                         />
@@ -50,17 +67,17 @@ export function useListRemindersAction() {
                 }
                 return (
                     <ToolCard
-                        title={`Active Reminders (${result.count})`}
+                        title={`Active Reminders (${output.count})`}
                         state="success"
                         icon="📋"
                     >
-                        {result.count === 0 ? (
+                        {output.count === 0 ? (
                             <div style={{ fontSize: "13px", opacity: 0.7 }}>
                                 No active reminders
                             </div>
                         ) : (
                             <div style={{ fontSize: "13px" }}>
-                                {result.reminders.map((r: any) => (
+                                {output.reminders.map((r: any) => (
                                     <div
                                         key={r.id}
                                         style={{
@@ -80,7 +97,27 @@ export function useListRemindersAction() {
                     </ToolCard>
                 );
             }
+
+            if (toolState === 'output-error') {
+                return (
+                    <ToolCard
+                        title="Failed to Load Reminders"
+                        subtitle={state.errorText}
+                        state="error"
+                        icon="📋"
+                    />
+                );
+            }
+
             return null;
-        },
-    });
+        });
+
+        log.info('✅ listReminders tool registration complete');
+
+        // Cleanup on unmount
+        return () => {
+            log.info('🧹 Cleaning up listReminders tool');
+            unregisterToolUI('listReminders');
+        };
+    }, []); // Empty dependency array - only register once on mount
 }

@@ -65,7 +65,10 @@
       "notifications",
       "offscreen",
       "cookies",
-      "history"
+      "history",
+      "search",
+      "bookmarks",
+      "microphone"
     ],
     "optional_permissions": [
       "tabCapture",

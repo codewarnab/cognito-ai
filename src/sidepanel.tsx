@@ -10,7 +10,7 @@ import "./styles/mcp-tools.css";
 import "./styles/memory.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
-import { useOpenTabTool } from "./actions/tabs/openTabTool";
+import { useRegisterAllActions } from "./actions/registerAll";
 import {
     db,
     createThread,
@@ -35,8 +35,7 @@ import type { UIMessage } from "ai";
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
     
-    // Register AI SDK v5 tools
-    useOpenTabTool();
+    useRegisterAllActions();
     
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);

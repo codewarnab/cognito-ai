@@ -1,82 +1,87 @@
-import React from "react";
-import { useFrontendTool } from "@copilotkit/react-core";
-import { createLogger } from "../../logger";
-import { shouldProcess } from "../useActionDeduper";
-import { ToolCard } from "../../components/ui/ToolCard";
+import { z } from 'zod';
+import { useEffect } from 'react';
+import { registerTool } from '../../ai/toolRegistryUtils';
+import { useToolUI } from '../../ai/ToolUIContext';
+import { createLogger } from '../../logger';
+import { ToolCard } from '../../components/ui/ToolCard';
+import type { ToolUIState } from '../../ai/ToolUIContext';
 
-const log = createLogger("Actions-History-UrlVisits");
+const log = createLogger('Actions-History-UrlVisits');
 
 export function useGetUrlVisits() {
-    useFrontendTool({
-        name: "getUrlVisits",
-        description: "Get detailed visit information for a specific URL including all visit timestamps and how the user navigated to the page.",
-        parameters: [
-            {
-                name: "url",
-                type: "string",
-                description: "The URL to get visit details for",
-                required: true
-            }
-        ],
-        handler: async ({ url }) => {
-            if (!shouldProcess("getUrlVisits", { url })) {
-                return { skipped: true, reason: "duplicate" };
-            }
+    const { registerToolUI, unregisterToolUI } = useToolUI();
 
-            try {
-                // Normalize and validate URL input before calling the Chrome API
-                const normalizedUrl = typeof url === "string" ? url.trim() : String(url ?? "");
+    useEffect(() => {
+        log.info('🔧 Registering getUrlVisits tool...');
 
-                if (!normalizedUrl) {
-                    log.warn("getUrlVisits: missing or empty url", { url });
-                    return { success: false, error: "URL is required", details: "Provide a non-empty URL string" };
-                }
-
-                // Validate URL format using the URL constructor; return a clear error if invalid
-                let validatedUrl = normalizedUrl;
+        registerTool({
+            name: 'getUrlVisits',
+            description: 'Get detailed visit information for a specific URL including all visit timestamps and how the user navigated to the page.',
+            parameters: z.object({
+                url: z.string().describe('The URL to get visit details for'),
+            }),
+            execute: async ({ url }) => {
                 try {
-                    // Throws if not a valid absolute URL
-                    // eslint-disable-next-line no-new
-                    new URL(validatedUrl);
-                } catch (_) {
-                    log.warn("getUrlVisits: invalid URL format", { url: normalizedUrl });
-                    return { success: false, error: "Invalid URL format", details: `Value provided: ${normalizedUrl}` };
+                    // Normalize and validate URL input before calling the Chrome API
+                    const normalizedUrl = typeof url === 'string' ? url.trim() : String(url ?? '');
+
+                    if (!normalizedUrl) {
+                        log.warn('getUrlVisits: missing or empty url', { url });
+                        return { success: false, error: 'URL is required', details: 'Provide a non-empty URL string' };
+                    }
+
+                    // Validate URL format using the URL constructor; return a clear error if invalid
+                    let validatedUrl = normalizedUrl;
+                    try {
+                        // Throws if not a valid absolute URL
+                        // eslint-disable-next-line no-new
+                        new URL(validatedUrl);
+                    } catch (_) {
+                        log.warn('getUrlVisits: invalid URL format', { url: normalizedUrl });
+                        return { success: false, error: 'Invalid URL format', details: `Value provided: ${normalizedUrl}` };
+                    }
+
+                    log.info('getUrlVisits', { url: validatedUrl });
+
+                    const visits = await chrome.history.getVisits({ url: validatedUrl });
+
+                    const formattedVisits = visits.map(visit => ({
+                        visitId: visit.visitId,
+                        visitTime: visit.visitTime,
+                        referringVisitId: visit.referringVisitId,
+                        transition: visit.transition
+                    }));
+
+                    return {
+                        success: true,
+                        url: validatedUrl,
+                        visitCount: formattedVisits.length,
+                        visits: formattedVisits
+                    };
+                } catch (error) {
+                    log.error('[Tool] Error getting URL visits:', error);
+                    return { error: 'Failed to get URL visits', details: String(error) };
+                }
+            },
+        });
+
+        registerToolUI('getUrlVisits', (state: ToolUIState) => {
+            const { state: toolState, input, output } = state;
+
+            if (toolState === 'input-streaming' || toolState === 'input-available') {
+                return <ToolCard title="Getting Visit Details" subtitle={input?.url} state="loading" icon="📊" />;
+            }
+
+            if (toolState === 'output-available' && output) {
+                if ((output as any).error) {
+                    return <ToolCard title="Failed to Get Visits" subtitle={(output as any).error} state="error" icon="📊" />;
                 }
 
-                log.info("getUrlVisits", { url: validatedUrl });
-
-                const visits = await chrome.history.getVisits({ url: validatedUrl });
-
-                const formattedVisits = visits.map(visit => ({
-                    visitId: visit.visitId,
-                    visitTime: visit.visitTime,
-                    referringVisitId: visit.referringVisitId,
-                    transition: visit.transition
-                }));
-
-                return {
-                    success: true,
-                    url: validatedUrl,
-                    visitCount: formattedVisits.length,
-                    visits: formattedVisits
-                };
-            } catch (error) {
-                log.error('[FrontendTool] Error getting URL visits:', error);
-                return { error: "Failed to get URL visits", details: String(error) };
-            }
-        },
-        render: ({ args, status, result }) => {
-            if (status === "inProgress") {
-                return <ToolCard title="Getting Visit Details" subtitle={args.url} state="loading" icon="📊" />;
-            }
-            if (status === "complete" && result) {
-                if (result.error) {
-                    return <ToolCard title="Failed to Get Visits" subtitle={result.error} state="error" icon="📊" />;
-                }
+                const res: any = output;
                 return (
                     <ToolCard
                         title="Visit Details"
-                        subtitle={`${result.visitCount} visit(s) to this URL`}
+                        subtitle={`${res.visitCount} visit(s) to this URL`}
                         state="success"
                         icon="📊"
                     >
@@ -87,12 +92,12 @@ export function useGetUrlVisits() {
                             opacity: 0.7,
                             wordBreak: 'break-all'
                         }}>
-                            {result.url}
+                            {res.url}
                         </div>
-                        {result.visits && result.visits.length > 0 && (
+                        {res.visits && res.visits.length > 0 && (
                             <div style={{ fontSize: '12px' }}>
-									{result.visits.slice(0, 10).map((visit: any, idx: number) => (
-										<div key={visit.visitId} style={{
+                                {res.visits.slice(0, 10).map((visit: any) => (
+                                    <div key={visit.visitId} style={{
                                         padding: '6px 8px',
                                         marginBottom: '4px',
                                         background: 'rgba(0,0,0,0.03)',
@@ -112,9 +117,9 @@ export function useGetUrlVisits() {
                                         </span>
                                     </div>
                                 ))}
-                                {result.visits.length > 10 && (
+                                {res.visits.length > 10 && (
                                     <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '4px' }}>
-                                        Showing 10 of {result.visits.length} visits
+                                        Showing 10 of {res.visits.length} visits
                                     </div>
                                 )}
                             </div>
@@ -122,7 +127,19 @@ export function useGetUrlVisits() {
                     </ToolCard>
                 );
             }
+
+            if (toolState === 'output-error') {
+                return <ToolCard title="Failed to Get Visits" subtitle={state.errorText} state="error" icon="📊" />;
+            }
+
             return null;
-        },
-    });
+        });
+
+        log.info('✅ getUrlVisits tool registration complete');
+
+        return () => {
+            log.info('🧹 Cleaning up getUrlVisits tool');
+            unregisterToolUI('getUrlVisits');
+        };
+    }, []);
 }

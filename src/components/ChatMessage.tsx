@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import type { UIMessage } from 'ai';
-import { ToolPartRenderer } from './ToolPartRenderer';
+import { ToolPartRenderer } from '../ai/ToolPartRenderer';
 
 interface ChatMessageProps {
     message: UIMessage;
@@ -31,10 +31,15 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
 
     // Check if message has tool calls
     const hasToolCalls = (message: UIMessage): boolean => {
-        if (!message.parts || message.parts.length === 0) return false;
+        if (!message.parts || message.parts.length === 0) {
+            return false;
+        }
         
         return message.parts.some((part: any) => 
-            part.type?.startsWith('tool-') || part.type === 'dynamic-tool'
+            part.type === 'tool-call' || 
+            part.type === 'tool-result' ||
+            part.type?.startsWith('tool-') || 
+            part.type === 'dynamic-tool'
         );
     };
 
@@ -105,11 +110,16 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                 </div>
             )}
 
-            {/* Render tool calls */}
-            {hasTools && message.parts && (
+            {/* Render tool calls - SEPARATED AND MORE VISIBLE */}
+            {hasTools && message.parts && message.parts.length > 0 && (
                 <div className="message-tools">
                     {message.parts
-                        .filter((part: any) => part.type?.startsWith('tool-') || part.type === 'dynamic-tool')
+                        .filter((part: any) => 
+                            part.type === 'tool-call' || 
+                            part.type === 'tool-result' ||
+                            part.type?.startsWith('tool-') || 
+                            part.type === 'dynamic-tool'
+                        )
                         .map((part: any, index: number) => (
                             <ToolPartRenderer
                                 key={part.toolCallId || `${message.id}-tool-${index}`}
