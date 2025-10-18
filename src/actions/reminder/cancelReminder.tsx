@@ -1,64 +1,76 @@
-import React from "react";
-import { useFrontendTool } from "@copilotkit/react-core";
+import { z } from 'zod';
+import { useEffect } from 'react';
 import { createLogger } from "../../logger";
 import { ToolCard } from "../../components/ui/ToolCard";
+import { registerTool } from '../../ai/toolRegistryUtils';
+import { useToolUI } from '../../ai/ToolUIContext';
 import { findReminder, deleteReminder } from "./storage";
+import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger("Actions-Reminders-Cancel");
 
 export function useCancelReminderAction() {
-    useFrontendTool({
-        name: "cancelReminder",
-        description: "Cancel an existing reminder by its title or ID",
-        parameters: [
-            {
-                name: "identifier",
-                type: "string",
-                description: "Reminder title or ID to cancel",
-                required: true,
-            },
-        ],
-        handler: async ({ identifier }) => {
-            try {
-                const reminder = await findReminder(identifier as string);
+    const { registerToolUI, unregisterToolUI } = useToolUI();
 
-                if (!reminder) {
-                    return { error: "Reminder not found" };
+    useEffect(() => {
+        log.info('🔧 Registering cancelReminder tool...');
+
+        registerTool({
+            name: "cancelReminder",
+            description: "Cancel an existing reminder by its title or ID",
+            parameters: z.object({
+                identifier: z.string().describe("Reminder title or ID to cancel"),
+            }),
+            execute: async ({ identifier }) => {
+                try {
+                    log.info("TOOL CALL: cancelReminder", { identifier });
+                    const reminder = await findReminder(identifier);
+
+                    if (!reminder) {
+                        return { error: "Reminder not found" };
+                    }
+
+                    // Cancel alarm
+                    await chrome.alarms.clear(`reminder:${reminder.id}`);
+
+                    // Remove from storage
+                    await deleteReminder(reminder.id);
+
+                    log.info('✅ Reminder cancelled', { id: reminder.id, title: reminder.title });
+
+                    return {
+                        success: true,
+                        title: reminder.title,
+                        message: `Reminder "${reminder.title}" cancelled`,
+                    };
+                } catch (error) {
+                    log.error('[Tool] Error cancelling reminder:', error);
+                    return { error: "Failed to cancel reminder" };
                 }
+            },
+        });
 
-                // Cancel alarm
-                await chrome.alarms.clear(`reminder:${reminder.id}`);
+        // Register the UI renderer for this tool
+        registerToolUI('cancelReminder', (state: ToolUIState) => {
+            const { state: toolState, input, output } = state;
 
-                // Remove from storage
-                await deleteReminder(reminder.id);
-
-                return {
-                    success: true,
-                    title: reminder.title,
-                    message: `Reminder "${reminder.title}" cancelled`,
-                };
-            } catch (error) {
-                log.error("Failed to cancel reminder:", error);
-                return { error: "Failed to cancel reminder" };
-            }
-        },
-        render: ({ args, status, result }) => {
-            if (status === "inProgress") {
+            if (toolState === 'input-streaming' || toolState === 'input-available') {
                 return (
                     <ToolCard
                         title="Cancelling Reminder"
-                        subtitle={args.identifier}
+                        subtitle={input?.identifier}
                         state="loading"
                         icon="🗑️"
                     />
                 );
             }
-            if (status === "complete" && result) {
-                if (result.error) {
+
+            if (toolState === 'output-available' && output) {
+                if (output.error) {
                     return (
                         <ToolCard
                             title="Failed to Cancel"
-                            subtitle={result.error}
+                            subtitle={output.error}
                             state="error"
                             icon="🗑️"
                         />
@@ -67,13 +79,33 @@ export function useCancelReminderAction() {
                 return (
                     <ToolCard
                         title="Reminder Cancelled"
-                        subtitle={result.title}
+                        subtitle={output.title}
                         state="success"
                         icon="🗑️"
                     />
                 );
             }
+
+            if (toolState === 'output-error') {
+                return (
+                    <ToolCard
+                        title="Failed to Cancel"
+                        subtitle={state.errorText}
+                        state="error"
+                        icon="🗑️"
+                    />
+                );
+            }
+
             return null;
-        },
-    });
+        });
+
+        log.info('✅ cancelReminder tool registration complete');
+
+        // Cleanup on unmount
+        return () => {
+            log.info('🧹 Cleaning up cancelReminder tool');
+            unregisterToolUI('cancelReminder');
+        };
+    }, []); // Empty dependency array - only register once on mount
 }

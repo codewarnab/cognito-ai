@@ -9,9 +9,9 @@ https://github.com/cupcakearmy/ora?tab=readme-ov-file
 
 
 
-tool renderer in ui
-history, memory, remainder, tabs (useOpenTab add new tab param)
-search using chrome search api, also add permision for that and microphone
+#tool renderer in ui
+#history, memory, remainder, tabs (useNavigateTo add new tab param)
+#search using chrome search api, also add permision for that and microphone
 improve organise tab by context
 select and fill inputs
 interaction tool

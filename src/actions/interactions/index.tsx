@@ -1,13 +1,16 @@
-import { registerBasicInteractions } from "./basic-interactions";
+
 import { registerKeyboardInteractions } from "./keyboard-interactions";
-import { registerFormInteractions } from "./form-interactions";
 import { registerTextExtractionInteractions } from "./text-extraction";
-import { registerSearchResultsInteractions } from "./search-results";
+import { useChromeSearchTool } from "./search";
+import { useClickElementTool } from "./click";
+import { useFocusElementTool } from "./focus";
+import { useScrollPageTool } from "./scroll";
 
 export function registerInteractionActions() {
-    registerBasicInteractions();
+    useChromeSearchTool();
+    useClickElementTool();
+    useFocusElementTool();
+    useScrollPageTool();
     registerKeyboardInteractions();
-    registerFormInteractions();
     registerTextExtractionInteractions();
-    registerSearchResultsInteractions();
 }
