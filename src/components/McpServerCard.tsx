@@ -10,6 +10,7 @@ interface McpServerCardProps {
     icon: React.ReactNode
     initialEnabled?: boolean
     initialAuthenticated?: boolean
+    requiresAuth?: boolean
 }
 
 export const McpServerCard: React.FC<McpServerCardProps> = ({
@@ -17,7 +18,8 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     name,
     icon,
     initialEnabled = false,
-    initialAuthenticated = false
+    initialAuthenticated = false,
+    requiresAuth = true
 }) => {
     const [isEnabled, setIsEnabled] = useState(initialEnabled)
     const [isAuthenticated, setIsAuthenticated] = useState(initialAuthenticated)
@@ -112,37 +114,34 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
 	const sendMessage = (message: NotionMcpMessage): Promise<NotionMcpResponse> => {
 		return new Promise((resolve, reject) => {
 			let settled = false
-			// Short timeout to avoid hanging promises if callback is never invoked
-			const timeoutId = setTimeout(() => {
-				if (settled) return
-				settled = true
-				reject(new Error('Timeout: No response from background script'))
-			}, 5000)
 
 			try {
+				console.log('[McpServerCard] Sending message:', message.type)
 				chrome.runtime.sendMessage(message, (response) => {
 					if (settled) return
 					settled = true
-					clearTimeout(timeoutId)
 
 					const lastError = chrome.runtime.lastError
 					if (lastError) {
 						const errorMessage = lastError.message || 'Unknown runtime error'
+						console.error('[McpServerCard] Runtime error:', errorMessage)
 						reject({ success: false, error: `chrome.runtime.lastError: ${errorMessage}` })
 						return
 					}
 
 					if (response === undefined) {
+						console.error('[McpServerCard] No response received for:', message.type)
 						resolve({ success: false, error: 'No response' })
 						return
 					}
 
+					console.log('[McpServerCard] Response received:', message.type, response)
 					resolve(response as NotionMcpResponse)
 				})
 			} catch (err) {
 				if (settled) return
 				settled = true
-				clearTimeout(timeoutId)
+				console.error('[McpServerCard] Send message error:', err)
 				reject(err)
 			}
 		})
@@ -311,15 +310,17 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                             checked={isEnabled}
                             onChange={handleToggle}
                             label="Enable"
-                            disabled={isLoading || !isAuthenticated}
+                            disabled={isLoading || (requiresAuth && !isAuthenticated)}
                         />
                     </div>
                 </div>
 
                 <div className="mcp-card__footer">
-                    <StatusBadge
-                        state={getBadgeState()}
-                    />
+                    {requiresAuth && (
+                        <StatusBadge
+                            state={getBadgeState()}
+                        />
+                    )}
                     {isNotion && status.error && (
                         <span className="mcp-card__error" style={{ fontSize: '12px', color: '#ef4444' }}>
                             {status.error}
@@ -335,7 +336,37 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                         </span>
                     )}
                     <div className="mcp-card__actions">
-                        {isAuthenticated ? (
+                        {requiresAuth ? (
+                            isAuthenticated ? (
+                                <>
+                                    {isNotion && isEnabled && (
+                                        <button
+                                            className="btn btn--secondary btn--sm"
+                                            onClick={handleHealthCheck}
+                                            disabled={isLoading}
+                                            title="Check server health"
+                                        >
+                                            {isLoading && healthCheckStatus.includes('Checking') ? 'Checking...' : 'Health Check'}
+                                        </button>
+                                    )}
+                                    <button
+                                        className="btn btn--secondary btn--sm"
+                                        onClick={handleLogout}
+                                        disabled={isLoading}
+                                    >
+                                        {isLoading && !healthCheckStatus.includes('Checking') ? 'Loading...' : 'Logout'}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    className="btn btn--primary btn--sm"
+                                    onClick={handleAuthenticate}
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? 'Connecting...' : 'Connect'}
+                                </button>
+                            )
+                        ) : (
                             <>
                                 {isNotion && isEnabled && (
                                     <button
@@ -347,22 +378,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                                         {isLoading && healthCheckStatus.includes('Checking') ? 'Checking...' : 'Health Check'}
                                     </button>
                                 )}
-                                <button
-                                    className="btn btn--secondary btn--sm"
-                                    onClick={handleLogout}
-                                    disabled={isLoading}
-                                >
-                                    {isLoading && !healthCheckStatus.includes('Checking') ? 'Loading...' : 'Logout'}
-                                </button>
                             </>
-                        ) : (
-                            <button
-                                className="btn btn--primary btn--sm"
-                                onClick={handleAuthenticate}
-                                disabled={isLoading}
-                            >
-                                {isLoading ? 'Connecting...' : 'Connect'}
-                            </button>
                         )}
                     </div>
                 </div>

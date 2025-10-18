@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import { McpHeader } from "./McpHeader"
 import { McpServerCard } from "./McpServerCard"
 import { MCP_SERVERS } from "../constants/mcpServers"
@@ -7,21 +7,91 @@ interface McpManagerProps {
     onBack: () => void
 }
 
+interface ServerStatus {
+    serverId: string
+    isEnabled: boolean
+    isAuthenticated: boolean
+}
+
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [searchQuery, setSearchQuery] = useState("")
+    const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
+
+    // Fetch real authentication status on mount and listen for updates
+    useEffect(() => {
+        const loadStatuses = async () => {
+            // For Notion, fetch real status from background
+            try {
+                const response = await chrome.runtime.sendMessage({ 
+                    type: 'mcp/notion/status/get' 
+                })
+                if (response.success && response.data) {
+                    const status = response.data
+                    const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
+                    setServerStatuses(prev => ({
+                        ...prev,
+                        notion: {
+                            serverId: 'notion',
+                            isEnabled: status.state === 'connected',
+                            isAuthenticated: isAuth
+                        }
+                    }))
+                }
+            } catch (error) {
+                console.error('Failed to load Notion status:', error)
+            }
+        }
+
+        loadStatuses()
+
+        // Listen for status updates
+        const handleMessage = (message: any) => {
+            if (message.type === 'mcp/notion/status/update') {
+                const status = message.payload
+                const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
+                setServerStatuses(prev => ({
+                    ...prev,
+                    notion: {
+                        serverId: 'notion',
+                        isEnabled: status.state === 'connected',
+                        isAuthenticated: isAuth
+                    }
+                }))
+            }
+        }
+
+        chrome.runtime.onMessage.addListener(handleMessage)
+        return () => chrome.runtime.onMessage.removeListener(handleMessage)
+    }, [])
 
     // Filter servers based on search query
     const filteredServers = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return MCP_SERVERS
-        }
-
-        const query = searchQuery.toLowerCase()
-        return MCP_SERVERS.filter(server =>
-            server.name.toLowerCase().includes(query) ||
-            server.id.toLowerCase().includes(query)
-        )
-    }, [searchQuery])
+        let results = !searchQuery.trim()
+            ? MCP_SERVERS
+            : MCP_SERVERS.filter(server =>
+                server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                server.id.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        
+        // Sort priority: enabled > authenticated > unauthenticated
+        return results.sort((a, b) => {
+            const aStatus = serverStatuses[a.id]
+            const bStatus = serverStatuses[b.id]
+            
+            // Priority 1: Enabled servers first (use real status if available, fallback to initial)
+            const aEnabled = aStatus?.isEnabled ?? a.initialEnabled ? 1 : 0
+            const bEnabled = bStatus?.isEnabled ?? b.initialEnabled ? 1 : 0
+            if (aEnabled !== bEnabled) return bEnabled - aEnabled
+            
+            // Priority 2: Authenticated servers next (use real status if available, fallback to initial)
+            const aAuth = aStatus?.isAuthenticated ?? a.initialAuthenticated ? 1 : 0
+            const bAuth = bStatus?.isAuthenticated ?? b.initialAuthenticated ? 1 : 0
+            if (aAuth !== bAuth) return bAuth - aAuth
+            
+            // Keep original order for same priority
+            return 0
+        })
+    }, [searchQuery, serverStatuses])
 
     return (
         <div className="mcp-panel">
@@ -87,6 +157,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                     icon={server.icon}
                                     initialEnabled={server.initialEnabled}
                                     initialAuthenticated={server.initialAuthenticated}
+                                    requiresAuth={server.requiresAuthentication}
                                 />
                             </li>
                         ))}

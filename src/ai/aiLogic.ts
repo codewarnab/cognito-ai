@@ -4,11 +4,12 @@
  * Runs directly in the UI thread, no service worker needed
  */
 
-import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
+import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage ,stepCountIs } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
 import { getAllTools } from './toolRegistry';
+import { initializeMCPClients } from './mcpClient';
 
 const log = createLogger('AI-Logic');
 
@@ -54,8 +55,25 @@ export async function streamAIResponse(params: {
 
   log.info('Starting AI stream', { messageCount: messages.length });
 
+  // Initialize MCP clients and get their tools
+  let mcpTools = {};
+  let mcpCleanup: (() => Promise<void>) | null = null;
+  
+  try {
+    const mcpManager = await initializeMCPClients(abortSignal);
+    mcpTools = mcpManager.tools;
+    mcpCleanup = mcpManager.cleanup;
+    
+    const mcpToolCount = Object.keys(mcpTools).length;
+    log.info('🔍 Available MCP tools:', { count: mcpToolCount, names: Object.keys(mcpTools) });
+  } catch (error) {
+    log.error('❌ Failed to initialize MCP clients:', error);
+    mcpCleanup = null; // Ensure cleanup is null on error
+  }
+
   try {
     // Create UI message stream
+
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
@@ -73,13 +91,24 @@ export async function streamAIResponse(params: {
           // Convert UI messages to model format
           const modelMessages = convertToModelMessages(messages);
 
-          // Get all registered tools
-          const tools = getAllTools();
-          const toolCount = Object.keys(tools).length;
+          // Get all registered tools (Chrome extension tools)
+          const extensionTools = getAllTools();
+          const extensionToolCount = Object.keys(extensionTools).length;
           
-          log.info('🔍 Available tools:', { count: toolCount, names: Object.keys(tools) });
+          log.info('🔍 Available extension tools:', { count: extensionToolCount, names: Object.keys(extensionTools) });
           
-          if (toolCount === 0) {
+          // Combine all tools
+          const tools = { ...extensionTools, ...mcpTools };
+          const totalToolCount = Object.keys(tools).length;
+          
+          log.info('🎯 Total available tools:', { 
+            count: totalToolCount, 
+            extension: extensionToolCount,
+            mcp: Object.keys(mcpTools).length,
+            names: Object.keys(tools) 
+          });
+          
+          if (totalToolCount === 0) {
             log.warn('⚠️ NO TOOLS REGISTERED! AI will not be able to use tools.');
           }
 
@@ -88,6 +117,7 @@ export async function streamAIResponse(params: {
             model,
             system: systemPrompt,
             messages: modelMessages,
+            stopWhen: [stepCountIs(10)],
             tools, // Include tools in the stream
             abortSignal,
             temperature: 0.7,
@@ -139,12 +169,33 @@ export async function streamAIResponse(params: {
                   transient: true,
                 });
 
+                // Clean up MCP clients
+                if (mcpCleanup) {
+                  try {
+                    await mcpCleanup();
+                    log.info('✅ MCP clients cleaned up');
+                  } catch (error) {
+                    log.error('❌ Error cleaning up MCP clients:', error);
+                  }
+                }
+
                 log.info('AI stream completed', { messageCount: finalMessages.length });
               },
             })
           );
         } catch (error) {
           log.error('Stream execution error', error);
+          
+          // Clean up MCP clients on error
+          if (mcpCleanup) {
+            try {
+              await mcpCleanup();
+              log.info('✅ MCP clients cleaned up after error');
+            } catch (cleanupError) {
+              log.error('❌ Error cleaning up MCP clients after error:', cleanupError);
+            }
+          }
+          
           onError?.(error instanceof Error ? error : new Error(String(error)));
           throw error;
         }
@@ -154,6 +205,17 @@ export async function streamAIResponse(params: {
     return stream;
   } catch (error) {
     log.error('Error creating stream', error);
+    
+    // Clean up MCP clients on error
+    if (mcpCleanup) {
+      try {
+        await mcpCleanup();
+        log.info('✅ MCP clients cleaned up after stream creation error');
+      } catch (cleanupError) {
+        log.error('❌ Error cleaning up MCP clients after stream creation error:', cleanupError);
+      }
+    }
+    
     throw error;
   }
 }
