@@ -6,3 +6,5 @@ https://www.copilotkit.ai/examples/ai-research
 https://www.copilotkit.ai/examples/travel-planner
 https://github.com/cupcakearmy/ora?tab=readme-ov-file
 
+1. add db save after onfinish 
+

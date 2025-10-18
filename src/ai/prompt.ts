@@ -83,7 +83,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "FORM FILLING: Use 'fillInput' with label text or placeholder; then 'pressKey' Enter if form submit needed.",
                 "VALIDATION: Always read back results after write operations (clicks, form fills, navigation) to confirm success.",
                 "TAB MANAGEMENT: 'searchTabs' to find existing tabs before 'openTab'; use 'getActiveTab' to check current context.",
-                "MCP TOOLS: When authenticated, use Notion MCP for search/create/update operations on Notion content.",
+                "MCP TOOLS: When authenticated, use Notion MCP for search/create/update operations on Notion content. CRITICAL: After calling an MCP tool, ALWAYS analyze the results and provide a response to the user. NEVER stop after a tool call - continue the conversation with your findings.",
                 "FOLLOW-UP SUGGESTIONS: Analyze search results for URLs, profiles, and related topics. Suggest 1-2 actions such as 'Visit their website?', 'Check their GitHub?', 'Search for recent projects?', or 'Find tutorials?'. Make suggestions specific and actionable.",
                 "CONTEXT EXTRACTION: From search results, identify personal/company websites (domains), social profiles (GitHub/Twitter/LinkedIn URLs), related topics to suggest further searches, and content type (article/tutorial/news) to tailor follow-ups.",
 

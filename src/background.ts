@@ -48,6 +48,122 @@ let notionStatus: NotionMcpStatus = { state: 'disconnected' };
 let isEnabled = false;
 
 
+/**
+ * Schedule automatic token refresh before expiration
+ * Calculates when to refresh (5 minutes before expiry) and sets an alarm
+ */
+async function scheduleTokenRefresh(tokens: NotionOAuthTokens): Promise<void> {
+    try {
+        // Clear any existing refresh alarm
+        await chrome.alarms.clear('notion-token-refresh');
+        
+        // Calculate when to refresh (5 minutes before expiration)
+        const refreshTime = tokens.expires_at - (5 * 60 * 1000); // 5 minutes before expiry
+        const now = Date.now();
+        
+        // Only schedule if the refresh time is in the future
+        if (refreshTime > now) {
+            await chrome.alarms.create('notion-token-refresh', {
+                when: refreshTime
+            });
+            
+            const expiresAt = new Date(tokens.expires_at).toISOString();
+            const refreshAt = new Date(refreshTime).toISOString();
+            console.log('[Background] Token refresh scheduled:', {
+                expiresAt,
+                refreshAt,
+                delayMinutes: Math.ceil((refreshTime - now) / (1000 * 60))
+            });
+        } else {
+            console.warn('[Background] Token expires too soon for automatic refresh:', {
+                expiresAt: new Date(tokens.expires_at).toISOString(),
+                now: new Date(now).toISOString()
+            });
+        }
+    } catch (error) {
+        console.error('[Background] Error scheduling token refresh:', error);
+    }
+}
+
+/**
+ * Handle automatic token refresh alarm
+ */
+async function handleTokenRefreshAlarm(): Promise<void> {
+    console.log('[Background] Token refresh alarm fired');
+    
+    try {
+        // Check if MCP is still enabled
+        const { 'mcp.notion.enabled': enabled } = await chrome.storage.local.get('mcp.notion.enabled');
+        if (!enabled) {
+            console.log('[Background] MCP disabled, skipping token refresh');
+            return;
+        }
+        
+        // Attempt to refresh the token
+        const refreshed = await refreshNotionToken();
+        
+        if (refreshed && notionTokens) {
+            // Schedule the next refresh
+            await scheduleTokenRefresh(notionTokens);
+            console.log('[Background] Token refreshed successfully, next refresh scheduled');
+        } else {
+            console.error('[Background] Token refresh failed during alarm, may require re-authentication');
+            notionStatus = {
+                state: 'needs-auth',
+                error: 'Automatic token refresh failed. Please re-authenticate.'
+            };
+            broadcastStatusUpdate();
+        }
+    } catch (error) {
+        console.error('[Background] Error in token refresh alarm:', error);
+    }
+}
+
+/**
+ * Ensure token is valid and schedule refresh if needed
+ */
+async function ensureTokenValidity(): Promise<boolean> {
+    try {
+        const tokens = await getStoredTokens();
+        if (!tokens) {
+            console.log('[Background] No stored tokens found');
+            return false;
+        }
+        
+        console.log('[Background] Checking token validity:', {
+            expiresAt: new Date(tokens.expires_at).toISOString(),
+            now: new Date().toISOString(),
+            isExpired: isTokenExpired(tokens)
+        });
+        
+        // Check if token is expired or about to expire
+        if (isTokenExpired(tokens)) {
+            console.log('[Background] Token expired or expiring soon, attempting refresh');
+            
+            // Load tokens into memory
+            notionTokens = tokens;
+            
+            // Try to refresh
+            const refreshed = await refreshNotionToken();
+            if (refreshed && notionTokens) {
+                // Schedule next refresh
+                await scheduleTokenRefresh(notionTokens);
+                return true;
+            } else {
+                // Refresh failed, need re-auth
+                return false;
+            }
+        }
+        
+        // Token is still valid, schedule next refresh
+        notionTokens = tokens;
+        await scheduleTokenRefresh(tokens);
+        return true;
+    } catch (error) {
+        console.error('[Background] Error in ensureTokenValidity:', error);
+        return false;
+    }
+}
 
 /**
  * Start OAuth flow for Notion MCP with dynamic client registration
@@ -134,6 +250,9 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
 
         console.log('[Background] Tokens stored successfully');
 
+        // Schedule automatic token refresh before expiry
+        await scheduleTokenRefresh(tokens);
+
         // Update status
         notionStatus = { state: 'authenticated' };
         broadcastStatusUpdate();
@@ -193,6 +312,9 @@ async function refreshNotionToken(): Promise<boolean> {
         notionTokens = newTokens;
         await storeTokens(newTokens);
 
+        // Schedule next automatic token refresh
+        await scheduleTokenRefresh(newTokens);
+
         notionStatus = { state: 'authenticated' };
         broadcastStatusUpdate();
 
@@ -227,10 +349,10 @@ async function ensureValidToken(): Promise<string | null> {
 
     // Check if token is expired
     if (isTokenExpired(notionTokens)) {
-        // const refreshed = await refreshNotionToken();
-        // if (!refreshed) {
-        //     return null;
-        // }
+        const refreshed = await refreshNotionToken();
+        if (!refreshed) {
+            return null;
+        }
     }
 
     return notionTokens.access_token;
@@ -587,6 +709,49 @@ async function callNotionTool(name: string, args?: Record<string, any>): Promise
 }
 
 /**
+ * Get MCP server configurations for frontend
+ */
+async function getMCPServerConfigs(): Promise<any[]> {
+    const servers = [];
+    
+    try {
+        // Check if Notion MCP is enabled
+        const { 'mcp.notion.enabled': notionEnabled } = await chrome.storage.local.get('mcp.notion.enabled');
+        
+        if (notionEnabled) {
+            // Get stored tokens for Notion
+            const tokens = await getStoredTokens();
+            
+            if (tokens?.access_token) {
+                servers.push({
+                    id: 'notion',
+                    name: 'Notion MCP',
+                    url: NOTION_CONFIG.MCP_SSE_URL,
+                    type: 'sse',
+                    headers: [
+                        { key: 'Authorization', value: `Bearer ${tokens.access_token}` },
+                        { key: 'Accept', value: 'application/json, text/event-stream' }
+                    ],
+                    enabled: true,
+                    status: notionStatus
+                });
+                
+                console.log('[Background] Notion MCP server configured for frontend');
+            } else {
+                console.log('[Background] Notion MCP enabled but no access token found');
+            }
+        }
+        
+        // Add more MCP servers here as they are implemented
+        
+    } catch (error) {
+        console.error('[Background] Error getting MCP server configs:', error);
+    }
+    
+    return servers;
+}
+
+/**
  * Broadcast status update to all listeners
  */
 function broadcastStatusUpdate(): void {
@@ -598,16 +763,58 @@ function broadcastStatusUpdate(): void {
     });
 }
 
+/**
+ * Initialize Notion status from stored tokens
+ * Called on startup to restore authentication state
+ */
+async function initializeNotionStatus(): Promise<void> {
+    try {
+        const tokens = await getStoredTokens();
+        if (tokens) {
+            // User has tokens, mark as authenticated
+            notionStatus = { state: 'authenticated' };
+            console.log('[Background] Notion status initialized: authenticated (tokens found)');
+        } else {
+            // No tokens, needs auth
+            notionStatus = { state: 'needs-auth' };
+            console.log('[Background] Notion status initialized: needs-auth (no tokens)');
+        }
+    } catch (error) {
+        console.error('[Background] Error initializing Notion status:', error);
+        notionStatus = { state: 'disconnected' };
+    }
+}
+
 // ============================================================================
 // Message Handler
 // ============================================================================
 
-chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
+    console.log('[Background] Received message:', message.type, message);
+    
+    // Handle general MCP messages
+    if (message.type === 'mcp/servers/get') {
+        (async () => {
+            try {
+                const servers = await getMCPServerConfigs();
+                sendResponse({ success: true, data: servers });
+            } catch (error) {
+                console.error('[Background] Error getting MCP server configs:', error);
+                sendResponse({ 
+                    success: false, 
+                    error: error instanceof Error ? error.message : 'Failed to get server configs' 
+                });
+            }
+        })();
+        return true;
+    }
+
     // Handle Notion MCP messages
     if (message.type?.startsWith('mcp/notion/')) {
         (async () => {
             let response: NotionMcpResponse;
 
+            console.log('[Background] Handling MCP message:', message.type);
             switch (message.type) {
                 case 'mcp/notion/auth/start':
                     response = await startNotionAuth();
@@ -629,6 +836,13 @@ chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendRes
                     response = { success: true, data: getNotionStatus() };
                     break;
 
+                case 'mcp/notion/auth/refresh':
+                    const refreshed = await refreshNotionToken();
+                    response = refreshed 
+                        ? { success: true, data: { state: 'authenticated' } }
+                        : { success: false, error: 'Token refresh failed' };
+                    break;
+
                 case 'mcp/notion/tool/call':
                     response = await callNotionTool(
                         message.payload?.name,
@@ -644,11 +858,46 @@ chrome.runtime.onMessage.addListener((message: NotionMcpMessage, sender, sendRes
                     response = { success: false, error: 'Unknown message type' };
             }
 
+            console.log('[Background] Sending MCP response:', response);
             sendResponse(response);
         })();
 
         return true; // Will respond asynchronously
     }
+
+    // Handle summarize messages
+    if (message?.type === 'summarize:availability') {
+        (async () => {
+            await ensureOffscreenDocument();
+            try {
+                const res = await chrome.runtime.sendMessage({ type: 'offscreen/summarize/availability' });
+                sendResponse(res);
+            } catch (error) {
+                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
+            }
+        })();
+        return true;
+    }
+
+    if (message?.type === 'summarize:request') {
+        (async () => {
+            const msg = message as SummarizeRequestMessage;
+            await ensureOffscreenDocument();
+            try {
+                const res = await chrome.runtime.sendMessage({
+                    type: 'offscreen/summarize/request',
+                    payload: msg.payload
+                });
+                sendResponse(res);
+            } catch (error) {
+                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
+            }
+        })();
+        return true;
+    }
+
+    // Return false for unhandled messages
+    return false;
 });
 
 // ============================================================================
@@ -689,6 +938,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     console.log('[Background] onInstalled:', details.reason);
 
     try {
+        // Initialize Notion status from stored tokens
+        await initializeNotionStatus();
+
         // Enable side panel on all existing tabs
         if (chrome.sidePanel) {
             chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
@@ -705,6 +957,10 @@ chrome.runtime.onInstalled.addListener(async (details) => {
             if (tokens && credentials) {
                 notionTokens = tokens;
                 notionClientCredentials = credentials;
+                
+                // Check token validity and schedule refresh if needed
+                await ensureTokenValidity();
+                
                 await connectNotionMcp();
             }
         }
@@ -721,6 +977,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
     console.log('[Background] onStartup - Extension ready');
 
+    // Initialize Notion status from stored tokens
+    await initializeNotionStatus();
+
     // Load saved state
     const stored = await chrome.storage.local.get(['mcp.notion.enabled']);
     isEnabled = stored['mcp.notion.enabled'] || false;
@@ -732,6 +991,10 @@ chrome.runtime.onStartup.addListener(async () => {
         if (tokens && credentials) {
             notionTokens = tokens;
             notionClientCredentials = credentials;
+            
+            // Check token validity and schedule refresh if needed
+            await ensureTokenValidity();
+            
             await connectNotionMcp();
         }
     }
@@ -776,6 +1039,12 @@ interface Reminder {
  * Handle reminder alarms - show notification when reminder fires
  */
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+    // Handle token refresh alarm
+    if (alarm.name === 'notion-token-refresh') {
+        await handleTokenRefreshAlarm();
+        return;
+    }
+
     // Only handle reminder alarms
     if (!alarm.name.startsWith('reminder:')) {
         return;
@@ -874,36 +1143,4 @@ type SummarizeRequestMessage = {
     };
 };
 
-// Wire summarize messages coming from UI to the offscreen document
-chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
-    if (message?.type === 'summarize:availability') {
-        (async () => {
-            await ensureOffscreenDocument();
-            try {
-                const res = await chrome.runtime.sendMessage({ type: 'offscreen/summarize/availability' });
-                sendResponse(res);
-            } catch (error) {
-                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
-            }
-        })();
-        return true;
-    }
-
-    if (message?.type === 'summarize:request') {
-        (async () => {
-            const msg = message as SummarizeRequestMessage;
-            await ensureOffscreenDocument();
-            try {
-                const res = await chrome.runtime.sendMessage({
-                    type: 'offscreen/summarize/request',
-                    payload: msg.payload
-                });
-                sendResponse(res);
-            } catch (error) {
-                sendResponse({ ok: false, code: 'error', message: error instanceof Error ? error.message : 'unknown' });
-            }
-        })();
-        return true;
-    }
-});
 

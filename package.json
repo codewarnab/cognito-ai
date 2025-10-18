@@ -9,7 +9,7 @@
     "dev:setup": "node scripts/copy-offscreen.js",
     "build": "plasmo build && node scripts/copy-offscreen.js",
     "package": "plasmo package",
-    "postinstall": "node scripts/patch-vfile.js"
+    "postinstall": "node scripts/patch-vfile.js && node scripts/patch-google-sdk.js"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.23",
@@ -22,6 +22,7 @@
     "@plasmohq/storage": "^1.15.0",
     "ai": "^5.0.75",
     "dexie": "^4.2.1",
+    "lucide-react": "^0.546.0",
     "plasmo": "0.90.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",

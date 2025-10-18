@@ -234,10 +234,6 @@ async function refreshAccessToken(
         refresh_token: data.refresh_token || refreshToken,
         token_type: data.token_type || 'Bearer',
         expires_at: expiresAt,
-        workspace_id: data.workspace_id,
-        workspace_name: data.workspace_name,
-        workspace_icon: data.workspace_icon,
-        owner: data.owner,
         created_at: Date.now()
     };
 }

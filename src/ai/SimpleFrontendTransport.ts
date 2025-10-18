@@ -20,15 +20,25 @@ export class SimpleFrontendTransport {
 
   /**
    * Send messages to AI and get streaming response
+   * Supports multiple trigger types including submit-tool-result
    */
   async sendMessages(params: {
     chatId: string;
     messages: UIMessage[];
     abortSignal: AbortSignal;
+    trigger?: 'submit-user-message' | 'submit-tool-result' | 'regenerate-assistant-message';
+    id?: string;
+    messageId?: string;
   }): Promise<ReadableStream> {
-    const { chatId, messages, abortSignal } = params;
+    const { chatId, messages, abortSignal, trigger, id, messageId } = params;
 
-    log.info('Sending messages', { chatId, count: messages.length });
+    log.info('Sending messages', { 
+      chatId, 
+      count: messages.length, 
+      trigger: trigger || 'submit-user-message',
+      id,
+      messageId
+    });
 
     // Create abort controller for this request
     const abortController = new AbortController();
@@ -42,9 +52,19 @@ export class SimpleFrontendTransport {
     });
 
     try {
+      // Handle different trigger types
+      let requestMessages = messages;
+      
+      if (trigger === 'submit-tool-result') {
+        // For tool results, include complete message context
+        log.info('Processing submit-tool-result request', { messageId });
+        // Messages already include tool results from useChat
+        requestMessages = messages;
+      }
+
       // Get the stream from AI logic
       const uiMessageStream = await streamAIResponse({
-        messages,
+        messages: requestMessages,
         abortSignal: abortController.signal,
         onError: (error) => {
           log.error('AI response error', error);
