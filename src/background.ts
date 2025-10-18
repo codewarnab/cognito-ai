@@ -120,7 +120,7 @@ async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): P
             });
 
             await chrome.alarms.create(alarmName, {
-                when: Date.now() + 30000  // For debugging: set alarm 30 seconds from now
+                when: refreshTime
             });
 
             console.log(`[Background:${serverId}] Alarm "${alarmName}" created successfully`);
@@ -326,16 +326,22 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         );
 
         console.log(`[Background:${serverId}] Launching OAuth...`);
+        console.log(`[Background:${serverId}] Authorization URL: ${authUrl}`);
 
         // Update status
         state.status = { ...state.status, state: 'authorizing' };
         broadcastStatusUpdate(serverId, state.status);
-
         // Step 5: Launch OAuth flow using Chrome Identity API
-        const redirectUrl = await chrome.identity.launchWebAuthFlow({
+        let redirectUrl: string | undefined;
+        try {
+            redirectUrl = await chrome.identity.launchWebAuthFlow({
             url: authUrl,
             interactive: true
-        });
+            });
+        } catch (error) {
+            console.error(`[Background:${serverId}] Could not load OAuth URL:`, error);
+            throw new Error(`Could not load OAuth URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
 
         if (!redirectUrl) {
             throw new Error('OAuth flow cancelled');
@@ -401,8 +407,10 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 
         return { success: true, data: { state: 'authenticated' } };
     } catch (error) {
+        console
         console.error(`[Background:${serverId}] OAuth error:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+        console.log("full error :", error);
 
         // Check if user cancelled or denied the flow
         const wasCancelled = errorMessage.toLowerCase().includes('cancelled') ||

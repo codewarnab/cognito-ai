@@ -43,7 +43,7 @@ export interface ServerConfig {
 }
 
 export const MCP_SERVERS: ServerConfig[] = [
-    {
+   {   // working 
         id: "ahrefs",
         name: "Ahrefs",
         icon: <Ahrefs />,
@@ -53,16 +53,17 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Ahrefs is an SEO platform for website analysis and keyword research.",
         requiresAuthentication: true
     },
-    {
-        id: "asana",
-        name: "Asana",
-        icon: <Asana />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.asana.com/sse",
-        description: "Asana is a project management tool for teams.",
-        requiresAuthentication: true
-    },
+   // { 
+        // apply to allowlist at http://developers.asana.com/docs/integrating-with-asanas-mcp-server#why-do-we-have-an-allowlist
+        // id: "asana",
+        // name: "Asana",
+        // icon: <Asana />,
+        // initialEnabled: false,
+        // initialAuthenticated: false,
+        // url: "https://mcp.asana.com/sse",
+        // description: "Asana is a project management tool for teams.",
+        // requiresAuthentication: true
+    //},
     {
         id: "astro-docs",
         name: "Astro Docs",
@@ -73,36 +74,36 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Astro is a static site builder for the modern web.",
         requiresAuthentication: false
     },
-    {
-        id: "atlassian",
-        name: "Atlassian",
-        icon: <Atlassian />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.atlassian.com/v1/sse",
-        description: "Atlassian is a project management tool for teams.",
-        requiresAuthentication: true
-    },
-    {
-        id: "canva",
-        name: "Canva",
-        icon: <Canva />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.canva.com/mcp",
-        description: "Canva is a design tool for creating beautiful designs.",
-        requiresAuthentication: true
-    },
-    {
-        id: "figma",
-        name: "Figma",
-        icon: <Figma />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.figma.com/mcp",
-        description: "Figma is a design tool for creating beautiful designs.",
-        requiresAuthentication: true
-    },
+    // {
+    //     id: "atlassian",
+    //     name: "Atlassian",
+    //     icon: <Atlassian />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://mcp.atlassian.com/v1/sse",
+    //     description: "Atlassian is a project management tool for teams.",
+    //     requiresAuthentication: true
+    // },
+    // { // failed to laucnh auth flow  need to debug more or raise an issue in github 
+    //     id: "canva",
+    //     name: "Canva",
+    //     icon: <Canva />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://mcp.canva.com/mcp",
+    //     description: "Canva is a design tool for creating beautiful designs.",
+    //     requiresAuthentication: true
+    // },
+    // { apply for mcp client at https://forum.figma.com/report-a-problem-6/remote-mcp-server-oauth-client-registration-issue-45936 and https://form.asana.com/?k=kBG-ejRQTdY8x_H6a4vM3Q&d=10497086658021
+    //     id: "figma",
+    //     name: "Figma",
+    //     icon: <Figma />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://mcp.figma.com/mcp",
+    //     description: "Figma is a design tool for creating beautiful designs.",
+    //     requiresAuthentication: true
+    // },
     // {
     //     id: "github",
     //     name: "GitHub",
@@ -123,7 +124,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Hugging Face is a platform for building and sharing machine learning models.",
         requiresAuthentication: false
     },
-    {
+    { // worked 
         id: "linear",
         name: "Linear",
         icon: <Linear />,
@@ -133,7 +134,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Linear is a project management tool for teams.",
         requiresAuthentication: true
     },
-    {
+    { // working 
         id: "netlify",
         name: "Netlify",
         icon: <Netlify />,
@@ -143,7 +144,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Netlify is a platform for building and deploying websites.",
         requiresAuthentication: true
     },
-    {
+    { // working 
         id: "notion",
         name: "Notion",
         icon: <Notion />,
@@ -153,7 +154,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Notion is a project management tool for teams.",
         requiresAuthentication: true
     },
-    {
+    { // working 
         id: "paypal",
         name: "PayPal",
         icon: <PayPal />,
@@ -163,7 +164,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "PayPal is a payment platform for online transactions.",
         requiresAuthentication: true
     },
-    {
+    { //  working 
         id: "sentry",
         name: "Sentry",
         icon: <Sentry />,
@@ -173,7 +174,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Sentry is a error tracking platform for monitoring and logging errors.",
         requiresAuthentication: true
     },
-    // {
+    // { // does not support dynamic client registartion 
     //     id: "stripe",
     //     name: "Stripe",
     //     icon: <Stripe />,
@@ -183,7 +184,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     //     description: "Stripe is a payment platform for online transactions.",
     //     requiresAuthentication: true
     // },
-    {
+    { // working 
         id: "supabase",
         name: "Supabase",
         icon: <Supabase />,
@@ -193,17 +194,17 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Supabase is a database platform for building web applications.",
         requiresAuthentication: true
     },
-    {
-        id: "vercel",
-        name: "Vercel",
-        icon: <Vercel />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.vercel.com/mcp",
-        description: "Vercel is a platform for building and deploying websites.",
-        requiresAuthentication: true
-    },
-    {
+    //{ not approaved by them ( maybe find form or reach out to them )
+    //     id: "vercel",
+    //     name: "Vercel",
+    //     icon: <Vercel />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://mcp.vercel.com/mcp",
+    //     description: "Vercel is a platform for building and deploying websites.",
+    //     requiresAuthentication: true
+    // },
+    { // working 
         id: "webflow",
         name: "Webflow",
         icon: <Webflow />,

@@ -39,7 +39,8 @@ export async function registerDynamicClient(
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code", "refresh_token"],
         response_types: ["code"],
-        scope: scopes ? scopes.join(' ') : "read write",
+        // Only include scope if scopes are provided and non-empty
+        ...(scopes && scopes.length > 0 ? { scope: scopes.join(' ') } : {}),
         token_endpoint_auth_method: "client_secret_basic"
     };
 
