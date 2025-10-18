@@ -1,17 +1,16 @@
 /**
- * OAuth utilities for Notion MCP authentication
- * Implements OAuth 2.0 PKCE (Proof Key for Code Exchange) flow
- * for Notion's hosted MCP server (no client secret)
+ * OAuth utilities for MCP authentication
+ * Implements OAuth 2.0 with Dynamic Client Registration (RFC 7591)
+ * Supports multiple MCP servers with independent credentials
  */
 
-import { buffer } from 'node:stream/consumers';
-import { NOTION_CONFIG } from '../constants';
-import type { NotionOAuthTokens } from './types';
+import type { McpOAuthTokens } from './types';
 
 /**
  * Dynamic client credentials from registration
  */
-interface DynamicClientCredentials {
+export interface DynamicClientCredentials {
+    serverId: string; // Server this client is registered for
     client_id: string;
     client_secret: string;
     redirect_uris: string[];
@@ -25,22 +24,28 @@ interface DynamicClientCredentials {
 }
 
 /**
- * Register a dynamic client with Notion MCP OAuth server
+ * Register a dynamic client with MCP OAuth server
  * This is called before starting the OAuth flow
  */
-async function registerDynamicClient(redirectUri: string): Promise<DynamicClientCredentials> {
+export async function registerDynamicClient(
+    serverId: string,
+    registrationUrl: string,
+    redirectUri: string,
+    serverName: string,
+    scopes?: string[]
+): Promise<DynamicClientCredentials> {
     const registrationPayload = {
-        client_name: "Chrome AI Extension - Notion MCP",
+        client_name: `Chrome AI Extension - ${serverName}`,
         redirect_uris: [redirectUri],
         grant_types: ["authorization_code", "refresh_token"],
         response_types: ["code"],
-        scope: "read write",
+        scope: scopes ? scopes.join(' ') : "read write",
         token_endpoint_auth_method: "client_secret_basic"
     };
 
-    console.log('[OAuth] Registering dynamic client with payload:', registrationPayload);
+    console.log(`[OAuth:${serverId}] Registering dynamic client with payload:`, registrationPayload);
 
-    const response = await fetch(NOTION_CONFIG.OAUTH_REGISTER_URL, {
+    const response = await fetch(registrationUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -55,12 +60,13 @@ async function registerDynamicClient(redirectUri: string): Promise<DynamicClient
 
     const data = await response.json();
 
-    console.log('[OAuth] Client registered successfully:', {
+    console.log(`[OAuth:${serverId}] Client registered successfully:`, {
         client_id: data.client_id,
         redirect_uris: data.redirect_uris
     });
 
     return {
+        serverId,
         client_id: data.client_id,
         client_secret: data.client_secret,
         redirect_uris: data.redirect_uris,
@@ -121,32 +127,61 @@ function base64UrlEncode(buffer: Uint8Array): string {
 }
 
 /**
- * Build Notion MCP OAuth authorization URL (standard OAuth, no PKCE)
+ * Build OAuth authorization URL
  */
-function buildAuthUrl(clientId: string, redirectUri: string, state: string): string {
+export function buildAuthUrl(
+    serverId: string,
+    authEndpoint: string,
+    clientId: string,
+    redirectUri: string,
+    state: string,
+    scopes?: string[],
+    resource?: string
+): string {
     const params = new URLSearchParams({
         response_type: 'code',
         client_id: clientId,
         redirect_uri: redirectUri,
-        owner: 'user',
         state: state
     });
 
-    return `${NOTION_CONFIG.OAUTH_AUTH_URL}?${params.toString()}`;
+    // Add scopes if provided
+    if (scopes && scopes.length > 0) {
+        params.append('scope', scopes.join(' '));
+    }
+
+    // Add resource parameter if provided (RFC 8707)
+    if (resource) {
+        params.append('resource', resource);
+    }
+
+    // Notion-specific: add owner parameter
+    if (serverId === 'notion') {
+        params.append('owner', 'user');
+    }
+
+    const url = `${authEndpoint}?${params.toString()}`;
+    console.log(`[OAuth:${serverId}] Built authorization URL (scopes: ${scopes?.join(' ') || 'none'})`);
+    
+    return url;
 }
 
 /**
  * Exchange authorization code for tokens using dynamic client credentials
  */
-async function exchangeCodeForTokens(
+export async function exchangeCodeForTokens(
+    serverId: string,
+    tokenEndpoint: string,
     code: string,
     clientId: string,
     clientSecret: string,
-    redirectUri: string
-): Promise<NotionOAuthTokens> {
+    redirectUri: string,
+    resource?: string,
+    customHeaders?: Record<string, string>
+): Promise<McpOAuthTokens> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     
-    console.log('[OAuth] Exchange code for tokens with client:', clientId);
+    console.log(`[OAuth:${serverId}] Exchange code for tokens with client:`, clientId);
     
     // Create x-www-form-urlencoded body for OAuth token exchange
     const params = new URLSearchParams({
@@ -155,16 +190,23 @@ async function exchangeCodeForTokens(
         redirect_uri: redirectUri
     });
 
-    console.log('[OAuth] Exchange code for tokens body (urlencoded):', params.toString());
-    console.log('[OAuth] Exchange code for tokens URL:', NOTION_CONFIG.OAUTH_TOKEN_URL);
+    // Add resource parameter if provided (RFC 8707)
+    if (resource) {
+        params.append('resource', resource);
+    }
 
-    const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
+    console.log(`[OAuth:${serverId}] Exchange code for tokens body (urlencoded):`, params.toString());
+    console.log(`[OAuth:${serverId}] Exchange code for tokens URL:`, tokenEndpoint);
+
+    const headers: Record<string, string> = {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...customHeaders
+    };
+
+    const response = await fetch(tokenEndpoint, {
         method: 'POST',
-        headers: {
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Notion-Version': '2022-06-28'
-        },
+        headers,
         body: params.toString()
     });
 
@@ -179,17 +221,23 @@ async function exchangeCodeForTokens(
     const expiresIn = data.expires_in || 3600; // Default 1 hour if not provided
     const expiresAt = Date.now() + (expiresIn * 1000);
 
+    // Store server-specific metadata as JSON string
+    const metadata: Record<string, any> = {};
+    const standardFields = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'scope'];
+    
+    for (const [key, value] of Object.entries(data)) {
+        if (!standardFields.includes(key)) {
+            metadata[key] = value;
+        }
+    }
+
     return {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         token_type: data.token_type || 'Bearer',
         expires_at: expiresAt,
-        workspace_id: data.workspace_id,
-        workspace_name: data.workspace_name,
-        workspace_icon: data.workspace_icon,
-        owner: data.owner,
-        bot_id: data.bot_id,
-        duplicated_template_id: data.duplicated_template_id,
+        scope: data.scope,
+        metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : undefined,
         created_at: Date.now()
     };
 }
@@ -197,11 +245,15 @@ async function exchangeCodeForTokens(
 /**
  * Refresh access token using refresh token and dynamic client credentials
  */
-async function refreshAccessToken(
+export async function refreshAccessToken(
+    serverId: string,
+    tokenEndpoint: string,
     refreshToken: string,
     clientId: string,
-    clientSecret: string
-): Promise<NotionOAuthTokens> {
+    clientSecret: string,
+    resource?: string,
+    customHeaders?: Record<string, string>
+): Promise<McpOAuthTokens> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     
     const params = new URLSearchParams({
@@ -209,13 +261,20 @@ async function refreshAccessToken(
         refresh_token: refreshToken
     });
 
-    const response = await fetch(NOTION_CONFIG.OAUTH_TOKEN_URL, {
+    // Add resource parameter if provided (RFC 8707)
+    if (resource) {
+        params.append('resource', resource);
+    }
+
+    const headers: Record<string, string> = {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...customHeaders
+    };
+
+    const response = await fetch(tokenEndpoint, {
         method: 'POST',
-        headers: {
-            'Authorization': `Basic ${credentials}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Notion-Version': '2022-06-28'
-        },
+        headers,
         body: params.toString()
     });
 
@@ -229,87 +288,106 @@ async function refreshAccessToken(
     const expiresIn = data.expires_in || 3600;
     const expiresAt = Date.now() + (expiresIn * 1000);
 
+    // Store server-specific metadata as JSON string
+    const metadata: Record<string, any> = {};
+    const standardFields = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'scope'];
+    
+    for (const [key, value] of Object.entries(data)) {
+        if (!standardFields.includes(key)) {
+            metadata[key] = value;
+        }
+    }
+
     return {
         access_token: data.access_token,
         refresh_token: data.refresh_token || refreshToken,
         token_type: data.token_type || 'Bearer',
         expires_at: expiresAt,
+        scope: data.scope,
+        metadata: Object.keys(metadata).length > 0 ? JSON.stringify(metadata) : undefined,
         created_at: Date.now()
     };
 }
 
 /**
- * Check if token is expired or about to expire (within 5 minutes)
+ * Check if token is expired or about to expire (within buffer time)
  */
-function isTokenExpired(tokens: NotionOAuthTokens): boolean {
+export function isTokenExpired(tokens: McpOAuthTokens, bufferMinutes: number = 5): boolean {
     const now = Date.now();
-    const bufferTime = 5 * 60 * 1000; // 5 minutes
+    const bufferTime = bufferMinutes * 60 * 1000;
     return tokens.expires_at <= (now + bufferTime);
+}
+
+/**
+ * Get storage key for tokens
+ */
+function getTokensKey(serverId: string): string {
+    return `oauth.${serverId}.tokens`;
+}
+
+/**
+ * Get storage key for client credentials
+ */
+function getClientCredentialsKey(serverId: string): string {
+    return `oauth.${serverId}.client`;
 }
 
 /**
  * Store tokens in chrome.storage.local
  */
-async function storeTokens(tokens: NotionOAuthTokens): Promise<void> {
-    await chrome.storage.local.set({
-        [`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.tokens`]: tokens
-    });
+export async function storeTokens(serverId: string, tokens: McpOAuthTokens): Promise<void> {
+    const key = getTokensKey(serverId);
+    await chrome.storage.local.set({ [key]: tokens });
+    console.log(`[OAuth:${serverId}] Tokens stored`);
 }
 
 /**
  * Retrieve tokens from chrome.storage.local
  */
-async function getStoredTokens(): Promise<NotionOAuthTokens | null> {
-    const result = await chrome.storage.local.get(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.tokens`);
-    return result[`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.tokens`] || null;
+export async function getStoredTokens(serverId: string): Promise<McpOAuthTokens | null> {
+    const key = getTokensKey(serverId);
+    const result = await chrome.storage.local.get(key);
+    return result[key] || null;
 }
 
 /**
  * Clear stored tokens
  */
-async function clearTokens(): Promise<void> {
-    await chrome.storage.local.remove(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.tokens`);
+export async function clearTokens(serverId: string): Promise<void> {
+    const key = getTokensKey(serverId);
+    await chrome.storage.local.remove(key);
+    console.log(`[OAuth:${serverId}] Tokens cleared`);
 }
 
 /**
  * Store dynamic client credentials in chrome.storage.local
  */
-async function storeClientCredentials(credentials: DynamicClientCredentials): Promise<void> {
-    await chrome.storage.local.set({
-        [`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`]: credentials
-    });
+export async function storeClientCredentials(serverId: string, credentials: DynamicClientCredentials): Promise<void> {
+    const key = getClientCredentialsKey(serverId);
+    await chrome.storage.local.set({ [key]: credentials });
+    console.log(`[OAuth:${serverId}] Client credentials stored`);
 }
 
 /**
  * Retrieve dynamic client credentials from chrome.storage.local
  */
-async function getStoredClientCredentials(): Promise<DynamicClientCredentials | null> {
-    const result = await chrome.storage.local.get(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`);
-    return result[`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`] || null;
+export async function getStoredClientCredentials(serverId: string): Promise<DynamicClientCredentials | null> {
+    const key = getClientCredentialsKey(serverId);
+    const result = await chrome.storage.local.get(key);
+    return result[key] || null;
 }
 
 /**
  * Clear stored client credentials
  */
-async function clearClientCredentials(): Promise<void> {
-    await chrome.storage.local.remove(`${NOTION_CONFIG.STORAGE_KEY_PREFIX}.client`);
+export async function clearClientCredentials(serverId: string): Promise<void> {
+    const key = getClientCredentialsKey(serverId);
+    await chrome.storage.local.remove(key);
+    console.log(`[OAuth:${serverId}] Client credentials cleared`);
 }
 
 export {
-    registerDynamicClient,
     generateState,
     createCodeVerifier,
     createCodeChallenge,
-    buildAuthUrl,
-    exchangeCodeForTokens,
-    refreshAccessToken,
-    isTokenExpired,
-    storeTokens,
-    getStoredTokens,
-    clearTokens,
-    storeClientCredentials,
-    getStoredClientCredentials,
-    clearClientCredentials,
 };
-
-export type { DynamicClientCredentials };

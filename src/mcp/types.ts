@@ -6,8 +6,8 @@
  * MCP Server connection states
  */
 export type McpConnectionState =
-    | 'disconnected'      // Not connected, no auth
-    | 'needs-auth'        // Needs OAuth authentication
+    | 'disconnected'      // Not connected, no auth (ready for servers without auth)
+    | 'needs-auth'        // Needs OAuth authentication (for servers requiring auth)
     | 'registering'       // Registering dynamic OAuth client
     | 'authorizing'       // Authorizing with OAuth provider
     | 'authenticated'     // OAuth complete, not connected
@@ -18,19 +18,30 @@ export type McpConnectionState =
     | 'invalid-token';    // Token format is invalid, needs re-auth
 
 /**
- * OAuth tokens stored in chrome.storage
- * Based on Notion OAuth API response
+ * Generic OAuth tokens stored in chrome.storage
+ * Compatible with OAuth 2.1 standard
  */
-export interface NotionOAuthTokens {
+export interface McpOAuthTokens {
     access_token: string;
     refresh_token?: string;
     token_type: string;
     expires_at: number; // Unix timestamp
-    bot_id?: string; // Identifier for this authorization
+    scope?: string; // Granted scopes
+    created_at: number; // Unix timestamp
+    // Server-specific metadata stored as JSON string
+    metadata?: string;
+}
+
+/**
+ * Legacy Notion OAuth tokens (for migration)
+ * @deprecated Use McpOAuthTokens instead
+ */
+export interface NotionOAuthTokens extends McpOAuthTokens {
+    bot_id?: string;
     workspace_id?: string;
     workspace_name?: string;
     workspace_icon?: string;
-    duplicated_template_id?: string; // ID of duplicated template page (if any)
+    duplicated_template_id?: string;
     owner?: {
         type: string;
         user?: {
@@ -39,7 +50,6 @@ export interface NotionOAuthTokens {
             avatar_url?: string;
         };
     };
-    created_at: number; // Unix timestamp
 }
 
 /**
@@ -142,7 +152,21 @@ export interface McpPrompt {
 }
 
 /**
- * Notion MCP Server Status
+ * MCP Server Status (generalized)
+ */
+export interface McpServerStatus {
+    serverId: string;
+    state: McpConnectionState;
+    error?: string;
+    lastConnected?: number;
+    tools?: McpTool[];
+    resources?: McpResource[];
+    prompts?: McpPrompt[];
+}
+
+/**
+ * Legacy Notion MCP Server Status (for backwards compatibility)
+ * @deprecated Use McpServerStatus instead
  */
 export interface NotionMcpStatus {
     state: McpConnectionState;
@@ -153,30 +177,6 @@ export interface NotionMcpStatus {
     prompts?: McpPrompt[];
 }
 
-/**
- * Background message types for Notion MCP
- */
-export type NotionMcpMessageType =
-    | 'mcp/notion/auth/start'
-    | 'mcp/notion/auth/complete'
-    | 'mcp/notion/auth/refresh'
-    | 'mcp/notion/enable'
-    | 'mcp/notion/disable'
-    | 'mcp/notion/disconnect'
-    | 'mcp/notion/status/get'
-    | 'mcp/notion/status/update'
-    | 'mcp/notion/health/check'
-    | 'mcp/notion/tool/call'
-    | 'mcp/notion/tools/list'
-    | 'mcp/notion/resource/read';
-
-/**
- * Background message structure
- */
-export interface NotionMcpMessage {
-    type: NotionMcpMessageType;
-    payload?: any;
-}
 
 /**
  * Response from background
@@ -185,4 +185,106 @@ export interface NotionMcpResponse {
     success: boolean;
     data?: any;
     error?: string;
+}
+
+/**
+ * Generic extension message type for MCP (replaces Notion-specific)
+ */
+export type McpExtensionMessageType =
+    | `mcp/${string}/auth/start`
+    | `mcp/${string}/auth/complete`
+    | `mcp/${string}/auth/refresh`
+    | `mcp/${string}/enable`
+    | `mcp/${string}/disable`
+    | `mcp/${string}/disconnect`
+    | `mcp/${string}/status/get`
+    | `mcp/${string}/status/update`
+    | `mcp/${string}/health/check`
+    | `mcp/${string}/tool/call`
+    | `mcp/${string}/tools/list`
+    | `mcp/${string}/resource/read`;
+
+/**
+ * Generic extension message structure for MCP
+ */
+export interface McpExtensionMessage {
+    type: McpExtensionMessageType | string;
+    payload?: any;
+}
+
+/**
+ * Generic extension response structure for MCP
+ */
+export interface McpExtensionResponse {
+    success: boolean;
+    data?: any;
+    error?: string;
+}
+
+/**
+ * OAuth endpoints discovered or configured
+ */
+export interface OAuthEndpoints {
+    authorization_endpoint: string;
+    token_endpoint: string;
+    registration_endpoint?: string;
+    introspection_endpoint?: string;
+    revocation_endpoint?: string;
+    scopes_supported?: string[];
+    resource?: string; // RFC 8707 resource parameter
+}
+
+/**
+ * Protected Resource Metadata (RFC 9728)
+ */
+export interface ProtectedResourceMetadata {
+    resource?: string;
+    authorization_servers: string[];
+    bearer_methods_supported?: string[];
+    resource_signing_alg_values_supported?: string[];
+    resource_documentation?: string;
+    resource_policy_uri?: string;
+    scopes_supported?: string[];
+}
+
+/**
+ * Authorization Server Metadata (RFC 8414 / OpenID Connect Discovery)
+ */
+export interface AuthorizationServerMetadata {
+    issuer: string;
+    authorization_endpoint: string;
+    token_endpoint: string;
+    registration_endpoint?: string;
+    jwks_uri?: string;
+    scopes_supported?: string[];
+    response_types_supported?: string[];
+    grant_types_supported?: string[];
+    token_endpoint_auth_methods_supported?: string[];
+    code_challenge_methods_supported?: string[]; // PKCE support
+    introspection_endpoint?: string;
+    revocation_endpoint?: string;
+}
+
+/**
+ * Scope challenge from WWW-Authenticate header
+ */
+export interface ScopeChallenge {
+    scope?: string;
+    error?: string;
+    error_description?: string;
+    resource_metadata?: string;
+}
+
+/**
+ * MCP Server OAuth configuration
+ */
+export interface McpServerOAuthConfig {
+    discoveryHints?: {
+        registrationEndpoint?: string;
+        authorizationEndpoint?: string;
+        tokenEndpoint?: string;
+    };
+    scopes?: string[];
+    resource?: string; // RFC 8707 resource parameter
+    customHeaders?: Record<string, string>;
 }

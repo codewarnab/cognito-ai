@@ -470,6 +470,20 @@
     outline-offset: 2px;
 }
 
+.btn--icon {
+    padding: 6px;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn--icon svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .mcp-card__header {
