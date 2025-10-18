@@ -20,39 +20,44 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     // Fetch real authentication status on mount and listen for updates
     useEffect(() => {
         const loadStatuses = async () => {
-            // For Notion, fetch real status from background
-            try {
-                const response = await chrome.runtime.sendMessage({ 
-                    type: 'mcp/notion/status/get' 
-                })
-                if (response.success && response.data) {
-                    const status = response.data
-                    const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
-                    setServerStatuses(prev => ({
-                        ...prev,
-                        notion: {
-                            serverId: 'notion',
-                            isEnabled: status.state === 'connected',
-                            isAuthenticated: isAuth
-                        }
-                    }))
+            // Fetch status for all servers
+            for (const server of MCP_SERVERS) {
+                try {
+                    const response = await chrome.runtime.sendMessage({ 
+                        type: `mcp/${server.id}/status/get` 
+                    })
+                    if (response.success && response.data) {
+                        const status = response.data
+                        const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
+                        setServerStatuses(prev => ({
+                            ...prev,
+                            [server.id]: {
+                                serverId: server.id,
+                                isEnabled: status.state === 'connected',
+                                isAuthenticated: isAuth
+                            }
+                        }))
+                    }
+                } catch (error) {
+                    console.error(`Failed to load ${server.name} status:`, error)
                 }
-            } catch (error) {
-                console.error('Failed to load Notion status:', error)
             }
         }
 
         loadStatuses()
 
-        // Listen for status updates
+        // Listen for status updates from any server
         const handleMessage = (message: any) => {
-            if (message.type === 'mcp/notion/status/update') {
+            // Match pattern: mcp/{serverId}/status/update
+            const match = message.type?.match(/^mcp\/([^/]+)\/status\/update$/)
+            if (match) {
+                const serverId = match[1]
                 const status = message.payload
                 const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
                 setServerStatuses(prev => ({
                     ...prev,
-                    notion: {
-                        serverId: 'notion',
+                    [serverId]: {
+                        serverId,
                         isEnabled: status.state === 'connected',
                         isAuthenticated: isAuth
                     }

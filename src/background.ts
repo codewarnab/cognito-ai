@@ -4,16 +4,15 @@
  * Handles:
  * - Side panel initialization
  * - Extension lifecycle events
- * - Notion MCP OAuth and SSE connection
+ * - Multi-server MCP OAuth and SSE connections
  */
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { McpSSEClient } from './mcp/notionClient';
+import { McpSSEClient } from './mcp/sseClient';
 import {
     registerDynamicClient,
     generateState,
-    createCodeVerifier,
     buildAuthUrl,
     exchangeCodeForTokens,
     refreshAccessToken,
@@ -26,189 +25,313 @@ import {
     clearClientCredentials,
     type DynamicClientCredentials
 } from './mcp/oauth';
+import {
+    discoverOAuthEndpoints,
+    parseScopeChallenge
+} from './mcp/discovery';
+import {
+    selectScopes,
+    updateGrantedScopes,
+    clearScopeData
+} from './mcp/scopeHandler';
 import type {
-    NotionOAuthTokens,
+    McpOAuthTokens,
     OAuthState,
-    NotionMcpStatus,
-    NotionMcpMessage,
-    NotionMcpResponse,
-    McpMessage
+    McpServerStatus,
+    McpExtensionMessage,
+    McpExtensionResponse,
+    McpMessage,
+    OAuthEndpoints
 } from './mcp/types';
-import { NOTION_CONFIG } from './constants';
+import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
+import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
 
 // ============================================================================
-// Notion MCP State
+// Multi-Server MCP State
 // ============================================================================
 
-let notionMcpClient: McpSSEClient | null = null;
-let notionTokens: NotionOAuthTokens | null = null;
-let notionClientCredentials: DynamicClientCredentials | null = null;
-let oauthState: OAuthState | null = null;
-let notionStatus: NotionMcpStatus = { state: 'disconnected' };
-let isEnabled = false;
+/**
+ * State for each MCP server
+ */
+interface ServerState {
+    client: McpSSEClient | null;
+    tokens: McpOAuthTokens | null;
+    credentials: DynamicClientCredentials | null;
+    status: McpServerStatus;
+    oauthEndpoints: OAuthEndpoints | null;
+    oauthState: OAuthState | null;
+    isEnabled: boolean;
+}
+
+/**
+ * Map of server states by serverId
+ */
+const serverStates = new Map<string, ServerState>();
+
+/**
+ * Get or initialize server state
+ */
+function getServerState(serverId: string): ServerState {
+    if (!serverStates.has(serverId)) {
+        serverStates.set(serverId, {
+            client: null,
+            tokens: null,
+            credentials: null,
+            status: { serverId, state: 'disconnected' },
+            oauthEndpoints: null,
+            oauthState: null,
+            isEnabled: false
+        });
+    }
+    return serverStates.get(serverId)!;
+}
+
+/**
+ * Get server config by ID
+ */
+function getServerConfig(serverId: string): ServerConfig | null {
+    return MCP_SERVERS.find(s => s.id === serverId) || null;
+}
 
 
 /**
  * Schedule automatic token refresh before expiration
- * Calculates when to refresh (5 minutes before expiry) and sets an alarm
+ * Calculates when to refresh and sets a server-specific alarm
  */
-async function scheduleTokenRefresh(tokens: NotionOAuthTokens): Promise<void> {
+async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): Promise<void> {
     try {
-        // Clear any existing refresh alarm
-        await chrome.alarms.clear('notion-token-refresh');
-        
-        // Calculate when to refresh (5 minutes before expiration)
-        const refreshTime = tokens.expires_at - (5 * 60 * 1000); // 5 minutes before expiry
+        const alarmName = `mcp-token-refresh-${serverId}`;
+
+        // Clear any existing refresh alarm for this server
+        await chrome.alarms.clear(alarmName);
+
+        // Calculate when to refresh (buffer time before expiration)
+        const refreshTime = tokens.expires_at - MCP_OAUTH_CONFIG.TOKEN_REFRESH_BUFFER;
         const now = Date.now();
-        
+
         // Only schedule if the refresh time is in the future
         if (refreshTime > now) {
-            await chrome.alarms.create('notion-token-refresh', {
-                when: refreshTime
+            console.log(`[Background:${serverId}] Creating alarm "${alarmName}" for token refresh`, {
+                refreshTime,
+                refreshTimeISO: new Date(refreshTime).toISOString(),
+                now,
+                nowISO: new Date(now).toISOString(),
+                delayMs: refreshTime - now
             });
-            
+
+            await chrome.alarms.create(alarmName, {
+                when: Date.now() + 30000  // For debugging: set alarm 30 seconds from now
+            });
+
+            console.log(`[Background:${serverId}] Alarm "${alarmName}" created successfully`);
+
             const expiresAt = new Date(tokens.expires_at).toISOString();
             const refreshAt = new Date(refreshTime).toISOString();
-            console.log('[Background] Token refresh scheduled:', {
+            console.log(`[Background:${serverId}] Token refresh scheduled:`, {
+                alarmName,
                 expiresAt,
                 refreshAt,
                 delayMinutes: Math.ceil((refreshTime - now) / (1000 * 60))
             });
         } else {
-            console.warn('[Background] Token expires too soon for automatic refresh:', {
+            console.warn(`[Background:${serverId}] Token expires too soon for automatic refresh:`, {
                 expiresAt: new Date(tokens.expires_at).toISOString(),
                 now: new Date(now).toISOString()
             });
         }
     } catch (error) {
-        console.error('[Background] Error scheduling token refresh:', error);
+        console.error(`[Background:${serverId}] Error scheduling token refresh:`, error);
     }
 }
 
 /**
- * Handle automatic token refresh alarm
+ * Handle automatic token refresh alarm for a specific server
  */
-async function handleTokenRefreshAlarm(): Promise<void> {
-    console.log('[Background] Token refresh alarm fired');
-    
+async function handleTokenRefreshAlarm(serverId: string): Promise<void> {
+    console.log(`[Background:${serverId}] Token refresh alarm fired`);
+
     try {
-        // Check if MCP is still enabled
-        const { 'mcp.notion.enabled': enabled } = await chrome.storage.local.get('mcp.notion.enabled');
-        if (!enabled) {
-            console.log('[Background] MCP disabled, skipping token refresh');
+        const state = getServerState(serverId);
+
+        // Check if server is still enabled
+        if (!state.isEnabled) {
+            console.log(`[Background:${serverId}] Server disabled, skipping token refresh`);
             return;
         }
-        
+
         // Attempt to refresh the token
-        const refreshed = await refreshNotionToken();
-        
-        if (refreshed && notionTokens) {
+        const refreshed = await refreshServerToken(serverId);
+
+        if (refreshed && state.tokens) {
             // Schedule the next refresh
-            await scheduleTokenRefresh(notionTokens);
-            console.log('[Background] Token refreshed successfully, next refresh scheduled');
+            await scheduleTokenRefresh(serverId, state.tokens);
+            console.log(`[Background:${serverId}] Token refreshed successfully, next refresh scheduled`);
         } else {
-            console.error('[Background] Token refresh failed during alarm, may require re-authentication');
-            notionStatus = {
+            console.error(`[Background:${serverId}] Token refresh failed during alarm, may require re-authentication`);
+            state.status = {
+                ...state.status,
                 state: 'needs-auth',
                 error: 'Automatic token refresh failed. Please re-authenticate.'
             };
-            broadcastStatusUpdate();
+            broadcastStatusUpdate(serverId, state.status);
         }
     } catch (error) {
-        console.error('[Background] Error in token refresh alarm:', error);
+        console.error(`[Background:${serverId}] Error in token refresh alarm:`, error);
     }
 }
 
 /**
  * Ensure token is valid and schedule refresh if needed
  */
-async function ensureTokenValidity(): Promise<boolean> {
+async function ensureTokenValidity(serverId: string): Promise<boolean> {
     try {
-        const tokens = await getStoredTokens();
+        const state = getServerState(serverId);
+        const tokens = await getStoredTokens(serverId);
+
         if (!tokens) {
-            console.log('[Background] No stored tokens found');
+            console.log(`[Background:${serverId}] No stored tokens found`);
             return false;
         }
-        
-        console.log('[Background] Checking token validity:', {
+
+        console.log(`[Background:${serverId}] Checking token validity:`, {
             expiresAt: new Date(tokens.expires_at).toISOString(),
             now: new Date().toISOString(),
             isExpired: isTokenExpired(tokens)
         });
-        
+
         // Check if token is expired or about to expire
         if (isTokenExpired(tokens)) {
-            console.log('[Background] Token expired or expiring soon, attempting refresh');
-            
+            console.log(`[Background:${serverId}] Token expired or expiring soon, attempting refresh`);
+
             // Load tokens into memory
-            notionTokens = tokens;
-            
+            state.tokens = tokens;
+
             // Try to refresh
-            const refreshed = await refreshNotionToken();
-            if (refreshed && notionTokens) {
+            const refreshed = await refreshServerToken(serverId);
+            if (refreshed && state.tokens) {
                 // Schedule next refresh
-                await scheduleTokenRefresh(notionTokens);
+                await scheduleTokenRefresh(serverId, state.tokens);
                 return true;
             } else {
                 // Refresh failed, need re-auth
                 return false;
             }
         }
-        
+
         // Token is still valid, schedule next refresh
-        notionTokens = tokens;
-        await scheduleTokenRefresh(tokens);
+        state.tokens = tokens;
+        await scheduleTokenRefresh(serverId, tokens);
         return true;
     } catch (error) {
-        console.error('[Background] Error in ensureTokenValidity:', error);
+        console.error(`[Background:${serverId}] Error in ensureTokenValidity:`, error);
         return false;
     }
 }
 
 /**
- * Start OAuth flow for Notion MCP with dynamic client registration
+ * Start OAuth flow for any MCP server with dynamic client registration and discovery
  */
-async function startNotionAuth(): Promise<NotionMcpResponse> {
+async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
+    const state = getServerState(serverId);
+    const serverConfig = getServerConfig(serverId);
+
+    if (!serverConfig) {
+        return {
+            success: false,
+            error: `Server config not found for ${serverId}`
+        };
+    }
+
+    if (!serverConfig.url) {
+        return {
+            success: false,
+            error: `No URL configured for ${serverId}`
+        };
+    }
+
     try {
-        console.log('[Background] Starting Notion OAuth flow with dynamic client registration');
+        console.log(`[Background:${serverId}] Starting OAuth flow with dynamic client registration`);
 
-        // Step 1: Register a dynamic client
-        console.log('[Background] Registering dynamic client...');
-        notionStatus = { state: 'registering' };
-        broadcastStatusUpdate();
+        // Step 1: Discover OAuth endpoints using proper RFC 9728 + RFC 8414 metadata discovery
+        // Never use hardcoded hints - always follow the MCP specification discovery flow
+        state.status = { ...state.status, state: 'connecting' };
+        broadcastStatusUpdate(serverId, state.status);
 
-        const clientCredentials = await registerDynamicClient(NOTION_CONFIG.OAUTH_REDIRECT_URI);
+        let endpoints: OAuthEndpoints | null = state.oauthEndpoints;
 
-        // Store client credentials
-        notionClientCredentials = clientCredentials;
-        await storeClientCredentials(clientCredentials);
+        if (!endpoints) {
+            // Perform spec-compliant OAuth discovery following RFC 9728 (Protected Resource Metadata)
+            // and RFC 8414 (Authorization Server Metadata)
+            console.log(`[Background:${serverId}] Performing OAuth discovery per RFC 9728 + RFC 8414...`);
+            endpoints = await discoverOAuthEndpoints(serverConfig.url);
 
-        console.log('[Background] Dynamic client registered:', clientCredentials.client_id);
+            if (!endpoints) {
+                throw new Error('OAuth discovery failed. Server may not support OAuth or endpoints are not discoverable. Ensure the server implements RFC 9728 Protected Resource Metadata discovery.');
+            }
 
-        // Step 2: Generate state for CSRF protection
-        const state = generateState();
+            // Cache discovered endpoints for future use
+            state.oauthEndpoints = endpoints;
+            console.log(`[Background:${serverId}] Successfully discovered OAuth endpoints:`, {
+                authorization_endpoint: endpoints.authorization_endpoint,
+                token_endpoint: endpoints.token_endpoint,
+                registration_endpoint: endpoints.registration_endpoint,
+                scopes_supported: endpoints.scopes_supported
+            });
+        }
+
+        if (!endpoints.registration_endpoint) {
+            throw new Error('No registration endpoint found. Dynamic client registration is required.');
+        }
+
+        // Step 2: Register a dynamic client
+        console.log(`[Background:${serverId}] Registering dynamic client...`);
+        state.status = { ...state.status, state: 'registering' };
+        broadcastStatusUpdate(serverId, state.status);
+
+        // Select scopes for registration
+        const scopes = await selectScopes(serverId, serverConfig.oauth);
+
+        const clientCredentials = await registerDynamicClient(
+            serverId,
+            endpoints.registration_endpoint,
+            MCP_OAUTH_CONFIG.REDIRECT_URI,
+            serverConfig.name,
+            scopes
+        );
+
+        // Store credentials in memory but NOT in storage yet - wait until user approves
+        state.credentials = clientCredentials;
+
+        console.log(`[Background:${serverId}] Dynamic client registered:`, clientCredentials.client_id);
+
+        // Step 3: Generate state for CSRF protection
+        const oauthStateValue = generateState();
 
         // Store state in memory for the callback
-        oauthState = {
-            state,
-            codeVerifier: '', // Not needed for standard OAuth
+        state.oauthState = {
+            state: oauthStateValue,
+            codeVerifier: '', // Not used in standard OAuth (only PKCE)
             created_at: Date.now()
         };
 
-        // Step 3: Build authorization URL using the dynamic client ID
+        // Step 4: Build authorization URL
         const authUrl = buildAuthUrl(
+            serverId,
+            endpoints.authorization_endpoint,
             clientCredentials.client_id,
-            NOTION_CONFIG.OAUTH_REDIRECT_URI,
-            state
+            MCP_OAUTH_CONFIG.REDIRECT_URI,
+            oauthStateValue,
+            scopes,
+            serverConfig.oauth?.resource || endpoints.resource
         );
 
-        console.log('[Background] Launching OAuth with URL:', authUrl);
+        console.log(`[Background:${serverId}] Launching OAuth...`);
 
         // Update status
-        notionStatus = { state: 'authorizing' };
-        broadcastStatusUpdate();
+        state.status = { ...state.status, state: 'authorizing' };
+        broadcastStatusUpdate(serverId, state.status);
 
-        // Step 4: Launch OAuth flow using Chrome Identity API
+        // Step 5: Launch OAuth flow using Chrome Identity API
         const redirectUrl = await chrome.identity.launchWebAuthFlow({
             url: authUrl,
             interactive: true
@@ -218,9 +341,9 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
             throw new Error('OAuth flow cancelled');
         }
 
-        console.log('[Background] OAuth redirect URL:', redirectUrl);
+        console.log(`[Background:${serverId}] OAuth redirect URL received`);
 
-        // Step 5: Extract code and state from redirect URL
+        // Step 6: Extract code and state from redirect URL
         const url = new URL(redirectUrl);
         const code = url.searchParams.get('code');
         const returnedState = url.searchParams.get('state');
@@ -230,185 +353,300 @@ async function startNotionAuth(): Promise<NotionMcpResponse> {
         }
 
         // Verify state
-        if (!oauthState || returnedState !== oauthState.state) {
+        if (!state.oauthState || returnedState !== state.oauthState.state) {
             throw new Error('State mismatch - possible CSRF attack');
         }
 
-        console.log('[Background] Exchanging code for tokens');
+        console.log(`[Background:${serverId}] Exchanging code for tokens`);
 
-        // Step 6: Exchange code for tokens using dynamic client credentials
+        // Step 7: Exchange code for tokens
+        // Get custom headers for this server (e.g., Notion-Version header)
+        const specificConfig = SERVER_SPECIFIC_CONFIGS[serverId];
+        const customHeaders = specificConfig?.customHeaders;
+
         const tokens = await exchangeCodeForTokens(
+            serverId,
+            endpoints.token_endpoint,
             code,
             clientCredentials.client_id,
             clientCredentials.client_secret,
-            NOTION_CONFIG.OAUTH_REDIRECT_URI
+            MCP_OAUTH_CONFIG.REDIRECT_URI,
+            serverConfig.oauth?.resource || endpoints.resource,
+            customHeaders
         );
 
-        // Store tokens
-        notionTokens = tokens;
-        await storeTokens(tokens);
+        // User approved! Now we can store client credentials permanently
+        await storeClientCredentials(serverId, clientCredentials);
+        console.log(`[Background:${serverId}] Client credentials stored after user approval`);
 
-        console.log('[Background] Tokens stored successfully');
+        // Update granted scopes
+        if (tokens.scope) {
+            await updateGrantedScopes(serverId, tokens.scope);
+        }
+
+        // Store tokens
+        state.tokens = tokens;
+        await storeTokens(serverId, tokens);
+
+        console.log(`[Background:${serverId}] Tokens stored successfully`);
 
         // Schedule automatic token refresh before expiry
-        await scheduleTokenRefresh(tokens);
+        await scheduleTokenRefresh(serverId, tokens);
 
         // Update status
-        notionStatus = { state: 'authenticated' };
-        broadcastStatusUpdate();
+        state.status = { ...state.status, state: 'authenticated' };
+        broadcastStatusUpdate(serverId, state.status);
 
-        console.log('[Background] Notion MCP OAuth successful');
+        console.log(`[Background:${serverId}] OAuth successful`);
 
         return { success: true, data: { state: 'authenticated' } };
     } catch (error) {
-        console.error('[Background] Notion MCP OAuth error:', error);
-        notionStatus = {
-            state: 'error',
-            error: error instanceof Error ? error.message : 'Authentication failed'
-        };
-        broadcastStatusUpdate();
+        console.error(`[Background:${serverId}] OAuth error:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+
+        // Check if user cancelled or denied the flow
+        const wasCancelled = errorMessage.toLowerCase().includes('cancelled') ||
+            errorMessage.toLowerCase().includes('closed') ||
+            errorMessage.toLowerCase().includes('denied') ||
+            errorMessage.toLowerCase().includes('did not approve') ||
+            errorMessage.toLowerCase().includes('user denied');
+
+        if (wasCancelled) {
+            console.log(`[Background:${serverId}] OAuth flow was cancelled/denied by user - cleaning up...`);
+
+            // Clean up ALL partial data since auth was cancelled
+            // Clear storage (in case anything was written)
+            await clearClientCredentials(serverId);
+            await clearTokens(serverId);
+            await clearScopeData(serverId);
+
+            // Clear memory state
+            state.credentials = null;
+            state.tokens = null;
+            state.oauthEndpoints = null;
+
+            // Set state back to disconnected (clean slate) since cancellation is not an error
+            state.status = { serverId, state: 'disconnected' };
+
+            console.log(`[Background:${serverId}] Cleanup complete after cancellation`);
+        } else {
+            // Actual error occurred (not user cancellation)
+            console.error(`[Background:${serverId}] Actual authentication error (not cancellation):`, errorMessage);
+
+            // Still clean up partial data on error
+            await clearClientCredentials(serverId);
+            state.credentials = null;
+
+            state.status = {
+                serverId,
+                state: 'error',
+                error: errorMessage
+            };
+        }
+
+        broadcastStatusUpdate(serverId, state.status);
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Authentication failed'
+            error: errorMessage
         };
     } finally {
-        oauthState = null;
+        // Always clear OAuth state when exiting flow
+        state.oauthState = null;
     }
 }
 
 /**
- * Refresh Notion access token
+ * Refresh access token for any MCP server
  */
-async function refreshNotionToken(): Promise<boolean> {
-    if (!notionTokens?.refresh_token) {
-        console.error('[Background] No refresh token available');
-        notionStatus = { state: 'needs-auth', error: 'No refresh token' };
-        broadcastStatusUpdate();
+async function refreshServerToken(serverId: string): Promise<boolean> {
+    const state = getServerState(serverId);
+    const serverConfig = getServerConfig(serverId);
+
+    if (!state.tokens?.refresh_token) {
+        console.error(`[Background:${serverId}] No refresh token available`);
+        state.status = { ...state.status, state: 'needs-auth', error: 'No refresh token' };
+        broadcastStatusUpdate(serverId, state.status);
         return false;
     }
 
     // Load client credentials if not in memory
-    if (!notionClientCredentials) {
-        notionClientCredentials = await getStoredClientCredentials();
+    if (!state.credentials) {
+        state.credentials = await getStoredClientCredentials(serverId);
+    }
+    console.log(`[Background:${serverId}] Loaded client credentials for token refresh`, state.credentials);
+
+    if (!state.credentials) {
+        console.error(`[Background:${serverId}] No client credentials available for token refresh`);
+        state.status = { ...state.status, state: 'needs-auth', error: 'No client credentials' };
+        broadcastStatusUpdate(serverId, state.status);
+        return false;
     }
 
-    if (!notionClientCredentials) {
-        console.error('[Background] No client credentials available for token refresh');
-        notionStatus = { state: 'needs-auth', error: 'No client credentials' };
-        broadcastStatusUpdate();
+    // Get OAuth endpoints
+    if (!state.oauthEndpoints) {
+        console.error(`[Background:${serverId}] No OAuth endpoints available for token refresh`);
+        state.status = { ...state.status, state: 'needs-auth', error: 'No OAuth endpoints' };
+        broadcastStatusUpdate(serverId, state.status);
         return false;
     }
 
     try {
-        console.log('[Background] Refreshing Notion token');
-        notionStatus = { state: 'token-refresh' };
-        broadcastStatusUpdate();
+        console.log(`[Background:${serverId}] Refreshing token`);
+        state.status = { ...state.status, state: 'token-refresh' };
+        broadcastStatusUpdate(serverId, state.status);
+
+        const specificConfig = SERVER_SPECIFIC_CONFIGS[serverId];
+        const customHeaders = specificConfig?.customHeaders;
 
         const newTokens = await refreshAccessToken(
-            notionTokens.refresh_token,
-            notionClientCredentials.client_id,
-            notionClientCredentials.client_secret
+            serverId,
+            state.oauthEndpoints.token_endpoint,
+            state.tokens.refresh_token,
+            state.credentials.client_id,
+            state.credentials.client_secret,
+            serverConfig?.oauth?.resource || state.oauthEndpoints.resource,
+            customHeaders
         );
-        notionTokens = newTokens;
-        await storeTokens(newTokens);
+
+        // Update granted scopes
+        if (newTokens.scope) {
+            await updateGrantedScopes(serverId, newTokens.scope);
+        }
+
+        state.tokens = newTokens;
+        await storeTokens(serverId, newTokens);
 
         // Schedule next automatic token refresh
-        await scheduleTokenRefresh(newTokens);
+        await scheduleTokenRefresh(serverId, newTokens);
 
-        notionStatus = { state: 'authenticated' };
-        broadcastStatusUpdate();
+        state.status = { ...state.status, state: 'authenticated' };
+        broadcastStatusUpdate(serverId, state.status);
 
-        console.log('[Background] Token refreshed successfully');
+        console.log(`[Background:${serverId}] Token refreshed successfully`);
         return true;
     } catch (error) {
-        console.error('[Background] Token refresh failed:', error);
+        console.error(`[Background:${serverId}] Token refresh failed:`, error);
         // Clear invalid tokens
-        await clearTokens();
-        notionTokens = null;
-        notionStatus = {
+        await clearTokens(serverId);
+        state.tokens = null;
+        state.status = {
+            ...state.status,
             state: 'needs-auth',
             error: 'Token refresh failed. Please re-authenticate.'
         };
-        broadcastStatusUpdate();
+        broadcastStatusUpdate(serverId, state.status);
         return false;
     }
 }
 
 /**
- * Ensure we have a valid access token
+ * Ensure we have a valid access token for a server
  */
-async function ensureValidToken(): Promise<string | null> {
-    if (!notionTokens) {
+async function ensureValidToken(serverId: string): Promise<string | null> {
+    const state = getServerState(serverId);
+
+    if (!state.tokens) {
         // Try to load from storage
-        notionTokens = await getStoredTokens();
+        state.tokens = await getStoredTokens(serverId);
     }
 
-    if (!notionTokens) {
+    if (!state.tokens) {
         return null;
     }
 
     // Check if token is expired
-    if (isTokenExpired(notionTokens)) {
-        const refreshed = await refreshNotionToken();
+    if (isTokenExpired(state.tokens)) {
+        const refreshed = await refreshServerToken(serverId);
         if (!refreshed) {
             return null;
         }
     }
 
-    return notionTokens.access_token;
+    return state.tokens.access_token;
 }
 
 // ============================================================================
-// Notion MCP Connection Functions
+// MCP Connection Functions
 // ============================================================================
 
 /**
- * Connect to Notion MCP server
+ * Connect to any MCP server
  */
-async function connectNotionMcp(): Promise<NotionMcpResponse> {
-    try {
-        console.log('[Background] Connecting to Notion MCP');
+async function connectMcpServer(serverId: string): Promise<McpExtensionResponse> {
+    const state = getServerState(serverId);
+    const serverConfig = getServerConfig(serverId);
 
-        const accessToken = await ensureValidToken();
-        if (!accessToken) {
-            return {
-                success: false,
-                error: 'Authentication required'
-            };
+    if (!serverConfig) {
+        return {
+            success: false,
+            error: `Server config not found for ${serverId}`
+        };
+    }
+
+    if (!serverConfig.url) {
+        return {
+            success: false,
+            error: `No URL configured for ${serverId}`
+        };
+    }
+
+    try {
+        console.log(`[Background:${serverId}] Connecting to MCP server`);
+
+        // Only require token for servers that need authentication
+        let accessToken: string | null = null;
+        if (serverConfig.requiresAuthentication) {
+            accessToken = await ensureValidToken(serverId);
+            if (!accessToken) {
+                return {
+                    success: false,
+                    error: 'Authentication required'
+                };
+            }
+        } else {
+            // For servers that don't require authentication, use empty string
+            accessToken = '';
+            console.log(`[Background:${serverId}] Server does not require authentication, proceeding without token`);
         }
 
         // Create SSE client
-        notionMcpClient = new McpSSEClient(
-            NOTION_CONFIG.MCP_SSE_URL,
+        state.client = new McpSSEClient(
+            serverId,
+            serverConfig.url,
             accessToken,
             {
                 onStatusChange: (status) => {
-                    notionStatus = status;
-                    broadcastStatusUpdate();
+                    state.status = status;
+                    broadcastStatusUpdate(serverId, status);
 
                     // Handle token expiry (but not format errors)
                     if (status.state === 'needs-auth') {
-                        // handleTokenExpiry();
+                        handleTokenExpiry(serverId);
                     } else if (status.state === 'invalid-token') {
                         // Token format is invalid - clear tokens and require re-auth
-                        // handleInvalidToken();
+                        handleInvalidToken(serverId);
                     }
                 },
                 onMessage: (message) => {
-                    console.log('[Background] MCP message:', message);
+                    console.log(`[Background:${serverId}] MCP message:`, message);
                 }
+            },
+            {
+                reconnectMinDelay: MCP_OAUTH_CONFIG.RECONNECT_MIN_DELAY,
+                reconnectMaxDelay: MCP_OAUTH_CONFIG.RECONNECT_MAX_DELAY,
+                reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER
             }
         );
 
         // Connect
-        await notionMcpClient.connect();
+        await state.client.connect();
 
         // Initialize MCP protocol
-        await notionMcpClient.initialize();
+        await state.client.initialize();
 
-        return { success: true, data: notionMcpClient.getStatus() };
+        return { success: true, data: state.client.getStatus() };
     } catch (error) {
-        console.error('[Background] Notion MCP connection error:', error);
+        console.error(`[Background:${serverId}] MCP connection error:`, error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Connection failed'
@@ -417,106 +655,115 @@ async function connectNotionMcp(): Promise<NotionMcpResponse> {
 }
 
 /**
- * Disconnect from Notion MCP server
+ * Disconnect from MCP server
  */
-function disconnectNotionMcp(): void {
-    if (notionMcpClient) {
-        notionMcpClient.disconnect();
-        notionMcpClient = null;
+function disconnectMcpServer(serverId: string): void {
+    const state = getServerState(serverId);
+
+    if (state.client) {
+        state.client.disconnect();
+        state.client = null;
     }
-    notionStatus = { state: 'authenticated' };
-    broadcastStatusUpdate();
+    state.status = { ...state.status, state: 'authenticated' };
+    broadcastStatusUpdate(serverId, state.status);
 }
 
 /**
  * Handle token expiry - attempt refresh and reconnect
  */
-async function handleTokenExpiry(): Promise<void> {
-    console.log('[Background] Handling token expiry');
+async function handleTokenExpiry(serverId: string): Promise<void> {
+    console.log(`[Background:${serverId}] Handling token expiry`);
+
+    const state = getServerState(serverId);
 
     // Disconnect current client
-    if (notionMcpClient) {
-        notionMcpClient.disconnect();
-        notionMcpClient = null;
+    if (state.client) {
+        state.client.disconnect();
+        state.client = null;
     }
 
     // Try to refresh
-    const refreshed = await refreshNotionToken();
+    const refreshed = await refreshServerToken(serverId);
 
     // If enabled and refresh succeeded, reconnect
-    if (refreshed && isEnabled) {
-        await connectNotionMcp();
+    if (refreshed && state.isEnabled) {
+        await connectMcpServer(serverId);
     }
 }
 
 /**
  * Handle invalid token format - clear tokens and require re-auth
  */
-async function handleInvalidToken(): Promise<void> {
-    console.log('[Background] Handling invalid token format');
+async function handleInvalidToken(serverId: string): Promise<void> {
+    console.log(`[Background:${serverId}] Handling invalid token format`);
+
+    const state = getServerState(serverId);
 
     // Disconnect current client
-    if (notionMcpClient) {
-        notionMcpClient.disconnect();
-        notionMcpClient = null;
+    if (state.client) {
+        state.client.disconnect();
+        state.client = null;
     }
 
     // Clear invalid tokens and client credentials - don't try to refresh
-    await clearTokens();
-    await clearClientCredentials();
-    notionTokens = null;
-    notionClientCredentials = null;
-    notionStatus = {
+    await clearTokens(serverId);
+    await clearClientCredentials(serverId);
+    await clearScopeData(serverId);
+
+    state.tokens = null;
+    state.credentials = null;
+    state.status = {
+        ...state.status,
         state: 'invalid-token',
         error: 'Invalid token format - please re-authenticate'
     };
-    isEnabled = false;
-    await chrome.storage.local.set({ 'mcp.notion.enabled': false });
-    broadcastStatusUpdate();
+    state.isEnabled = false;
+
+    await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
+    broadcastStatusUpdate(serverId, state.status);
 }
 
 /**
- * Enable Notion MCP (connect if authenticated)
+ * Enable MCP server (connect if authenticated)
  */
-async function enableNotionMcp(): Promise<NotionMcpResponse> {
-    isEnabled = true;
+async function enableMcpServer(serverId: string): Promise<McpExtensionResponse> {
+    const state = getServerState(serverId);
+    const serverConfig = getServerConfig(serverId);
+    state.isEnabled = true;
 
     // Store enabled state
-    await chrome.storage.local.set({ 'mcp.notion.enabled': true });
+    await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: true });
 
-    // If already connected, perform health check
-    if (notionMcpClient && notionStatus.state === 'connected') {
-        console.log('[Background] Already connected, performing health check');
-        const healthCheck = await performHealthCheck();
+    // If already connected, just return success
+    if (state.client && state.status.state === 'connected') {
+        console.log(`[Background:${serverId}] Already connected and initialized`);
+        return { success: true, data: state.status };
+    }
 
-        if (healthCheck.success) {
-            return { success: true, data: notionStatus };
+    // Check if server requires authentication
+    if (serverConfig && !serverConfig.requiresAuthentication) {
+        // Server doesn't require authentication, connect directly
+        console.log(`[Background:${serverId}] Server does not require authentication, connecting directly`);
+        const connectResult = await connectMcpServer(serverId);
+
+        if (connectResult.success) {
+            console.log(`[Background:${serverId}] Connection and initialization successful`);
         } else {
-            console.warn('[Background] Health check failed, reconnecting...', healthCheck.error);
-            // Health check failed, try to reconnect
-            disconnectNotionMcp();
+            console.warn(`[Background:${serverId}] Connection failed:`, connectResult.error);
         }
+
+        return connectResult;
     }
 
     // If authenticated, connect
-    if (notionTokens || await getStoredTokens()) {
-        const connectResult = await connectNotionMcp();
+    if (state.tokens || await getStoredTokens(serverId)) {
+        const connectResult = await connectMcpServer(serverId);
 
-        // If connection successful, perform health check
-        if (connectResult.success && notionMcpClient) {
-            console.log('[Background] Connection successful, performing health check');
-            const healthCheck = await performHealthCheck();
-
-            if (!healthCheck.success) {
-                console.warn('[Background] Health check failed after connection:', healthCheck.error);
-                notionStatus = {
-                    ...notionStatus,
-                    error: `Connected but health check failed: ${healthCheck.error}`
-                };
-                broadcastStatusUpdate();
-            } else {
-                console.log('[Background] Health check passed:', healthCheck.data);
-            }
+        // No need for separate health check - our client already initializes and fetches tools during connection
+        if (connectResult.success) {
+            console.log(`[Background:${serverId}] Connection and initialization successful`);
+        } else {
+            console.warn(`[Background:${serverId}] Connection failed:`, connectResult.error);
         }
 
         return connectResult;
@@ -530,120 +777,153 @@ async function enableNotionMcp(): Promise<NotionMcpResponse> {
 }
 
 /**
- * Disable Notion MCP (disconnect)
+ * Disable MCP server (disconnect)
  */
-async function disableNotionMcp(): Promise<NotionMcpResponse> {
-    isEnabled = false;
-    await chrome.storage.local.set({ 'mcp.notion.enabled': false });
-    disconnectNotionMcp();
+async function disableMcpServer(serverId: string): Promise<McpExtensionResponse> {
+    const state = getServerState(serverId);
+    state.isEnabled = false;
+
+    await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
+    disconnectMcpServer(serverId);
+
     return { success: true };
 }
 
 /**
- * Disconnect and clear authentication
+ * Disconnect and clear authentication for a server
  */
-async function disconnectNotionAuth(): Promise<NotionMcpResponse> {
-    disconnectNotionMcp();
-    await clearTokens();
-    await clearClientCredentials();
-    notionTokens = null;
-    notionClientCredentials = null;
-    notionStatus = { state: 'disconnected' };
-    isEnabled = false;
-    await chrome.storage.local.set({ 'mcp.notion.enabled': false });
-    broadcastStatusUpdate();
+async function disconnectServerAuth(serverId: string): Promise<McpExtensionResponse> {
+    console.log(`[Background:${serverId}] Disconnecting and clearing all authentication data...`);
+    const state = getServerState(serverId);
+
+    // Disconnect the MCP client if active
+    disconnectMcpServer(serverId);
+
+    // Clear all stored authentication data from chrome.storage.local
+    await clearTokens(serverId);
+    await clearClientCredentials(serverId);
+    await clearScopeData(serverId);
+
+    // Clear all in-memory state
+    state.tokens = null;
+    state.credentials = null;
+    state.oauthEndpoints = null;
+    state.oauthState = null;
+    state.status = { serverId, state: 'disconnected' };
+    state.isEnabled = false;
+
+    // Clear enabled flag from storage
+    await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
+
+    console.log(`[Background:${serverId}] All authentication data cleared successfully`);
+    broadcastStatusUpdate(serverId, state.status);
+
     return { success: true };
 }
 
 /**
- * Get current Notion MCP status
+ * Get current MCP server status
  */
-function getNotionStatus(): NotionMcpStatus {
-    return notionStatus;
+function getServerStatus(serverId: string): McpServerStatus {
+    const state = getServerState(serverId);
+    return state.status;
 }
 
 /**
- * Perform health check on Notion MCP connection using official MCP SDK
+ * Broadcast status update to all listeners
+ */
+function broadcastStatusUpdate(serverId: string, status: McpServerStatus): void {
+    chrome.runtime.sendMessage({
+        type: `mcp/${serverId}/status/update`,
+        payload: status
+    }).catch(() => {
+        // Ignore errors if no listeners
+    });
+}
+
+/**
+ * Perform health check on MCP server
  * Validates connection and retrieves available tools
- * Similar to: https://modelcontextprotocol.io/docs/tools/clients
+ * Uses custom SSE client that supports both Streamable HTTP and HTTP+SSE transports
  */
-async function performHealthCheck(): Promise<NotionMcpResponse> {
-    let client: Client | undefined = undefined;
+async function performHealthCheck(serverId: string): Promise<McpExtensionResponse> {
+    let healthCheckClient: McpSSEClient | undefined = undefined;
+    const serverConfig = getServerConfig(serverId);
+
+    if (!serverConfig || !serverConfig.url) {
+        return {
+            success: false,
+            error: 'Server configuration not found'
+        };
+    }
 
     try {
-        console.log('[Background] Performing Notion MCP health check with SDK');
+        console.log(`[Background:${serverId}] Performing MCP health check with custom client`);
 
-        // Get access token
-        const accessToken = await ensureValidToken();
-        if (!accessToken) {
-            return {
-                success: false,
-                error: 'No valid access token available'
-            };
+        // Get access token (only required if server needs authentication)
+        let accessToken: string | null = null;
+        if (serverConfig.requiresAuthentication) {
+            accessToken = await ensureValidToken(serverId);
+            if (!accessToken) {
+                return {
+                    success: false,
+                    error: 'No valid access token available'
+                };
+            }
+        } else {
+            // For servers that don't require authentication, use empty string
+            accessToken = '';
+            console.log(`[Background:${serverId}] Server does not require authentication, performing health check without token`);
         }
 
-        const url = new URL(NOTION_CONFIG.MCP_SSE_URL);
-
         try {
-            // Create MCP client
-            client = new Client({
-                name: 'chrome-ai-health-check',
-                version: '1.0.0'
-            }, {
-                capabilities: {
-                    roots: { listChanged: true }
-                }
-            });
-
-            console.log('[Background] Connecting to MCP server with SSE transport...');
-
-            // Create SSE transport with authorization
-            // Use requestInit to add Authorization header to POST requests
-            const transport = new SSEClientTransport(url, {
-                requestInit: {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Accept': 'application/json, text/event-stream'
+            // Create temporary client for health check
+            // This client supports both Streamable HTTP (POST) and HTTP+SSE (GET) transports
+            healthCheckClient = new McpSSEClient(
+                `${serverId}-health`,
+                serverConfig.url,
+                accessToken,
+                {
+                    onStatusChange: (status) => {
+                        console.log(`[Background:${serverId}] Health check status:`, status.state);
+                    },
+                    onMessage: (message) => {
+                        // Ignore messages during health check
                     }
                 },
-                // Use custom fetch to add Authorization header to SSE connection
-                fetch: async (input, init) => {
-                    const headers = new Headers(init?.headers);
-                    headers.set('Authorization', `Bearer ${accessToken}`);
-                    headers.set('Accept', 'text/event-stream, application/json');
-
-                    return fetch(input, {
-                        ...init,
-                        headers
-                    });
+                {
+                    reconnectMinDelay: MCP_OAUTH_CONFIG.RECONNECT_MIN_DELAY,
+                    reconnectMaxDelay: MCP_OAUTH_CONFIG.RECONNECT_MAX_DELAY,
+                    reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER
                 }
-            });
+            );
 
-            // Connect to the server
-            await client.connect(transport);
-            console.log('[Background] Connected using SSE transport');
+            console.log(`[Background:${serverId}] Connecting to MCP server (auto-detect transport)...`);
 
-            // Get tools from the connected client
-            const toolsResponse = await client.listTools();
-            console.log('[Background] Tools response:', toolsResponse);
+            // Connect (will auto-detect Streamable HTTP vs HTTP+SSE)
+            await healthCheckClient.connect();
+            console.log(`[Background:${serverId}] Connected successfully`);
 
-            // Disconnect after getting tools
-            await client.close();
+            // Initialize MCP protocol
+            await healthCheckClient.initialize();
+            console.log(`[Background:${serverId}] Initialized successfully`);
 
-            if (toolsResponse && toolsResponse.tools) {
-                const toolCount = toolsResponse.tools.length;
-                console.log('[Background] Health check passed. Tools available:', toolCount);
+            // Get server status (includes tools)
+            const status = healthCheckClient.getStatus();
+            console.log(`[Background:${serverId}] Server status:`, status);
+
+            // Disconnect the health check client
+            healthCheckClient.disconnect();
+
+            if (status.tools && status.tools.length > 0) {
+                console.log(`[Background:${serverId}] Health check passed. Tools available:`, status.tools.length);
 
                 return {
                     success: true,
                     data: {
                         state: 'connected',
-                        tools: toolsResponse.tools.map(tool => ({
-                            name: tool.name,
-                            description: tool.description,
-                            inputSchema: tool.inputSchema
-                        })),
-                        toolCount: toolCount
+                        tools: status.tools,
+                        toolCount: status.tools.length
                     }
                 };
             } else {
@@ -653,14 +933,14 @@ async function performHealthCheck(): Promise<NotionMcpResponse> {
                 };
             }
         } catch (transportError) {
-            console.error('[Background] Health check failed:', transportError);
+            console.error(`[Background:${serverId}] Health check failed:`, transportError);
 
             // Clean up client if exists
-            if (client) {
+            if (healthCheckClient) {
                 try {
-                    await client.close();
+                    healthCheckClient.disconnect();
                 } catch (closeError) {
-                    console.error('[Background] Error closing client:', closeError);
+                    console.error(`[Background:${serverId}] Error closing client:`, closeError);
                 }
             }
 
@@ -670,14 +950,14 @@ async function performHealthCheck(): Promise<NotionMcpResponse> {
             };
         }
     } catch (error) {
-        console.error('[Background] Health check error:', error);
+        console.error(`[Background:${serverId}] Health check error:`, error);
 
         // Clean up client if exists
-        if (client) {
+        if (healthCheckClient) {
             try {
-                await client.close();
+                healthCheckClient.disconnect();
             } catch (closeError) {
-                console.error('[Background] Error closing client:', closeError);
+                console.error(`[Background:${serverId}] Error closing client:`, closeError);
             }
         }
 
@@ -689,18 +969,20 @@ async function performHealthCheck(): Promise<NotionMcpResponse> {
 }
 
 /**
- * Call a Notion MCP tool
+ * Call an MCP tool on any server
  */
-async function callNotionTool(name: string, args?: Record<string, any>): Promise<NotionMcpResponse> {
-    if (!notionMcpClient) {
+async function callServerTool(serverId: string, name: string, args?: Record<string, any>): Promise<McpExtensionResponse> {
+    const state = getServerState(serverId);
+
+    if (!state.client) {
         return { success: false, error: 'Not connected' };
     }
 
     try {
-        const result = await notionMcpClient.callTool(name, args);
+        const result = await state.client.callTool(name, args);
         return { success: true, data: result };
     } catch (error) {
-        console.error('[Background] Tool call error:', error);
+        console.error(`[Background:${serverId}] Tool call error:`, error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Tool call failed'
@@ -712,76 +994,107 @@ async function callNotionTool(name: string, args?: Record<string, any>): Promise
  * Get MCP server configurations for frontend
  */
 async function getMCPServerConfigs(): Promise<any[]> {
+    console.log('[Background] getMCPServerConfigs called');
     const servers = [];
-    
+
     try {
-        // Check if Notion MCP is enabled
-        const { 'mcp.notion.enabled': notionEnabled } = await chrome.storage.local.get('mcp.notion.enabled');
-        
-        if (notionEnabled) {
-            // Get stored tokens for Notion
-            const tokens = await getStoredTokens();
-            
-            if (tokens?.access_token) {
+        console.log(`[Background] Processing ${MCP_SERVERS.length} server configs`);
+
+        for (const serverConfig of MCP_SERVERS) {
+            const serverId = serverConfig.id;
+            const state = getServerState(serverId);
+
+            console.log(`[Background:${serverId}] Checking server configuration:`, {
+                name: serverConfig.name,
+                url: serverConfig.url,
+                hasTokens: !!state.tokens,
+                hasAccessToken: !!state.tokens?.access_token,
+                currentStatus: state.status.state
+            });
+
+            // Get enabled status from storage
+            const { [`mcp.${serverId}.enabled`]: isEnabled } = await chrome.storage.local.get(`mcp.${serverId}.enabled`);
+            console.log(`[Background:${serverId}] Enabled status from storage:`, isEnabled);
+
+            const serverType = serverConfig.url.endsWith('/sse') ? 'sse' : 'mcp';
+
+            // Add server if enabled AND either:
+            // 1. Server requires authentication and has access token
+            // 2. Server doesn't require authentication
+            const shouldAddServer = isEnabled && serverConfig.url && (
+                !serverConfig.requiresAuthentication ||
+                (serverConfig.requiresAuthentication && state.tokens?.access_token)
+            );
+
+            if (shouldAddServer) {
+                console.log(`[Background:${serverId}] ✓ Adding server to frontend config`);
+
+                // Build headers based on authentication requirement
+                const headers = [
+                    { key: 'Accept', value: 'application/json, text/event-stream' }
+                ];
+
+                // Only add Authorization header if server requires authentication
+                if (serverConfig.requiresAuthentication && state.tokens?.access_token) {
+                    headers.unshift({ key: 'Authorization', value: `Bearer ${state.tokens.access_token}` });
+                }
+
                 servers.push({
-                    id: 'notion',
-                    name: 'Notion MCP',
-                    url: NOTION_CONFIG.MCP_SSE_URL,
-                    type: 'sse',
-                    headers: [
-                        { key: 'Authorization', value: `Bearer ${tokens.access_token}` },
-                        { key: 'Accept', value: 'application/json, text/event-stream' }
-                    ],
+                    id: serverId,
+                    name: serverConfig.name,
+                    url: serverConfig.url,
+                    type: serverType,
+                    headers,
                     enabled: true,
-                    status: notionStatus
+                    status: state.status
                 });
-                
-                console.log('[Background] Notion MCP server configured for frontend');
+
+                console.log(`[Background:${serverId}] ${serverConfig.name} configured for frontend (requiresAuth: ${serverConfig.requiresAuthentication})`);
             } else {
-                console.log('[Background] Notion MCP enabled but no access token found');
+                console.log(`[Background:${serverId}] ✗ Not adding to config - Conditions not met:`, {
+                    isEnabled,
+                    requiresAuthentication: serverConfig.requiresAuthentication,
+                    hasAccessToken: !!state.tokens?.access_token,
+                    hasUrl: !!serverConfig.url
+                });
             }
         }
-        
-        // Add more MCP servers here as they are implemented
-        
+
+        console.log(`[Background] Returning ${servers.length} configured server(s)`);
     } catch (error) {
         console.error('[Background] Error getting MCP server configs:', error);
     }
-    
+
     return servers;
 }
 
 /**
- * Broadcast status update to all listeners
- */
-function broadcastStatusUpdate(): void {
-    chrome.runtime.sendMessage({
-        type: 'mcp/notion/status/update',
-        payload: notionStatus
-    }).catch(() => {
-        // Ignore errors if no listeners
-    });
-}
-
-/**
- * Initialize Notion status from stored tokens
+ * Initialize server status from stored tokens
  * Called on startup to restore authentication state
  */
-async function initializeNotionStatus(): Promise<void> {
+async function initializeServerStatus(serverId: string): Promise<void> {
+    const state = getServerState(serverId);
+    const serverConfig = getServerConfig(serverId);
+
     try {
-        const tokens = await getStoredTokens();
+        const tokens = await getStoredTokens(serverId);
+
         if (tokens) {
             // User has tokens, mark as authenticated
-            notionStatus = { state: 'authenticated' };
-            console.log('[Background] Notion status initialized: authenticated (tokens found)');
+            state.status = { ...state.status, state: 'authenticated' };
+            console.log(`[Background:${serverId}] Status initialized: authenticated (tokens found)`);
+        } else if (serverConfig && !serverConfig.requiresAuthentication) {
+            // Server doesn't require authentication, mark as ready to connect
+            state.status = { ...state.status, state: 'disconnected' };
+            console.log(`[Background:${serverId}] Status initialized: disconnected (no auth required)`);
         } else {
-            // No tokens, needs auth
-            notionStatus = { state: 'needs-auth' };
-            console.log('[Background] Notion status initialized: needs-auth (no tokens)');
+            // No tokens and server requires auth
+            state.status = { ...state.status, state: 'needs-auth' };
+            console.log(`[Background:${serverId}] Status initialized: needs-auth (no tokens)`);
         }
     } catch (error) {
-        console.error('[Background] Error initializing Notion status:', error);
-        notionStatus = { state: 'disconnected' };
+        console.error(`[Background:${serverId}] Error initializing status:`, error);
+        state.status = { ...state.status, state: 'disconnected' };
     }
 }
 
@@ -791,74 +1104,87 @@ async function initializeNotionStatus(): Promise<void> {
 
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     console.log('[Background] Received message:', message.type, message);
-    
+
     // Handle general MCP messages
     if (message.type === 'mcp/servers/get') {
         (async () => {
             try {
                 const servers = await getMCPServerConfigs();
+                console.log('[Background] Sending MCP server configs:', servers);
                 sendResponse({ success: true, data: servers });
             } catch (error) {
                 console.error('[Background] Error getting MCP server configs:', error);
-                sendResponse({ 
-                    success: false, 
-                    error: error instanceof Error ? error.message : 'Failed to get server configs' 
+                sendResponse({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to get server configs'
                 });
             }
         })();
         return true;
     }
 
-    // Handle Notion MCP messages
-    if (message.type?.startsWith('mcp/notion/')) {
+    // Handle generic MCP messages (format: mcp/{serverId}/{action})
+    if (message.type?.startsWith('mcp/')) {
         (async () => {
-            let response: NotionMcpResponse;
+            // Parse serverId from message type
+            const parts = message.type.split('/');
+            if (parts.length < 3) {
+                sendResponse({ success: false, error: 'Invalid message format' });
+                return;
+            }
 
-            console.log('[Background] Handling MCP message:', message.type);
-            switch (message.type) {
-                case 'mcp/notion/auth/start':
-                    response = await startNotionAuth();
+            const serverId = parts[1];
+            const action = parts.slice(2).join('/');
+
+            let response: McpExtensionResponse;
+
+            console.log(`[Background] Handling MCP message for ${serverId}:`, action);
+
+            switch (action) {
+                case 'auth/start':
+                    response = await startOAuthFlow(serverId);
                     break;
 
-                case 'mcp/notion/enable':
-                    response = await enableNotionMcp();
+                case 'enable':
+                    response = await enableMcpServer(serverId);
                     break;
 
-                case 'mcp/notion/disable':
-                    response = await disableNotionMcp();
+                case 'disable':
+                    response = await disableMcpServer(serverId);
                     break;
 
-                case 'mcp/notion/disconnect':
-                    response = await disconnectNotionAuth();
+                case 'disconnect':
+                    response = await disconnectServerAuth(serverId);
                     break;
 
-                case 'mcp/notion/status/get':
-                    response = { success: true, data: getNotionStatus() };
+                case 'status/get':
+                    response = { success: true, data: getServerStatus(serverId) };
                     break;
 
-                case 'mcp/notion/auth/refresh':
-                    const refreshed = await refreshNotionToken();
-                    response = refreshed 
+                case 'auth/refresh':
+                    const refreshed = await refreshServerToken(serverId);
+                    response = refreshed
                         ? { success: true, data: { state: 'authenticated' } }
                         : { success: false, error: 'Token refresh failed' };
                     break;
 
-                case 'mcp/notion/tool/call':
-                    response = await callNotionTool(
+                case 'tool/call':
+                    response = await callServerTool(
+                        serverId,
                         message.payload?.name,
                         message.payload?.arguments
                     );
                     break;
 
-                case 'mcp/notion/health/check':
-                    response = await performHealthCheck();
+                case 'health/check':
+                    response = await performHealthCheck(serverId);
                     break;
 
                 default:
-                    response = { success: false, error: 'Unknown message type' };
+                    response = { success: false, error: `Unknown action: ${action}` };
             }
 
-            console.log('[Background] Sending MCP response:', response);
+            console.log(`[Background:${serverId}] Sending MCP response:`, response);
             sendResponse(response);
         })();
 
@@ -932,37 +1258,65 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 });
 
 /**
+ * Initialize all MCP servers from storage
+ */
+async function initializeAllServers(): Promise<void> {
+    console.log('[Background] Initializing all MCP servers');
+
+    for (const serverConfig of MCP_SERVERS) {
+        const serverId = serverConfig.id;
+
+        try {
+            // Initialize server status from stored tokens
+            await initializeServerStatus(serverId);
+
+            // Check if server is enabled
+            const { [`mcp.${serverId}.enabled`]: isEnabled } = await chrome.storage.local.get(`mcp.${serverId}.enabled`);
+            const state = getServerState(serverId);
+            state.isEnabled = isEnabled || false;
+
+            // If enabled, try to restore connection
+            if (isEnabled) {
+                const tokens = await getStoredTokens(serverId);
+                const credentials = await getStoredClientCredentials(serverId);
+
+                if (tokens && credentials) {
+                    state.tokens = tokens;
+                    state.credentials = credentials;
+
+                    // Check token validity and schedule refresh if needed
+                    const tokenValid = await ensureTokenValidity(serverId);
+
+                    if (tokenValid) {
+                        // Attempt to connect
+                        await connectMcpServer(serverId);
+                        console.log(`[Background] ${serverConfig.name} restored and connected`);
+                    } else {
+                        console.log(`[Background] ${serverConfig.name} needs re-authentication`);
+                    }
+                } else {
+                    console.log(`[Background] ${serverConfig.name} enabled but no credentials found`);
+                }
+            }
+        } catch (error) {
+            console.error(`[Background] Error initializing ${serverId}:`, error);
+        }
+    }
+}
+
+/**
  * Extension install/update handler
  */
 chrome.runtime.onInstalled.addListener(async (details) => {
     console.log('[Background] onInstalled:', details.reason);
 
     try {
-        // Initialize Notion status from stored tokens
-        await initializeNotionStatus();
+        // Initialize all MCP servers from storage
+        await initializeAllServers();
 
         // Enable side panel on all existing tabs
         if (chrome.sidePanel) {
             chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
-        }
-
-        // Load saved state
-        const stored = await chrome.storage.local.get(['mcp.notion.enabled']);
-        isEnabled = stored['mcp.notion.enabled'] || false;
-
-        // If enabled, try to restore connection
-        if (isEnabled) {
-            const tokens = await getStoredTokens();
-            const credentials = await getStoredClientCredentials();
-            if (tokens && credentials) {
-                notionTokens = tokens;
-                notionClientCredentials = credentials;
-                
-                // Check token validity and schedule refresh if needed
-                await ensureTokenValidity();
-                
-                await connectNotionMcp();
-            }
         }
 
         console.log('[Background] Side panel configured');
@@ -977,27 +1331,8 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
     console.log('[Background] onStartup - Extension ready');
 
-    // Initialize Notion status from stored tokens
-    await initializeNotionStatus();
-
-    // Load saved state
-    const stored = await chrome.storage.local.get(['mcp.notion.enabled']);
-    isEnabled = stored['mcp.notion.enabled'] || false;
-
-    // If enabled, try to restore connection
-    if (isEnabled) {
-        const tokens = await getStoredTokens();
-        const credentials = await getStoredClientCredentials();
-        if (tokens && credentials) {
-            notionTokens = tokens;
-            notionClientCredentials = credentials;
-            
-            // Check token validity and schedule refresh if needed
-            await ensureTokenValidity();
-            
-            await connectNotionMcp();
-        }
-    }
+    // Initialize all MCP servers from storage
+    await initializeAllServers();
 });
 
 /**
@@ -1039,13 +1374,14 @@ interface Reminder {
  * Handle reminder alarms - show notification when reminder fires
  */
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-    // Handle token refresh alarm
-    if (alarm.name === 'notion-token-refresh') {
-        await handleTokenRefreshAlarm();
+    // Handle token refresh alarms (format: mcp-token-refresh-{serverId})
+    if (alarm.name.startsWith('mcp-token-refresh-')) {
+        const serverId = alarm.name.replace('mcp-token-refresh-', '');
+        await handleTokenRefreshAlarm(serverId);
         return;
     }
 
-    // Only handle reminder alarms
+    // Only handle reminder alarms after this point
     if (!alarm.name.startsWith('reminder:')) {
         return;
     }

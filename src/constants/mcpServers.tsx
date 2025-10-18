@@ -29,6 +29,17 @@ export interface ServerConfig {
     url?: string
     description: string
     requiresAuthentication: boolean
+    
+    // OAuth configuration (optional - will use discovery if not provided)
+    oauth?: {
+        discoveryHints?: {
+            registrationEndpoint?: string  // Hint for faster registration
+            authorizationEndpoint?: string
+            tokenEndpoint?: string
+        }
+        scopes?: string[]  // Default scopes to request
+        resource?: string  // RFC 8707 resource parameter
+    }
 }
 
 export const MCP_SERVERS: ServerConfig[] = [
@@ -92,17 +103,16 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Figma is a design tool for creating beautiful designs.",
         requiresAuthentication: true
     },
-    {
-        id: "github",
-        name: "GitHub",
-        icon: <GitHub />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://api.githubcopilot.com/mcp/",
-        description: "GitHub is a code hosting platform for version control and collaboration.",
-        requiresAuthentication: true
-    },
-
+    // {
+    //     id: "github",
+    //     name: "GitHub",
+    //     icon: <GitHub />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://api.githubcopilot.com/mcp/",
+    //     description: "GitHub is a code hosting platform for version control and collaboration.",
+    //     requiresAuthentication: true
+    // },
     {
         id: "huggingface",
         name: "Hugging Face",
@@ -211,7 +221,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialAuthenticated: false,
         url: "https://mcp.deepwiki.com/mcp",
         description: "DeepWiki automatically generates architecture diagrams, documentation, and links to source code to help you understand unfamiliar codebases quickly.",
-        requiresAuthentication: true
+        requiresAuthentication: false
     },
     {
         id: "coingecko",

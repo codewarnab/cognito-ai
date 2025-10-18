@@ -27,39 +27,40 @@ export const COPILOT_RUNTIME_URL = " http://localhost:3000/api" as string; // TO
 export const COPILOT_RUNTIME_URL_DEFAULT = " http://localhost:3000/";
 
 /**
- * Notion MCP Configuration
- * OAuth with Dynamic Client Registration for Notion hosted MCP server
- * 
- * IMPORTANT: This uses dynamic client registration (RFC 7591)
- * Client credentials are obtained at runtime when the user clicks "Connect"
+ * Generic MCP OAuth Configuration
+ * Applies to all MCP servers with OAuth authentication
  */
-export const NOTION_CONFIG = {
-    /** OAuth redirect URI - Chrome extension identity redirect */
-    OAUTH_REDIRECT_URI: "https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/",
+export const MCP_OAUTH_CONFIG = {
+    /** OAuth redirect URI - Chrome extension identity redirect (same for all servers) */
+    REDIRECT_URI: "https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/",
 
-    /** OAuth dynamic client registration endpoint */
-    OAUTH_REGISTER_URL: "https://mcp.notion.com/register",
+    /** Storage key prefix format: oauth.{serverId}.tokens */
+    STORAGE_KEY_PREFIX: "oauth",
 
-    /** OAuth authorization endpoint - Standard Notion OAuth */
-    OAUTH_AUTH_URL: "https://mcp.notion.com/authorize",
-
-    /** OAuth token endpoint - Standard Notion OAuth */
-    OAUTH_TOKEN_URL: "https://mcp.notion.com/token",
-
-    /** OAuth token introspection endpoint */
-    OAUTH_INTROSPECT_URL: "https://api.notion.com/v1/oauth/introspect",
-
-    /** MCP resource identifier for OAuth scope */
-    MCP_RESOURCE: "https://mcp.notion.com/",
-
-    /** Notion MCP SSE endpoint (for establishing SSE connection and receiving events) */
-    MCP_SSE_URL: "https://mcp.notion.com/sse",
-
-    /** Token storage key prefix */
-    STORAGE_KEY_PREFIX: "oauth.notion.mcp",
+    /** Token refresh timing */
+    TOKEN_REFRESH_BUFFER: 5 * 60 * 1000, // 5 minutes before expiry
 
     /** Reconnection settings */
     RECONNECT_MIN_DELAY: 500, // 0.5s
     RECONNECT_MAX_DELAY: 30000, // 30s
     RECONNECT_MULTIPLIER: 2,
+
+    /** Discovery timeouts */
+    DISCOVERY_TIMEOUT: 10000, // 10s timeout for discovery requests
 } as const;
+
+/**
+ * Server-specific configurations
+ * Optional overrides and custom settings per server
+ * 
+ * Note: Discovery endpoints are determined via RFC 9728 (Protected Resource Metadata)
+ * and RFC 8414 (Authorization Server Metadata) discovery. Do NOT hardcode endpoints here
+ * as it violates the MCP specification. Instead, use custom headers for server-specific
+ * requirements like the Notion-Version header.
+ */
+export const SERVER_SPECIFIC_CONFIGS: Record<string, {
+    customHeaders?: Record<string, string>;
+}> = {
+
+};
+
