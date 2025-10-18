@@ -33,12 +33,41 @@ function IndexPopup() {
     }
   }
 
+  const openSidePanel = async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    if (tab?.id) {
+      await chrome.sidePanel.open({ tabId: tab.id })
+    }
+  }
+
   return (
     <div className="popup-container">
       <div className="popup-header">
         <h1>🤖 Chrome AI Assistant</h1>
         <p className="subtitle">Powered by on-device AI</p>
       </div>
+
+      <button 
+        onClick={openSidePanel}
+        className="sidepanel-button"
+        style={{
+          width: '100%',
+          padding: '12px',
+          marginBottom: '16px',
+          background: 'linear-gradient(135deg, #4a6fa5 0%, #3a5a8a 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: '600',
+          transition: 'all 0.2s'
+        }}
+        onMouseOver={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #5a7fb5 0%, #4a6a9a 100%)'}
+        onMouseOut={(e) => e.currentTarget.style.background = 'linear-gradient(135deg, #4a6fa5 0%, #3a5a8a 100%)'}
+      >
+        🚀 Open AI Chat in Sidebar
+      </button>
 
       <form onSubmit={handleSubmit} className="prompt-form">
         <textarea
