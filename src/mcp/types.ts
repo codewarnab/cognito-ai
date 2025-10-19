@@ -288,3 +288,12 @@ export interface McpServerOAuthConfig {
     resource?: string; // RFC 8707 resource parameter
     customHeaders?: Record<string, string>;
 }
+
+/**
+ * MCP Tool Configuration
+ * Manages which tools are enabled/disabled for a specific server
+ */
+export interface McpToolConfig {
+    serverId: string;
+    disabledTools: string[]; // Tool names that are disabled
+}

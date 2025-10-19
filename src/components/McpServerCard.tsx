@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from "react"
-import { Info } from "lucide-react"
+import { Info, Sliders } from "lucide-react"
 import { StatusBadge } from "./ui/StatusBadge"
 import { Toggle } from "./ui/Toggle"
 import { ConfirmDialog } from "./ui/ConfirmDialog"
@@ -14,6 +14,7 @@ interface McpServerCardProps {
     initialAuthenticated?: boolean
     requiresAuth?: boolean
     paid?: boolean
+    onManageTools?: (serverId: string) => void
 }
 
 export const McpServerCard: React.FC<McpServerCardProps> = ({
@@ -24,7 +25,8 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     initialEnabled = false,
     initialAuthenticated = false,
     requiresAuth = true,
-    paid = false
+    paid = false,
+    onManageTools
 }) => {
     const [isEnabled, setIsEnabled] = useState(initialEnabled)
     const [isAuthenticated, setIsAuthenticated] = useState(initialAuthenticated)
@@ -115,7 +117,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
             if (showTooltip && !event.composedPath().some((el) => {
                 const target = el as Element
                 return target.classList?.contains('mcp-card__info-container') ||
-                       target.classList?.contains('mcp-card__tooltip')
+                    target.classList?.contains('mcp-card__tooltip')
             })) {
                 setShowTooltip(false)
             }
@@ -399,6 +401,20 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                         {requiresAuth ? (
                             isAuthenticated ? (
                                 <>
+                                    {isEnabled && onManageTools && (
+                                        <button
+                                            className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                                            onClick={() => onManageTools(id)}
+                                            disabled={isLoading}
+                                            title="Manage Tools"
+                                        >
+                                            {isNarrowView ? (
+                                                <Sliders size={16} />
+                                            ) : (
+                                                'Manage Tools'
+                                            )}
+                                        </button>
+                                    )}
                                     {isEnabled && (
                                         <button
                                             className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
@@ -434,6 +450,20 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                             )
                         ) : (
                             <>
+                                {isEnabled && onManageTools && (
+                                    <button
+                                        className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                                        onClick={() => onManageTools(id)}
+                                        disabled={isLoading}
+                                        title="Manage Tools"
+                                    >
+                                        {isNarrowView ? (
+                                            <Sliders size={16} />
+                                        ) : (
+                                            'Manage Tools'
+                                        )}
+                                    </button>
+                                )}
                                 {isEnabled && (
                                     <button
                                         className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}

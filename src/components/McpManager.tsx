@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react"
 import { McpHeader } from "./McpHeader"
 import { McpServerCard } from "./McpServerCard"
+import { McpToolsManager } from "./McpToolsManager"
 import { MCP_SERVERS } from "../constants/mcpServers"
 
 interface McpManagerProps {
@@ -16,6 +17,8 @@ interface ServerStatus {
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [searchQuery, setSearchQuery] = useState("")
     const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
+    const [activeView, setActiveView] = useState<'list' | 'tools'>('list')
+    const [selectedServerId, setSelectedServerId] = useState<string | null>(null)
 
     // Fetch real authentication status on mount and listen for updates
     useEffect(() => {
@@ -23,8 +26,8 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             // Fetch status for all servers
             for (const server of MCP_SERVERS) {
                 try {
-                    const response = await chrome.runtime.sendMessage({ 
-                        type: `mcp/${server.id}/status/get` 
+                    const response = await chrome.runtime.sendMessage({
+                        type: `mcp/${server.id}/status/get`
                     })
                     if (response.success && response.data) {
                         const status = response.data
@@ -77,26 +80,46 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                 server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 server.id.toLowerCase().includes(searchQuery.toLowerCase())
             )
-        
+
         // Sort priority: enabled > authenticated > unauthenticated
         return results.sort((a, b) => {
             const aStatus = serverStatuses[a.id]
             const bStatus = serverStatuses[b.id]
-            
+
             // Priority 1: Enabled servers first (use real status if available, fallback to initial)
             const aEnabled = aStatus?.isEnabled ?? a.initialEnabled ? 1 : 0
             const bEnabled = bStatus?.isEnabled ?? b.initialEnabled ? 1 : 0
             if (aEnabled !== bEnabled) return bEnabled - aEnabled
-            
+
             // Priority 2: Authenticated servers next (use real status if available, fallback to initial)
             const aAuth = aStatus?.isAuthenticated ?? a.initialAuthenticated ? 1 : 0
             const bAuth = bStatus?.isAuthenticated ?? b.initialAuthenticated ? 1 : 0
             if (aAuth !== bAuth) return bAuth - aAuth
-            
+
             // Keep original order for same priority
             return 0
         })
     }, [searchQuery, serverStatuses])
+
+    const handleManageTools = (serverId: string) => {
+        setSelectedServerId(serverId)
+        setActiveView('tools')
+    }
+
+    const handleBackToList = () => {
+        setActiveView('list')
+        setSelectedServerId(null)
+    }
+
+    // Conditional rendering based on active view
+    if (activeView === 'tools' && selectedServerId) {
+        return (
+            <McpToolsManager
+                serverId={selectedServerId}
+                onBack={handleBackToList}
+            />
+        )
+    }
 
     return (
         <div className="mcp-panel">
@@ -165,6 +188,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                     initialAuthenticated={server.initialAuthenticated}
                                     requiresAuth={server.requiresAuthentication}
                                     paid={server.paid}
+                                    onManageTools={handleManageTools}
                                 />
                             </li>
                         ))}

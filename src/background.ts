@@ -41,7 +41,8 @@ import type {
     McpExtensionMessage,
     McpExtensionResponse,
     McpMessage,
-    OAuthEndpoints
+    OAuthEndpoints,
+    McpTool
 } from './mcp/types';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
 import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
@@ -335,8 +336,8 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         let redirectUrl: string | undefined;
         try {
             redirectUrl = await chrome.identity.launchWebAuthFlow({
-            url: authUrl,
-            interactive: true
+                url: authUrl,
+                interactive: true
             });
         } catch (error) {
             console.error(`[Background:${serverId}] Could not load OAuth URL:`, error);
@@ -850,6 +851,31 @@ function broadcastStatusUpdate(serverId: string, status: McpServerStatus): void 
 }
 
 /**
+ * Get disabled tools for a server from chrome.storage
+ */
+async function getDisabledTools(serverId: string): Promise<string[]> {
+    const key = `mcp.${serverId}.tools.disabled`;
+    const result = await chrome.storage.local.get(key);
+    return result[key] || [];
+}
+
+/**
+ * Set disabled tools for a server in chrome.storage
+ */
+async function setDisabledTools(serverId: string, toolNames: string[]): Promise<void> {
+    const key = `mcp.${serverId}.tools.disabled`;
+    await chrome.storage.local.set({ [key]: toolNames });
+}
+
+/**
+ * Get available tools for a server
+ */
+async function getServerTools(serverId: string): Promise<McpTool[]> {
+    const state = getServerState(serverId);
+    return state.status?.tools || [];
+}
+
+/**
  * Perform health check on MCP server
  * Validates connection and retrieves available tools
  * Uses custom SSE client that supports both Streamable HTTP and HTTP+SSE transports
@@ -1186,6 +1212,21 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
 
                 case 'health/check':
                     response = await performHealthCheck(serverId);
+                    break;
+
+                case 'tools/list':
+                    const tools = await getServerTools(serverId);
+                    response = { success: true, data: tools };
+                    break;
+
+                case 'tools/config/get':
+                    const disabledTools = await getDisabledTools(serverId);
+                    response = { success: true, data: disabledTools };
+                    break;
+
+                case 'tools/config/set':
+                    await setDisabledTools(serverId, message.payload?.disabledTools || []);
+                    response = { success: true };
                     break;
 
                 default:

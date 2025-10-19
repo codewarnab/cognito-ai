@@ -252,18 +252,39 @@ export async function initializeMCPClients(
           tools: Object.keys(mcpTools)
         });
 
+        // Get disabled tools from storage
+        const disabledToolsResult = await chrome.storage.local.get(`mcp.${mcpServer.id}.tools.disabled`);
+        const disabledTools: string[] = disabledToolsResult[`mcp.${mcpServer.id}.tools.disabled`] || [];
+
+        log.info(`🔧 Disabled tools for ${mcpServer.name}:`, disabledTools);
+
         // Log detailed tool information for debugging
         Object.entries(mcpTools).forEach(([toolName, toolDef]: [string, any]) => {
           log.info(`📦 Tool: ${toolName}`, {
             description: toolDef?.description,
             hasExecute: typeof toolDef?.execute === 'function',
-            hasInputSchema: !!toolDef?.inputSchema
+            hasInputSchema: !!toolDef?.inputSchema,
+            isDisabled: disabledTools.includes(toolName)
           });
+        });
+
+        // Filter out disabled tools before adding to tools object
+        const filteredTools = Object.entries(mcpTools).reduce((acc, [name, def]) => {
+          if (!disabledTools.includes(name)) {
+            acc[name] = def;
+          }
+          return acc;
+        }, {} as Record<string, any>);
+
+        log.info(`✅ Filtered MCP tools from ${mcpServer.name}:`, {
+          total: Object.keys(mcpTools).length,
+          enabled: Object.keys(filteredTools).length,
+          disabled: disabledTools.length
         });
 
         // Add MCP tools directly (AI SDK handles tool naming)
         // Don't prefix the tools - the AI SDK expects the original names
-        tools = { ...tools, ...mcpTools };
+        tools = { ...tools, ...filteredTools };
 
       } catch (error) {
         log.error(`❌ Failed to initialize MCP client for ${mcpServer.name}:`, error);
