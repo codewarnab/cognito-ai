@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect, useRef } from "react"
+import { Info } from "lucide-react"
 import { StatusBadge } from "./ui/StatusBadge"
 import { Toggle } from "./ui/Toggle"
 import { ConfirmDialog } from "./ui/ConfirmDialog"
@@ -8,18 +9,22 @@ interface McpServerCardProps {
     id: string
     name: string
     icon: React.ReactNode
+    description: string
     initialEnabled?: boolean
     initialAuthenticated?: boolean
     requiresAuth?: boolean
+    paid?: boolean
 }
 
 export const McpServerCard: React.FC<McpServerCardProps> = ({
     id,
     name,
     icon,
+    description,
     initialEnabled = false,
     initialAuthenticated = false,
-    requiresAuth = true
+    requiresAuth = true,
+    paid = false
 }) => {
     const [isEnabled, setIsEnabled] = useState(initialEnabled)
     const [isAuthenticated, setIsAuthenticated] = useState(initialAuthenticated)
@@ -29,6 +34,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     const [isLoading, setIsLoading] = useState(false)
     const [healthCheckStatus, setHealthCheckStatus] = useState<string>('')
     const [isNarrowView, setIsNarrowView] = useState(false)
+    const [showTooltip, setShowTooltip] = useState(false)
 
     // Store timeout IDs to avoid state updates after unmount
     const clearSuccessTimeoutRef = useRef<number | null>(null)
@@ -54,7 +60,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
             for (const entry of entries) {
                 const width = entry.contentRect.width
                 // Switch to icon view when card width is less than 400px
-                setIsNarrowView(width < 400)
+                setIsNarrowView(width < 330)
             }
         })
 
@@ -102,6 +108,28 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
             chrome.runtime.onMessage.removeListener(handleMessage)
         }
     }, [id])
+
+    // Handle clicking outside tooltip to close it
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (showTooltip && !event.composedPath().some((el) => {
+                const target = el as Element
+                return target.classList?.contains('mcp-card__info-container') ||
+                       target.classList?.contains('mcp-card__tooltip')
+            })) {
+                setShowTooltip(false)
+            }
+        }
+
+        if (showTooltip) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showTooltip])
+
 
     const loadStatus = async () => {
         try {
@@ -308,7 +336,34 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                         <div className="mcp-card__icon" aria-hidden="true">
                             {icon}
                         </div>
-                        <h3 className="mcp-card__name">{name}</h3>
+                        <div className="mcp-card__name-container">
+                            <h3 className="mcp-card__name">{name}</h3>
+                            {paid && (
+                                <span className="mcp-card__service-badge">
+                                    PAID
+                                </span>
+                            )}
+                        </div>
+                        {!isNarrowView && (
+                            <div className="mcp-card__info-container">
+                                <button
+                                    className="mcp-card__info-btn"
+                                    onClick={() => setShowTooltip(!showTooltip)}
+                                    aria-label={`Show information about ${name}`}
+                                    title={`Show information about ${name}`}
+                                >
+                                    <Info size={16} />
+                                </button>
+                                {showTooltip && (
+                                    <div className="mcp-card__tooltip">
+                                        <div className="mcp-card__tooltip-content">
+                                            {description}
+                                        </div>
+                                        <div className="mcp-card__tooltip-arrow"></div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div className="mcp-card__right">
                         <Toggle

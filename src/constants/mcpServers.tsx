@@ -19,6 +19,7 @@ import { Vercel } from "../../assets/vercel"
 import { Webflow } from "../../assets/webflow"
 import deepwikiImage from "../../assets/deepwiki.webp"
 import coingeckoImage from "../../assets/coingecko.webp"
+import context7Image from "../../assets/context7.png"
 
 export interface ServerConfig {
     id: string
@@ -29,6 +30,7 @@ export interface ServerConfig {
     url?: string
     description: string
     requiresAuthentication: boolean
+    paid?: boolean
     
     // OAuth configuration (optional - will use discovery if not provided)
     oauth?: {
@@ -154,6 +156,16 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Notion is a project management tool for teams.",
         requiresAuthentication: true
     },
+    {
+        id:"context7",
+        name: "Context7",
+        icon:<img src={context7Image} alt="Context7" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.context7.com/mcp",
+        description: "Up-to-date code documentation for LLMs and AI code editors",
+        requiresAuthentication: false
+    },
     { // working 
         id: "paypal",
         name: "PayPal",
@@ -272,5 +284,6 @@ export const MCP_SERVERS: ServerConfig[] = [
         requiresAuthentication: true,
         initialEnabled: false,
         initialAuthenticated: false,
+        paid: true
     }
 ]

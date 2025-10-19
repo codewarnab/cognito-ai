@@ -7,4 +7,13 @@ https://www.copilotkit.ai/examples/travel-planner
 https://github.com/cupcakearmy/ora?tab=readme-ov-file
 
 1. add db save after onfinish 
-
+2. auto summarize button if user in long article 
+3. history tagging 
+4. add web page modifying ability https://chromewebstore.google.com/detail/click-to-remove-element/jcgpghgjhhahcefnfpbncdmhhddedhnk 
+5. https://chromewebstore.google.com/detail/custom-highlight/bmhaflbnleckffaacepbbbonfookcedm add  highlighing abilities in a web page 
+6.https://chromewebstore.google.com/detail/one-click-search-select-a/eaafadnjnjkpfeoghedeoadlnebaccbg add one click explain 
+7.https://chromewebstore.google.com/detail/page-assist-a-web-ui-for/jfgfiigpkhlkbnfnbobbkinehhfdhndo?hl=en ollama support 
+8.https://chromewebstore.google.com/detail/automatic-tab-opener/hkjobkeceflhccchhjkfofhbcaaaccag automatic ttab openar
+9 .add 40 tool limitation 
+10.https://github.com/github/github-mcp-server/blob/main/docs/host-integration.md github mcp support 
+11. https://chromewebstore.google.com/detail/scribbl-ai-meeting-notes/kmjmlilenakedodldceipdnmmnfkahni google meet notes taking with extension 
