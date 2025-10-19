@@ -160,9 +160,11 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                     id={server.id}
                                     name={server.name}
                                     icon={server.icon}
+                                    description={server.description}
                                     initialEnabled={server.initialEnabled}
                                     initialAuthenticated={server.initialAuthenticated}
                                     requiresAuth={server.requiresAuthentication}
+                                    paid={server.paid}
                                 />
                             </li>
                         ))}
