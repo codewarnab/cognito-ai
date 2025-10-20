@@ -8,6 +8,7 @@ import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
 import "./styles/memory.css";
+import "./styles/mentions.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useOpenTabTool } from "./actions/tabs/openTabTool";
@@ -34,10 +35,10 @@ import type { UIMessage } from "ai";
  */
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
-    
+
     // Register AI SDK v5 tools
     useOpenTabTool();
-    
+
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
@@ -261,7 +262,7 @@ function AIChatContent() {
         }
 
         log.info("SendMessage", { length: trimmedInput.length, fromVoice: messageText !== undefined });
-        
+
         // Only clear input if we're using the input state (not voice input)
         if (messageText === undefined) {
             setInput('');

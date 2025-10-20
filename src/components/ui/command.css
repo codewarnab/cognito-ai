@@ -1,0 +1,193 @@
+/* Command Styles */
+.command {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 0.375rem;
+    background-color: var(--popover-background, white);
+    color: var(--popover-foreground, #1f2937);
+}
+
+.command-dialog-content {
+    overflow: hidden;
+    padding: 0;
+}
+
+.command-dialog-header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.command-styled [cmdk-group-heading] {
+    color: var(--muted-foreground-color, #6b7280);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-weight: 500;
+}
+
+.command-styled [data-slot="command-input-wrapper"] {
+    height: 3rem;
+}
+
+.command-styled [cmdk-group] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+.command-styled [cmdk-group]:not([hidden])~[cmdk-group] {
+    padding-top: 0;
+}
+
+.command-styled [cmdk-input-wrapper] svg {
+    height: 1.25rem;
+    width: 1.25rem;
+}
+
+.command-styled [cmdk-input] {
+    height: 3rem;
+}
+
+.command-styled [cmdk-item] {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+}
+
+.command-styled [cmdk-item] svg {
+    height: 1.25rem;
+    width: 1.25rem;
+}
+
+.command-input-wrapper {
+    display: flex;
+    height: 2.25rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+.command-input-wrapper .search-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.command-input {
+    display: flex;
+    height: 2.5rem;
+    width: 100%;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    font-size: 0.875rem;
+    outline: none;
+    border: none;
+}
+
+.command-input::placeholder {
+    color: var(--muted-foreground-color, #6b7280);
+}
+
+.command-input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.command-list {
+    max-height: 300px;
+    scroll-padding-top: 0.25rem;
+    scroll-padding-bottom: 0.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.command-empty {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.command-group {
+    overflow: hidden;
+    padding: 0.25rem;
+    color: var(--foreground-color, #1f2937);
+}
+
+.command-group [cmdk-group-heading] {
+    color: var(--muted-foreground-color, #6b7280);
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.command-separator {
+    height: 1px;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    background-color: var(--border-color, #e5e7eb);
+}
+
+.command-item {
+    position: relative;
+    display: flex;
+    cursor: default;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.125rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+    font-size: 0.875rem;
+    outline: none;
+    user-select: none;
+}
+
+.command-item[data-selected="true"] {
+    background-color: var(--accent-color, #f3f4f6);
+    color: var(--accent-foreground-color, #1f2937);
+}
+
+.command-item[data-disabled="true"] {
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+.command-item svg {
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+.command-item svg:not([class*='size-']) {
+    width: 1rem;
+    height: 1rem;
+}
+
+.command-item svg:not([class*='text-']) {
+    color: var(--muted-foreground-color, #6b7280);
+}
+
+.command-shortcut {
+    margin-left: auto;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--muted-foreground-color, #6b7280);
+}

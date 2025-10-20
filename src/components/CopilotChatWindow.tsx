@@ -9,11 +9,13 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import { VoiceInput } from '../audio/VoiceInput';
+import { MentionInput } from './MentionInput';
+import { renderTextWithMentions } from './MentionBadge';
 
 interface Message {
     id?: string;
     role: 'user' | 'assistant';
-    parts?: Array<{ type: string; text?: string; [key: string]: any }>;
+    parts?: Array<{ type: string; text?: string;[key: string]: any }>;
 }
 
 interface CopilotChatWindowProps {
@@ -35,7 +37,7 @@ interface CopilotChatWindowProps {
 // Helper to extract text content from AI SDK v5 parts array
 const getMessageContent = (message: Message): string => {
     if (!message.parts || message.parts.length === 0) return '';
-    
+
     return message.parts
         .filter((part: any) => part.type === 'text')
         .map((part: any) => part.text)
@@ -173,10 +175,17 @@ export function CopilotChatWindow({
                         <p className="copilot-empty-subtitle">
                             I can browse, click, fill forms, manage tabs, and execute tasks end-to-end. Just tell me what you need!
                         </p>
+                        <p className="copilot-empty-hint">
+                            💡 Type <strong>@</strong> to mention browser tabs and provide context
+                        </p>
                     </div>
                 ) : (
                     messages
                         .filter(message => {
+                            // Filter out internal messages (tab context)
+                            if ((message as any).metadata?.internal) {
+                                return false;
+                            }
                             const content = getMessageContent(message);
                             return typeof content === 'string' && content.trim().length > 0;
                         })
@@ -198,7 +207,9 @@ export function CopilotChatWindow({
                                                 </ReactMarkdown>
                                             </div>
                                         ) : (
-                                            getMessageContent(message)
+                                            <div className="user-message-with-mentions">
+                                                {renderTextWithMentions(getMessageContent(message))}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -234,14 +245,12 @@ export function CopilotChatWindow({
             {/* Input Area */}
             <div className="copilot-input-container">
                 <div className="copilot-input-wrapper">
-                    <input
-                        type="text"
+                    <MentionInput
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={onKeyDown}
-                        placeholder="Ask me anything..."
-                        className="copilot-input"
+                        onChange={setInput}
+                        onSend={() => onSendMessage()}
                         disabled={isLoading}
+                        placeholder="Ask me anything... (type @ to mention tabs)"
                     />
                     <div className="copilot-input-actions">
                         {/* Voice Input */}
