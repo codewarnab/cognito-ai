@@ -11,6 +11,7 @@ import remarkBreaks from 'remark-breaks';
 import { VoiceInput } from '../audio/VoiceInput';
 import { MentionInput } from './MentionInput';
 import { renderTextWithMentions } from './MentionBadge';
+import { ToolPartRenderer } from '../ai/ToolPartRenderer';
 
 interface Message {
     id?: string;
@@ -37,11 +38,28 @@ interface CopilotChatWindowProps {
 // Helper to extract text content from AI SDK v5 parts array
 const getMessageContent = (message: Message): string => {
     if (!message.parts || message.parts.length === 0) return '';
-
     return message.parts
         .filter((part: any) => part.type === 'text')
         .map((part: any) => part.text)
         .join('');
+};
+
+// Helper to check if message has tool calls
+const hasToolCalls = (message: Message): boolean => {
+    if (!message.parts || message.parts.length === 0) {
+        return false;
+    }
+    
+    const toolParts = message.parts.filter((part: any) => {
+        const isToolCall = part.type === 'tool-call';
+        const isToolResult = part.type === 'tool-result';
+        const startsWithTool = part.type?.startsWith && part.type.startsWith('tool-');
+        const isDynamicTool = part.type === 'dynamic-tool';
+        
+        return isToolCall || isToolResult || startsWithTool || isDynamicTool;
+    });
+    
+    return toolParts.length > 0;
 };
 
 export function CopilotChatWindow({
@@ -187,7 +205,11 @@ export function CopilotChatWindow({
                                 return false;
                             }
                             const content = getMessageContent(message);
-                            return typeof content === 'string' && content.trim().length > 0;
+                            const hasText = typeof content === 'string' && content.trim().length > 0;
+                            const hasTools = hasToolCalls(message);
+                            
+                            // Show message if it has text OR tool calls
+                            return hasText || hasTools;
                         })
                         .map((message, index) => (
                             <div
@@ -198,7 +220,7 @@ export function CopilotChatWindow({
                                     <div className="copilot-message-avatar">🤖</div>
                                 )}
 
-                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role}`}>
+                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
                                     <div className="copilot-message-content">
                                         {message.role === 'assistant' ? (
                                             <div className="markdown-content">
@@ -212,6 +234,33 @@ export function CopilotChatWindow({
                                             </div>
                                         )}
                                     </div>
+                                    
+                                    {/* Render tool calls if present */}
+                                    {(() => {
+                                        const shouldRenderTools = hasToolCalls(message);
+                                        
+                                        if (shouldRenderTools && message.parts) {
+                                            const toolPartsToRender = message.parts.filter((part: any) => 
+                                                part.type === 'tool-call' || 
+                                                part.type === 'tool-result' ||
+                                                part.type?.startsWith('tool-') || 
+                                                part.type === 'dynamic-tool'
+                                            );
+                                            
+                                            return (
+                                                <div className="message-tools">
+                                                    {toolPartsToRender.map((part: any, partIndex: number) => (
+                                                        <ToolPartRenderer
+                                                            key={part.toolCallId || `${message.id}-tool-${partIndex}`}
+                                                            part={part}
+                                                            messageId={message.id || `msg-${index}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
 
                                 {message.role === 'user' && (

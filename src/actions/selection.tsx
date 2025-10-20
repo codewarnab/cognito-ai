@@ -1,7 +1,6 @@
 import React from "react";
 import { useFrontendTool } from "@copilotkit/react-core";
 import { createLogger } from "../logger";
-import { shouldProcess } from "./useActionDeduper";
 import { ToolCard, CodeBlock } from "../components/ui/ToolCard";
 
 // ===========================
@@ -105,9 +104,6 @@ export function registerSelectionActions() {
     description: "Get the currently selected text from the active browser tab",
     parameters: [],
     handler: async () => {
-      if (!shouldProcess("getSelectedText", {})) {
-        return { skipped: true, reason: "duplicate" };
-      }
 
       try {
         log.debug("getSelectedText");
@@ -152,9 +148,6 @@ export function registerSelectionActions() {
       { name: "limit", type: "number", description: "Maximum characters to extract (optional)", required: false }
     ],
     handler: async ({ limit }) => {
-      if (!shouldProcess("readPageContent", { limit })) {
-        return { skipped: true, reason: "duplicate" };
-      }
 
       try {
         log.debug("readPageContent");
