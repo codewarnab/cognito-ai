@@ -1,0 +1,232 @@
+/* Thread List Side Panel Styles */
+
+.thread-sidepanel-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.thread-sidepanel {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 320px !important;
+    max-width: 320px !important;
+    min-width: 320px !important;
+    background: #0D0D0D !important;
+    border-right: 1px solid #1a1a1a !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.thread-sidepanel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid #1a1a1a;
+    background: #0D0D0D;
+}
+
+.thread-sidepanel-header-content h2 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.thread-sidepanel-header-content p {
+    margin: 0;
+    font-size: 14px;
+    color: #888888;
+}
+
+.thread-sidepanel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    color: #888888;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.thread-sidepanel-close:hover {
+    background: #1a1a1a;
+    color: #FFFFFF;
+}
+
+.thread-sidepanel-new-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 20px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thread-sidepanel-new-button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.thread-sidepanel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 20px;
+}
+
+.thread-sidepanel-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+    color: #888888;
+}
+
+.thread-sidepanel-empty-icon {
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.thread-sidepanel-empty h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.thread-sidepanel-empty p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.thread-sidepanel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.thread-sidepanel-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thread-sidepanel-item:hover {
+    background: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}
+
+.thread-sidepanel-item.active {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.thread-sidepanel-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.thread-sidepanel-item-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.thread-sidepanel-item.active .thread-sidepanel-item-title {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.thread-sidepanel-item-date {
+    font-size: 12px;
+    color: #888888;
+}
+
+.thread-sidepanel-item-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    color: #888888;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.thread-sidepanel-item:hover .thread-sidepanel-item-delete {
+    opacity: 1;
+}
+
+.thread-sidepanel-item-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .thread-sidepanel {
+        width: 60%;
+        max-width: 350px;
+        min-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .thread-sidepanel {
+        width: 100vw;
+        max-width: 100vw;
+        min-width: 100vw;
+    }
+    
+    .thread-sidepanel-header {
+        padding: 16px 16px 12px;
+    }
+    
+    .thread-sidepanel-new-button {
+        margin: 12px 16px;
+    }
+    
+    .thread-sidepanel-content {
+        padding: 0 16px 16px;
+    }
+}
