@@ -5,6 +5,7 @@ import { McpManager } from "./components/McpManager";
 import { ToolUIProvider } from "./ai/ToolUIContext";
 import { ThreadListSidePanel } from "./components/ThreadListSidePanel";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { ReminderPanel } from "./components/ReminderPanel";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
 import "./styles/copilot.css";
@@ -13,6 +14,7 @@ import "./styles/mcp-tools.css";
 import "./styles/memory.css";
 import "./styles/mentions.css";
 import "./styles/thread-sidepanel.css";
+import "./styles/reminder.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -46,6 +48,7 @@ function AIChatContent() {
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
     const [showMemory, setShowMemory] = useState(false);
+    const [showReminders, setShowReminders] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [showPill, setShowPill] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -396,6 +399,9 @@ function AIChatContent() {
             {/* Memory Panel - Side panel overlay */}
             <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
 
+            {/* Reminder Panel - Side panel overlay */}
+            <ReminderPanel isOpen={showReminders} onClose={() => setShowReminders(false)} />
+
             {/* Thread List Side Panel */}
             <ThreadListSidePanel
                 isOpen={showThreads}
@@ -415,6 +421,7 @@ function AIChatContent() {
                 onSettingsClick={() => setShowMcp(true)}
                 onThreadsClick={() => setShowThreads(true)}
                 onMemoryClick={() => setShowMemory(true)}
+                onRemindersClick={() => setShowReminders(true)}
                 onNewThreadClick={handleNewThread}
                 onStop={stop}
                 isLoading={isLoading}

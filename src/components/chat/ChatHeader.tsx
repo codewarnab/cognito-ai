@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
+import { GeminiApiKeyDialog } from '../GeminiApiKeyDialog';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
     onMemoryClick?: () => void;
+    onRemindersClick?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -13,8 +15,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onThreadsClick,
     onNewThreadClick,
     onMemoryClick,
+    onRemindersClick,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+    const [showGeminiDialog, setShowGeminiDialog] = useState(false);
 
     useEffect(() => {
         const handleClickOutside = () => setShowHeaderMenu(false);
@@ -96,7 +100,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     className="copilot-header-menu-item"
                                     onClick={() => {
                                         setShowHeaderMenu(false);
-                                        alert('Reminders section coming soon');
+                                        onRemindersClick?.();
                                     }}
                                 >
                                     Reminders
@@ -105,7 +109,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     className="copilot-header-menu-item"
                                     onClick={() => {
                                         setShowHeaderMenu(false);
-                                        alert('Gemini API key setup coming soon');
+                                        setShowGeminiDialog(true);
                                     }}
                                 >
                                     Gemini API Key Setup
@@ -115,6 +119,12 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Gemini API Key Dialog */}
+            <GeminiApiKeyDialog
+                isOpen={showGeminiDialog}
+                onClose={() => setShowGeminiDialog(false)}
+            />
         </div>
     );
 };
