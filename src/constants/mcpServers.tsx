@@ -86,8 +86,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     //     description: "Atlassian is a project management tool for teams.",
     //     requiresAuthentication: true
     // },
-    // { // failed to laucnh auth flow  need to debug more or raise an issue in github 
-    //     id: "canva",
+    // { // failed to launch auth flow  need to debug more or raise an issue in github     //     id: "canva",
     //     name: "Canva",
     //     icon: <Canva />,
     //     initialEnabled: false,
@@ -183,8 +182,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.sentry.dev/sse",
-        description: "Sentry is a error tracking platform for monitoring and logging errors.",
-        requiresAuthentication: true
+        description: "Sentry is an error tracking platform for monitoring and logging errors.",        requiresAuthentication: true
     },
     // { // does not support dynamic client registartion 
     //     id: "stripe",
@@ -206,8 +204,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Supabase is a database platform for building web applications.",
         requiresAuthentication: true
     },
-    //{ not approaved by them ( maybe find form or reach out to them )
-    //     id: "vercel",
+    //{ not approved by them ( maybe find form or reach out to them )    //     id: "vercel",
     //     name: "Vercel",
     //     icon: <Vercel />,
     //     initialEnabled: false,
@@ -275,7 +272,8 @@ export const MCP_SERVERS: ServerConfig[] = [
         url: "https://remote.mcpservers.org/edgeone-pages/mcp",
         description: "An MCP service designed for deploying HTML content to EdgeOne Pages and obtaining an accessible public URL.",
         requiresAuthentication: false
-    }, {
+    },
+     {
         id: "parallel-search-mcp",
         name: "Parallel Search MCP",
         description: "Highly accurate deep search and batch tasks",

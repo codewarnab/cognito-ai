@@ -362,18 +362,60 @@ export async function getMCPStatus(): Promise<{
   totalTools: number;
 }> {
   const servers = await getEnabledMCPServers();
-  const status = {
-    servers: servers.map(server => ({
-      id: server.id,
-      name: server.name,
-      enabled: server.enabled || false,
-      connected: false, // TODO: Implement connection status check
-      toolCount: 0 // TODO: Implement tool count
-    })),
-    totalTools: 0
-  };
+  let totalToolsCount = 0;
 
-  return status;
+  const serverStatuses = await Promise.all(
+    servers.map(async (server) => {
+      try {
+        // Get connection status
+        const statusResponse = await chrome.runtime.sendMessage({
+          type: `mcp/${server.id}/status/get`
+        });
+        const isConnected = statusResponse?.success &&
+          statusResponse.data?.state === 'connected';
+
+        // Get tools and disabled tools
+        const toolsResponse = await chrome.runtime.sendMessage({
+          type: `mcp/${server.id}/tools/list`
+        });
+        const tools = toolsResponse?.success ? toolsResponse.data || [] : [];
+
+        const disabledToolsKey = `mcp.${server.id}.tools.disabled`;
+        const disabledResult = await chrome.storage.local.get(disabledToolsKey);
+        const disabledTools = disabledResult[disabledToolsKey] || [];
+
+        // Count only enabled tools
+        const enabledToolCount = tools.length - disabledTools.filter(
+          (dt: string) => tools.some((t: any) => t.name === dt)
+        ).length;
+
+        totalToolsCount += enabledToolCount;
+
+        return {
+          id: server.id,
+          name: server.name,
+          enabled: server.enabled || false,
+          connected: isConnected,
+          toolCount: enabledToolCount
+        };
+      } catch (error) {
+        // Handle errors gracefully - default to disconnected with no tools
+        log.error(`❌ Failed to get status for server ${server.id}:`, error);
+        return {
+          id: server.id,
+          name: server.name,
+          enabled: server.enabled || false,
+          connected: false,
+          toolCount: 0
+        };
+      }
+    })
+  );
+
+  return {
+    servers: serverStatuses,
+    totalTools: totalToolsCount
+  };
 }
 
 /**

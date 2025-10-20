@@ -45,12 +45,22 @@ export class SimpleFrontendTransport {
     const abortController = new AbortController();
     this.abortControllers.set(chatId, abortController);
 
-    // Handle abort signal from caller
-    abortSignal?.addEventListener('abort', () => {
+    // Named handler for abort signal
+    const onAbort = () => {
       log.info('Stream aborted by caller', { chatId });
       abortController.abort();
       this.abortControllers.delete(chatId);
-    });
+    };
+
+    // Handle abort signal from caller
+    abortSignal?.addEventListener('abort', onAbort);
+
+    // Cleanup function to remove listener and clean up resources
+    const cleanup = () => {
+      abortSignal?.removeEventListener('abort', onAbort);
+      abortController.abort();
+      this.abortControllers.delete(chatId);
+    };
 
     try {
       // Handle different trigger types
@@ -80,6 +90,9 @@ export class SimpleFrontendTransport {
     } catch (error) {
       log.error('Transport error', error);
       throw error;
+    } finally {
+      // Ensure cleanup is always called to prevent memory leaks
+      cleanup();
     }
   }
 
@@ -130,3 +143,4 @@ export class SimpleFrontendTransport {
     throw new Error('Stream reconnection not supported in simple frontend transport');
   }
 }
+
