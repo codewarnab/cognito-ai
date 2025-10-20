@@ -645,6 +645,14 @@ export class McpSSEClient {
     }
 
     /**
+     * Get available tools (returns cached tools from status)
+     */
+    async listTools(): Promise<{ tools: any[] }> {
+        // Return cached tools from status
+        return { tools: this.currentStatus.tools || [] };
+    }
+
+    /**
      * Call a tool
      */
     async callTool(name: string, args?: Record<string, any>): Promise<any> {

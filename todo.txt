@@ -17,3 +17,4 @@ https://github.com/cupcakearmy/ora?tab=readme-ov-file
 9 .add 40 tool limitation 
 10.https://github.com/github/github-mcp-server/blob/main/docs/host-integration.md github mcp support 
 11. https://chromewebstore.google.com/detail/scribbl-ai-meeting-notes/kmjmlilenakedodldceipdnmmnfkahni google meet notes taking with extension 
+12.https://21st.dev/community/components/hextaui/shining-text/default for onbaoridng 

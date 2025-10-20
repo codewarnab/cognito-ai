@@ -9,7 +9,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
 import { getAllTools } from './toolRegistry';
-import { initializeMCPClients } from './mcpClient';
+import { getMCPToolsFromBackground } from './mcpProxy';
 
 const log = createLogger('AI-Logic');
 
@@ -55,47 +55,48 @@ export async function streamAIResponse(params: {
 
   log.info('Starting AI stream', { messageCount: messages.length });
 
-  // Initialize MCP clients and get their tools
+  // Get MCP tools from background service worker's persistent connections
+  // This replaces the old approach of creating new clients on every chat
   let mcpTools = {};
   let mcpCleanup: (() => Promise<void>) | null = null;
   let mcpSessionIds: Map<string, string> | null = null;
 
   try {
-    const mcpManager = await initializeMCPClients(abortSignal);
+    const mcpManager = await getMCPToolsFromBackground(abortSignal);
+    console.log("mcpManager from background proxy", mcpManager);
     mcpTools = mcpManager.tools;
     mcpCleanup = mcpManager.cleanup;
     mcpSessionIds = mcpManager.sessionIds;
 
     const mcpToolCount = Object.keys(mcpTools).length;
-    log.info('🔍 Available MCP tools:', { count: mcpToolCount, names: Object.keys(mcpTools) });
+    log.info('🔍 Available MCP tools (from background):', { count: mcpToolCount, names: Object.keys(mcpTools) });
 
-    // Log active sessions - these enable reconnection and state persistence
+    // Log session info - sessions are managed by background service worker
     if (mcpSessionIds && mcpSessionIds.size > 0) {
-      log.info('📝 Active MCP sessions (enables auto-reconnection):', {
+      log.info('📝 Active MCP sessions (managed by background):', {
         count: mcpSessionIds.size,
         sessions: Array.from(mcpSessionIds.entries()).map(([id, sessionId]) => ({
           serverId: id,
           sessionId: sessionId.substring(0, 16) + '...' // Truncate for security
         }))
       });
-
-      // Session IDs provide these benefits:
-      // 1. Automatic reconnection with state preservation
-      // 2. Server can track which client is making requests
-      // 3. Long-running operations can resume after disconnect
-      // 4. Server-side caching/optimization per session
+    } else {
+      log.info('📝 MCP sessions managed by background service worker with keep-alive');
     }
   } catch (error) {
-    log.error('❌ Failed to initialize MCP clients:', error);
+    log.error('❌ Failed to get MCP tools from background:', error);
     mcpCleanup = null; // Ensure cleanup is null on error
   }
 
   try {
     // Create UI message stream
+    log.info('Creating UI message stream...');
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
+          log.info('Stream execute function started');
+
           // Send initial status (transient - not saved to history)
           writer.write({
             type: 'data-status',
@@ -105,6 +106,7 @@ export async function streamAIResponse(params: {
           });
 
           // Get Google Gemini model
+          log.info('Initializing Gemini model...');
           const model = google('gemini-2.5-flash');
 
           // Convert UI messages to model format
@@ -132,6 +134,11 @@ export async function streamAIResponse(params: {
           }
 
           // Stream text from AI
+          log.info('🚀 Calling streamText with Gemini API...', {
+            messageCount: modelMessages.length,
+            toolCount: totalToolCount
+          });
+
           const result = streamText({
             model,
             system: systemPrompt,
@@ -172,6 +179,8 @@ export async function streamAIResponse(params: {
           });
 
           // Merge AI stream with status stream
+          log.info('✅ Gemini streamText result received, merging with UI stream...');
+
           writer.merge(
             result.toUIMessageStream({
               onError: (error) => {
@@ -188,15 +197,9 @@ export async function streamAIResponse(params: {
                   transient: true,
                 });
 
-                // Clean up MCP clients
-                if (mcpCleanup) {
-                  try {
-                    await mcpCleanup();
-                    log.info('✅ MCP clients cleaned up');
-                  } catch (error) {
-                    log.error('❌ Error cleaning up MCP clients:', error);
-                  }
-                }
+                // MCP connections are persistent - no cleanup needed
+                // Connections managed by background service worker with keep-alive
+                log.info('✅ MCP tools remain available for next chat');
 
                 log.info('AI stream completed', { messageCount: finalMessages.length });
               },
@@ -205,15 +208,9 @@ export async function streamAIResponse(params: {
         } catch (error) {
           log.error('Stream execution error', error);
 
-          // Clean up MCP clients on error
-          if (mcpCleanup) {
-            try {
-              await mcpCleanup();
-              log.info('✅ MCP clients cleaned up after error');
-            } catch (cleanupError) {
-              log.error('❌ Error cleaning up MCP clients after error:', cleanupError);
-            }
-          }
+          // MCP connections are persistent - no cleanup needed
+          // Connections managed by background service worker with keep-alive
+          log.info('✅ MCP tools remain available for next chat');
 
           onError?.(error instanceof Error ? error : new Error(String(error)));
           throw error;
@@ -221,19 +218,14 @@ export async function streamAIResponse(params: {
       },
     });
 
+    log.info('✅ UI message stream created successfully, returning to caller');
     return stream;
   } catch (error) {
-    log.error('Error creating stream', error);
+    log.error('❌ Error creating stream', error);
 
-    // Clean up MCP clients on error
-    if (mcpCleanup) {
-      try {
-        await mcpCleanup();
-        log.info('✅ MCP clients cleaned up after stream creation error');
-      } catch (cleanupError) {
-        log.error('❌ Error cleaning up MCP clients after stream creation error:', cleanupError);
-      }
-    }
+    // MCP connections are persistent - no cleanup needed
+    // Connections managed by background service worker with keep-alive
+    log.info('✅ MCP tools remain available for next chat');
 
     throw error;
   }
