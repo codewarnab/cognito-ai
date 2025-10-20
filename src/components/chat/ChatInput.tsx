@@ -71,6 +71,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                 }}
                                 disabled={isLoading}
                                 placeholder="Ask me to do something (type @ to mention tabs)"
+                                autoFocus={true}
                             />
 
                             {/* Animated Preview Overlay - iMessage style */}

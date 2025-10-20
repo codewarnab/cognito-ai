@@ -20,12 +20,12 @@ export function useCreateReminderAction() {
         registerTool({
             name: "createReminder",
             description:
-                "Create a fun, engaging reminder with AI-generated title and motivational description. IMPORTANT: Only call this function when you have a SPECIFIC time from the user. If the user says 'tomorrow', 'today', or 'next week' WITHOUT a specific time, you MUST ask them 'What time would you like the reminder?' before calling this function. For workouts: add fitness motivation. For work tasks: add productivity quotes. For personal tasks: add encouraging messages.",
+                "Create a reminder with a custom AI-generated title and description for the notification. IMPORTANT: You MUST generate BOTH a catchy title AND a motivational description for every reminder. Only call this function when you have a SPECIFIC time from the user. If the user says 'tomorrow', 'today', or 'next week' WITHOUT a specific time, you MUST ask them 'What time would you like the reminder?' before calling this function. Examples: For workouts: title='💪 Time to Get Fit!', description='Your body will thank you! Let\\'s crush this workout!' For work tasks: title='🎯 Career Boost Time', description='Success is built one step at a time. You got this!' For personal tasks: title='❤️ Connect with Loved Ones', description='The best investment is time with family.'",
             parameters: z.object({
-                title: z.string().describe("What to remind about (e.g., 'workout', 'apply for the job', 'call mom')"),
+                title: z.string().describe("Short reminder task (e.g., 'workout', 'apply for the job', 'call mom') - this is the internal reference"),
                 dateTime: z.string().describe("Natural language date/time WITH SPECIFIC TIME like 'tomorrow at 2pm', 'next Monday at 9am', 'today at 5pm', 'in 2 hours', etc. Must include a specific time - do NOT pass ambiguous values like just 'tomorrow' or 'today' without time."),
-                generatedTitle: z.string().describe("AI-generated catchy notification title (max 50 chars) based on the reminder context. Make it fun and engaging!"),
-                generatedDescription: z.string().describe("AI-generated motivational/fun description (max 100 chars). For workout: fitness quote. For work: productivity tip. For personal: encouraging message."),
+                generatedTitle: z.string().describe("REQUIRED: AI-generated catchy notification TITLE (max 50 chars). Use emojis and make it engaging! Examples: '💪 Time to Get Fit!', '🎯 Career Boost Time', '❤️ Connect with Loved Ones'. This will be the MAIN notification headline the user sees."),
+                generatedDescription: z.string().describe("REQUIRED: AI-generated motivational/fun DESCRIPTION (max 100 chars). Add context and motivation! Examples: For workout: 'Your body will thank you! Let\\'s crush this workout!' For work: 'Success is built one step at a time.' For personal: 'The best investment is time with family.' This will be the notification message body."),
             }),
             execute: async ({ title, dateTime, generatedTitle, generatedDescription }) => {
                 try {

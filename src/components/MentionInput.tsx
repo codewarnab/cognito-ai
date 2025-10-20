@@ -18,6 +18,7 @@ interface MentionInputProps {
     onSend: () => void;
     disabled?: boolean;
     placeholder?: string;
+    autoFocus?: boolean;
 }
 
 export function MentionInput({
@@ -25,7 +26,8 @@ export function MentionInput({
     onChange,
     onSend,
     disabled = false,
-    placeholder = "Ask me anything... (type @ to mention tabs)"
+    placeholder = "Ask me anything... (type @ to mention tabs)",
+    autoFocus = false
 }: MentionInputProps) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -122,6 +124,7 @@ export function MentionInput({
                 placeholder={placeholder}
                 className="copilot-input mention-input"
                 disabled={disabled}
+                autoFocus={autoFocus}
             />
 
             {showDropdown && (
