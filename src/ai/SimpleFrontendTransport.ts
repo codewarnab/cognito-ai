@@ -7,7 +7,7 @@
 import type { UIMessage } from 'ai';
 import { streamAIResponse } from './aiLogic';
 import { createLogger } from '../logger';
-import { loadThreadMessages } from '../db';
+import { loadThreadMessages, getThread } from '../db';
 import { processMessagesWithMentions } from '../utils/mentionProcessor';
 
 const log = createLogger('SimpleFrontendTransport');
@@ -24,19 +24,18 @@ export class SimpleFrontendTransport {
    * Supports multiple trigger types including submit-tool-result
    */
   async sendMessages(params: {
+    trigger: 'submit-message' | 'regenerate-message';
     chatId: string;
+    messageId: string;
     messages: UIMessage[];
     abortSignal: AbortSignal;
-    trigger?: 'submit-user-message' | 'submit-tool-result' | 'regenerate-assistant-message';
-    id?: string;
-    messageId?: string;
-  }): Promise<ReadableStream> {
+  } & any): Promise<ReadableStream> {
     const { chatId, messages, abortSignal, trigger, id, messageId } = params;
 
     log.info('Sending messages', {
       chatId,
       count: messages.length,
-      trigger: trigger || 'submit-user-message',
+      trigger: trigger || 'submit-message',
       id,
       messageId
     });
@@ -66,25 +65,41 @@ export class SimpleFrontendTransport {
       // Handle different trigger types
       let requestMessages = messages;
 
-      if (trigger === 'submit-tool-result') {
-        // For tool results, include complete message context
-        log.info('Processing submit-tool-result request', { messageId });
-        // Messages already include tool results from useChat
+      if (trigger === 'regenerate-message') {
+        // For regenerating messages, use the existing messages
+        log.info('Processing regenerate-message request', { messageId });
         requestMessages = messages;
       }
 
       // Process messages for tab mentions (extracts @[Tab](id) and adds context)
       requestMessages = await processMessagesWithMentions(requestMessages);
 
+      // Get thread's initial page context for system prompt
+      let initialPageContext: string | undefined;
+      try {
+        const thread = await getThread(chatId);
+        initialPageContext = thread?.initialPageContext;
+        if (initialPageContext) {
+          log.info('📄 Using initial page context from thread', {
+            threadId: chatId,
+            contextLength: initialPageContext.length
+          });
+        }
+      } catch (error) {
+        log.warn('Failed to load thread context', error);
+      }
+
       log.info('📤 Calling streamAIResponse...', {
         messageCount: requestMessages.length,
-        hasAbortSignal: !!abortController.signal
+        hasAbortSignal: !!abortController.signal,
+        hasInitialContext: !!initialPageContext
       });
 
       // Get the stream from AI logic
       const uiMessageStream = await streamAIResponse({
         messages: requestMessages,
         abortSignal: abortController.signal,
+        initialPageContext,
         onError: (error) => {
           log.error('AI response error', error);
         },

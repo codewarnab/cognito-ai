@@ -49,9 +49,10 @@ const google = createGoogleGenerativeAI({ apiKey });
 export async function streamAIResponse(params: {
   messages: UIMessage[];
   abortSignal?: AbortSignal;
+  initialPageContext?: string;
   onError?: (error: Error) => void;
 }) {
-  const { messages, abortSignal, onError } = params;
+  const { messages, abortSignal, initialPageContext, onError } = params;
 
   log.info('Starting AI stream', { messageCount: messages.length });
 
@@ -133,15 +134,23 @@ export async function streamAIResponse(params: {
             log.warn('⚠️ NO TOOLS REGISTERED! AI will not be able to use tools.');
           }
 
+          // Build system prompt with initial page context if available
+          let enhancedSystemPrompt = systemPrompt;
+          if (initialPageContext) {
+            enhancedSystemPrompt = `${systemPrompt}\n\n[INITIAL PAGE CONTEXT - Captured at thread start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started. If you navigate to different pages or need updated context, use the readPageContent or getActiveTab tools.`;
+            log.info('📄 Enhanced system prompt with initial page context');
+          }
+
           // Stream text from AI
           log.info('🚀 Calling streamText with Gemini API...', {
             messageCount: modelMessages.length,
-            toolCount: totalToolCount
+            toolCount: totalToolCount,
+            hasInitialContext: !!initialPageContext
           });
 
           const result = streamText({
             model,
-            system: systemPrompt,
+            system: enhancedSystemPrompt,
             messages: modelMessages,
             stopWhen: [stepCountIs(10)],
             tools, // Include tools in the stream
