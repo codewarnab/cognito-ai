@@ -11,7 +11,7 @@ import "./styles/memory.css";
 import "./styles/mentions.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
-import { useOpenTabTool } from "./actions/tabs/openTabTool";
+import { useRegisterAllActions } from "./actions/registerAll";
 import {
     db,
     createThread,
@@ -28,6 +28,7 @@ import { generateThreadTitle } from "./utils/summarizer";
 import { getBehavioralPreferences } from "./memory/store";
 import { useAIChat } from "./ai/useAIChat";
 import type { UIMessage } from "ai";
+import { extractPageContext, formatPageContextForAI } from "./utils/pageContextExtractor";
 
 /**
  * Inner component that uses AI SDK v5
@@ -35,10 +36,8 @@ import type { UIMessage } from "ai";
  */
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
-
-    // Register AI SDK v5 tools
-    useOpenTabTool();
-
+    
+    useRegisterAllActions();
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
@@ -268,8 +267,29 @@ function AIChatContent() {
             setInput('');
         }
 
-        // Send message using AI SDK v5 sendMessage
-        sendMessage({ text: trimmedInput });
+        // Extract page context and inject it with the user message
+        let messageWithContext = trimmedInput;
+        try {
+            const pageContext = await extractPageContext();
+            if (pageContext) {
+                const contextFormatted = formatPageContextForAI(pageContext);
+                
+                // Inject page context BEFORE user message
+                messageWithContext = `[AUTOMATIC PAGE CONTEXT - Current tab information]\n${contextFormatted}\n\n[USER MESSAGE]\n${trimmedInput}`;
+                
+                log.info("Injected page context", { 
+                    url: pageContext.url, 
+                    inputs: pageContext.inputs.length, 
+                    buttons: pageContext.buttons.length,
+                    links: pageContext.links.length
+                });
+            }
+        } catch (error) {
+            log.warn("Failed to extract page context, sending message without it", error);
+        }
+
+        // Send message using AI SDK v5 sendMessage with injected context
+        sendMessage({ text: messageWithContext });
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {

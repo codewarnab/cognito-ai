@@ -6,6 +6,7 @@ https://www.copilotkit.ai/examples/ai-research
 https://www.copilotkit.ai/examples/travel-planner
 https://github.com/cupcakearmy/ora?tab=readme-ov-file
 
+# DETAILED FEATURE LIST (from HEAD branch)
 1. add db save after onfinish 
 2. auto summarize button if user in long article 
 3. history tagging 
@@ -18,3 +19,21 @@ https://github.com/cupcakearmy/ora?tab=readme-ov-file
 10.https://github.com/github/github-mcp-server/blob/main/docs/host-integration.md github mcp support 
 11. https://chromewebstore.google.com/detail/scribbl-ai-meeting-notes/kmjmlilenakedodldceipdnmmnfkahni google meet notes taking with extension 
 12.https://21st.dev/community/components/hextaui/shining-text/default for onbaoridng 
+
+# GENERAL FEATURE CATEGORIES (from aisdk branch)
+#tool renderer in ui
+#history, memory, remainder, tabs (useNavigateTo add new tab param)
+#search using chrome search api, also add permision for that and microphone
+improve organise tab by context
+select and fill inputs
+interaction tool
+
+DELETE ALL COPILOTKIT REFERENCES (ANY AND ALLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL)
+
+Get accessibility api working
+
+mcp auth , tools (integration with mcp)
+ui improvements
+floating action button to select tables
+onboarding
+settings page - api key, voice settings, etc

@@ -1,103 +1,105 @@
-import React from "react";
-import { useFrontendTool } from "@copilotkit/react-core";
-import { createLogger } from "../../logger";
-import { shouldProcess } from "../useActionDeduper";
-import { ToolCard } from "../../components/ui/ToolCard";
+import { z } from 'zod';
+import { useEffect } from 'react';
+import { registerTool } from '../../ai/toolRegistryUtils';
+import { useToolUI } from '../../ai/ToolUIContext';
+import { createLogger } from '../../logger';
+import { ToolCard } from '../../components/ui/ToolCard';
+import type { ToolUIState } from '../../ai/ToolUIContext';
 
-const log = createLogger("Actions-History-Recent");
+const log = createLogger('Actions-History-Recent');
 
 export function useGetRecentHistory() {
-    useFrontendTool({
-        name: "getRecentHistory",
-        description: "Get recent browsing history within a specific time window. Perfect for queries like 'what did I browse this morning' or 'recent activity'. IMPORTANT: This tool filters by time period and shows only visits within that timeframe. Do NOT mention lifetime visit counts when user asks about specific time periods.",
-        parameters: [
-            {
-                name: "hours",
-                type: "number",
-                description: "Look back this many hours (default: 24). For 'this morning' use 12 hours, for 'yesterday' use 24-48 hours, for 'today' use 12-24 hours",
-                required: false
-            },
-            {
-                name: "maxResults",
-                type: "number",
-                description: "Maximum number of results to return (default: 50)",
-                required: false
-            }
-        ],
-        handler: async ({ hours = 24, maxResults = 50 }) => {
-            if (!shouldProcess("getRecentHistory", { hours })) {
-                return { skipped: true, reason: "duplicate" };
-            }
+    const { registerToolUI, unregisterToolUI } = useToolUI();
 
-            try {
-                log.info("getRecentHistory", { hours, maxResults });
+    useEffect(() => {
+        log.info('🔧 Registering getRecentHistory tool...');
 
-                const now = Date.now();
-                const startTime = now - (Number(hours) * 60 * 60 * 1000);
+        registerTool({
+            name: 'getRecentHistory',
+            description: "Get recent browsing history within a specific time window. Perfect for queries like 'what did I browse this morning' or 'recent activity'. IMPORTANT: This tool filters by time period and shows only visits within that timeframe. Do NOT mention lifetime visit counts when user asks about specific time periods.",
+            parameters: z.object({
+                hours: z.number().describe('Look back this many hours (default: 24). For "this morning" use 12 hours, for "yesterday" use 24-48 hours, for "today" use 12-24 hours').default(24),
+                maxResults: z.number().describe('Maximum number of results to return (default: 50)').default(50),
+            }),
+            execute: async ({ hours = 24, maxResults = 50 }) => {
+                try {
+                    log.info('getRecentHistory', { hours, maxResults });
 
-				// Feature-detect Chrome History API to avoid runtime exceptions in unsupported contexts
-				const hasHistorySearch = typeof window !== 'undefined'
-					&& (window as any).chrome
-					&& chrome.history
-					&& typeof chrome.history.search === 'function';
+                    const now = Date.now();
+                    const startTime = now - (Number(hours) * 60 * 60 * 1000);
 
-				if (!hasHistorySearch) {
-					log.warn('chrome.history.search API unavailable');
-					return { error: "Chrome history API is unavailable", details: "window.chrome.history.search not available in this context" };
-				}
+                    // Feature-detect Chrome History API to avoid runtime exceptions in unsupported contexts
+                    const hasHistorySearch = typeof window !== 'undefined'
+                        && (window as any).chrome
+                        && chrome.history
+                        && typeof chrome.history.search === 'function';
 
-				const results = await chrome.history.search({
-                    text: '',
-                    startTime,
-                    maxResults: Number(maxResults)
-                });
+                    if (!hasHistorySearch) {
+                        log.warn('chrome.history.search API unavailable');
+                        return { error: 'Chrome history API is unavailable', details: 'window.chrome.history.search not available in this context' };
+                    }
 
-                const formattedResults = results.map(item => ({
-                    id: item.id,
-                    title: item.title || 'Untitled',
-                    url: item.url || '',
-                    lastVisitTime: item.lastVisitTime,
-                    visitCount: item.visitCount || 0
-                }));
+                    const results = await chrome.history.search({
+                        text: '',
+                        startTime,
+                        maxResults: Number(maxResults)
+                    });
 
-                // Sort by last visit time (most recent first)
-                formattedResults.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+                    const formattedResults = results.map(item => ({
+                        id: item.id,
+                        title: item.title || 'Untitled',
+                        url: item.url || '',
+                        lastVisitTime: item.lastVisitTime,
+                        visitCount: item.visitCount || 0
+                    }));
 
-                return {
-                    success: true,
-                    found: formattedResults.length,
-                    hours,
-                    results: formattedResults
-                };
-            } catch (error) {
-                log.error('[FrontendTool] Error getting recent history:', error);
-                return { error: "Failed to get recent history", details: String(error) };
-            }
-        },
-        render: ({ args, status, result }) => {
-            if (status === "inProgress") {
-                return <ToolCard
-                    title="Getting Recent History"
-                    subtitle={`Last ${args.hours || 24} hours`}
-                    state="loading"
-                    icon="⏰"
-                />;
-            }
-            if (status === "complete" && result) {
-                if (result.error) {
-                    return <ToolCard title="Failed to Get History" subtitle={result.error} state="error" icon="⏰" />;
+                    // Sort by last visit time (most recent first)
+                    formattedResults.sort((a, b) => (b.lastVisitTime || 0) - (a.lastVisitTime || 0));
+
+                    return {
+                        success: true,
+                        found: formattedResults.length,
+                        hours,
+                        results: formattedResults
+                    };
+                } catch (error) {
+                    log.error('[Tool] Error getting recent history:', error);
+                    return { error: 'Failed to get recent history', details: String(error) };
                 }
+            },
+        });
+
+        registerToolUI('getRecentHistory', (state: ToolUIState) => {
+            const { state: toolState, input, output } = state;
+
+            if (toolState === 'input-streaming' || toolState === 'input-available') {
+                return (
+                    <ToolCard
+                        title="Getting Recent History"
+                        subtitle={`Last ${input?.hours || 24} hours`}
+                        state="loading"
+                        icon="⏰"
+                    />
+                );
+            }
+
+            if (toolState === 'output-available' && output) {
+                if ((output as any).error) {
+                    return <ToolCard title="Failed to Get History" subtitle={(output as any).error} state="error" icon="⏰" />;
+                }
+
+                const res: any = output;
                 return (
                     <ToolCard
                         title="Recent History"
-                        subtitle={`${result.found} page(s) in last ${result.hours}h`}
+                        subtitle={`${res.found} page(s) in last ${res.hours}h`}
                         state="success"
                         icon="⏰"
                     >
-                        {result.results && result.results.length > 0 && (
+                        {res.results && res.results.length > 0 && (
                             <div style={{ marginTop: '8px' }}>
-							{result.results.slice(0, 15).map((item: any, idx: number) => (
-								<div key={item.id} style={{
+                                {res.results.slice(0, 15).map((item: any) => (
+                                    <div key={item.id} style={{
                                         padding: '8px',
                                         marginBottom: '6px',
                                         background: 'rgba(0,0,0,0.03)',
@@ -118,9 +120,9 @@ export function useGetRecentHistory() {
                                         </div>
                                     </div>
                                 ))}
-                                {result.results.length > 15 && (
+                                {res.results.length > 15 && (
                                     <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '4px' }}>
-                                        Showing 15 of {result.results.length} results
+                                        Showing 15 of {res.results.length} results
                                     </div>
                                 )}
                             </div>
@@ -128,7 +130,26 @@ export function useGetRecentHistory() {
                     </ToolCard>
                 );
             }
+
+            if (toolState === 'output-error') {
+                return (
+                    <ToolCard
+                        title="Failed to Get History"
+                        subtitle={state.errorText}
+                        state="error"
+                        icon="⏰"
+                    />
+                );
+            }
+
             return null;
-        },
-    });
+        });
+
+        log.info('✅ getRecentHistory tool registration complete');
+
+        return () => {
+            log.info('🧹 Cleaning up getRecentHistory tool');
+            unregisterToolUI('getRecentHistory');
+        };
+    }, []);
 }
