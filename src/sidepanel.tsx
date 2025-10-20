@@ -1,14 +1,18 @@
 import { useState, useRef, useEffect } from "react";
+import { AnimatePresence, motion } from 'framer-motion';
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import { ToolUIProvider } from "./ai/ToolUIContext";
-import { ThreadList } from "./components/ThreadList";
+import { ThreadListSidePanel } from "./components/ThreadListSidePanel";
 import { MemoryPanel } from "./components/MemoryPanel";
+import { AudioLinesIcon } from "./components/AudioLinesIcon";
+import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
 import "./styles/memory.css";
 import "./styles/mentions.css";
+import "./styles/thread-sidepanel.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -42,11 +46,14 @@ function AIChatContent() {
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
     const [showMemory, setShowMemory] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [showPill, setShowPill] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
     const [behavioralPreferences, setBehavioralPreferences] = useState<Record<string, unknown>>({});
     const sessionIdRef = useRef<string>(Date.now().toString());
+    const audioLinesIconRef = useRef<AudioLinesIconHandle>(null);
 
     // Use AI SDK v5 chat hook with ChromeExtensionTransport
     const aiChat = useAIChat({
@@ -347,20 +354,28 @@ function AIChatContent() {
         await setLastActiveThreadId(threadId);
     };
 
-    // Render MCP Manager, Thread List, Memory Panel, or Chat Window
+    // Handle microphone click for voice recording
+    const handleMicClick = () => {
+        const newRecordingState = !isRecording;
+        
+        if (isRecording) {
+            // Stop animation and hide pill immediately
+            audioLinesIconRef.current?.stopAnimation();
+            setShowPill(false);
+        } else {
+            // Show pill and start recording
+            setShowPill(true);
+        }
+        
+        setIsRecording(newRecordingState);
+        log.info("Microphone clicked", { isRecording: newRecordingState });
+    };
+
+    // Animation is now controlled by motion component callbacks
+
+    // Render MCP Manager or Chat Window
     if (showMcp) {
         return <McpManager onBack={() => setShowMcp(false)} />;
-    }
-
-    if (showThreads) {
-        return (
-            <ThreadList
-                currentThreadId={currentThreadId}
-                onThreadSelect={handleThreadSelect}
-                onNewThread={handleNewThread}
-                onBack={() => setShowThreads(false)}
-            />
-        );
     }
 
     return (
@@ -370,6 +385,15 @@ function AIChatContent() {
 
             {/* Memory Panel - Side panel overlay */}
             <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
+
+            {/* Thread List Side Panel */}
+            <ThreadListSidePanel
+                isOpen={showThreads}
+                onClose={() => setShowThreads(false)}
+                currentThreadId={currentThreadId}
+                onThreadSelect={handleThreadSelect}
+                onNewThread={handleNewThread}
+            />
 
             <CopilotChatWindow
                 messages={messages.filter(m => m.role !== 'system') as any}
@@ -385,7 +409,37 @@ function AIChatContent() {
                 onStop={stop}
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
+                isRecording={isRecording}
+                onMicClick={handleMicClick}
             />
+
+            {/* Floating Recording Pill - Rendered at top level */}
+            <AnimatePresence mode="wait">
+                {showPill && (
+                    <motion.div
+                        className="voice-recording-pill"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        onAnimationStart={() => {
+                            audioLinesIconRef.current?.startAnimation();
+                        }}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleMicClick();
+                        }}
+                    >
+                        <AudioLinesIcon 
+                            ref={audioLinesIconRef} 
+                            size={16} 
+                            style={{ color: 'white' }} 
+                        />
+                        <span className="recording-text">Click to finish recording</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     );
 }

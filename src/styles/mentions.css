@@ -6,11 +6,13 @@
 .mention-input-wrapper {
     position: relative;
     flex: 1;
+    width: 100%;
 }
 
 .mention-input-container {
     position: relative;
     flex: 1;
+    width: 100%;
 }
 
 .mention-input {
@@ -18,12 +20,32 @@
     position: relative;
     z-index: 2;
     background: transparent;
-    color: transparent;
-    caret-color: #000;
+    color: inherit;
+    /* Show normal text color, not transparent */
+    caret-color: #1976d2;
+    border: none;
+    outline: none;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: inherit;
+    resize: none;
+    min-height: 32px;
 }
 
 .mention-input:focus {
     caret-color: #1976d2;
+}
+
+/* Integration with copilot-composer */
+.copilot-composer-primary .mention-input-wrapper {
+    width: 100%;
+}
+
+.copilot-composer-primary .mention-input {
+    background: transparent;
+    border: none;
+    outline: none;
 }
 
 /* Overlay for highlighted mentions */

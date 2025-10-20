@@ -128,10 +128,12 @@ export function useSpeechRecognition(
 
   // Stop recording
   const stopRecording = useCallback(() => {
+    console.log('useSpeechRecognition: stopRecording called, isRecording:', isRecording);
     if (recognitionRef.current && isRecording) {
       try {
         recognitionRef.current.stop();
         clearSilenceTimers();
+        console.log('useSpeechRecognition: Setting isRecording to false');
         setIsRecording(false);
         setState('idle');
         log.info('Recording stopped');
@@ -256,6 +258,7 @@ export function useSpeechRecognition(
       // Handle start
       recognition.onstart = () => {
         log.info('Recording started');
+        console.log('useSpeechRecognition: Setting isRecording to true');
         setIsRecording(true);
         setState('recording');
         setError(null);

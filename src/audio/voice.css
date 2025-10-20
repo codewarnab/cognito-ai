@@ -12,6 +12,61 @@
   gap: 8px;
 }
 
+/* Copilot-specific voice input styling */
+.copilot-voice-input {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.copilot-voice-input .voice-button {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.copilot-voice-input .voice-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--color-secondary);
+  transform: scale(1.05);
+}
+
+.copilot-voice-input .voice-button.recording {
+  background: #dc2626 !important;
+  border-color: #ef4444 !important;
+  animation: recording-pulse 1.5s ease-in-out infinite !important;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7) !important;
+  transform: scale(1.1) !important;
+}
+
+.copilot-voice-input .voice-button.recording.countdown-active {
+  animation: none;
+  background: #f59e0b;
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+}
+
+.copilot-voice-input .pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid #ef4444;
+  border-radius: 50%;
+  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite !important;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.copilot-voice-input .pulse-ring-delay {
+  animation-delay: 0.75s;
+}
+
 /* Microphone Button */
 .voice-button {
   position: relative;
@@ -21,8 +76,8 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  background: var(--bg-secondary, #2a2a2a);
-  border: 2px solid var(--border-color, #404040);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -31,8 +86,8 @@
 }
 
 .voice-button:hover {
-  background: var(--bg-hover, #333);
-  border-color: var(--primary-color, #007acc);
+  background: var(--bg-tertiary);
+  border-color: var(--color-secondary);
   transform: scale(1.05);
 }
 
@@ -44,12 +99,14 @@
   background: #dc2626;
   border-color: #ef4444;
   animation: recording-pulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
 }
 
 .voice-button.recording.countdown-active {
   animation: none;
   background: #f59e0b;
   border-color: #fbbf24;
+  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
 }
 
 .voice-button.error {
@@ -69,7 +126,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-primary);
   z-index: 1;
 }
 
@@ -95,10 +152,11 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 2px solid #ef4444;
+  border: 3px solid #ef4444;
   border-radius: 50%;
   animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
   opacity: 0;
+  pointer-events: none;
 }
 
 .pulse-ring-delay {
@@ -108,11 +166,155 @@
 @keyframes pulse-ring {
   0% {
     transform: scale(1);
-    opacity: 1;
+    opacity: 0.8;
   }
   100% {
-    transform: scale(1.5);
+    transform: scale(2);
     opacity: 0;
+  }
+}
+
+/* Floating Recording Pill */
+.voice-recording-pill {
+  position: absolute !important;
+  top: -50px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  right: auto !important;
+  /* Rely on Framer Motion for enter/exit; avoid conflicting CSS animations */
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.recording-pill-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(26, 38, 55, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 240px;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+}
+
+.recording-dot {
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  animation: recording-dot-pulse 1.5s ease-in-out infinite;
+}
+
+.recording-dot-delay {
+  animation-delay: 0.75s;
+}
+
+.recording-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.stop-recording-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.stop-recording-button:hover {
+  color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.05);
+}
+
+.stop-recording-button:active {
+  transform: scale(0.95);
+}
+
+.recording-countdown-ring {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.recording-countdown-ring circle {
+  stroke: #fbbf24;
+  transition: stroke-dasharray 0.1s linear;
+}
+
+/* Animations */
+@keyframes pill-float-up {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes recording-dot-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+/* Background blur effect when recording */
+.voice-recording-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  animation: backdrop-fade-in 0.3s ease-out;
+}
+
+@keyframes backdrop-fade-in {
+  0% {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    backdrop-filter: blur(8px);
   }
 }
 
@@ -121,7 +323,7 @@
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    box-shadow: 0 0 0 12px rgba(239, 68, 68, 0);
   }
 }
 

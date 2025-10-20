@@ -7,13 +7,40 @@
     --dodo-mist: #F6F7F9;
     --white-stream: #FFFFFF;
 
+    /* Dark Theme Colors (from chrome-ai) */
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #0f1420;
+    --bg-tertiary: #141f30;
+    --bg-quaternary: #1a2637;
+    --bg-quinary: #202d3e;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.4);
+    --text-quaternary: rgba(255, 255, 255, 0.35);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color-hover: rgba(255, 255, 255, 0.12);
+    --border-color-focus: rgba(255, 255, 255, 0.15);
+
+    /* Message bubble colors */
+    --message-user-bg: #1a3a5c;
+    --message-assistant-bg: #141f30;
+    --message-user-shadow: rgba(26, 58, 92, 0.3);
+
+    /* Button colors */
+    --button-primary-bg: #4a6fa5;
+    --button-primary-hover: #5a7fb5;
+    --button-send-bg: linear-gradient(135deg, #c6fe1e 0%, #a8d814 100%);
+    --button-send-hover: linear-gradient(135deg, #d4ff3a 0%, #b8e820 100%);
+    --button-stop-bg: linear-gradient(135deg, #ff4444 0%, #cc0000 100%);
+    --button-stop-hover: linear-gradient(135deg, #ff5555 0%, #dd0000 100%);
+
     /* Semantic colors */
     --color-primary: var(--green-pulse);
     --color-secondary: var(--blue-stride);
-    --color-text: var(--eclipse-black);
-    --color-background: var(--white-stream);
-    --color-surface: var(--dodo-mist);
-    --color-border: rgba(13, 13, 13, 0.1);
+    --color-text: var(--text-primary);
+    --color-background: var(--bg-primary);
+    --color-surface: var(--bg-secondary);
+    --color-border: var(--border-color);
 
     /* Status colors */
     --color-success: #4caf50;
@@ -37,14 +64,37 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-dark: 0 2px 12px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-send: 0 4px 12px rgba(198, 254, 30, 0.3);
+    --shadow-send-hover: 0 8px 24px rgba(198, 254, 30, 0.4);
+    --shadow-stop: 0 4px 12px rgba(255, 68, 68, 0.3);
+    --shadow-stop-hover: 0 8px 24px rgba(255, 68, 68, 0.4);
+
+    /* Glassmorphism effects */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg-hover: rgba(255, 255, 255, 0.08);
+    --glass-bg-active: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-hover: rgba(255, 255, 255, 0.15);
+    --backdrop-blur: blur(10px);
+    --backdrop-blur-strong: blur(12px);
 }
 
-/* Dark mode support */
+/* Dark mode support - Enhanced */
 @media (prefers-color-scheme: dark) {
     :root {
-        --color-text: var(--white-stream);
-        --color-background: #1a1a1a;
-        --color-surface: #2a2a2a;
-        --color-border: rgba(255, 255, 255, 0.1);
+        --color-text: var(--text-primary);
+        --color-background: var(--bg-primary);
+        --color-surface: var(--bg-secondary);
+        --color-border: var(--border-color);
     }
+}
+
+/* Force dark theme for copilot chat */
+.copilot-chat-window {
+    --color-text: var(--text-primary);
+    --color-background: var(--bg-primary);
+    --color-surface: var(--bg-secondary);
+    --color-border: var(--border-color);
 }

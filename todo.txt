@@ -37,3 +37,7 @@ ui improvements
 floating action button to select tables
 onboarding
 settings page - api key, voice settings, etc
+
+
+
+1. fix hover effect on the tab mentioned render in the ui 
