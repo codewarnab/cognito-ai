@@ -147,7 +147,6 @@ export async function streamAIResponse(params: {
             tools, // Include tools in the stream
             abortSignal,
             temperature: 0.7,
-            stopWhen: [stepCountIs(10)],
             // Log when a step completes (includes tool calls)
             onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
               if (toolCalls && toolCalls.length > 0) {
