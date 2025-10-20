@@ -36,7 +36,7 @@ import { extractPageContext, formatPageContextForAI } from "./utils/pageContextE
  */
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
-    
+
     useRegisterAllActions();
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);
@@ -267,29 +267,35 @@ function AIChatContent() {
             setInput('');
         }
 
-        // Extract page context and inject it with the user message
-        let messageWithContext = trimmedInput;
-        try {
-            const pageContext = await extractPageContext();
-            if (pageContext) {
-                const contextFormatted = formatPageContextForAI(pageContext);
-                
-                // Inject page context BEFORE user message
-                messageWithContext = `[AUTOMATIC PAGE CONTEXT - Current tab information]\n${contextFormatted}\n\n[USER MESSAGE]\n${trimmedInput}`;
-                
-                log.info("Injected page context", { 
-                    url: pageContext.url, 
-                    inputs: pageContext.inputs.length, 
-                    buttons: pageContext.buttons.length,
-                    links: pageContext.links.length
-                });
+        // Capture page context ONLY for the first message in a new thread
+        // This will be stored in the thread and injected into system prompt
+        if (messages.length === 0 && currentThreadId) {
+            try {
+                const pageContext = await extractPageContext();
+                if (pageContext) {
+                    const contextFormatted = formatPageContextForAI(pageContext);
+
+                    // Update the thread with initial page context
+                    await db.chatThreads.update(currentThreadId, {
+                        initialPageContext: contextFormatted
+                    });
+
+                    log.info("Captured initial page context for thread", {
+                        threadId: currentThreadId,
+                        url: pageContext.url,
+                        inputs: pageContext.inputs.length,
+                        buttons: pageContext.buttons.length,
+                        links: pageContext.links.length
+                    });
+                }
+            } catch (error) {
+                log.warn("Failed to capture initial page context", error);
             }
-        } catch (error) {
-            log.warn("Failed to extract page context, sending message without it", error);
         }
 
-        // Send message using AI SDK v5 sendMessage with injected context
-        sendMessage({ text: messageWithContext });
+        // Send message directly without injecting context
+        // Context is now handled in system prompt via SimpleFrontendTransport
+        sendMessage({ text: trimmedInput });
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {

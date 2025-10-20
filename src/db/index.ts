@@ -32,6 +32,7 @@ export interface ChatThread {
     title: string;
     createdAt: number;
     updatedAt: number;
+    initialPageContext?: string; // Page context snapshot at thread creation
 }
 
 /**
@@ -159,14 +160,15 @@ export async function updateSettings(updates: Partial<Settings>): Promise<void> 
 /**
  * Create a new chat thread
  */
-export async function createThread(firstMessage?: string): Promise<ChatThread> {
+export async function createThread(firstMessage?: string, initialPageContext?: string): Promise<ChatThread> {
     const thread: ChatThread = {
         id: crypto.randomUUID(),
-        title: firstMessage 
+        title: firstMessage
             ? (firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : ''))
             : 'New Chat',
         createdAt: Date.now(),
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
+        initialPageContext
     };
     await db.chatThreads.add(thread);
     return thread;
@@ -176,9 +178,9 @@ export async function createThread(firstMessage?: string): Promise<ChatThread> {
  * Update thread title
  */
 export async function updateThreadTitle(threadId: string, title: string): Promise<void> {
-    await db.chatThreads.update(threadId, { 
+    await db.chatThreads.update(threadId, {
         title,
-        updatedAt: Date.now() 
+        updatedAt: Date.now()
     });
 }
 
@@ -227,10 +229,10 @@ export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timesta
         timestamp: Date.now()
     };
     await db.chatMessages.add(fullMessage);
-    
+
     // Update thread timestamp
     await updateThreadTimestamp(message.threadId);
-    
+
     return fullMessage;
 }
 

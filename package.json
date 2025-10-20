@@ -70,8 +70,7 @@
       "cookies",
       "history",
       "search",
-      "bookmarks",
-      "microphone"
+      "bookmarks"
     ],
     "optional_permissions": [
       "tabCapture",
