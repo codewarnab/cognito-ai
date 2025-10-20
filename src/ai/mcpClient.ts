@@ -136,13 +136,10 @@ export async function initializeMCPClients(
       try {
         log.info(`🔌 Connecting to MCP server: ${mcpServer.name} (${mcpServer.type})`);
 
-        // Load stored session ID if available
-        if (!mcpServer.sessionId) {
-          mcpServer.sessionId = await getStoredSessionId(mcpServer.id);
-          if (mcpServer.sessionId) {
-            log.info(`🔄 Loaded stored session ID for ${mcpServer.name}: ${mcpServer.sessionId}`);
-          }
-        }
+        // Note: We don't load stored session IDs for new client instances
+        // Session IDs should only be used by the background service worker for persistent connections
+        // Each frontend client instance gets a fresh session from the server during initialization
+        // This prevents "Invalid Request: Initialization requests must not include a sessionId" errors
 
         // Convert headers array to object
         const headers = mcpServer.headers?.reduce((acc, header) => {
@@ -185,8 +182,9 @@ export async function initializeMCPClients(
                 // mode: 'cors',
               },
 
-              // Session ID for reconnection support (if available from previous connection)
-              sessionId: mcpServer.sessionId,
+              // DO NOT pass sessionId during initialization - let server assign a fresh one
+              // Session IDs are only for reconnection after disconnect, not initial connection
+              sessionId: undefined,
 
               // Reconnection options with exponential backoff
               reconnectionOptions: {
@@ -297,10 +295,11 @@ export async function initializeMCPClients(
       tools: Object.keys(tools)
     });
 
-    // Register cleanup for all clients if an abort signal is provided
-    if (abortSignal && mcpClients.length > 0) {
-      abortSignal.addEventListener('abort', async () => {
-        await cleanupMCPClients(mcpClients);
+    // Note: We no longer clean up on abort since connections are persistent
+    // The background service worker maintains connections with keep-alive
+    if (abortSignal) {
+      abortSignal.addEventListener('abort', () => {
+        log.info('⏸️ Chat aborted but MCP connections remain active');
       });
     }
 
@@ -311,7 +310,10 @@ export async function initializeMCPClients(
   return {
     tools,
     clients: mcpClients,
-    cleanup: async () => await cleanupMCPClients(mcpClients),
+    cleanup: async () => {
+      // No-op cleanup - connections are persistent
+      log.info('🔄 MCP connections persist across chat sessions');
+    },
     sessionIds
   };
 }

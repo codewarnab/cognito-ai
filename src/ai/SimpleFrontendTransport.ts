@@ -76,6 +76,11 @@ export class SimpleFrontendTransport {
       // Process messages for tab mentions (extracts @[Tab](id) and adds context)
       requestMessages = await processMessagesWithMentions(requestMessages);
 
+      log.info('📤 Calling streamAIResponse...', {
+        messageCount: requestMessages.length,
+        hasAbortSignal: !!abortController.signal
+      });
+
       // Get the stream from AI logic
       const uiMessageStream = await streamAIResponse({
         messages: requestMessages,
@@ -85,14 +90,17 @@ export class SimpleFrontendTransport {
         },
       });
 
+      log.info('📥 Stream received from streamAIResponse, returning to caller');
+
       // Return the stream as ReadableStream
+      // Note: Do NOT cleanup here - the stream needs to stay alive!
+      // Cleanup will happen when the stream is consumed or aborted
       return uiMessageStream;
     } catch (error) {
       log.error('Transport error', error);
-      throw error;
-    } finally {
-      // Ensure cleanup is always called to prevent memory leaks
+      // Only cleanup on error
       cleanup();
+      throw error;
     }
   }
 

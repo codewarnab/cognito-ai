@@ -48,6 +48,78 @@ import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
 import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
 
 // ============================================================================
+// Service Worker Keep-Alive Management
+// ============================================================================
+
+/**
+ * Chrome API keep-alive interval to prevent service worker termination
+ * This exploit calls chrome.runtime.getPlatformInfo every 20 seconds
+ * to keep the service worker running when MCP servers are enabled
+ */
+let keepAliveInterval: number | null = null;
+
+/**
+ * Start keep-alive when at least one MCP server is enabled
+ */
+function startMCPKeepAlive(): void {
+    if (keepAliveInterval !== null) {
+        console.log('[Background] Keep-alive already running');
+        return;
+    }
+
+    console.log('[Background] Starting MCP keep-alive to prevent service worker termination');
+
+    // Call chrome.runtime.getPlatformInfo every 20 seconds
+    // This keeps service worker alive indefinitely (Chrome 110+ exploit)
+    keepAliveInterval = setInterval(() => {
+        chrome.runtime.getPlatformInfo(() => {
+            // No-op callback, just keeping worker alive
+        });
+    }, 20000) as unknown as number;
+
+    console.log('[Background] Keep-alive started successfully');
+}
+
+/**
+ * Stop keep-alive when all MCP servers are disabled
+ */
+function stopMCPKeepAlive(): void {
+    if (keepAliveInterval === null) {
+        return;
+    }
+
+    console.log('[Background] Stopping MCP keep-alive');
+    clearInterval(keepAliveInterval);
+    keepAliveInterval = null;
+    console.log('[Background] Keep-alive stopped');
+}
+
+/**
+ * Check if any MCP server is currently enabled
+ */
+function hasEnabledMCPServers(): boolean {
+    for (const [serverId, state] of serverStates) {
+        if (state.isEnabled) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Update keep-alive state based on enabled MCP servers
+ */
+function updateKeepAliveState(): void {
+    const hasEnabled = hasEnabledMCPServers();
+
+    if (hasEnabled && keepAliveInterval === null) {
+        startMCPKeepAlive();
+    } else if (!hasEnabled && keepAliveInterval !== null) {
+        stopMCPKeepAlive();
+    }
+}
+
+// ============================================================================
 // Multi-Server MCP State
 // ============================================================================
 
@@ -743,6 +815,9 @@ async function enableMcpServer(serverId: string): Promise<McpExtensionResponse> 
     // Store enabled state
     await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: true });
 
+    // Start keep-alive when first server is enabled
+    updateKeepAliveState();
+
     // If already connected, just return success
     if (state.client && state.status.state === 'connected') {
         console.log(`[Background:${serverId}] Already connected and initialized`);
@@ -795,6 +870,9 @@ async function disableMcpServer(serverId: string): Promise<McpExtensionResponse>
     await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
     disconnectMcpServer(serverId);
 
+    // Stop keep-alive if no servers remain enabled
+    updateKeepAliveState();
+
     return { success: true };
 }
 
@@ -823,6 +901,9 @@ async function disconnectServerAuth(serverId: string): Promise<McpExtensionRespo
 
     // Clear enabled flag from storage
     await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
+
+    // Stop keep-alive if no servers remain enabled
+    updateKeepAliveState();
 
     console.log(`[Background:${serverId}] All authentication data cleared successfully`);
     broadcastStatusUpdate(serverId, state.status);
@@ -1003,6 +1084,48 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
 }
 
 /**
+ * Get all available tools from persistent MCP connections
+ */
+async function getAllMCPTools(): Promise<McpExtensionResponse> {
+    const allTools: any[] = [];
+
+    try {
+        for (const [serverId, state] of serverStates) {
+            // Only include tools from enabled servers with active connections
+            if (state.isEnabled && state.client && state.status.state === 'connected') {
+                try {
+                    const toolsList = await state.client.listTools();
+
+                    if (toolsList && toolsList.tools) {
+                        // Add serverId to each tool for routing
+                        const serverTools = toolsList.tools.map((tool: any) => ({
+                            ...tool,
+                            serverId, // Add server ID so we know where to route calls
+                            serverName: getServerConfig(serverId)?.name || serverId
+                        }));
+
+                        allTools.push(...serverTools);
+                        console.log(`[Background:${serverId}] Added ${serverTools.length} tools`);
+                    }
+                } catch (error) {
+                    console.error(`[Background:${serverId}] Error listing tools:`, error);
+                    // Continue with other servers instead of failing completely
+                }
+            }
+        }
+
+        console.log(`[Background] Total MCP tools available: ${allTools.length}`);
+        return { success: true, data: { tools: allTools } };
+    } catch (error) {
+        console.error('[Background] Error getting all MCP tools:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to get MCP tools'
+        };
+    }
+}
+
+/**
  * Call an MCP tool on any server
  */
 async function callServerTool(serverId: string, name: string, args?: Record<string, any>): Promise<McpExtensionResponse> {
@@ -1151,6 +1274,24 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to get server configs'
+                });
+            }
+        })();
+        return true;
+    }
+
+    // Handle tools list request - get all tools from persistent connections
+    if (message.type === 'mcp/tools/list') {
+        (async () => {
+            try {
+                const result = await getAllMCPTools();
+                console.log('[Background] Sending MCP tools list:', result);
+                sendResponse(result);
+            } catch (error) {
+                console.error('[Background] Error getting MCP tools:', error);
+                sendResponse({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Failed to get MCP tools'
                 });
             }
         })();
@@ -1351,6 +1492,10 @@ async function initializeAllServers(): Promise<void> {
             console.error(`[Background] Error initializing ${serverId}:`, error);
         }
     }
+
+    // Start keep-alive if any servers are enabled
+    console.log('[Background] Checking if keep-alive should start');
+    updateKeepAliveState();
 }
 
 /**
@@ -1362,6 +1507,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     try {
         // Initialize all MCP servers from storage
         await initializeAllServers();
+
+        // Keep-alive is initialized by initializeAllServers
+        console.log('[Background] Keep-alive initialized');
 
         // Enable side panel on all existing tabs
         if (chrome.sidePanel) {
@@ -1382,6 +1530,9 @@ chrome.runtime.onStartup.addListener(async () => {
 
     // Initialize all MCP servers from storage
     await initializeAllServers();
+
+    // Keep-alive is initialized by initializeAllServers
+    console.log('[Background] Keep-alive initialized on startup');
 });
 
 /**
