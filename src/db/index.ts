@@ -44,6 +44,7 @@ export interface ChatMessage {
     role: 'user' | 'assistant';
     content: string;
     timestamp: number;
+    sequenceNumber?: number; // Added to preserve message order
     metadata?: {
         streaming?: boolean;
         error?: boolean;
@@ -73,6 +74,13 @@ export class AppDB extends Dexie {
         this.version(2).stores({
             settings: 'key',
             chatMessages: 'id, threadId, timestamp',
+            chatThreads: 'id, createdAt, updatedAt'
+        });
+
+        // Version 3: Add sequenceNumber for proper message ordering
+        this.version(3).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp, sequenceNumber',
             chatThreads: 'id, createdAt, updatedAt'
         });
     }
@@ -240,10 +248,18 @@ export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timesta
  * Load chat history for a specific thread
  */
 export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
-    return await db.chatMessages
+    const messages = await db.chatMessages
         .where('threadId')
         .equals(threadId)
-        .sortBy('timestamp');
+        .toArray();
+
+    // Sort by sequenceNumber first (if available), then by timestamp as fallback
+    return messages.sort((a, b) => {
+        if (a.sequenceNumber !== undefined && b.sequenceNumber !== undefined) {
+            return a.sequenceNumber - b.sequenceNumber;
+        }
+        return a.timestamp - b.timestamp;
+    });
 }
 
 /**

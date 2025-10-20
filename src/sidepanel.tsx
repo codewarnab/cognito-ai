@@ -182,18 +182,28 @@ function AIChatContent() {
                             .join('');
                         return text && text.trim().length > 0;
                     })
-                    .map((msg) => {
+                    .map((msg, index) => {
                         const text = msg.parts
                             ?.filter((part: any) => part.type === 'text')
                             .map((part: any) => part.text)
                             .join('') || '';
+
+                        // Extract timestamp from createdAt or use index-based timestamp
+                        let timestamp: number;
+                        if ((msg as any).createdAt) {
+                            timestamp = new Date((msg as any).createdAt).getTime();
+                        } else {
+                            // Use base timestamp + index to ensure proper ordering
+                            timestamp = Date.now() + index;
+                        }
 
                         return {
                             id: msg.id,
                             threadId: currentThreadId,
                             role: msg.role as 'user' | 'assistant',
                             content: text,
-                            timestamp: (msg as any).createdAt ? new Date((msg as any).createdAt).getTime() : Date.now(),
+                            timestamp,
+                            sequenceNumber: index, // Preserve exact order
                         };
                     });
 
@@ -357,7 +367,7 @@ function AIChatContent() {
     // Handle microphone click for voice recording
     const handleMicClick = () => {
         const newRecordingState = !isRecording;
-        
+
         if (isRecording) {
             // Stop animation and hide pill immediately
             audioLinesIconRef.current?.stopAnimation();
@@ -366,7 +376,7 @@ function AIChatContent() {
             // Show pill and start recording
             setShowPill(true);
         }
-        
+
         setIsRecording(newRecordingState);
         log.info("Microphone clicked", { isRecording: newRecordingState });
     };
@@ -431,10 +441,10 @@ function AIChatContent() {
                             handleMicClick();
                         }}
                     >
-                        <AudioLinesIcon 
-                            ref={audioLinesIconRef} 
-                            size={16} 
-                            style={{ color: 'white' }} 
+                        <AudioLinesIcon
+                            ref={audioLinesIconRef}
+                            size={16}
+                            style={{ color: 'white' }}
                         />
                         <span className="recording-text">Click to finish recording</span>
                     </motion.div>

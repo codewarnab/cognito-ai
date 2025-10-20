@@ -185,6 +185,15 @@ export async function streamAIResponse(params: {
                 tokensUsed: usage?.totalTokens || 0,
               });
             },
+            // Log when the entire stream finishes
+            onFinish: async ({ text, finishReason, usage, steps }) => {
+              log.info('Stream finished:', {
+                finishReason,
+                textLength: text?.length || 0,
+                tokensUsed: usage?.totalTokens || 0,
+                stepCount: steps?.length || 0,
+              });
+            },
           });
 
           // Merge AI stream with status stream
@@ -198,6 +207,10 @@ export async function streamAIResponse(params: {
                 return error instanceof Error ? error.message : String(error);
               },
               onFinish: async ({ messages: finalMessages }) => {
+                log.info('UI stream completed', {
+                  messageCount: finalMessages.length,
+                });
+
                 // Send completion status
                 writer.write({
                   type: 'data-status',
@@ -209,8 +222,6 @@ export async function streamAIResponse(params: {
                 // MCP connections are persistent - no cleanup needed
                 // Connections managed by background service worker with keep-alive
                 log.info('✅ MCP tools remain available for next chat');
-
-                log.info('AI stream completed', { messageCount: finalMessages.length });
               },
             })
           );
