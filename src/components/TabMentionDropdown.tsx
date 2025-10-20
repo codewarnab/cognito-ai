@@ -30,13 +30,30 @@ export function TabMentionDropdown({
 
     // Load tabs on mount
     useEffect(() => {
+        let mounted = true;
+        
         const loadTabs = async () => {
-            setLoading(true);
-            const allTabs = await getAllTabs();
-            setTabs(allTabs);
-            setLoading(false);
+            try {
+                setLoading(true);
+                const allTabs = await getAllTabs();
+                if (mounted) {
+                    setTabs(allTabs);
+                }
+            } catch (error) {
+                console.error('Failed to load tabs:', error);
+                // Optionally set error state here if needed
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
         };
+        
         loadTabs();
+        
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // Extract already mentioned tab IDs from current input

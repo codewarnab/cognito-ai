@@ -44,7 +44,8 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
         }
 
         // Check if tab is accessible (not chrome:// or other restricted URLs)
-        if (tab.url?.startsWith('chrome://') || tab.url?.startsWith('chrome-extension://')) {
+        const restrictedSchemes = ['chrome://', 'chrome-extension://', 'about://', 'file://', 'data://', 'blob://', 'filesystem://'];
+        if (restrictedSchemes.some(scheme => tab.url?.startsWith(scheme))) {
             return {
                 url: tab.url,
                 title: tab.title || null,
@@ -52,7 +53,6 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
                 error: 'Cannot access system pages'
             };
         }
-
         // Execute script to get page content
         try {
             const results = await chrome.scripting.executeScript({

@@ -18,12 +18,11 @@ export function MentionBadge({ type, display, id, faviconUrl, fullTitle }: Menti
         if (type === 'tab') {
             // Switch to the mentioned tab
             const tabId = parseInt(id, 10);
-            if (!isNaN(tabId)) {
+            if (!isNaN(tabId) && typeof chrome !== 'undefined' && chrome.tabs) {
                 chrome.tabs.update(tabId, { active: true }).catch(console.error);
             }
         }
     };
-
     return (
         <span
             className={`mention-badge mention-badge-${type}`}

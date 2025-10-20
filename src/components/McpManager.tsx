@@ -23,8 +23,8 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     // Fetch real authentication status on mount and listen for updates
     useEffect(() => {
         const loadStatuses = async () => {
-            // Fetch status for all servers
-            for (const server of MCP_SERVERS) {
+            // Fetch status for all servers in parallel
+            const statusPromises = MCP_SERVERS.map(async (server) => {
                 try {
                     const response = await chrome.runtime.sendMessage({
                         type: `mcp/${server.id}/status/get`
@@ -32,19 +32,38 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     if (response.success && response.data) {
                         const status = response.data
                         const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
-                        setServerStatuses(prev => ({
-                            ...prev,
-                            [server.id]: {
+                        return {
+                            serverId: server.id,
+                            status: {
                                 serverId: server.id,
                                 isEnabled: status.state === 'connected',
                                 isAuthenticated: isAuth
                             }
-                        }))
+                        }
                     }
+                    return null
                 } catch (error) {
                     console.error(`Failed to load ${server.name} status:`, error)
+                    return null
                 }
-            }
+            })
+
+            // Wait for all promises to complete
+            const results = await Promise.all(statusPromises)
+            
+            // Build the statuses object from successful results
+            const newStatuses: Record<string, any> = {}
+            results.forEach(result => {
+                if (result) {
+                    newStatuses[result.serverId] = result.status
+                }
+            })
+
+            // Update state once with all statuses
+            setServerStatuses(prev => ({
+                ...prev,
+                ...newStatuses
+            }))
         }
 
         loadStatuses()
