@@ -1,0 +1,414 @@
+/**
+ * Styles for tab mention feature components
+ */
+
+/* Mention Input Wrapper */
+.mention-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.mention-input-container {
+    position: relative;
+    flex: 1;
+}
+
+.mention-input {
+    width: 100%;
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    color: transparent;
+    caret-color: #000;
+}
+
+.mention-input:focus {
+    caret-color: #1976d2;
+}
+
+/* Overlay for highlighted mentions */
+.mention-input-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: nowrap;
+    overflow: hidden;
+    color: #2c3e50;
+}
+
+.mention-input-highlight {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+    border: 1px solid #c8e6c9;
+    vertical-align: middle;
+}
+
+.mention-input-favicon {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.mention-input-icon {
+    font-size: 10px;
+    line-height: 1;
+}
+
+/* User message with mentions */
+.user-message-with-mentions {
+    line-height: 1.6;
+    word-break: break-word;
+}
+
+/* Tab Mention Dropdown */
+.tab-mention-dropdown {
+    position: fixed;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 320px;
+    width: 320px;
+    max-height: 240px;
+    overflow: hidden;
+    z-index: 10000;
+    animation: slideUp 0.15s ease-out;
+    /* Position from bottom, grows upward */
+    transform: translateY(-100%);
+    margin-top: -10px;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(-100%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(-100%);
+    }
+}
+
+.tab-mention-list {
+    max-height: 240px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for dropdown */
+.tab-mention-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.tab-mention-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tab-mention-list::-webkit-scrollbar-thumb {
+    background: #d0d0d0;
+    border-radius: 3px;
+}
+
+.tab-mention-list::-webkit-scrollbar-thumb:hover {
+    background: #b0b0b0;
+}
+
+.tab-mention-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: none;
+    background: white;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.tab-mention-item:last-child {
+    border-bottom: none;
+}
+
+.tab-mention-item:hover,
+.tab-mention-item.selected {
+    background-color: #f8f9fa;
+}
+
+.tab-mention-item.selected {
+    background-color: #e3f2fd;
+}
+
+.tab-mention-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #fafafa;
+}
+
+.tab-mention-item.disabled:hover {
+    background-color: #fafafa;
+}
+
+.already-mentioned-badge {
+    font-size: 10px;
+    font-weight: 400;
+    color: #4caf50;
+    margin-left: 4px;
+}
+
+.tab-mention-favicon {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.tab-mention-favicon img {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    border-radius: 2px;
+}
+
+.tab-mention-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.tab-mention-title {
+    font-size: 12px;
+    font-weight: 500;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.tab-mention-url {
+    font-size: 10px;
+    color: #7f8c8d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+    line-height: 1.2;
+}
+
+.tab-mention-loading,
+.tab-mention-empty {
+    padding: 12px;
+    text-align: center;
+    color: #7f8c8d;
+    font-size: 12px;
+}
+
+/* Mention Badges in Messages */
+.mention-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
+    margin: 0 2px;
+    transition: all 0.2s ease;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
+.mention-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mention-badge-favicon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.mention-badge-icon {
+    font-size: 12px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.mention-badge-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.mention-badge-tab {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+.mention-badge-tab:hover {
+    background-color: #c8e6c9;
+}
+
+.mention-badge-tool {
+    background-color: #fff3e0;
+    color: #ef6c00;
+    border-color: #ffe0b2;
+}
+
+.mention-badge-tool:hover {
+    background-color: #ffe0b2;
+}
+
+/* Empty state hint */
+.copilot-empty-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #666;
+    padding: 8px 16px;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.copilot-empty-hint strong {
+    color: #1976d2;
+    font-weight: 600;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .mention-input {
+        caret-color: #fff;
+    }
+
+    .mention-input:focus {
+        caret-color: #64b5f6;
+    }
+
+    .mention-input-overlay {
+        color: #e0e0e0;
+    }
+
+    .mention-input-highlight {
+        background-color: #1b5e20;
+        color: #c8e6c9;
+        border-color: #2e7d32;
+    }
+
+    .tab-mention-dropdown {
+        background: #1e1e1e;
+        border-color: #3c3c3c;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .tab-mention-item {
+        background: #1e1e1e;
+        border-bottom-color: #2a2a2a;
+    }
+
+    .tab-mention-item:hover {
+        background-color: #2a2a2a;
+    }
+
+    .tab-mention-item.selected {
+        background-color: #1a3a52;
+    }
+
+    .tab-mention-item.disabled {
+        background-color: #252525;
+        opacity: 0.4;
+    }
+
+    .tab-mention-item.disabled:hover {
+        background-color: #252525;
+    }
+
+    .already-mentioned-badge {
+        color: #81c784;
+    }
+
+    .tab-mention-title {
+        color: #e0e0e0;
+    }
+
+    .tab-mention-url {
+        color: #888;
+    }
+
+    .tab-mention-loading,
+    .tab-mention-empty {
+        color: #888;
+    }
+
+    .tab-mention-list::-webkit-scrollbar-thumb {
+        background: #3c3c3c;
+    }
+
+    .tab-mention-list::-webkit-scrollbar-thumb:hover {
+        background: #4c4c4c;
+    }
+
+    .mention-badge-tab {
+        background-color: #1b5e20;
+        color: #c8e6c9;
+        border-color: #2e7d32;
+    }
+
+    .mention-badge-tab:hover {
+        background-color: #2e7d32;
+    }
+
+    .mention-badge-tool {
+        background-color: #e65100;
+        color: #ffe0b2;
+        border-color: #ef6c00;
+    }
+
+    .mention-badge-tool:hover {
+        background-color: #ef6c00;
+    }
+
+    .mention-badge {
+        background-color: #1a3a52;
+        color: #64b5f6;
+        border-color: #2a5a7a;
+    }
+
+    .copilot-empty-hint {
+        background-color: #2a2a2a;
+        color: #a0a0a0;
+    }
+
+    .copilot-empty-hint strong {
+        color: #64b5f6;
+    }
+}

@@ -8,6 +8,7 @@ import type { UIMessage } from 'ai';
 import { streamAIResponse } from './aiLogic';
 import { createLogger } from '../logger';
 import { loadThreadMessages } from '../db';
+import { processMessagesWithMentions } from '../utils/mentionProcessor';
 
 const log = createLogger('SimpleFrontendTransport');
 
@@ -32,9 +33,9 @@ export class SimpleFrontendTransport {
   }): Promise<ReadableStream> {
     const { chatId, messages, abortSignal, trigger, id, messageId } = params;
 
-    log.info('Sending messages', { 
-      chatId, 
-      count: messages.length, 
+    log.info('Sending messages', {
+      chatId,
+      count: messages.length,
       trigger: trigger || 'submit-user-message',
       id,
       messageId
@@ -54,13 +55,16 @@ export class SimpleFrontendTransport {
     try {
       // Handle different trigger types
       let requestMessages = messages;
-      
+
       if (trigger === 'submit-tool-result') {
         // For tool results, include complete message context
         log.info('Processing submit-tool-result request', { messageId });
         // Messages already include tool results from useChat
         requestMessages = messages;
       }
+
+      // Process messages for tab mentions (extracts @[Tab](id) and adds context)
+      requestMessages = await processMessagesWithMentions(requestMessages);
 
       // Get the stream from AI logic
       const uiMessageStream = await streamAIResponse({
