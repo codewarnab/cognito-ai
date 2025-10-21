@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-ApplyTabGroups');
@@ -24,7 +24,7 @@ export function useApplyTabGroups() {
 
     useEffect(() => {
         log.info('🔧 Registering applyTabGroups tool...');
-        
+
         // Register the tool with AI SDK v5
         registerTool({
             name: 'applyTabGroups',
@@ -103,78 +103,9 @@ export function useApplyTabGroups() {
             },
         });
 
-        // Register the UI renderer for this tool
+        // Register the UI renderer for this tool - uses CompactToolRenderer
         registerToolUI('applyTabGroups', (state: ToolUIState) => {
-            const { state: toolState, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard 
-                        title="Applying Groups" 
-                        subtitle="Creating tab groups..." 
-                        state="loading" 
-                        icon="✨" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard 
-                            title="Failed to Apply Groups" 
-                            subtitle={output.error} 
-                            state="error" 
-                            icon="✨" 
-                        />
-                    );
-                }
-                
-                if (output.success) {
-                    return (
-                        <ToolCard
-                            title="Groups Applied"
-                            subtitle={`Successfully created ${output.groupsCreated} group(s)`}
-                            state="success"
-                            icon="✨"
-                        >
-                            {output.groups && output.groups.length > 0 && (
-                                <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                                    {output.groups.map((group: any, idx: number) => (
-                                        <div key={idx} style={{
-                                            padding: '8px',
-                                            marginBottom: '6px',
-                                            background: 'rgba(0,0,0,0.05)',
-                                            borderRadius: '4px'
-                                        }}>
-                                            <div style={{ fontWeight: 600, marginBottom: '2px' }}>{group.name}</div>
-                                            {group.description && (
-                                                <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px' }}>
-                                                    {group.description}
-                                                </div>
-                                            )}
-                                            <div style={{ opacity: 0.6 }}>{group.tabCount} tab(s)</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </ToolCard>
-                    );
-                }
-            }
-            
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard 
-                        title="Failed to Apply Groups" 
-                        subtitle={state.errorText} 
-                        state="error" 
-                        icon="✨" 
-                    />
-                );
-            }
-            
-            return null;
+            return <CompactToolRenderer state={state} />;
         });
 
         log.info('✅ applyTabGroups tool registration complete');

@@ -12,7 +12,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-UngroupTabs');
@@ -25,7 +25,7 @@ export function useUngroupTabs() {
 
     useEffect(() => {
         log.info('🔧 Registering ungroupTabs tool...');
-        
+
         // Register the tool with AI SDK v5
         registerTool({
             name: 'ungroupTabs',
@@ -144,8 +144,10 @@ export function useUngroupTabs() {
             },
         });
 
-        // Register the UI renderer for this tool
-        // Using default CompactToolRenderer - no custom UI needed
+        // Register the UI renderer for this tool - uses CompactToolRenderer
+        registerToolUI('ungroupTabs', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        });
 
         log.info('✅ ungroupTabs tool registration complete');
 

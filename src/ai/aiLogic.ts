@@ -39,7 +39,7 @@ async function GoogleAI() {
 } */
 
 // Initialize Google AI
-const apiKey = "AIzaSyAdqyd9kSD_12B_WQ4Fm-Qk6IcL-6p5wjE";
+const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
 const google = createGoogleGenerativeAI({ apiKey });
 
 /**
@@ -158,6 +158,15 @@ export async function streamAIResponse(params: {
             temperature: 0.7,
             // Log when a step completes (includes tool calls)
             onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
+              // Check for malformed function calls or errors
+              if (finishReason === 'error' || finishReason === 'unknown') {
+                log.error('❌ TOOL CALL ERROR DETECTED', {
+                  finishReason,
+                  text: text?.substring(0, 200),
+                  hint: 'The AI may have tried to use invalid syntax. Check if it generated Python-style code instead of proper tool calling.'
+                });
+              }
+
               if (toolCalls && toolCalls.length > 0) {
                 log.info('Tools called:', {
                   count: toolCalls.length,

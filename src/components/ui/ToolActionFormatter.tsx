@@ -114,10 +114,11 @@ const readPageContentFormatter: ActionFormatter = ({ state, output }) => {
     if (state === 'success') {
         const contentLength = output?.content?.length || output?.contentLength || 0;
         const title = output?.title;
+        const formattedLength = contentLength >= 1000 ? `${Math.round(contentLength / 1000)}k` : contentLength.toString();
         if (title) {
-            return `Read: ${truncateText(title, 30)} (${contentLength} chars)`;
+            return `Read: ${truncateText(title, 30)} (${formattedLength} chars)`;
         }
-        return `Read ${contentLength} characters`;
+        return `Read ${formattedLength} characters`;
     }
     return 'Failed to read content';
 };
@@ -289,6 +290,66 @@ const listTabsFormatter: ActionFormatter = ({ state, output }) => {
     return 'Failed to list tabs';
 };
 
+const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, output }) => {
+    if (state === 'loading') {
+        return 'Crafting grouping strategy...';
+    }
+    if (state === 'success') {
+        if (output?.needsAIAnalysis) {
+            const tabCount = output?.tabs?.length || 0;
+            return `Prepared ${tabCount} tabs for analysis`;
+        }
+        if (output?.groups) {
+            const groupCount = output?.groups?.length || 0;
+            return `Organized into ${groupCount} groups`;
+        }
+        if (output?.error) {
+            return 'Organization failed';
+        }
+        return 'Tabs organized';
+    }
+    return 'Failed to organize tabs';
+};
+
+const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output }) => {
+    if (state === 'loading') {
+        const groupCount = input?.groups?.length || 0;
+        if (groupCount > 0) {
+            return `Applying ${groupCount} tab groups...`;
+        }
+        return 'Applying tab groups...';
+    }
+    if (state === 'success') {
+        const groupsCreated = output?.groupsCreated || output?.groups?.length || 0;
+        if (groupsCreated > 0) {
+            return `Created ${groupsCreated} groups`;
+        }
+        return 'Tab groups applied';
+    }
+    return 'Failed to apply groups';
+};
+
+const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) => {
+    if (state === 'loading') {
+        if (input?.ungroupAll) {
+            return 'Ungrouping all tabs...';
+        }
+        const groupCount = input?.groupIds?.length || 0;
+        if (groupCount > 0) {
+            return `Ungrouping ${groupCount} group(s)...`;
+        }
+        return 'Ungrouping tabs...';
+    }
+    if (state === 'success') {
+        const ungrouped = output?.ungroupedCount || 0;
+        if (ungrouped > 0) {
+            return `Ungrouped ${ungrouped} group(s)`;
+        }
+        return 'Tabs ungrouped';
+    }
+    return 'Failed to ungroup tabs';
+};
+
 // Memory Tools
 const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
     if (state === 'loading') {
@@ -404,6 +465,9 @@ const formatters: Record<string, ActionFormatter> = {
     newTab: openNewTabFormatter,
     closeTab: closeTabFormatter,
     listTabs: listTabsFormatter,
+    organizeTabsByContext: organizeTabsByContextFormatter,
+    applyTabGroups: applyTabGroupsFormatter,
+    ungroupTabs: ungroupTabsFormatter,
 
     // Memory
     saveMemory: saveMemoryFormatter,
