@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolCard } from '../../components/ui/CompactToolCard';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Actions-History-UrlVisits');
@@ -66,70 +66,40 @@ export function useGetUrlVisits() {
         });
 
         registerToolUI('getUrlVisits', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
+            const { state: toolState, input, output, errorText } = state;
 
             if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return <ToolCard title="Getting Visit Details" subtitle={input?.url} state="loading" icon="📊" />;
+                return (
+                    <CompactToolCard
+                        toolName="getUrlVisits"
+                        state="loading"
+                        input={input}
+                    />
+                );
             }
 
             if (toolState === 'output-available' && output) {
-                if ((output as any).error) {
-                    return <ToolCard title="Failed to Get Visits" subtitle={(output as any).error} state="error" icon="📊" />;
-                }
-
-                const res: any = output;
+                const cardState = (output as any).error ? 'error' : 'success';
                 return (
-                    <ToolCard
-                        title="Visit Details"
-                        subtitle={`${res.visitCount} visit(s) to this URL`}
-                        state="success"
-                        icon="📊"
-                    >
-                        <div style={{
-                            fontSize: '11px',
-                            marginTop: '8px',
-                            marginBottom: '8px',
-                            opacity: 0.7,
-                            wordBreak: 'break-all'
-                        }}>
-                            {res.url}
-                        </div>
-                        {res.visits && res.visits.length > 0 && (
-                            <div style={{ fontSize: '12px' }}>
-                                {res.visits.slice(0, 10).map((visit: any) => (
-                                    <div key={visit.visitId} style={{
-                                        padding: '6px 8px',
-                                        marginBottom: '4px',
-                                        background: 'rgba(0,0,0,0.03)',
-                                        borderRadius: '4px',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        fontSize: '11px'
-                                    }}>
-                                        <span>{new Date(visit.visitTime || 0).toLocaleString()}</span>
-                                        <span style={{
-                                            opacity: 0.6,
-                                            fontSize: '10px',
-                                            textTransform: 'lowercase'
-                                        }}>
-                                            {visit.transition || 'unknown'}
-                                        </span>
-                                    </div>
-                                ))}
-                                {res.visits.length > 10 && (
-                                    <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '4px' }}>
-                                        Showing 10 of {res.visits.length} visits
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </ToolCard>
+                    <CompactToolCard
+                        toolName="getUrlVisits"
+                        state={cardState}
+                        input={input}
+                        output={output}
+                        errorText={(output as any).error}
+                    />
                 );
             }
 
             if (toolState === 'output-error') {
-                return <ToolCard title="Failed to Get Visits" subtitle={state.errorText} state="error" icon="📊" />;
+                return (
+                    <CompactToolCard
+                        toolName="getUrlVisits"
+                        state="error"
+                        input={input}
+                        errorText={errorText}
+                    />
+                );
             }
 
             return null;

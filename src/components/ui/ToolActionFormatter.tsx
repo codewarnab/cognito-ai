@@ -528,6 +528,45 @@ const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'History search failed' };
 };
 
+const getRecentHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
+    const hours = input?.hours || 24;
+
+    if (state === 'loading') {
+        return {
+            action: 'Getting recent history',
+            description: `Last ${hours} hours`
+        };
+    }
+    if (state === 'success') {
+        const count = output?.found || output?.results?.length || 0;
+        return {
+            action: 'Recent history retrieved',
+            description: `${count} pages in ${output?.hours || hours}h`
+        };
+    }
+    return { action: 'Failed to get history' };
+};
+
+const getUrlVisitsFormatter: ActionFormatter = ({ state, input, output }) => {
+    const url = input?.url;
+    const domain = url ? extractDomain(url) : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Getting visit details',
+            description: domain ? truncateText(domain, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        const count = output?.visitCount || output?.visits?.length || 0;
+        return {
+            action: 'Visit details retrieved',
+            description: `${count} visits`
+        };
+    }
+    return { action: 'Failed to get visits' };
+};
+
 // YouTube Tools
 const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }) => {
     const videoTitle = output?.videoTitle;
@@ -654,6 +693,8 @@ const formatters: Record<string, ActionFormatter> = {
     // History
     getHistory: getHistoryFormatter,
     searchHistory: getHistoryFormatter,
+    getRecentHistory: getRecentHistoryFormatter,
+    getUrlVisits: getUrlVisitsFormatter,
 
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
