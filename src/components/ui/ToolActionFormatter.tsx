@@ -3,14 +3,19 @@
  * Shows contextual information from tool input/output instead of raw function names
  */
 
-interface ActionFormatterContext {
+export interface ActionFormatterContext {
     toolName: string;
     state: 'loading' | 'success' | 'error';
     input?: any;
     output?: any;
 }
 
-type ActionFormatter = (ctx: ActionFormatterContext) => string;
+export interface FormattedAction {
+    action: string;
+    description?: string;
+}
+
+type ActionFormatter = (ctx: ActionFormatterContext) => FormattedAction;
 
 // Helper Functions
 function truncateText(text: string, maxLength: number): string {
@@ -52,379 +57,440 @@ function camelToTitle(text: string): string {
 
 // Navigation Tools
 const navigateToFormatter: ActionFormatter = ({ state, input, output }) => {
+    const url = output?.url || input?.url || input?.targetUrl;
+    const domain = url ? extractDomain(url) : '';
+    const newTab = input?.newTab || output?.newTab;
+    
     if (state === 'loading') {
-        const url = input?.url || input?.targetUrl;
-        if (url) {
-            return `Navigating to: ${truncateText(extractDomain(url), 30)}`;
-        }
-        return 'Navigating...';
+        return {
+            action: 'Navigating',
+            description: domain ? truncateText(domain, 40) : undefined
+        };
     }
     if (state === 'success') {
-        const url = output?.url || input?.url;
-        const newTab = input?.newTab || output?.newTab;
-        if (url) {
-            const domain = truncateText(extractDomain(url), 30);
-            return newTab ? `Opened in new tab: ${domain}` : `Opened: ${domain}`;
-        }
-        return 'Navigation complete';
+        return {
+            action: newTab ? 'Opened in new tab' : 'Navigated',
+            description: domain ? truncateText(domain, 40) : undefined
+        };
     }
-    return 'Navigation failed';
+    return {
+        action: 'Navigation failed',
+        description: domain ? truncateText(domain, 40) : undefined
+    };
 };
 
 // Search Tools
 const getSearchResultsFormatter: ActionFormatter = ({ state, output }) => {
     if (state === 'loading') {
-        return 'Reading search results...';
+        return { action: 'Reading search results' };
     }
     if (state === 'success') {
         const count = output?.results?.length || output?.count || 0;
         const engine = output?.engine || 'search';
-        return `Found ${count} results from ${engine}`;
+        return {
+            action: `Found ${count} results`,
+            description: engine
+        };
     }
-    return 'Search failed';
+    return { action: 'Search failed' };
 };
 
 const openSearchResultFormatter: ActionFormatter = ({ state, input, output }) => {
+    const title = output?.title || input?.title;
+    const rank = output?.rank || input?.rank || input?.index;
+    
     if (state === 'loading') {
-        const rank = input?.rank || input?.index;
-        if (rank !== undefined) {
-            return `Opening search result #${rank}...`;
-        }
-        return 'Opening search result...';
+        return {
+            action: 'Opening search result',
+            description: rank !== undefined ? `Result #${rank}` : undefined
+        };
     }
     if (state === 'success') {
-        const title = output?.title || input?.title;
-        const rank = output?.rank || input?.rank;
-        if (title) {
-            return `Opened: ${truncateText(title, 40)}`;
-        }
-        if (rank !== undefined) {
-            return `Opened result #${rank}`;
-        }
-        return 'Search result opened';
+        return {
+            action: 'Opened search result',
+            description: title ? truncateText(title, 40) : rank !== undefined ? `Result #${rank}` : undefined
+        };
     }
-    return 'Failed to open result';
+    return { action: 'Failed to open result' };
 };
 
 // Content Tools
 const readPageContentFormatter: ActionFormatter = ({ state, output }) => {
+    const title = output?.title;
+    const contentLength = output?.content?.length || output?.contentLength || 0;
+    const formattedLength = contentLength >= 1000 ? `${Math.round(contentLength / 1000)}k chars` : `${contentLength} chars`;
+    
     if (state === 'loading') {
-        return 'Reading page content...';
+        return {
+            action: 'Reading page content',
+            description: title ? truncateText(title, 40) : undefined
+        };
     }
     if (state === 'success') {
-        const contentLength = output?.content?.length || output?.contentLength || 0;
-        const title = output?.title;
-        const formattedLength = contentLength >= 1000 ? `${Math.round(contentLength / 1000)}k` : contentLength.toString();
-        if (title) {
-            return `Read: ${truncateText(title, 30)} (${formattedLength} chars)`;
-        }
-        return `Read ${formattedLength} characters`;
+        return {
+            action: 'Read page content',
+            description: title ? `${truncateText(title, 30)} (${formattedLength})` : formattedLength
+        };
     }
-    return 'Failed to read content';
+    return { action: 'Failed to read content' };
 };
 
 const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => {
+    const text = output?.text || output?.selectedText;
+    const length = text?.length || 0;
+    
     if (state === 'loading') {
-        return 'Getting selected text...';
+        return { action: 'Getting selected text' };
     }
     if (state === 'success') {
-        const text = output?.text || output?.selectedText;
-        const length = text?.length || 0;
         if (length > 0) {
-            return `Got ${length} characters: "${truncateText(text, 30)}"`;
+            return {
+                action: 'Got selected text',
+                description: `${length} characters`
+            };
         }
-        return 'No text selected';
+        return { action: 'No text selected' };
     }
-    return 'Failed to get selection';
+    return { action: 'Failed to get selection' };
 };
 
 // Interaction Tools
 const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
+    const clicked = output?.clicked;
+    const text = clicked?.text || clicked?.innerText;
+    const selector = input?.selector;
+    
     if (state === 'loading') {
-        const selector = input?.selector;
-        if (selector) {
-            return `Clicking ${truncateText(selector, 30)}...`;
-        }
-        return 'Clicking element...';
+        return {
+            action: 'Clicking element',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
     }
     if (state === 'success') {
-        const clicked = output?.clicked;
-        const text = clicked?.text || clicked?.innerText;
-        const tagName = clicked?.tagName?.toLowerCase();
-        if (text) {
-            return `Clicked: ${truncateText(text, 30)}`;
-        }
-        if (tagName) {
-            return `Clicked ${tagName} element`;
-        }
-        return 'Element clicked';
+        return {
+            action: 'Clicked',
+            description: text ? truncateText(text, 40) : selector ? truncateText(selector, 40) : undefined
+        };
     }
-    return 'Click failed';
+    return { action: 'Click failed' };
 };
 
 const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) => {
+    const field = input?.field || input?.selector;
+    const length = input?.text?.length || 0;
+    
     if (state === 'loading') {
-        const field = input?.field || input?.selector;
-        if (field) {
-            return `Typing in ${truncateText(field, 30)}...`;
-        }
-        return 'Typing...';
+        return {
+            action: 'Typing',
+            description: field ? truncateText(field, 40) : undefined
+        };
     }
     if (state === 'success') {
-        const length = input?.text?.length || 0;
-        return `Typed ${length} characters`;
+        return {
+            action: 'Typed',
+            description: field ? `${truncateText(field, 30)} (${length} chars)` : `${length} characters`
+        };
     }
-    return 'Typing failed';
+    return { action: 'Typing failed' };
 };
 
 const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
+    const key = input?.key;
+    
     if (state === 'loading') {
-        const key = input?.key;
-        if (key) {
-            return `Pressing ${key}...`;
-        }
-        return 'Pressing key...';
+        return {
+            action: 'Pressing key',
+            description: key
+        };
     }
     if (state === 'success') {
-        const key = input?.key;
-        return `Pressed ${key || 'key'}`;
+        return {
+            action: 'Pressed key',
+            description: key
+        };
     }
-    return 'Key press failed';
+    return { action: 'Key press failed' };
 };
 
 const scrollFormatter: ActionFormatter = ({ state, input }) => {
+    const direction = input?.direction || 'down';
+    
     if (state === 'loading') {
-        const direction = input?.direction || 'down';
-        return `Scrolling ${direction}...`;
+        return {
+            action: 'Scrolling',
+            description: direction
+        };
     }
     if (state === 'success') {
-        const direction = input?.direction || 'down';
-        return `Scrolled ${direction}`;
+        return {
+            action: 'Scrolled',
+            description: direction
+        };
     }
-    return 'Scroll failed';
+    return { action: 'Scroll failed' };
 };
 
 const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
+    const selector = input?.selector;
+    
     if (state === 'loading') {
-        const selector = input?.selector;
-        if (selector) {
-            return `Waiting for ${truncateText(selector, 30)}...`;
-        }
-        return 'Waiting for element...';
+        return {
+            action: 'Waiting for element',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
     }
     if (state === 'success') {
-        return 'Element found';
+        return {
+            action: 'Element found',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
     }
-    return 'Wait timeout';
+    return { action: 'Wait timeout' };
 };
 
 // Tab Tools
 const switchTabsFormatter: ActionFormatter = ({ state, input, output }) => {
+    const title = output?.title || input?.title;
+    
     if (state === 'loading') {
-        return 'Switching tab...';
+        return { action: 'Switching tab' };
     }
     if (state === 'success') {
-        const title = output?.title || input?.title;
-        if (title) {
-            return `Switched to: ${truncateText(title, 40)}`;
-        }
-        return 'Tab switched';
+        return {
+            action: 'Switched tab',
+            description: title ? truncateText(title, 40) : undefined
+        };
     }
-    return 'Tab switch failed';
+    return { action: 'Tab switch failed' };
 };
 
 const getActiveTabFormatter: ActionFormatter = ({ state, output }) => {
+    const title = output?.title;
+    
     if (state === 'loading') {
-        return 'Getting active tab...';
+        return { action: 'Getting active tab' };
     }
     if (state === 'success') {
-        const title = output?.title;
-        if (title) {
-            return `Active: ${truncateText(title, 40)}`;
-        }
-        return 'Got active tab';
+        return {
+            action: 'Active tab',
+            description: title ? truncateText(title, 40) : undefined
+        };
     }
-    return 'Failed to get tab';
+    return { action: 'Failed to get tab' };
 };
 
 const openNewTabFormatter: ActionFormatter = ({ state, input, output }) => {
+    const url = input?.url;
+    const title = output?.title;
+    const domain = url ? extractDomain(url) : '';
+    
     if (state === 'loading') {
-        const url = input?.url;
-        if (url) {
-            return `Opening new tab: ${truncateText(extractDomain(url), 30)}`;
-        }
-        return 'Opening new tab...';
+        return {
+            action: 'Opening new tab',
+            description: domain ? truncateText(domain, 40) : undefined
+        };
     }
     if (state === 'success') {
-        const title = output?.title;
-        if (title) {
-            return `Opened: ${truncateText(title, 40)}`;
-        }
-        return 'New tab opened';
+        return {
+            action: 'New tab opened',
+            description: title ? truncateText(title, 40) : domain ? truncateText(domain, 40) : undefined
+        };
     }
-    return 'Failed to open tab';
+    return { action: 'Failed to open tab' };
 };
 
 const closeTabFormatter: ActionFormatter = ({ state, input }) => {
+    const title = input?.title;
+    
     if (state === 'loading') {
-        return 'Closing tab...';
+        return { action: 'Closing tab' };
     }
     if (state === 'success') {
-        const title = input?.title;
-        if (title) {
-            return `Closed: ${truncateText(title, 40)}`;
-        }
-        return 'Tab closed';
+        return {
+            action: 'Tab closed',
+            description: title ? truncateText(title, 40) : undefined
+        };
     }
-    return 'Failed to close tab';
+    return { action: 'Failed to close tab' };
 };
 
 const listTabsFormatter: ActionFormatter = ({ state, output }) => {
     if (state === 'loading') {
-        return 'Listing tabs...';
+        return { action: 'Listing tabs' };
     }
     if (state === 'success') {
         const count = output?.tabs?.length || output?.count || 0;
-        return `Found ${count} open tabs`;
+        return {
+            action: 'Found tabs',
+            description: `${count} open tabs`
+        };
     }
-    return 'Failed to list tabs';
+    return { action: 'Failed to list tabs' };
 };
 
 const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, output }) => {
     if (state === 'loading') {
-        return 'Crafting grouping strategy...';
+        return { action: 'Organizing tabs' };
     }
     if (state === 'success') {
         if (output?.needsAIAnalysis) {
             const tabCount = output?.tabs?.length || 0;
-            return `Prepared ${tabCount} tabs for analysis`;
+            return {
+                action: 'Prepared for analysis',
+                description: `${tabCount} tabs`
+            };
         }
         if (output?.groups) {
             const groupCount = output?.groups?.length || 0;
-            return `Organized into ${groupCount} groups`;
+            return {
+                action: 'Tabs organized',
+                description: `${groupCount} groups`
+            };
+            
         }
         if (output?.error) {
-            return 'Organization failed';
+            return { action: 'Organization failed' };
         }
-        return 'Tabs organized';
+        return { action: 'Tabs organized' };
     }
-    return 'Failed to organize tabs';
+    return { action: 'Failed to organize tabs' };
 };
 
 const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output }) => {
+    const groupCount = input?.groups?.length || 0;
+    const groupsCreated = output?.groupsCreated || output?.groups?.length || 0;
+    
     if (state === 'loading') {
-        const groupCount = input?.groups?.length || 0;
-        if (groupCount > 0) {
-            return `Applying ${groupCount} tab groups...`;
-        }
-        return 'Applying tab groups...';
+        return {
+            action: 'Applying tab groups',
+            description: groupCount > 0 ? `${groupCount} groups` : undefined
+        };
     }
     if (state === 'success') {
-        const groupsCreated = output?.groupsCreated || output?.groups?.length || 0;
-        if (groupsCreated > 0) {
-            return `Created ${groupsCreated} groups`;
-        }
-        return 'Tab groups applied';
+        return {
+            action: 'Tab groups applied',
+            description: groupsCreated > 0 ? `${groupsCreated} groups created` : undefined
+        };
     }
-    return 'Failed to apply groups';
+    return { action: 'Failed to apply groups' };
 };
 
 const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) => {
+    const groupCount = input?.groupIds?.length || 0;
+    const ungrouped = output?.ungroupedCount || 0;
+    
     if (state === 'loading') {
         if (input?.ungroupAll) {
-            return 'Ungrouping all tabs...';
+            return { action: 'Ungrouping all tabs' };
         }
-        const groupCount = input?.groupIds?.length || 0;
-        if (groupCount > 0) {
-            return `Ungrouping ${groupCount} group(s)...`;
-        }
-        return 'Ungrouping tabs...';
+        return {
+            action: 'Ungrouping tabs',
+            description: groupCount > 0 ? `${groupCount} group(s)` : undefined
+        };
     }
     if (state === 'success') {
-        const ungrouped = output?.ungroupedCount || 0;
-        if (ungrouped > 0) {
-            return `Ungrouped ${ungrouped} group(s)`;
-        }
-        return 'Tabs ungrouped';
+        return {
+            action: 'Tabs ungrouped',
+            description: ungrouped > 0 ? `${ungrouped} group(s)` : undefined
+        };
     }
-    return 'Failed to ungroup tabs';
+    return { action: 'Failed to ungroup tabs' };
 };
 
 // Memory Tools
 const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
+    const key = input?.key || input?.name;
+    
     if (state === 'loading') {
-        const key = input?.key || input?.name;
-        if (key) {
-            return `Saving memory: ${humanizeKey(key)}`;
-        }
-        return 'Saving memory...';
+        return {
+            action: 'Saving memory',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
     if (state === 'success') {
-        const key = input?.key || input?.name;
-        return `Saved: ${humanizeKey(key)}`;
+        return {
+            action: 'Memory saved',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
-    return 'Failed to save memory';
+    return { action: 'Failed to save memory' };
 };
 
 const getMemoryFormatter: ActionFormatter = ({ state, input, output }) => {
+    const key = input?.key || input?.name;
+    const found = output?.value !== undefined || output?.found;
+    
     if (state === 'loading') {
-        const key = input?.key || input?.name;
-        if (key) {
-            return `Retrieving memory: ${humanizeKey(key)}`;
-        }
-        return 'Retrieving memory...';
+        return {
+            action: 'Retrieving memory',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
     if (state === 'success') {
-        const key = input?.key || input?.name;
-        const found = output?.value !== undefined || output?.found;
         if (found) {
-            return `Retrieved: ${humanizeKey(key)}`;
+            return {
+                action: 'Memory retrieved',
+                description: key ? humanizeKey(key) : undefined
+            };
         }
-        return `Memory not found: ${humanizeKey(key)}`;
+        return {
+            action: 'Memory not found',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
-    return 'Failed to retrieve memory';
+    return { action: 'Failed to retrieve memory' };
 };
 
 const deleteMemoryFormatter: ActionFormatter = ({ state, input }) => {
+    const key = input?.key || input?.name;
+    
     if (state === 'loading') {
-        const key = input?.key || input?.name;
-        if (key) {
-            return `Deleting memory: ${humanizeKey(key)}`;
-        }
-        return 'Deleting memory...';
+        return {
+            action: 'Deleting memory',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
     if (state === 'success') {
-        const key = input?.key || input?.name;
-        return `Deleted: ${humanizeKey(key)}`;
+        return {
+            action: 'Memory deleted',
+            description: key ? humanizeKey(key) : undefined
+        };
     }
-    return 'Failed to delete memory';
+    return { action: 'Failed to delete memory' };
 };
 
 const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
     if (state === 'loading') {
-        return 'Listing memories...';
+        return { action: 'Listing memories' };
     }
     if (state === 'success') {
         const count = output?.memories?.length || output?.count || 0;
-        return `Found ${count} memories`;
+        return {
+            action: 'Found memories',
+            description: `${count} items`
+        };
     }
-    return 'Failed to list memories';
+    return { action: 'Failed to list memories' };
 };
 
 // History Tools
 const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
+    const query = input?.query;
+    
     if (state === 'loading') {
-        const query = input?.query;
-        if (query) {
-            return `Searching history: ${truncateText(query, 30)}`;
-        }
-        return 'Searching history...';
+        return {
+            action: 'Searching history',
+            description: query ? truncateText(query, 30) : undefined
+        };
     }
     if (state === 'success') {
         const count = output?.results?.length || output?.count || 0;
-        return `Found ${count} history items`;
+        return {
+            action: 'Found history items',
+            description: `${count} results`
+        };
     }
-    return 'History search failed';
+    return { action: 'History search failed' };
 };
 
 // Formatter Registry
@@ -482,25 +548,25 @@ const formatters: Record<string, ActionFormatter> = {
 };
 
 // Default formatter for tools without specific formatters
-function defaultFormatter(ctx: ActionFormatterContext): string {
+function defaultFormatter(ctx: ActionFormatterContext): FormattedAction {
     const { toolName, state } = ctx;
     const friendlyName = camelToTitle(toolName);
 
     if (state === 'loading') {
-        return `${friendlyName}...`;
+        return { action: friendlyName };
     }
     if (state === 'success') {
-        return `${friendlyName} ✓`;
+        return { action: `${friendlyName} ✓` };
     }
-    return `${friendlyName} failed`;
+    return { action: `${friendlyName} failed` };
 }
 
 /**
  * Format a tool action into a human-readable description
  * @param ctx - Action context with tool name, state, input, and output
- * @returns Formatted action description
+ * @returns Formatted action with optional description
  */
-export function formatToolAction(ctx: ActionFormatterContext): string {
+export function formatToolAction(ctx: ActionFormatterContext): FormattedAction {
     const formatter = formatters[ctx.toolName] || defaultFormatter;
     try {
         return formatter(ctx);
