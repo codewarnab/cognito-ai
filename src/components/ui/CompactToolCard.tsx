@@ -31,12 +31,18 @@ export function CompactToolCard({
     const [mounted, setMounted] = useState(false);
     const loadingCheckRef = useRef<LoadingCheckIconHandle>(null);
     const chevronRef = useRef<ChevronRightIconHandle | ChevronDownIconHandle>(null);
+    const toolIconRef = useRef<any>(null); // Ref for the tool icon
     const ToolIcon = getToolIcon(toolName);
 
     // Trigger mount animation on component mount (like Sonner toast)
     useEffect(() => {
         // Trigger enter animation without using CSS animation
         setMounted(true);
+
+        // Trigger tool icon animation on mount
+        if (toolIconRef.current?.startAnimation) {
+            toolIconRef.current.startAnimation();
+        }
     }, []);
 
     // Trigger loading animation when state is loading
@@ -80,7 +86,7 @@ export function CompactToolCard({
                 {/* Left: Icon + Tool Name */}
                 <div className="compact-tool-main">
                     <div className={`compact-tool-icon ${isHovered ? 'hovered' : ''}`}>
-                        <ToolIcon size={20} />
+                        <ToolIcon ref={toolIconRef} size={20} />
                     </div>
                     <span className="compact-tool-name">{displayName}</span>
                 </div>

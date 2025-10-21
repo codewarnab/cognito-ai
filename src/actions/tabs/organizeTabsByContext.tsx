@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-OrganizeTabsByContext');
@@ -24,7 +24,7 @@ export function useOrganizeTabsByContextTool() {
 
     useEffect(() => {
         log.info('🔧 Registering organizeTabsByContext tool...');
-        
+
         // Register the tool with AI SDK v5
         registerTool({
             name: 'organizeTabsByContext',
@@ -37,7 +37,7 @@ export function useOrganizeTabsByContextTool() {
             execute: async ({ maxGroups = 5 }) => {
                 try {
                     log.info("TOOL CALL: organizeTabsByContext", { maxGroups });
-                    
+
                     // Check if Tab Groups API is available
                     if (!chrome.tabs.group || !chrome.tabGroups) {
                         log.error("Tab Groups API not available");
@@ -89,93 +89,9 @@ export function useOrganizeTabsByContextTool() {
             },
         });
 
-        // Register the UI renderer for this tool
+        // Register the UI renderer for this tool - uses CompactToolRenderer
         registerToolUI('organizeTabsByContext', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard 
-                        title="Analyzing Tabs" 
-                        subtitle="AI is analyzing tab content and context..." 
-                        state="loading" 
-                        icon="🧠" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard 
-                            title="Organization Failed" 
-                            subtitle={output.error} 
-                            state="error" 
-                            icon="🧠" 
-                        />
-                    );
-                }
-                
-                if (output.needsAIAnalysis) {
-                    return (
-                        <ToolCard 
-                            title="Tabs Ready for Analysis" 
-                            subtitle={`${output.tabs.length} tabs prepared`} 
-                            state="success" 
-                            icon="🧠"
-                        >
-                            <div style={{ fontSize: '12px', marginTop: '8px', opacity: 0.8 }}>
-                                AI will now analyze and group these tabs by context...
-                            </div>
-                        </ToolCard>
-                    );
-                }
-                
-                if (output.groups) {
-                    return (
-                        <ToolCard
-                            title="Tabs Organized by Context"
-                            subtitle={`Created ${output.groups.length} contextual group(s)`}
-                            state="success"
-                            icon="🧠"
-                        >
-                            {output.groups.length > 0 && (
-                                <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                                    {output.groups.map((group: any, idx: number) => (
-                                        <div key={idx} style={{
-                                            padding: '8px',
-                                            marginBottom: '6px',
-                                            background: 'rgba(0,0,0,0.05)',
-                                            borderRadius: '4px'
-                                        }}>
-                                            <div style={{ fontWeight: 600, marginBottom: '2px' }}>{group.name}</div>
-                                            {group.description && (
-                                                <div style={{ fontSize: '11px', opacity: 0.7, marginBottom: '4px' }}>
-                                                    {group.description}
-                                                </div>
-                                            )}
-                                            <div style={{ opacity: 0.6 }}>{group.tabCount || group.tabIds?.length || 0} tab(s)</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </ToolCard>
-                    );
-                }
-            }
-            
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard 
-                        title="Failed to Organize Tabs" 
-                        subtitle={state.errorText} 
-                        state="error" 
-                        icon="🧠" 
-                    />
-                );
-            }
-            
-            return null;
+            return <CompactToolRenderer state={state} />;
         });
 
         log.info('✅ organizeTabsByContext tool registration complete');

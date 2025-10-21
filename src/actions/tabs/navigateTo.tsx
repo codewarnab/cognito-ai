@@ -12,7 +12,7 @@ import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
 import { useActionHelpers } from '../useActionHelpers';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-NavigateTo');
@@ -76,7 +76,10 @@ export function useNavigateToTool() {
             },
         });
 
-        // Using default CompactToolRenderer - no custom UI needed
+        // Register the UI renderer for this tool - uses CompactToolRenderer
+        registerToolUI('navigateTo', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        });
 
         log.info('✅ openTab tool registration complete');
 

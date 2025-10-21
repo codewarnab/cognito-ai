@@ -3,7 +3,6 @@
  * Provides consistent, space-efficient UI for all tool executions
  */
 
-import React from 'react';
 import { CompactToolCard } from '../components/ui/CompactToolCard';
 import type { ToolUIState } from './ToolUIContext';
 
