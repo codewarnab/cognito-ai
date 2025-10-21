@@ -10,17 +10,18 @@ export function CompactToolRenderer({ state }: { state: ToolUIState }) {
     const { toolName, state: toolState, input, output, errorText } = state;
 
     // Map tool state to UI state
-    // Special handling: if output exists but has success:false, treat as error
+    // Special handling: if output exists but has success:false or error:true, treat as error
+    const hasError = output && (output.success === false || output.error === true || output.error);
     const uiState =
         toolState === 'input-streaming' || toolState === 'input-available'
             ? 'loading'
             : toolState === 'output-available'
-                ? (output && output.success === false) ? 'error' : 'success'
+                ? hasError ? 'error' : 'success'
                 : 'error';
 
-    // Use output.error as errorText if output.success is false
-    const displayErrorText = (output && output.success === false && output.error)
-        ? output.error
+    // Use output.error as errorText if there's an error in the output
+    const displayErrorText = hasError
+        ? (typeof output.error === 'string' ? output.error : output.answer || errorText)
         : errorText;
 
     return (

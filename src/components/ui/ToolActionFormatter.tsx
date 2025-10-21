@@ -175,6 +175,30 @@ const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'Click failed' };
 };
 
+const clickByTextFormatter: ActionFormatter = ({ state, input, output }) => {
+    const searchText = input?.text;
+    const clicked = output?.clicked;
+    const matchInfo = output?.totalMatches > 1 ? ` (match ${output.clickedIndex} of ${output.totalMatches})` : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Searching & clicking',
+            description: searchText ? `"${truncateText(searchText, 40)}"` : undefined
+        };
+    }
+    if (state === 'success') {
+        const clickedText = clicked?.text || searchText;
+        return {
+            action: 'Element clicked',
+            description: clickedText ? `"${truncateText(clickedText, 30)}"${matchInfo}` : matchInfo
+        };
+    }
+    return {
+        action: 'Click failed',
+        description: searchText ? `"${truncateText(searchText, 40)}"` : undefined
+    };
+};
+
 const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) => {
     const target = input?.target;
     const text = input?.text || '';
@@ -600,6 +624,7 @@ const formatters: Record<string, ActionFormatter> = {
     // Interactions
     clickElement: clickElementFormatter,
     click: clickElementFormatter,
+    clickByText: clickByTextFormatter,
     typeInField: typeInFieldFormatter,
     type: typeInFieldFormatter,
     pressKey: pressKeyFormatter,
