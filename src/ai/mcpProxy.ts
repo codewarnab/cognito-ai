@@ -13,6 +13,7 @@
 
 import { createLogger } from '../logger';
 import { z } from 'zod';
+import { registerToolServer } from '../utils/toolMetadataStore';
 
 const log = createLogger('MCP-Proxy');
 
@@ -96,13 +97,32 @@ export async function getMCPToolsFromBackground(abortSignal?: AbortSignal): Prom
                     }
                 };
 
-                log.info(`✅ Registered proxy tool: ${toolDef.name} (from ${toolDef.serverName})`);
+                // Register tool→server mapping for icon resolution
+                registerToolServer(toolDef.name, toolDef.serverId);
+
+                log.info(`✅ Registered proxy tool: ${toolDef.name} (from ${toolDef.serverName})`, {
+                    toolName: toolDef.name,
+                    serverId: toolDef.serverId,
+                    serverName: toolDef.serverName,
+                    hasDescription: !!toolDef.description,
+                    hasInputSchema: !!toolDef.inputSchema
+                });
             } catch (error) {
                 log.error(`❌ Failed to register tool ${toolDef.name}:`, error);
             }
         }
 
-        log.info(`🎉 Total proxy tools registered: ${Object.keys(tools).length}`);
+        const registeredToolNames = Object.keys(tools);
+        log.info(`🎉 Total proxy tools registered: ${registeredToolNames.length}`, {
+            count: registeredToolNames.length,
+            toolNames: registeredToolNames
+        });
+
+        // Debug: Log the registry for troubleshooting
+        if (registeredToolNames.length > 0) {
+            const { debugRegistry } = await import('../utils/toolMetadataStore');
+            debugRegistry();
+        }
 
         // No session IDs needed - background manages sessions
         // No cleanup needed - background manages persistent connections

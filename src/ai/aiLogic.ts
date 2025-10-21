@@ -4,7 +4,7 @@
  * Runs directly in the UI thread, no service worker needed
  */
 
-import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs } from 'ai';
+import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs , smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
@@ -156,6 +156,10 @@ export async function streamAIResponse(params: {
             tools, // Include tools in the stream
             abortSignal,
             temperature: 0.7,
+            experimental_transform: smoothStream({
+              delayInMs: 20, // optional: defaults to 10ms
+              chunking: 'word', // optional: defaults to 'word'
+            }),
             // Log when a step completes (includes tool calls)
             onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage }) => {
               // Check for malformed function calls or errors

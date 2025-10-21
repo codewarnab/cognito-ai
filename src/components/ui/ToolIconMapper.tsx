@@ -1,6 +1,11 @@
 /**
  * ToolIconMapper - Maps tool names to their corresponding animated icons
  * Provides centralized icon mapping for all registered tools
+ * 
+ * Features:
+ * - MCP tool support: Automatically maps MCP tools to their server icons
+ * - Local tool mapping: Maps built-in browser automation tools
+ * - Fallback hierarchy: MCP server icon → local tool icon → ChromeIcon
  */
 
 import React from 'react';
@@ -24,7 +29,39 @@ import { PlusIcon } from '../../../assets/chat/new-tab';
 import { ClockIcon } from '../../../assets/chat/wait-for';
 import { BanIcon } from '../../../assets/chat/blocked';
 import { ExpandIcon } from '../../../assets/chat/expand';
-import { ScanTextIcon } from '../../../assets/chat/reading-page-content'
+import { ScanTextIcon } from '../../../assets/chat/reading-page-content';
+import { getToolServerId, isMcpTool } from '../../utils/toolMetadataStore';
+import { getMcpServerIcon, GenericMcpIcon } from './McpIconMapper';
+import { createLogger } from '../../logger';
+import { Wrench } from 'lucide-react';
+import { forwardRef, useImperativeHandle } from 'react';
+
+const log = createLogger('ToolIconMapper');
+
+// Wrench icon wrapper component for MCP tools with animation support
+export interface WrenchIconHandle {
+    startAnimation: () => void;
+    stopAnimation: () => void;
+}
+
+const WrenchIcon = forwardRef<WrenchIconHandle, { size?: number; className?: string }>(
+    ({ size = 16, className }, ref) => {
+        // Expose dummy animation methods to match icon interface
+        useImperativeHandle(ref, () => ({
+            startAnimation: () => {
+                // Wrench icon doesn't have animation, but we need this for compatibility
+            },
+            stopAnimation: () => {
+                // Wrench icon doesn't have animation, but we need this for compatibility
+            },
+        }));
+
+        return <Wrench size={size} className={className} />;
+    }
+);
+
+WrenchIcon.displayName = 'WrenchIcon';
+
 export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     // Interaction tools
     clickElement: CursorClickIcon,
@@ -85,9 +122,64 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
 };
 
 /**
+ * Heuristic to detect if a tool name looks like an MCP tool
+ * Even if it's not registered in our store
+ */
+function looksLikeMcpTool(toolName: string): boolean {
+    const lower = toolName.toLowerCase();
+
+    // Check for known MCP server names in the tool name
+    const mcpServerHints = [
+        'notion', 'linear', 'github', 'figma', 'supabase',
+        'netlify', 'sentry', 'paypal', 'webflow', 'ahrefs',
+        'context7', 'deepwiki', 'coingecko', 'fetch', 'sequential',
+        'edgeone', 'parallel', 'mcp'
+    ];
+
+    // If tool name contains any MCP server hint
+    if (mcpServerHints.some(hint => lower.includes(hint))) {
+        return true;
+    }
+
+    // If tool name has multiple underscores (typical MCP naming pattern)
+    if ((toolName.match(/_/g) || []).length >= 2) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Get the icon component for a given tool name
- * Falls back to ChromeIcon if no specific mapping exists
+ * First checks if it's an MCP tool and uses server icon
+ * Falls back to local tool mapping, then ChromeIcon
  */
 export function getToolIcon(toolName: string): React.ComponentType<any> {
-    return TOOL_ICON_MAP[toolName] || ChromeIcon;
+    log.debug(`🔍 Looking up icon for tool: "${toolName}"`);
+
+    // Check if this is a registered MCP tool
+    const isMcp = isMcpTool(toolName);
+    log.debug(`  → Is registered MCP tool: ${isMcp}`);
+
+    if (isMcp) {
+        // All MCP tools should show the wrench icon
+        log.debug(`  → 🔧 MCP tool detected, using Wrench icon`);
+        return WrenchIcon;
+    }
+
+    // Check local tool mapping
+    if (TOOL_ICON_MAP[toolName]) {
+        log.debug(`  → ✅ Resolved to local tool icon`);
+        return TOOL_ICON_MAP[toolName];
+    }
+
+    // Heuristic check: Does it LOOK like an MCP tool even if not registered?
+    if (looksLikeMcpTool(toolName)) {
+        log.debug(`  → 🔧 Looks like MCP tool (heuristic), using Wrench icon`);
+        return WrenchIcon;
+    }
+
+    // Final fallback
+    log.debug(`  → ⚠️ No icon found, using ChromeIcon fallback`);
+    return ChromeIcon;
 }

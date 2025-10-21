@@ -35,19 +35,9 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
 
       return {
         startAnimation: () => {
-          // Start all animations
+          // Only start the worm spinner animation (loop indefinitely)
+          // Don't start checkmark, pop, or confetti animations
           wormControls.start('animate');
-          checkControls.start('animate');
-          popStartControls.start('animate');
-          popEndControls.start('animate');
-          dotGroup1Controls.start('animate');
-          dotGroup2Controls.start('animate');
-          dotGroup3Controls.start('animate');
-          dotGroup4Controls.start('animate');
-          dotGroup5Controls.start('animate');
-          dotGroup6Controls.start('animate');
-          dotGroup7Controls.start('animate');
-          dotGroup8Controls.start('animate');
         },
         stopAnimation: () => {
           wormControls.start('initial');
@@ -69,46 +59,24 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          // Auto-start animation on hover
+          // Auto-start animation on hover (only spinner)
           wormControls.start('animate');
-          checkControls.start('animate');
-          popStartControls.start('animate');
-          popEndControls.start('animate');
-          dotGroup1Controls.start('animate');
-          dotGroup2Controls.start('animate');
-          dotGroup3Controls.start('animate');
-          dotGroup4Controls.start('animate');
-          dotGroup5Controls.start('animate');
-          dotGroup6Controls.start('animate');
-          dotGroup7Controls.start('animate');
-          dotGroup8Controls.start('animate');
         } else {
           onMouseEnter?.(e);
         }
       },
-      [wormControls, checkControls, popStartControls, popEndControls, dotGroup1Controls, dotGroup2Controls, dotGroup3Controls, dotGroup4Controls, dotGroup5Controls, dotGroup6Controls, dotGroup7Controls, dotGroup8Controls, onMouseEnter]
+      [wormControls, onMouseEnter]
     );
 
     const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
           wormControls.start('initial');
-          checkControls.start('initial');
-          popStartControls.start('initial');
-          popEndControls.start('initial');
-          dotGroup1Controls.start('initial');
-          dotGroup2Controls.start('initial');
-          dotGroup3Controls.start('initial');
-          dotGroup4Controls.start('initial');
-          dotGroup5Controls.start('initial');
-          dotGroup6Controls.start('initial');
-          dotGroup7Controls.start('initial');
-          dotGroup8Controls.start('initial');
         } else {
           onMouseLeave?.(e);
         }
       },
-      [wormControls, checkControls, popStartControls, popEndControls, dotGroup1Controls, dotGroup2Controls, dotGroup3Controls, dotGroup4Controls, dotGroup5Controls, dotGroup6Controls, dotGroup7Controls, dotGroup8Controls, onMouseLeave]
+      [wormControls, onMouseLeave]
     );
 
     return (
@@ -135,18 +103,26 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
               strokeDasharray="138.23 138.23"
               strokeDashoffset="-51.84"
               transform="rotate(-119)"
+              initial="initial"
               variants={{
                 initial: {
                   strokeDashoffset: -51.84,
                   rotate: -119,
+                  opacity: 0,
                 },
                 animate: {
-                  strokeDashoffset: [-51.84, -51.84, -138.23],
-                  rotate: [-119, -119 + 1080, -119 + 1152], // 3 full rotations + extra
+                  strokeDashoffset: -51.84,
+                  rotate: -119 + 360,
+                  opacity: 1,
                   transition: {
-                    duration: 4,
-                    times: [0, 0.6, 0.725],
-                    ease: [0.61, 1, 0.88, 1],
+                    rotate: {
+                      duration: 1,
+                      ease: 'linear',
+                      repeat: Infinity,
+                    },
+                    opacity: {
+                      duration: 0.2,
+                    },
                   },
                 },
               }}
@@ -354,14 +330,17 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
               d="M 17 25 L 22 30 C 22 30 32.2 19.8 37.3 14.7 C 41.8 10.2 39 7.9 39 7.9"
               strokeDasharray="36.7 36.7"
               strokeDashoffset="-36.7"
+              initial="initial"
               variants={{
                 initial: {
                   strokeDashoffset: -36.7,
                   scale: 1,
+                  opacity: 0,
                 },
                 animate: {
                   strokeDashoffset: [-36.7, 13.7, 13.7, 13.7],
                   scale: [1, 1, 0.4, 1.4, 1],
+                  opacity: [0, 0, 1, 1, 1],
                   transition: {
                     duration: 4,
                     times: [0, 0.75, 0.79, 0.87, 0.93],

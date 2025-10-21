@@ -10,7 +10,9 @@ import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../assets/c
 import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/chat/chevrown-down';
 import { getToolIcon } from './ToolIconMapper';
 import { formatToolAction } from './ToolActionFormatter';
+import { createLogger } from '../../logger';
 
+const log = createLogger('CompactToolCard');
 
 interface CompactToolCardProps {
     toolName: string;
@@ -27,6 +29,17 @@ export function CompactToolCard({
     output,
     errorText
 }: CompactToolCardProps) {
+    // Log tool rendering for debugging
+    useEffect(() => {
+        log.debug(`🎨 Rendering CompactToolCard for tool: "${toolName}"`, {
+            toolName,
+            state,
+            hasInput: !!input,
+            hasOutput: !!output,
+            hasError: !!errorText
+        });
+    }, [toolName, state, input, output, errorText]);
+
     const [isExpanded, setIsExpanded] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -51,12 +64,16 @@ export function CompactToolCard({
     useEffect(() => {
         if (state === 'loading') {
             loadingCheckRef.current?.startAnimation();
-        } else if (state === 'success') {
+        } else {
+            // Always stop loading animation when not in loading state
             loadingCheckRef.current?.stopAnimation();
-            // Trigger check animation on success
-            setTimeout(() => {
-                circleCheckRef.current?.startAnimation();
-            }, 100);
+
+            if (state === 'success') {
+                // Trigger check animation after a brief delay
+                setTimeout(() => {
+                    circleCheckRef.current?.startAnimation();
+                }, 50);
+            }
         }
     }, [state]);
 
@@ -104,14 +121,17 @@ export function CompactToolCard({
 
                 {/* Right: Status Icon + Chevron */}
                 <div className="compact-tool-status">
-                    {state === 'loading' && (
+                    {/* Loading icon - only visible when loading */}
+                    <div style={{ display: state === 'loading' ? 'flex' : 'none', alignItems: 'center' }}>
                         <LoadingCheckIcon ref={loadingCheckRef} size={16} />
-                    )}
-                    {state === 'success' && (
-                        <div style={{ color: '#22c55e' }}>
-                            <CircleCheckIcon ref={circleCheckRef} size={16} />
-                        </div>
-                    )}
+                    </div>
+
+                    {/* Success icon - only visible when success */}
+                    <div style={{ display: state === 'success' ? 'flex' : 'none', alignItems: 'center', color: '#22c55e' }}>
+                        <CircleCheckIcon ref={circleCheckRef} size={16} />
+                    </div>
+
+                    {/* Error icon - only visible when error */}
                     {state === 'error' && (
                         <div className="compact-tool-error-icon">✕</div>
                     )}
