@@ -1,0 +1,201 @@
+/**
+ * VoiceControls Styles
+ * Control buttons with smooth transitions and animations
+ */
+
+.voice-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    width: 100%;
+}
+
+/* Base Button Style */
+.voice-control-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.voice-control-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.voice-control-button:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+.voice-control-button svg {
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.voice-control-button span {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.voice-control-button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--border-color-hover);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.voice-control-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.voice-control-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Reset Button */
+.voice-control-reset {
+    background: var(--glass-bg);
+    border-color: var(--border-color);
+}
+
+.voice-control-reset:hover:not(:disabled) {
+    background: var(--glass-bg-hover);
+    border-color: var(--text-tertiary);
+    color: var(--text-primary);
+}
+
+.voice-control-reset svg {
+    color: var(--text-secondary);
+}
+
+.voice-control-reset:hover:not(:disabled) svg {
+    color: var(--text-primary);
+    transform: rotate(-180deg);
+}
+
+/* Start Button */
+.voice-control-start {
+    background: linear-gradient(135deg, rgba(198, 254, 30, 0.1) 0%, rgba(168, 216, 20, 0.1) 100%);
+    border-color: var(--green-pulse);
+    color: var(--green-pulse);
+    min-width: 120px;
+}
+
+.voice-control-start:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(198, 254, 30, 0.2) 0%, rgba(168, 216, 20, 0.2) 100%);
+    border-color: var(--green-pulse);
+    box-shadow: 0 8px 24px rgba(198, 254, 30, 0.3);
+}
+
+.voice-control-start svg circle {
+    animation: voice-control-pulse 2s ease-in-out infinite;
+}
+
+@keyframes voice-control-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+}
+
+/* Stop Button */
+.voice-control-stop {
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.1) 0%, rgba(204, 0, 0, 0.1) 100%);
+    border-color: var(--color-error);
+    color: var(--color-error);
+    min-width: 120px;
+}
+
+.voice-control-stop:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.2) 0%, rgba(204, 0, 0, 0.2) 100%);
+    border-color: var(--color-error);
+    box-shadow: 0 8px 24px rgba(255, 68, 68, 0.3);
+}
+
+.voice-control-stop svg rect {
+    animation: voice-control-blink 1s ease-in-out infinite;
+}
+
+@keyframes voice-control-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .voice-controls {
+        gap: var(--spacing-md);
+    }
+
+    .voice-control-button {
+        padding: var(--spacing-sm) var(--spacing-md);
+        min-width: auto;
+    }
+
+    .voice-control-button span {
+        font-size: 11px;
+    }
+
+    .voice-control-start,
+    .voice-control-stop {
+        min-width: 100px;
+    }
+}
+
+/* Accessibility - Focus States */
+.voice-control-button:focus-visible {
+    outline: 2px solid var(--green-pulse);
+    outline-offset: 2px;
+}
+
+.voice-control-button:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Dark mode enhancement */
+@media (prefers-color-scheme: dark) {
+    .voice-control-button {
+        background: var(--glass-bg);
+    }
+
+    .voice-control-button:hover:not(:disabled) {
+        background: var(--glass-bg-hover);
+    }
+}
