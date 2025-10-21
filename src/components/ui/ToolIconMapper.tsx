@@ -104,6 +104,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     youtubeSearch: YoutubeIcon,
     youtubeTranscript: YoutubeIcon,
     getYoutubeTranscript: YoutubeIcon,
+    youtubeAgentAsTool: YoutubeIcon,
 
     // Reminder tools
     createReminder: CircleCheckIcon,

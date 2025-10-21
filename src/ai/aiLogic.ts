@@ -4,12 +4,13 @@
  * Runs directly in the UI thread, no service worker needed
  */
 
-import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs , smoothStream } from 'ai';
+import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs, smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
 import { getAllTools } from './toolRegistryUtils';
 import { getMCPToolsFromBackground } from './mcpProxy';
+import { youtubeAgentAsTool } from './agents/youtubeAgent';
 
 const log = createLogger('AI-Logic');
 
@@ -119,15 +120,22 @@ export async function streamAIResponse(params: {
 
           log.info('🔍 Available extension tools:', { count: extensionToolCount, names: Object.keys(extensionTools) });
 
-          // Combine all tools
-          const tools = { ...extensionTools, ...mcpTools };
+          // Add specialist agents as tools
+          const agentTools = {
+            analyzeYouTubeVideo: youtubeAgentAsTool,
+          };
+
+          // Combine all tools: extension tools + agent tools + MCP tools
+          const tools = { ...extensionTools, ...agentTools, ...mcpTools };
           const totalToolCount = Object.keys(tools).length;
 
           log.info('🎯 Total available tools:', {
             count: totalToolCount,
             extension: extensionToolCount,
+            agents: Object.keys(agentTools).length,
             mcp: Object.keys(mcpTools).length,
-            names: Object.keys(tools)
+            names: Object.keys(tools),
+            agentNames: Object.keys(agentTools),
           });
 
           if (totalToolCount === 0) {
@@ -177,6 +185,7 @@ export async function streamAIResponse(params: {
                   calls: toolCalls.map(call => ({
                     id: call.toolCallId,
                     name: call.toolName,
+                    isAgentTool: call.toolName === 'analyzeYouTubeVideo',
                   })),
                 });
               }
