@@ -1,0 +1,44 @@
+:root {
+  /* Theme colors */
+  --hue: 223;
+  --sat: 10%;
+  --bg: hsl(var(--hue), var(--sat), 90%);
+  --fg: hsl(var(--hue), var(--sat), 10%);
+
+  /* Checkmark colors */
+  --hue-success: 126;
+  --success1: hsl(var(--hue-success), 90%, 40%);
+  --success2: hsl(var(--hue-success), 90%, 24%);
+
+  /* Confetti colors */
+  --periwinkle: hsl(240, 90%, 70%);
+  --light-blue: hsl(210, 90%, 70%);
+  --orange: hsl(15, 90%, 70%);
+  --magenta: hsl(300, 90%, 70%);
+  --light-green: hsl(105, 40%, 70%);
+  --light-teal: hsl(150, 40%, 70%);
+  --purple: hsl(270, 90%, 70%);
+
+  /* Animation duration */
+  --trans-dur: 0.3s;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: hsl(var(--hue), var(--sat), 10%);
+    --fg: hsl(var(--hue), var(--sat), 90%);
+  }
+}
+
+/* Loading check icon styles */
+.loading-check-icon {
+  color: var(--success2);
+  transition: color var(--trans-dur);
+}
+
+@media (prefers-color-scheme: dark) {
+  .loading-check-icon {
+    color: var(--success1);
+  }
+}

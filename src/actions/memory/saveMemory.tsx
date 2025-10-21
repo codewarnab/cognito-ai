@@ -61,56 +61,7 @@ export function useSaveMemory() {
             },
         });
 
-        registerToolUI('saveMemory', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Saving Memory"
-                        subtitle={`Key: ${input?.key}`}
-                        state="loading"
-                        icon="💾"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Failed to Save Memory"
-                            subtitle={output.error}
-                            state="error"
-                            icon="💾"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard title="Memory Saved" state="success" icon="💾">
-                        <div style={{ fontSize: '13px' }}>
-                            <div><strong>Key:</strong> {output.key}</div>
-                            <div style={{ opacity: 0.7, fontSize: '12px', marginTop: '4px' }}>
-                                {output.message}
-                            </div>
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Failed to Save Memory"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="💾"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ saveMemory tool registration complete');
 

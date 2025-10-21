@@ -53,64 +53,7 @@ export function useSuggestSaveMemory() {
             },
         });
 
-        registerToolUI('suggestSaveMemory', (state: ToolUIState) => {
-            const { state: toolState, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Suggesting Memory"
-                        state="loading"
-                        icon="💡"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Error in Memory Suggestion"
-                            subtitle={output.error}
-                            state="error"
-                            icon="💡"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard title="Memory Suggestion" state="success" icon="💡">
-                        <div style={{ fontSize: '13px' }}>
-                            <div><strong>{output.key}:</strong> {String(output.value)}</div>
-                            <div style={{ opacity: 0.7, fontSize: '11px', marginTop: '4px' }}>
-                                {output.reason}
-                            </div>
-                            <div style={{
-                                marginTop: '8px',
-                                padding: '6px',
-                                background: 'rgba(198, 254, 30, 0.1)',
-                                borderRadius: '4px',
-                                fontSize: '12px'
-                            }}>
-                                ℹ️ Awaiting user consent to save
-                            </div>
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Memory Suggestion Failed"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="💡"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ suggestSaveMemory tool registration complete');
 

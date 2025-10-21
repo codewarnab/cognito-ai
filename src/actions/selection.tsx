@@ -135,32 +135,7 @@ export function registerSelectionActions() {
       },
     });
 
-    registerToolUI('getSelectedText', (state: ToolUIState) => {
-      const { state: toolState, output } = state;
-
-      if (toolState === 'input-streaming' || toolState === 'input-available') {
-        return <ToolCard title="Getting Selected Text" state="loading" icon="✏️" />;
-      }
-
-      if (toolState === 'output-available' && output) {
-        if (output.error) {
-          return <ToolCard title="Failed to Get Selection" subtitle={output.error} state="error" icon="✏️" />;
-        }
-        return (
-          <ToolCard title="Selected Text" subtitle={`${output.length} characters`} state="success" icon="✏️">
-            {output.selectedText && (
-              <CodeBlock code={output.selectedText.length > 200 ? output.selectedText.substring(0, 200) + '...' : output.selectedText} />
-            )}
-          </ToolCard>
-        );
-      }
-
-      if (toolState === 'output-error') {
-        return <ToolCard title="Selection Error" subtitle={state.errorText || 'Unknown error'} state="error" icon="✏️" />;
-      }
-
-      return null;
-    });
+    // Using default CompactToolRenderer - no custom UI needed
 
     log.info('✅ getSelectedText tool registration complete');
 
@@ -224,33 +199,7 @@ export function registerSelectionActions() {
       },
     });
 
-    registerToolUI('readPageContent', (state: ToolUIState) => {
-      const { state: toolState, output } = state;
-
-      if (toolState === 'input-streaming' || toolState === 'input-available') {
-        return <ToolCard title="Reading Page Content" state="loading" icon="📄" />;
-      }
-
-      if (toolState === 'output-available' && output) {
-        if (output.error) {
-          return <ToolCard title="Failed to Read Page" subtitle={output.error} state="error" icon="📄" />;
-        }
-        return (
-          <ToolCard title="Page Content" subtitle={`${output.contentLength} characters from ${output.title}`} state="success" icon="📄">
-            <details className="tool-details">
-              <summary>View excerpt</summary>
-              <CodeBlock code={output.content.substring(0, 300) + (output.content.length > 300 ? '...' : '')} />
-            </details>
-          </ToolCard>
-        );
-      }
-
-      if (toolState === 'output-error') {
-        return <ToolCard title="Read Page Error" subtitle={state.errorText || 'Unknown error'} state="error" icon="📄" />;
-      }
-
-      return null;
-    });
+    // Using default CompactToolRenderer - no custom UI needed
 
     log.info('✅ readPageContent tool registration complete');
 

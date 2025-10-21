@@ -13,7 +13,7 @@ export function useClickElementTool() {
 
     useEffect(() => {
         log.info('🔧 Registering clickElement tool...');
-        
+
         registerTool({
             name: "clickElement",
             description: "Click an element on the active page by selector, text, or aria-label.",
@@ -64,36 +64,7 @@ export function useClickElementTool() {
             },
         });
 
-        registerToolUI('clickElement', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return <ToolCard title="Clicking Element" subtitle={input?.selector} state="loading" icon="👆" />;
-            }
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard title="Click Failed" subtitle={output.error} state="error" icon="👆">
-                            {output.suggestion && <div style={{ fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>{output.suggestion}</div>}
-                        </ToolCard>
-                    );
-                }
-                return (
-                    <ToolCard title="Element Clicked" subtitle={output.message || 'Click successful'} state="success" icon="👆">
-                        {output.clicked && (
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                                <Badge label={output.clicked.tagName} variant="default" />
-                                {output.clicked.text && <div style={{ marginTop: '4px', opacity: 0.7 }}>{output.clicked.text}</div>}
-                            </div>
-                        )}
-                    </ToolCard>
-                );
-            }
-            if (toolState === 'output-error') {
-                return <ToolCard title="Click Failed" subtitle={state.errorText || 'Unknown error'} state="error" icon="👆" />;
-            }
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ clickElement tool registration complete');
 

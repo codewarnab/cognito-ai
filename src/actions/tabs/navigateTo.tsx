@@ -26,7 +26,7 @@ export function useNavigateToTool() {
 
     useEffect(() => {
         log.info('🔧 Registering navigateTo tool...');
-        
+
         // Register the tool with AI SDK v5
         registerTool({
             name: 'navigateTo',
@@ -42,16 +42,16 @@ export function useNavigateToTool() {
                     log.info("TOOL CALL: openTab", { url, newTab });
                     const key = normalizeUrl(url);
                     markOpened(key);
-                    
+
                     if (newTab) {
                         // Open in new tab
                         const tab = await chrome.tabs.create({ url });
                         log.info('📑 Opened URL in new tab', { tabId: tab.id, url });
-                        return { 
-                            success: true, 
+                        return {
+                            success: true,
                             action: 'opened_new_tab',
-                            tabId: tab.id, 
-                            url: tab.url 
+                            tabId: tab.id,
+                            url: tab.url
                         };
                     } else {
                         // Open in current tab (update active tab)
@@ -59,14 +59,14 @@ export function useNavigateToTool() {
                         if (!currentTab || currentTab.id === undefined) {
                             return { error: "Could not find current tab" };
                         }
-                        
+
                         await chrome.tabs.update(currentTab.id, { url });
                         log.info('🔄 Opened URL in current tab', { tabId: currentTab.id, url });
-                        return { 
-                            success: true, 
+                        return {
+                            success: true,
                             action: 'opened_current_tab',
-                            tabId: currentTab.id, 
-                            url 
+                            tabId: currentTab.id,
+                            url
                         };
                     }
                 } catch (error) {
@@ -76,57 +76,7 @@ export function useNavigateToTool() {
             },
         });
 
-        // Register the UI renderer for this tool
-        registerToolUI('navigateTo', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                const location = input?.newTab ? 'new tab' : 'current tab';
-                return (
-                    <ToolCard 
-                        title="Opening Tab" 
-                        subtitle={`${input?.url} (in ${location})`} 
-                        state="loading" 
-                        icon="🌐" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard 
-                            title="Failed to Open Tab" 
-                            subtitle={output.error} 
-                            state="error" 
-                            icon="🌐" 
-                        />
-                    );
-                }
-                const action = output.action === 'opened_new_tab' ? 'Opened in new tab' : 'Opened in current tab';
-                return (
-                    <ToolCard 
-                        title={action} 
-                        subtitle={output.url} 
-                        state="success" 
-                        icon="🌐" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard 
-                        title="Failed to Open Tab" 
-                        subtitle={state.errorText} 
-                        state="error" 
-                        icon="🌐" 
-                    />
-                );
-            }
-            
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ openTab tool registration complete');
 

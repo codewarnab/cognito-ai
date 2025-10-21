@@ -7,6 +7,7 @@ import React, { useMemo } from 'react';
 import { useToolUI } from './ToolUIContext';
 import type { ToolUIState } from './ToolUIContext';
 import { createLogger } from '../logger';
+import { CompactToolRenderer } from './CompactToolRenderer';
 
 const log = createLogger('ToolPartRenderer');
 
@@ -61,7 +62,7 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
         output = part.output;
         state = part.state || 'input-available';
       }
-      
+
       if (!toolName) {
         log.warn('Could not extract tool name from part:', part);
         return null;
@@ -91,7 +92,7 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
   }
 
   // Default fallback renderer for tools without custom UI
-  return <DefaultToolRenderer state={toolState} />;
+  return <CompactToolRenderer state={toolState} />;
 }
 
 /**
@@ -130,7 +131,7 @@ function DefaultToolRenderer({ state }: { state: ToolUIState }) {
       delete: '🗑️',
       update: '✏️',
     };
-    
+
     for (const [key, icon] of Object.entries(icons)) {
       if (name.toLowerCase().includes(key)) return icon;
     }
@@ -154,14 +155,14 @@ function DefaultToolRenderer({ state }: { state: ToolUIState }) {
           {toolState === 'output-error' && '❌ Error'}
         </span>
       </div>
-      
+
       {(toolState === 'input-streaming' || toolState === 'input-available') && input && (
         <div className="tool-call-input">
           <div className="tool-call-label">📥 Input:</div>
           <pre className="tool-call-code">{formatArgs(input)}</pre>
         </div>
       )}
-      
+
       {toolState === 'output-available' && output && (
         <div className="tool-call-output">
           <div className="tool-call-label">📤 Output:</div>
@@ -170,7 +171,7 @@ function DefaultToolRenderer({ state }: { state: ToolUIState }) {
           </pre>
         </div>
       )}
-      
+
       {toolState === 'output-error' && errorText && (
         <div className="tool-call-error">
           <div className="tool-call-label">⚠️ Error:</div>

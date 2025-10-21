@@ -53,66 +53,7 @@ export function useGetMemory() {
             },
         });
 
-        registerToolUI('getMemory', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Retrieving Memory"
-                        subtitle={`Key: ${input?.key}`}
-                        state="loading"
-                        icon="🔍"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Failed to Get Memory"
-                            subtitle={output.error}
-                            state="error"
-                            icon="🔍"
-                        />
-                    );
-                }
-                if (!output.found) {
-                    return (
-                        <ToolCard
-                            title="Memory Not Found"
-                            subtitle={`No memory with key: ${input?.key}`}
-                            state="error"
-                            icon="🔍"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard title="Memory Retrieved" state="success" icon="🔍">
-                        <div style={{ fontSize: '13px' }}>
-                            <div><strong>{output.key}:</strong> {String(output.value)}</div>
-                            <div style={{ opacity: 0.7, fontSize: '11px', marginTop: '4px' }}>
-                                Category: {output.category} • Created: {output.createdAt}
-                            </div>
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Failed to Get Memory"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="🔍"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ getMemory tool registration complete');
 

@@ -13,7 +13,7 @@ export function useFocusElementTool() {
 
     useEffect(() => {
         log.info('🔧 Registering focusElement tool...');
-        
+
         registerTool({
             name: "focusElement",
             description: "Focus an element by selector.",
@@ -45,23 +45,7 @@ export function useFocusElementTool() {
             },
         });
 
-        registerToolUI('focusElement', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return <ToolCard title="Focusing Element" subtitle={input?.selector} state="loading" icon="🎯" />;
-            }
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return <ToolCard title="Focus Failed" subtitle={output.error} state="error" icon="🎯" />;
-                }
-                return <ToolCard title="Element Focused" subtitle={input?.selector} state="success" icon="🎯" />;
-            }
-            if (toolState === 'output-error') {
-                return <ToolCard title="Focus Failed" subtitle={state.errorText || 'Unknown error'} state="error" icon="🎯" />;
-            }
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ focusElement tool registration complete');
 

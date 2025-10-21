@@ -177,73 +177,7 @@ export function useGetSearchResultsTool() {
             },
         });
 
-        // Register the UI renderer for this tool
-        registerToolUI('getSearchResults', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Parsing Search Results"
-                        subtitle={`Extracting up to ${input?.maxResults || 10} results`}
-                        state="loading"
-                        icon="🔍"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Parse Failed"
-                            subtitle={output.error}
-                            state="error"
-                            icon="🔍"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard
-                        title="Search Results Parsed"
-                        subtitle={`${output.count} results from ${output.engine}`}
-                        state="success"
-                        icon="🔍"
-                    >
-                        <div style={{ fontSize: '12px', marginTop: '8px' }}>
-                            <Badge label={`${output.count} results`} variant="success" />
-                            {output.results && output.results.length > 0 && (
-                                <details className="tool-details" style={{ marginTop: '8px' }}>
-                                    <summary>View top {Math.min(5, output.results.length)} results</summary>
-                                    <div style={{ fontSize: '11px', marginTop: '4px' }}>
-                                        {output.results.slice(0, 5).map((r: any, idx: number) => (
-                                            <div key={idx} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid var(--color-border)' }}>
-                                                <div style={{ fontWeight: 'bold' }}>#{r.rank}: {r.title}</div>
-                                                <div style={{ opacity: 0.7, fontSize: '10px' }}>{r.hostname}{r.path}</div>
-                                                {r.snippet && <div style={{ opacity: 0.6, marginTop: '2px' }}>{r.snippet.substring(0, 100)}...</div>}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </details>
-                            )}
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Parse Failed"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="🔍"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ getSearchResults tool registration complete');
 
