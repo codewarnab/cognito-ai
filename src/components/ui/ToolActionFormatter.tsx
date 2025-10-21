@@ -541,6 +541,42 @@ const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }
     };
 };
 
+const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
+    const question = input?.question;
+    const wasChunked = output?.wasChunked;
+
+    if (state === 'loading') {
+        return {
+            action: 'Analyzing YouTube video',
+            description: question ? truncateText(question, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        const answerLength = output?.answer?.length || 0;
+        const duration = output?.videoDuration;
+        const durationText = duration
+            ? duration >= 3600
+                ? `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`
+                : duration >= 60
+                    ? `${Math.floor(duration / 60)}m`
+                    : `${duration}s`
+            : '';
+
+        return {
+            action: 'Video analyzed',
+            description: wasChunked
+                ? `Long video (${durationText}) - chunked analysis`
+                : durationText
+                    ? `${durationText} video`
+                    : `Analysis complete`
+        };
+    }
+    return {
+        action: 'Analysis failed',
+        description: question ? truncateText(question, 40) : undefined
+    };
+};
+
 // Formatter Registry
 const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -597,6 +633,7 @@ const formatters: Record<string, ActionFormatter> = {
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
     youtubeTranscript: getYoutubeTranscriptFormatter,
+    youtubeAgentAsTool: youtubeAgentFormatter,
 };
 
 // Default formatter for tools without specific formatters
