@@ -32,6 +32,11 @@ import {
 import { AudioManager, type AudioDataCallback } from './audioManager';
 import { convertAllTools } from './toolConverter';
 import { getAllTools, getTool } from '../toolRegistryUtils';
+import { 
+    browserActionAgentDeclaration, 
+    executeBrowserActionAgent, 
+    getBrowserCapabilitiesSummary 
+} from '../agents/browserActionAgent';
 import { createLogger } from '../../logger';
 import {
     GeminiLiveErrorHandler,
@@ -88,6 +93,7 @@ export class GeminiLiveClient {
     private errorHandler: GeminiLiveErrorHandler;
     private connectionRetryCount = 0;
     private maxConnectionRetries = 3;
+    private agentToolExecutors: Map<string, (args: any) => Promise<any>> = new Map();
 
     constructor(config: GeminiLiveClientConfig) {
         this.config = {
@@ -379,6 +385,9 @@ export class GeminiLiveClient {
                 this.session = null;
             }
 
+            // Clear agent tool executors
+            this.agentToolExecutors.clear();
+
             this.isSessionActive = false;
             this.updateStatus('Ready');
 
@@ -388,6 +397,7 @@ export class GeminiLiveClient {
             log.error('Error stopping session', error);
             // Continue cleanup even if close fails
             this.session = null;
+            this.agentToolExecutors.clear();
             this.isSessionActive = false;
             this.updateStatus('Error');
         }
@@ -480,30 +490,31 @@ export class GeminiLiveClient {
 
     /**
      * Get tool declarations for Live API
+     * MODIFIED: Now only exposes agent tool instead of individual browser tools
+     * Gemini Live models struggle with structured tool calling, so we use an agent
      */
     private async getToolDeclarations(): Promise<any[]> {
         try {
-            // Get extension tools only (no MCP tools in voice mode)
-            const extensionTools = getAllTools();
+            log.info('🤖 Preparing agent tool for Gemini Live (voice-optimized)');
 
-            // Filter out any MCP tools (they have 'mcp_' prefix)
-            const filteredTools: typeof extensionTools = {};
-            for (const [name, tool] of Object.entries(extensionTools)) {
-                if (!name.startsWith('mcp_')) {
-                    filteredTools[name] = tool;
-                }
-            }
+            // Instead of exposing all tools, we expose ONLY the intelligent agent
+            // that can handle natural language task descriptions
 
-            log.info('Extension tools available', {
-                total: Object.keys(extensionTools).length,
-                filtered: Object.keys(filteredTools).length
+            // Create executor wrapper and store it for handleToolCalls
+            const browserActionExecutor = async (args: any) => {
+                return await executeBrowserActionAgent(args);
+            };
+
+            // Store executor in the map so handleToolCalls can find it
+            this.agentToolExecutors.set('executeBrowserAction', browserActionExecutor);
+
+            log.info('Agent tool prepared', {
+                name: browserActionAgentDeclaration.name,
+                description: browserActionAgentDeclaration.description?.substring(0, 100) + '...'
             });
 
-            // Convert to Live API format
-            const declarations = convertAllTools(filteredTools);
-
-            log.info('Tools converted to Live API format', { count: declarations.length });
-            return declarations;
+            // Return the declaration directly (already in Gemini Live format)
+            return [browserActionAgentDeclaration];
 
         } catch (error) {
             log.error('Failed to get tool declarations', error);
@@ -512,41 +523,48 @@ export class GeminiLiveClient {
     }
 
     /**
-     * Get default system instruction optimized for voice conversation
+     * Get default system instruction optimized for voice conversation with agent-based tool use
      */
     private getDefaultSystemInstruction(): string {
-        return `You are an intelligent AI assistant integrated into a Chrome browser extension.
+        // Get browser capabilities summary from the agent
+        const capabilities = getBrowserCapabilitiesSummary();
 
-You can help users with:
-- Browser navigation and tab management
-- Web page interaction (clicking, scrolling, filling forms)
-- Information retrieval from the current page
-- Managing browser history and bookmarks
-- Setting reminders
-- Remembering important information
+        return `You are an intelligent AI assistant integrated into a Chrome browser extension, speaking via voice.
 
-You have access to tools to perform these actions. When users ask you to do something, use the appropriate tools. Always confirm actions before executing them, unless the user has given explicit permission.
+${capabilities}
 
-Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation. Speak naturally as if you're having a conversation.
+**How to Use Your Tool:**
 
-IMPORTANT TOOL USAGE GUIDELINES:
+You have ONE main tool available:
 
-For clicking elements:
-- Use clickByText to find and click elements by their visible text
-- Example: clickByText with text "Sign In" to click a sign-in button
+**executeBrowserAction** - For ALL browser-related tasks
+   - Simply describe what you want to do in natural language
+   - Examples: "Click the sign in button", "Type hello into the search box", "Read this page"
+   - The tool will figure out the technical details
 
-For typing text into input fields:
-- ALWAYS provide the "target" parameter describing which field to type in
-- Example: typeInField with text "hello" and target "search box"
-- If you don't know which field, first use clickByText to click on the field description, then typeInField
-- Example workflow: clickByText("email field") then typeInField("user@example.com", target="email field")
+**IMPORTANT GUIDELINES:**
 
-When using tools:
-1. Explain what you're about to do briefly
-2. Execute the tool with the correct parameters
-3. Report the result succinctly
+- For browser tasks, just describe what needs to be done - don't worry about exact parameters
+- Be conversational and friendly since this is voice interaction
+- Keep responses concise and natural
+- When you want to perform an action, use executeBrowserAction with a clear task description
+- Always acknowledge actions before executing them unless the user has given blanket permission
 
-If a tool fails or you encounter an error, explain it clearly and suggest alternatives.`;
+**Examples of How to Use executeBrowserAction:**
+
+User: "Click the login button"
+You: "I'll click the login button for you." → executeBrowserAction("Click the login button")
+
+User: "Type my email into the form"
+You: "I'll type that in the email field." → executeBrowserAction("Type user@example.com into the email field")
+
+User: "What does this page say?"
+You: "Let me read the page for you." → executeBrowserAction("Read the page content")
+
+User: "Open LinkedIn"
+You: "Opening LinkedIn in a new tab." → executeBrowserAction("Navigate to linkedin.com")
+
+You're having a natural conversation - the technical complexity is handled by the intelligent agent behind this tool.`;
     }
 
     /**
@@ -692,19 +710,34 @@ If a tool fails or you encounter an error, explain it clearly and suggest altern
             }
 
             try {
-                // Get tool from registry
-                const toolDef = getTool(call.name);
+                // First check if this is an agent tool
+                const agentExecutor = this.agentToolExecutors.get(call.name);
 
-                if (!toolDef) {
-                    throw new Error(`Tool not found: ${call.name}`);
+                let result: any;
+
+                if (agentExecutor) {
+                    // Execute agent tool
+                    log.info('Executing agent tool', { name: call.name });
+                    result = await this.executeToolWithTimeout(
+                        agentExecutor,
+                        call.args,
+                        60000 // 60 second timeout for agents (they may call multiple tools)
+                    );
+                } else {
+                    // Fallback: Get tool from registry (for backwards compatibility)
+                    const toolDef = getTool(call.name);
+
+                    if (!toolDef) {
+                        throw new Error(`Tool not found: ${call.name}`);
+                    }
+
+                    // Execute regular tool with timeout
+                    result = await this.executeToolWithTimeout(
+                        toolDef.execute,
+                        call.args,
+                        30000 // 30 second timeout
+                    );
                 }
-
-                // Execute tool with timeout
-                const result = await this.executeToolWithTimeout(
-                    toolDef.execute,
-                    call.args,
-                    30000 // 30 second timeout
-                );
 
                 log.info('Tool execution completed', { name: call.name, result });
 
