@@ -141,46 +141,99 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
                                             return (
                                                 <div className="message-parts">
-                                                    {mergedParts.map((part: any, partIndex: number) => {
-                                                        // Render text parts
-                                                        if (part.type === 'text' && part.text) {
-                                                            return (
-                                                                <div key={`text-${partIndex}`} className="copilot-message-content">
-                                                                    {message.role === 'assistant' ? (
-                                                                        <div className="markdown-content">
-                                                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                                                {part.text}
-                                                                            </ReactMarkdown>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="user-message-with-mentions">
-                                                                            {renderTextWithMentions(part.text)}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        }
+                                                    {(() => {
+                                                        // Separate tool calls from other parts
+                                                        const toolParts: any[] = [];
+                                                        const otherParts: any[] = [];
 
-                                                        // Render tool parts
-                                                        if (
-                                                            part.type === 'tool-call' ||
-                                                            part.type === 'tool-result' ||
-                                                            part.type?.startsWith('tool-') ||
-                                                            part.type === 'dynamic-tool'
-                                                        ) {
-                                                            return (
-                                                                <div key={part.toolCallId || `tool-${partIndex}`} className="message-tools">
-                                                                    <ToolPartRenderer
-                                                                        part={part}
-                                                                        messageId={message.id || `msg-${index}`}
-                                                                    />
-                                                                </div>
-                                                            );
-                                                        }
+                                                        mergedParts.forEach((part: any, partIndex: number) => {
+                                                            const isToolPart =
+                                                                part.type === 'tool-call' ||
+                                                                part.type === 'tool-result' ||
+                                                                part.type?.startsWith('tool-') ||
+                                                                part.type === 'dynamic-tool';
 
-                                                        // Unknown part type
-                                                        return null;
-                                                    })}
+                                                            if (isToolPart) {
+                                                                toolParts.push({ part, partIndex });
+                                                            } else {
+                                                                otherParts.push({ part, partIndex });
+                                                            }
+                                                        });
+
+                                                        return (
+                                                            <>
+                                                                {/* Render all tool calls in one connected sequence */}
+                                                                {toolParts.length > 0 && (
+                                                                    <div className="tool-call-sequence">
+                                                                        <div className="tool-call-timeline" />
+                                                                        <div className="tool-call-list">
+                                                                            {toolParts.map(({ part, partIndex }: any) => (
+                                                                                <div key={part.toolCallId || `tool-${partIndex}`} className="tool-call-item">
+                                                                                    <div className="tool-call-dot" />
+                                                                                    <div className="tool-call-content">
+                                                                                        <ToolPartRenderer
+                                                                                            part={part}
+                                                                                            messageId={message.id || `msg-${index}`}
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Render other parts (text, files) */}
+                                                                {otherParts.map(({ part, partIndex }: any) => {
+                                                                    // Render text parts
+                                                                    if (part.type === 'text' && part.text) {
+                                                                        return (
+                                                                            <div key={`text-${partIndex}`} className="copilot-message-content">
+                                                                                {message.role === 'assistant' ? (
+                                                                                    <div className="markdown-content">
+                                                                                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                                                            {part.text}
+                                                                                        </ReactMarkdown>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="user-message-with-mentions">
+                                                                                        {renderTextWithMentions(part.text)}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    }
+
+                                                                    // Render file attachments
+                                                                    if (part.type === 'file') {
+                                                                        const isImage = part.mediaType?.startsWith('image/');
+                                                                        const isPdf = part.mediaType === 'application/pdf';
+
+                                                                        return (
+                                                                            <div key={`file-${partIndex}`} className="message-file-attachment">
+                                                                                {isImage ? (
+                                                                                    <div className="message-file-image">
+                                                                                        <img src={part.url} alt={part.name || 'Attached image'} />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="message-file-document">
+                                                                                        <div className="file-attachment-icon">
+                                                                                            {isPdf ? '📕' : '📄'}
+                                                                                        </div>
+                                                                                        <span className="file-attachment-name" title={part.name}>
+                                                                                            {part.name || 'Document'}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        );
+                                                                    }
+
+                                                                    // Unknown part type
+                                                                    return null;
+                                                                })}
+                                                            </>
+                                                        );
+                                                    })()}
                                                 </div>
                                             );
                                         })()}

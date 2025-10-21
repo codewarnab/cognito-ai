@@ -10,6 +10,8 @@ import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
 import { getAllTools } from './toolRegistryUtils';
 import { getMCPToolsFromBackground } from './mcpProxy';
+import { getGeminiApiKey } from '../utils/geminiApiKey';
+import { builtInAI } from "@built-in-ai/core";
 
 const log = createLogger('AI-Logic');
 
@@ -19,28 +21,25 @@ const log = createLogger('AI-Logic');
 // ============================================================================
 
 /**
- * Get Google AI instance with API key from storage or environment
-
-async function GoogleAI() {
+ * Initialize Google AI with API key from storage
+ * Falls back to chrome-ai if API key is not configured
+ */
+async function getGoogleAIInstance() {
   try {
-    const result = await chrome.storage.local.get(['googleApiKey']);
-
+    const apiKey = await getGeminiApiKey();
     
     if (!apiKey) {
-      throw new Error('Google API key not configured. Please set it in extension settings.');
+      log.info('⚠️ Gemini API key not configured, falling back to chrome-ai');
+      return builtInAI();
     }
 
-
-    return google;
+    const google = createGoogleGenerativeAI({ apiKey });
+    return google('gemini-2.5-flash');
   } catch (error) {
     log.error('Error getting Google AI instance', error);
     throw error;
   }
-} */
-
-// Initialize Google AI
-const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
-const google = createGoogleGenerativeAI({ apiKey });
+}
 
 /**
  * Stream AI response directly from the frontend
@@ -107,8 +106,9 @@ export async function streamAIResponse(params: {
           });
 
           // Get Google Gemini model
-          log.info('Initializing Gemini model...');
-          const model = google('gemini-2.5-flash');
+          log.info('Initializing AI model...');
+          let model= await getGoogleAIInstance();
+          log.info('✅ AI model initialized');
 
           // Convert UI messages to model format
           const modelMessages = convertToModelMessages(messages);
@@ -149,7 +149,7 @@ export async function streamAIResponse(params: {
           });
 
           const result = streamText({
-            model,
+            model: model,
             system: enhancedSystemPrompt,
             messages: modelMessages,
             stopWhen: [stepCountIs(10)],
