@@ -8,6 +8,8 @@ import { MemoryPanel } from "./components/MemoryPanel";
 import { ReminderPanel } from "./components/ReminderPanel";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
+import { ModeToggle, type ChatMode } from "./components/ModeToggle";
+import { VoiceModeUI } from "./components/voice/VoiceModeUI";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
@@ -51,6 +53,8 @@ function AIChatContent() {
     const [showReminders, setShowReminders] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [showPill, setShowPill] = useState(false);
+    const [mode, setMode] = useState<ChatMode>('text');
+    const [apiKey, setApiKey] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -78,6 +82,36 @@ function AIChatContent() {
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
+
+    // Load API key from storage
+    useEffect(() => {
+        const loadApiKey = async () => {
+            try {
+                const result = await chrome.storage.local.get(['apiKey']);
+                if (result.apiKey) {
+                    setApiKey(result.apiKey);
+                    log.debug('API key loaded from storage');
+                }
+            } catch (error) {
+                log.error('Failed to load API key', error);
+            }
+        };
+        loadApiKey();
+    }, []);
+
+    // Handle mode change with cleanup
+    const handleModeChange = async (newMode: ChatMode) => {
+        if (mode === newMode) return;
+
+        // Prevent switching during active recording
+        if (isRecording) {
+            log.warn('Cannot switch mode while recording');
+            return;
+        }
+
+        log.info('Switching mode', { from: mode, to: newMode });
+        setMode(newMode);
+    };
 
     // Track current tab context
     useEffect(() => {
@@ -431,52 +465,74 @@ function AIChatContent() {
                 onNewThread={handleNewThread}
             />
 
-            <CopilotChatWindow
-                messages={messages.filter(m => m.role !== 'system') as any}
-                input={input}
-                setInput={setInput}
-                onSendMessage={handleSendMessage}
-                onKeyDown={handleKeyPress}
-                onClearChat={handleClearChat}
-                onSettingsClick={() => setShowMcp(true)}
-                onThreadsClick={() => setShowThreads(true)}
-                onMemoryClick={() => setShowMemory(true)}
-                onRemindersClick={() => setShowReminders(true)}
-                onNewThreadClick={handleNewThread}
-                onStop={stop}
-                isLoading={isLoading}
-                messagesEndRef={messagesEndRef}
-                isRecording={isRecording}
-                onMicClick={handleMicClick}
-            />
+            {/* Mode Toggle - Only show in text mode or when not recording */}
+            {(mode === 'text' || !isRecording) && (
+                <div className="mode-toggle-wrapper">
+                    <ModeToggle
+                        mode={mode}
+                        onModeChange={handleModeChange}
+                        disabled={isRecording}
+                    />
+                </div>
+            )}
 
-            {/* Floating Recording Pill - Rendered at top level */}
-            <AnimatePresence mode="wait">
-                {showPill && (
-                    <motion.div
-                        className="voice-recording-pill"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        onAnimationStart={() => {
-                            audioLinesIconRef.current?.startAnimation();
-                        }}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleMicClick();
-                        }}
-                    >
-                        <AudioLinesIcon
-                            ref={audioLinesIconRef}
-                            size={16}
-                            style={{ color: 'white' }}
-                        />
-                        <span className="recording-text">Click to finish recording</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Conditional rendering based on mode */}
+            {mode === 'text' ? (
+                <>
+                    <CopilotChatWindow
+                        messages={messages.filter(m => m.role !== 'system') as any}
+                        input={input}
+                        setInput={setInput}
+                        onSendMessage={handleSendMessage}
+                        onKeyDown={handleKeyPress}
+                        onClearChat={handleClearChat}
+                        onSettingsClick={() => setShowMcp(true)}
+                        onThreadsClick={() => setShowThreads(true)}
+                        onMemoryClick={() => setShowMemory(true)}
+                        onRemindersClick={() => setShowReminders(true)}
+                        onNewThreadClick={handleNewThread}
+                        onStop={stop}
+                        isLoading={isLoading}
+                        messagesEndRef={messagesEndRef}
+                        isRecording={isRecording}
+                        onMicClick={handleMicClick}
+                    />
+
+                    {/* Floating Recording Pill - Only in text mode */}
+                    <AnimatePresence mode="wait">
+                        {showPill && (
+                            <motion.div
+                                className="voice-recording-pill"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ duration: 0.15, ease: 'easeOut' }}
+                                onAnimationStart={() => {
+                                    audioLinesIconRef.current?.startAnimation();
+                                }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleMicClick();
+                                }}
+                            >
+                                <AudioLinesIcon
+                                    ref={audioLinesIconRef}
+                                    size={16}
+                                    style={{ color: 'white' }}
+                                />
+                                <span className="recording-text">Click to finish recording</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </>
+            ) : (
+                <VoiceModeUI
+                    onBack={() => setMode('text')}
+                    apiKey={apiKey}
+                    systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
+                />
+            )}
         </>
     );
 }

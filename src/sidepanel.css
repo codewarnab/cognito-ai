@@ -14,3 +14,24 @@
 @import './styles/compact-tools.css';
 @import './styles/threads.css';
 @import './styles/mentions.css';
+
+/* Mode Toggle Wrapper */
+.mode-toggle-wrapper {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    animation: fadeInDown 0.3s ease;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

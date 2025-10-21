@@ -107,7 +107,7 @@ export async function streamAIResponse(params: {
             transient: true,
           });
 
-          // Get Google Gemini model
+          // Get Google   i model
           log.info('Initializing Gemini model...');
           const model = google('gemini-2.5-flash');
 

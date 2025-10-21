@@ -1,0 +1,276 @@
+/**
+ * VoiceModeUI Styles
+ * Dark theme with glassmorphism effects
+ */
+
+.voice-mode-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #0a0e1a 0%, #141f30 100%);
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+/* Header */
+.voice-mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.voice-mode-back-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.voice-mode-back-button:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: var(--glass-bg-hover);
+    border-color: var(--border-color-hover);
+}
+
+.voice-mode-back-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.voice-mode-back-button svg {
+    flex-shrink: 0;
+}
+
+/* Main Content - Orb Area */
+.voice-mode-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Loading State */
+.voice-mode-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+    color: var(--text-secondary);
+}
+
+.voice-mode-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--green-pulse);
+    border-radius: 50%;
+    animation: voice-mode-spin 0.8s linear infinite;
+}
+
+@keyframes voice-mode-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.voice-mode-loading p {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Status Display */
+.voice-mode-status {
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border-top: 1px solid var(--border-color);
+}
+
+.voice-mode-status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-lg);
+    background: var(--bg-tertiary);
+    transition: all 0.3s ease;
+}
+
+.voice-mode-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-tertiary);
+    transition: all 0.3s ease;
+}
+
+.voice-mode-status-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* Status States */
+.voice-mode-status-indicator.ready .voice-mode-status-dot {
+    background: var(--color-success);
+}
+
+.voice-mode-status-indicator.initializing .voice-mode-status-dot {
+    background: var(--color-warning);
+    animation: voice-mode-pulse 1.5s ease-in-out infinite;
+}
+
+.voice-mode-status-indicator.listening .voice-mode-status-dot {
+    background: var(--green-pulse);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+}
+
+.voice-mode-status-indicator.thinking .voice-mode-status-dot {
+    background: var(--blue-stride);
+    animation: voice-mode-pulse 1.2s ease-in-out infinite;
+}
+
+.voice-mode-status-indicator.speaking .voice-mode-status-dot {
+    background: var(--green-pulse);
+    animation: voice-mode-pulse 0.8s ease-in-out infinite;
+}
+
+.voice-mode-status-indicator.error .voice-mode-status-dot {
+    background: var(--color-error);
+    animation: none;
+}
+
+.voice-mode-status-indicator.retrying .voice-mode-status-dot {
+    background: var(--color-warning);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+}
+
+.voice-mode-status-indicator.disconnected .voice-mode-status-dot {
+    background: var(--text-quaternary);
+}
+
+@keyframes voice-mode-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+/* Error Display */
+.voice-mode-error {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0 var(--spacing-md) var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-md);
+    color: var(--color-error);
+    font-size: 14px;
+    animation: voice-mode-slide-in 0.3s ease;
+}
+
+/* Warning Display */
+.voice-mode-warning {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0 var(--spacing-md) var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(255, 159, 10, 0.1);
+    border: 1px solid #ff9f0a;
+    border-radius: var(--radius-md);
+    color: #ff9f0a;
+    font-size: 14px;
+    animation: voice-mode-slide-in 0.3s ease;
+}
+
+@keyframes voice-mode-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.voice-mode-error svg {
+    flex-shrink: 0;
+}
+
+.voice-mode-error span {
+    flex: 1;
+}
+
+.voice-mode-error-dismiss {
+    padding: var(--spacing-xs);
+    background: transparent;
+    color: var(--color-error);
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.voice-mode-error-dismiss:hover {
+    opacity: 0.7;
+}
+
+/* Controls Wrapper */
+.voice-mode-controls-wrapper {
+    padding: var(--spacing-md);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .voice-mode-back-button span {
+        display: none;
+    }
+
+    .voice-mode-status-text {
+        font-size: 12px;
+    }
+
+    .voice-mode-error {
+        font-size: 12px;
+    }
+}
+
+/* Dark mode enhancement */
+@media (prefers-color-scheme: dark) {
+    .voice-mode-container {
+        background: linear-gradient(135deg, #0a0e1a 0%, #141f30 100%);
+    }
+}

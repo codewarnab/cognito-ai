@@ -151,9 +151,9 @@ export function registerSelectionActions() {
     // Register readPageContent tool
     registerTool({
       name: "readPageContent",
-      description: "Read text content from active tab; extracts main text content.",
+      description: "Read text content from active tab; extracts main text content. For large pages (like social media feeds), specify a limit to avoid overwhelming responses. Recommended limit: 10000-30000 characters for summaries.",
       parameters: z.object({
-        limit: z.number().optional().describe("Maximum characters to extract (optional)"),
+        limit: z.number().optional().describe("Maximum characters to extract. Recommended: 10000-30000 for large pages. If not specified, defaults to 30000 to prevent excessive content."),
       }),
       execute: async ({ limit }) => {
         try {
@@ -177,20 +177,27 @@ export function registerSelectionActions() {
           if (!pageData) return { error: "Failed to extract page content" };
 
           // Normalize and validate the limit parameter
+          // Default to 30000 characters if not specified (reasonable for voice mode)
+          const DEFAULT_LIMIT = 30000;
           const numericLimit = Number(limit);
-          const normalizedLimit = Number.isFinite(numericLimit) ? Math.max(0, Math.floor(numericLimit)) : undefined;
+          const normalizedLimit = Number.isFinite(numericLimit) && numericLimit > 0
+            ? Math.max(0, Math.floor(numericLimit))
+            : DEFAULT_LIMIT;
 
-          // Apply truncation when limit is a positive number; otherwise keep original content
-          const truncatedContent = normalizedLimit && normalizedLimit > 0
-            ? pageData.content.slice(0, normalizedLimit)
-            : pageData.content;
+          // Apply truncation
+          const truncatedContent = pageData.content.slice(0, normalizedLimit);
+          const wasTruncated = truncatedContent.length < pageData.content.length;
 
           return {
             success: true,
             title: pageData.title,
             url: pageData.url,
             content: truncatedContent,
-            contentLength: truncatedContent.length
+            contentLength: truncatedContent.length,
+            ...(wasTruncated && {
+              truncated: true,
+              originalLength: pageData.content.length
+            })
           };
         } catch (error) {
           log.error('[Tool] Error reading page content:', error);
