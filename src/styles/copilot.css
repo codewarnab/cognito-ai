@@ -81,65 +81,6 @@ body {
     gap: 8px;
 }
 
-/* Tool call sequence with connecting line */
-.tool-call-sequence {
-    position: relative;
-    margin: 16px 0;
-    padding-left: 28px;
-}
-
-.tool-call-timeline {
-    position: absolute;
-    left: 10px;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
-    border-radius: 2px;
-}
-
-.tool-call-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-.tool-call-item {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 8px 0;
-}
-
-.tool-call-item:first-child {
-    padding-top: 0;
-}
-
-.tool-call-item:last-child {
-    padding-bottom: 0;
-}
-
-.tool-call-dot {
-    position: absolute;
-    left: -22px;
-    top: 45%;
-    transform: translateY(-50%);
-    width: 10px;
-    height: 10px;
-    background: #3b82f6;
-    border: 2px solid rgba(13, 13, 13, 0.98);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-    z-index: 1;
-    flex-shrink: 0;
-}
-
-.tool-call-content {
-    flex: 1;
-    min-width: 0;
-}
-
 /* Header kebab menu */
 .copilot-header-menu-wrapper {
     position: relative;
