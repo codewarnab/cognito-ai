@@ -162,6 +162,7 @@ export async function streamAIResponse(params: {
             messages: modelMessages,
             stopWhen: [stepCountIs(10)],
             tools, // Include tools in the stream
+            toolChoice: 'auto', // Force proper tool calling format
             abortSignal,
             temperature: 0.7,
             experimental_transform: smoothStream({
