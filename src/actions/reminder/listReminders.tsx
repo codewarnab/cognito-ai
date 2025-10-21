@@ -45,72 +45,7 @@ export function useListRemindersAction() {
         });
 
         // Register the UI renderer for this tool
-        registerToolUI('listReminders', (state: ToolUIState) => {
-            const { state: toolState, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard title="Loading Reminders" state="loading" icon="📋" />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Failed to Load Reminders"
-                            subtitle={output.error}
-                            state="error"
-                            icon="📋"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard
-                        title={`Active Reminders (${output.count})`}
-                        state="success"
-                        icon="📋"
-                    >
-                        {output.count === 0 ? (
-                            <div style={{ fontSize: "13px", opacity: 0.7 }}>
-                                No active reminders
-                            </div>
-                        ) : (
-                            <div style={{ fontSize: "13px" }}>
-                                {output.reminders.map((r: any) => (
-                                    <div
-                                        key={r.id}
-                                        style={{
-                                            marginBottom: "var(--spacing-sm)",
-                                            paddingBottom: "var(--spacing-sm)",
-                                            borderBottom: "1px solid var(--color-border)",
-                                        }}
-                                    >
-                                        <div style={{ fontWeight: 600 }}>{r.title}</div>
-                                        <div style={{ opacity: 0.7, fontSize: "12px" }}>
-                                            {r.when}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Failed to Load Reminders"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="📋"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ listReminders tool registration complete');
 

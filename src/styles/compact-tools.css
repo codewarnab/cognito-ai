@@ -1,0 +1,199 @@
+/* Compact Tool Card Styles - Modern, space-efficient tool rendering with smooth animations */
+
+.compact-tool-card {
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) 12px;
+    margin: 4px 0;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    cursor: pointer;
+
+    /* Smooth entrance animation - similar to Sonner toast */
+    --y: translateY(0);
+    opacity: 0;
+    transform: var(--y) scale(0.95);
+    transition: transform 400ms ease, opacity 400ms ease, background 200ms ease, border-color 200ms ease;
+}
+
+.compact-tool-card[data-mounted="true"] {
+    --y: translateY(0);
+    opacity: 1;
+    transform: var(--y) scale(1);
+}
+
+.compact-tool-card:hover {
+    background: rgba(18, 100, 255, 0.03);
+    border-color: var(--border-color-hover);
+}
+
+.compact-tool-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.compact-tool-main {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex: 1;
+    min-width: 0;
+    /* Allow text truncation */
+}
+
+.compact-tool-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: opacity 0.2s ease;
+    color: var(--text-primary);
+}
+
+.compact-tool-icon.hovered {
+    opacity: 0.6;
+}
+
+.compact-tool-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.compact-tool-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: var(--spacing-sm);
+}
+
+.compact-tool-error-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-error);
+    color: var(--white-stream);
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.compact-tool-content {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-color);
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.compact-tool-section {
+    margin-bottom: var(--spacing-sm);
+}
+
+.compact-tool-section:last-child {
+    margin-bottom: 0;
+}
+
+.compact-tool-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.compact-tool-code {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 6px var(--spacing-sm);
+    font-size: 12px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    overflow-x: auto;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text-primary);
+    line-height: 1.5;
+}
+
+.compact-tool-code::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.compact-tool-code::-webkit-scrollbar-track {
+    background: var(--bg-quaternary);
+    border-radius: var(--radius-sm);
+}
+
+.compact-tool-code::-webkit-scrollbar-thumb {
+    background: var(--border-color-hover);
+    border-radius: var(--radius-sm);
+}
+
+.compact-tool-code::-webkit-scrollbar-thumb:hover {
+    background: var(--border-color-focus);
+}
+
+.compact-tool-error-text {
+    color: var(--color-error);
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
+    padding: 6px var(--spacing-sm);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Chevron icon styling */
+.compact-tool-status svg {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.compact-tool-status svg:hover {
+    opacity: 1;
+}
+
+/* Loading check icon styling */
+.compact-tool-status .loading-check-icon {
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+    .compact-tool-card {
+        padding: 6px var(--spacing-sm);
+    }
+
+    .compact-tool-name {
+        font-size: 12px;
+    }
+
+    .compact-tool-code {
+        font-size: 11px;
+    }
+}

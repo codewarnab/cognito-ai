@@ -123,59 +123,7 @@ export function useOpenSearchResultTool() {
             },
         });
 
-        // Register the UI renderer for this tool
-        registerToolUI('openSearchResult', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Opening Search Result"
-                        subtitle={`Rank #${input?.rank}`}
-                        state="loading"
-                        icon="🔗"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Open Failed"
-                            subtitle={output.error}
-                            state="error"
-                            icon="🔗"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard
-                        title="Search Result Opened"
-                        subtitle={output.title || output.url}
-                        state="success"
-                        icon="🔗"
-                    >
-                        <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.7 }}>
-                            Rank #{output.rank}: {output.url}
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Open Failed"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="🔗"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ openSearchResult tool registration complete');
 

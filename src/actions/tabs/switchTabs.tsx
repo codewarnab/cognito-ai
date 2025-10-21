@@ -121,56 +121,7 @@ export function useSwitchTabsTool() {
         });
 
         // Register the UI renderer for this tool
-        registerToolUI('switchTabs', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                const searchTerm = input?.url || `ID: ${input?.tabId}`;
-                return (
-                    <ToolCard 
-                        title="Switching Tab" 
-                        subtitle={`Finding: ${searchTerm}`} 
-                        state="loading" 
-                        icon="🔄" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard 
-                            title="Failed to Switch Tab" 
-                            subtitle={output.error} 
-                            state="error" 
-                            icon="🔄" 
-                        />
-                    );
-                }
-                
-                return (
-                    <ToolCard 
-                        title="Switched to Tab" 
-                        subtitle={output.title || output.url} 
-                        state="success" 
-                        icon="🔄" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard 
-                        title="Failed to Switch Tab" 
-                        subtitle={state.errorText} 
-                        state="error" 
-                        icon="🔄" 
-                    />
-                );
-            }
-            
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ switchTabs tool registration complete');
 

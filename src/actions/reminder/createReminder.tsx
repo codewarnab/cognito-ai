@@ -80,61 +80,7 @@ export function useCreateReminderAction() {
         });
 
         // Register the UI renderer for this tool
-        registerToolUI('createReminder', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard
-                        title="Creating Reminder"
-                        subtitle={`"${input?.title}" at ${input?.dateTime}`}
-                        state="loading"
-                        icon="⏰"
-                    />
-                );
-            }
-
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard
-                            title="Failed to Create Reminder"
-                            subtitle={output.details || output.error}
-                            state="error"
-                            icon="⏰"
-                        />
-                    );
-                }
-                return (
-                    <ToolCard title="Reminder Set" state="success" icon="⏰">
-                        <div style={{ fontSize: "13px" }}>
-                            <div style={{ fontWeight: 600, marginBottom: "4px" }}>
-                                {output.generatedTitle || output.title}
-                            </div>
-                            <div style={{ marginBottom: "4px", fontSize: "12px" }}>
-                                {output.generatedDescription}
-                            </div>
-                            <div style={{ opacity: 0.7, fontSize: "11px" }}>
-                                {output.when}
-                            </div>
-                        </div>
-                    </ToolCard>
-                );
-            }
-
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard
-                        title="Failed to Create Reminder"
-                        subtitle={state.errorText}
-                        state="error"
-                        icon="⏰"
-                    />
-                );
-            }
-
-            return null;
-        });
+        // Using default CompactToolRenderer - no custom UI needed
 
         log.info('✅ createReminder tool registration complete');
 
