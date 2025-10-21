@@ -60,7 +60,7 @@ const navigateToFormatter: ActionFormatter = ({ state, input, output }) => {
     const url = output?.url || input?.url || input?.targetUrl;
     const domain = url ? extractDomain(url) : '';
     const newTab = input?.newTab || output?.newTab;
-    
+
     if (state === 'loading') {
         return {
             action: 'Navigating',
@@ -98,7 +98,7 @@ const getSearchResultsFormatter: ActionFormatter = ({ state, output }) => {
 const openSearchResultFormatter: ActionFormatter = ({ state, input, output }) => {
     const title = output?.title || input?.title;
     const rank = output?.rank || input?.rank || input?.index;
-    
+
     if (state === 'loading') {
         return {
             action: 'Opening search result',
@@ -119,7 +119,7 @@ const readPageContentFormatter: ActionFormatter = ({ state, output }) => {
     const title = output?.title;
     const contentLength = output?.content?.length || output?.contentLength || 0;
     const formattedLength = contentLength >= 1000 ? `${Math.round(contentLength / 1000)}k chars` : `${contentLength} chars`;
-    
+
     if (state === 'loading') {
         return {
             action: 'Reading page content',
@@ -138,7 +138,7 @@ const readPageContentFormatter: ActionFormatter = ({ state, output }) => {
 const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => {
     const text = output?.text || output?.selectedText;
     const length = text?.length || 0;
-    
+
     if (state === 'loading') {
         return { action: 'Getting selected text' };
     }
@@ -159,7 +159,7 @@ const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
     const clicked = output?.clicked;
     const text = clicked?.text || clicked?.innerText;
     const selector = input?.selector;
-    
+
     if (state === 'loading') {
         return {
             action: 'Clicking element',
@@ -176,27 +176,38 @@ const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
 };
 
 const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) => {
-    const field = input?.field || input?.selector;
-    const length = input?.text?.length || 0;
-    
+    const target = input?.target;
+    const text = input?.text || '';
+    const length = text.length;
+    const preview = truncateText(text, 20);
+
     if (state === 'loading') {
         return {
             action: 'Typing',
-            description: field ? truncateText(field, 40) : undefined
+            description: target ? `"${preview}" • ${target}` : `"${preview}"`
         };
     }
     if (state === 'success') {
+        const message = output?.message;
+        const typed = output?.typed || length;
+        const pressedEnter = input?.pressEnter || message?.includes('Enter');
+
         return {
-            action: 'Typed',
-            description: field ? `${truncateText(field, 30)} (${length} chars)` : `${length} characters`
+            action: 'Text Typed',
+            description: target
+                ? `${typed} chars${pressedEnter ? ' + Enter' : ''} • ${target}`
+                : `${typed} chars${pressedEnter ? ' + Enter' : ''}`
         };
     }
-    return { action: 'Typing failed' };
+    return {
+        action: 'Typing failed',
+        description: target ? truncateText(target, 40) : undefined
+    };
 };
 
 const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
     const key = input?.key;
-    
+
     if (state === 'loading') {
         return {
             action: 'Pressing key',
@@ -214,7 +225,7 @@ const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
 
 const scrollFormatter: ActionFormatter = ({ state, input }) => {
     const direction = input?.direction || 'down';
-    
+
     if (state === 'loading') {
         return {
             action: 'Scrolling',
@@ -232,7 +243,7 @@ const scrollFormatter: ActionFormatter = ({ state, input }) => {
 
 const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
     const selector = input?.selector;
-    
+
     if (state === 'loading') {
         return {
             action: 'Waiting for element',
@@ -251,7 +262,7 @@ const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
 // Tab Tools
 const switchTabsFormatter: ActionFormatter = ({ state, input, output }) => {
     const title = output?.title || input?.title;
-    
+
     if (state === 'loading') {
         return { action: 'Switching tab' };
     }
@@ -266,7 +277,7 @@ const switchTabsFormatter: ActionFormatter = ({ state, input, output }) => {
 
 const getActiveTabFormatter: ActionFormatter = ({ state, output }) => {
     const title = output?.title;
-    
+
     if (state === 'loading') {
         return { action: 'Getting active tab' };
     }
@@ -283,7 +294,7 @@ const openNewTabFormatter: ActionFormatter = ({ state, input, output }) => {
     const url = input?.url;
     const title = output?.title;
     const domain = url ? extractDomain(url) : '';
-    
+
     if (state === 'loading') {
         return {
             action: 'Opening new tab',
@@ -301,7 +312,7 @@ const openNewTabFormatter: ActionFormatter = ({ state, input, output }) => {
 
 const closeTabFormatter: ActionFormatter = ({ state, input }) => {
     const title = input?.title;
-    
+
     if (state === 'loading') {
         return { action: 'Closing tab' };
     }
@@ -346,7 +357,7 @@ const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, output 
                 action: 'Tabs organized',
                 description: `${groupCount} groups`
             };
-            
+
         }
         if (output?.error) {
             return { action: 'Organization failed' };
@@ -359,7 +370,7 @@ const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, output 
 const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output }) => {
     const groupCount = input?.groups?.length || 0;
     const groupsCreated = output?.groupsCreated || output?.groups?.length || 0;
-    
+
     if (state === 'loading') {
         return {
             action: 'Applying tab groups',
@@ -378,7 +389,7 @@ const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output }) => {
 const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) => {
     const groupCount = input?.groupIds?.length || 0;
     const ungrouped = output?.ungroupedCount || 0;
-    
+
     if (state === 'loading') {
         if (input?.ungroupAll) {
             return { action: 'Ungrouping all tabs' };
@@ -400,7 +411,7 @@ const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) => {
 // Memory Tools
 const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
     const key = input?.key || input?.name;
-    
+
     if (state === 'loading') {
         return {
             action: 'Saving memory',
@@ -419,7 +430,7 @@ const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
 const getMemoryFormatter: ActionFormatter = ({ state, input, output }) => {
     const key = input?.key || input?.name;
     const found = output?.value !== undefined || output?.found;
-    
+
     if (state === 'loading') {
         return {
             action: 'Retrieving memory',
@@ -443,7 +454,7 @@ const getMemoryFormatter: ActionFormatter = ({ state, input, output }) => {
 
 const deleteMemoryFormatter: ActionFormatter = ({ state, input }) => {
     const key = input?.key || input?.name;
-    
+
     if (state === 'loading') {
         return {
             action: 'Deleting memory',
@@ -476,7 +487,7 @@ const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
 // History Tools
 const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
     const query = input?.query;
-    
+
     if (state === 'loading') {
         return {
             action: 'Searching history',
@@ -556,7 +567,7 @@ function defaultFormatter(ctx: ActionFormatterContext): FormattedAction {
         return { action: friendlyName };
     }
     if (state === 'success') {
-        return { action: `${friendlyName} ✓` };
+        return { action: friendlyName };
     }
     return { action: `${friendlyName} failed` };
 }
