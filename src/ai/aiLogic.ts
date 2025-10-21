@@ -40,7 +40,7 @@ async function GoogleAI() {
 } */
 
 // Initialize Google AI
-const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
+const apiKey = "AIzaSyAxTFyeqmms2eV9zsp6yZpCSAHGZebHzqc";
 const google = createGoogleGenerativeAI({ apiKey });
 
 /**
@@ -225,8 +225,22 @@ export async function streamAIResponse(params: {
             result.toUIMessageStream({
               onError: (error) => {
                 log.error('AI stream error', error);
-                onError?.(error instanceof Error ? error : new Error(String(error)));
-                return error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+
+                // Write error message to the stream so it appears in chat
+                writer.write({
+                  type: 'data-error',
+                  id: 'error-' + generateId(),
+                  data: {
+                    error: errorMessage,
+                    timestamp: Date.now(),
+                    context: 'AI stream processing'
+                  },
+                  transient: false, // Keep error in history
+                });
+
+                onError?.(error instanceof Error ? error : new Error(errorMessage));
+                return `❌ Error: ${errorMessage}`;
               },
               onFinish: async ({ messages: finalMessages }) => {
                 log.info('UI stream completed', {
@@ -249,12 +263,32 @@ export async function streamAIResponse(params: {
           );
         } catch (error) {
           log.error('Stream execution error', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          // Write error message to the stream so it appears in chat
+          writer.write({
+            type: 'data-error',
+            id: 'error-' + generateId(),
+            data: {
+              error: errorMessage,
+              timestamp: Date.now(),
+              context: 'Stream execution'
+            },
+            transient: false, // Keep error in history
+          });
+
+          // Also write a text message for better visibility
+          writer.write({
+            type: 'text-delta',
+            id: 'error-text-' + generateId(),
+            delta: `\n\n❌ **Error occurred:** ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
+          });
 
           // MCP connections are persistent - no cleanup needed
           // Connections managed by background service worker with keep-alive
           log.info('✅ MCP tools remain available for next chat');
 
-          onError?.(error instanceof Error ? error : new Error(String(error)));
+          onError?.(error instanceof Error ? error : new Error(errorMessage));
           throw error;
         }
       },
@@ -264,11 +298,16 @@ export async function streamAIResponse(params: {
     return stream;
   } catch (error) {
     log.error('❌ Error creating stream', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // MCP connections are persistent - no cleanup needed
     // Connections managed by background service worker with keep-alive
     log.info('✅ MCP tools remain available for next chat');
 
-    throw error;
+    // Call onError callback if provided
+    onError?.(error instanceof Error ? error : new Error(errorMessage));
+
+    // Re-throw with enhanced message
+    throw new Error(`Failed to create AI stream: ${errorMessage}`);
   }
 }

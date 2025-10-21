@@ -11,7 +11,8 @@ import { createLogger } from '../../logger';
 const log = createLogger('YouTube-Agent');
 
 // Initialize Google AI for the YouTube agent
-const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
+// const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
+const apiKey = "AIzaSyAxTFyeqmms2eV9zsp6yZpCSAHGZebHzqc";
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Maximum chunk duration in seconds (30 minutes)
@@ -160,7 +161,7 @@ async function analyzeVideoChunk(
     endOffset?: number,
     chunkInfo?: string
 ): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const timeRange = startOffset !== undefined && endOffset !== undefined
         ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
@@ -273,7 +274,7 @@ async function analyzeYouTubeVideo(
         // If there are many chunks, create a final summary
         if (numChunks > 3) {
             log.info('Creating final consolidated summary from all chunks');
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
             const consolidationPrompt = `You are synthesizing analysis from ${numChunks} parts of a ${formatDuration(videoDuration)} video.
 
