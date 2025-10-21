@@ -80,7 +80,7 @@ export function CompactToolCard({
 
     return (
         <div
-            className="compact-tool-card"
+            className={`compact-tool-card ${isExpanded ? 'expanded' : ''}`}
             data-mounted={mounted}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}

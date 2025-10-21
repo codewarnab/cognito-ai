@@ -244,11 +244,8 @@
 
 /* Tool Calls and Results */
 .message-tools {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    margin-top: var(--spacing-lg);
-    width: 100%;
+    display: inline-block;
+    margin: 2px 0;
     max-width: 100%;
 }
 

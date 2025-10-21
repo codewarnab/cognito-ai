@@ -7,12 +7,20 @@
     border: none;
     background: transparent;
     cursor: pointer;
+    display: inline-block;
+    max-width: fit-content;
 
     /* Smooth entrance animation - similar to Sonner toast */
     --y: translateY(0);
     opacity: 0;
     transform: var(--y) scale(0.95);
-    transition: transform 400ms ease, opacity 400ms ease;
+    transition: transform 400ms ease, opacity 400ms ease, max-width 0.2s ease;
+}
+
+/* When expanded, take full width */
+.compact-tool-card.expanded {
+    max-width: 100%;
+    display: block;
 }
 
 .compact-tool-card[data-mounted="true"] {
@@ -34,7 +42,7 @@
 
 .compact-tool-main {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
     flex: 1;
     min-width: 0;
@@ -48,7 +56,6 @@
     flex-shrink: 0;
     transition: opacity 0.2s ease;
     color: var(--text-secondary);
-    margin-top: 2px;
 }
 
 .compact-tool-icon.hovered {
@@ -68,6 +75,7 @@
 .compact-tool-action {
     font-size: 14px;
     color: var(--text-primary);
+    line-height: 1;
 }
 
 .compact-tool-description {
@@ -82,7 +90,6 @@
     gap: 4px;
     flex-shrink: 0;
     margin-left: 8px;
-    margin-top: 2px;
 }
 
 .compact-tool-error-icon {
@@ -105,6 +112,7 @@
     padding-left: 24px;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     animation: slideDown 0.2s ease;
+    width: 100%;
 }
 
 @keyframes slideDown {
