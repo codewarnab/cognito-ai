@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createLogger } from "../../logger";
 import { registerTool } from "../../ai/toolRegistryUtils";
 import { useToolUI } from "../../ai/ToolUIContext";
-import { ToolCard, CodeBlock, Badge } from "../../components/ui/ToolCard";
+import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
 import type { ToolUIState } from "../../ai/ToolUIContext";
 
 const log = createLogger("Actions-YouTube");
@@ -42,7 +42,7 @@ async function extractYoutubeTranscript(
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     console.log("i am executing youtube transcript", tab);
-    
+
     if (!tab.id || !tab.url?.includes("youtube.com/watch")) {
       return {
         success: false,
@@ -60,39 +60,39 @@ async function extractYoutubeTranscript(
           const ytData = (window as any).ytInitialPlayerResponse;
           if (ytData?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
             const tracks = ytData.captions.playerCaptionsTracklistRenderer.captionTracks;
-            
+
             // Find preferred language or fallback to first available
-            let track = preferredLang 
+            let track = preferredLang
               ? tracks.find((t: any) => t.languageCode === preferredLang) || tracks[0]
               : tracks[0];
-            
+
             if (track?.baseUrl) {
               const url = track.baseUrl + "&fmt=json3";
               const response = await fetch(url);
               const data = await response.json();
-              
+
               const segments: TranscriptSegment[] = [];
-              
+
               if (data.events) {
                 for (const event of data.events) {
                   if (event.segs) {
                     const timestamp = (event.tStartMs || 0) / 1000;
-                    
+
                     // Skip if beyond limit
                     if (maxSeconds !== null && timestamp > maxSeconds) break;
-                    
+
                     const text = event.segs
                       .map((seg: any) => seg.utf8 || "")
                       .join("")
                       .trim();
-                    
+
                     if (text) {
                       segments.push({ timestamp, text });
                     }
                   }
                 }
               }
-              
+
               if (segments.length > 0) {
                 return {
                   success: true,
@@ -104,15 +104,15 @@ async function extractYoutubeTranscript(
               }
             }
           }
-          
+
           // Method 2: Fallback - try to read from transcript panel DOM
           const transcriptSegments = document.querySelectorAll(
             "ytd-transcript-segment-renderer"
           );
-          
+
           if (transcriptSegments.length > 0) {
             const segments: TranscriptSegment[] = [];
-            
+
             transcriptSegments.forEach((segment) => {
               const timeElement = segment.querySelector(
                 ".segment-timestamp"
@@ -120,11 +120,11 @@ async function extractYoutubeTranscript(
               const textElement = segment.querySelector(
                 ".segment-text"
               ) as HTMLElement;
-              
+
               if (timeElement && textElement) {
                 const timeText = timeElement.textContent?.trim() || "0:00";
                 const text = textElement.textContent?.trim() || "";
-                
+
                 // Parse timestamp (format: "MM:SS" or "H:MM:SS")
                 const parts = timeText.split(":").map(Number);
                 let timestamp = 0;
@@ -133,16 +133,16 @@ async function extractYoutubeTranscript(
                 } else if (parts.length === 3) {
                   timestamp = parts[0] * 3600 + parts[1] * 60 + parts[2];
                 }
-                
+
                 // Skip if beyond limit
                 if (maxSeconds !== null && timestamp > maxSeconds) return;
-                
+
                 if (text) {
                   segments.push({ timestamp, text });
                 }
               }
             });
-            
+
             if (segments.length > 0) {
               return {
                 success: true,
@@ -153,7 +153,7 @@ async function extractYoutubeTranscript(
               };
             }
           }
-          
+
           // No transcript found
           return {
             success: false,
@@ -207,7 +207,7 @@ export function registerYoutubeActions() {
 
   useEffect(() => {
     log.info('🔧 Registering getYoutubeTranscript tool...');
-    
+
     // Register the tool
     registerTool({
       name: "getYoutubeTranscript",
@@ -225,16 +225,16 @@ export function registerYoutubeActions() {
         try {
           log.info("TOOL CALL: getYoutubeTranscript", { lang, limitSeconds });
           const result = await extractYoutubeTranscript(lang, limitSeconds);
-          
+
           if (result.success) {
-            log.info('✅ YouTube transcript extracted', { 
+            log.info('✅ YouTube transcript extracted', {
               videoTitle: result.videoTitle,
-              segmentCount: result.transcript?.length 
+              segmentCount: result.transcript?.length
             });
           } else {
             log.warn('⚠️ YouTube transcript extraction failed', { errorCode: result.errorCode });
           }
-          
+
           return result;
         } catch (error) {
           log.error('[Tool] Error in getYoutubeTranscript:', error);
@@ -247,74 +247,9 @@ export function registerYoutubeActions() {
       },
     });
 
-    // Register the UI renderer
+    // Register the UI renderer - uses CompactToolRenderer
     registerToolUI("getYoutubeTranscript", (state: ToolUIState) => {
-      const { state: toolState, input, output } = state;
-
-      if (toolState === "input-streaming" || toolState === "input-available") {
-        return (
-          <ToolCard
-            title="Fetching YouTube Transcript"
-            subtitle="Reading video captions..."
-            state="loading"
-            icon="🎥"
-          />
-        );
-      }
-
-      if (toolState === "output-available" && output) {
-        if (output.error) {
-          return (
-            <ToolCard
-              title="Transcript Unavailable"
-              subtitle={output.error}
-              state="error"
-              icon="🎥"
-            />
-          );
-        }
-
-        const segmentCount = output.transcript?.length || 0;
-        const duration = output.transcript?.[output.transcript.length - 1]?.timestamp || 0;
-        const minutes = Math.floor(duration / 60);
-
-        return (
-          <ToolCard
-            title="Transcript Retrieved"
-            subtitle={`${output.videoTitle || "YouTube Video"}`}
-            state="success"
-            icon="🎥"
-          >
-            <Badge label={`${segmentCount} segments`} variant="default" />
-            {duration > 0 && <Badge label={`${minutes}m ${Math.floor(duration % 60)}s`} variant="default" />}
-            {output.language && <Badge label={output.language} variant="default" />}
-            {output.transcript && output.transcript.length > 0 && (
-              <details className="tool-details">
-                <summary>Preview transcript</summary>
-                <CodeBlock
-                  code={output.transcript
-                    .slice(0, 5)
-                    .map((seg) => `[${Math.floor(seg.timestamp)}s] ${seg.text}`)
-                    .join("\n")}
-                />
-              </details>
-            )}
-          </ToolCard>
-        );
-      }
-
-      if (toolState === "output-error") {
-        return (
-          <ToolCard
-            title="Failed to Fetch Transcript"
-            subtitle={state.errorText || "An error occurred while fetching the transcript"}
-            state="error"
-            icon="🎥"
-          />
-        );
-      }
-
-      return null;
+      return <CompactToolRenderer state={state} />;
     });
 
     log.info('✅ getYoutubeTranscript tool registration complete');

@@ -30,7 +30,7 @@ import { ClockIcon } from '../../../assets/chat/wait-for';
 import { BanIcon } from '../../../assets/chat/blocked';
 import { ExpandIcon } from '../../../assets/chat/expand';
 import { ScanTextIcon } from '../../../assets/chat/reading-page-content';
-import {  isMcpTool } from '../../utils/toolMetadataStore';
+import { isMcpTool } from '../../utils/toolMetadataStore';
 import { createLogger } from '../../logger';
 import { Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle } from 'react';
@@ -103,6 +103,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     youtube: YoutubeIcon,
     youtubeSearch: YoutubeIcon,
     youtubeTranscript: YoutubeIcon,
+    getYoutubeTranscript: YoutubeIcon,
 
     // Reminder tools
     createReminder: CircleCheckIcon,

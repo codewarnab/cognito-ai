@@ -504,6 +504,43 @@ const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'History search failed' };
 };
 
+// YouTube Tools
+const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }) => {
+    const videoTitle = output?.videoTitle;
+    const lang = input?.lang;
+
+    if (state === 'loading') {
+        return {
+            action: 'Fetching transcript',
+            description: videoTitle ? truncateText(videoTitle, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        // Check if actually successful (YouTube tool returns success:false on error)
+        if (output?.success === false || output?.error) {
+            return {
+                action: 'Transcript unavailable',
+                description: videoTitle ? truncateText(videoTitle, 40) : output?.error ? truncateText(output.error, 40) : undefined
+            };
+        }
+        const segmentCount = output?.transcript?.length || 0;
+        const duration = output?.transcript?.[output.transcript.length - 1]?.timestamp || 0;
+        const minutes = Math.floor(duration / 60);
+        const durationStr = duration > 0 ? `${minutes}m ${Math.floor(duration % 60)}s` : '';
+
+        return {
+            action: 'Transcript retrieved',
+            description: videoTitle
+                ? `${truncateText(videoTitle, 30)} (${segmentCount} segments${durationStr ? ', ' + durationStr : ''})`
+                : `${segmentCount} segments${durationStr ? ', ' + durationStr : ''}`
+        };
+    }
+    return {
+        action: 'Transcript failed',
+        description: videoTitle ? truncateText(videoTitle, 40) : undefined
+    };
+};
+
 // Formatter Registry
 const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -556,6 +593,10 @@ const formatters: Record<string, ActionFormatter> = {
     // History
     getHistory: getHistoryFormatter,
     searchHistory: getHistoryFormatter,
+
+    // YouTube
+    getYoutubeTranscript: getYoutubeTranscriptFormatter,
+    youtubeTranscript: getYoutubeTranscriptFormatter,
 };
 
 // Default formatter for tools without specific formatters
