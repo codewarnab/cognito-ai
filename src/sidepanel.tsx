@@ -144,13 +144,19 @@ function AIChatContent() {
                 if (storedMessages.length > 0) {
                     log.info("Loading thread messages from DB", { threadId: currentThreadId, count: storedMessages.length });
 
-                    // Convert DB messages to AI SDK v5 UIMessage format
-                    const uiMessages: UIMessage[] = storedMessages.map((msg: ChatMessage) => ({
-                        id: msg.id,
-                        role: msg.role,
-                        parts: [{ type: 'text', text: msg.content }],
-                        createdAt: new Date(msg.timestamp),
-                    }));
+                    // Load complete UIMessage objects (already in correct format)
+                    // This preserves all tool-call and tool-result parts for proper UI rendering
+                    const uiMessages: UIMessage[] = storedMessages.map((msg: ChatMessage) => msg.message);
+
+                    log.info("Restored messages with tool parts", {
+                        totalMessages: uiMessages.length,
+                        messagesWithTools: uiMessages.filter(m =>
+                            m.parts?.some((p: any) =>
+                                p.type === 'tool-call' ||
+                                p.type === 'tool-result'
+                            )
+                        ).length
+                    });
 
                     setMessages(uiMessages);
                 }
@@ -175,21 +181,14 @@ function AIChatContent() {
                 // Clear existing messages for this thread and save new ones
                 await clearThreadMessages(currentThreadId);
 
-                // Convert AI SDK v5 UIMessage to DB format
+                // Store complete UIMessage objects to preserve tool calls and results
                 const dbMessages: ChatMessage[] = messages
-                    .filter((msg) => {
-                        // Extract text from parts
-                        const text = msg.parts
-                            ?.filter((part: any) => part.type === 'text')
-                            .map((part: any) => part.text)
-                            .join('');
-                        return text && text.trim().length > 0;
-                    })
                     .map((msg, index) => {
-                        const text = msg.parts
-                            ?.filter((part: any) => part.type === 'text')
-                            .map((part: any) => part.text)
-                            .join('') || '';
+                        // Filter out transient parts (temporary status messages)
+                        const messageWithoutTransient = {
+                            ...msg,
+                            parts: msg.parts?.filter((part: any) => !part.transient)
+                        };
 
                         // Extract timestamp from createdAt or use index-based timestamp
                         let timestamp: number;
@@ -203,8 +202,7 @@ function AIChatContent() {
                         return {
                             id: msg.id,
                             threadId: currentThreadId,
-                            role: msg.role as 'user' | 'assistant',
-                            content: text,
+                            message: messageWithoutTransient, // Store complete UIMessage
                             timestamp,
                             sequenceNumber: index, // Preserve exact order
                         };
@@ -212,7 +210,29 @@ function AIChatContent() {
 
                 if (dbMessages.length > 0) {
                     await db.chatMessages.bulkAdd(dbMessages);
-                    log.info("Saved thread messages to DB", { threadId: currentThreadId, count: dbMessages.length });
+
+                    // Count messages with tool calls for logging
+                    const toolCallCount = dbMessages.filter(msg =>
+                        msg.message.parts?.some((p: any) =>
+                            p.type === 'tool-call' ||
+                            p.type === 'tool-result'
+                        )
+                    ).length;
+
+                    const totalToolParts = dbMessages.reduce((sum, msg) =>
+                        sum + (msg.message.parts?.filter((p: any) =>
+                            p.type === 'tool-call' ||
+                            p.type === 'tool-result'
+                        ).length || 0), 0
+                    );
+
+                    log.info("💾 Saved thread messages to DB with complete UIMessage structure", {
+                        threadId: currentThreadId,
+                        totalMessages: dbMessages.length,
+                        messagesWithTools: toolCallCount,
+                        totalToolParts,
+                        preservesToolUI: true
+                    });
                 }
 
                 // Generate thread title after every assistant response (non-blocking)
