@@ -61,46 +61,51 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                     )}
 
                                     <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
-                                        <div className="copilot-message-content">
-                                            {message.role === 'assistant' ? (
-                                                <div className="markdown-content">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                                        {getMessageContent(message)}
-                                                    </ReactMarkdown>
-                                                </div>
-                                            ) : (
-                                                <div className="user-message-with-mentions">
-                                                    {renderTextWithMentions(getMessageContent(message))}
-                                                </div>
-                                            )}
-                                        </div>
+                                        {/* Render parts in their actual order - text and tools interleaved */}
+                                        {message.parts && message.parts.length > 0 && (
+                                            <div className="message-parts">
+                                                {message.parts.map((part: any, partIndex: number) => {
+                                                    // Render text parts
+                                                    if (part.type === 'text' && part.text) {
+                                                        return (
+                                                            <div key={`text-${partIndex}`} className="copilot-message-content">
+                                                                {message.role === 'assistant' ? (
+                                                                    <div className="markdown-content">
+                                                                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                                            {part.text}
+                                                                        </ReactMarkdown>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="user-message-with-mentions">
+                                                                        {renderTextWithMentions(part.text)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
 
-                                        {/* Render tool calls if present */}
-                                        {(() => {
-                                            const shouldRenderTools = hasToolCalls(message);
+                                                    // Render tool parts
+                                                    if (
+                                                        part.type === 'tool-call' ||
+                                                        part.type === 'tool-result' ||
+                                                        part.type?.startsWith('tool-') ||
+                                                        part.type === 'dynamic-tool'
+                                                    ) {
+                                                        return (
+                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="message-tools">
+                                                                <ToolPartRenderer
+                                                                    part={part}
+                                                                    messageId={message.id || `msg-${index}`}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    }
 
-                                            if (shouldRenderTools && message.parts) {
-                                                const toolPartsToRender = message.parts.filter((part: any) =>
-                                                    part.type === 'tool-call' ||
-                                                    part.type === 'tool-result' ||
-                                                    part.type?.startsWith('tool-') ||
-                                                    part.type === 'dynamic-tool'
-                                                );
-
-                                                return (
-                                                    <div className="message-tools">
-                                                        {toolPartsToRender.map((part: any, partIndex: number) => (
-                                                            <ToolPartRenderer
-                                                                key={part.toolCallId || `${message.id}-tool-${partIndex}`}
-                                                                part={part}
-                                                                messageId={message.id || `msg-${index}`}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                );
-                                            }
-                                            return null;
-                                        })()}
+                                                    // Unknown part type
+                                                    return null;
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {message.role === 'user' && (

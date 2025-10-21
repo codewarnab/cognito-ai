@@ -22,7 +22,7 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
     // Extract text content from parts array
     const getTextContent = (message: UIMessage): string => {
         if (!message.parts || message.parts.length === 0) return '';
-        
+
         return message.parts
             .filter((part: any) => part.type === 'text')
             .map((part: any) => part.text)
@@ -34,11 +34,11 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
         if (!message.parts || message.parts.length === 0) {
             return false;
         }
-        
-        return message.parts.some((part: any) => 
-            part.type === 'tool-call' || 
+
+        return message.parts.some((part: any) =>
+            part.type === 'tool-call' ||
             part.type === 'tool-result' ||
-            part.type?.startsWith('tool-') || 
+            part.type?.startsWith('tool-') ||
             part.type === 'dynamic-tool'
         );
     };
@@ -60,7 +60,7 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
 
     const formatTime = (createdAt?: Date) => {
         if (!createdAt) return '';
-        
+
         const date = createdAt instanceof Date ? createdAt : new Date(createdAt);
         const now = new Date();
         const isToday = date.toDateString() === now.toDateString();
@@ -95,39 +95,47 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                 <span className="message-time">{formatTime((message as any).createdAt)}</span>
             </div>
 
-            {/* Render text content */}
-            {content && (
-                <div className={`message-content ${isError ? 'error' : ''}`}>
-                    {message.role === 'assistant' ? (
-                        <div className="markdown-content">
-                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                                {content}
-                            </ReactMarkdown>
-                        </div>
-                    ) : (
-                        content
-                    )}
-                </div>
-            )}
+            {/* Render parts in their actual order - text and tools interleaved */}
+            {message.parts && message.parts.length > 0 && (
+                <div className="message-parts">
+                    {message.parts.map((part: any, index: number) => {
+                        // Render text parts
+                        if (part.type === 'text' && part.text) {
+                            return (
+                                <div key={`text-${index}`} className={`message-content ${isError ? 'error' : ''}`}>
+                                    {message.role === 'assistant' ? (
+                                        <div className="markdown-content">
+                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                {part.text}
+                                            </ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        part.text
+                                    )}
+                                </div>
+                            );
+                        }
 
-            {/* Render tool calls - SEPARATED AND MORE VISIBLE */}
-            {hasTools && message.parts && message.parts.length > 0 && (
-                <div className="message-tools">
-                    {message.parts
-                        .filter((part: any) => 
-                            part.type === 'tool-call' || 
+                        // Render tool parts
+                        if (
+                            part.type === 'tool-call' ||
                             part.type === 'tool-result' ||
-                            part.type?.startsWith('tool-') || 
+                            part.type?.startsWith('tool-') ||
                             part.type === 'dynamic-tool'
-                        )
-                        .map((part: any, index: number) => (
-                            <ToolPartRenderer
-                                key={part.toolCallId || `${message.id}-tool-${index}`}
-                                part={part}
-                                messageId={message.id}
-                            />
-                        ))
-                    }
+                        ) {
+                            return (
+                                <div key={part.toolCallId || `tool-${index}`} className="message-tools">
+                                    <ToolPartRenderer
+                                        part={part}
+                                        messageId={message.id}
+                                    />
+                                </div>
+                            );
+                        }
+
+                        // Unknown part type
+                        return null;
+                    })}
                 </div>
             )}
 
