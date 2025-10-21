@@ -35,6 +35,8 @@ import { getBehavioralPreferences } from "./memory/store";
 import { useAIChat } from "./ai/useAIChat";
 import type { UIMessage } from "ai";
 import { extractPageContext, formatPageContextForAI } from "./utils/pageContextExtractor";
+import { processFile, getFileIcon, formatFileSize } from "./utils/fileProcessor";
+import type { FileAttachmentData } from "./components/chat/FileAttachment";
 
 /**
  * Inner component that uses AI SDK v5
@@ -271,16 +273,25 @@ function AIChatContent() {
     }, [messages]);
 
     // Handle sending messages
-    const handleSendMessage = async (messageText?: string) => {
+    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[]) => {
         // Use provided messageText or fall back to input state
         const textToSend = messageText !== undefined ? messageText : input;
         const trimmedInput = textToSend.trim();
 
-        if (!trimmedInput || isLoading) {
+        if (!trimmedInput && (!attachments || attachments.length === 0)) {
             return;
         }
 
-        log.info("SendMessage", { length: trimmedInput.length, fromVoice: messageText !== undefined });
+        if (isLoading) {
+            return;
+        }
+
+        log.info("SendMessage", {
+            length: trimmedInput.length,
+            fromVoice: messageText !== undefined,
+            hasAttachments: attachments && attachments.length > 0,
+            attachmentCount: attachments?.length || 0
+        });
 
         // Only clear input if we're using the input state (not voice input)
         if (messageText === undefined) {
@@ -313,8 +324,72 @@ function AIChatContent() {
             }
         }
 
-        // Send message directly without injecting context
-        // Context is now handled in system prompt via SimpleFrontendTransport
+        // Process attachments if present
+        if (attachments && attachments.length > 0) {
+            try {
+                log.info("Processing file attachments", { count: attachments.length });
+
+                // Process each file
+                const processedFiles = await Promise.all(
+                    attachments.map(async (att) => {
+                        try {
+                            return await processFile(att.file);
+                        } catch (error) {
+                            log.error("Failed to process file", { name: att.file.name, error });
+                            return null;
+                        }
+                    })
+                );
+
+                // Filter out failed files
+                const validFiles = processedFiles.filter(f => f !== null);
+
+                if (validFiles.length > 0) {
+                    log.info("Files processed successfully", {
+                        total: attachments.length,
+                        successful: validFiles.length,
+                        images: validFiles.filter(f => f!.isImage).length
+                    });
+
+                    // Build message parts for multimodal support (AI SDK v5 format)
+                    const messageParts: any[] = [];
+
+                    // Add text content first (only if provided)
+                    if (trimmedInput) {
+                        messageParts.push({
+                            type: 'text',
+                            text: trimmedInput
+                        });
+                    }
+
+                    // Add files in AI SDK v5 format: { type: 'file', mediaType: string, url: string }
+                    for (const file of validFiles) {
+                        messageParts.push({
+                            type: 'file',
+                            mediaType: file!.mimeType,
+                            url: `data:${file!.mimeType};base64,${file!.content}`,
+                            name: file!.name,
+                            size: file!.size
+                        });
+
+                    }
+
+                    // Send multimodal message with parts (AI SDK v5 format)
+                    sendMessage({
+                        role: 'user',
+                        parts: messageParts
+                    } as any);
+
+                    return;
+                }
+            } catch (error) {
+                log.error("Failed to process attachments", error);
+                alert("Failed to process some attachments. Please try again.");
+            }
+        }
+
+        // Send text-only message if no valid attachments
+        // Context is handled in system prompt via SimpleFrontendTransport
         sendMessage({ text: trimmedInput });
     };
 
