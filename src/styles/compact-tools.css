@@ -1,18 +1,18 @@
 /* Compact Tool Card Styles - Modern, space-efficient tool rendering with smooth animations */
 
 .compact-tool-card {
-    border-radius: var(--radius-md);
-    padding: var(--spacing-sm) 12px;
-    margin: 4px 0;
-    border: 1px solid var(--border-color);
-    background: var(--bg-secondary);
+    border-radius: 0;
+    padding: 6px 0;
+    margin: 2px 0;
+    border: none;
+    background: transparent;
     cursor: pointer;
 
     /* Smooth entrance animation - similar to Sonner toast */
     --y: translateY(0);
     opacity: 0;
     transform: var(--y) scale(0.95);
-    transition: transform 400ms ease, opacity 400ms ease, background 200ms ease, border-color 200ms ease;
+    transition: transform 400ms ease, opacity 400ms ease;
 }
 
 .compact-tool-card[data-mounted="true"] {
@@ -22,8 +22,7 @@
 }
 
 .compact-tool-card:hover {
-    background: rgba(18, 100, 255, 0.03);
-    border-color: var(--border-color-hover);
+    background: transparent;
 }
 
 .compact-tool-header {
@@ -35,8 +34,8 @@
 
 .compact-tool-main {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
+    align-items: flex-start;
+    gap: 8px;
     flex: 1;
     min-width: 0;
     /* Allow text truncation */
@@ -48,49 +47,63 @@
     justify-content: center;
     flex-shrink: 0;
     transition: opacity 0.2s ease;
-    color: var(--text-primary);
+    color: var(--text-secondary);
+    margin-top: 2px;
 }
 
 .compact-tool-icon.hovered {
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 .compact-tool-name {
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 400;
     color: var(--text-primary);
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.compact-tool-action {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.compact-tool-description {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
 }
 
 .compact-tool-status {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
-    margin-left: var(--spacing-sm);
+    margin-left: 8px;
+    margin-top: 2px;
 }
 
 .compact-tool-error-icon {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--color-error);
     color: var(--white-stream);
-    font-size: 12px;
+    font-size: 10px;
     font-weight: bold;
     flex-shrink: 0;
 }
 
 .compact-tool-content {
-    margin-top: var(--spacing-sm);
-    padding-top: var(--spacing-sm);
-    border-top: 1px solid var(--border-color);
+    margin-top: 8px;
+    padding-top: 8px;
+    padding-left: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
     animation: slideDown 0.2s ease;
 }
 

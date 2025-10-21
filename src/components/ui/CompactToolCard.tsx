@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { LoadingCheckIcon, type LoadingCheckIconHandle } from '../../../assets/chat/loading-check';
+import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../assets/chat/circle-check';
 import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../assets/chat/chevron-right';
 import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/chat/chevrown-down';
 import { getToolIcon } from './ToolIconMapper';
@@ -30,6 +31,7 @@ export function CompactToolCard({
     const [isHovered, setIsHovered] = useState(false);
     const [mounted, setMounted] = useState(false);
     const loadingCheckRef = useRef<LoadingCheckIconHandle>(null);
+    const circleCheckRef = useRef<CircleCheckIconHandle>(null);
     const chevronRef = useRef<ChevronRightIconHandle | ChevronDownIconHandle>(null);
     const toolIconRef = useRef<any>(null); // Ref for the tool icon
     const ToolIcon = getToolIcon(toolName);
@@ -51,6 +53,10 @@ export function CompactToolCard({
             loadingCheckRef.current?.startAnimation();
         } else if (state === 'success') {
             loadingCheckRef.current?.stopAnimation();
+            // Trigger check animation on success
+            setTimeout(() => {
+                circleCheckRef.current?.startAnimation();
+            }, 100);
         }
     }, [state]);
 
@@ -61,7 +67,7 @@ export function CompactToolCard({
     };
 
     // Format the tool action name based on state and context
-    const displayName = formatToolAction({
+    const formattedAction = formatToolAction({
         toolName,
         state,
         input,
@@ -86,18 +92,25 @@ export function CompactToolCard({
                 {/* Left: Icon + Tool Name */}
                 <div className="compact-tool-main">
                     <div className={`compact-tool-icon ${isHovered ? 'hovered' : ''}`}>
-                        <ToolIcon ref={toolIconRef} size={20} />
+                        <ToolIcon ref={toolIconRef} size={16} />
                     </div>
-                    <span className="compact-tool-name">{displayName}</span>
+                    <div className="compact-tool-name">
+                        <span className="compact-tool-action">{formattedAction.action}</span>
+                        {formattedAction.description && (
+                            <span className="compact-tool-description">{formattedAction.description}</span>
+                        )}
+                    </div>
                 </div>
 
                 {/* Right: Status Icon + Chevron */}
                 <div className="compact-tool-status">
                     {state === 'loading' && (
-                        <LoadingCheckIcon ref={loadingCheckRef} size={20} />
+                        <LoadingCheckIcon ref={loadingCheckRef} size={16} />
                     )}
                     {state === 'success' && (
-                        <LoadingCheckIcon ref={loadingCheckRef} size={20} />
+                        <div style={{ color: '#22c55e' }}>
+                            <CircleCheckIcon ref={circleCheckRef} size={16} />
+                        </div>
                     )}
                     {state === 'error' && (
                         <div className="compact-tool-error-icon">✕</div>
@@ -105,9 +118,9 @@ export function CompactToolCard({
 
                     {isHovered && (
                         isExpanded ? (
-                            <ChevronDownIcon ref={chevronRef as React.RefObject<ChevronDownIconHandle>} size={16} />
+                            <ChevronDownIcon ref={chevronRef as React.RefObject<ChevronDownIconHandle>} size={14} />
                         ) : (
-                            <ChevronRightIcon ref={chevronRef as React.RefObject<ChevronRightIconHandle>} size={16} />
+                            <ChevronRightIcon ref={chevronRef as React.RefObject<ChevronRightIconHandle>} size={14} />
                         )
                     )}
                 </div>
