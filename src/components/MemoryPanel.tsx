@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { X, Brain, Pin, Trash2, Save, Check, X as XIcon, Lightbulb } from "lucide-react";
 import * as memoryStore from "../memory/store";
 import type { StoredMemory } from "../memory/types";
 import { createLogger } from "../logger";
@@ -85,9 +86,12 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
       <div className="memory-panel" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="memory-panel-header">
-          <h2>💾 Memory</h2>
+          <div className="memory-panel-header-content">
+            <Save size={18} className="memory-panel-icon" />
+            <h2>Memory</h2>
+          </div>
           <button className="memory-panel-close" onClick={onClose} aria-label="Close">
-            ✕
+            <X size={20} />
           </button>
         </div>
 
@@ -146,7 +150,9 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
                 <p>No memories match your search.</p>
               ) : (
                 <>
-                  <div className="memory-empty-icon">🧠</div>
+                  <div className="memory-empty-icon">
+                    <Brain size={48} />
+                  </div>
                   <p>No memories saved yet.</p>
                   <p className="memory-empty-subtitle">
                     I'll suggest saving useful information as we work together.
@@ -159,7 +165,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
               <div key={memory.id} className="memory-item">
                 <div className="memory-item-header">
                   <div className="memory-item-key">
-                    {memory.pinned && <span className="memory-pin">📌</span>}
+                    {memory.pinned && <Pin size={12} className="memory-pin" />}
                     {memory.key}
                   </div>
                   <button
@@ -168,7 +174,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
                     aria-label="Delete"
                     title="Delete memory"
                   >
-                    🗑️
+                    <Trash2 size={14} />
                   </button>
                 </div>
                 <div className="memory-item-value">{String(memory.value)}</div>
@@ -188,7 +194,10 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
 
         {/* Footer */}
         <div className="memory-panel-footer">
-          <p>💡 Ask me to save, list, or delete memories anytime!</p>
+          <p>
+            <Lightbulb size={14} className="memory-footer-icon" />
+            Ask me to save, list, or delete memories anytime!
+          </p>
         </div>
       </div>
     </div>
@@ -220,7 +229,9 @@ export function ConsentPrompt({
 
   return (
     <div className="consent-prompt">
-      <div className="consent-prompt-icon">💾</div>
+      <div className="consent-prompt-icon">
+        <Save size={24} />
+      </div>
       <div className="consent-prompt-content">
         <div className="consent-prompt-title">Remember this?</div>
         <div className="consent-prompt-text">
@@ -230,10 +241,12 @@ export function ConsentPrompt({
       </div>
       <div className="consent-prompt-actions">
         <button className="consent-btn consent-btn-yes" onClick={onYes}>
-          ✓ Yes
+          <Check size={14} />
+          Yes
         </button>
         <button className="consent-btn consent-btn-no" onClick={onNo}>
-          ✕ No
+          <XIcon size={14} />
+          No
         </button>
         {onNeverAsk && (
           <button
