@@ -6,9 +6,10 @@ import { ModeSelector } from './ModeSelector';
 import { SendIcon } from './icons/SendIcon';
 import { StopIcon } from './icons/StopIcon';
 import { MentionInput } from '../MentionInput';
-import type { ExecutionMode } from './types';
+import type { ExecutionMode, Message } from './types';
 
 interface ChatInputProps {
+    messages: Message[];
     input: string;
     setInput: (value: string) => void;
     onSendMessage: (messageText?: string) => void;
@@ -23,6 +24,7 @@ interface ChatInputProps {
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
+    messages,
     input,
     setInput,
     onSendMessage,
@@ -40,8 +42,75 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const uploadIconRef = useRef<any>(null);
     const [showModeDropdown, setShowModeDropdown] = React.useState(false);
 
+    // Show suggestions when there are no messages
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading;
+
+    const suggestedActions = [
+        {
+            title: 'How can I improve',
+            label: 'my time management skills?',
+            action: 'How can I improve my time management skills?',
+        },
+        {
+            title: 'Suggest ideas for',
+            label: 'a creative writing project',
+            action: 'Suggest ideas for a creative writing project',
+        },
+        {
+            title: 'What are some tips',
+            label: 'for staying motivated?',
+            action: 'What are some tips for staying motivated?',
+        },
+        {
+            title: 'Help me brainstorm',
+            label: 'ideas for a new hobby',
+            action: 'Help me brainstorm ideas for a new hobby',
+        },
+    ];
+
+    const handleSuggestionClick = (action: string) => {
+        setInput(action);
+        textareaRef.current?.focus();
+    };
+
     return (
         <div className="copilot-input-container">
+            {/* Suggested Actions */}
+            <AnimatePresence>
+                {showSuggestedActions && (
+                    <motion.div
+                        key="suggested-actions-container"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.2 }}
+                        className="suggested-actions-container"
+                    >
+                        <div className="suggested-actions-grid">
+                            {suggestedActions.map((suggestedAction, index) => (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    transition={{ delay: 0.05 * index }}
+                                    key={`suggested-action-${index}`}
+                                >
+                                    <button
+                                        onClick={() => handleSuggestionClick(suggestedAction.action)}
+                                        className="suggested-action-button"
+                                    >
+                                        <span className="suggested-action-title">{suggestedAction.title}</span>
+                                        <span className="suggested-action-label">
+                                            {suggestedAction.label}
+                                        </span>
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
