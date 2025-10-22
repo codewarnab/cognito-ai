@@ -82,13 +82,7 @@
       "desktopCapture"
     ],
     "host_permissions": [
-      "https://backend-4khk5owpk-arnab-mondals-projects.vercel.app/*",
-      "http://localhost:3000/*",
-      "https://*/*",
-      "http://*/*",
-      "https://api.notion.com/*",
-      "https://mcp.notion.com/*",
-      "https://www.notion.so/*"
+      "https://youtube-transcript-generator-five.vercel.app/*"
     ],
     "commands": {
       "_execute_side_panel": {

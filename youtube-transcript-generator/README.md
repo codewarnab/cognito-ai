@@ -1,6 +1,6 @@
 # YouTube Transcript and Video Info Service
 
-This is an Express-based service that fetches YouTube video information and transcripts (subtitles) in any available language. It uses the [ytdl-core](https://github.com/fent/node-ytdl-core) library to extract video metadata and the [youtube-captions-scraper](https://www.npmjs.com/package/youtube-captions-scraper) library to retrieve subtitles from YouTube videos.
+This is an Express-based service that fetches YouTube video information and transcripts (subtitles) in any available language. It uses the [@distube/ytdl-core](https://github.com/distubejs/ytdl-core) library (a more actively maintained fork of ytdl-core) to extract video metadata and the [youtube-transcript-api](https://www.npmjs.com/package/youtube-transcript-api) library to retrieve subtitles from YouTube videos.
 
 ![Backend Service](https://objects-us-east-1.dream.io/az-assets/youtube-transcript-generator.png "YouTube Transcript Generator")
 
@@ -99,6 +99,21 @@ Returns only the video title and concatenated transcript in the first available 
   "transcript": "This is the transcript..."
 }
 ```
+
+**Error Responses:**
+
+- **404** - No captions available for this video
+- **503** - YouTube blocked the request (temporary API changes)
+- **500** - Other errors
+
+**⚠️ Important Note:**
+
+This endpoint uses `@distube/ytdl-core` (an actively maintained fork) which is more reliable than the original `ytdl-core`, but may still occasionally fail due to YouTube's frequent API changes. When this happens, you'll receive a 503 error. The service will automatically try multiple methods to fetch the transcript:
+1. First tries the `youtube-transcript-api` library (most reliable)
+2. Falls back to manual scraping with `@distube/ytdl-core` if needed
+
+If both methods fail, the video either has no captions or YouTube has temporarily blocked automated access. In production, it's recommended to implement retry logic on the client side or use the video analysis fallback.
+
 ---
 
 ### ✅ POST `/simple-transcript-v2`  
