@@ -36,10 +36,21 @@ function getSchemaType(zodType: string): FunctionDeclarationSchemaProperty['type
  * Extract description from Zod schema if available
  */
 function extractDescription(schema: any): string | undefined {
-    // Check for .describe() metadata
+    // Check for .describe() metadata at various levels
     if (schema._def?.description) {
         return schema._def.description;
     }
+
+    // Sometimes description is nested in innerType
+    if (schema._def?.innerType?._def?.description) {
+        return schema._def.innerType._def.description;
+    }
+
+    // Check the schema property (for ZodEffects)
+    if (schema._def?.schema?._def?.description) {
+        return schema._def.schema._def.description;
+    }
+
     return undefined;
 }
 
@@ -51,24 +62,81 @@ function isOptional(schema: any): boolean {
 }
 
 /**
+ * Unwrap Zod schema to get the innermost type (handles .describe(), .optional(), .default(), etc.)
+ */
+function unwrapZodSchema(schema: any): any {
+    let current = schema;
+    const wrappers: string[] = [];
+    let maxIterations = 10; // Prevent infinite loops
+
+    // Keep unwrapping until we find the base type
+    while (current?._def && maxIterations > 0) {
+        maxIterations--;
+        const typeName = current._def.typeName;
+
+        if (!typeName) {
+            // No typeName, return what we have
+            break;
+        }
+
+        // Track wrapper types (including those created by .describe())
+        if (['ZodOptional', 'ZodDefault', 'ZodNullable', 'ZodEffects', 'ZodBranded', 'ZodPipeline', 'ZodCatch'].includes(typeName)) {
+            wrappers.push(typeName);
+
+            // Unwrap to inner type
+            if (current._def.innerType) {
+                current = current._def.innerType;
+            } else if (current._def.schema) {
+                current = current._def.schema;
+            } else {
+                break;
+            }
+        } else {
+            // Found a base type (ZodString, ZodNumber, ZodObject, etc.)
+            break;
+        }
+    }
+
+    return current;
+}
+
+/**
  * Convert Zod schema to Gemini Live API Schema format
  */
 export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string): FunctionDeclarationSchemaProperty {
-    const zodDef = (schema as any)._def;
+    // First unwrap any wrapper types (describe, optional, default, etc.)
+    const unwrapped = unwrapZodSchema(schema);
+    const zodDef = unwrapped?._def;
     let zodType = zodDef?.typeName;
 
-    // Handle undefined zodType - might be a converted MCP schema
-    if (!zodType) {
-        // Log full structure to understand what we're dealing with
-        log.warn('⚠️ Encountered schema with undefined typeName, attempting to infer type', {
-            context: parentContext || 'unknown',
-            defType: zodDef?.type,
-            defShape: zodDef?.shape ? 'present' : 'absent',
-            defConstructorName: zodDef?.constructor?.name,
+    // Debug logging for problematic cases
+    if (!zodType && parentContext) {
+        log.info(`🔍 Debugging schema without typeName`, {
+            context: parentContext,
+            originalTypeName: (schema as any)?._def?.typeName,
+            unwrappedTypeName: zodType,
+            originalDef: (schema as any)?._def ? {
+                hasTypeName: !!(schema as any)._def.typeName,
+                hasInnerType: !!(schema as any)._def.innerType,
+                hasSchema: !!(schema as any)._def.schema,
+                hasShape: !!(schema as any)._def.shape,
+                keys: Object.keys((schema as any)._def),
+            } : 'no _def',
         });
+    }
 
+    // Handle undefined zodType - might be a converted MCP schema or empty Zod object
+    if (!zodType) {
+        // Check if this is a Zod object by looking for shape property
+        if (zodDef?.shape !== undefined) {
+            log.info('✅ Detected ZodObject from shape property (missing typeName)', {
+                context: parentContext || 'unknown',
+                hasShape: true,
+            });
+            zodType = 'ZodObject';
+        }
         // Infer type from _def structure (for MCP-converted schemas)
-        if (zodDef?.type) {
+        else if (zodDef?.type) {
             // Map _def.type to ZodType names
             const typeMap: Record<string, string> = {
                 'object': 'ZodObject',
@@ -83,25 +151,31 @@ export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string):
             if (zodType) {
                 log.info(`✅ Inferred type: ${zodType} from _def.type="${zodDef.type}"`);
             } else {
-                log.warn(`⚠️ Unknown _def.type: ${zodDef.type}, defaulting to STRING`);
+                log.warn(`⚠️ Unknown _def.type: ${zodDef.type}, defaulting to STRING`, {
+                    context: parentContext || 'unknown',
+                });
                 return {
                     type: SchemaType.STRING,
                 } as any;
             }
         } else {
-            log.warn('⚠️ Cannot infer type, defaulting to STRING');
+            log.warn('⚠️ Cannot infer type, defaulting to STRING', {
+                context: parentContext || 'unknown',
+                hasDef: !!zodDef,
+                defKeys: zodDef ? Object.keys(zodDef) : [],
+            });
             return {
                 type: SchemaType.STRING,
             } as any;
         }
     }
 
-    // Handle ZodOptional by unwrapping
+    // Handle ZodOptional by unwrapping (shouldn't reach here after unwrap, but keep for safety)
     if (zodType === 'ZodOptional') {
         return zodToLiveAPISchema(zodDef.innerType, `${parentContext || 'schema'}.optional`);
     }
 
-    // Handle ZodDefault by unwrapping
+    // Handle ZodDefault by unwrapping (shouldn't reach here after unwrap, but keep for safety)
     if (zodType === 'ZodDefault') {
         return zodToLiveAPISchema(zodDef.innerType, `${parentContext || 'schema'}.default`);
     }
@@ -110,8 +184,8 @@ export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string):
         type: getSchemaType(zodType),
     } as any;
 
-    // Add description if available
-    const description = extractDescription(schema);
+    // Add description if available - check both original schema and unwrapped
+    const description = extractDescription(schema) || extractDescription(unwrapped);
     if (description) {
         result.description = description;
     }
@@ -139,13 +213,25 @@ export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string):
 
         case 'ZodObject':
             // Convert object properties
-            const shape = zodDef.shape();
+            // Handle both native Zod schemas (shape is a function) and converted schemas (shape is an object)
+            let shape: any;
+            if (typeof zodDef.shape === 'function') {
+                shape = zodDef.shape();
+            } else if (typeof zodDef.shape === 'object') {
+                // For MCP-converted schemas, shape is already the object
+                shape = zodDef.shape;
+            } else {
+                log.warn(`⚠️ No valid shape found for ZodObject at ${parentContext || 'schema'}`);
+                shape = {};
+            }
+
             const properties: Record<string, FunctionDeclarationSchemaProperty> = {};
             const required: string[] = [];
 
             log.info(`🔍 Processing ZodObject for ${parentContext || 'schema'}`, {
                 hasShape: !!shape,
                 shapeType: typeof shape,
+                shapeIsFunction: typeof zodDef.shape === 'function',
                 shapeKeys: shape ? Object.keys(shape) : [],
             });
 
@@ -161,11 +247,15 @@ export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string):
                         continue;
                     }
 
+                    const zodValue = value as z.ZodSchema;
+                    const unwrappedValue = unwrapZodSchema(zodValue);
+                    const valueTypeName = unwrappedValue?._def?.typeName || (zodValue as any)?._def?.typeName || 'unknown';
+
                     log.info(`  📝 Processing property: ${key}`, {
-                        valueType: (value as any)?._def?.typeName || 'unknown',
+                        valueType: valueTypeName,
+                        hasDescription: !!(zodValue as any)?._def?.description,
                     });
 
-                    const zodValue = value as z.ZodSchema;
                     properties[key] = zodToLiveAPISchema(zodValue, `${parentContext || 'schema'}.${key}`);
 
                     // Track required fields (not optional, not with default)

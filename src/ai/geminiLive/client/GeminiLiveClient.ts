@@ -47,6 +47,8 @@ export class GeminiLiveClient {
     private isInitialized = false;
     private currentStatus: VoiceModeStatus = 'Ready';
     private isModelSpeaking = false;
+    private isExecutingTools = false;
+    private wasCapturingBeforeToolExecution = false;
     private connectionRetryCount = 0;
     private sessionStartPromise: Promise<void> | null = null;
 
@@ -345,8 +347,16 @@ export class GeminiLiveClient {
             isSessionActive: this.sessionManager?.isConnected() ?? false,
             isCleanedUp: this.isCleanedUp,
             currentStatus: this.currentStatus,
+            isExecutingTools: this.isExecutingTools,
             totalInstances: GeminiLiveClient.instanceCount
         };
+    }
+
+    /**
+     * Check if tools are currently executing
+     */
+    getIsExecutingTools(): boolean {
+        return this.isExecutingTools;
     }
 
     /**
@@ -387,17 +397,51 @@ export class GeminiLiveClient {
         const result = await this.messageHandler.handleMessage(message);
 
         if (result.requiresToolExecution && result.functionCalls) {
-            this.updateStatus('Thinking...');
+            // Tool execution starting - pause user input to prevent interruption
+            log.info('🔒 Tool execution starting - pausing user audio input to prevent interruption');
+            this.wasCapturingBeforeToolExecution = this.audioHandler?.isCaptureActive() ?? false;
 
-            const toolHandler = this.sessionManager.getToolHandler();
-            const responses = await toolHandler.executeToolCalls(
-                result.functionCalls,
-                this.eventHandlers.onToolCall,
-                this.eventHandlers.onToolResult
-            );
+            if (this.wasCapturingBeforeToolExecution) {
+                this.stopCapture();
+                log.info('⏸️ Audio capture paused during tool execution');
+            }
 
-            if (responses.length > 0) {
-                await this.sessionManager.sendToolResponse(responses);
+            this.isExecutingTools = true;
+            this.updateStatus('Executing Action...');
+
+            if (this.eventHandlers.onToolExecutionChange) {
+                this.eventHandlers.onToolExecutionChange(true);
+            }
+
+            try {
+                const toolHandler = this.sessionManager.getToolHandler();
+                const responses = await toolHandler.executeToolCalls(
+                    result.functionCalls,
+                    this.eventHandlers.onToolCall,
+                    this.eventHandlers.onToolResult
+                );
+
+                if (responses.length > 0) {
+                    await this.sessionManager.sendToolResponse(responses);
+                }
+            } finally {
+                // Tool execution complete - resume user input
+                this.isExecutingTools = false;
+                log.info('🔓 Tool execution completed');
+
+                if (this.eventHandlers.onToolExecutionChange) {
+                    this.eventHandlers.onToolExecutionChange(false);
+                }
+
+                // Resume audio capture if it was active before
+                if (this.wasCapturingBeforeToolExecution && this.sessionManager?.isConnected()) {
+                    log.info('▶️ Resuming audio capture after tool execution');
+                    await this.startCapture();
+                } else {
+                    this.updateStatus('Ready');
+                }
+
+                this.wasCapturingBeforeToolExecution = false;
             }
         }
     }

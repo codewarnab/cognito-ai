@@ -50,6 +50,8 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
     const [isModelSpeaking, setIsModelSpeaking] = useState(false);
     const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+    const [isExecutingTools, setIsExecutingTools] = useState(false);
+    const [showSetupNotification, setShowSetupNotification] = useState(false);
 
     // Refs
     const liveClientRef = useRef<GeminiLiveClient | null>(null);
@@ -200,6 +202,10 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     },
                     onToolResult: (toolName, result) => {
                         log.info('Tool result:', toolName, result);
+                    },
+                    onToolExecutionChange: (isExecuting) => {
+                        log.info('Tool execution state changed:', isExecuting);
+                        setIsExecutingTools(isExecuting);
                     }
                 };
 
@@ -239,14 +245,23 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 // Auto-start the voice session
                 log.info('Auto-starting voice session...');
                 try {
+                    // Show setup notification
+                    setShowSetupNotification(true);
+
                     await client.startSession();
                     await client.startCapture();
                     setIsRecording(true);
                     log.info('Voice session auto-started successfully');
+
+                    // Hide notification after 3 seconds
+                    setTimeout(() => {
+                        setShowSetupNotification(false);
+                    }, 3000);
                 } catch (err) {
                     log.error('Failed to auto-start session:', err);
                     setError(err instanceof Error ? err.message : 'Failed to auto-start voice session');
                     setIsRecording(false);
+                    setShowSetupNotification(false);
                 }
             } catch (err) {
                 log.error('Failed to initialize client:', err);
@@ -363,7 +378,11 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     setIsUserSpeaking(isSpeaking);
                 },
                 onToolCall: (toolName, args) => log.info('Tool called:', toolName, args),
-                onToolResult: (toolName, result) => log.info('Tool result:', toolName, result)
+                onToolResult: (toolName, result) => log.info('Tool result:', toolName, result),
+                onToolExecutionChange: (isExecuting) => {
+                    log.info('Tool execution state changed:', isExecuting);
+                    setIsExecutingTools(isExecuting);
+                }
             };
 
             // Get new client from manager (ensures singleton)
@@ -540,9 +559,18 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
 
             {/* Status Display */}
             <div className="voice-mode-status">
-                <div className={`voice-mode-status-indicator ${status.toLowerCase().replace(/\.\.\./g, '')}`}>
+                <div className={`voice-mode-status-indicator ${status.toLowerCase().replace(/\.\.\./g, '')} ${isExecutingTools ? 'with-notice' : ''}`}>
                     <div className="voice-mode-status-dot" />
                     <span className="voice-mode-status-text">{status}</span>
+                    {isExecutingTools && (
+                        <div className="voice-mode-inline-notice">
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+                                <path d="M8 1V4M8 12V15M15 8H12M4 8H1M13.657 2.343L11.536 4.464M4.464 11.536L2.343 13.657M13.657 13.657L11.536 11.536M4.464 4.464L2.343 2.343"
+                                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                            <span className="notice-text">Audio input paused during action</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -581,6 +609,17 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     >
                         ×
                     </button>
+                </div>
+            )}
+
+            {/* Setup Notification */}
+            {showSetupNotification && (
+                <div className="voice-mode-setup-notification">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M10 2V5M10 15V18M18 10H15M5 10H2M16.364 3.636L14.243 5.757M5.757 14.243L3.636 16.364M16.364 16.364L14.243 14.243M5.757 5.757L3.636 3.636"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    <span>Please wait, we're still setting up things...</span>
                 </div>
             )}
 
