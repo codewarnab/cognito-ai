@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive/GeminiLiveClient';
+import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive';
 import { getGeminiLiveManager } from '../../ai/geminiLive/GeminiLiveManager';
 import { AudioOrb3D } from './AudioOrb3D';
 import { VoicePoweredOrb } from './VoicePoweredOrb';

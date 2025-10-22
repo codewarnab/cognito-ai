@@ -5,13 +5,19 @@
  * using the Gemini Live API with tool calling support.
  */
 
+// Type exports
 export * from './types';
-export {
-    GeminiLiveClient as default,
-    GeminiLiveClient,
-    type GeminiLiveClientConfig,
-    type GeminiLiveEventHandlers
-} from './GeminiLiveClient';
+
+// Client exports (from new modular structure)
+export { GeminiLiveClient } from './client';
+export { GeminiLiveClient as default } from './client';
+export type {
+    GeminiLiveClientConfig,
+    GeminiLiveEventHandlers,
+    ErrorRecoveryConfig
+} from './client';
+
+// Audio manager exports
 export {
     AudioManager,
     AudioCapture,
@@ -21,6 +27,8 @@ export {
     type AudioPlaybackOptions,
     type AudioDataCallback
 } from './audioManager';
+
+// Tool converter exports
 export {
     convertToolToLiveAPIFormat,
     convertAllTools,
@@ -28,6 +36,8 @@ export {
     zodToLiveAPISchema,
     validateFunctionDeclaration
 } from './toolConverter';
+
+// Error handler exports
 export {
     GeminiLiveErrorHandler,
     ErrorRecoveryManager,
@@ -38,6 +48,5 @@ export {
     SidePanelLifecycleHandler,
     TabVisibilityHandler,
     ModeSwitchGuard,
-    RecoveryStrategy,
-    type ErrorRecoveryConfig
+    RecoveryStrategy
 } from './errorHandler';
