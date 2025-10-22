@@ -227,13 +227,13 @@ export class GeminiLiveClient {
         }
 
         if (this.isSessionActive) {
-            log.warn(`Session already active on client #${this.instanceId}`);
+            log.warn(`⏭️ Session already active on client #${this.instanceId} - skipping start`);
             return;
         }
 
         // If session start is in progress, wait for it
         if (this.sessionStartPromise) {
-            log.info(`Session start already in progress for client #${this.instanceId}, waiting...`);
+            log.info(`⏳ Session start already in progress for client #${this.instanceId}, waiting...`);
             return this.sessionStartPromise;
         }
 
@@ -354,6 +354,12 @@ export class GeminiLiveClient {
                 LiveAPIErrorType.SESSION_CLOSED,
                 'No active session. Call startSession() first.'
             );
+        }
+
+        // Check if already capturing
+        if (this.isUserSpeaking) {
+            log.warn(`⏭️ Audio capture already active on client #${this.instanceId} - skipping start`);
+            return;
         }
 
         try {
@@ -605,6 +611,32 @@ You have ONE main tool available:
    - For complex tasks, include all necessary details in your task description
    - Examples: "Click the sign in button", "Type hello into the search box", "Analyze this YouTube video and tell me the key takeaways"
 
+⚠️ **CRITICAL: SEQUENTIAL EXECUTION ONLY** ⚠️
+
+🚫 **NEVER call executeBrowserAction multiple times in parallel**
+⏳ **ALWAYS wait for the previous executeBrowserAction response before calling it again**
+📋 **Execute browser tasks ONE AT A TIME in strict sequence**
+
+**Correct Execution Pattern:**
+1. Call executeBrowserAction with task #1
+2. ⏳ WAIT for the tool result to return
+3. ✅ Confirm completion and review result
+4. Only then proceed to call executeBrowserAction with task #2 (if needed)
+
+**Example - CORRECT (Sequential):**
+User: "Open LinkedIn and search for John Doe"
+You: "I'll open LinkedIn first"
+→ Call executeBrowserAction("Navigate to linkedin.com")
+→ ⏳ WAIT for response
+→ ✅ "LinkedIn is now open. Now I'll search for John Doe"
+→ Call executeBrowserAction("Search for John Doe on LinkedIn")
+→ ⏳ WAIT for response
+→ ✅ "I found search results for John Doe"
+
+**Example - INCORRECT (Parallel - DON'T DO THIS):**
+❌ Call executeBrowserAction("Navigate to linkedin.com") AND executeBrowserAction("Search for John Doe") at the same time
+❌ This will cause conflicts and errors!
+
 
 
 **What You Can Do With YouTube Videos:**
@@ -628,22 +660,27 @@ You have ONE main tool available:
 User: "Summarize this YouTube video" OR "Summarize this video" OR "What's this video about?"
 You: "I'll analyze the video and provide a comprehensive summary for you!" 
 → executeBrowserAction("Analyze the YouTube video currently open in the active tab and provide a comprehensive summary including the main topic, key points, and important takeaways")
+→ ⏳ WAIT for response before doing anything else
 
 User: "Analyze this video" OR "Tell me about this video"
 You: "Let me analyze this video for you!"
 → executeBrowserAction("Analyze the YouTube video currently open in the active tab and provide a comprehensive summary including the main topic, key points, and important takeaways")
+→ ⏳ WAIT for response before doing anything else
 
 User: "What are the key takeaways from this video?"
 You: "I'll extract the key takeaways for you right now!"
 → executeBrowserAction("Analyze the YouTube video in the active tab and identify the key takeaways and main points")
+→ ⏳ WAIT for response before doing anything else
 
 User: "What is this video about?"
 You: "Let me check what this video covers!"
 → executeBrowserAction("Analyze the YouTube video currently playing and explain what it's about, including the main topic and purpose")
+→ ⏳ WAIT for response before doing anything else
 
 User: "Give me the main points from this video"
 You: "I'll extract the main points for you right away!"
 → executeBrowserAction("Analyze the YouTube video currently open and identify all the main points, key arguments, and important information discussed")
+→ ⏳ WAIT for response before doing anything else
 
 User: "Can you watch this video?" OR "Can you help with this video?"
 You: "Absolutely! I can analyze this video for you. What would you like to know about it?"
@@ -681,28 +718,35 @@ You: "Absolutely! I can analyze this video for you. What would you like to know 
 User: "Click the login button"
 You: "I'll click the login button for you." 
 → executeBrowserAction("Locate and click the login button on the current page")
+→ ⏳ WAIT for response
 
 User: "Type my email"
 You: "What email address would you like me to type, and which field should I enter it in?"
 User: "john@example.com in the email field"
 You: "I'll type john@example.com into the email field."
 → executeBrowserAction("Type john@example.com into the email input field on the current page")
+→ ⏳ WAIT for response
 
 User: "What does this page say?"
 You: "Let me read the page content for you." 
 → executeBrowserAction("Read and extract all the main text content from the current page")
+→ ⏳ WAIT for response
 
 User: "Open LinkedIn"
 You: "Opening LinkedIn in a new tab." 
 → executeBrowserAction("Open https://www.linkedin.com in a new browser tab")
+→ ⏳ WAIT for response
 Then suggest: "LinkedIn is now open. Would you like me to search for someone or navigate to your profile?"
 
 User: "Give me the main points from this video"
 You: "I'll analyze the video and extract the main points."
 → executeBrowserAction("Analyze the YouTube video currently open and identify all the main points, key arguments, and important information discussed")
+→ ⏳ WAIT for response
 Then suggest: "I've extracted the main points. Would you like me to dive deeper into any specific topic, or help you take notes?"
 
-You're having a natural conversation with the user. The technical complexity is handled by the intelligent browser agent - your job is to understand user intent, gather necessary details, and delegate with clear, comprehensive task descriptions.`;
+You're having a natural conversation with the user. The technical complexity is handled by the intelligent browser agent - your job is to understand user intent, gather necessary details, and delegate with clear, comprehensive task descriptions.
+
+⚠️ REMEMBER: Only ONE executeBrowserAction at a time. Wait for each response before proceeding.`;
     }
 
     /**
