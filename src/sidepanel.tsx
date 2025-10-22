@@ -8,7 +8,6 @@ import { MemoryPanel } from "./components/MemoryPanel";
 import { ReminderPanel } from "./components/ReminderPanel";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
-import { ModeToggle, type ChatMode } from "./components/ModeToggle";
 import { VoiceModeUI } from "./components/voice/VoiceModeUI";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
@@ -37,6 +36,9 @@ import { getBehavioralPreferences } from "./memory/store";
 import { useAIChat } from "./ai/useAIChat";
 import type { UIMessage } from "ai";
 import { extractPageContext, formatPageContextForAI } from "./utils/pageContextExtractor";
+
+// Type definition for chat mode
+type ChatMode = 'text' | 'voice';
 
 /**
  * Inner component that uses AI SDK v5
@@ -465,17 +467,6 @@ function AIChatContent() {
                 onNewThread={handleNewThread}
             />
 
-            {/* Mode Toggle - Only show in text mode or when not recording */}
-            {(mode === 'text' || !isRecording) && (
-                <div className="mode-toggle-wrapper">
-                    <ModeToggle
-                        mode={mode}
-                        onModeChange={handleModeChange}
-                        disabled={isRecording}
-                    />
-                </div>
-            )}
-
             {/* Conditional rendering based on mode */}
             {mode === 'text' ? (
                 <>
@@ -525,6 +516,25 @@ function AIChatContent() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Voice Mode FAB - Only in text mode */}
+                    <motion.button
+                        className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
+                        onClick={() => handleModeChange('voice')}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                            type: 'spring',
+                            stiffness: 260,
+                            damping: 20,
+                            delay: 0.1
+                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        title="Switch to Voice Mode"
+                    >
+                        <AudioLinesIcon size={20} />
+                    </motion.button>
                 </>
             ) : (
                 <VoiceModeUI

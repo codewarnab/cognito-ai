@@ -278,11 +278,12 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             // Clean up any existing microphone first
             stopMicrophone();
 
+            // Request microphone with constraints to prevent system audio capture
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
-                    echoCancellation: false,  // Better for voice analysis
-                    noiseSuppression: false,  // Better for voice analysis
-                    autoGainControl: false,   // Better for voice analysis
+                    echoCancellation: true,   // Prevent echo from system audio/speakers
+                    noiseSuppression: true,   // Remove background noise
+                    autoGainControl: true,    // Normalize voice levels
                     sampleRate: 44100,
                 },
             });

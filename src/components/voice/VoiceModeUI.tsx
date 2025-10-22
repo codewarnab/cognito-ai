@@ -10,6 +10,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive/GeminiLiveClient';
+import { getGeminiLiveManager } from '../../ai/geminiLive/GeminiLiveManager';
 import { AudioOrb3D } from './AudioOrb3D';
 import { VoicePoweredOrb } from './VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
@@ -71,11 +72,22 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
         checkMicrophone();
     }, []);
 
-    // Initialize client on mount
+    // Initialize client on mount using Singleton Manager
     useEffect(() => {
         const initializeClient = async () => {
             try {
-                log.info('Initializing GeminiLiveClient...');
+                log.info('Initializing GeminiLiveClient via Manager...');
+
+                // Get the singleton manager
+                const manager = getGeminiLiveManager();
+
+                // Check if there's already an active client
+                const diagnostics = manager.getDiagnostics();
+                log.info('Manager diagnostics:', diagnostics);
+
+                if (diagnostics.hasActiveClient) {
+                    log.warn('⚠️ Existing client detected, cleaning up before creating new instance...');
+                }
 
                 // Initialize error handler
                 const errorHandler = new GeminiLiveErrorHandler({
@@ -161,7 +173,8 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     }
                 };
 
-                const client = new GeminiLiveClient({
+                // Use manager to get client (ensures singleton)
+                const client = await manager.getClient({
                     apiKey,
                     systemInstruction,
                     eventHandlers,
@@ -171,7 +184,6 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     }
                 });
 
-                await client.initialize();
                 liveClientRef.current = client;
 
                 // Register cleanup for client
@@ -191,6 +203,19 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
 
                 setIsInitialized(true);
                 log.info('GeminiLiveClient initialized successfully');
+
+                // Auto-start the voice session
+                log.info('Auto-starting voice session...');
+                try {
+                    await client.startSession();
+                    await client.startCapture();
+                    setIsRecording(true);
+                    log.info('Voice session auto-started successfully');
+                } catch (err) {
+                    log.error('Failed to auto-start session:', err);
+                    setError(err instanceof Error ? err.message : 'Failed to auto-start voice session');
+                    setIsRecording(false);
+                }
             } catch (err) {
                 log.error('Failed to initialize client:', err);
                 setError(err instanceof Error ? err.message : 'Failed to initialize voice mode');
@@ -203,8 +228,9 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
         return () => {
             if (!isCleaningUpRef.current) {
                 isCleaningUpRef.current = true;
-                log.info('Component unmounting, running cleanup...');
+                log.info('Component unmounting, running cleanup via Manager...');
 
+                // Cleanup lifecycle handlers first
                 if (lifecycleHandlerRef.current) {
                     lifecycleHandlerRef.current.handleClose();
                 }
@@ -212,6 +238,14 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 if (errorHandlerRef.current) {
                     errorHandlerRef.current.cleanup();
                 }
+
+                // Use manager to cleanup client (ensures proper singleton cleanup)
+                const manager = getGeminiLiveManager();
+                manager.cleanup().catch(err => {
+                    log.error('Error during manager cleanup:', err);
+                });
+
+                liveClientRef.current = null;
             }
         };
     }, [apiKey, systemInstruction]);
@@ -265,7 +299,7 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
         if (!liveClientRef.current) return;
 
         try {
-            log.info('Resetting voice session...');
+            log.info('Resetting voice session via Manager...');
             setError(null);
 
             // Stop if recording
@@ -274,9 +308,11 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 setIsRecording(false);
             }
 
-            // Cleanup and reinitialize
-            await liveClientRef.current.cleanup();
+            // Get manager and cleanup current instance
+            const manager = getGeminiLiveManager();
+            await manager.cleanup();
 
+            // Create event handlers for new instance
             const eventHandlers: GeminiLiveEventHandlers = {
                 onStatusChange: (newStatus) => setStatus(newStatus),
                 onError: (err) => {
@@ -295,13 +331,17 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 onToolResult: (toolName, result) => log.info('Tool result:', toolName, result)
             };
 
-            const newClient = new GeminiLiveClient({
+            // Get new client from manager (ensures singleton)
+            const newClient = await manager.getClient({
                 apiKey,
                 systemInstruction,
-                eventHandlers
+                eventHandlers,
+                errorRecoveryConfig: {
+                    maxRetries: 3,
+                    retryDelay: 1000
+                }
             });
 
-            await newClient.initialize();
             liveClientRef.current = newClient;
 
             // Update audio nodes
@@ -312,7 +352,7 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
             }
 
             setStatus('Ready');
-            log.info('Voice session reset successfully');
+            log.info('Voice session reset successfully via Manager');
         } catch (err) {
             log.error('Failed to reset session:', err);
             setError(err instanceof Error ? err.message : 'Failed to reset voice session');
