@@ -24,6 +24,46 @@
     animation: fadeInDown 0.3s ease;
 }
 
+/* Voice Mode FAB (Floating Action Button) */
+.voice-mode-fab {
+    position: fixed;
+    bottom:120px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+}
+
+.voice-mode-fab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.voice-mode-fab:active {
+    transform: scale(0.95);
+}
+
+/* Low opacity when messages exist */
+.voice-mode-fab.has-messages {
+    opacity: 0.2;
+    transition: opacity 0.3s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+.voice-mode-fab.has-messages:hover {
+    opacity: 1;
+}
+
 @keyframes fadeInDown {
     from {
         opacity: 0;

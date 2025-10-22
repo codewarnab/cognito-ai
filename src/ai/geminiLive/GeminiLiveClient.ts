@@ -95,10 +95,24 @@ export class GeminiLiveClient {
     private maxConnectionRetries = 3;
     private agentToolExecutors: Map<string, (args: any) => Promise<any>> = new Map();
 
+    // Instance tracking for preventing multiple sessions
+    private static instanceCount = 0;
+    private instanceId: number;
+    private isCleanedUp = false;
+    private sessionStartPromise: Promise<void> | null = null;
+
     constructor(config: GeminiLiveClientConfig) {
+        // Track instance creation
+        GeminiLiveClient.instanceCount++;
+        this.instanceId = GeminiLiveClient.instanceCount;
+
+        if (GeminiLiveClient.instanceCount > 1) {
+            log.warn(`⚠️ Multiple GeminiLiveClient instances detected! Current count: ${GeminiLiveClient.instanceCount}. Consider using GeminiLiveManager for singleton management.`);
+        }
+
         this.config = {
             model: GEMINI_LIVE_MODELS.NATIVE_AUDIO,
-            voiceName: 'Orus',
+            voiceName: 'Aoede',
             enableTools: true,
             ...config
         };
@@ -121,10 +135,11 @@ export class GeminiLiveClient {
             ...config.errorRecoveryConfig
         });
 
-        log.info('GeminiLiveClient created', {
+        log.info(`GeminiLiveClient #${this.instanceId} created`, {
             model: this.config.model,
             voiceName: this.config.voiceName,
-            enableTools: this.config.enableTools
+            enableTools: this.config.enableTools,
+            totalInstances: GeminiLiveClient.instanceCount
         });
     }
 
@@ -197,6 +212,13 @@ export class GeminiLiveClient {
      * Start a Live API session
      */
     async startSession(): Promise<void> {
+        if (this.isCleanedUp) {
+            throw new LiveAPIError(
+                LiveAPIErrorType.SESSION_CLOSED,
+                `Client #${this.instanceId} has been cleaned up and cannot start a session`
+            );
+        }
+
         if (!this.isInitialized) {
             throw new LiveAPIError(
                 LiveAPIErrorType.INITIALIZATION,
@@ -205,20 +227,26 @@ export class GeminiLiveClient {
         }
 
         if (this.isSessionActive) {
-            log.warn('Session already active');
+            log.warn(`Session already active on client #${this.instanceId}`);
             return;
         }
 
+        // If session start is in progress, wait for it
+        if (this.sessionStartPromise) {
+            log.info(`Session start already in progress for client #${this.instanceId}, waiting...`);
+            return this.sessionStartPromise;
+        }
+
         // API key is hardcoded in initialize(), no need to validate here
-        log.info('Starting session with hardcoded API key');
+        log.info(`Starting session with hardcoded API key on client #${this.instanceId}`);
 
         const wsHandler = this.errorHandler.getWebSocketHandler();
 
-        await wsHandler.handleConnectionFailure(
+        this.sessionStartPromise = wsHandler.handleConnectionFailure(
             async () => {
                 try {
                     this.updateStatus('Connecting...');
-                    log.info('Starting Live API session...');
+                    log.info(`Starting Live API session on client #${this.instanceId}...`);
 
                     // Prepare session configuration
                     const sessionConfig = await this.prepareSessionConfig();
@@ -238,7 +266,7 @@ export class GeminiLiveClient {
                         },
                         callbacks: {
                             onopen: () => {
-                                log.info('Live API session opened via callback');
+                                log.info(`Live API session opened via callback on client #${this.instanceId}`);
                                 this.handleSessionOpen();
                             },
                             onmessage: async (message: any) => {
@@ -268,22 +296,26 @@ export class GeminiLiveClient {
                     // Set up event handlers
                     this.setupSessionHandlers();
 
-                    log.info('Live API session connected');
+                    log.info(`Live API session connected on client #${this.instanceId}`);
                     this.connectionRetryCount = 0; // Reset on success
 
                 } catch (error) {
                     this.connectionRetryCount++;
                     const liveError = new LiveAPIError(
                         LiveAPIErrorType.CONNECTION,
-                        'Failed to connect to Live API',
+                        `Failed to connect to Live API on client #${this.instanceId}`,
                         error as Error
                     );
                     this.handleError(liveError);
                     throw liveError;
+                } finally {
+                    this.sessionStartPromise = null;
                 }
             },
             (status) => this.updateStatus(status as VoiceModeStatus)
-        );
+        ).then(() => { });
+
+        return this.sessionStartPromise;
     }
 
     /**
@@ -407,7 +439,12 @@ export class GeminiLiveClient {
      * Cleanup all resources
      */
     cleanup(): void {
-        log.info('Cleaning up GeminiLiveClient...');
+        if (this.isCleanedUp) {
+            log.warn(`Client #${this.instanceId} already cleaned up`);
+            return;
+        }
+
+        log.info(`Cleaning up GeminiLiveClient #${this.instanceId}...`);
 
         // Stop session if active
         if (this.isSessionActive) {
@@ -419,9 +456,34 @@ export class GeminiLiveClient {
 
         this.client = null;
         this.isInitialized = false;
+        this.isCleanedUp = true;
         this.updateStatus('Ready');
 
-        log.info('GeminiLiveClient cleaned up');
+        // Decrement instance count
+        GeminiLiveClient.instanceCount--;
+
+        log.info(`GeminiLiveClient #${this.instanceId} cleaned up. Remaining instances: ${GeminiLiveClient.instanceCount}`);
+    }
+
+    /**
+     * Get instance diagnostics
+     */
+    getDiagnostics(): {
+        instanceId: number;
+        isInitialized: boolean;
+        isSessionActive: boolean;
+        isCleanedUp: boolean;
+        currentStatus: VoiceModeStatus;
+        totalInstances: number;
+    } {
+        return {
+            instanceId: this.instanceId,
+            isInitialized: this.isInitialized,
+            isSessionActive: this.isSessionActive,
+            isCleanedUp: this.isCleanedUp,
+            currentStatus: this.currentStatus,
+            totalInstances: GeminiLiveClient.instanceCount
+        };
     }
 
     /**
@@ -537,35 +599,110 @@ ${capabilities}
 
 You have ONE main tool available:
 
-**executeBrowserAction** - For ALL browser-related tasks
-   - Simply describe what you want to do in natural language
-   - Examples: "Click the sign in button", "Type hello into the search box", "Read this page"
-   - The tool will figure out the technical details
+**executeBrowserAction** - For ALL browser-related tasks including YouTube video analysis
+   - Describe what you want to do in DETAILED natural language
+   - The tool handles technical execution - you provide clear intent
+   - For complex tasks, include all necessary details in your task description
+   - Examples: "Click the sign in button", "Type hello into the search box", "Analyze this YouTube video and tell me the key takeaways"
 
-**IMPORTANT GUIDELINES:**
+
+
+**What You Can Do With YouTube Videos:**
+- Summarizing YouTube videos (any length, auto-chunked)
+- Extracting key takeaways and main points
+- Answering ANY specific questions about video content
+- Analyzing topics, themes, and important information
+- Providing timestamps and detailed breakdowns
+- Comparing multiple videos
+- Finding specific information in videos
+
+**When User Asks About a YouTube Video:**
+1. ✅ ALWAYS help - NEVER decline
+2. ✅ Immediately delegate to executeBrowserAction with detailed task description
+3. ✅ Include the user's specific question or request
+4. ✅ Be enthusiastic and helpful
+5. ❌ NEVER say: "I can't watch videos", "I can't access video content", "I don't have that capability"
+
+**YouTube Examples:**
+
+User: "Summarize this YouTube video" OR "Summarize this video" OR "What's this video about?"
+You: "I'll analyze the video and provide a comprehensive summary for you!" 
+→ executeBrowserAction("Analyze the YouTube video currently open in the active tab and provide a comprehensive summary including the main topic, key points, and important takeaways")
+
+User: "Analyze this video" OR "Tell me about this video"
+You: "Let me analyze this video for you!"
+→ executeBrowserAction("Analyze the YouTube video currently open in the active tab and provide a comprehensive summary including the main topic, key points, and important takeaways")
+
+User: "What are the key takeaways from this video?"
+You: "I'll extract the key takeaways for you right now!"
+→ executeBrowserAction("Analyze the YouTube video in the active tab and identify the key takeaways and main points")
+
+User: "What is this video about?"
+You: "Let me check what this video covers!"
+→ executeBrowserAction("Analyze the YouTube video currently playing and explain what it's about, including the main topic and purpose")
+
+User: "Give me the main points from this video"
+You: "I'll extract the main points for you right away!"
+→ executeBrowserAction("Analyze the YouTube video currently open and identify all the main points, key arguments, and important information discussed")
+
+User: "Can you watch this video?" OR "Can you help with this video?"
+You: "Absolutely! I can analyze this video for you. What would you like to know about it?"
+[Wait for their specific request, then delegate appropriately]
+
+
 
 - **LANGUAGE**: ALWAYS speak in English unless the user explicitly asks you to respond in another language. If the user speaks in another language but doesn't specifically request a response in that language, continue responding in English.
-- For browser tasks, just describe what needs to be done - don't worry about exact parameters
-- Be conversational and friendly since this is voice interaction
-- Keep responses concise and natural
-- When you want to perform an action, use executeBrowserAction with a clear task description
-- Always acknowledge actions before executing them unless the user has given blanket permission
 
-**Examples of How to Use executeBrowserAction:**
+- **Task Descriptions Must Be DETAILED**:
+  - Include specific details: what to click, what to type, where to navigate
+  - For YouTube: specify what information you want extracted
+  - If user request is vague, ask clarifying questions BEFORE delegating
+  - Example: User says "type my email" → Ask "What email address should I type, and in which field?"
+
+- **Confirm When Uncertain**:
+  - If missing critical details (email address, specific button name, etc.), ASK the user
+  - Don't make assumptions about user data or preferences
+  - For navigation tasks, confirm the exact URL if ambiguous
+  - Example: User says "open my profile" → Ask "Which website's profile would you like to open?"
+
+- **After Task Completion**:
+  - Report what was accomplished
+  - Suggest relevant next actions based on context
+  - Example: After opening YouTube → "I've opened YouTube. Would you like me to search for something specific, or analyze a particular video?"
+
+- **Be Conversational**:
+  - Friendly and natural voice interaction
+  - Acknowledge actions before executing
+  - Keep responses concise but informative
+  - Proactively suggest capabilities when relevant
+
+**Comprehensive Examples:**
 
 User: "Click the login button"
-You: "I'll click the login button for you." → executeBrowserAction("Click the login button")
+You: "I'll click the login button for you." 
+→ executeBrowserAction("Locate and click the login button on the current page")
 
-User: "Type my email into the form"
-You: "I'll type that in the email field." → executeBrowserAction("Type user@example.com into the email field")
+User: "Type my email"
+You: "What email address would you like me to type, and which field should I enter it in?"
+User: "john@example.com in the email field"
+You: "I'll type john@example.com into the email field."
+→ executeBrowserAction("Type john@example.com into the email input field on the current page")
 
 User: "What does this page say?"
-You: "Let me read the page for you." → executeBrowserAction("Read the page content")
+You: "Let me read the page content for you." 
+→ executeBrowserAction("Read and extract all the main text content from the current page")
 
 User: "Open LinkedIn"
-You: "Opening LinkedIn in a new tab." → executeBrowserAction("Navigate to linkedin.com")
+You: "Opening LinkedIn in a new tab." 
+→ executeBrowserAction("Open https://www.linkedin.com in a new browser tab")
+Then suggest: "LinkedIn is now open. Would you like me to search for someone or navigate to your profile?"
 
-You're having a natural conversation - the technical complexity is handled by the intelligent agent behind this tool.`;
+User: "Give me the main points from this video"
+You: "I'll analyze the video and extract the main points."
+→ executeBrowserAction("Analyze the YouTube video currently open and identify all the main points, key arguments, and important information discussed")
+Then suggest: "I've extracted the main points. Would you like me to dive deeper into any specific topic, or help you take notes?"
+
+You're having a natural conversation with the user. The technical complexity is handled by the intelligent browser agent - your job is to understand user intent, gather necessary details, and delegate with clear, comprehensive task descriptions.`;
     }
 
     /**
@@ -696,14 +833,21 @@ You're having a natural conversation - the technical complexity is handled by th
      * Handle tool calls from the AI
      */
     private async handleToolCalls(functionCalls: FunctionCall[]): Promise<void> {
-        log.info('Received tool calls', { count: functionCalls.length });
+        log.info('🔧 Received tool calls from Gemini Live', {
+            count: functionCalls.length,
+            tools: functionCalls.map(fc => ({ name: fc.name, args: fc.args }))
+        });
 
         this.updateStatus('Thinking...');
 
         const responses: any[] = [];
 
         for (const call of functionCalls) {
-            log.info('Executing tool', { name: call.name, args: call.args });
+            log.info('🎯 Executing tool', {
+                name: call.name,
+                args: call.args,
+                callId: call.id
+            });
 
             // Notify event handler
             if (this.eventHandlers.onToolCall) {
@@ -718,12 +862,23 @@ You're having a natural conversation - the technical complexity is handled by th
 
                 if (agentExecutor) {
                     // Execute agent tool
-                    log.info('Executing agent tool', { name: call.name });
-                    result = await this.executeToolWithTimeout(
-                        agentExecutor,
-                        call.args,
-                        60000 // 60 second timeout for agents (they may call multiple tools)
-                    );
+                    log.info('🤖 Executing agent tool (Browser Action Agent)', {
+                        name: call.name,
+                        taskDescription: call.args?.taskDescription
+                    });
+
+                    const startTime = Date.now();
+                    result = await agentExecutor(call.args); // No timeout - allow agent to complete
+                    const duration = Date.now() - startTime;
+
+                    log.info('✅ Agent tool completed', {
+                        name: call.name,
+                        duration: `${duration}ms`,
+                        resultType: typeof result,
+                        hasResult: !!result,
+                        resultKeys: typeof result === 'object' && result ? Object.keys(result) : [],
+                        resultPreview: JSON.stringify(result).substring(0, 300) + '...'
+                    });
                 } else {
                     // Fallback: Get tool from registry (for backwards compatibility)
                     const toolDef = getTool(call.name);
@@ -733,14 +888,23 @@ You're having a natural conversation - the technical complexity is handled by th
                     }
 
                     // Execute regular tool with timeout
-                    result = await this.executeToolWithTimeout(
-                        toolDef.execute,
-                        call.args,
-                        30000 // 30 second timeout
-                    );
+                    log.info('🔨 Executing regular tool from registry', { name: call.name });
+                    const startTime = Date.now();
+                    result = await toolDef.execute(call.args); // No timeout
+                    const duration = Date.now() - startTime;
+
+                    log.info('✅ Regular tool completed', {
+                        name: call.name,
+                        duration: `${duration}ms`,
+                        resultPreview: JSON.stringify(result).substring(0, 200) + '...'
+                    });
                 }
 
-                log.info('Tool execution completed', { name: call.name, result });
+                log.info('📊 Tool execution completed - Full result', {
+                    name: call.name,
+                    result,
+                    resultJSON: JSON.stringify(result, null, 2)
+                });
 
                 // Notify event handler
                 if (this.eventHandlers.onToolResult) {
@@ -749,6 +913,15 @@ You're having a natural conversation - the technical complexity is handled by th
 
                 // Truncate large responses to prevent WebSocket message size errors
                 const truncatedResult = this.truncateToolResponse(result, call.name);
+
+                log.info('📦 Preparing response for Gemini Live', {
+                    name: call.name,
+                    callId: call.id,
+                    originalResultLength: JSON.stringify(result).length,
+                    truncatedResultLength: JSON.stringify(truncatedResult).length,
+                    wasTruncated: JSON.stringify(result).length !== JSON.stringify(truncatedResult).length,
+                    truncatedResult: truncatedResult
+                });
 
                 // Format response
                 responses.push({
@@ -760,7 +933,11 @@ You're having a natural conversation - the technical complexity is handled by th
                 });
 
             } catch (error) {
-                log.error('Tool execution failed', { name: call.name, error });
+                log.error('❌ Tool execution failed', {
+                    name: call.name,
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined
+                });
 
                 // Use error handler to format response
                 const { errorResponse, shouldRetry } = ToolExecutionHandler.handleToolError(
@@ -793,18 +970,39 @@ You're having a natural conversation - the technical complexity is handled by th
         // Send tool responses back to Live API
         if (responses.length > 0) {
             try {
+                log.info('📤 Sending tool responses back to Gemini Live', {
+                    count: responses.length,
+                    responses: responses.map(r => ({
+                        id: r.id,
+                        name: r.name,
+                        hasResult: !!r.response?.result,
+                        resultType: typeof r.response?.result,
+                        resultPreview: JSON.stringify(r.response).substring(0, 200) + '...'
+                    })),
+                    fullResponses: responses
+                });
+
                 await this.session.sendToolResponse({
                     functionResponses: responses
                 });
-                log.info('Tool responses sent', { count: responses.length });
+
+                log.info('✅ Tool responses sent successfully to Gemini Live', {
+                    count: responses.length
+                });
             } catch (error) {
-                log.error('Failed to send tool responses', error);
+                log.error('❌ Failed to send tool responses', {
+                    error: error instanceof Error ? error.message : String(error),
+                    stack: error instanceof Error ? error.stack : undefined,
+                    responses
+                });
                 this.handleError(new LiveAPIError(
                     LiveAPIErrorType.CONNECTION,
                     'Failed to send tool responses',
                     error as Error
                 ));
             }
+        } else {
+            log.warn('⚠️ No tool responses to send (all tools may have failed)');
         }
     }
 

@@ -115,9 +115,9 @@ export class AudioCapture {
                 audio: {
                     channelCount: channels,
                     sampleRate,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    autoGainControl: true,
+                    echoCancellation: true,   // Prevent capturing audio from speakers/system
+                    noiseSuppression: true,   // Remove background noise
+                    autoGainControl: true,    // Normalize voice levels
                 }
             });
         } catch (error) {
