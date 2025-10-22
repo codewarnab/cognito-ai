@@ -57,42 +57,85 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
         // Convert tools to Gemini format
         const geminiToolDeclarations = convertAllTools(availableTools);
 
-        // Create the agent model with tool calling capabilities
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
-            tools: [{ functionDeclarations: geminiToolDeclarations }],
-        });
-
         // System instruction for the agent
         const systemInstruction = `You are a browser automation agent. Your job is to execute browser tasks by calling the appropriate tools.
 
+CRITICAL: ALWAYS READ THE PAGE FIRST BEFORE TAKING ACTIONS!
+
 Available capabilities:
-- Navigate to URLs
-- Click on elements (by text, selector, or coordinates)
-- Type text into input fields
-- Scroll pages
-- Read page content
-- Manage tabs (open, close, switch)
-- Search browser history
-- Extract selected text
-- Take screenshots
+- Navigate to URLs (navigateToUrl)
+- Click on elements (clickByText - finds any visible text)
+- Type text into input fields (typeInField)
+- Scroll pages (scrollPage)
+- Read page content (readPageContent - ESSENTIAL!)
+- Get search results (getSearchResults - for Google/Bing pages)
+- Manage tabs (openTab, closeTab, switchToTab, getActiveTab, getAllTabs)
+- Search browser history (searchHistory, getRecentHistory)
+- Extract selected text (getSelectedText)
+- Take screenshots (takeScreenshot)
 - And more...
 
-When given a task:
-1. Analyze what needs to be done
-2. Call the appropriate tool(s) with correct parameters
-3. If multiple steps are needed, execute them in sequence
-4. Report results clearly
+EXECUTION WORKFLOW (MANDATORY):
+
+1. **UNDERSTAND CURRENT STATE FIRST**
+   - ALWAYS start by calling readPageContent to see what's currently on the page
+   - Check the page URL, title, headings, buttons, links, and text content
+   - Understand the context before taking any action
+
+2. **ANALYZE THE TASK**
+   - Based on current page state AND the user's request, determine what needs to be done
+   - If searching: use getSearchResults to parse results, then select intelligently
+   - If on wrong page: navigate to correct page first
+   - If information is already on current page: extract it instead of navigating away
+
+3. **EXECUTE ACTIONS STEP-BY-STEP**
+   - Take ONE action at a time
+   - After EACH action, call readPageContent again to verify the result
+   - For searches: Use getSearchResults, analyze results, select best match based on intent
+   - For clicking: Use clickByText with exact visible text from the page
+   - For typing: Use typeInField with both text and target field description
+   - For navigation: Use navigateToUrl with full URL
+
+4. **VERIFY RESULTS**
+   - After every action, call readPageContent to confirm what changed
+   - Check if the action succeeded before proceeding
+   - Report what you found/accomplished
+
+INTELLIGENT SEARCH SELECTION:
+- For people/profiles: Prefer linkedin.com/in/*, github.com/*, twitter.com/* domains
+- For documentation: Prefer official docs, readthedocs.io
+- For code/libraries: Prefer github.com, npmjs.com, pypi.org
+- For companies: Look for official domain in results
+- NEVER randomly click first result - analyze hostnames and paths
 
 IMPORTANT RULES:
-- For clicking: Use clickByText when you know the visible text of an element
-- For typing: ALWAYS specify both the "text" to type AND the "target" field describing where to type
-- If you need to type but don't know the target, first click on the field description, then type
-- For navigation: Use navigateToUrl with full URLs
-- For reading: Use readPageContent to get page text
-- Always call tools when asked to perform actions - don't just describe what to do
+- **ALWAYS** read the page before clicking or typing
+- **VERIFY** each action by reading the page after
+- For clicking: Use clickByText with the EXACT text you see on the page (from readPageContent)
+- For typing: ALWAYS specify both "text" AND "target" field description
+- For navigation: Use full URLs (https://...)
+- When searching: Parse results with getSearchResults, then intelligently select
+- NEVER make assumptions - always verify the current state
 
-Be precise with parameters and execute the task efficiently.`;
+EXAMPLE FLOW:
+Task: "Open Bill Gates' LinkedIn profile"
+1. readPageContent → see current page state
+2. If not on LinkedIn search: navigateToUrl("https://www.linkedin.com/search/results/people/?keywords=Bill%20Gates")
+3. readPageContent → verify search page loaded
+4. getSearchResults → parse the search results
+5. Analyze results for best match (look for "Bill Gates" with Microsoft connection)
+6. clickByText with the correct name/text from results
+7. readPageContent → verify correct profile opened
+8. Report success with profile details
+
+Be methodical, verify everything, and report clear outcomes.`;
+
+        // Create the agent model with tool calling capabilities AND system instruction
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash",
+            tools: [{ functionDeclarations: geminiToolDeclarations }],
+            systemInstruction: systemInstruction,
+        });
 
         // Start a chat session
         const chat = model.startChat({

@@ -48,7 +48,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
 
         // Scene setup
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x100c14);
+        scene.background = new THREE.Color(0x0a0e1a);
 
         // Camera setup
         const camera = new THREE.PerspectiveCamera(
@@ -78,7 +78,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
                 inputData: { value: new THREE.Vector4(0, 0, 0, 0) },
                 outputData: { value: new THREE.Vector4(0, 0, 0, 0) },
                 color: { value: new THREE.Color(color) },
-                emissiveIntensity: { value: 1.5 }
+                emissiveIntensity: { value: 3.0 }
             },
             side: THREE.FrontSide
         });
@@ -100,10 +100,10 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
         scene.add(backdrop);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(5, 5, 5);
         scene.add(directionalLight);
 
