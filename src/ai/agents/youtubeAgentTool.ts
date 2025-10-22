@@ -17,6 +17,57 @@ const genAI = new GoogleGenerativeAI(apiKey);
 // Maximum chunk duration in seconds (30 minutes)
 const MAX_CHUNK_DURATION = 30 * 60; // 1800 seconds
 
+// Transcript API endpoint
+const TRANSCRIPT_API_URL = 'https://youtube-transcript-generator-five.vercel.app/simple-transcript';
+
+/**
+ * Fetch transcript from the deployed API
+ * @param youtubeUrl - The YouTube video URL
+ * @returns Transcript data or undefined if not available
+ */
+async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; duration: number; transcript: string } | undefined> {
+    try {
+        log.info('📝 Fetching transcript from API', { youtubeUrl });
+
+        const response = await fetch(TRANSCRIPT_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: youtubeUrl }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+
+            if (response.status === 404) {
+                log.info('ℹ️ No captions available for this video', errorData);
+                return undefined;
+            }
+
+            if (response.status === 503) {
+                log.warn('⚠️ Transcript service temporarily unavailable (YouTube API changes)', errorData);
+                return undefined;
+            }
+
+            log.warn(`⚠️ Transcript API returned ${response.status}:`, errorData);
+            return undefined;
+        }
+
+        const data = await response.json();
+        log.info('✅ Transcript fetched successfully', {
+            title: data.title,
+            duration: data.duration,
+            transcriptLength: data.transcript?.length || 0,
+        });
+
+        return data;
+    } catch (error) {
+        log.warn('⚠️ Could not fetch transcript (will use video analysis):', error);
+        return undefined;
+    }
+}
+
 /**
  * Format seconds to readable time format (e.g., "1h 30m" or "45m 30s")
  */
@@ -150,11 +201,45 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
 async function analyzeVideoChunk(
     youtubeUrl: string,
     question: string,
+    transcript?: string,
     startOffset?: number,
     endOffset?: number,
     chunkInfo?: string
 ): Promise<string> {
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    // If transcript is available, use text-based analysis
+    if (transcript) {
+        log.info('📝 Using transcript-based analysis', { transcriptLength: transcript.length });
+
+        const timeRange = startOffset !== undefined && endOffset !== undefined
+            ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
+            : '';
+
+        const systemPrompt = `You are a specialized YouTube video analysis expert${chunkInfo ? ` analyzing ${chunkInfo}` : ''}.
+  
+You have access to the complete transcript of the video, which allows you to provide precise answers with accurate quotes.
+
+Your capabilities:
+- Analyzing video transcripts thoroughly
+- Answering specific questions about video content
+- Extracting key information and insights
+- Providing accurate quotes from the transcript
+- Summarizing video content accurately
+
+${chunkInfo ? `IMPORTANT: You are analyzing ${chunkInfo}${timeRange}. Focus on content within this time range.` : ''}
+
+Always be thorough, accurate, and cite specific quotes from the transcript when relevant.
+Focus on directly answering the user's specific question about the video.`;
+
+        const prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\nUser Question: ${question}`;
+
+        const result = await model.generateContent([{ text: prompt }]);
+        return result.response.text();
+    }
+
+    // Fallback to video-based analysis if no transcript
+    log.info('🎥 Using video-based analysis (no transcript available)');
 
     const timeRange = startOffset !== undefined && endOffset !== undefined
         ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
@@ -211,8 +296,18 @@ Focus on directly answering the user's specific question about the video.`;
 async function analyzeYouTubeVideo(
     youtubeUrl: string,
     question: string,
-    videoDuration?: number
+    videoDuration?: number,
+    transcript?: string
 ): Promise<string> {
+    // If transcript is available, use it for analysis (much faster and more accurate)
+    if (transcript) {
+        log.info('📝 Using transcript for analysis', {
+            transcriptLength: transcript.length,
+            videoDuration,
+        });
+        return await analyzeVideoChunk(youtubeUrl, question, transcript);
+    }
+
     // If video duration is not provided or video is short enough, analyze it whole
     if (!videoDuration || videoDuration <= MAX_CHUNK_DURATION) {
         log.info('Analyzing video as single chunk', { videoDuration, maxChunkDuration: MAX_CHUNK_DURATION });
@@ -247,6 +342,7 @@ async function analyzeYouTubeVideo(
             const chunkResult = await analyzeVideoChunk(
                 youtubeUrl,
                 question,
+                undefined, // no transcript for chunked video analysis
                 startOffset,
                 endOffset,
                 chunkInfo
@@ -303,6 +399,7 @@ Your consolidated response:`;
             const chunkResult = await analyzeVideoChunk(
                 youtubeUrl,
                 question,
+                undefined, // no transcript for chunked video analysis
                 startOffset,
                 endOffset,
                 chunkInfo
@@ -332,6 +429,7 @@ Your consolidated response:`;
                     const nextChunkResult = await analyzeVideoChunk(
                         youtubeUrl,
                         question,
+                        undefined, // no transcript for chunked video analysis
                         nextStartOffset,
                         nextEndOffset,
                         nextChunkInfo
@@ -446,26 +544,44 @@ export async function executeYouTubeAnalysis(args: { question: string; youtubeUr
             log.info('✅ Extracted YouTube URL from active tab', { url: finalUrl });
         }
 
-        // Get video duration
-        log.info('Extracting video duration');
-        const videoDuration = await getVideoDuration(finalUrl);
+        // Try to fetch transcript first (preferred method - faster and more accurate)
+        log.info('Attempting to fetch transcript');
+        const transcriptData = await fetchTranscript(finalUrl);
 
-        if (videoDuration) {
-            log.info('Video duration available', {
+        let videoDuration: number | undefined;
+        let transcript: string | undefined;
+
+        if (transcriptData) {
+            videoDuration = transcriptData.duration * 60; // API returns duration in minutes, we need seconds
+            transcript = transcriptData.transcript;
+            log.info('✅ Transcript available', {
                 duration: videoDuration,
                 formatted: formatDuration(videoDuration),
-                willChunk: videoDuration > MAX_CHUNK_DURATION
+                transcriptLength: transcript.length,
             });
         } else {
-            log.warn('Video duration not available - will analyze as single chunk');
+            // If transcript not available, get video duration for chunking
+            log.info('Transcript not available, extracting video duration');
+            videoDuration = await getVideoDuration(finalUrl);
+
+            if (videoDuration) {
+                log.info('Video duration available', {
+                    duration: videoDuration,
+                    formatted: formatDuration(videoDuration),
+                    willChunk: videoDuration > MAX_CHUNK_DURATION
+                });
+            } else {
+                log.warn('Video duration not available - will analyze as single chunk');
+            }
         }
 
         // Analyze the video
-        const answer = await analyzeYouTubeVideo(finalUrl, args.question, videoDuration);
+        const answer = await analyzeYouTubeVideo(finalUrl, args.question, videoDuration, transcript);
 
         log.info('✅ YouTube Analysis completed', {
             textLength: answer.length,
-            wasChunked: videoDuration ? videoDuration > MAX_CHUNK_DURATION : false,
+            usedTranscript: !!transcript,
+            wasChunked: videoDuration ? videoDuration > MAX_CHUNK_DURATION && !transcript : false,
         });
 
         return {
@@ -473,7 +589,8 @@ export async function executeYouTubeAnalysis(args: { question: string; youtubeUr
             answer,
             videoUrl: finalUrl,
             videoDuration,
-            wasChunked: videoDuration ? videoDuration > MAX_CHUNK_DURATION : false,
+            usedTranscript: !!transcript,
+            wasChunked: videoDuration ? videoDuration > MAX_CHUNK_DURATION && !transcript : false,
         };
 
     } catch (error) {
