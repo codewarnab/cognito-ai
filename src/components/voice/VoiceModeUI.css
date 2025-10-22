@@ -197,6 +197,9 @@
     border-top: 1px solid rgba(74, 144, 255, 0.15);
     position: relative;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .voice-mode-status-indicator {
@@ -210,6 +213,11 @@
     border: 1px solid rgba(74, 144, 255, 0.2);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+}
+
+.voice-mode-status-indicator.with-notice {
+    padding: 14px 24px;
 }
 
 .voice-mode-status-dot {
@@ -315,6 +323,42 @@
     box-shadow: 0 0 10px rgba(107, 114, 128, 0.4);
 }
 
+.voice-mode-status-indicator.executing {
+    background: rgba(236, 72, 153, 0.15);
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+.voice-mode-status-indicator.executing .voice-mode-status-dot {
+    background: rgb(236, 72, 153);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.8);
+}
+
+/* Inline Notice within Status */
+.voice-mode-inline-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(236, 72, 153, 0.15);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 12px;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.voice-mode-inline-notice svg {
+    flex-shrink: 0;
+    color: rgb(236, 72, 153);
+}
+
+.voice-mode-inline-notice .notice-text {
+    white-space: nowrap;
+}
+
 @keyframes voice-mode-pulse {
 
     0%,
@@ -326,6 +370,12 @@
     50% {
         opacity: 0.5;
         transform: scale(1.2);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
     }
 }
 
@@ -365,6 +415,35 @@
     box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
     position: relative;
     z-index: 10;
+}
+
+/* Setup Notification */
+.voice-mode-setup-notification {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 20px 16px;
+    padding: 14px 18px;
+    background: rgba(74, 144, 255, 0.15);
+    border: 1px solid rgba(74, 144, 255, 0.4);
+    border-radius: 12px;
+    color: rgb(147, 197, 253);
+    font-size: 14px;
+    font-weight: 500;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(74, 144, 255, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+.voice-mode-setup-notification svg {
+    flex-shrink: 0;
+    color: rgb(74, 144, 255);
+}
+
+.voice-mode-setup-notification span {
+    flex: 1;
 }
 
 @keyframes voice-mode-slide-in {

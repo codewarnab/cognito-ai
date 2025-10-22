@@ -161,6 +161,7 @@ export type VoiceModeStatus =
     | 'Listening...'
     | 'Thinking...'
     | 'Speaking...'
+    | 'Executing Action...'
     | 'Retrying...'
     | 'Error'
     | 'Disconnected';

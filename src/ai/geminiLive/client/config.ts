@@ -14,6 +14,7 @@ export interface GeminiLiveEventHandlers {
     onUserSpeaking?: (isSpeaking: boolean) => void;
     onToolCall?: (toolName: string, args: any) => void;
     onToolResult?: (toolName: string, result: any) => void;
+    onToolExecutionChange?: (isExecuting: boolean) => void;
 }
 
 /**
