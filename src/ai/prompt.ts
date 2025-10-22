@@ -155,6 +155,12 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "FOLLOW-UP SUGGESTIONS: Analyze search results for URLs, profiles, and related topics. Suggest 1-2 actions such as 'Visit their website?', 'Check their GitHub?', 'Search for recent projects?', or 'Find tutorials?'. Make suggestions specific and actionable.",
                 "CONTEXT EXTRACTION: From search results, identify personal/company websites (domains), social profiles (GitHub/Twitter/LinkedIn URLs), related topics to suggest further searches, and content type (article/tutorial/news) to tailor follow-ups.",
 
+                "CONTENT EXTRACTION - CHOOSE THE RIGHT TOOL:",
+                "  readPageContent → Basic text (fast, simple answers)",
+                "  extractText → Page structure analysis + search bar detection (page type, headings, landmarks, search inputs)",
+                "  findSearchBar → Locate search inputs ONLY (returns exact selectors, placeholders, IDs)",
+                "  Rule: Can't find search? Use findSearchBar first, then typeInField with returned selector.",
+
                 "INTELLIGENT TAB ORGANIZATION:",
                 "  - When user asks to organize/group tabs, use 'organizeTabsByContext' for SMART grouping",
                 "  - organizeTabsByContext returns tab info that YOU must analyze",
@@ -277,6 +283,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "chromeSearch (searches across Chrome bookmarks, history, and open tabs)",
                 "getSelectedText",
                 "readPageContent",
+                "extractText - Advanced page analysis with semantic structure (page type, headings, landmarks, search bar detection)",
+                "findSearchBar - Dedicated search input locator (returns exact selectors, placeholders, IDs)",
                 "clickElement",
                 "scrollPage",
                 "fillInput",
