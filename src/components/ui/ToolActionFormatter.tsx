@@ -265,6 +265,124 @@ const scrollFormatter: ActionFormatter = ({ state, input }) => {
     return { action: 'Scroll failed' };
 };
 
+const extractTextFormatter: ActionFormatter = ({ state, input, output }) => {
+    const selector = input?.selector;
+    const charCount = output?.text?.length || 0;
+    const structure = output?.structure;
+    const pageType = structure?.pageType;
+    const count = output?.count;
+    const searchBars = output?.searchBars;
+    const primarySearchBar = output?.primarySearchBar;
+
+    if (state === 'loading') {
+        return {
+            action: 'Extracting text',
+            description: selector ? truncateText(selector, 40) : 'entire page'
+        };
+    }
+    if (state === 'success') {
+        // Build description with structure info
+        let parts: string[] = [];
+
+        if (charCount > 0) {
+            parts.push(`${charCount} chars`);
+        }
+
+        if (count) {
+            parts.push(`${count} elements`);
+        }
+
+        // Prioritize search bar info if detected
+        if (searchBars && searchBars.length > 0) {
+            const visibleCount = searchBars.filter((sb: any) => sb.isVisible).length;
+            parts.push(`${searchBars.length} search bar${searchBars.length > 1 ? 's' : ''}${visibleCount < searchBars.length ? ` (${visibleCount} visible)` : ''}`);
+        }
+
+        if (pageType && pageType !== 'unknown') {
+            parts.push(`${pageType} page`);
+        }
+
+        if (structure?.headings) {
+            const headingCount = (structure.headings.h1?.length || 0) +
+                (structure.headings.h2?.length || 0) +
+                (structure.headings.h3?.length || 0);
+            if (headingCount > 0) {
+                parts.push(`${headingCount} headings`);
+            }
+        }
+
+        return {
+            action: 'Text extracted',
+            description: parts.join(' • ') || undefined
+        };
+    }
+    return {
+        action: 'Extraction failed',
+        description: selector ? truncateText(selector, 40) : undefined
+    };
+}; const scrollIntoViewFormatter: ActionFormatter = ({ state, input }) => {
+    const selector = input?.selector;
+    const block = input?.block;
+
+    if (state === 'loading') {
+        return {
+            action: 'Scrolling to element',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Scrolled to element',
+            description: selector ? `${truncateText(selector, 30)}${block ? ` (${block})` : ''}` : undefined
+        };
+    }
+    return {
+        action: 'Scroll failed',
+        description: selector ? truncateText(selector, 40) : undefined
+    };
+};
+
+const findSearchBarFormatter: ActionFormatter = ({ state, output }) => {
+    const count = output?.count || 0;
+    const primarySearchBar = output?.primarySearchBar;
+
+    if (state === 'loading') {
+        return {
+            action: 'Finding search bars',
+            description: undefined
+        };
+    }
+    if (state === 'success') {
+        let description = `${count} search bar${count !== 1 ? 's' : ''}`;
+
+        // Add info about the primary search bar
+        if (primarySearchBar) {
+            const details: string[] = [];
+            if (primarySearchBar.placeholder) {
+                details.push(`"${truncateText(primarySearchBar.placeholder, 20)}"`);
+            }
+            if (primarySearchBar.id) {
+                details.push(`#${primarySearchBar.id}`);
+            } else if (primarySearchBar.name) {
+                details.push(`name="${primarySearchBar.name}"`);
+            }
+
+            if (details.length > 0) {
+                description += ` • ${details.join(', ')}`;
+            }
+        }
+
+        return {
+            action: 'Search bars found',
+            description
+        };
+    }
+    return {
+        action: 'No search bars found',
+        description: undefined
+    };
+};
+
 const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
     const selector = input?.selector;
 
@@ -659,6 +777,9 @@ const formatters: Record<string, ActionFormatter> = {
     extractContent: readPageContentFormatter,
     getSelectedText: getSelectedTextFormatter,
     getSelection: getSelectedTextFormatter,
+    extractText: extractTextFormatter,
+    scrollIntoView: scrollIntoViewFormatter,
+    findSearchBar: findSearchBarFormatter,
 
     // Interactions
     clickElement: clickElementFormatter,

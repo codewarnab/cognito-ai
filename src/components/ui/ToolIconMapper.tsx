@@ -74,6 +74,8 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     getSearchResults: SearchIcon,
     openSearchResult: LinkIcon,
     extractText: ExpandIcon,
+    scrollIntoView: ArrowBigDownDashIcon,
+    findSearchBar: SearchIcon,
     waitFor: ClockIcon,
     readPageContent: ScanTextIcon,
     getSelectedText: ExpandIcon,    // Tab tools
