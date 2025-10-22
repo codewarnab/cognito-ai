@@ -21,6 +21,9 @@ import {
     storeClientCredentials,
     getStoredClientCredentials,
     clearClientCredentials,
+    storeOAuthEndpoints,
+    getStoredOAuthEndpoints,
+    clearOAuthEndpoints,
     type DynamicClientCredentials
 } from './mcp/oauth';
 import {
@@ -342,6 +345,10 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 
             // Cache discovered endpoints for future use
             state.oauthEndpoints = endpoints;
+
+            // Persist endpoints to storage so they survive service worker restarts
+            await storeOAuthEndpoints(serverId, endpoints);
+
             console.log(`[Background:${serverId}] Successfully discovered OAuth endpoints:`, {
                 authorization_endpoint: endpoints.authorization_endpoint,
                 token_endpoint: endpoints.token_endpoint,
@@ -498,6 +505,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             await clearClientCredentials(serverId);
             await clearTokens(serverId);
             await clearScopeData(serverId);
+            await clearOAuthEndpoints(serverId);
 
             // Clear memory state
             state.credentials = null;
@@ -561,9 +569,40 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
         return false;
     }
 
-    // Get OAuth endpoints
+    // Load OAuth endpoints if not in memory
     if (!state.oauthEndpoints) {
-        console.error(`[Background:${serverId}] No OAuth endpoints available for token refresh`);
+        state.oauthEndpoints = await getStoredOAuthEndpoints(serverId);
+        if (state.oauthEndpoints) {
+            console.log(`[Background:${serverId}] Loaded OAuth endpoints from storage for token refresh`);
+        }
+    }
+
+    // If still not available, try to re-discover them as a fallback
+    if (!state.oauthEndpoints) {
+        console.log(`[Background:${serverId}] OAuth endpoints not found in memory or storage, attempting re-discovery...`);
+
+        if (serverConfig?.url) {
+            try {
+                const discoveredEndpoints = await discoverOAuthEndpoints(serverConfig.url);
+
+                if (discoveredEndpoints) {
+                    console.log(`[Background:${serverId}] Successfully re-discovered OAuth endpoints`);
+                    state.oauthEndpoints = discoveredEndpoints;
+
+                    // Persist the re-discovered endpoints for future use
+                    await storeOAuthEndpoints(serverId, discoveredEndpoints);
+                } else {
+                    console.error(`[Background:${serverId}] OAuth endpoint re-discovery failed`);
+                }
+            } catch (discoveryError) {
+                console.error(`[Background:${serverId}] Error during OAuth endpoint re-discovery:`, discoveryError);
+            }
+        }
+    }
+
+    // Final check: if still no endpoints, fail
+    if (!state.oauthEndpoints) {
+        console.error(`[Background:${serverId}] No OAuth endpoints available after all attempts (memory, storage, and re-discovery)`);
         state.status = { ...state.status, state: 'needs-auth', error: 'No OAuth endpoints' };
         broadcastStatusUpdate(serverId, state.status);
         return false;
@@ -788,9 +827,11 @@ async function handleInvalidToken(serverId: string): Promise<void> {
     await clearTokens(serverId);
     await clearClientCredentials(serverId);
     await clearScopeData(serverId);
+    await clearOAuthEndpoints(serverId);
 
     state.tokens = null;
     state.credentials = null;
+    state.oauthEndpoints = null;
     state.status = {
         ...state.status,
         state: 'invalid-token',
@@ -888,6 +929,7 @@ async function disconnectServerAuth(serverId: string): Promise<McpExtensionRespo
     await clearTokens(serverId);
     await clearClientCredentials(serverId);
     await clearScopeData(serverId);
+    await clearOAuthEndpoints(serverId);
 
     // Clear all in-memory state
     state.tokens = null;
@@ -1233,6 +1275,13 @@ async function initializeServerStatus(serverId: string): Promise<void> {
 
     try {
         const tokens = await getStoredTokens(serverId);
+
+        // Also restore OAuth endpoints from storage if available
+        const storedEndpoints = await getStoredOAuthEndpoints(serverId);
+        if (storedEndpoints) {
+            state.oauthEndpoints = storedEndpoints;
+            console.log(`[Background:${serverId}] OAuth endpoints restored from storage`);
+        }
 
         if (tokens) {
             // User has tokens, mark as authenticated

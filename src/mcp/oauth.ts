@@ -163,7 +163,7 @@ export function buildAuthUrl(
 
     const url = `${authEndpoint}?${params.toString()}`;
     console.log(`[OAuth:${serverId}] Built authorization URL (scopes: ${scopes?.join(' ') || 'none'})`);
-    
+
     return url;
 }
 
@@ -181,9 +181,9 @@ export async function exchangeCodeForTokens(
     customHeaders?: Record<string, string>
 ): Promise<McpOAuthTokens> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
+
     console.log(`[OAuth:${serverId}] Exchange code for tokens with client:`, clientId);
-    
+
     // Create x-www-form-urlencoded body for OAuth token exchange
     const params = new URLSearchParams({
         grant_type: 'authorization_code',
@@ -225,7 +225,7 @@ export async function exchangeCodeForTokens(
     // Store server-specific metadata as JSON string
     const metadata: Record<string, any> = {};
     const standardFields = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'scope'];
-    
+
     for (const [key, value] of Object.entries(data)) {
         if (!standardFields.includes(key)) {
             metadata[key] = value;
@@ -256,7 +256,7 @@ export async function refreshAccessToken(
     customHeaders?: Record<string, string>
 ): Promise<McpOAuthTokens> {
     const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
+
     const params = new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: refreshToken
@@ -292,7 +292,7 @@ export async function refreshAccessToken(
     // Store server-specific metadata as JSON string
     const metadata: Record<string, any> = {};
     const standardFields = ['access_token', 'refresh_token', 'token_type', 'expires_in', 'scope'];
-    
+
     for (const [key, value] of Object.entries(data)) {
         if (!standardFields.includes(key)) {
             metadata[key] = value;
@@ -385,6 +385,40 @@ export async function clearClientCredentials(serverId: string): Promise<void> {
     const key = getClientCredentialsKey(serverId);
     await chrome.storage.local.remove(key);
     console.log(`[OAuth:${serverId}] Client credentials cleared`);
+}
+
+/**
+ * Get storage key for OAuth endpoints
+ */
+function getEndpointsKey(serverId: string): string {
+    return `mcp.${serverId}.oauth.endpoints`;
+}
+
+/**
+ * Store OAuth endpoints in chrome.storage.local
+ */
+export async function storeOAuthEndpoints(serverId: string, endpoints: any): Promise<void> {
+    const key = getEndpointsKey(serverId);
+    await chrome.storage.local.set({ [key]: endpoints });
+    console.log(`[OAuth:${serverId}] OAuth endpoints stored`);
+}
+
+/**
+ * Retrieve OAuth endpoints from chrome.storage.local
+ */
+export async function getStoredOAuthEndpoints(serverId: string): Promise<any | null> {
+    const key = getEndpointsKey(serverId);
+    const result = await chrome.storage.local.get(key);
+    return result[key] || null;
+}
+
+/**
+ * Clear stored OAuth endpoints
+ */
+export async function clearOAuthEndpoints(serverId: string): Promise<void> {
+    const key = getEndpointsKey(serverId);
+    await chrome.storage.local.remove(key);
+    console.log(`[OAuth:${serverId}] OAuth endpoints cleared`);
 }
 
 export {
