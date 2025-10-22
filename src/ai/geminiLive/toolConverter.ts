@@ -53,18 +53,57 @@ function isOptional(schema: any): boolean {
 /**
  * Convert Zod schema to Gemini Live API Schema format
  */
-export function zodToLiveAPISchema(schema: z.ZodSchema): FunctionDeclarationSchemaProperty {
+export function zodToLiveAPISchema(schema: z.ZodSchema, parentContext?: string): FunctionDeclarationSchemaProperty {
     const zodDef = (schema as any)._def;
-    const zodType = zodDef?.typeName;
+    let zodType = zodDef?.typeName;
+
+    // Handle undefined zodType - might be a converted MCP schema
+    if (!zodType) {
+        // Log full structure to understand what we're dealing with
+        log.warn('⚠️ Encountered schema with undefined typeName, attempting to infer type', {
+            context: parentContext || 'unknown',
+            defType: zodDef?.type,
+            defShape: zodDef?.shape ? 'present' : 'absent',
+            defConstructorName: zodDef?.constructor?.name,
+        });
+
+        // Infer type from _def structure (for MCP-converted schemas)
+        if (zodDef?.type) {
+            // Map _def.type to ZodType names
+            const typeMap: Record<string, string> = {
+                'object': 'ZodObject',
+                'string': 'ZodString',
+                'number': 'ZodNumber',
+                'boolean': 'ZodBoolean',
+                'array': 'ZodArray',
+            };
+
+            zodType = typeMap[zodDef.type];
+
+            if (zodType) {
+                log.info(`✅ Inferred type: ${zodType} from _def.type="${zodDef.type}"`);
+            } else {
+                log.warn(`⚠️ Unknown _def.type: ${zodDef.type}, defaulting to STRING`);
+                return {
+                    type: SchemaType.STRING,
+                } as any;
+            }
+        } else {
+            log.warn('⚠️ Cannot infer type, defaulting to STRING');
+            return {
+                type: SchemaType.STRING,
+            } as any;
+        }
+    }
 
     // Handle ZodOptional by unwrapping
     if (zodType === 'ZodOptional') {
-        return zodToLiveAPISchema(zodDef.innerType);
+        return zodToLiveAPISchema(zodDef.innerType, `${parentContext || 'schema'}.optional`);
     }
 
     // Handle ZodDefault by unwrapping
     if (zodType === 'ZodDefault') {
-        return zodToLiveAPISchema(zodDef.innerType);
+        return zodToLiveAPISchema(zodDef.innerType, `${parentContext || 'schema'}.default`);
     }
 
     const result: FunctionDeclarationSchemaProperty = {
@@ -94,7 +133,7 @@ export function zodToLiveAPISchema(schema: z.ZodSchema): FunctionDeclarationSche
         case 'ZodArray':
             // Convert array items
             if (zodDef.type) {
-                (result as any).items = zodToLiveAPISchema(zodDef.type);
+                (result as any).items = zodToLiveAPISchema(zodDef.type, `${parentContext || 'schema'}.array.items`);
             }
             break;
 
@@ -104,15 +143,43 @@ export function zodToLiveAPISchema(schema: z.ZodSchema): FunctionDeclarationSche
             const properties: Record<string, FunctionDeclarationSchemaProperty> = {};
             const required: string[] = [];
 
-            for (const [key, value] of Object.entries(shape)) {
-                const zodValue = value as z.ZodSchema;
-                properties[key] = zodToLiveAPISchema(zodValue);
+            log.info(`🔍 Processing ZodObject for ${parentContext || 'schema'}`, {
+                hasShape: !!shape,
+                shapeType: typeof shape,
+                shapeKeys: shape ? Object.keys(shape) : [],
+            });
 
-                // Track required fields (not optional, not with default)
-                if (!isOptional(zodValue) && (zodValue as any)._def?.typeName !== 'ZodDefault') {
-                    required.push(key);
+            // Handle empty objects gracefully
+            if (shape && typeof shape === 'object') {
+                for (const [key, value] of Object.entries(shape)) {
+                    // Skip undefined or null values
+                    if (!value) {
+                        log.warn(`⚠️ Skipping property ${key} with undefined/null value`, {
+                            parentContext: parentContext || 'schema',
+                            propertyName: key,
+                        });
+                        continue;
+                    }
+
+                    log.info(`  📝 Processing property: ${key}`, {
+                        valueType: (value as any)?._def?.typeName || 'unknown',
+                    });
+
+                    const zodValue = value as z.ZodSchema;
+                    properties[key] = zodToLiveAPISchema(zodValue, `${parentContext || 'schema'}.${key}`);
+
+                    // Track required fields (not optional, not with default)
+                    if (!isOptional(zodValue) && (zodValue as any)._def?.typeName !== 'ZodDefault') {
+                        required.push(key);
+                    }
                 }
             }
+
+            log.info(`✅ ZodObject processed for ${parentContext || 'schema'}`, {
+                propertyCount: Object.keys(properties).length,
+                requiredCount: required.length,
+                propertyNames: Object.keys(properties),
+            });
 
             (result as any).properties = properties;
             if (required.length > 0) {
@@ -135,8 +202,11 @@ export function zodToLiveAPISchema(schema: z.ZodSchema): FunctionDeclarationSche
             // For unions, try to merge or pick first option
             // This is a simplification - complex unions may not convert well
             if (zodDef.options && zodDef.options.length > 0) {
-                log.warn('⚠️ ZodUnion detected, using first option only');
-                return zodToLiveAPISchema(zodDef.options[0]);
+                log.warn('⚠️ ZodUnion detected, using first option only', {
+                    context: parentContext || 'schema',
+                    optionCount: zodDef.options.length,
+                });
+                return zodToLiveAPISchema(zodDef.options[0], `${parentContext || 'schema'}.union[0]`);
             }
             break;
 
@@ -162,16 +232,34 @@ export function convertToolToLiveAPIFormat(
     try {
         log.info(`🔄 Converting tool: ${toolName}`);
 
-        // Convert the Zod schema to Live API schema
-        const parametersSchema = zodToLiveAPISchema(toolDef.parameters);
+        // Log the input schema for debugging
+        const schemaType = (toolDef.parameters as any)?._def?.typeName;
+        log.info(`📋 Tool ${toolName} schema type: ${schemaType}`, {
+            hasParameters: !!toolDef.parameters,
+            hasDef: !!(toolDef.parameters as any)?._def,
+            schemaTypeName: schemaType,
+        });
 
-        // Ensure it's an object schema for parameters
+        // Convert the Zod schema to Live API schema
+        const parametersSchema = zodToLiveAPISchema(toolDef.parameters, toolName);
+
+        // Build parameters object carefully, only including defined fields
+        // This prevents undefined values from appearing in the serialized JSON
         const parameters: FunctionDeclarationSchema = {
             type: SchemaType.OBJECT,
             properties: (parametersSchema as any).properties || {},
-            required: (parametersSchema as any).required,
-            description: parametersSchema.description,
         };
+
+        // Only add optional fields if they have actual values (not undefined)
+        const requiredFields = (parametersSchema as any).required;
+        if (requiredFields && Array.isArray(requiredFields) && requiredFields.length > 0) {
+            parameters.required = requiredFields;
+        }
+
+        const schemaDescription = parametersSchema.description;
+        if (schemaDescription && typeof schemaDescription === 'string') {
+            parameters.description = schemaDescription;
+        }
 
         // Create the function declaration
         const functionDeclaration: FunctionDeclaration = {
@@ -181,7 +269,11 @@ export function convertToolToLiveAPIFormat(
         };
 
         log.info(`✅ Converted tool: ${toolName}`, {
-            parameters,
+            hasDescription: !!toolDef.description,
+            descriptionPreview: toolDef.description?.substring(0, 50),
+            propertyCount: Object.keys(parameters.properties || {}).length,
+            hasRequired: !!parameters.required,
+            requiredCount: parameters.required?.length || 0,
         });
 
         return functionDeclaration;
@@ -232,10 +324,15 @@ export function convertAllTools(
 
     for (const [toolName, toolDef] of Object.entries(tools)) {
         try {
+            // Validate that description exists
+            if (!toolDef.description) {
+                log.warn(`⚠️ Tool ${toolName} has no description, using fallback`);
+            }
+
             // Convert to ToolDefinition format
             const normalizedTool: ToolDefinition = {
                 name: toolName,
-                description: toolDef.description,
+                description: toolDef.description || `Tool: ${toolName}`,
                 parameters: toolDef.inputSchema,
                 execute: toolDef.execute,
             };

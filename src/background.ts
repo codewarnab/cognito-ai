@@ -1679,7 +1679,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // Initialization
 // ============================================================================
 
-console.log('[Background] Service worker loaded - CopilotKit powered extension ready');
+
 console.log('[Background] Browser actions event listeners initialized');
 
 // ============================================================================

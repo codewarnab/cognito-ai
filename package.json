@@ -82,7 +82,8 @@
       "desktopCapture"
     ],
     "host_permissions": [
-      "https://youtube-transcript-generator-five.vercel.app/*"
+      "https://youtube-transcript-generator-five.vercel.app/*",
+      "<all_urls>"
     ],
     "commands": {
       "_execute_side_panel": {
