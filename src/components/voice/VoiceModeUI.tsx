@@ -11,6 +11,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive/GeminiLiveClient';
 import { AudioOrb3D } from './AudioOrb3D';
+import { VoicePoweredOrb } from './VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
 import type { VoiceModeStatus } from '../../ai/geminiLive/types';
 import { runToolIntegrationReport } from '../../ai/geminiLive/toolIntegrationTest';
@@ -42,10 +43,12 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     const [status, setStatus] = useState<VoiceModeStatus>('Ready');
     const [error, setError] = useState<string | null>(null);
     const [isInitialized, setIsInitialized] = useState(false);
-    const [sphereColor, setSphereColor] = useState('#000010');
+    const [sphereColor, setSphereColor] = useState('#4a90ff');
     const [showDebug, setShowDebug] = useState(false);
     const [debugReport, setDebugReport] = useState<string>('');
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
+    const [isModelSpeaking, setIsModelSpeaking] = useState(false);
+    const [isUserSpeaking, setIsUserSpeaking] = useState(false);
 
     // Refs
     const liveClientRef = useRef<GeminiLiveClient | null>(null);
@@ -144,9 +147,11 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     },
                     onModelSpeaking: (isSpeaking) => {
                         log.debug('Model speaking:', isSpeaking);
+                        setIsModelSpeaking(isSpeaking);
                     },
                     onUserSpeaking: (isSpeaking) => {
                         log.debug('User speaking:', isSpeaking);
+                        setIsUserSpeaking(isSpeaking);
                     },
                     onToolCall: (toolName, args) => {
                         log.info('Tool called:', toolName, args);
@@ -278,8 +283,14 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     setError(err.message);
                     setIsRecording(false);
                 },
-                onModelSpeaking: (isSpeaking) => log.debug('Model speaking:', isSpeaking),
-                onUserSpeaking: (isSpeaking) => log.debug('User speaking:', isSpeaking),
+                onModelSpeaking: (isSpeaking) => {
+                    log.debug('Model speaking:', isSpeaking);
+                    setIsModelSpeaking(isSpeaking);
+                },
+                onUserSpeaking: (isSpeaking) => {
+                    log.debug('User speaking:', isSpeaking);
+                    setIsUserSpeaking(isSpeaking);
+                },
                 onToolCall: (toolName, args) => log.info('Tool called:', toolName, args),
                 onToolResult: (toolName, result) => log.info('Tool result:', toolName, result)
             };
@@ -347,58 +358,66 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 )}
 
                 {/* Debug button */}
-                <button
-                    className="voice-mode-debug-button"
-                    onClick={() => setShowDebug(!showDebug)}
-                    title="Toggle Debug Panel"
-                    style={{
-                        marginLeft: 'auto',
-                        padding: '8px 12px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'white',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                    }}
-                >
-                    {showDebug ? '🐛 Hide Debug' : '🐛 Debug'}
-                </button>
+
             </div>
 
             {/* Debug Panel */}
             {showDebug && (
                 <div style={{
                     position: 'absolute',
-                    top: '60px',
+                    top: '70px',
                     right: '20px',
-                    width: '400px',
-                    maxHeight: '500px',
-                    background: 'rgba(0, 0, 0, 0.9)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '12px',
-                    padding: '16px',
+                    width: '420px',
+                    maxHeight: '520px',
+                    background: 'rgba(15, 20, 35, 0.95)',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    borderRadius: '16px',
+                    padding: '20px',
                     color: 'white',
                     fontSize: '12px',
-                    fontFamily: 'monospace',
+                    fontFamily: 'ui-monospace, monospace',
                     overflow: 'auto',
                     zIndex: 1000,
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
                 }}>
-                    <h3 style={{ margin: '0 0 12px 0', fontSize: '14px' }}>
-                        🔧 Tool Integration Test (Phase 8)
+                    <h3 style={{
+                        margin: '0 0 16px 0',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        color: 'rgba(216, 180, 254, 0.95)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span>🔧</span>
+                        <span>Tool Integration Test</span>
                     </h3>
                     <button
                         onClick={handleDebugTest}
                         style={{
                             width: '100%',
-                            padding: '8px',
-                            background: 'rgba(0, 120, 255, 0.8)',
-                            border: 'none',
-                            borderRadius: '6px',
+                            padding: '12px',
+                            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(139, 92, 246, 0.25) 100%)',
+                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                            borderRadius: '10px',
                             color: 'white',
                             cursor: 'pointer',
-                            marginBottom: '12px'
+                            marginBottom: '16px',
+                            fontWeight: '500',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease',
+                            backdropFilter: 'blur(10px)'
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.4) 0%, rgba(139, 92, 246, 0.35) 100%)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 85, 247, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(139, 92, 246, 0.25) 100%)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
                         }}
                     >
                         Run Test
@@ -408,7 +427,14 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                             margin: 0,
                             whiteSpace: 'pre-wrap',
                             fontSize: '11px',
-                            lineHeight: '1.4'
+                            lineHeight: '1.6',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            color: 'rgba(255, 255, 255, 0.9)',
+                            maxHeight: '350px',
+                            overflow: 'auto'
                         }}>
                             {debugReport}
                         </pre>
@@ -419,10 +445,15 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
             {/* Main Content - Orb Visualization */}
             <div className="voice-mode-content">
                 {isInitialized && inputNodeRef.current && outputNodeRef.current ? (
-                    <AudioOrb3D
-                        inputNode={inputNodeRef.current}
+                    <VoicePoweredOrb
+                        enableVoiceControl={isRecording}
+                        agentSpeaking={isModelSpeaking}
                         outputNode={outputNodeRef.current}
-                        color={sphereColor}
+                        voiceSensitivity={1.5}
+                        maxRotationSpeed={1.2}
+                        maxHoverIntensity={0.8}
+                        hue={220}
+                        className="voice-mode-orb"
                     />
                 ) : (
                     <div className="voice-mode-loading">

@@ -32,10 +32,10 @@ import {
 import { AudioManager, type AudioDataCallback } from './audioManager';
 import { convertAllTools } from './toolConverter';
 import { getAllTools, getTool } from '../toolRegistryUtils';
-import { 
-    browserActionAgentDeclaration, 
-    executeBrowserActionAgent, 
-    getBrowserCapabilitiesSummary 
+import {
+    browserActionAgentDeclaration,
+    executeBrowserActionAgent,
+    getBrowserCapabilitiesSummary
 } from '../agents/browserActionAgent';
 import { createLogger } from '../../logger';
 import {
@@ -98,7 +98,7 @@ export class GeminiLiveClient {
     constructor(config: GeminiLiveClientConfig) {
         this.config = {
             model: GEMINI_LIVE_MODELS.NATIVE_AUDIO,
-            voiceName: 'Aoede',
+            voiceName: 'Orus',
             enableTools: true,
             ...config
         };
@@ -544,6 +544,7 @@ You have ONE main tool available:
 
 **IMPORTANT GUIDELINES:**
 
+- **LANGUAGE**: ALWAYS speak in English unless the user explicitly asks you to respond in another language. If the user speaks in another language but doesn't specifically request a response in that language, continue responding in English.
 - For browser tasks, just describe what needs to be done - don't worry about exact parameters
 - Be conversational and friendly since this is voice interaction
 - Keep responses concise and natural
