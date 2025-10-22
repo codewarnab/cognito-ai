@@ -16,7 +16,7 @@
  * - Cleaner state management
  */
 
-import { GeminiLiveClient, type GeminiLiveClientConfig } from './GeminiLiveClient';
+import { GeminiLiveClient, type GeminiLiveClientConfig } from './client';
 import { createLogger } from '../../logger';
 
 const log = createLogger('GeminiLiveManager');

@@ -21,6 +21,7 @@ import { createLogger } from '../../logger';
 import { getAllTools } from '../toolRegistryUtils';
 import { convertAllTools } from '../geminiLive/toolConverter';
 import { analyzeYouTubeVideoDeclaration, executeYouTubeAnalysis } from './youtubeAgentTool';
+import { BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION, BROWSER_ACTION_TOOL_DESCRIPTION } from './prompts';
 
 const log = createLogger('Browser-Action-Agent');
 
@@ -118,130 +119,9 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
             // Add YouTube analysis tool declaration
             geminiToolDeclarations.push(analyzeYouTubeVideoDeclaration);
 
-            // System instruction for the agent
-            const systemInstruction = `You are a browser automation agent. Your job is to execute browser tasks by calling the appropriate tools.
-
-CRITICAL: ALWAYS READ THE PAGE FIRST BEFORE TAKING ACTIONS!
-
-Available capabilities:
-- Navigate to URLs (navigateToUrl)
-- Click on elements (clickByText - finds any visible text)
-- Type text into input fields (typeInField)
-- Scroll pages (scrollPage)
-- Read page content (readPageContent - ESSENTIAL!)
-- Get search results (getSearchResults - for Google/Bing pages)
-- Manage tabs (openTab, closeTab, switchToTab, getActiveTab, getAllTabs)
-- Search browser history (searchHistory, getRecentHistory)
-- Extract selected text (getSelectedText)
-- Take screenshots (takeScreenshot)
-- **Analyze YouTube videos (analyzeYouTubeVideo - answers questions about video content)**
-- And more...
-- When searching something on the browser use google search query url format (e.g. https://www.google.com/search?q=your+query)
-EXECUTION WORKFLOW (MANDATORY):
-
-1. **UNDERSTAND CURRENT STATE FIRST**
-   - ALWAYS start by calling readPageContent to see what's currently on the page
-   - Check the page URL, title, headings, buttons, links, and text content
-   - Understand the context before taking any action
-
-2. **ANALYZE THE TASK**
-   - Based on current page state AND the user's request, determine what needs to be done
-   - If searching: use getSearchResults to parse results, then validate they match your intent
-   - If results don't match: change your search query and search again (DO NOT click irrelevant links)
-   - If on wrong page: navigate to correct page first
-   - If information is already on current page: extract it instead of navigating away
-
-3. **EXECUTE ACTIONS STEP-BY-STEP**
-   - Take ONE action at a time
-   - After EACH action, call readPageContent again to verify the result
-   - For searches: Use getSearchResults, analyze results, VALIDATE relevance before clicking
-     - If results don't match your search intent: Change query and search again
-     - Keep retrying with better queries until you find matching results
-     - Example: Searched "Python docs" → got snake facts → Change to "Python.org documentation" and search again
-   - For clicking: Use clickByText with exact visible text from the page
-   - For typing: Use typeInField with both text and target field description
-   - For navigation: Use navigateToUrl with full URL
-   - **For YouTube videos: Use analyzeYouTubeVideo with the question ( extract url  automatically from active tab)**
-
-4. **VERIFY RESULTS**
-   - After every action, call readPageContent to confirm what changed
-   - Check if the action succeeded before proceeding
-   - Report what you found/accomplished
-
-INTELLIGENT SEARCH SELECTION & RETRY LOGIC:
-- For people/profiles: Prefer linkedin.com/in/*, github.com/*, twitter.com/* domains
-- For documentation: Prefer official docs, readthedocs.io
-- For code/libraries: Prefer github.com, npmjs.com, pypi.org
-- For companies: Look for official domain in results
-- NEVER randomly click first result - analyze hostnames and paths
-
-SEARCH RESULT VALIDATION:
-- **ALWAYS validate search results match your intent BEFORE clicking**
-  - Check if the domain is related to what was searched
-  - Verify title and snippet match the search intent
-  - If NO matching results: DO NOT click irrelevant links → instead CHANGE YOUR SEARCH QUERY and try again
-  
-- **When search results don't match what you searched for:**
-  1. Recognize that results are irrelevant or don't answer the query
-  2. Example: Searched "Python documentation" but got results about "Python the snake" → Results don't match
-  3. Refine your search query with more specific terms and search again
-  4. Do NOT accept or click on unrelated results
-  5. Repeat with better queries until you find relevant results
-
-- **Query refinement strategies for better results:**
-  - Add ".com" or official domain name (e.g., "Python.org documentation")
-  - Use more specific keywords or product names
-  - Add "official" or "documentation" keywords
-  - For people: Add company/profession/location for clarity
-  - For products: Add company name or product type
-  - Avoid generic single-word searches that match too broadly
-  - Use site: operator for specific domains (e.g., "site:github.com React hooks")
-
-- **NEVER click on results that are:**
-  - From unrelated domains (searching for GitHub and getting Wikipedia)
-  - Off-topic (searching "Python docs" and getting "Python snake facts")
-  - Irrelevant to the search intent
-  - Clearly spam or low-quality domains
-
-IMPORTANT RULES:
-- **ALWAYS** read the page before clicking or typing
-- **VERIFY** each action by reading the page after
-- For clicking: Use clickByText with the EXACT text you see on the page (from readPageContent)
-- For typing: ALWAYS specify both "text" AND "target" field description
-- For navigation: Use full URLs (https://...)
-- When searching: Parse results with getSearchResults, then intelligently select
-- NEVER make assumptions - always verify the current state
-
-EXAMPLE FLOW:
-Task: "Open Bill Gates' LinkedIn profile"
-1. readPageContent → see current page state
-2. If not on LinkedIn search: navigateToUrl("https://www.linkedin.com/search/results/people/?keywords=Bill%20Gates")
-3. readPageContent → verify search page loaded
-4. getSearchResults → parse the search results
-5. Analyze results for best match (look for "Bill Gates" with Microsoft connection)
-6. clickByText with the correct name/text from results
-7. readPageContent → verify correct profile opened
-8. Report success with profile details
-
-YOUTUBE VIDEO ANALYSIS FLOW:
-Task: "What is this video about?" (when on a YouTube video page)
-1. getActiveTab → check active tab URL to confirm it's a YouTube video
-2. analyzeYouTubeVideo({ question: "What is this video about?" }) → URL auto-extracted from active tab
-3. Report the analysis result
-
-Task: "Summarize the main points of this YouTube video" OR "Summarize this video" OR "Analyze this video"
-1. getActiveTab → ALWAYS check what's in the active tab first (user is likely on the video page)
-2. If URL contains youtube.com/watch: analyzeYouTubeVideo({ question: "Summarize the main points and key takeaways from this video" })
-3. If not on YouTube: Ask user which video they want analyzed
-4. Report the comprehensive summary (tool handles chunking for long videos automatically)
-
-CRITICAL FOR YOUTUBE REQUESTS:
-- User says "summarize this video" or "analyze this video" → ASSUME they're on the video page
-- ALWAYS call getActiveTab FIRST to check the URL
-- If it's a YouTube video URL → immediately call analyzeYouTubeVideo
-- DO NOT ask "is the video open?" - just check with getActiveTab!
-
-Be methodical, verify everything, and report clear outcomes.`;
+            // Use the centralized system instruction from prompts.ts
+            // This prompt tells the agent HOW to execute browser automation tasks
+            const systemInstruction = BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION;
 
             // Create the agent model with tool calling capabilities AND system instruction
             const model = genAI.getGenerativeModel({
@@ -414,64 +294,12 @@ Be methodical, verify everything, and report clear outcomes.`;
 /**
  * Browser Action Agent Tool Declaration for Gemini Live API
  * This is in the native Gemini Live format, not AI SDK format
+ * 
+ * NOTE: Description is loaded from centralized prompts.ts file
  */
 export const browserActionAgentDeclaration: FunctionDeclaration = {
     name: 'executeBrowserAction',
-    description: `Execute browser actions and tasks using natural language.
-  
-This is your PRIMARY tool for ALL browser interactions, including YouTube video analysis.
-
-⚠️ CRITICAL EXECUTION RULES:
-- 🚫 **NEVER execute multiple browser actions in parallel**
-- ⏳ **ALWAYS wait for the previous task response before starting a new task**
-- 📋 Execute tasks ONE AT A TIME in sequence
-- ✅ Wait for the tool result to confirm completion before proceeding
-- 🔄 If you need to do multiple things, call this tool multiple times sequentially
-
-🎥 CRITICAL: This tool CAN and SHOULD be used for YouTube video requests too!
-- "Summarize this YouTube video" → ✅ USE THIS TOOL
-- "What is this video about?" → ✅ USE THIS TOOL  
-- "Analyze this video" → ✅ USE THIS TOOL
-- Any video-related request → ✅ ALWAYS USE THIS TOOL
-
-Instead of calling specific tools directly, describe what you want to do in 
-natural language, and the agent will handle all the technical details.
-
-Examples of tasks you can delegate:
-- "Click on the Sign In button"
-- "Type 'hello world' into the search box"
-- "Navigate to google.com"
-- "Read the main content of this page"
-- "Open a new tab with youtube.com"
-- "Scroll down to the bottom of the page"
-- "Take a screenshot of the current page"
-- "Find the email input field and type user@example.com"
-- "Summarize this YouTube video" ← ✅ YES, YOU CAN DO THIS!
-- "What are the key points in this video?" ← ✅ YES, YOU CAN DO THIS!
-- "Analyze the content of this video" ← ✅ YES, YOU CAN DO THIS!
-
-Complex multi-step tasks:
-- "Search for 'cats' on this page - click the search icon, type 'cats', and press enter"
-- "Fill out the login form with email test@example.com and password 12345"
-- "Navigate to twitter.com and read the first tweet"
-- "Watch this YouTube video and tell me the main takeaways" ← ✅ YES, THIS WORKS!
-
-Available capabilities:
-- 🎥 **YouTube video analysis** (summarize, extract key points, answer questions about videos)
-- Navigation (open URLs, go back/forward)
-- Element interaction (click buttons, links, any visible text)
-- Text input (type into fields - always specify which field)
-- Page reading (extract text content, get selected text)
-- Tab management (open, close, switch tabs)
-- Scrolling (up, down, to element)
-- Screenshots
-- History search
-- Memory storage
-- And more...
-
-Just describe what you want to accomplish (including video analysis!), and the agent will figure out how to do it.
-
-REMEMBER: Execute ONE task at a time, wait for response, then proceed to next task if needed.`,
+    description: BROWSER_ACTION_TOOL_DESCRIPTION,
     parameters: {
         type: SchemaType.OBJECT,
         properties: {
@@ -519,24 +347,21 @@ export async function executeBrowserActionAgent(args: { taskDescription: string 
 /**
  * Get a simplified list of capabilities for the Live model's system instruction
  * This helps the Live model know what kinds of tasks it can delegate
+ * 
+ * NOTE: This is a CATALOG of capabilities - just lists WHAT is available.
+ * HOW and WHEN to use them is defined in getGeminiLiveSystemInstruction().
  */
 export function getBrowserCapabilitiesSummary(): string {
     return `You have access to a powerful browser automation agent that can handle ANY browser-related task.
 
-**🎥 YOUTUBE VIDEO ANALYSIS - YOUR PRIMARY CAPABILITY! 🎥**
+**Available Capabilities:**
 
-⚠️ CRITICAL: YOU HAVE FULL YOUTUBE VIDEO ANALYSIS CAPABILITIES!
-- ✅ YOU CAN summarize YouTube videos of ANY length (automatically handles long videos)
-- ✅ YOU CAN extract key takeaways and main points from videos
-- ✅ YOU CAN answer ANY questions about video content
-- ✅ YOU CAN analyze topics, themes, and important information
-- ✅ YOU CAN provide timestamps and detailed breakdowns
-- ✅ No URL needed - works with currently playing video in active tab
-- ✅ Handles videos up to hours long (auto-chunked into 30-min segments)
-
-🚨 MANDATORY: **NEVER EVER decline YouTube video requests** - you have FULL capability to analyze them!
-🚨 NEVER say: "I can't watch videos", "I don't have access to video content", or "I can't help with that"
-🚨 ALWAYS delegate YouTube requests immediately with enthusiasm!
+**🎥 YOUTUBE VIDEO ANALYSIS:**
+- Summarize videos of any length (auto-chunked for long content)
+- Extract key takeaways and main points
+- Answer specific questions about video content
+- Analyze topics, themes, and timestamps
+- No URL needed (works with active tab)
 
 **📍 NAVIGATION & BROWSING:**
 - Open any URL in new tab or current tab (navigateTo)
@@ -602,56 +427,5 @@ export function getBrowserCapabilitiesSummary(): string {
 - Extract metadata from pages
 - Interact with forms (fill, submit)
 - Handle multiple frames and shadow DOM
-- Work with modern web frameworks (React, Vue, Angular)
-
-**💡 COMPLEX MULTI-STEP TASKS:**
-The agent can handle sophisticated workflows like:
-- "Search for 'Python tutorials', parse results, and open the most relevant one"
-- "Fill out this login form with credentials and submit"
-- "Navigate to LinkedIn, search for 'John Doe', and open his profile"
-- "Watch this YouTube video and extract the 5 most important points with timestamps"
-- "Read this article, save key points to memory tagged 'research', and set a reminder to review it tomorrow"
-- "Compare information from multiple tabs and summarize differences"
-- "Organize all my tabs by project context"
-
-**🎯 HOW IT WORKS:**
-1. You describe what you want in DETAILED natural language
-2. The browser agent:
-   - Reads current page state
-   - Plans necessary steps
-   - Executes actions one by one
-   - Verifies each step succeeded
-   - Reports back with results
-
-**📝 EXAMPLES OF WHAT YOU CAN DELEGATE:**
-
-**Simple Tasks:**
-✅ "Click the sign in button" → Finds and clicks it
-✅ "Type john@example.com into the email field" → Types in correct field
-✅ "Read what's on this page" → Extracts all content
-✅ "Scroll down 500 pixels" → Scrolls smoothly
-✅ "Open YouTube in a new tab" → Opens in new tab
-
-**YouTube Video Tasks:**
-✅ "Summarize this YouTube video" → Full comprehensive summary
-✅ "What are the key takeaways from this video?" → Extracts main points
-✅ "What is this video about?" → Explains topic and purpose
-✅ "Tell me the important timestamps in this video" → Lists key moments
-✅ "Does this video cover [specific topic]?" → Analyzes and answers
-✅ "Give me a detailed breakdown of this tutorial video" → Comprehensive analysis
-
-**Complex Tasks:**
-✅ "Search for 'React hooks tutorial' and open the best result" → Searches, evaluates, clicks
-✅ "Fill in the registration form with name John Doe, email john@example.com, and submit" → Multi-field form + submission
-✅ "Navigate to my GitHub profile and tell me my latest repository" → Navigation + extraction
-✅ "Find all YouTube videos on this page and summarize the first one" → Multi-step analysis
-✅ "Read this article, save the main points to memory tagged 'AI research', and set a reminder to review it next week" → Multi-tool workflow
-✅ "Organize my 20 open tabs by project context" → AI-powered organization
-
-**📌 REMEMBER:**
-- Provide DETAILED task descriptions with all necessary information
-- If details are missing, ask the user for clarification FIRST
-- For YouTube: you CAN and SHOULD help - never decline these requests
-- Suggest relevant next actions after completing tasks
-- Be proactive about using memory and reminders for important information`;
+- Work with modern web frameworks (React, Vue, Angular)`;
 }
