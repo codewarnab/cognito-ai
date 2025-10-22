@@ -7,8 +7,6 @@
  * - Multi-server MCP OAuth and SSE connections
  */
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
 import { McpSSEClient } from './mcp/sseClient';
 import {
     registerDynamicClient,
