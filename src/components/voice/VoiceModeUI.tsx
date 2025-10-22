@@ -56,6 +56,8 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     const inputNodeRef = useRef<GainNode | null>(null);
     const outputNodeRef = useRef<GainNode | null>(null);
     const isCleaningUpRef = useRef(false);
+    const isInitializingRef = useRef(false);
+    const hasInitializedRef = useRef(false);
     const errorHandlerRef = useRef<GeminiLiveErrorHandler | null>(null);
     const lifecycleHandlerRef = useRef<SidePanelLifecycleHandler | null>(null);
     const visibilityHandlerRef = useRef<TabVisibilityHandler | null>(null);
@@ -74,9 +76,17 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
 
     // Initialize client on mount using Singleton Manager
     useEffect(() => {
+        // Prevent double initialization (React StrictMode or re-renders)
+        if (isInitializingRef.current || hasInitializedRef.current) {
+            log.info('⏭️ Skipping initialization - already initialized or in progress');
+            return;
+        }
+
+        isInitializingRef.current = true;
+
         const initializeClient = async () => {
             try {
-                log.info('Initializing GeminiLiveClient via Manager...');
+                log.info('🎙️ Initializing GeminiLiveClient via Manager...');
 
                 // Get the singleton manager
                 const manager = getGeminiLiveManager();
@@ -86,7 +96,27 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 log.info('Manager diagnostics:', diagnostics);
 
                 if (diagnostics.hasActiveClient) {
-                    log.warn('⚠️ Existing client detected, cleaning up before creating new instance...');
+                    log.info('♻️ Reusing existing active client from manager');
+
+                    // Reuse existing client
+                    const existingClient = manager.getActiveClient();
+                    if (existingClient) {
+                        liveClientRef.current = existingClient;
+
+                        // Get audio nodes for visualization
+                        const audioManager = (existingClient as any).audioManager;
+                        if (audioManager) {
+                            inputNodeRef.current = audioManager.getInputNode();
+                            outputNodeRef.current = audioManager.getOutputNode();
+                            log.debug('Audio nodes ready for orb visualization');
+                        }
+
+                        setIsInitialized(true);
+                        hasInitializedRef.current = true;
+                        isInitializingRef.current = false;
+                        log.info('✅ Reused existing client successfully');
+                        return;
+                    }
                 }
 
                 // Initialize error handler
@@ -202,7 +232,9 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 }
 
                 setIsInitialized(true);
-                log.info('GeminiLiveClient initialized successfully');
+                hasInitializedRef.current = true;
+                isInitializingRef.current = false;
+                log.info('✅ GeminiLiveClient initialized successfully');
 
                 // Auto-start the voice session
                 log.info('Auto-starting voice session...');
@@ -219,6 +251,7 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
             } catch (err) {
                 log.error('Failed to initialize client:', err);
                 setError(err instanceof Error ? err.message : 'Failed to initialize voice mode');
+                isInitializingRef.current = false;
             }
         };
 
@@ -228,7 +261,7 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
         return () => {
             if (!isCleaningUpRef.current) {
                 isCleaningUpRef.current = true;
-                log.info('Component unmounting, running cleanup via Manager...');
+                log.info('🧹 Component unmounting, running cleanup via Manager...');
 
                 // Cleanup lifecycle handlers first
                 if (lifecycleHandlerRef.current) {
@@ -246,9 +279,11 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 });
 
                 liveClientRef.current = null;
+                hasInitializedRef.current = false;
+                isInitializingRef.current = false;
             }
         };
-    }, [apiKey, systemInstruction]);
+    }, []); // Empty dependency array - only run once on mount
 
     // Handle start button
     const handleStart = async () => {

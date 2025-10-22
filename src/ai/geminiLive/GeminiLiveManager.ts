@@ -69,10 +69,20 @@ export class GeminiLiveManager {
             return this.initializationPromise;
         }
 
-        // If there's an active client, check if config matches
+        // If there's an active client that's not cleaned up, return it instead of creating a new one
+        if (this.activeClient && this.state === 'active') {
+            const diagnostics = this.activeClient.getDiagnostics();
+            if (!diagnostics.isCleanedUp) {
+                log.info('✅ Reusing existing active client', { instanceId: diagnostics.instanceId });
+                return this.activeClient;
+            }
+        }
+
+        // If there's an active client that's cleaned up, we need to create a new one
         if (this.activeClient) {
-            log.warn('⚠️ Active client already exists, will cleanup and recreate');
-            await this.cleanup();
+            log.warn('⚠️ Active client exists but is cleaned up, creating new instance');
+            this.activeClient = null;
+            this.state = 'idle';
         }
 
         // Start initialization
