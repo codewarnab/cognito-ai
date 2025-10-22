@@ -100,8 +100,23 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
             const availableTools: Record<string, any> = {};
 
             for (const [name, tool] of Object.entries(allTools)) {
-                // Filter out MCP tools and the agent itself
-                if (!name.startsWith('mcp_') && name !== 'executeBrowserAction' && name !== 'youtubeAgent') {
+                // Filter out:
+                // - MCP tools (start with 'mcp_')
+                // - This agent itself ('executeBrowserAction')
+                // - YouTube agent ('youtubeAgent')
+                // - Memory tools (saveMemory, getMemory, listMemories, deleteMemory, suggestSaveMemory)
+                const isMemoryTool = [
+                    'saveMemory',
+                    'getMemory',
+                    'listMemories',
+                    'deleteMemory',
+                    'suggestSaveMemory'
+                ].includes(name);
+
+                if (!name.startsWith('mcp_') &&
+                    name !== 'executeBrowserAction' &&
+                    name !== 'youtubeAgent' &&
+                    !isMemoryTool) {
                     availableTools[name] = tool;
                 }
             }

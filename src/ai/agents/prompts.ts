@@ -39,7 +39,7 @@
  * HOW and WHEN to use them is defined in getGeminiLiveSystemInstruction().
  */
 export function getBrowserCapabilitiesSummary(): string {
-    return `You have access to a powerful browser automation agent that can handle ANY browser-related task.
+  return `You have access to a powerful browser automation agent that can handle ANY browser-related task.
 
 **Available Capabilities:**
 
@@ -95,15 +95,6 @@ export function getBrowserCapabilitiesSummary(): string {
 - **Search history** (searchHistory) - find previously visited pages by keywords
 - **Get URL visits** (getUrlVisits) - get visit count and last visit time for specific URLs
 
-**🧠 MEMORY SYSTEM:**
-- **Save memories** (saveMemory) - store information permanently across sessions
-  - Tag-based organization
-  - Full-text search support
-- **Get memories** (getMemory) - retrieve stored information by tags or search
-- **List all memories** (listMemories) - show all stored information
-- **Delete memories** (deleteMemory) - remove specific memories
-- **Suggest saving** (suggestSaveMemory) - AI suggests what to remember from conversations
-
 **⏰ REMINDERS:**
 - **Create reminders** (createReminder) - set time-based or context-based reminders
 - **List reminders** (listReminders) - show all active reminders
@@ -135,10 +126,10 @@ export function getBrowserCapabilitiesSummary(): string {
  * - Speak in English by default
  */
 export function getGeminiLiveSystemInstruction(): string {
-    // Get browser capabilities summary (this is embedded in the Live model's instruction)
-    const capabilities = getBrowserCapabilitiesSummary();
+  // Get browser capabilities summary (this is embedded in the Live model's instruction)
+  const capabilities = getBrowserCapabilitiesSummary();
 
-    return `You are an intelligent AI assistant integrated into a Chrome browser extension, speaking via voice.
+  return `You are an intelligent AI assistant integrated into a Chrome browser extension, speaking via voice.
 
 ${capabilities}
 
