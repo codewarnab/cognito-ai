@@ -181,7 +181,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             {modelState.mode === 'local' && (
                 <LocalBanner onSettingsClick={onSettingsClick} />
             )}
-            
+
             {/* Suggested Actions */}
             <AnimatePresence>
                 {showSuggestedActions && (

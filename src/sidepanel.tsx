@@ -94,9 +94,9 @@ function AIChatContent() {
     useEffect(() => {
         const loadApiKey = async () => {
             try {
-                const result = await chrome.storage.local.get(['apiKey']);
-                if (result.apiKey) {
-                    setApiKey(result.apiKey);
+                const result = await chrome.storage.local.get(['gemini_api_key']);
+                if (result.gemini_api_key) {
+                    setApiKey(result.gemini_api_key);
                     log.debug('API key loaded from storage');
                 }
             } catch (error) {

@@ -50,9 +50,3 @@ export const DEFAULT_CONFIG = {
     maxConnectionRetries: 3,
     maxContentLength: 50000, // ~50KB of text for tool responses
 };
-
-/**
- * Hardcoded API key for testing
- * TODO: Remove this and use proper API key management
- */
-export const HARDCODED_API_KEY = 'AIzaSyAxTFyeqmms2eV9zsp6yZpCSAHGZebHzqc';

@@ -90,6 +90,15 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
             try {
                 log.info('🎙️ Initializing GeminiLiveClient via Manager...');
 
+                // Validate API key
+                if (!apiKey || apiKey.trim().length === 0) {
+                    const errorMsg = 'API key is required for voice mode. Please configure your Gemini API key in settings.';
+                    log.error(errorMsg);
+                    setError(errorMsg);
+                    isInitializingRef.current = false;
+                    return;
+                }
+
                 // Get the singleton manager
                 const manager = getGeminiLiveManager();
 

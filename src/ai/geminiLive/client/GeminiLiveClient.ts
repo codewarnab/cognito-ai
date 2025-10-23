@@ -24,8 +24,7 @@ import { GeminiLiveMessageHandler } from './messageHandler';
 import {
     type GeminiLiveClientConfig,
     type GeminiLiveEventHandlers,
-    DEFAULT_CONFIG,
-    HARDCODED_API_KEY
+    DEFAULT_CONFIG
 } from './config';
 
 const log = createLogger('GeminiLiveClient');
@@ -117,16 +116,18 @@ export class GeminiLiveClient {
                     this.updateStatus('Initializing...');
                     log.info('Initializing GeminiLiveClient...');
 
-                    // Use hardcoded API key
-                    this.config.apiKey = HARDCODED_API_KEY;
+                    // Validate API key
+                    if (!this.config.apiKey || this.config.apiKey.trim().length === 0) {
+                        throw new Error('API key is required for Gemini Live');
+                    }
 
-                    const keyPreview = HARDCODED_API_KEY.length > 8
-                        ? `${HARDCODED_API_KEY.substring(0, 4)}...${HARDCODED_API_KEY.substring(HARDCODED_API_KEY.length - 4)}`
+                    const keyPreview = this.config.apiKey.length > 8
+                        ? `${this.config.apiKey.substring(0, 4)}...${this.config.apiKey.substring(this.config.apiKey.length - 4)}`
                         : '****';
-                    log.info('Using hardcoded API key', { keyLength: HARDCODED_API_KEY.length, preview: keyPreview });
+                    log.info('Using API key from config', { keyLength: this.config.apiKey.length, preview: keyPreview });
 
                     // Initialize clients
-                    this.legacyClient = new GoogleGenerativeAI(HARDCODED_API_KEY);
+                    this.legacyClient = new GoogleGenerativeAI(this.config.apiKey);
 
                     // Initialize audio manager
                     await this.audioManager.initialize();
@@ -212,7 +213,7 @@ export class GeminiLiveClient {
 
                     // Create session manager
                     this.sessionManager = new GeminiLiveSessionManager(
-                        HARDCODED_API_KEY,
+                        this.config.apiKey,
                         {
                             model: this.config.model!,
                             voiceName: this.config.voiceName!,
