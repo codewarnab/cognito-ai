@@ -11,9 +11,6 @@ export const EmptyState: React.FC = () => {
             <p className="copilot-empty-subtitle">
                 I can browse, click, fill forms, manage tabs, and execute tasks end-to-end. Just tell me what you need!
             </p>
-            <p className="copilot-empty-hint">
-                💡 Type <strong>@</strong> to mention browser tabs and provide context
-            </p>
         </div>
     );
 };

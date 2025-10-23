@@ -74,6 +74,8 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     getSearchResults: SearchIcon,
     openSearchResult: LinkIcon,
     extractText: ExpandIcon,
+    scrollIntoView: ArrowBigDownDashIcon,
+    findSearchBar: SearchIcon,
     waitFor: ClockIcon,
     readPageContent: ScanTextIcon,
     getSelectedText: ExpandIcon,    // Tab tools
@@ -104,6 +106,8 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     youtubeSearch: YoutubeIcon,
     youtubeTranscript: YoutubeIcon,
     getYoutubeTranscript: YoutubeIcon,
+    youtubeAgentAsTool: YoutubeIcon,
+    analyzeYouTubeVideo: YoutubeIcon,  // YouTube agent tool
 
     // Reminder tools
     createReminder: CircleCheckIcon,

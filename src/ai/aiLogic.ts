@@ -4,7 +4,7 @@
  * Runs directly in the UI thread, no service worker needed
  */
 
-import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs , smoothStream } from 'ai';
+import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs, smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../logger';
 import { systemPrompt } from './prompt';
@@ -12,6 +12,7 @@ import { getAllTools } from './toolRegistryUtils';
 import { getMCPToolsFromBackground } from './mcpProxy';
 import { getGeminiApiKey } from '../utils/geminiApiKey';
 import { builtInAI } from "@built-in-ai/core";
+import { youtubeAgentAsTool } from './agents/youtubeAgent';
 
 const log = createLogger('AI-Logic');
 
@@ -119,15 +120,22 @@ export async function streamAIResponse(params: {
 
           log.info('🔍 Available extension tools:', { count: extensionToolCount, names: Object.keys(extensionTools) });
 
-          // Combine all tools
-          const tools = { ...extensionTools, ...mcpTools };
+          // Add specialist agents as tools
+          const agentTools = {
+            analyzeYouTubeVideo: youtubeAgentAsTool,
+          };
+
+          // Combine all tools: extension tools + agent tools + MCP tools
+          const tools = { ...extensionTools, ...agentTools, ...mcpTools };
           const totalToolCount = Object.keys(tools).length;
 
           log.info('🎯 Total available tools:', {
             count: totalToolCount,
             extension: extensionToolCount,
+            agents: Object.keys(agentTools).length,
             mcp: Object.keys(mcpTools).length,
-            names: Object.keys(tools)
+            names: Object.keys(tools),
+            agentNames: Object.keys(agentTools),
           });
 
           if (totalToolCount === 0) {
@@ -154,6 +162,7 @@ export async function streamAIResponse(params: {
             messages: modelMessages,
             stopWhen: [stepCountIs(10)],
             tools, // Include tools in the stream
+            toolChoice: 'auto', // Force proper tool calling format
             abortSignal,
             temperature: 0.7,
             experimental_transform: smoothStream({
@@ -177,6 +186,7 @@ export async function streamAIResponse(params: {
                   calls: toolCalls.map(call => ({
                     id: call.toolCallId,
                     name: call.toolName,
+                    isAgentTool: call.toolName === 'analyzeYouTubeVideo',
                   })),
                 });
               }
@@ -216,8 +226,22 @@ export async function streamAIResponse(params: {
             result.toUIMessageStream({
               onError: (error) => {
                 log.error('AI stream error', error);
-                onError?.(error instanceof Error ? error : new Error(String(error)));
-                return error instanceof Error ? error.message : String(error);
+                const errorMessage = error instanceof Error ? error.message : String(error);
+
+                // Write error message to the stream so it appears in chat
+                writer.write({
+                  type: 'data-error',
+                  id: 'error-' + generateId(),
+                  data: {
+                    error: errorMessage,
+                    timestamp: Date.now(),
+                    context: 'AI stream processing'
+                  },
+                  transient: false, // Keep error in history
+                });
+
+                onError?.(error instanceof Error ? error : new Error(errorMessage));
+                return `❌ Error: ${errorMessage}`;
               },
               onFinish: async ({ messages: finalMessages }) => {
                 log.info('UI stream completed', {
@@ -240,12 +264,32 @@ export async function streamAIResponse(params: {
           );
         } catch (error) {
           log.error('Stream execution error', error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          // Write error message to the stream so it appears in chat
+          writer.write({
+            type: 'data-error',
+            id: 'error-' + generateId(),
+            data: {
+              error: errorMessage,
+              timestamp: Date.now(),
+              context: 'Stream execution'
+            },
+            transient: false, // Keep error in history
+          });
+
+          // Also write a text message for better visibility
+          writer.write({
+            type: 'text-delta',
+            id: 'error-text-' + generateId(),
+            delta: `\n\n❌ **Error occurred:** ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
+          });
 
           // MCP connections are persistent - no cleanup needed
           // Connections managed by background service worker with keep-alive
           log.info('✅ MCP tools remain available for next chat');
 
-          onError?.(error instanceof Error ? error : new Error(String(error)));
+          onError?.(error instanceof Error ? error : new Error(errorMessage));
           throw error;
         }
       },
@@ -255,11 +299,16 @@ export async function streamAIResponse(params: {
     return stream;
   } catch (error) {
     log.error('❌ Error creating stream', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     // MCP connections are persistent - no cleanup needed
     // Connections managed by background service worker with keep-alive
     log.info('✅ MCP tools remain available for next chat');
 
-    throw error;
+    // Call onError callback if provided
+    onError?.(error instanceof Error ? error : new Error(errorMessage));
+
+    // Re-throw with enhanced message
+    throw new Error(`Failed to create AI stream: ${errorMessage}`);
   }
 }

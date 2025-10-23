@@ -8,8 +8,6 @@ import { useEffect, useRef } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard, Badge } from '../../components/ui/ToolCard';
-import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-GetSearchResults');
 
@@ -17,7 +15,7 @@ const log = createLogger('Tool-GetSearchResults');
  * Hook to register the getSearchResults tool
  */
 export function useGetSearchResultsTool() {
-    const { registerToolUI, unregisterToolUI } = useToolUI();
+    const {  unregisterToolUI } = useToolUI();
     const lastCallRef = useRef<{ args: any; timestamp: number } | null>(null);
 
     const shouldProcess = (toolName: string, args: any) => {
@@ -43,7 +41,7 @@ export function useGetSearchResultsTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'getSearchResults',
-            description: 'Parse current Google/Bing search results page and return a structured ranked list with metadata (title, href, hostname, snippet). Use this after navigating to a search engine to intelligently select which result to open.',
+            description: 'Parse current Google/Bing search results page and return a structured ranked list with metadata (title, href, hostname, snippet). Use this after navigating to a search engine to intelligently select which result to open. Do not use this on other websites.',
             parameters: z.object({
                 maxResults: z.number()
                     .max(50)

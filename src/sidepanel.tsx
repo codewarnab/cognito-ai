@@ -8,6 +8,7 @@ import { MemoryPanel } from "./components/MemoryPanel";
 import { ReminderPanel } from "./components/ReminderPanel";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
+import { VoiceModeUI } from "./components/voice/VoiceModeUI";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
@@ -38,6 +39,9 @@ import { extractPageContext, formatPageContextForAI } from "./utils/pageContextE
 import { processFile, getFileIcon, formatFileSize } from "./utils/fileProcessor";
 import type { FileAttachmentData } from "./components/chat/FileAttachment";
 
+// Type definition for chat mode
+type ChatMode = 'text' | 'voice';
+
 /**
  * Inner component that uses AI SDK v5
  * Uses custom ChromeExtensionTransport for service worker communication
@@ -53,6 +57,8 @@ function AIChatContent() {
     const [showReminders, setShowReminders] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [showPill, setShowPill] = useState(false);
+    const [mode, setMode] = useState<ChatMode>('text');
+    const [apiKey, setApiKey] = useState<string>('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -80,6 +86,36 @@ function AIChatContent() {
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
+
+    // Load API key from storage
+    useEffect(() => {
+        const loadApiKey = async () => {
+            try {
+                const result = await chrome.storage.local.get(['apiKey']);
+                if (result.apiKey) {
+                    setApiKey(result.apiKey);
+                    log.debug('API key loaded from storage');
+                }
+            } catch (error) {
+                log.error('Failed to load API key', error);
+            }
+        };
+        loadApiKey();
+    }, []);
+
+    // Handle mode change with cleanup
+    const handleModeChange = async (newMode: ChatMode) => {
+        if (mode === newMode) return;
+
+        // Prevent switching during active recording
+        if (isRecording) {
+            log.warn('Cannot switch mode while recording');
+            return;
+        }
+
+        log.info('Switching mode', { from: mode, to: newMode });
+        setMode(newMode);
+    };
 
     // Track current tab context
     useEffect(() => {
@@ -146,13 +182,19 @@ function AIChatContent() {
                 if (storedMessages.length > 0) {
                     log.info("Loading thread messages from DB", { threadId: currentThreadId, count: storedMessages.length });
 
-                    // Convert DB messages to AI SDK v5 UIMessage format
-                    const uiMessages: UIMessage[] = storedMessages.map((msg: ChatMessage) => ({
-                        id: msg.id,
-                        role: msg.role,
-                        parts: [{ type: 'text', text: msg.content }],
-                        createdAt: new Date(msg.timestamp),
-                    }));
+                    // Load complete UIMessage objects (already in correct format)
+                    // This preserves all tool-call and tool-result parts for proper UI rendering
+                    const uiMessages: UIMessage[] = storedMessages.map((msg: ChatMessage) => msg.message);
+
+                    log.info("Restored messages with tool parts", {
+                        totalMessages: uiMessages.length,
+                        messagesWithTools: uiMessages.filter(m =>
+                            m.parts?.some((p: any) =>
+                                p.type === 'tool-call' ||
+                                p.type === 'tool-result'
+                            )
+                        ).length
+                    });
 
                     setMessages(uiMessages);
                 }
@@ -177,21 +219,14 @@ function AIChatContent() {
                 // Clear existing messages for this thread and save new ones
                 await clearThreadMessages(currentThreadId);
 
-                // Convert AI SDK v5 UIMessage to DB format
+                // Store complete UIMessage objects to preserve tool calls and results
                 const dbMessages: ChatMessage[] = messages
-                    .filter((msg) => {
-                        // Extract text from parts
-                        const text = msg.parts
-                            ?.filter((part: any) => part.type === 'text')
-                            .map((part: any) => part.text)
-                            .join('');
-                        return text && text.trim().length > 0;
-                    })
                     .map((msg, index) => {
-                        const text = msg.parts
-                            ?.filter((part: any) => part.type === 'text')
-                            .map((part: any) => part.text)
-                            .join('') || '';
+                        // Filter out transient parts (temporary status messages)
+                        const messageWithoutTransient = {
+                            ...msg,
+                            parts: msg.parts?.filter((part: any) => !part.transient)
+                        };
 
                         // Extract timestamp from createdAt or use index-based timestamp
                         let timestamp: number;
@@ -205,8 +240,7 @@ function AIChatContent() {
                         return {
                             id: msg.id,
                             threadId: currentThreadId,
-                            role: msg.role as 'user' | 'assistant',
-                            content: text,
+                            message: messageWithoutTransient, // Store complete UIMessage
                             timestamp,
                             sequenceNumber: index, // Preserve exact order
                         };
@@ -214,7 +248,29 @@ function AIChatContent() {
 
                 if (dbMessages.length > 0) {
                     await db.chatMessages.bulkAdd(dbMessages);
-                    log.info("Saved thread messages to DB", { threadId: currentThreadId, count: dbMessages.length });
+
+                    // Count messages with tool calls for logging
+                    const toolCallCount = dbMessages.filter(msg =>
+                        msg.message.parts?.some((p: any) =>
+                            p.type === 'tool-call' ||
+                            p.type === 'tool-result'
+                        )
+                    ).length;
+
+                    const totalToolParts = dbMessages.reduce((sum, msg) =>
+                        sum + (msg.message.parts?.filter((p: any) =>
+                            p.type === 'tool-call' ||
+                            p.type === 'tool-result'
+                        ).length || 0), 0
+                    );
+
+                    log.info("💾 Saved thread messages to DB with complete UIMessage structure", {
+                        threadId: currentThreadId,
+                        totalMessages: dbMessages.length,
+                        messagesWithTools: toolCallCount,
+                        totalToolParts,
+                        preservesToolUI: true
+                    });
                 }
 
                 // Generate thread title after every assistant response (non-blocking)
@@ -486,52 +542,82 @@ function AIChatContent() {
                 onNewThread={handleNewThread}
             />
 
-            <CopilotChatWindow
-                messages={messages.filter(m => m.role !== 'system') as any}
-                input={input}
-                setInput={setInput}
-                onSendMessage={handleSendMessage}
-                onKeyDown={handleKeyPress}
-                onClearChat={handleClearChat}
-                onSettingsClick={() => setShowMcp(true)}
-                onThreadsClick={() => setShowThreads(true)}
-                onMemoryClick={() => setShowMemory(true)}
-                onRemindersClick={() => setShowReminders(true)}
-                onNewThreadClick={handleNewThread}
-                onStop={stop}
-                isLoading={isLoading}
-                messagesEndRef={messagesEndRef}
-                isRecording={isRecording}
-                onMicClick={handleMicClick}
-            />
+            {/* Conditional rendering based on mode */}
+            {mode === 'text' ? (
+                <>
+                    <CopilotChatWindow
+                        messages={messages.filter(m => m.role !== 'system') as any}
+                        input={input}
+                        setInput={setInput}
+                        onSendMessage={handleSendMessage}
+                        onKeyDown={handleKeyPress}
+                        onClearChat={handleClearChat}
+                        onSettingsClick={() => setShowMcp(true)}
+                        onThreadsClick={() => setShowThreads(true)}
+                        onMemoryClick={() => setShowMemory(true)}
+                        onRemindersClick={() => setShowReminders(true)}
+                        onNewThreadClick={handleNewThread}
+                        onStop={stop}
+                        isLoading={isLoading}
+                        messagesEndRef={messagesEndRef}
+                        isRecording={isRecording}
+                        onMicClick={handleMicClick}
+                    />
 
-            {/* Floating Recording Pill - Rendered at top level */}
-            <AnimatePresence mode="wait">
-                {showPill && (
-                    <motion.div
-                        className="voice-recording-pill"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        onAnimationStart={() => {
-                            audioLinesIconRef.current?.startAnimation();
+                    {/* Floating Recording Pill - Only in text mode */}
+                    <AnimatePresence mode="wait">
+                        {showPill && (
+                            <motion.div
+                                className="voice-recording-pill"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                transition={{ duration: 0.15, ease: 'easeOut' }}
+                                onAnimationStart={() => {
+                                    audioLinesIconRef.current?.startAnimation();
+                                }}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    handleMicClick();
+                                }}
+                            >
+                                <AudioLinesIcon
+                                    ref={audioLinesIconRef}
+                                    size={16}
+                                    style={{ color: 'white' }}
+                                />
+                                <span className="recording-text">Click to finish recording</span>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Voice Mode FAB - Only in text mode */}
+                    <motion.button
+                        className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
+                        onClick={() => handleModeChange('voice')}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                            type: 'spring',
+                            stiffness: 260,
+                            damping: 20,
+                            delay: 0.1
                         }}
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleMicClick();
-                        }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        title="Switch to Voice Mode"
                     >
-                        <AudioLinesIcon
-                            ref={audioLinesIconRef}
-                            size={16}
-                            style={{ color: 'white' }}
-                        />
-                        <span className="recording-text">Click to finish recording</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        <AudioLinesIcon size={20} />
+                    </motion.button>
+                </>
+            ) : (
+                <VoiceModeUI
+                    onBack={() => setMode('text')}
+                    apiKey={apiKey}
+                    systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
+                />
+            )}
         </>
     );
 }
