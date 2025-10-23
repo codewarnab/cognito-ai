@@ -95,6 +95,40 @@ const getSearchResultsFormatter: ActionFormatter = ({ state, output }) => {
     return { action: 'Search failed' };
 };
 
+const chromeSearchFormatter: ActionFormatter = ({ state, input, output }) => {
+    const query = input?.query || output?.query;
+
+    if (state === 'loading') {
+        return {
+            action: 'Searching Chrome',
+            description: query ? `"${truncateText(query, 40)}"` : undefined
+        };
+    }
+    if (state === 'success') {
+        const totalCount = output?.totalCount || output?.results?.length || 0;
+        const tabs = output?.results?.filter((r: any) => r.type === 'tab').length || 0;
+        const bookmarks = output?.results?.filter((r: any) => r.type === 'bookmark').length || 0;
+        const history = output?.results?.filter((r: any) => r.type === 'history').length || 0;
+
+        // Build description showing breakdown
+        const parts = [];
+        if (tabs > 0) parts.push(`${tabs} tab${tabs > 1 ? 's' : ''}`);
+        if (bookmarks > 0) parts.push(`${bookmarks} bookmark${bookmarks > 1 ? 's' : ''}`);
+        if (history > 0) parts.push(`${history} history`);
+
+        const description = parts.length > 0 ? parts.join(', ') : `${totalCount} results`;
+
+        return {
+            action: `Found ${totalCount} results`,
+            description: query ? `"${truncateText(query, 30)}": ${description}` : description
+        };
+    }
+    return {
+        action: 'Search failed',
+        description: query ? `"${truncateText(query, 40)}"` : undefined
+    };
+};
+
 const openSearchResultFormatter: ActionFormatter = ({ state, input, output }) => {
     const title = output?.title || input?.title;
     const rank = output?.rank || input?.rank || input?.index;
@@ -432,6 +466,20 @@ const getActiveTabFormatter: ActionFormatter = ({ state, output }) => {
     return { action: 'Failed to get tab' };
 };
 
+const getAllTabsFormatter: ActionFormatter = ({ state, output }) => {
+    if (state === 'loading') {
+        return { action: 'Getting all tabs' };
+    }
+    if (state === 'success') {
+        const count = output?.count || output?.tabs?.length || 0;
+        return {
+            action: 'Retrieved all tabs',
+            description: `${count} tab${count !== 1 ? 's' : ''}`
+        };
+    }
+    return { action: 'Failed to get tabs' };
+};
+
 const openNewTabFormatter: ActionFormatter = ({ state, input, output }) => {
     const url = input?.url;
     const title = output?.title;
@@ -758,6 +806,53 @@ const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
     };
 };
 
+// Report Tools
+const generatePDFFormatter: ActionFormatter = ({ state, input, output }) => {
+    const filename = output?.filename || input?.filename;
+    const size = output?.size;
+    const formattedSize = size ? `${Math.round(size / 1024)}KB` : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Generating PDF',
+            description: filename ? truncateText(filename, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'PDF Downloaded',
+            description: filename ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''}` : undefined
+        };
+    }
+    return {
+        action: 'PDF generation failed',
+        description: filename ? truncateText(filename, 40) : undefined
+    };
+};
+
+const generateMarkdownFormatter: ActionFormatter = ({ state, input, output }) => {
+    const filename = output?.filename || input?.filename;
+    const size = output?.size;
+    const formattedSize = size ? `${Math.round(size / 1024)}KB` : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Generating Markdown',
+            description: filename ? truncateText(filename, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Markdown Downloaded',
+            description: filename ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''}` : undefined
+        };
+    }
+    return {
+        action: 'Markdown generation failed',
+        description: filename ? truncateText(filename, 40) : undefined
+    };
+};
+
 // Formatter Registry
 const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -769,6 +864,7 @@ const formatters: Record<string, ActionFormatter> = {
     getSearchResults: getSearchResultsFormatter,
     searchGoogle: getSearchResultsFormatter,
     search: getSearchResultsFormatter,
+    chromeSearch: chromeSearchFormatter,
     openSearchResult: openSearchResultFormatter,
 
     // Content
@@ -796,6 +892,7 @@ const formatters: Record<string, ActionFormatter> = {
     switchTabs: switchTabsFormatter,
     switchTab: switchTabsFormatter,
     getActiveTab: getActiveTabFormatter,
+    getAllTabs: getAllTabsFormatter,
     openNewTab: openNewTabFormatter,
     newTab: openNewTabFormatter,
     closeTab: closeTabFormatter,
@@ -821,6 +918,10 @@ const formatters: Record<string, ActionFormatter> = {
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
     youtubeTranscript: getYoutubeTranscriptFormatter,
     youtubeAgentAsTool: youtubeAgentFormatter,
+
+    // Reports
+    generatePDF: generatePDFFormatter,
+    generateMarkdown: generateMarkdownFormatter,
 };
 
 // Default formatter for tools without specific formatters

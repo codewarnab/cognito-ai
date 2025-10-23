@@ -16,9 +16,11 @@ import "./styles/memory.css";
 import "./styles/mentions.css";
 import "./styles/thread-sidepanel.css";
 import "./styles/reminder.css";
+import "./styles/workflows.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
+import { useRegisterAllWorkflows } from "./workflows/registerAll";
 import {
     db,
     createThread,
@@ -50,6 +52,7 @@ function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
 
     useRegisterAllActions();
+    useRegisterAllWorkflows();
     const [input, setInput] = useState('');
     const [showMcp, setShowMcp] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
@@ -329,7 +332,7 @@ function AIChatContent() {
     }, [messages]);
 
     // Handle sending messages
-    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[]) => {
+    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => {
         // Use provided messageText or fall back to input state
         const textToSend = messageText !== undefined ? messageText : input;
         const trimmedInput = textToSend.trim();
@@ -346,12 +349,23 @@ function AIChatContent() {
             length: trimmedInput.length,
             fromVoice: messageText !== undefined,
             hasAttachments: attachments && attachments.length > 0,
-            attachmentCount: attachments?.length || 0
+            attachmentCount: attachments?.length || 0,
+            workflowId: workflowId || 'none'
         });
 
         // Only clear input if we're using the input state (not voice input)
         if (messageText === undefined) {
             setInput('');
+        }
+
+        // If workflow is specified, prepend workflow command to message
+        let finalMessage = trimmedInput;
+        if (workflowId) {
+            // Add workflow metadata to message experimental data
+            log.info("Workflow mode active", { workflowId });
+            // The workflow will be handled by the AI logic layer
+            // For now, we'll just pass it through in the message
+            finalMessage = `/${workflowId} ${trimmedInput}`;
         }
 
         // Capture page context ONLY for the first message in a new thread
@@ -411,10 +425,10 @@ function AIChatContent() {
                     const messageParts: any[] = [];
 
                     // Add text content first (only if provided)
-                    if (trimmedInput) {
+                    if (finalMessage) {
                         messageParts.push({
                             type: 'text',
-                            text: trimmedInput
+                            text: finalMessage
                         });
                     }
 
@@ -446,7 +460,7 @@ function AIChatContent() {
 
         // Send text-only message if no valid attachments
         // Context is handled in system prompt via SimpleFrontendTransport
-        sendMessage({ text: trimmedInput });
+        sendMessage({ text: finalMessage });
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {

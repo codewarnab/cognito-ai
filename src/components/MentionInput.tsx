@@ -11,6 +11,7 @@ import {
     insertMentionAtCursor,
     getCursorPosition
 } from '../utils/mentionUtils';
+import { detectSlashCommand, getSlashSearchQuery } from '../utils/slashCommandUtils';
 
 interface MentionInputProps {
     value: string;
@@ -19,6 +20,8 @@ interface MentionInputProps {
     disabled?: boolean;
     placeholder?: string;
     autoFocus?: boolean;
+    onSlashCommand?: (isSlash: boolean, searchQuery: string) => void; // Callback for slash command detection
+    isSlashDropdownOpen?: boolean; // Whether slash command dropdown is showing
 }
 
 export function MentionInput({
@@ -27,7 +30,9 @@ export function MentionInput({
     onSend,
     disabled = false,
     placeholder = "Ask me anything... (type @ to mention tabs)",
-    autoFocus = false
+    autoFocus = false,
+    onSlashCommand,
+    isSlashDropdownOpen = false
 }: MentionInputProps) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +45,23 @@ export function MentionInput({
         onChange(newValue);
 
         const cursorPos = getCursorPosition(e.target);
+
+        // Check for slash command first
+        const isSlash = detectSlashCommand(newValue, cursorPos);
+        if (isSlash) {
+            const slashQuery = getSlashSearchQuery(newValue, cursorPos);
+            // Notify parent about slash command
+            if (onSlashCommand) {
+                onSlashCommand(true, slashQuery);
+            }
+            setShowDropdown(false); // Hide tab mention dropdown
+            return;
+        } else if (onSlashCommand) {
+            // Not a slash command, clear slash dropdown
+            onSlashCommand(false, '');
+        }
+
+        // Check for @ mention trigger
         const trigger = isMentionTrigger(newValue, cursorPos, '@');
 
         if (trigger.isTrigger) {
@@ -94,7 +116,8 @@ export function MentionInput({
 
     // Handle keyboard events
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && !showDropdown) {
+        // Don't handle Enter if any dropdown is showing
+        if (e.key === 'Enter' && !showDropdown && !isSlashDropdownOpen) {
             e.preventDefault();
             onSend();
         }
