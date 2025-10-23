@@ -118,6 +118,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    * Visual feedback: highlights the field yellow before typing",
                 "    * Parameters: text (required), target (input description, optional - uses focused if omitted), clearFirst (bool), pressEnter (bool), humanLike (bool, default true)",
                 "    * Examples: typeInField({text: 'hello', target: 'search box'}), typeInField({text: 'test@example.com', target: 'email field', pressEnter: true})",
+                "    * CRITICAL: After searching (typing + pressing Enter), ALWAYS call pressKey({key: 'Escape'}) to close any lingering search dropdowns/overlays",
                 
                 "  - clickByText: Click ANY element by searching for visible text anywhere on the page",
                 "    * Searches ALL text on page (buttons, links, headings, labels, divs, spans - everything)",
@@ -134,6 +135,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    * For typing text, use typeInField instead",
                 "    * Parameters: key (e.g., 'Enter', 'Escape', 'Tab', 'ArrowDown', 'Space', 'Backspace')",
                 "    * Examples: pressKey({key: 'Enter'}), pressKey({key: 'Escape'}), pressKey({key: 'Tab'})",
+                "    * IMPORTANT: Use Escape to close search dropdowns, overlays, or modal dialogs after search operations",
                 
                 "INTERACTION BEST PRACTICES:",
                 "  - After navigation/tab changes, use readPageContent to see what inputs/buttons/links are available",

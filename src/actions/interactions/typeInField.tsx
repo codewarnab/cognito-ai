@@ -183,19 +183,34 @@ export function useTypeInFieldTool() {
                             }
 
                             /**
-                             * Add visual highlight to element
+                             * Add visual highlight to element with Field Focus (Option C)
                              */
-                            function highlightElement(element: HTMLElement) {
-                                const originalOutline = element.style.outline;
-                                const originalBackground = element.style.backgroundColor;
+                            function highlightElement(element: HTMLElement, duration: number) {
+                                try {
+                                    const css = `
+                                        @keyframes ai-field-focus {
+                                            0%, 100% { box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.5); }
+                                            50% { box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.8), 0 0 20px rgba(6, 182, 212, 0.4); }
+                                        }
+                                        .ai-field-focus {
+                                            animation: ai-field-focus 1s ease-in-out infinite !important;
+                                            border: 2px solid rgba(6, 182, 212, 0.8) !important;
+                                        }
+                                    `;
+                                    const style = document.createElement('style');
+                                    style.id = 'ai-field-focus-style';
+                                    style.textContent = css;
+                                    document.head.appendChild(style);
 
-                                element.style.outline = '3px solid #FFD700';
-                                element.style.backgroundColor = 'rgba(255, 215, 0, 0.2)';
+                                    element.classList.add('ai-field-focus');
 
-                                setTimeout(() => {
-                                    element.style.outline = originalOutline;
-                                    element.style.backgroundColor = originalBackground;
-                                }, 800);
+                                    setTimeout(() => {
+                                        try {
+                                            element.classList.remove('ai-field-focus');
+                                            document.getElementById('ai-field-focus-style')?.remove();
+                                        } catch (e) { }
+                                    }, duration);
+                                } catch (e) { }
                             }
 
                             /**
@@ -321,7 +336,7 @@ export function useTypeInFieldTool() {
 
                                 // Scroll into view and highlight
                                 scrollIntoView(targetElement);
-                                highlightElement(targetElement);
+                                highlightElement(targetElement, 800);
 
                                 // Focus element
                                 focusElement(targetElement);
