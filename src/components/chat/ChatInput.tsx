@@ -10,12 +10,16 @@ import { MentionInput } from '../MentionInput';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
 import { validateFile, createImagePreview, isImageFile } from '../../utils/fileProcessor';
 import type { ExecutionMode, Message } from './types';
+import { SlashCommandDropdown } from './SlashCommandDropdown';
+import { WorkflowBadge } from './WorkflowBadge';
+import type { WorkflowDefinition } from '../../workflows/types';
+import { replaceSlashCommand } from '../../utils/slashCommandUtils';
 
 interface ChatInputProps {
     messages: Message[];
     input: string;
     setInput: (value: string) => void;
-    onSendMessage: (messageText?: string, attachments?: FileAttachmentData[]) => void;
+    onSendMessage: (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => void;
     isLoading: boolean;
     isRecording?: boolean;
     onMicClick?: () => void;
@@ -47,13 +51,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
 
+    // Workflow state
+    const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDefinition | null>(null);
+    const [showSlashDropdown, setShowSlashDropdown] = useState(false);
+    const [slashSearchQuery, setSlashSearchQuery] = useState('');
+
     // Handle file selection
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        
+
         for (const file of files) {
             const validation = validateFile(file);
-            
+
             if (!validation.valid) {
                 alert(validation.error);
                 continue;
@@ -61,7 +70,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
             const id = `${Date.now()}-${Math.random()}`;
             const type = isImageFile(file) ? 'image' : 'document';
-            
+
             // Create preview for images
             let preview: string | undefined;
             if (type === 'image') {
@@ -90,14 +99,48 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Handle send with attachments
     const handleSend = () => {
         if (!input.trim() && attachments.length === 0) return;
-        
-        onSendMessage(input, attachments);
+
+        // If workflow is active, add workflow metadata to message
+        if (activeWorkflow) {
+            onSendMessage(input, attachments, activeWorkflow.id);
+            // Clear workflow mode after sending
+            setActiveWorkflow(null);
+        } else {
+            onSendMessage(input, attachments);
+        }
+
         setInput('');
         setAttachments([]);
     };
 
-    // Show suggestions when there are no messages
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading;
+    // Handle workflow selection from slash command dropdown
+    const handleSelectWorkflow = (workflow: WorkflowDefinition) => {
+        setActiveWorkflow(workflow);
+        setShowSlashDropdown(false);
+
+        // Clear the slash command from input
+        const cursorPos = input.length;
+        const result = replaceSlashCommand(input, cursorPos, workflow.id);
+        setInput(result.newText);
+    };
+
+    // Handle clearing workflow mode
+    const handleClearWorkflow = () => {
+        setActiveWorkflow(null);
+    };
+
+    // Handle slash command detection from MentionInput
+    const handleSlashCommandDetection = (isSlash: boolean, searchQuery: string) => {
+        if (isSlash) {
+            setSlashSearchQuery(searchQuery);
+            setShowSlashDropdown(true);
+        } else {
+            setShowSlashDropdown(false);
+        }
+    };
+
+    // Show suggestions when there are no messages and no active workflow
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow;
 
     const suggestedActions = [
         {
@@ -182,6 +225,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 />
 
                 <div className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
+                    {/* Workflow Badge - shows when workflow is active */}
+                    {activeWorkflow && (
+                        <WorkflowBadge
+                            workflow={activeWorkflow}
+                            onClose={handleClearWorkflow}
+                        />
+                    )}
+
+                    {/* Slash Command Dropdown */}
+                    {showSlashDropdown && !activeWorkflow && (
+                        <SlashCommandDropdown
+                            searchQuery={slashSearchQuery}
+                            onSelectWorkflow={handleSelectWorkflow}
+                            onClose={() => setShowSlashDropdown(false)}
+                        />
+                    )}
+
                     {/* File Attachments Preview */}
                     {attachments.length > 0 && (
                         <div className="file-attachments-container">
@@ -201,19 +261,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             <MentionInput
                                 value={input}
                                 onChange={setInput}
+                                onSlashCommand={handleSlashCommandDetection}
+                                isSlashDropdownOpen={showSlashDropdown}
                                 onSend={() => {
                                     if ((input.trim() || attachments.length > 0) && !isLoading) {
                                         handleSend();
                                     }
                                 }}
                                 disabled={isLoading}
-                                placeholder={attachments.length > 0 
-                                    ? "Add a message (optional)..." 
-                                    : "Ask me to do something (type @ to mention tabs)"}
+                                placeholder={
+                                    activeWorkflow
+                                        ? `${activeWorkflow.name} mode: Describe what to ${activeWorkflow.id}...`
+                                        : attachments.length > 0
+                                            ? "Add a message (optional)..."
+                                            : "Ask me to do something (type @ to mention tabs, / for workflows)"
+                                }
                                 autoFocus={true}
-                            />
-
-                            {/* Animated Preview Overlay - iMessage style */}
+                            />                            {/* Animated Preview Overlay - iMessage style */}
                             <AnimatePresence>
                                 {input.trim() && !pendingMessageId && nextMessageId && (
                                     <motion.div
@@ -255,9 +319,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                     // The pill animation will show based on external state
                                 }}
                                 onRecordingComplete={(finalText) => {
-                                    onSendMessage(finalText, attachments);
+                                    const workflowId = activeWorkflow?.id;
+                                    onSendMessage(finalText, attachments, workflowId);
                                     setInput('');
                                     setAttachments([]);
+                                    if (activeWorkflow) {
+                                        setActiveWorkflow(null);
+                                    }
                                 }}
                                 className="copilot-voice-input"
                                 externalRecordingState={isRecording}

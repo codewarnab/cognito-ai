@@ -30,6 +30,7 @@ import { ClockIcon } from '../../../assets/chat/wait-for';
 import { BanIcon } from '../../../assets/chat/blocked';
 import { ExpandIcon } from '../../../assets/chat/expand';
 import { ScanTextIcon } from '../../../assets/chat/reading-page-content';
+import { BookTextIcon } from '../../../assets/report';
 import { isMcpTool } from '../../utils/toolMetadataStore';
 import { createLogger } from '../../logger';
 import { Wrench } from 'lucide-react';
@@ -82,6 +83,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     navigateTo: CompassIcon,
     switchTabs: GalleryHorizontalEndIcon,
     getActiveTab: ChromeIcon,
+    getAllTabs: FoldersIcon,
     applyTabGroups: FoldersIcon,
     organizeTabsByContext: FoldersIcon,
     ungroupTabs: FoldersIcon,
@@ -123,6 +125,10 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     updateTask: CircleCheckIcon,
     completeTask: CircleCheckIcon,
     listTasks: FoldersIcon,
+
+    // Report tools
+    generatePDF: BookTextIcon,
+    generateMarkdown: BookTextIcon,
 };
 
 /**

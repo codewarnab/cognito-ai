@@ -117,7 +117,48 @@ export function registerSelectionActions() {
 
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            func: () => window.getSelection()?.toString() || ""
+            func: () => {
+              // Animation: Selection Glow (Option A)
+              try {
+                const css = `
+                  @keyframes ai-selection-glow {
+                    0%, 100% { outline: 2px solid rgba(59, 130, 246, 0); outline-offset: 2px; }
+                    50% { outline: 2px solid rgba(59, 130, 246, 0.8); outline-offset: 4px; }
+                  }
+                `;
+                const style = document.createElement('style');
+                style.id = 'ai-selection-glow-style';
+                style.textContent = css;
+                document.head.appendChild(style);
+
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                  const range = selection.getRangeAt(0);
+                  const span = document.createElement('span');
+                  span.style.outline = '2px solid rgba(59, 130, 246, 0.8)';
+                  span.style.outlineOffset = '2px';
+                  span.style.animation = 'ai-selection-glow 200ms ease-in-out';
+
+                  try {
+                    range.surroundContents(span);
+                    setTimeout(() => {
+                      try {
+                        const parent = span.parentNode;
+                        while (span.firstChild) {
+                          parent?.insertBefore(span.firstChild, span);
+                        }
+                        span.remove();
+                        document.getElementById('ai-selection-glow-style')?.remove();
+                      } catch (e) { }
+                    }, 200);
+                  } catch (e) {
+                    document.getElementById('ai-selection-glow-style')?.remove();
+                  }
+                }
+              } catch (e) { }
+
+              return window.getSelection()?.toString() || "";
+            }
           });
 
           const selectedText = results[0]?.result || "";
@@ -162,6 +203,57 @@ export function registerSelectionActions() {
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
+              // Animation: Vertical Scan (Option A)
+              try {
+                const css = `
+                  @keyframes ai-vertical-scan-left {
+                    0% { top: 0; opacity: 1; }
+                    100% { top: 100%; opacity: 0.8; }
+                  }
+                  @keyframes ai-vertical-scan-right {
+                    0% { top: 0; opacity: 1; }
+                    100% { top: 100%; opacity: 0.8; }
+                  }
+                  .ai-vertical-scan-line {
+                    position: fixed;
+                    width: 3px;
+                    height: 100px;
+                    background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.8), transparent);
+                    z-index: 999999;
+                    pointer-events: none;
+                    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+                  }
+                `;
+                const style = document.createElement('style');
+                style.id = 'ai-vertical-scan-style';
+                style.textContent = css;
+                document.head.appendChild(style);
+
+                // Create left and right scan lines
+                const leftLine = document.createElement('div');
+                leftLine.className = 'ai-vertical-scan-line';
+                leftLine.style.left = '0';
+                leftLine.style.top = '0';
+                leftLine.style.animation = 'ai-vertical-scan-left 400ms ease-in-out';
+
+                const rightLine = document.createElement('div');
+                rightLine.className = 'ai-vertical-scan-line';
+                rightLine.style.right = '0';
+                rightLine.style.top = '0';
+                rightLine.style.animation = 'ai-vertical-scan-right 400ms ease-in-out';
+
+                document.body.appendChild(leftLine);
+                document.body.appendChild(rightLine);
+
+                setTimeout(() => {
+                  try {
+                    leftLine.remove();
+                    rightLine.remove();
+                    document.getElementById('ai-vertical-scan-style')?.remove();
+                  } catch (e) { }
+                }, 400);
+              } catch (e) { }
+
               const body = document.body;
               const title = document.title;
 

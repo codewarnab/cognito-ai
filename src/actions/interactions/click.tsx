@@ -27,6 +27,41 @@ export function useClickElementTool() {
                         target: { tabId: tab.id },
                         args: [selector],
                         func: (sel: string) => {
+                            // Animation: Ripple Click (Option A)
+                            async function showRippleClick(x: number, y: number): Promise<void> {
+                                try {
+                                    const css = `
+                                        @keyframes ai-ripple-click {
+                                            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+                                            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+                                        }
+                                        .ai-ripple-click {
+                                            position: fixed; width: 50px; height: 50px; border-radius: 50%;
+                                            background: rgba(255, 215, 0, 0.6); border: 2px solid #FFD700;
+                                            pointer-events: none; z-index: 999999;
+                                            animation: ai-ripple-click 300ms ease-out forwards;
+                                        }
+                                    `;
+                                    const style = document.createElement('style');
+                                    style.id = 'ai-ripple-click-style';
+                                    style.textContent = css;
+                                    document.head.appendChild(style);
+
+                                    const ripple = document.createElement('div');
+                                    ripple.className = 'ai-ripple-click';
+                                    ripple.style.left = `${x}px`;
+                                    ripple.style.top = `${y}px`;
+                                    document.body.appendChild(ripple);
+
+                                    setTimeout(() => {
+                                        try {
+                                            ripple.remove();
+                                            document.getElementById('ai-ripple-click-style')?.remove();
+                                        } catch (e) { }
+                                    }, 300);
+                                } catch (e) { }
+                            }
+
                             let element = document.querySelector(sel);
                             if (!element) {
                                 const allElements = Array.from(document.querySelectorAll('button, a, [role="button"], input[type="button"], input[type="submit"]'));
@@ -39,6 +74,13 @@ export function useClickElementTool() {
                                 return { success: false, error: `Element not found: ${sel}`, suggestion: "Try a different selector, button text, or aria-label" };
                             }
                             const elementInfo = { tagName: element.tagName, text: element.textContent?.trim().slice(0, 100), id: (element as HTMLElement).id, className: (element as HTMLElement).className, href: (element as HTMLAnchorElement).href };
+
+                            // Show ripple animation at element center
+                            const rect = element.getBoundingClientRect();
+                            const x = rect.left + rect.width / 2;
+                            const y = rect.top + rect.height / 2;
+                            showRippleClick(x, y);
+
                             (element as HTMLElement).click();
                             return { success: true, clicked: elementInfo, message: `Successfully clicked ${element.tagName}${(element as HTMLElement).id ? '#' + (element as HTMLElement).id : ''}` };
                         }

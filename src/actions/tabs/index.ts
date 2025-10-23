@@ -1,6 +1,7 @@
 import { useNavigateToTool } from './navigateTo';
 import { useSwitchTabsTool } from './switchTabs';
 import { useGetActiveTab } from './getActiveTab';
+import { useGetAllTabs } from './getAllTabs';
 import { useApplyTabGroups } from './applyTabGroups';
 import { useUngroupTabs } from './ungroupTabs';
 import { useOrganizeTabsByContextTool } from './organizeTabsByContext';
@@ -11,6 +12,7 @@ export function registerTabActions() {
   useNavigateToTool();
   useSwitchTabsTool();
   useGetActiveTab();
+  useGetAllTabs();
   useApplyTabGroups();
   useUngroupTabs();
   useOrganizeTabsByContextTool();

@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
-import { ToolCard, Badge } from "../../components/ui/ToolCard";
 import { registerTool } from "../../ai/toolRegistryUtils";
 import { useToolUI } from "../../ai/ToolUIContext";
+import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
 import type { ToolUIState } from "../../ai/ToolUIContext";
 
 const log = createLogger("Actions-Interactions-Scroll");
@@ -13,7 +13,7 @@ export function useScrollPageTool() {
 
     useEffect(() => {
         log.info('🔧 Registering scrollPage tool...');
-        
+
         registerTool({
             name: "scrollPage",
             description: "Scroll page up/down/top/bottom or to a specific element.",
@@ -31,10 +31,52 @@ export function useScrollPageTool() {
                         target: { tabId: tab.id },
                         args: [direction, amount || 500, selector || null],
                         func: (dir: string, amt: number, sel: string | null) => {
+                            // Animation: Page Slide (Option C)
+                            function showPageSlide(direction: 'up' | 'down') {
+                                try {
+                                    const css = `
+                                        @keyframes ai-page-slide-indicator {
+                                            0% { opacity: 0; transform: translateY(${direction === 'down' ? '-20px' : '20px'}); }
+                                            50% { opacity: 1; transform: translateY(0); }
+                                            100% { opacity: 0; transform: translateY(${direction === 'down' ? '20px' : '-20px'}); }
+                                        }
+                                        .ai-page-slide-indicator {
+                                            position: fixed; ${direction === 'down' ? 'top' : 'bottom'}: 50%; right: 20px;
+                                            width: 40px; height: 40px; background: rgba(59, 130, 246, 0.8); border-radius: 50%;
+                                            display: flex; align-items: center; justify-content: center;
+                                            color: white; font-size: 24px; font-weight: bold; z-index: 999999; pointer-events: none;
+                                            animation: ai-page-slide-indicator 250ms ease-out forwards;
+                                        }
+                                    `;
+                                    const style = document.createElement('style');
+                                    style.id = 'ai-page-slide-style';
+                                    style.textContent = css;
+                                    document.head.appendChild(style);
+
+                                    const indicator = document.createElement('div');
+                                    indicator.className = 'ai-page-slide-indicator';
+                                    indicator.textContent = direction === 'down' ? '↓' : '↑';
+                                    document.body.appendChild(indicator);
+
+                                    setTimeout(() => {
+                                        try {
+                                            indicator.remove();
+                                            document.getElementById('ai-page-slide-style')?.remove();
+                                        } catch (e) { }
+                                    }, 250);
+                                } catch (e) { }
+                            }
+
                             const beforeScroll = window.scrollY;
                             switch (dir.toLowerCase()) {
-                                case 'up': window.scrollBy({ top: -amt, behavior: 'smooth' }); break;
-                                case 'down': window.scrollBy({ top: amt, behavior: 'smooth' }); break;
+                                case 'up':
+                                    showPageSlide('up');
+                                    window.scrollBy({ top: -amt, behavior: 'smooth' });
+                                    break;
+                                case 'down':
+                                    showPageSlide('down');
+                                    window.scrollBy({ top: amt, behavior: 'smooth' });
+                                    break;
                                 case 'top': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
                                 case 'bottom': window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); break;
                                 case 'to-element':
@@ -63,31 +105,9 @@ export function useScrollPageTool() {
             },
         });
 
+        // Register the UI renderer for this tool - uses CompactToolRenderer
         registerToolUI('scrollPage', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                const scrollInfo = input?.direction === "to-element" && input?.selector
-                    ? `to ${input.selector}`
-                    : input?.amount ? `${input.direction} ${input.amount}px` : input?.direction;
-                return <ToolCard title="Scrolling Page" subtitle={scrollInfo} state="loading" icon="📜" />;
-            }
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return <ToolCard title="Scroll Failed" subtitle={output.error} state="error" icon="📜" />;
-                }
-                return (
-                    <ToolCard title="Page Scrolled" subtitle={output.message || `Scrolled ${output.direction}`} state="success" icon="📜">
-                        {output.scrollDistance !== undefined && (
-                            <Badge label={`${output.scrollDistance}px`} variant="success" />
-                        )}
-                    </ToolCard>
-                );
-            }
-            if (toolState === 'output-error') {
-                return <ToolCard title="Scroll Failed" subtitle={state.errorText || 'Unknown error'} state="error" icon="📜" />;
-            }
-            return null;
+            return <CompactToolRenderer state={state} />;
         });
 
         log.info('✅ scrollPage tool registration complete');
