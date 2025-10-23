@@ -161,6 +161,31 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                             );
                                                         }
 
+                                                        // Render file attachments
+                                                        if (part.type === 'file') {
+                                                            const isImage = part.mediaType?.startsWith('image/');
+                                                            const isPdf = part.mediaType === 'application/pdf';
+
+                                                            return (
+                                                                <div key={`file-${partIndex}`} className="message-file-attachment">
+                                                                    {isImage ? (
+                                                                        <div className="message-file-image">
+                                                                            <img src={part.url} alt={part.name || 'Attached image'} />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="message-file-document">
+                                                                            <div className="file-attachment-icon">
+                                                                                {isPdf ? '📕' : '📄'}
+                                                                            </div>
+                                                                            <span className="file-attachment-name" title={part.name}>
+                                                                                {part.name || 'Document'}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        }
+
                                                         // Render tool parts
                                                         if (
                                                             part.type === 'tool-call' ||
