@@ -3,6 +3,7 @@ import { z } from "zod";
 import { registerTool } from "../ai/toolRegistryUtils";
 import { useToolUI } from "../ai/ToolUIContext";
 import { createLogger } from "../logger";
+import { startPageGlow, stopPageGlow } from "../utils/pageGlowIndicator";
 
 // ===========================
 // Query Utilities
@@ -112,8 +113,15 @@ export function registerSelectionActions() {
       execute: async () => {
         try {
           log.info("TOOL CALL: getSelectedText");
+          
+          // Start the glow effect
+          startPageGlow();
+          
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (!tab.id) return { error: "No active tab" };
+          if (!tab.id) {
+            stopPageGlow();
+            return { error: "No active tab" };
+          }
 
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -121,6 +129,7 @@ export function registerSelectionActions() {
           });
 
           const selectedText = results[0]?.result || "";
+          stopPageGlow();
           return {
             success: true,
             selectedText,
@@ -128,6 +137,7 @@ export function registerSelectionActions() {
           };
         } catch (error) {
           log.error('[Tool] Error getting selected text:', error);
+          stopPageGlow();
           return { error: "Failed to get selected text. Make sure you have permission." };
         }
       },
@@ -156,8 +166,15 @@ export function registerSelectionActions() {
       execute: async ({ limit }) => {
         try {
           log.info("TOOL CALL: readPageContent", { limit });
+          
+          // Start the glow effect
+          startPageGlow();
+          
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (!tab.id) return { error: "No active tab" };
+          if (!tab.id) {
+            stopPageGlow();
+            return { error: "No active tab" };
+          }
 
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -253,7 +270,10 @@ export function registerSelectionActions() {
           };
         } catch (error) {
           log.error('[Tool] Error reading page content:', error);
+          stopPageGlow();
           return { error: "Failed to read page content. Make sure you have permission to access this page." };
+        } finally {
+          stopPageGlow();
         }
       },
     });

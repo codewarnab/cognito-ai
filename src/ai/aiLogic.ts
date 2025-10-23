@@ -6,55 +6,23 @@
 
 import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs, smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '../logger';
-import { systemPrompt } from './prompt';
-import { getAllTools } from './toolRegistryUtils';
+import { localSystemPrompt } from './prompt/local';
+import { remoteSystemPrompt } from './prompt/remote';
+import { getToolsForMode } from './toolRegistry';
 import { getMCPToolsFromBackground } from './mcpProxy';
-import { getGeminiApiKey } from '../utils/geminiApiKey';
-import { builtInAI } from "@built-in-ai/core";
 import { youtubeAgentAsTool } from './agents/youtubeAgent';
+import { getGeminiApiKey, hasGeminiApiKey } from '../utils/geminiApiKey';
+import { getModelConfig } from '../utils/modelSettings';
 
 const log = createLogger('AI-Logic');
-
-
-// ============================================================================
-// Configuration
-// ============================================================================
-
-/**
- * Initialize Google AI with API key from storage
- * Falls back to chrome-ai if API key is not configured
- */
-async function getGoogleAIInstance() {
-  try {
-    const apiKey = await getGeminiApiKey();
-    
-    if (!apiKey) {
-      log.info('⚠️ Gemini API key not configured, falling back to chrome-ai');
-      return builtInAI();
-    }
-
-    // Custom fetch to remove referrer header that causes 403 errors in Chrome extensions
-    const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-      const newInit = { ...init };
-      if (newInit.headers) {
-        // Remove the Referer header to avoid 403 from Google API
-        delete (newInit.headers as any).Referer;
-      }
-      return fetch(url, newInit);
-    };
-
-    const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
-    return google('gemini-2.5-flash');
-  } catch (error) {
-    log.error('Error getting Google AI instance', error);
-    throw error;
-  }
-}
 
 /**
  * Stream AI response directly from the frontend
  * Returns a UIMessageStream that can be consumed by useChat
+ * 
+ * Handles both local (Gemini Nano) and remote (Gemini API) modes
  */
 export async function streamAIResponse(params: {
   messages: UIMessage[];
@@ -66,43 +34,28 @@ export async function streamAIResponse(params: {
 
   log.info('Starting AI stream', { messageCount: messages.length });
 
-  // Get MCP tools from background service worker's persistent connections
-  // This replaces the old approach of creating new clients on every chat
-  let mcpTools = {};
-  let mcpCleanup: (() => Promise<void>) | null = null;
-  let mcpSessionIds: Map<string, string> | null = null;
+  // Get current model configuration
+  const modelConfig = await getModelConfig();
 
-  try {
-    const mcpManager = await getMCPToolsFromBackground(abortSignal);
-    console.log("mcpManager from background proxy", mcpManager);
-    mcpTools = mcpManager.tools;
-    mcpCleanup = mcpManager.cleanup;
-    mcpSessionIds = mcpManager.sessionIds;
-
-    const mcpToolCount = Object.keys(mcpTools).length;
-    log.info('🔍 Available MCP tools (from background):', { count: mcpToolCount, names: Object.keys(mcpTools) });
-
-    // Log session info - sessions are managed by background service worker
-    if (mcpSessionIds && mcpSessionIds.size > 0) {
-      log.info('📝 Active MCP sessions (managed by background):', {
-        count: mcpSessionIds.size,
-        sessions: Array.from(mcpSessionIds.entries()).map(([id, sessionId]) => ({
-          serverId: id,
-          sessionId: sessionId.substring(0, 16) + '...' // Truncate for security
-        }))
-      });
-    } else {
-      log.info('📝 MCP sessions managed by background service worker with keep-alive');
+  // Determine mode based on API key availability
+  let effectiveMode = modelConfig.mode;
+  if (effectiveMode === 'remote') {
+    const hasKey = await hasGeminiApiKey();
+    if (!hasKey) {
+      log.warn('⚠️ Remote mode requested but no API key, falling back to local');
+      effectiveMode = 'local';
     }
-  } catch (error) {
-    log.error('❌ Failed to get MCP tools from background:', error);
-    mcpCleanup = null; // Ensure cleanup is null on error
   }
 
-  try {
-    // Create UI message stream
-    log.info('Creating UI message stream...');
+  log.info('🤖 AI Mode:', effectiveMode, effectiveMode === 'remote' ? modelConfig.remoteModel : 'gemini-nano');
 
+  // Initialize variables for streaming
+  let model: any;
+  let tools: Record<string, any> = {};
+  let systemPrompt: string;
+
+
+  try {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
@@ -116,64 +69,110 @@ export async function streamAIResponse(params: {
             transient: true,
           });
 
-          // Get Google Gemini model
-          log.info('Initializing AI model...');
-          let model= await getGoogleAIInstance();
-          log.info('✅ AI model initialized');
+          if (effectiveMode === 'local') {
+            // ========== LOCAL MODE (Gemini Nano) ==========
+            log.info('🏠 Using LOCAL Gemini Nano');
 
-          // Convert UI messages to model format
-          const modelMessages = convertToModelMessages(messages);
+            // Get local model
+            model = builtInAI();
 
-          // Get all registered tools (Chrome extension tools)
-          const extensionTools = getAllTools();
-          const extensionToolCount = Object.keys(extensionTools).length;
+            // Get limited tool set (basic tools only)
+            tools = getToolsForMode('local');
+            log.info('🔧 Local tools available:', {
+              count: Object.keys(tools).length,
+              names: Object.keys(tools)
+            });
 
-          log.info('🔍 Available extension tools:', { count: extensionToolCount, names: Object.keys(extensionTools) });
+            // Use local prompt
+            systemPrompt = localSystemPrompt;
 
-          // Add specialist agents as tools
-          const agentTools = {
-            analyzeYouTubeVideo: youtubeAgentAsTool,
-          };
+          } else {
+            // ========== REMOTE MODE (Gemini API) ==========
+            const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+            log.info('☁️ Using REMOTE model:', modelName);
 
-          // Combine all tools: extension tools + agent tools + MCP tools
-          const tools = { ...extensionTools, ...agentTools, ...mcpTools };
-          const totalToolCount = Object.keys(tools).length;
+            // Get API key
+            const apiKey = await getGeminiApiKey();
+            if (!apiKey) {
+              throw new Error('API key required for remote mode');
+            }
 
-          log.info('🎯 Total available tools:', {
-            count: totalToolCount,
-            extension: extensionToolCount,
-            agents: Object.keys(agentTools).length,
-            mcp: Object.keys(mcpTools).length,
-            names: Object.keys(tools),
-            agentNames: Object.keys(agentTools),
-          });
+            // Custom fetch to remove referrer header (fixes 403 errors in Chrome extensions)
+            const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+              const newInit = { ...init };
+              if (newInit.headers) {
+                delete (newInit.headers as any).Referer;
+              }
+              return fetch(url, newInit);
+            };
 
-          if (totalToolCount === 0) {
-            log.warn('⚠️ NO TOOLS REGISTERED! AI will not be able to use tools.');
+            // Initialize model
+            const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
+            model = google(modelName);
+
+            // Get full tool suite
+            const extensionTools = getToolsForMode('remote');
+            log.info('🔧 Extension tools loaded:', {
+              count: Object.keys(extensionTools).length,
+              names: Object.keys(extensionTools)
+            });
+
+            // Get MCP tools from background service worker
+            let mcpTools = {};
+            try {
+              const mcpManager = await getMCPToolsFromBackground(abortSignal);
+              mcpTools = mcpManager.tools;
+              log.info('🔧 MCP tools loaded:', {
+                count: Object.keys(mcpTools).length,
+                names: Object.keys(mcpTools)
+              });
+            } catch (error) {
+              log.warn('⚠️ MCP tools unavailable:', error);
+            }
+
+            // Add agent tools
+            const agentTools = {
+              analyzeYouTubeVideo: youtubeAgentAsTool,
+            };
+            log.info('🤖 Agent tools loaded:', {
+              count: Object.keys(agentTools).length,
+              names: Object.keys(agentTools)
+            });
+
+            // Combine all tools
+            tools = { ...extensionTools, ...agentTools, ...mcpTools };
+            log.info('🎯 Total tools available:', {
+              count: Object.keys(tools).length,
+              extension: Object.keys(extensionTools).length,
+              mcp: Object.keys(mcpTools).length,
+              agents: Object.keys(agentTools).length,
+            });
+
+            // Use remote prompt
+            systemPrompt = remoteSystemPrompt;
           }
 
-          // Build system prompt with initial page context if available
-          let enhancedSystemPrompt = systemPrompt;
+          // Build enhanced prompt with initial page context if available
+          let enhancedPrompt = systemPrompt;
           if (initialPageContext) {
-            enhancedSystemPrompt = `${systemPrompt}\n\n[INITIAL PAGE CONTEXT - Captured at thread start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started. If you navigate to different pages or need updated context, use the readPageContent or getActiveTab tools.`;
-            log.info('📄 Enhanced system prompt with initial page context');
+            enhancedPrompt += `\n\nCURRENT PAGE CONTEXT:\n${initialPageContext}`;
           }
 
-          // Stream text from AI
-          log.info('🚀 Calling streamText with Gemini API...', {
-            messageCount: modelMessages.length,
-            toolCount: totalToolCount,
+          // Stream with appropriate configuration
+          log.info('🚀 Starting streamText...', {
+            mode: effectiveMode,
+            toolCount: Object.keys(tools).length,
             hasInitialContext: !!initialPageContext
           });
 
-          const result = streamText({
-            model: model,
-            system: enhancedSystemPrompt,
-            messages: modelMessages,
-            stopWhen: [stepCountIs(10)],
-            tools, // Include tools in the stream
-            toolChoice: 'auto', // Force proper tool calling format
+          const result = await streamText({
+            model,
+            messages: convertToModelMessages(messages),
+            tools,
+            system: enhancedPrompt,
             abortSignal,
+            stopWhen: [stepCountIs(effectiveMode === 'local' ? 5 : 10)],
+            toolChoice: 'auto', // Force proper tool calling format
             temperature: 0.7,
             experimental_transform: smoothStream({
               delayInMs: 20, // optional: defaults to 10ms

@@ -70,7 +70,6 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     pressKey: KeyboardIcon,
     scroll: ArrowBigDownDashIcon,
     search: SearchIcon,
-    chromeSearch: SearchIcon,
     getSearchResults: SearchIcon,
     openSearchResult: LinkIcon,
     extractText: ExpandIcon,

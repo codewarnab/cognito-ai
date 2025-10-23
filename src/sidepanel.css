@@ -14,6 +14,7 @@
 @import './styles/compact-tools.css';
 @import './styles/threads.css';
 @import './styles/mentions.css';
+@import './styles/model-selector.css';
 
 /* Mode Toggle Wrapper */
 .mode-toggle-wrapper {

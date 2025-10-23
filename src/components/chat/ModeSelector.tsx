@@ -1,21 +1,27 @@
 import React, { useRef } from 'react';
 import { CloudCogIcon } from '../CloudCogIcon';
 import { LaptopMinimalCheckIcon } from '../LaptopMinimalCheckIcon';
-import type { ExecutionMode } from './types';
+import { ModelDropdown } from './ModelDropdown';
+import { canSwitchMode } from '../../utils/modelSettings';
+import type { AIMode, RemoteModelType, ModelState } from './types';
 
 interface ModeSelectorProps {
-    executionMode: ExecutionMode;
+    modelState: ModelState;
+    onModeChange: (mode: AIMode) => void;
+    onModelChange: (model: RemoteModelType) => void;
     showModeDropdown: boolean;
-    onExecutionModeChange: (mode: ExecutionMode) => void;
     onToggleDropdown: (show: boolean) => void;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({
-    executionMode,
+    modelState,
+    onModeChange,
+    onModelChange,
     showModeDropdown,
-    onExecutionModeChange,
     onToggleDropdown,
 }) => {
+    const { mode, remoteModel, hasApiKey, conversationStartMode } = modelState;
+    
     const cloudCogRef = useRef<any>(null);
     const laptopIconRef = useRef<any>(null);
     const cloudCogDropdownActiveRef = useRef<any>(null);
@@ -23,39 +29,80 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     const laptopIconDropdownActiveRef = useRef<any>(null);
     const laptopIconDropdownInactiveRef = useRef<any>(null);
 
+    const handleModeSwitch = async (newMode: AIMode) => {
+        // Check if switch is allowed
+        const allowed = await canSwitchMode(mode, newMode);
+        
+        if (!allowed) {
+            alert(
+                '⚠️ Cannot switch to Local mode\n\n' +
+                'This conversation started with Remote mode and uses advanced features. ' +
+                'Switching to Local would break functionality.\n\n' +
+                'Please start a new conversation to use Local mode.'
+            );
+            return;
+        }
+        
+        // Check if remote mode has API key
+        if (newMode === 'remote' && !hasApiKey) {
+            alert(
+                'API Key Required\n\n' +
+                'Please add your Gemini API key in Settings (⋮ menu) to use Remote mode.'
+            );
+            return;
+        }
+        
+        onModeChange(newMode);
+        onToggleDropdown(false);
+    };
+    
+    // Get model display name
+    const modelName = mode === 'local' ? 'Nano' : remoteModel.split('-').pop() || 'Flash';
+
     return (
         <div className="copilot-composer-options">
             {!showModeDropdown ? (
-                <button
-                    type="button"
-                    className="copilot-mode-inline-button"
-                    onClick={() => onToggleDropdown(true)}
-                    title="Execution mode"
-                    onMouseEnter={() => {
-                        if (executionMode === 'cloud') {
-                            cloudCogRef.current?.startAnimation();
-                        } else {
-                            laptopIconRef.current?.startAnimation();
-                        }
-                    }}
-                    onMouseLeave={() => {
-                        if (executionMode === 'cloud') {
-                            cloudCogRef.current?.stopAnimation();
-                        } else {
-                            laptopIconRef.current?.stopAnimation();
-                        }
-                    }}
-                >
-                    {executionMode === 'local' ? (
-                        <LaptopMinimalCheckIcon ref={laptopIconRef} size={14} />
-                    ) : (
-                        <CloudCogIcon ref={cloudCogRef} size={14} />
+                <div className="mode-selector-inline">
+                    <button
+                        type="button"
+                        className="copilot-mode-inline-button"
+                        onClick={() => onToggleDropdown(true)}
+                        title="Change AI mode"
+                        onMouseEnter={() => {
+                            if (mode === 'remote') {
+                                cloudCogRef.current?.startAnimation();
+                            } else {
+                                laptopIconRef.current?.startAnimation();
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            if (mode === 'remote') {
+                                cloudCogRef.current?.stopAnimation();
+                            } else {
+                                laptopIconRef.current?.stopAnimation();
+                            }
+                        }}
+                    >
+                        {mode === 'local' ? (
+                            <LaptopMinimalCheckIcon ref={laptopIconRef} size={14} />
+                        ) : (
+                            <CloudCogIcon ref={cloudCogRef} size={14} />
+                        )}
+                        <span className="mode-label">{mode === 'local' ? 'Local' : 'Cloud'}</span>
+                    </button>
+                    
+                    <span className="model-name-display">{modelName}</span>
+                    
+                    {mode === 'remote' && (
+                        <ModelDropdown
+                            currentModel={remoteModel}
+                            onModelChange={onModelChange}
+                        />
                     )}
-                    <span>{executionMode === 'local' ? 'Local' : 'Cloud'}</span>
-                </button>
+                </div>
             ) : (
                 <div className="copilot-mode-expanded">
-                    {executionMode === 'local' ? (
+                    {mode === 'local' ? (
                         <>
                             <button
                                 type="button"
@@ -70,10 +117,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                             <button
                                 type="button"
                                 className="copilot-mode-expanded-option"
-                                onClick={() => {
-                                    onExecutionModeChange('cloud');
-                                    onToggleDropdown(false);
-                                }}
+                                onClick={() => handleModeSwitch('remote')}
                                 onMouseEnter={() => cloudCogDropdownInactiveRef.current?.startAnimation()}
                                 onMouseLeave={() => cloudCogDropdownInactiveRef.current?.stopAnimation()}
                             >
@@ -96,10 +140,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                             <button
                                 type="button"
                                 className="copilot-mode-expanded-option"
-                                onClick={() => {
-                                    onExecutionModeChange('local');
-                                    onToggleDropdown(false);
-                                }}
+                                onClick={() => handleModeSwitch('local')}
                                 onMouseEnter={() => laptopIconDropdownInactiveRef.current?.startAnimation()}
                                 onMouseLeave={() => laptopIconDropdownInactiveRef.current?.stopAnimation()}
                             >

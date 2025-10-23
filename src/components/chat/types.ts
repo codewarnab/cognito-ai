@@ -1,3 +1,4 @@
+export { type AIMode, type RemoteModelType, type ModelState } from '../../ai/types';
 export interface Message {
     id?: string;
     role: 'user' | 'assistant';

@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
+import { startPageGlow, stopPageGlow } from '../../utils/pageGlowIndicator';
 
 const log = createLogger('Tool-GetSearchResults');
 
@@ -41,25 +42,43 @@ export function useGetSearchResultsTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'getSearchResults',
-            description: 'Parse current Google/Bing search results page and return a structured ranked list with metadata (title, href, hostname, snippet). Use this after navigating to a search engine to intelligently select which result to open. Do not use this on other websites.',
+            description: 'Search on Google with a query, open in new tab, and return structured ranked results with metadata (title, href, hostname, snippet).',
             parameters: z.object({
+                query: z.string()
+                    .describe('The search query to use on Google'),
                 maxResults: z.number()
                     .max(50)
                     .describe('Maximum number of results to return (default: 10)')
                     .default(10),
             }),
-            execute: async ({ maxResults = 10 }) => {
-                if (!shouldProcess("getSearchResults", { maxResults })) {
+            execute: async ({ query, maxResults = 10 }) => {
+                if (!shouldProcess("getSearchResults", { query, maxResults })) {
                     return { skipped: true, reason: "duplicate" };
                 }
 
                 try {
-                    log.info("TOOL CALL: getSearchResults", { maxResults });
-                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab?.id) return { error: "No active tab" };
-
+                    log.info("TOOL CALL: getSearchResults", { query, maxResults });
+                    
+                    // Start the glow effect
+                    startPageGlow();
+                    
+                    // Step 1: Navigate to Google with the query in a new tab
+                    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                    const newTab = await chrome.tabs.create({ url: googleSearchUrl, active: true });
+                    
+                    if (!newTab?.id) {
+                        stopPageGlow();
+                        return { error: "Failed to create new tab" };
+                    }
+                    
+                    log.info("Created new tab with Google search", { tabId: newTab.id, query });
+                    
+                    // Step 2: Wait for the page to load (give it 2 seconds)
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    // Step 3: Parse the search results from the new tab
                     const results = await chrome.scripting.executeScript({
-                        target: { tabId: tab.id },
+                        target: { tabId: newTab.id },
                         args: [maxResults],
                         func: (limit: number) => {
                             const url = location.href;
@@ -167,9 +186,12 @@ export function useGetSearchResultsTool() {
                     } else {
                         log.warn("getSearchResults failed", result);
                     }
+                    
+                    stopPageGlow();
                     return result || { error: "No result" };
                 } catch (error) {
                     log.error('[Tool] Error parsing search results:', error);
+                    stopPageGlow();
                     return { error: `Failed to parse search results: ${(error as Error).message}` };
                 }
             },

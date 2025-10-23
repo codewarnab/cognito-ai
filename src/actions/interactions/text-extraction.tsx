@@ -11,6 +11,7 @@ import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
 import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
+import { startPageGlow, stopPageGlow } from '../../utils/pageGlowIndicator';
 
 const log = createLogger("Actions-Interactions-Text");
 
@@ -36,8 +37,14 @@ export function registerTextExtractionInteractions() {
                     const max = typeof limit === 'number' && limit > 0 ? limit : 5000;
                     log.info("TOOL CALL: extractText", { selector, all, max, includeStructure, detectSearchBar });
 
+                    // Start the glow effect
+                    startPageGlow();
+
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab.id) {
+                        stopPageGlow();
+                        return { error: "No active tab" };
+                    }
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
@@ -282,9 +289,11 @@ export function registerTextExtractionInteractions() {
                     } else {
                         log.warn("extractText failed", result);
                     }
+                    stopPageGlow();
                     return result || { error: "No result" };
                 } catch (error) {
                     log.error('[Tool] Error extracting text:', error);
+                    stopPageGlow();
                     return { error: "Failed to extract text" };
                 }
             },
@@ -310,8 +319,15 @@ export function registerTextExtractionInteractions() {
             execute: async ({ selector, block = 'nearest' }) => {
                 try {
                     log.info("TOOL CALL: scrollIntoView", { selector, block });
+                    
+                    // Start the glow effect
+                    startPageGlow();
+                    
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab.id) {
+                        stopPageGlow();
+                        return { error: "No active tab" };
+                    }
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
@@ -333,9 +349,11 @@ export function registerTextExtractionInteractions() {
                     } else {
                         log.warn("scrollIntoView failed", result);
                     }
+                    stopPageGlow();
                     return result || { error: "Failed to scroll" };
                 } catch (error) {
                     log.error('[Tool] Error scrolling:', error);
+                    stopPageGlow();
                     return { error: "Failed to scroll element into view" };
                 }
             },
@@ -360,8 +378,15 @@ export function registerTextExtractionInteractions() {
             execute: async ({ onlyVisible = true }) => {
                 try {
                     log.info("TOOL CALL: findSearchBar", { onlyVisible });
+                    
+                    // Start the glow effect
+                    startPageGlow();
+                    
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab.id) {
+                        stopPageGlow();
+                        return { error: "No active tab" };
+                    }
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
@@ -494,9 +519,11 @@ export function registerTextExtractionInteractions() {
                     } else {
                         log.warn("findSearchBar failed", result);
                     }
+                    stopPageGlow();
                     return result || { error: "Failed to find search bars" };
                 } catch (error) {
                     log.error('[Tool] Error finding search bars:', error);
+                    stopPageGlow();
                     return { error: "Failed to find search bars" };
                 }
             },
