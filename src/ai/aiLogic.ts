@@ -34,7 +34,17 @@ async function getGoogleAIInstance() {
       return builtInAI();
     }
 
-    const google = createGoogleGenerativeAI({ apiKey });
+    // Custom fetch to remove referrer header that causes 403 errors in Chrome extensions
+    const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+      const newInit = { ...init };
+      if (newInit.headers) {
+        // Remove the Referer header to avoid 403 from Google API
+        delete (newInit.headers as any).Referer;
+      }
+      return fetch(url, newInit);
+    };
+
+    const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
     return google('gemini-2.5-flash');
   } catch (error) {
     log.error('Error getting Google AI instance', error);

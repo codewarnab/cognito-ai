@@ -11,8 +11,6 @@ import { FileAttachment, type FileAttachmentData } from './FileAttachment';
 import { validateFile, createImagePreview, isImageFile } from '../../utils/fileProcessor';
 import type { ExecutionMode, Message } from './types';
 
-const log = createLogger('ChatInput');
-
 interface ChatInputProps {
     messages: Message[];
     input: string;
@@ -57,7 +55,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             const validation = validateFile(file);
             
             if (!validation.valid) {
-                log.error('File validation failed', { file: file.name, error: validation.error });
                 alert(validation.error);
                 continue;
             }
@@ -71,7 +68,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 try {
                     preview = await createImagePreview(file);
                 } catch (error) {
-                    log.error('Failed to create image preview', error);
+                    console.error('Failed to create image preview', error);
                 }
             }
 
@@ -95,6 +92,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         if (!input.trim() && attachments.length === 0) return;
         
         onSendMessage(input, attachments);
+        setInput('');
         setAttachments([]);
     };
 
