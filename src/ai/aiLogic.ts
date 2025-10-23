@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Frontend AI Logic
  * Direct AI backend integration using AI SDK v5
  * Runs directly in the UI thread, no service worker needed
@@ -6,18 +6,20 @@
 
 import { streamText, createUIMessageStream, convertToModelMessages, generateId, type UIMessage, stepCountIs, smoothStream } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '../logger';
-import { systemPrompt } from './prompt';
+import { localSystemPrompt } from './prompt/local';
+import { remoteSystemPrompt } from './prompt/remote';
+import { getToolsForMode } from './toolRegistry';
 import { getAllTools } from './toolRegistryUtils';
 import { getMCPToolsFromBackground } from './mcpProxy';
-import { getGeminiApiKey } from '../utils/geminiApiKey';
-import { builtInAI } from "@built-in-ai/core";
 import { youtubeAgentAsTool } from './agents/youtubeAgent';
 import { getWorkflow } from '../workflows/registry';
 import { workflowSessionManager } from '../workflows/sessionManager';
+import { getGeminiApiKey, hasGeminiApiKey } from '../utils/geminiApiKey';
+import { getModelConfig } from '../utils/modelSettings';
 
 const log = createLogger('AI-Logic');
-
 
 // ============================================================================
 // Helper Functions
@@ -49,44 +51,12 @@ function extractMalformedCallInfo(response: any): { isMalformed: boolean; code?:
   }
 }
 
-// ============================================================================
-// Configuration
-// ============================================================================
-
-/**
- * Initialize Google AI with API key from storage
- * Falls back to chrome-ai if API key is not configured
- */
-async function getGoogleAIInstance() {
-  try {
-    const apiKey = await getGeminiApiKey();
-
-    if (!apiKey) {
-      log.info('⚠️ Gemini API key not configured, falling back to chrome-ai');
-      return builtInAI();
-    }
-
-    // Custom fetch to remove referrer header that causes 403 errors in Chrome extensions
-    const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-      const newInit = { ...init };
-      if (newInit.headers) {
-        // Remove the Referer header to avoid 403 from Google API
-        delete (newInit.headers as any).Referer;
-      }
-      return fetch(url, newInit);
-    };
-
-    const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
-    return google('gemini-2.5-flash');
-  } catch (error) {
-    log.error('Error getting Google AI instance', error);
-    throw error;
-  }
-}
-
 /**
  * Stream AI response directly from the frontend
  * Returns a UIMessageStream that can be consumed by useChat
+ * 
+ * Handles both local (Gemini Nano) and remote (Gemini API) modes
+ * Also supports workflow mode with custom prompts and tool filtering
  */
 export async function streamAIResponse(params: {
   messages: UIMessage[];
@@ -100,43 +70,27 @@ export async function streamAIResponse(params: {
 
   log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
 
-  // Get MCP tools from background service worker's persistent connections
-  // This replaces the old approach of creating new clients on every chat
-  let mcpTools = {};
-  let mcpCleanup: (() => Promise<void>) | null = null;
-  let mcpSessionIds: Map<string, string> | null = null;
+  // Get current model configuration
+  const modelConfig = await getModelConfig();
 
-  try {
-    const mcpManager = await getMCPToolsFromBackground(abortSignal);
-    console.log("mcpManager from background proxy", mcpManager);
-    mcpTools = mcpManager.tools;
-    mcpCleanup = mcpManager.cleanup;
-    mcpSessionIds = mcpManager.sessionIds;
-
-    const mcpToolCount = Object.keys(mcpTools).length;
-    log.info('🔍 Available MCP tools (from background):', { count: mcpToolCount, names: Object.keys(mcpTools) });
-
-    // Log session info - sessions are managed by background service worker
-    if (mcpSessionIds && mcpSessionIds.size > 0) {
-      log.info('📝 Active MCP sessions (managed by background):', {
-        count: mcpSessionIds.size,
-        sessions: Array.from(mcpSessionIds.entries()).map(([id, sessionId]) => ({
-          serverId: id,
-          sessionId: sessionId.substring(0, 16) + '...' // Truncate for security
-        }))
-      });
-    } else {
-      log.info('📝 MCP sessions managed by background service worker with keep-alive');
+  // Determine mode based on API key availability
+  let effectiveMode = modelConfig.mode;
+  if (effectiveMode === 'remote') {
+    const hasKey = await hasGeminiApiKey();
+    if (!hasKey) {
+      log.warn(' Remote mode requested but no API key, falling back to local');
+      effectiveMode = 'local';
     }
-  } catch (error) {
-    log.error('❌ Failed to get MCP tools from background:', error);
-    mcpCleanup = null; // Ensure cleanup is null on error
   }
 
-  try {
-    // Create UI message stream
-    log.info('Creating UI message stream...');
+  log.info(' AI Mode:', effectiveMode, effectiveMode === 'remote' ? modelConfig.remoteModel : 'gemini-nano');
 
+  // Initialize variables for streaming
+  let model: any;
+  let tools: Record<string, any> = {};
+  let systemPrompt: string;
+
+  try {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
         try {
@@ -150,127 +104,189 @@ export async function streamAIResponse(params: {
             transient: true,
           });
 
-          // Get Google Gemini model
-          log.info('Initializing AI model...');
-          let model = await getGoogleAIInstance();
-          log.info('✅ AI model initialized');
-
-          // Convert UI messages to model format
-          const modelMessages = convertToModelMessages(messages);
-
           // Check if we're in workflow mode
           let workflowConfig = null;
           if (workflowId) {
             workflowConfig = getWorkflow(workflowId);
             if (workflowConfig) {
-              log.info('🔄 Workflow mode detected:', { workflowId, name: workflowConfig.name });
+              log.info(' Workflow mode detected:', { workflowId, name: workflowConfig.name });
             } else {
-              log.warn('⚠️ Invalid workflowId provided:', workflowId);
+              log.warn(' Invalid workflowId provided:', workflowId);
             }
           }
 
-          // Get all registered tools (Chrome extension tools)
-          const extensionTools = getAllTools();
-          const extensionToolCount = Object.keys(extensionTools).length;
+          if (effectiveMode === 'local') {
+            // ========== LOCAL MODE (Gemini Nano) ==========
+            log.info(' Using LOCAL Gemini Nano');
 
-          log.info('🔍 Available extension tools:', { count: extensionToolCount, names: Object.keys(extensionTools) });
+            // Get local model
+            model = builtInAI();
 
-          // Define workflow-only tools (only available in workflow mode)
-          const workflowOnlyTools = ['generateMarkdown', 'generatePDF'];
+            // Get limited tool set (basic tools only) from tool registry
+            const localTools = getToolsForMode('local');
 
-          // Filter tools based on workflow if active
-          let filteredExtensionTools = extensionTools;
-          if (workflowConfig) {
-            filteredExtensionTools = Object.fromEntries(
-              Object.entries(extensionTools).filter(([name]) =>
-                workflowConfig.allowedTools.includes(name)
-              )
-            );
-            log.info('🎯 Filtered tools for workflow:', {
-              workflow: workflowConfig.name,
-              allowed: workflowConfig.allowedTools,
-              filtered: Object.keys(filteredExtensionTools)
+            // In workflow mode, filter to only allowed tools
+            if (workflowConfig) {
+              tools = Object.fromEntries(
+                Object.entries(localTools).filter(([name]) =>
+                  workflowConfig.allowedTools.includes(name)
+                )
+              );
+              log.info(' Filtered local tools for workflow:', {
+                workflow: workflowConfig.name,
+                allowed: workflowConfig.allowedTools,
+                filtered: Object.keys(tools)
+              });
+            } else {
+              tools = localTools;
+            }
+
+            log.info(' Local tools available:', {
+              count: Object.keys(tools).length,
+              names: Object.keys(tools)
             });
+
+            // Use local or workflow-specific prompt
+            systemPrompt = workflowConfig ? workflowConfig.systemPrompt : localSystemPrompt;
+
           } else {
-            // In normal mode, exclude workflow-only tools
-            filteredExtensionTools = Object.fromEntries(
-              Object.entries(extensionTools).filter(([name]) =>
-                !workflowOnlyTools.includes(name)
-              )
-            );
-            log.info('🎯 Normal mode - excluding workflow-only tools:', {
-              excluded: workflowOnlyTools,
-              available: Object.keys(filteredExtensionTools)
+            // ========== REMOTE MODE (Gemini API) ==========
+            const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+            log.info(' Using REMOTE model:', modelName);
+
+            // Get API key
+            const apiKey = await getGeminiApiKey();
+            if (!apiKey) {
+              throw new Error('API key required for remote mode');
+            }
+
+            // Custom fetch to remove referrer header (fixes 403 errors in Chrome extensions)
+            const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+              const newInit = { ...init };
+              if (newInit.headers) {
+                delete (newInit.headers as any).Referer;
+              }
+              return fetch(url, newInit);
+            };
+
+            // Initialize model
+            const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
+            model = google(modelName);
+
+            // Define workflow-only tools (only available in workflow mode)
+            const workflowOnlyTools = ['generateMarkdown', 'generatePDF'];
+
+            // Get all registered tools (Chrome extension tools)
+            const allExtensionTools = getAllTools();
+
+            // Filter extension tools based on workflow
+            let extensionTools: Record<string, any>;
+            if (workflowConfig) {
+              // Workflow mode: Only allowed tools
+              extensionTools = Object.fromEntries(
+                Object.entries(allExtensionTools).filter(([name]) =>
+                  workflowConfig.allowedTools.includes(name)
+                )
+              );
+              log.info(' Filtered tools for workflow:', {
+                workflow: workflowConfig.name,
+                allowed: workflowConfig.allowedTools,
+                filtered: Object.keys(extensionTools)
+              });
+            } else {
+              // Normal mode: All tools except workflow-only
+              extensionTools = Object.fromEntries(
+                Object.entries(allExtensionTools).filter(([name]) =>
+                  !workflowOnlyTools.includes(name)
+                )
+              );
+              log.info(' Normal mode - excluding workflow-only tools:', {
+                excluded: workflowOnlyTools,
+                available: Object.keys(extensionTools)
+              });
+            }
+
+            log.info(' Extension tools loaded:', {
+              count: Object.keys(extensionTools).length,
+              names: Object.keys(extensionTools)
             });
+
+            // Get MCP tools from background service worker (not in workflow mode)
+            let mcpTools = {};
+            if (!workflowConfig) {
+              try {
+                const mcpManager = await getMCPToolsFromBackground(abortSignal);
+                mcpTools = mcpManager.tools;
+                log.info(' MCP tools loaded:', {
+                  count: Object.keys(mcpTools).length,
+                  names: Object.keys(mcpTools)
+                });
+              } catch (error) {
+                log.warn(' MCP tools unavailable:', error);
+              }
+            }
+
+            // Add agent tools (not in workflow mode unless allowed)
+            const agentTools = workflowConfig ? {} : {
+              analyzeYouTubeVideo: youtubeAgentAsTool,
+            };
+            log.info(' Agent tools loaded:', {
+              count: Object.keys(agentTools).length,
+              names: Object.keys(agentTools)
+            });
+
+            // Combine all tools
+            tools = { ...extensionTools, ...agentTools, ...mcpTools };
+            log.info(' Total tools available:', {
+              count: Object.keys(tools).length,
+              extension: Object.keys(extensionTools).length,
+              mcp: Object.keys(mcpTools).length,
+              agents: Object.keys(agentTools).length,
+              workflowMode: !!workflowConfig
+            });
+
+            // Use remote or workflow-specific prompt
+            systemPrompt = workflowConfig ? workflowConfig.systemPrompt : remoteSystemPrompt;
           }
 
-          // Add specialist agents as tools (only if not in workflow mode or if workflow allows)
-          const agentTools = workflowConfig ? {} : {
-            analyzeYouTubeVideo: youtubeAgentAsTool,
-          };
-
-          // Combine tools: extension tools + agent tools + MCP tools (NO MCP tools in workflow mode)
-          const tools = workflowConfig
-            ? { ...filteredExtensionTools, ...agentTools } // Workflow mode: filtered tools (may include workflow-only tools)
-            : { ...filteredExtensionTools, ...agentTools, ...mcpTools }; // Normal mode: all tools except workflow-only
-
-          const totalToolCount = Object.keys(tools).length;
-
-          log.info('🎯 Total available tools:', {
-            count: totalToolCount,
-            extension: Object.keys(filteredExtensionTools).length,
-            agents: Object.keys(agentTools).length,
-            mcp: workflowConfig ? 0 : Object.keys(mcpTools).length,
-            names: Object.keys(tools),
-            agentNames: Object.keys(agentTools),
-            workflowMode: !!workflowConfig
-          });
-
-          if (totalToolCount === 0) {
-            log.warn('⚠️ NO TOOLS REGISTERED! AI will not be able to use tools.');
-          }
-
-          // Build system prompt with initial page context if available
-          // Use workflow system prompt if in workflow mode
-          let enhancedSystemPrompt = workflowConfig ? workflowConfig.systemPrompt : systemPrompt;
-
+          // Build enhanced prompt with initial page context if available
+          let enhancedPrompt = systemPrompt;
           if (initialPageContext) {
-            enhancedSystemPrompt = `${enhancedSystemPrompt}\n\n[INITIAL PAGE CONTEXT - Captured at thread start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started. If you navigate to different pages or need updated context, use the readPageContent or getActiveTab tools.`;
-            log.info('📄 Enhanced system prompt with initial page context');
+            enhancedPrompt = `${enhancedPrompt}\n\n[INITIAL PAGE CONTEXT - Captured at thread start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started. If you navigate to different pages or need updated context, use the readPageContent or getActiveTab tools.`;
+            log.info(' Enhanced system prompt with initial page context');
           }
 
           if (workflowConfig) {
-            log.info('📋 Using workflow system prompt:', {
+            log.info(' Using workflow system prompt:', {
               workflow: workflowConfig.name,
-              promptLength: enhancedSystemPrompt.length
+              promptLength: enhancedPrompt.length
             });
           }
 
-          // Stream text from AI
-          // Use workflow's stepCount if available, otherwise default to 10
-          const stepCount = workflowConfig?.stepCount || 10;
+          // Convert UI messages to model format
+          const modelMessages = convertToModelMessages(messages);
 
-          log.info('🚀 Calling streamText with Gemini API...', {
-            messageCount: modelMessages.length,
-            toolCount: totalToolCount,
+          // Determine step count based on mode and workflow
+          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 10);
+
+          // Stream with appropriate configuration
+          log.info(' Starting streamText...', {
+            mode: effectiveMode,
+            toolCount: Object.keys(tools).length,
             hasInitialContext: !!initialPageContext,
             stepCount,
             workflowMode: !!workflowConfig
           });
 
-          // Track if we've seen a MALFORMED_FUNCTION_CALL error
-          let hasMalformedError = false;
-          let malformedErrorDetails = '';
-
-          const result = streamText({
-            model: model,
-            system: enhancedSystemPrompt,
+          const result = await streamText({
+            model,
             messages: modelMessages,
-            stopWhen: [stepCountIs(stepCount)],
-            tools, // Include tools in the stream
-            toolChoice: 'auto', // Let AI decide when to use tools
+            tools,
+            system: enhancedPrompt,
             abortSignal,
-            maxRetries: 3, // Retry up to 3 times on errors (including malformed calls)
+            stopWhen: [stepCountIs(stepCount)],
+            toolChoice: 'auto', // Let AI decide when to use tools
+            maxRetries: 3, // Retry up to 3 times on errors
             temperature: 0.7,
             experimental_transform: smoothStream({
               delayInMs: 20,
@@ -278,23 +294,14 @@ export async function streamAIResponse(params: {
             }),
             // Log when a step completes (includes tool calls)
             onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }) => {
-              // Check for malformed function calls or errors via finishReason
-              // Gemini returns 'error' or 'other' when MALFORMED_FUNCTION_CALL occurs
+              // Check for malformed function calls or errors
               if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {
-                log.error('❌ MALFORMED FUNCTION CALL DETECTED', {
+                log.error(' MALFORMED FUNCTION CALL DETECTED', {
                   finishReason,
                   text: text?.substring(0, 200),
                   warnings: warnings,
                   responseInfo: response ? 'Response available' : 'No response',
                   hint: 'Malformed function call. AI SDK will automatically retry with error feedback.'
-                });
-
-                // The AI SDK automatically adds error context to conversation history
-                // and retries (up to maxRetries). The model receives feedback like:
-                // "The previous function call was malformed. Please use valid JSON format."
-                log.info('🔄 AI SDK handling retry with error feedback', {
-                  maxRetries: 3,
-                  behavior: 'Automatic error feedback sent to model'
                 });
 
                 // Write a transient status message to inform user
@@ -310,50 +317,34 @@ export async function streamAIResponse(params: {
                 });
               }
 
-              // CRITICAL: Check for MALFORMED_FUNCTION_CALL via finish reason
-              // This happens when Gemini returns Python code instead of JSON function calls
-              // The AI SDK's automatic retry doesn't help here because it's not malformed JSON,
-              // it's fundamentally wrong (code generation instead of function calling)
+              // Check for MALFORMED_FUNCTION_CALL via response
               const malformedInfo = extractMalformedCallInfo(response);
-
               if (malformedInfo.isMalformed) {
-                log.error('❌ GEMINI MALFORMED_FUNCTION_CALL ERROR', {
+                log.error(' GEMINI MALFORMED_FUNCTION_CALL ERROR', {
                   finishReason: 'MALFORMED_FUNCTION_CALL',
                   generatedCode: malformedInfo.code?.substring(0, 500),
                   fullText: text?.substring(0, 200),
-                  hint: 'Gemini returned Python/code instead of a function call. This bypasses AI SDK retry.'
+                  hint: 'Gemini returned Python/code instead of a function call.'
                 });
 
-                // Log the full generated code for debugging
-                if (malformedInfo.code && malformedInfo.code.length > 0) {
-                  log.info('📋 Full malformed code generated by Gemini:', malformedInfo.code);
-                }
-
-                // Write detailed error to stream with actionable guidance
+                // Write detailed error to stream
                 writer.write({
                   type: 'data-error',
                   id: 'malformed-' + generateId(),
                   data: {
                     error: 'MALFORMED_FUNCTION_CALL',
-                    message: '⚠️ The AI model generated code instead of calling a tool properly. This is a known Gemini limitation.',
+                    message: ' The AI model generated code instead of calling a tool properly.',
                     details: `The model tried to execute: ${malformedInfo.code?.substring(0, 200)}...`,
                     timestamp: Date.now(),
                     context: 'Function calling',
                     suggestions: [
                       'Try simplifying your request into smaller steps',
                       'Ask the model to perform one action at a time',
-                      'Rephrase to avoid triggering code generation',
-                      'If generating reports/PDFs, provide the content directly rather than asking to compute dates/values'
-                    ],
-                    technicalNote: 'Gemini sometimes generates Python code when it should use native function calls with pre-computed JSON values.'
+                      'Rephrase to avoid triggering code generation'
+                    ]
                   },
                   transient: false,
                 });
-
-                // Important: The AI SDK's maxRetries won't help here because this isn't
-                // a parsing error - Gemini fundamentally misunderstood the task.
-                // The error is now logged for the user to see and adjust their request.
-                log.warn('⚠️ MALFORMED_FUNCTION_CALL requires user intervention - AI SDK retry mechanism bypassed');
               }
 
               if (toolCalls && toolCalls.length > 0) {
@@ -398,13 +389,13 @@ export async function streamAIResponse(params: {
               // Check for workflow completion marker
               if (workflowId && threadId && text) {
                 if (text.includes('[WORKFLOW_COMPLETE]')) {
-                  log.info('🏁 WORKFLOW COMPLETION DETECTED - Ending workflow session', {
+                  log.info(' WORKFLOW COMPLETION DETECTED - Ending workflow session', {
                     threadId,
                     workflowId
                   });
                   workflowSessionManager.endSession(threadId);
                 } else {
-                  log.info('🔄 Workflow still active - no completion marker found', {
+                  log.info(' Workflow still active - no completion marker found', {
                     threadId,
                     workflowId
                   });
@@ -414,7 +405,7 @@ export async function streamAIResponse(params: {
           });
 
           // Merge AI stream with status stream
-          log.info('✅ Gemini streamText result received, merging with UI stream...');
+          log.info(' AI streamText result received, merging with UI stream...');
 
           writer.merge(
             result.toUIMessageStream({
@@ -435,7 +426,7 @@ export async function streamAIResponse(params: {
                 });
 
                 onError?.(error instanceof Error ? error : new Error(errorMessage));
-                return `❌ Error: ${errorMessage}`;
+                return ` Error: ${errorMessage}`;
               },
               onFinish: async ({ messages: finalMessages }) => {
                 log.info('UI stream completed', {
@@ -451,8 +442,7 @@ export async function streamAIResponse(params: {
                 });
 
                 // MCP connections are persistent - no cleanup needed
-                // Connections managed by background service worker with keep-alive
-                log.info('✅ MCP tools remain available for next chat');
+                log.info(' MCP tools remain available for next chat');
               },
             })
           );
@@ -476,12 +466,8 @@ export async function streamAIResponse(params: {
           writer.write({
             type: 'text-delta',
             id: 'error-text-' + generateId(),
-            delta: `\n\n❌ **Error occurred:** ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
+            delta: `\n\n **Error occurred:** ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
           });
-
-          // MCP connections are persistent - no cleanup needed
-          // Connections managed by background service worker with keep-alive
-          log.info('✅ MCP tools remain available for next chat');
 
           onError?.(error instanceof Error ? error : new Error(errorMessage));
           throw error;
@@ -489,15 +475,11 @@ export async function streamAIResponse(params: {
       },
     });
 
-    log.info('✅ UI message stream created successfully, returning to caller');
+    log.info(' UI message stream created successfully, returning to caller');
     return stream;
   } catch (error) {
-    log.error('❌ Error creating stream', error);
+    log.error(' Error creating stream', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-
-    // MCP connections are persistent - no cleanup needed
-    // Connections managed by background service worker with keep-alive
-    log.info('✅ MCP tools remain available for next chat');
 
     // Call onError callback if provided
     onError?.(error instanceof Error ? error : new Error(errorMessage));

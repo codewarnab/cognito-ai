@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { UploadIcon } from '../UploadIcon';
 import { VoiceInput } from '../../audio/VoiceInput';
 import { ModeSelector } from './ModeSelector';
+import { LocalBanner } from './LocalBanner';
 import { SendIcon } from './icons/SendIcon';
 import { StopIcon } from './icons/StopIcon';
 import { PaperclipIcon } from './icons/PaperclipIcon';
 import { MentionInput } from '../MentionInput';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
 import { validateFile, createImagePreview, isImageFile } from '../../utils/fileProcessor';
-import type { ExecutionMode, Message } from './types';
+import type { AIMode, RemoteModelType, ModelState, Message } from './types';
 import { SlashCommandDropdown } from './SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
 import type { WorkflowDefinition } from '../../workflows/types';
@@ -26,8 +27,10 @@ interface ChatInputProps {
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
-    executionMode: ExecutionMode;
-    onExecutionModeChange: (mode: ExecutionMode) => void;
+    modelState: ModelState;
+    onModeChange: (mode: AIMode) => void;
+    onModelChange: (model: RemoteModelType) => void;
+    onSettingsClick?: () => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -41,8 +44,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onStop,
     pendingMessageId,
     nextMessageId,
-    executionMode,
-    onExecutionModeChange,
+    modelState,
+    onModeChange,
+    onModelChange,
+    onSettingsClick,
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,6 +177,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     return (
         <div className="copilot-input-container">
+            {/* Show banner when in local mode */}
+            {modelState.mode === 'local' && (
+                <LocalBanner onSettingsClick={onSettingsClick} />
+            )}
+            
             {/* Suggested Actions */}
             <AnimatePresence>
                 {showSuggestedActions && (
@@ -303,9 +313,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     <div className="copilot-composer-bottom">
                         {/* Mode Selector - Bottom Left */}
                         <ModeSelector
-                            executionMode={executionMode}
+                            modelState={modelState}
+                            onModeChange={onModeChange}
+                            onModelChange={onModelChange}
                             showModeDropdown={showModeDropdown}
-                            onExecutionModeChange={onExecutionModeChange}
                             onToggleDropdown={setShowModeDropdown}
                         />
 

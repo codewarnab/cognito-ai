@@ -4,11 +4,13 @@
  * MERGED VERSION: Voice Input + Stop Button + Thread Management + Memory Panel
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChatHeader } from './chat/ChatHeader';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatInput } from './chat/ChatInput';
-import type { Message, ExecutionMode } from './chat/types';
+import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
+import { hasGeminiApiKey } from '../utils/geminiApiKey';
+import type { Message, AIMode, RemoteModelType, ModelState } from './chat/types';
 
 interface CopilotChatWindowProps {
     messages: Message[];
@@ -51,14 +53,68 @@ export function CopilotChatWindow({
     isRecording,
     onMicClick,
 }: CopilotChatWindowProps) {
-    const [executionMode, setExecutionMode] = useState<ExecutionMode>('local');
+    const [modelState, setModelState] = useState<ModelState>({
+        mode: 'local',
+        remoteModel: 'gemini-2.5-flash',
+        hasApiKey: false,
+    });
+
+    // Load initial state
+    useEffect(() => {
+        async function loadModelState() {
+            const config = await getModelConfig();
+            const hasKey = await hasGeminiApiKey();
+
+            setModelState({
+                mode: config.mode,
+                remoteModel: config.remoteModel,
+                hasApiKey: hasKey,
+                conversationStartMode: config.conversationStartMode,
+            });
+        }
+        loadModelState();
+    }, []);
+
+    // Track conversation start mode
+    useEffect(() => {
+        if (messages.length === 1 && !modelState.conversationStartMode) {
+            // First message sent - lock the conversation mode
+            setConversationStartMode(modelState.mode);
+            setModelState(prev => ({
+                ...prev,
+                conversationStartMode: prev.mode,
+            }));
+        }
+    }, [messages.length, modelState.mode, modelState.conversationStartMode]);
+
+    // Clear conversation mode on new thread
+    const handleNewThread = () => {
+        clearConversationStartMode();
+        setModelState(prev => ({
+            ...prev,
+            conversationStartMode: undefined,
+        }));
+        if (onNewThreadClick) {
+            onNewThreadClick();
+        }
+    };
+
+    const handleModeChange = async (mode: AIMode) => {
+        await setModelConfig({ mode });
+        setModelState(prev => ({ ...prev, mode }));
+    };
+
+    const handleModelChange = async (remoteModel: RemoteModelType) => {
+        await setModelConfig({ remoteModel });
+        setModelState(prev => ({ ...prev, remoteModel }));
+    };
 
     return (
         <div className="copilot-chat-window">
             <ChatHeader
                 onSettingsClick={onSettingsClick}
                 onThreadsClick={onThreadsClick}
-                onNewThreadClick={onNewThreadClick}
+                onNewThreadClick={handleNewThread}
                 onMemoryClick={onMemoryClick}
                 onRemindersClick={onRemindersClick}
             />
@@ -81,8 +137,10 @@ export function CopilotChatWindow({
                 onStop={onStop}
                 pendingMessageId={pendingMessageId}
                 nextMessageId={nextMessageId}
-                executionMode={executionMode}
-                onExecutionModeChange={setExecutionMode}
+                modelState={modelState}
+                onModeChange={handleModeChange}
+                onModelChange={handleModelChange}
+                onSettingsClick={onSettingsClick}
             />
         </div>
     );
