@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
-import { ToolCard, Badge } from "../../components/ui/ToolCard";
 import { registerTool } from "../../ai/toolRegistryUtils";
 import { useToolUI } from "../../ai/ToolUIContext";
+import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
 import type { ToolUIState } from "../../ai/ToolUIContext";
 
 const log = createLogger("Actions-Interactions-Scroll");
@@ -105,31 +105,9 @@ export function useScrollPageTool() {
             },
         });
 
+        // Register the UI renderer for this tool - uses CompactToolRenderer
         registerToolUI('scrollPage', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                const scrollInfo = input?.direction === "to-element" && input?.selector
-                    ? `to ${input.selector}`
-                    : input?.amount ? `${input.direction} ${input.amount}px` : input?.direction;
-                return <ToolCard title="Scrolling Page" subtitle={scrollInfo} state="loading" icon="📜" />;
-            }
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return <ToolCard title="Scroll Failed" subtitle={output.error} state="error" icon="📜" />;
-                }
-                return (
-                    <ToolCard title="Page Scrolled" subtitle={output.message || `Scrolled ${output.direction}`} state="success" icon="📜">
-                        {output.scrollDistance !== undefined && (
-                            <Badge label={`${output.scrollDistance}px`} variant="success" />
-                        )}
-                    </ToolCard>
-                );
-            }
-            if (toolState === 'output-error') {
-                return <ToolCard title="Scroll Failed" subtitle={state.errorText || 'Unknown error'} state="error" icon="📜" />;
-            }
-            return null;
+            return <CompactToolRenderer state={state} />;
         });
 
         log.info('✅ scrollPage tool registration complete');

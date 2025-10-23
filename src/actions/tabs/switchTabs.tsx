@@ -28,17 +28,17 @@ export function useSwitchTabsTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'switchTabs',
-            description: 'Switch focus to an existing tab. Can find tabs by URL (exact or partial match) or by tab ID. Brings the tab into focus and makes its window active.',
+            description: 'Switch focus to an ALREADY OPEN tab. CRITICAL: Use this ONLY for tabs that are already open in the browser. Can find tabs by URL (exact or partial match) or by tab ID. Brings the tab into focus and makes its window active. IMPORTANT: Always provide either a URL or tabId - do not call without parameters. If you have a tab ID from openSearchResult, use that for accurate switching.',
             parameters: z.object({
                 url: z.string()
-                    .describe('The URL to search for and switch to. Can be partial or full URL.')
+                    .describe('The URL to search for and switch to. Can be partial or full URL. Example: "github.com" or "https://github.com/user/repo"')
                     .optional(),
                 tabId: z.number()
-                    .describe('The specific tab ID to switch to. Use this if you know the exact tab ID.')
+                    .describe('The specific tab ID to switch to. Use this if you have the tab ID from openSearchResult or other tools.')
                     .optional(),
             }).refine(
                 (data) => data.url || data.tabId,
-                { message: 'Either url or tabId must be provided' }
+                { message: 'Either url or tabId must be provided - cannot call switchTabs without specifying which tab' }
             ),
             execute: async ({ url, tabId }) => {
                 try {
