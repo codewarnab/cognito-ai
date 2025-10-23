@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolCard } from '../../components/ui/CompactToolCard';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Actions-History-Search');
@@ -72,65 +72,40 @@ export function useSearchHistory() {
         });
 
         registerToolUI('searchHistory', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
+            const { state: toolState, input, output, errorText } = state;
 
             if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return <ToolCard title="Searching History" subtitle={`Query: "${input?.query}"`} state="loading" icon="🔍" />;
+                return (
+                    <CompactToolCard
+                        toolName="searchHistory"
+                        state="loading"
+                        input={input}
+                    />
+                );
             }
 
             if (toolState === 'output-available' && output) {
-                if ((output as any).error) {
-                    return <ToolCard title="History Search Failed" subtitle={(output as any).error} state="error" icon="🔍" />;
-                }
-
-                const res: any = output;
+                const cardState = (output as any).error ? 'error' : 'success';
                 return (
-                    <ToolCard
-                        title="History Search Results"
-                        subtitle={`Found ${res.found} page(s)`}
-                        state="success"
-                        icon="🔍"
-                    >
-                        {res.results && res.results.length > 0 && (
-                            <div style={{ marginTop: '8px' }}>
-                                {res.results.map((item: HistorySearchResult) => (
-                                    <div key={item.id} style={{
-                                        padding: '8px',
-                                        marginBottom: '6px',
-                                        background: 'rgba(0,0,0,0.03)',
-                                        borderRadius: '4px',
-                                        fontSize: '12px'
-                                    }}>
-                                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{item.title}</div>
-                                        <div style={{
-                                            opacity: 0.7,
-                                            wordBreak: 'break-all',
-                                            fontSize: '11px',
-                                            marginBottom: '4px'
-                                        }}>
-                                            {item.url}
-                                        </div>
-                                        <div style={{
-                                            fontSize: '10px',
-                                            opacity: 0.6,
-                                            display: 'flex',
-                                            gap: '12px'
-                                        }}>
-                                            {item.lastVisitTime && (
-                                                <span>Last visit: {new Date(item.lastVisitTime).toLocaleString()}</span>
-                                            )}
-                                            <span>Visits: {item.visitCount}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </ToolCard>
+                    <CompactToolCard
+                        toolName="searchHistory"
+                        state={cardState}
+                        input={input}
+                        output={output}
+                        errorText={(output as any).error}
+                    />
                 );
             }
 
             if (toolState === 'output-error') {
-                return <ToolCard title="History Search Failed" subtitle={state.errorText} state="error" icon="🔍" />;
+                return (
+                    <CompactToolCard
+                        toolName="searchHistory"
+                        state="error"
+                        input={input}
+                        errorText={errorText}
+                    />
+                );
             }
 
             return null;

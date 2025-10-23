@@ -71,6 +71,7 @@ export function CopilotChatWindow({
             />
 
             <ChatInput
+                messages={messages}
                 input={input}
                 setInput={setInput}
                 onSendMessage={onSendMessage}

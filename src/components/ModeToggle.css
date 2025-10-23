@@ -1,0 +1,83 @@
+/**
+ * ModeToggle.css - Styles for mode toggle component
+ * Phase 7 Implementation
+ */
+
+.mode-toggle {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mode-toggle-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.mode-toggle-button svg {
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s ease;
+}
+
+.mode-toggle-button:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.mode-toggle-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.mode-toggle-button.active {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mode-toggle-button.active::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    padding: 1px;
+    background: linear-gradient(135deg,
+            rgba(99, 102, 241, 0.4),
+            rgba(168, 85, 247, 0.4));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.mode-toggle-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .mode-toggle-button span {
+        display: none;
+    }
+
+    .mode-toggle-button {
+        padding: 8px 12px;
+    }
+}

@@ -175,6 +175,30 @@ const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'Click failed' };
 };
 
+const clickByTextFormatter: ActionFormatter = ({ state, input, output }) => {
+    const searchText = input?.text;
+    const clicked = output?.clicked;
+    const matchInfo = output?.totalMatches > 1 ? ` (match ${output.clickedIndex} of ${output.totalMatches})` : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Searching & clicking',
+            description: searchText ? `"${truncateText(searchText, 40)}"` : undefined
+        };
+    }
+    if (state === 'success') {
+        const clickedText = clicked?.text || searchText;
+        return {
+            action: 'Element clicked',
+            description: clickedText ? `"${truncateText(clickedText, 30)}"${matchInfo}` : matchInfo
+        };
+    }
+    return {
+        action: 'Click failed',
+        description: searchText ? `"${truncateText(searchText, 40)}"` : undefined
+    };
+};
+
 const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) => {
     const target = input?.target;
     const text = input?.text || '';
@@ -239,6 +263,124 @@ const scrollFormatter: ActionFormatter = ({ state, input }) => {
         };
     }
     return { action: 'Scroll failed' };
+};
+
+const extractTextFormatter: ActionFormatter = ({ state, input, output }) => {
+    const selector = input?.selector;
+    const charCount = output?.text?.length || 0;
+    const structure = output?.structure;
+    const pageType = structure?.pageType;
+    const count = output?.count;
+    const searchBars = output?.searchBars;
+    const primarySearchBar = output?.primarySearchBar;
+
+    if (state === 'loading') {
+        return {
+            action: 'Extracting text',
+            description: selector ? truncateText(selector, 40) : 'entire page'
+        };
+    }
+    if (state === 'success') {
+        // Build description with structure info
+        let parts: string[] = [];
+
+        if (charCount > 0) {
+            parts.push(`${charCount} chars`);
+        }
+
+        if (count) {
+            parts.push(`${count} elements`);
+        }
+
+        // Prioritize search bar info if detected
+        if (searchBars && searchBars.length > 0) {
+            const visibleCount = searchBars.filter((sb: any) => sb.isVisible).length;
+            parts.push(`${searchBars.length} search bar${searchBars.length > 1 ? 's' : ''}${visibleCount < searchBars.length ? ` (${visibleCount} visible)` : ''}`);
+        }
+
+        if (pageType && pageType !== 'unknown') {
+            parts.push(`${pageType} page`);
+        }
+
+        if (structure?.headings) {
+            const headingCount = (structure.headings.h1?.length || 0) +
+                (structure.headings.h2?.length || 0) +
+                (structure.headings.h3?.length || 0);
+            if (headingCount > 0) {
+                parts.push(`${headingCount} headings`);
+            }
+        }
+
+        return {
+            action: 'Text extracted',
+            description: parts.join(' • ') || undefined
+        };
+    }
+    return {
+        action: 'Extraction failed',
+        description: selector ? truncateText(selector, 40) : undefined
+    };
+}; const scrollIntoViewFormatter: ActionFormatter = ({ state, input }) => {
+    const selector = input?.selector;
+    const block = input?.block;
+
+    if (state === 'loading') {
+        return {
+            action: 'Scrolling to element',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Scrolled to element',
+            description: selector ? `${truncateText(selector, 30)}${block ? ` (${block})` : ''}` : undefined
+        };
+    }
+    return {
+        action: 'Scroll failed',
+        description: selector ? truncateText(selector, 40) : undefined
+    };
+};
+
+const findSearchBarFormatter: ActionFormatter = ({ state, output }) => {
+    const count = output?.count || 0;
+    const primarySearchBar = output?.primarySearchBar;
+
+    if (state === 'loading') {
+        return {
+            action: 'Finding search bars',
+            description: undefined
+        };
+    }
+    if (state === 'success') {
+        let description = `${count} search bar${count !== 1 ? 's' : ''}`;
+
+        // Add info about the primary search bar
+        if (primarySearchBar) {
+            const details: string[] = [];
+            if (primarySearchBar.placeholder) {
+                details.push(`"${truncateText(primarySearchBar.placeholder, 20)}"`);
+            }
+            if (primarySearchBar.id) {
+                details.push(`#${primarySearchBar.id}`);
+            } else if (primarySearchBar.name) {
+                details.push(`name="${primarySearchBar.name}"`);
+            }
+
+            if (details.length > 0) {
+                description += ` • ${details.join(', ')}`;
+            }
+        }
+
+        return {
+            action: 'Search bars found',
+            description
+        };
+    }
+    return {
+        action: 'No search bars found',
+        description: undefined
+    };
 };
 
 const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
@@ -504,6 +646,45 @@ const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'History search failed' };
 };
 
+const getRecentHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
+    const hours = input?.hours || 24;
+
+    if (state === 'loading') {
+        return {
+            action: 'Getting recent history',
+            description: `Last ${hours} hours`
+        };
+    }
+    if (state === 'success') {
+        const count = output?.found || output?.results?.length || 0;
+        return {
+            action: 'Recent history retrieved',
+            description: `${count} pages in ${output?.hours || hours}h`
+        };
+    }
+    return { action: 'Failed to get history' };
+};
+
+const getUrlVisitsFormatter: ActionFormatter = ({ state, input, output }) => {
+    const url = input?.url;
+    const domain = url ? extractDomain(url) : '';
+
+    if (state === 'loading') {
+        return {
+            action: 'Getting visit details',
+            description: domain ? truncateText(domain, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        const count = output?.visitCount || output?.visits?.length || 0;
+        return {
+            action: 'Visit details retrieved',
+            description: `${count} visits`
+        };
+    }
+    return { action: 'Failed to get visits' };
+};
+
 // YouTube Tools
 const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }) => {
     const videoTitle = output?.videoTitle;
@@ -541,6 +722,42 @@ const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }
     };
 };
 
+const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
+    const question = input?.question;
+    const wasChunked = output?.wasChunked;
+
+    if (state === 'loading') {
+        return {
+            action: 'Analyzing YouTube video',
+            description: question ? truncateText(question, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        const answerLength = output?.answer?.length || 0;
+        const duration = output?.videoDuration;
+        const durationText = duration
+            ? duration >= 3600
+                ? `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`
+                : duration >= 60
+                    ? `${Math.floor(duration / 60)}m`
+                    : `${duration}s`
+            : '';
+
+        return {
+            action: 'Video analyzed',
+            description: wasChunked
+                ? `Long video (${durationText}) - chunked analysis`
+                : durationText
+                    ? `${durationText} video`
+                    : `Analysis complete`
+        };
+    }
+    return {
+        action: 'Analysis failed',
+        description: question ? truncateText(question, 40) : undefined
+    };
+};
+
 // Formatter Registry
 const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -560,10 +777,14 @@ const formatters: Record<string, ActionFormatter> = {
     extractContent: readPageContentFormatter,
     getSelectedText: getSelectedTextFormatter,
     getSelection: getSelectedTextFormatter,
+    extractText: extractTextFormatter,
+    scrollIntoView: scrollIntoViewFormatter,
+    findSearchBar: findSearchBarFormatter,
 
     // Interactions
     clickElement: clickElementFormatter,
     click: clickElementFormatter,
+    clickByText: clickByTextFormatter,
     typeInField: typeInFieldFormatter,
     type: typeInFieldFormatter,
     pressKey: pressKeyFormatter,
@@ -593,10 +814,13 @@ const formatters: Record<string, ActionFormatter> = {
     // History
     getHistory: getHistoryFormatter,
     searchHistory: getHistoryFormatter,
+    getRecentHistory: getRecentHistoryFormatter,
+    getUrlVisits: getUrlVisitsFormatter,
 
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
     youtubeTranscript: getYoutubeTranscriptFormatter,
+    youtubeAgentAsTool: youtubeAgentFormatter,
 };
 
 // Default formatter for tools without specific formatters

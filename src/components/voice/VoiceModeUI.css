@@ -1,0 +1,517 @@
+/**
+ * VoiceModeUI Styles
+ * Dark theme with glassmorphism effects
+ */
+
+.voice-mode-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f35 50%, #0f1729 100%);
+    color: var(--text-primary);
+    overflow: hidden;
+    position: relative;
+}
+
+.voice-mode-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(74, 144, 255, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Header */
+.voice-mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: rgba(15, 20, 35, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(74, 144, 255, 0.15);
+    z-index: 10;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.voice-mode-back-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(74, 144, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(74, 144, 255, 0.3);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.voice-mode-back-button:hover:not(:disabled) {
+    color: white;
+    background: rgba(74, 144, 255, 0.2);
+    border-color: rgba(74, 144, 255, 0.5);
+    transform: translateX(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 255, 0.2);
+}
+
+.voice-mode-back-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.voice-mode-back-button svg {
+    flex-shrink: 0;
+}
+
+/* Main Content - Orb Area */
+.voice-mode-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.voice-mode-orb {
+    width: 500px;
+    height: 500px;
+    max-width: 90vw;
+    max-height: 60vh;
+    position: relative;
+    z-index: 2;
+}
+
+.voice-mode-content::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(74, 144, 255, 0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: voice-mode-glow-pulse 4s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes voice-mode-glow-pulse {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Loading State */
+.voice-mode-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    color: rgba(255, 255, 255, 0.7);
+    position: relative;
+    z-index: 2;
+}
+
+.voice-mode-loading-spinner {
+    width: 56px;
+    height: 56px;
+    border: 4px solid rgba(74, 144, 255, 0.2);
+    border-top-color: rgb(74, 144, 255);
+    border-right-color: rgb(74, 144, 255);
+    border-radius: 50%;
+    animation: voice-mode-spin 1s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+    box-shadow: 0 0 20px rgba(74, 144, 255, 0.3);
+    position: relative;
+}
+
+.voice-mode-loading-spinner::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 80%;
+    border: 3px solid transparent;
+    border-top-color: rgba(168, 85, 247, 0.6);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: voice-mode-spin-reverse 0.8s linear infinite;
+}
+
+@keyframes voice-mode-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes voice-mode-spin-reverse {
+    to {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
+}
+
+.voice-mode-loading p {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    animation: voice-mode-fade-pulse 2s ease-in-out infinite;
+}
+
+@keyframes voice-mode-fade-pulse {
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Status Display */
+.voice-mode-status {
+    padding: 16px 20px;
+    background: rgba(15, 20, 35, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(74, 144, 255, 0.15);
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.voice-mode-status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    background: rgba(30, 35, 50, 0.6);
+    border: 1px solid rgba(74, 144, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+}
+
+.voice-mode-status-indicator.with-notice {
+    padding: 14px 24px;
+}
+
+.voice-mode-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.voice-mode-status-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.5px;
+}
+
+/* Status States */
+.voice-mode-status-indicator.ready {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.voice-mode-status-indicator.ready .voice-mode-status-dot {
+    background: rgb(34, 197, 94);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+}
+
+.voice-mode-status-indicator.initializing {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.voice-mode-status-indicator.initializing .voice-mode-status-dot {
+    background: rgb(251, 191, 36);
+    animation: voice-mode-pulse 1.5s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+}
+
+.voice-mode-status-indicator.listening {
+    background: rgba(74, 144, 255, 0.15);
+    border-color: rgba(74, 144, 255, 0.3);
+}
+
+.voice-mode-status-indicator.listening .voice-mode-status-dot {
+    background: rgb(74, 144, 255);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(74, 144, 255, 0.8);
+}
+
+.voice-mode-status-indicator.thinking {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.voice-mode-status-indicator.thinking .voice-mode-status-dot {
+    background: rgb(168, 85, 247);
+    animation: voice-mode-pulse 1.2s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
+}
+
+.voice-mode-status-indicator.speaking {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.voice-mode-status-indicator.speaking .voice-mode-status-dot {
+    background: rgb(34, 197, 94);
+    animation: voice-mode-pulse 0.8s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.8);
+}
+
+.voice-mode-status-indicator.error {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.voice-mode-status-indicator.error .voice-mode-status-dot {
+    background: rgb(239, 68, 68);
+    animation: none;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+}
+
+.voice-mode-status-indicator.retrying {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.voice-mode-status-indicator.retrying .voice-mode-status-dot {
+    background: rgb(251, 191, 36);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+}
+
+.voice-mode-status-indicator.disconnected {
+    background: rgba(107, 114, 128, 0.15);
+    border-color: rgba(107, 114, 128, 0.3);
+}
+
+.voice-mode-status-indicator.disconnected .voice-mode-status-dot {
+    background: rgb(107, 114, 128);
+    box-shadow: 0 0 10px rgba(107, 114, 128, 0.4);
+}
+
+.voice-mode-status-indicator.executing {
+    background: rgba(236, 72, 153, 0.15);
+    border-color: rgba(236, 72, 153, 0.3);
+}
+
+.voice-mode-status-indicator.executing .voice-mode-status-dot {
+    background: rgb(236, 72, 153);
+    animation: voice-mode-pulse 1s ease-in-out infinite;
+    box-shadow: 0 0 20px rgba(236, 72, 153, 0.8);
+}
+
+/* Inline Notice within Status */
+.voice-mode-inline-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(236, 72, 153, 0.15);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 12px;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.voice-mode-inline-notice svg {
+    flex-shrink: 0;
+    color: rgb(236, 72, 153);
+}
+
+.voice-mode-inline-notice .notice-text {
+    white-space: nowrap;
+}
+
+@keyframes voice-mode-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Error Display */
+.voice-mode-error {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 20px 16px;
+    padding: 14px 18px;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    border-radius: 12px;
+    color: rgb(252, 165, 165);
+    font-size: 14px;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+/* Warning Display */
+.voice-mode-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 20px 16px;
+    padding: 14px 18px;
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    border-radius: 12px;
+    color: rgb(253, 224, 71);
+    font-size: 14px;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+/* Setup Notification */
+.voice-mode-setup-notification {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 20px 16px;
+    padding: 14px 18px;
+    background: rgba(74, 144, 255, 0.15);
+    border: 1px solid rgba(74, 144, 255, 0.4);
+    border-radius: 12px;
+    color: rgb(147, 197, 253);
+    font-size: 14px;
+    font-weight: 500;
+    animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(74, 144, 255, 0.2);
+    position: relative;
+    z-index: 10;
+}
+
+.voice-mode-setup-notification svg {
+    flex-shrink: 0;
+    color: rgb(74, 144, 255);
+}
+
+.voice-mode-setup-notification span {
+    flex: 1;
+}
+
+@keyframes voice-mode-slide-in {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.voice-mode-error svg {
+    flex-shrink: 0;
+}
+
+.voice-mode-error span {
+    flex: 1;
+}
+
+.voice-mode-error-dismiss {
+    padding: 4px;
+    background: transparent;
+    color: inherit;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.voice-mode-error-dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* Controls Wrapper */
+.voice-mode-controls-wrapper {
+    padding: 20px;
+    background: rgba(15, 20, 35, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(74, 144, 255, 0.15);
+    position: relative;
+    z-index: 10;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .voice-mode-back-button span {
+        display: none;
+    }
+
+    .voice-mode-status-text {
+        font-size: 12px;
+    }
+
+    .voice-mode-error {
+        font-size: 12px;
+    }
+}
+
+/* Dark mode enhancement */
+@media (prefers-color-scheme: dark) {
+    .voice-mode-container {
+        background: linear-gradient(135deg, #0a0e1a 0%, #141f30 100%);
+    }
+}

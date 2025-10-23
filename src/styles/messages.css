@@ -181,11 +181,23 @@
 }
 
 .markdown-content code {
-    background: rgba(0, 0, 0, 0.1);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.9em;
+    border-radius: 0.25rem;
+    background: rgb(229 231 235);
+    padding: 0.3rem;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: rgb(228 228 231);
+}
+
+/* Dark mode code styling */
+@media (prefers-color-scheme: dark) {
+    .markdown-content code {
+        background: rgb(39 39 42);
+    }
 }
 
 .markdown-content pre {

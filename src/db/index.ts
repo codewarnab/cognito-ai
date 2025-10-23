@@ -37,19 +37,18 @@ export interface ChatThread {
 
 /**
  * Chat message record for side panel chat UI
+ * Stores the complete UIMessage structure from AI SDK to preserve:
+ * - Tool call parts (tool-call, tool-result)
+ * - Text parts
+ * - Custom data parts
+ * - All metadata and timestamps
  */
 export interface ChatMessage {
     id: string;
     threadId: string;
-    role: 'user' | 'assistant';
-    content: string;
+    message: any; // Store complete UIMessage as JSON (typed as 'any' to avoid circular deps)
     timestamp: number;
     sequenceNumber?: number; // Added to preserve message order
-    metadata?: {
-        streaming?: boolean;
-        error?: boolean;
-        regenerated?: boolean;
-    };
 }
 
 // ============================================================================
@@ -82,6 +81,31 @@ export class AppDB extends Dexie {
             settings: 'key',
             chatMessages: 'id, threadId, timestamp, sequenceNumber',
             chatThreads: 'id, createdAt, updatedAt'
+        });
+
+        // Version 4: Store complete UIMessage structure for tool call persistence
+        this.version(4).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp, sequenceNumber',
+            chatThreads: 'id, createdAt, updatedAt'
+        }).upgrade(tx => {
+            // Migration: Convert old format (role + content) to new format (message object)
+            return tx.table('chatMessages').toCollection().modify((msg: any) => {
+                // Check if this is old format (has 'role' and 'content' fields)
+                if (msg.role && msg.content && !msg.message) {
+                    // Convert to new format with complete UIMessage structure
+                    msg.message = {
+                        id: msg.id,
+                        role: msg.role,
+                        parts: [{ type: 'text', text: msg.content }],
+                        createdAt: new Date(msg.timestamp)
+                    };
+                    // Remove old fields
+                    delete msg.role;
+                    delete msg.content;
+                    delete msg.metadata;
+                }
+            });
         });
     }
 }
@@ -228,12 +252,12 @@ export async function deleteThread(threadId: string): Promise<void> {
 // ============================================================================
 
 /**
- * Save a chat message
+ * Save a chat message with complete UIMessage structure
  */
 export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
     const fullMessage: ChatMessage = {
         ...message,
-        id: crypto.randomUUID(),
+        id: message.message.id || crypto.randomUUID(),
         timestamp: Date.now()
     };
     await db.chatMessages.add(fullMessage);
@@ -246,6 +270,7 @@ export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timesta
 
 /**
  * Load chat history for a specific thread
+ * Returns messages with complete UIMessage structure including tool calls
  */
 export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
     const messages = await db.chatMessages
@@ -281,6 +306,21 @@ export async function clearChatHistory(): Promise<void> {
  */
 export async function deleteChatMessage(id: string): Promise<void> {
     await db.chatMessages.delete(id);
+}
+
+/**
+ * Validate that a message has the expected structure
+ * Useful for debugging and ensuring data integrity
+ */
+export function isValidUIMessage(msg: any): boolean {
+    return (
+        msg &&
+        typeof msg === 'object' &&
+        'id' in msg &&
+        'role' in msg &&
+        'parts' in msg &&
+        Array.isArray(msg.parts)
+    );
 }
 
 // ============================================================================

@@ -1,10 +1,8 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
-import { ToolCard, Badge } from "../../components/ui/ToolCard";
 import { registerTool } from "../../ai/toolRegistryUtils";
 import { useToolUI } from "../../ai/ToolUIContext";
-import type { ToolUIState } from "../../ai/ToolUIContext";
 
 const log = createLogger("Actions-Interactions-Click");
 
