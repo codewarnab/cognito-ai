@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-ChromeSearch');
@@ -21,7 +21,7 @@ export function useChromeSearchTool() {
 
     useEffect(() => {
         log.info('🔧 Registering chromeSearch tool...');
-        
+
         // Register the tool with AI SDK v5
         registerTool({
             name: 'chromeSearch',
@@ -153,72 +153,7 @@ export function useChromeSearchTool() {
 
         // Register the UI renderer for this tool
         registerToolUI('chromeSearch', (state: ToolUIState) => {
-            const { state: toolState, input, output } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <ToolCard 
-                        title="Searching Chrome" 
-                        subtitle={`"${input?.query}"`}
-                        state="loading" 
-                        icon="🔍" 
-                    />
-                );
-            }
-            
-            if (toolState === 'output-available' && output) {
-                if (output.error) {
-                    return (
-                        <ToolCard 
-                            title="Search Failed" 
-                            subtitle={output.error} 
-                            state="error" 
-                            icon="🔍" 
-                        />
-                    );
-                }
-                
-                const resultCount = output.results?.length || 0;
-                return (
-                    <ToolCard 
-                        title="Chrome Search Results" 
-                        subtitle={`${resultCount} results for "${output.query}"`}
-                        state="success" 
-                        icon="🔍" 
-                    >
-                        {output.results && output.results.length > 0 && (
-                            <details className="tool-details">
-                                <summary>View results</summary>
-                                <div className="search-results">
-                                    {output.results.slice(0, 10).map((result: any, index: number) => (
-                                        <div key={index} className="search-result-item">
-                                            <div className="result-type">{result.type}</div>
-                                            <div className="result-title">{result.title}</div>
-                                            <div className="result-url">{result.url}</div>
-                                        </div>
-                                    ))}
-                                    {output.results.length > 10 && (
-                                        <div className="more-results">... and {output.results.length - 10} more results</div>
-                                    )}
-                                </div>
-                            </details>
-                        )}
-                    </ToolCard>
-                );
-            }
-            
-            if (toolState === 'output-error') {
-                return (
-                    <ToolCard 
-                        title="Search Failed" 
-                        subtitle={state.errorText} 
-                        state="error" 
-                        icon="🔍" 
-                    />
-                );
-            }
-            
-            return null;
+            return <CompactToolRenderer state={state} />;
         });
 
         log.info('✅ chromeSearch tool registration complete');

@@ -367,6 +367,41 @@ export function registerTextExtractionInteractions() {
                         target: { tabId: tab.id },
                         args: [Boolean(onlyVisible)],
                         func: (visibleOnly: boolean) => {
+                            // Animation: Search Detection (Option A)
+                            function showSearchDetection(elements: Element[]) {
+                                try {
+                                    const css = `
+                                        @keyframes ai-search-pulse {
+                                            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+                                            50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+                                        }
+                                        .ai-search-detected {
+                                            animation: ai-search-pulse 300ms ease-out !important;
+                                            border: 2px solid rgba(59, 130, 246, 0.8) !important;
+                                        }
+                                    `;
+                                    const style = document.createElement('style');
+                                    style.id = 'ai-search-detection-style';
+                                    style.textContent = css;
+                                    document.head.appendChild(style);
+
+                                    for (let i = 0; i < elements.length; i++) {
+                                        setTimeout(() => {
+                                            (elements[i] as HTMLElement).classList.add('ai-search-detected');
+                                            setTimeout(() => {
+                                                (elements[i] as HTMLElement).classList.remove('ai-search-detected');
+                                            }, 300);
+                                        }, i * 100);
+                                    }
+
+                                    setTimeout(() => {
+                                        try {
+                                            document.getElementById('ai-search-detection-style')?.remove();
+                                        } catch (e) { }
+                                    }, 300 + elements.length * 100);
+                                } catch (e) { }
+                            }
+
                             const searchBars: Array<{
                                 selector: string;
                                 type: string;
@@ -474,6 +509,19 @@ export function registerTextExtractionInteractions() {
                                     suggestion: "Try looking for other input fields or navigation elements"
                                 };
                             }
+
+                            // Show animation for detected search bars
+                            const detectedElements = Array.from(allCandidates).filter((input) => {
+                                const el = input as HTMLInputElement;
+                                const rect = el.getBoundingClientRect();
+                                const style = window.getComputedStyle(el);
+                                const isVisible = style.display !== 'none' &&
+                                    style.visibility !== 'hidden' &&
+                                    rect.width > 0 &&
+                                    rect.height > 0;
+                                return !visibleOnly || isVisible;
+                            });
+                            showSearchDetection(detectedElements);
 
                             return {
                                 success: true,

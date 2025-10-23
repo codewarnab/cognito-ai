@@ -35,7 +35,17 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "Return concise summaries with verified outcomes, not promises or intentions.",
                 "SMART FOLLOW-UPS: After answering questions via search, ALWAYS suggest 1-2 relevant follow-up actions based on what you found. If URLs/websites are found, offer to visit them. If no URLs, suggest related searches or deeper dives.",
                 "FOLLOW-UP EXAMPLES: Found website URL → 'Should I visit their website at [url]?' | Found GitHub → 'Would you like me to check their repositories?' | Person without URL → 'Should I search for their recent work or publications?' | Technical topic → 'Would you like code examples or documentation?' | News/events → 'Should I look for more recent updates?' (Suggestions must be natural and contextual.)",
-                "CRITICAL TOOL CALLING: NEVER generate Python code like 'print(default_api.toolName(...))'. ALWAYS call tools directly using the function calling mechanism. DO NOT wrap tool calls in print statements or use API-style prefixes.",
+                "CRITICAL TOOL CALLING FORMAT: Use ONLY the native function calling mechanism. NEVER generate Python-style code, print statements, or API-style syntax. Tool arguments must be valid JSON objects. If a tool call fails due to malformed syntax, you will receive error feedback and automatically retry with correct format.",
+                "MALFORMED FUNCTION CALL PREVENTION:",
+                "  • NEVER write Python code like 'from datetime import date' or 'print(default_api.functionName())' in responses",
+                "  • NEVER generate code snippets to prepare function arguments - compute values directly in JSON",
+                "  • NEVER use print(), variable assignments (=), imports, or any programming constructs",
+                "  • Tool calls must be DIRECT function invocations with JSON arguments only",
+                "  • If you need to compute a value (like today's date), compute it mentally and pass the RESULT in JSON",
+                "  • Example CORRECT: generatePDF({content: 'Report text here', filename: 'research-codewarnab-2025-01-15'})",
+                "  • Example WRONG: from datetime import date; file_name = f'report-{date.today()}'; print(generatePDF(...))",
+                "  • If you generate code instead of a function call, you will receive a MALFORMED_FUNCTION_CALL error",
+                "  • This is a critical failure mode - always use direct function calls with pre-computed JSON values",
             ],
 
             toolPlaybook: [
@@ -118,6 +128,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    * Visual feedback: highlights the field yellow before typing",
                 "    * Parameters: text (required), target (input description, optional - uses focused if omitted), clearFirst (bool), pressEnter (bool), humanLike (bool, default true)",
                 "    * Examples: typeInField({text: 'hello', target: 'search box'}), typeInField({text: 'test@example.com', target: 'email field', pressEnter: true})",
+                "    * CRITICAL: After searching (typing + pressing Enter), ALWAYS call pressKey({key: 'Escape'}) to close any lingering search dropdowns/overlays",
                 
                 "  - clickByText: Click ANY element by searching for visible text anywhere on the page",
                 "    * Searches ALL text on page (buttons, links, headings, labels, divs, spans - everything)",
@@ -134,6 +145,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    * For typing text, use typeInField instead",
                 "    * Parameters: key (e.g., 'Enter', 'Escape', 'Tab', 'ArrowDown', 'Space', 'Backspace')",
                 "    * Examples: pressKey({key: 'Enter'}), pressKey({key: 'Escape'}), pressKey({key: 'Tab'})",
+                "    * IMPORTANT: Use Escape to close search dropdowns, overlays, or modal dialogs after search operations",
                 
                 "INTERACTION BEST PRACTICES:",
                 "  - After navigation/tab changes, use readPageContent to see what inputs/buttons/links are available",
