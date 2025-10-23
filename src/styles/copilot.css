@@ -1472,3 +1472,204 @@ body {
 .markdown-content a:visited {
     color: #1264FF;
 }
+
+/* File Attachments Styles */
+.file-attachments-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.file-attachment {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(30, 40, 60, 0.6);
+    border: 1.5px solid rgba(100, 120, 150, 0.3);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.file-attachment:hover {
+    background: rgba(40, 50, 70, 0.7);
+    border-color: rgba(120, 140, 170, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Image Attachment */
+.file-attachment-image {
+    position: relative;
+    width: 75px;
+    height: 75px;
+    padding: 3px;
+}
+
+.file-attachment-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+}
+
+.file-attachment-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    padding: 0;
+}
+
+.file-attachment-image:hover .file-attachment-remove,
+.file-attachment-document:hover .file-attachment-remove {
+    opacity: 1;
+}
+
+.file-attachment-remove:hover {
+    background: rgba(255, 50, 50, 0.9);
+}
+
+/* Document Attachment */
+.file-attachment-document {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    min-width: 130px;
+    max-width: 220px;
+    position: relative;
+    background: rgba(35, 45, 65, 0.7);
+}
+
+.file-attachment-document:hover {
+    background: rgba(45, 55, 75, 0.8);
+}
+
+.file-attachment-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.file-attachment-name {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    font-weight: 500;
+}
+
+.file-attachment-document .file-attachment-remove {
+    position: relative;
+    top: auto;
+    right: auto;
+    opacity: 0.6;
+    background: transparent;
+    margin-left: auto;
+}
+
+.file-attachment-document .file-attachment-remove:hover {
+    opacity: 1;
+    background: rgba(255, 50, 50, 0.3);
+}
+
+/* File Attachments in Messages */
+.message-file-attachment {
+    margin: 8px 0;
+    display: inline-block;
+}
+
+.message-file-image {
+    position: relative;
+    width: 75px;
+    height: 75px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(30, 40, 60, 0.6);
+    border: 1.5px solid rgba(100, 120, 150, 0.3);
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.message-file-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.message-file-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.message-file-document {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    min-width: 130px;
+    max-width: 220px;
+    background: rgba(35, 45, 65, 0.7);
+    border-radius: 10px;
+    border: 1.5px solid rgba(100, 120, 150, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.message-file-document:hover {
+    background: rgba(45, 55, 75, 0.8);
+    border-color: rgba(120, 140, 170, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.message-file-document .file-attachment-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.message-file-document .file-attachment-name {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    font-weight: 500;
+}
+
+/* Message parts container for proper spacing */
+.message-parts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-parts .message-file-attachment:first-child {
+    margin-top: 0;
+}
+
+.message-parts .message-file-attachment:last-child {
+    margin-bottom: 0;
+}

@@ -1,18 +1,23 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { UploadIcon } from '../UploadIcon';
 import { VoiceInput } from '../../audio/VoiceInput';
 import { ModeSelector } from './ModeSelector';
 import { SendIcon } from './icons/SendIcon';
 import { StopIcon } from './icons/StopIcon';
+import { PaperclipIcon } from './icons/PaperclipIcon';
 import { MentionInput } from '../MentionInput';
+import { FileAttachment, type FileAttachmentData } from './FileAttachment';
+import { validateFile, createImagePreview, isImageFile } from '../../utils/fileProcessor';
 import type { ExecutionMode, Message } from './types';
+
+const log = createLogger('ChatInput');
 
 interface ChatInputProps {
     messages: Message[];
     input: string;
     setInput: (value: string) => void;
-    onSendMessage: (messageText?: string) => void;
+    onSendMessage: (messageText?: string, attachments?: FileAttachmentData[]) => void;
     isLoading: boolean;
     isRecording?: boolean;
     onMicClick?: () => void;
@@ -40,7 +45,58 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const uploadIconRef = useRef<any>(null);
-    const [showModeDropdown, setShowModeDropdown] = React.useState(false);
+    const paperclipIconRef = useRef<any>(null);
+    const [showModeDropdown, setShowModeDropdown] = useState(false);
+    const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
+
+    // Handle file selection
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        
+        for (const file of files) {
+            const validation = validateFile(file);
+            
+            if (!validation.valid) {
+                log.error('File validation failed', { file: file.name, error: validation.error });
+                alert(validation.error);
+                continue;
+            }
+
+            const id = `${Date.now()}-${Math.random()}`;
+            const type = isImageFile(file) ? 'image' : 'document';
+            
+            // Create preview for images
+            let preview: string | undefined;
+            if (type === 'image') {
+                try {
+                    preview = await createImagePreview(file);
+                } catch (error) {
+                    log.error('Failed to create image preview', error);
+                }
+            }
+
+            setAttachments(prev => [
+                ...prev,
+                { id, file, preview, type }
+            ]);
+        }
+
+        // Reset input
+        e.target.value = '';
+    };
+
+    // Remove attachment
+    const handleRemoveAttachment = (id: string) => {
+        setAttachments(prev => prev.filter(att => att.id !== id));
+    };
+
+    // Handle send with attachments
+    const handleSend = () => {
+        if (!input.trim() && attachments.length === 0) return;
+        
+        onSendMessage(input, attachments);
+        setAttachments([]);
+    };
 
     // Show suggestions when there are no messages
     const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading;
@@ -114,7 +170,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
-                    onSendMessage();
+                    handleSend();
                 }}
                 className="copilot-input-form"
             >
@@ -122,11 +178,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     ref={fileInputRef}
                     type="file"
                     multiple
+                    accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.csv"
                     style={{ display: 'none' }}
-                    onChange={() => { }}
+                    onChange={handleFileChange}
                 />
 
                 <div className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
+                    {/* File Attachments Preview */}
+                    {attachments.length > 0 && (
+                        <div className="file-attachments-container">
+                            {attachments.map(attachment => (
+                                <FileAttachment
+                                    key={attachment.id}
+                                    attachment={attachment}
+                                    onRemove={handleRemoveAttachment}
+                                />
+                            ))}
+                        </div>
+                    )}
+
                     {/* Main input area - MentionInput with @ support */}
                     <div className="copilot-composer-primary">
                         <div style={{ position: 'relative', width: '100%' }}>
@@ -134,12 +204,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                 value={input}
                                 onChange={setInput}
                                 onSend={() => {
-                                    if (input.trim() && !isLoading) {
-                                        onSendMessage();
+                                    if ((input.trim() || attachments.length > 0) && !isLoading) {
+                                        handleSend();
                                     }
                                 }}
                                 disabled={isLoading}
-                                placeholder="Ask me to do something (type @ to mention tabs)"
+                                placeholder={attachments.length > 0 
+                                    ? "Add a message (optional)..." 
+                                    : "Ask me to do something (type @ to mention tabs)"}
                                 autoFocus={true}
                             />
 
@@ -185,35 +257,37 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                     // The pill animation will show based on external state
                                 }}
                                 onRecordingComplete={(finalText) => {
-                                    onSendMessage(finalText);
+                                    onSendMessage(finalText, attachments);
                                     setInput('');
+                                    setAttachments([]);
                                 }}
                                 className="copilot-voice-input"
                                 externalRecordingState={isRecording}
                                 onExternalRecordingToggle={onMicClick}
                             />
 
+                            {/* Paperclip - File Upload */}
                             <button
                                 type="button"
                                 className="copilot-action-button"
-                                title="Upload file"
+                                title="Attach file (Images, PDFs, Documents)"
                                 tabIndex={-1}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     fileInputRef.current?.click();
                                 }}
-                                onMouseEnter={() => uploadIconRef.current?.startAnimation()}
-                                onMouseLeave={() => uploadIconRef.current?.stopAnimation()}
+                                onMouseEnter={() => paperclipIconRef.current?.startAnimation()}
+                                onMouseLeave={() => paperclipIconRef.current?.stopAnimation()}
                             >
-                                <UploadIcon ref={uploadIconRef} size={16} />
+                                <PaperclipIcon ref={paperclipIconRef} size={16} />
                             </button>
 
-                            {input.trim() && !isLoading && (
+                            {(input.trim() || attachments.length > 0) && !isLoading && (
                                 <button
                                     type="submit"
                                     className="copilot-send-button-sm"
                                     title="Send message (Enter)"
-                                    disabled={!input.trim() || isLoading}
+                                    disabled={(!input.trim() && attachments.length === 0) || isLoading}
                                 >
                                     <SendIcon size={18} />
                                 </button>
