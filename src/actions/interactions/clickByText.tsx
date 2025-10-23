@@ -248,25 +248,44 @@ export function useClickByTextTool() {
                             }
 
                             /**
-                             * Highlight element with yellow flash
+                             * Highlight element with Zoom Focus (Option C)
                              */
                             function highlightElement(element: Element): Promise<void> {
                                 return new Promise((resolve) => {
-                                    const htmlElement = element as HTMLElement;
-                                    const originalOutline = htmlElement.style.outline;
-                                    const originalBackground = htmlElement.style.backgroundColor;
-                                    const originalTransition = htmlElement.style.transition;
+                                    try {
+                                        const css = `
+                                            @keyframes ai-zoom-focus {
+                                                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+                                                50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.7); }
+                                                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+                                            }
+                                            .ai-zoom-focus { animation: ai-zoom-focus 300ms ease-in-out !important; position: relative !important; z-index: 999998 !important; }
+                                            body.ai-page-dim::before {
+                                                content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                                                background: rgba(0, 0, 0, 0.5); z-index: 999997; pointer-events: none;
+                                                animation: ai-dim-fade 300ms ease-in-out;
+                                            }
+                                            @keyframes ai-dim-fade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+                                        `;
+                                        const style = document.createElement('style');
+                                        style.id = 'ai-zoom-focus-style';
+                                        style.textContent = css;
+                                        document.head.appendChild(style);
 
-                                    htmlElement.style.transition = 'all 0.3s ease';
-                                    htmlElement.style.outline = '3px solid #FFD700';
-                                    htmlElement.style.backgroundColor = 'rgba(255, 215, 0, 0.3)';
+                                        document.body.classList.add('ai-page-dim');
+                                        (element as HTMLElement).classList.add('ai-zoom-focus');
 
-                                    setTimeout(() => {
-                                        htmlElement.style.outline = originalOutline;
-                                        htmlElement.style.backgroundColor = originalBackground;
-                                        htmlElement.style.transition = originalTransition;
+                                        setTimeout(() => {
+                                            try {
+                                                document.body.classList.remove('ai-page-dim');
+                                                (element as HTMLElement).classList.remove('ai-zoom-focus');
+                                                document.getElementById('ai-zoom-focus-style')?.remove();
+                                            } catch (e) { }
+                                            resolve();
+                                        }, 300);
+                                    } catch (e) {
                                         resolve();
-                                    }, 600);
+                                    }
                                 });
                             }
 

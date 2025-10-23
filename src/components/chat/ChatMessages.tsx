@@ -10,6 +10,61 @@ import { getMessageContent, hasToolCalls } from './utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
 
+// Custom components to handle streaming markdown gracefully
+const markdownComponents = {
+    a: ({ node, href, children, ...props }: any) => {
+        // Handle cases where href might be undefined during streaming
+        const safeHref = href || '#';
+        return (
+            <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
+                {children}
+            </a>
+        );
+    },
+    // Add other custom components as needed
+};
+
+// Error Boundary for Markdown rendering
+class MarkdownErrorBoundary extends React.Component<
+    { children: React.ReactNode; fallback: string },
+    { hasError: boolean }
+> {
+    constructor(props: { children: React.ReactNode; fallback: string }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error: any) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: any, errorInfo: any) {
+        console.warn('Markdown rendering error (likely due to streaming):', error);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return <div className="markdown-fallback">{this.props.fallback}</div>;
+        }
+        return this.props.children;
+    }
+}
+
+// Safe markdown wrapper to handle parsing errors during streaming
+const SafeMarkdown: React.FC<{ children: string }> = ({ children }) => {
+    return (
+        <MarkdownErrorBoundary fallback={children}>
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkBreaks]}
+                components={markdownComponents}
+                skipHtml={true}
+            >
+                {children}
+            </ReactMarkdown>
+        </MarkdownErrorBoundary>
+    );
+};
+
 interface ChatMessagesProps {
     messages: Message[];
     isLoading: boolean;
@@ -148,9 +203,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                 <div key={`text-${partIndex}`} className="copilot-message-content">
                                                                     {message.role === 'assistant' ? (
                                                                         <div className="markdown-content">
-                                                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                                                            <SafeMarkdown>
                                                                                 {part.text}
-                                                                            </ReactMarkdown>
+                                                                            </SafeMarkdown>
                                                                         </div>
                                                                     ) : (
                                                                         <div className="user-message-with-mentions">

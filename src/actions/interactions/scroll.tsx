@@ -13,7 +13,7 @@ export function useScrollPageTool() {
 
     useEffect(() => {
         log.info('🔧 Registering scrollPage tool...');
-        
+
         registerTool({
             name: "scrollPage",
             description: "Scroll page up/down/top/bottom or to a specific element.",
@@ -31,10 +31,52 @@ export function useScrollPageTool() {
                         target: { tabId: tab.id },
                         args: [direction, amount || 500, selector || null],
                         func: (dir: string, amt: number, sel: string | null) => {
+                            // Animation: Page Slide (Option C)
+                            function showPageSlide(direction: 'up' | 'down') {
+                                try {
+                                    const css = `
+                                        @keyframes ai-page-slide-indicator {
+                                            0% { opacity: 0; transform: translateY(${direction === 'down' ? '-20px' : '20px'}); }
+                                            50% { opacity: 1; transform: translateY(0); }
+                                            100% { opacity: 0; transform: translateY(${direction === 'down' ? '20px' : '-20px'}); }
+                                        }
+                                        .ai-page-slide-indicator {
+                                            position: fixed; ${direction === 'down' ? 'top' : 'bottom'}: 50%; right: 20px;
+                                            width: 40px; height: 40px; background: rgba(59, 130, 246, 0.8); border-radius: 50%;
+                                            display: flex; align-items: center; justify-content: center;
+                                            color: white; font-size: 24px; font-weight: bold; z-index: 999999; pointer-events: none;
+                                            animation: ai-page-slide-indicator 250ms ease-out forwards;
+                                        }
+                                    `;
+                                    const style = document.createElement('style');
+                                    style.id = 'ai-page-slide-style';
+                                    style.textContent = css;
+                                    document.head.appendChild(style);
+
+                                    const indicator = document.createElement('div');
+                                    indicator.className = 'ai-page-slide-indicator';
+                                    indicator.textContent = direction === 'down' ? '↓' : '↑';
+                                    document.body.appendChild(indicator);
+
+                                    setTimeout(() => {
+                                        try {
+                                            indicator.remove();
+                                            document.getElementById('ai-page-slide-style')?.remove();
+                                        } catch (e) { }
+                                    }, 250);
+                                } catch (e) { }
+                            }
+
                             const beforeScroll = window.scrollY;
                             switch (dir.toLowerCase()) {
-                                case 'up': window.scrollBy({ top: -amt, behavior: 'smooth' }); break;
-                                case 'down': window.scrollBy({ top: amt, behavior: 'smooth' }); break;
+                                case 'up':
+                                    showPageSlide('up');
+                                    window.scrollBy({ top: -amt, behavior: 'smooth' });
+                                    break;
+                                case 'down':
+                                    showPageSlide('down');
+                                    window.scrollBy({ top: amt, behavior: 'smooth' });
+                                    break;
                                 case 'top': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
                                 case 'bottom': window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); break;
                                 case 'to-element':

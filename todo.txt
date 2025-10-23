@@ -46,3 +46,12 @@ No OAuth endpoints
 
 [YT Transcript] Video metadata: 
 ObjectlengthFormatted: "minutes"lengthSeconds: undefinedtitle: undefinedvideoId: undefined[[Prototype]]: Object
+
+1. aura 
+2. url fix 
+4. local prompt 
+3. /reasearh , /image  gemini nano banana , / make me google sheet , /word report , /send me email
+5. error properly showing in ui all the types 
+6. when image is clicked on image it should open in a modal smooth animation 
+7. change icon for the pdf 
+10: add pasting support 
