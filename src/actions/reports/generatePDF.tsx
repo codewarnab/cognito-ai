@@ -2,7 +2,7 @@
  * Generate PDF Report Action
  * Creates and downloads a PDF file with the provided content
  * Uses jsPDF library for reliable PDF generation
- */
+ */ 
 
 import { z } from 'zod';
 import { useEffect } from 'react';
