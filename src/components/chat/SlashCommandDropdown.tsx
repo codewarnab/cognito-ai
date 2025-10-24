@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import type { WorkflowDefinition } from '../../workflows/types';
 import { getAllWorkflows } from '../../workflows/registry';
 import { SearchIcon } from '../../../assets/chat/search';
+import type { AIMode } from './types';
 
 // Helper to render icon (either emoji or component)
 function renderWorkflowIcon(icon: string) {
@@ -22,6 +23,7 @@ interface SlashCommandDropdownProps {
     onSelectWorkflow: (workflow: WorkflowDefinition) => void;
     onClose: () => void;
     position?: { top: number; left: number };
+    mode?: AIMode;
 }
 
 export function SlashCommandDropdown({
@@ -29,6 +31,7 @@ export function SlashCommandDropdown({
     onSelectWorkflow,
     onClose,
     position,
+    mode = 'remote',
 }: SlashCommandDropdownProps) {
     const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -108,6 +111,21 @@ export function SlashCommandDropdown({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [filteredWorkflows, selectedIndex, onSelectWorkflow, onClose]);
+
+    // Show message when in local mode
+    if (mode === 'local') {
+        return (
+            <div className="slash-command-dropdown" style={position}>
+                <div className="slash-command-empty">
+                    Workflows are not available in Local mode.
+                    <br />
+                    <span style={{ fontSize: '0.9em', opacity: 0.8 }}>
+                        Switch to Cloud mode to use workflows.
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
     if (filteredWorkflows.length === 0) {
         return (

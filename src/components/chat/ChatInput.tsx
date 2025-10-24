@@ -278,6 +278,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             searchQuery={slashSearchQuery}
                             onSelectWorkflow={handleSelectWorkflow}
                             onClose={() => setShowSlashDropdown(false)}
+                            mode={modelState.mode}
                         />
                     )}
 
