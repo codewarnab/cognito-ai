@@ -7,6 +7,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createLogger } from '../../logger';
+import { ExternalServiceError, NetworkError, parseError } from '../../errors';
 
 const log = createLogger('YouTube-Agent');
 
@@ -46,6 +47,16 @@ async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; dur
                 return undefined;
             }
 
+            if (response.status === 403) {
+                log.warn('⚠️ Video is restricted or private', errorData);
+                throw ExternalServiceError.youtubeError(403, 'This video is restricted, private, or unavailable.');
+            }
+
+            if (response.status === 429) {
+                log.warn('⚠️ YouTube API rate limit hit', errorData);
+                throw ExternalServiceError.youtubeError(429, 'YouTube API rate limit exceeded. Please try again later.');
+            }
+
             if (response.status === 503) {
                 log.warn('⚠️ Transcript service temporarily unavailable (YouTube API changes)', errorData);
                 return undefined;
@@ -64,6 +75,18 @@ async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; dur
 
         return data;
     } catch (error) {
+        // Re-throw if it's already a typed error
+        if (error instanceof ExternalServiceError) {
+            throw error;
+        }
+
+        // Check for network errors
+        const parsedError = parseError(error, { serviceName: 'YouTube' });
+        if (parsedError instanceof NetworkError) {
+            log.warn('⚠️ Network error fetching transcript:', parsedError.userMessage);
+            throw parsedError;
+        }
+
         log.warn('⚠️ Could not fetch transcript (will use video analysis):', error);
         return undefined;
     }
@@ -571,12 +594,11 @@ export const youtubeAgentAsTool = tool({
         } catch (error) {
             log.error('❌ YouTube Agent error', error);
 
-            // Return error information
-            return {
-                answer: `I encountered an error analyzing the YouTube video: ${error instanceof Error ? error.message : String(error)}`,
-                videoUrl: youtubeUrl,
-                error: true,
-            };
+            // Parse the error into a typed error
+            const parsedError = parseError(error, { serviceName: 'YouTube' });
+
+            // Throw the error so it gets displayed properly in CompactToolCard
+            throw parsedError;
         }
     },
 });

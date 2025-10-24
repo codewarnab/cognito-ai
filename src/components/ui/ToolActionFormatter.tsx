@@ -773,6 +773,8 @@ const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }
 const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
     const question = input?.question;
     const wasChunked = output?.wasChunked;
+    const usedTranscript = output?.usedTranscript;
+    const errorMsg = output?.error || output?.errorType;
 
     if (state === 'loading') {
         return {
@@ -781,6 +783,14 @@ const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
         };
     }
     if (state === 'success') {
+        // Check if actually failed (YouTube tool may return success: false)
+        if (output?.success === false || errorMsg) {
+            return {
+                action: 'Analysis failed',
+                description: errorMsg ? truncateText(String(errorMsg), 50) : question ? truncateText(question, 40) : undefined
+            };
+        }
+
         const answerLength = output?.answer?.length || 0;
         const duration = output?.videoDuration;
         const durationText = duration
@@ -791,22 +801,57 @@ const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
                     : `${duration}s`
             : '';
 
+        // Build description showing analysis method
+        const parts = [];
+        if (usedTranscript) {
+            parts.push('transcript');
+        } else if (wasChunked) {
+            parts.push('chunked');
+        }
+        if (durationText) {
+            parts.push(durationText);
+        }
+
         return {
             action: 'Video analyzed',
-            description: wasChunked
-                ? `Long video (${durationText}) - chunked analysis`
-                : durationText
-                    ? `${durationText} video`
-                    : `Analysis complete`
+            description: parts.length > 0 ? parts.join(' • ') : 'Analysis complete'
         };
     }
     return {
         action: 'Analysis failed',
-        description: question ? truncateText(question, 40) : undefined
+        description: errorMsg ? truncateText(String(errorMsg), 50) : question ? truncateText(question, 40) : undefined
     };
 };
 
 // Report Tools
+const getReportTemplateFormatter: ActionFormatter = ({ state, input, output }) => {
+    const query = input?.query;
+    const templateType = output?.templateType;
+    const templateName = output?.templateName;
+    const sectionCount = output?.sectionCount || 0;
+
+    if (state === 'loading') {
+        return {
+            action: 'Analyzing research topic',
+            description: query ? truncateText(query, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Template selected',
+            description: templateName
+                ? `${truncateText(templateName, 35)} (${sectionCount} sections)`
+                : templateType
+                    ? `${templateType} (${sectionCount} sections)`
+                    : undefined
+        };
+    }
+    return {
+        action: 'Template selection failed',
+        description: query ? truncateText(query, 40) : undefined
+    };
+};
+
 const generatePDFFormatter: ActionFormatter = ({ state, input, output }) => {
     const filename = output?.filename || input?.filename;
     const size = output?.size;
@@ -920,6 +965,7 @@ const formatters: Record<string, ActionFormatter> = {
     youtubeAgentAsTool: youtubeAgentFormatter,
 
     // Reports
+    getReportTemplate: getReportTemplateFormatter,
     generatePDF: generatePDFFormatter,
     generateMarkdown: generateMarkdownFormatter,
 };

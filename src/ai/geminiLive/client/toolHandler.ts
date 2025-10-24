@@ -12,11 +12,24 @@ import {
 import { createLogger } from '../../../logger';
 import { ToolExecutionHandler } from '../errorHandler';
 import { DEFAULT_CONFIG } from './config';
+import {
+    parseError,
+    isRetryableError,
+    RetryManager,
+    RetryPresets,
+    formatErrorInline,
+} from '../../../errors';
 
 const log = createLogger('ToolHandler');
 
 export class GeminiLiveToolHandler {
     private agentToolExecutors: Map<string, (args: any) => Promise<any>> = new Map();
+    private retryManager: RetryManager;
+
+    constructor() {
+        // Use Quick preset for tool execution (shorter delays, suitable for user-facing operations)
+        this.retryManager = new RetryManager(RetryPresets.Quick);
+    }
 
     /**
      * Get tool declarations for Live API
@@ -48,12 +61,13 @@ export class GeminiLiveToolHandler {
     }
 
     /**
-     * Execute tool calls from the AI
+     * Execute tool calls from the AI with timeout and validation
      */
     async executeToolCalls(
         functionCalls: FunctionCall[],
         onToolCall?: (toolName: string, args: any) => void,
-        onToolResult?: (toolName: string, result: any) => void
+        onToolResult?: (toolName: string, result: any) => void,
+        timeoutMs: number = 30000 // 30 second default timeout
     ): Promise<any[]> {
         log.info('🔧 Received tool calls from Gemini Live', {
             count: functionCalls.length,
@@ -75,20 +89,27 @@ export class GeminiLiveToolHandler {
             }
 
             try {
+                // Validate function call arguments
+                this.validateToolCall(call);
+
                 // First check if this is an agent tool
                 const agentExecutor = this.agentToolExecutors.get(call.name);
 
                 let result: any;
 
                 if (agentExecutor) {
-                    // Execute agent tool
+                    // Execute agent tool with timeout
                     log.info('🤖 Executing agent tool (Browser Action Agent)', {
                         name: call.name,
                         taskDescription: call.args?.taskDescription
                     });
 
                     const startTime = Date.now();
-                    result = await agentExecutor(call.args);
+                    result = await this.executeWithTimeout(
+                        () => agentExecutor(call.args),
+                        timeoutMs,
+                        call.name
+                    );
                     const duration = Date.now() - startTime;
 
                     log.info('✅ Agent tool completed', {
@@ -109,7 +130,11 @@ export class GeminiLiveToolHandler {
 
                     log.info('🔨 Executing regular tool from registry', { name: call.name });
                     const startTime = Date.now();
-                    result = await toolDef.execute(call.args);
+                    result = await this.executeWithTimeout(
+                        () => toolDef.execute(call.args),
+                        timeoutMs,
+                        call.name
+                    );
                     const duration = Date.now() - startTime;
 
                     log.info('✅ Regular tool completed', {
@@ -158,18 +183,36 @@ export class GeminiLiveToolHandler {
                     stack: error instanceof Error ? error.stack : undefined
                 });
 
-                // Use error handler to format response
-                const { errorResponse } = ToolExecutionHandler.handleToolError(
+                // Parse and categorize the error
+                const typedError = parseError(error, {
+                    context: 'tool-execution',
+                    toolName: call.name,
+                });
+
+                // Use enhanced error handler to format response
+                const { errorResponse, shouldRetry, formattedError } = ToolExecutionHandler.handleToolError(
                     call.name,
-                    error as Error,
+                    typedError instanceof Error ? typedError : new Error(String(error)),
                     call.args
                 );
 
-                // Send error response
+                // Log whether error is retryable
+                if (shouldRetry && isRetryableError(typedError)) {
+                    log.info('Error is retryable, but tool execution does not auto-retry in Live API', {
+                        name: call.name,
+                        errorCode: (typedError as any).errorCode,
+                    });
+                }
+
+                // Send error response with enhanced formatting
                 responses.push({
                     id: call.id,
                     name: call.name,
-                    response: errorResponse
+                    response: {
+                        ...errorResponse,
+                        // Include formatted error for AI to understand
+                        formattedError,
+                    }
                 });
             }
         }
@@ -228,6 +271,48 @@ export class GeminiLiveToolHandler {
         }
 
         return truncated;
+    }
+
+    /**
+     * Validate tool call arguments
+     */
+    private validateToolCall(call: FunctionCall): void {
+        if (!call.name) {
+            throw parseError(new Error('Tool name is required'), {
+                context: 'tool-execution',
+                toolName: 'unknown',
+            });
+        }
+
+        // Basic validation - ensure args is an object if provided
+        if (call.args !== undefined && call.args !== null && typeof call.args !== 'object') {
+            throw parseError(new Error('Tool arguments must be an object'), {
+                context: 'tool-execution',
+                toolName: call.name,
+            });
+        }
+    }
+
+    /**
+     * Execute a function with timeout
+     */
+    private async executeWithTimeout<T>(
+        fn: () => Promise<T>,
+        timeoutMs: number,
+        toolName: string
+    ): Promise<T> {
+        return Promise.race([
+            fn(),
+            new Promise<T>((_, reject) => {
+                setTimeout(() => {
+                    const timeoutError = parseError(
+                        new Error(`Tool execution timed out after ${timeoutMs}ms`),
+                        { context: 'tool-execution', toolName }
+                    );
+                    reject(timeoutError);
+                }, timeoutMs);
+            })
+        ]);
     }
 
     /**

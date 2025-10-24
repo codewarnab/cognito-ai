@@ -1,11 +1,20 @@
 /**
  * MCP Client Manager for AI SDK v5
  * Handles dynamic MCP server connections and tool integration
+ * 
+ * Enhanced with comprehensive error handling:
+ * - Per-server error isolation (one server failure doesn't break all)
+ * - Connection retry with exponential backoff
+ * - Graceful degradation when servers are unavailable
+ * - Validation of MCP server responses
  */
 
 import { experimental_createMCPClient as createMCPClient } from 'ai';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createLogger } from '../logger';
+import { MCPError, NetworkError, ErrorType } from '../errors/errorTypes';
+import { RetryManager, RetryPresets } from '../errors/retryManager';
+import { buildUserMessage, formatErrorInline } from '../errors/errorMessages';
 
 const log = createLogger('MCP-Client');
 
@@ -104,7 +113,14 @@ async function getEnabledMCPServers(): Promise<MCPServerConfig[]> {
 }
 
 /**
- * Initialize MCP clients for AI SDK
+ * Initialize MCP clients for AI SDK with comprehensive error handling
+ * 
+ * Error handling features:
+ * - Per-server error isolation: One server failure doesn't break all servers
+ * - Graceful degradation: Continue loading tools from available servers
+ * - Detailed error logging for debugging
+ * - Validation of server responses
+ * 
  * This creates connections to enabled MCP servers and retrieves their tools
  */
 export async function initializeMCPClients(
@@ -116,6 +132,7 @@ export async function initializeMCPClients(
   let tools = {};
   const mcpClients: any[] = [];
   const sessionIds = new Map<string, string>(); // Track session IDs
+  const errors: Array<{ serverId: string; serverName: string; error: Error }> = [];
 
   try {
     // Get enabled MCP server configurations
@@ -126,7 +143,7 @@ export async function initializeMCPClients(
       servers: mcpServers.map(s => ({ id: s.id, name: s.name, type: s.type }))
     });
 
-    // Process each MCP server configuration
+    // Process each MCP server configuration with isolated error handling
     for (const mcpServer of mcpServers) {
       if (!mcpServer.enabled) {
         log.info(`⏭️ Skipping disabled server: ${mcpServer.name}`);
@@ -160,90 +177,138 @@ export async function initializeMCPClients(
 
         if (url.endsWith('/sse')) {
           log.info(`🔧 Creating MCP client with SSE transport`);
-          mcpClient = await createMCPClient({
-            transport: {
-              type: 'sse',
-              url: url,
-              headers,
-            }
-          });
+
+          try {
+            mcpClient = await createMCPClient({
+              transport: {
+                type: 'sse',
+                url: url,
+                headers,
+              }
+            });
+          } catch (transportError) {
+            // Categorize transport creation errors
+            const error = MCPError.connectionFailed(
+              mcpServer.id,
+              `SSE transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
+            );
+            errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
+            log.error(`❌ SSE transport error for ${mcpServer.name}:`, error);
+            continue; // Skip to next server
+          }
         } else if (url.endsWith('/mcp')) {
           log.info(`🔧 Creating MCP client with StreamableHTTP transport`);
 
-          // Create StreamableHTTP transport with advanced features
-          const httpTransport = new StreamableHTTPClientTransport(
-            new URL(url),
-            {
-              // Custom request configuration
-              requestInit: {
-                headers,
-                // Add CORS and credentials if needed
-                // credentials: 'include',
-                // mode: 'cors',
-              },
+          try {
+            // Create StreamableHTTP transport with advanced features
+            const httpTransport = new StreamableHTTPClientTransport(
+              new URL(url),
+              {
+                // Custom request configuration
+                requestInit: {
+                  headers,
+                  // Add CORS and credentials if needed
+                  // credentials: 'include',
+                  // mode: 'cors',
+                },
 
-              // DO NOT pass sessionId during initialization - let server assign a fresh one
-              // Session IDs are only for reconnection after disconnect, not initial connection
-              sessionId: undefined,
+                // DO NOT pass sessionId during initialization - let server assign a fresh one
+                // Session IDs are only for reconnection after disconnect, not initial connection
+                sessionId: undefined,
 
-              // Reconnection options with exponential backoff
-              reconnectionOptions: {
-                maxReconnectionDelay: 30000, // 30 seconds max
-                initialReconnectionDelay: 1000, // 1 second initial
-                reconnectionDelayGrowFactor: 1.5, // Exponential backoff factor
-                maxRetries: 3, // Maximum retry attempts
-              },
+                // Reconnection options with exponential backoff
+                reconnectionOptions: {
+                  maxReconnectionDelay: 30000, // 30 seconds max
+                  initialReconnectionDelay: 1000, // 1 second initial
+                  reconnectionDelayGrowFactor: 1.5, // Exponential backoff factor
+                  maxRetries: 3, // Maximum retry attempts
+                },
 
-              // Custom fetch implementation (if needed for Chrome extension environment)
-              // fetch: customFetch,
+                // Custom fetch implementation (if needed for Chrome extension environment)
+                // fetch: customFetch,
+              }
+            );
+
+            // Set up event handlers for better error tracking and debugging
+            httpTransport.onerror = (error: Error) => {
+              log.error(`❌ Transport error for ${mcpServer.name}:`, error);
+              // Track transport errors for this server
+              const mcpError = MCPError.connectionFailed(
+                mcpServer.id,
+                `Transport error: ${error.message}`
+              );
+              // Error is logged but connection continues via retry logic
+            };
+
+            httpTransport.onclose = () => {
+              log.info(`🔌 Transport closed for ${mcpServer.name}`);
+              // Clean up or notify UI that connection was closed
+            };
+
+            httpTransport.onmessage = (message: any) => {
+              log.info(`📨 Message from ${mcpServer.name}:`, message);
+              // You can intercept and log messages here if needed
+            };
+
+            // Create MCP client with the configured transport
+            mcpClient = await createMCPClient({ transport: httpTransport as any });
+
+            // Store session ID for future reconnections (persistence)
+            if ((httpTransport as any).sessionId) {
+              const sessionId = (httpTransport as any).sessionId;
+              sessionIds.set(mcpServer.id, sessionId);
+              log.info(`📝 Session ID stored for ${mcpServer.name}: ${sessionId}`);
+
+              // Optionally persist to chrome.storage for long-term persistence
+              try {
+                await chrome.storage.local.set({
+                  [`mcp.${mcpServer.id}.sessionId`]: sessionId
+                });
+                log.info(`💾 Session ID persisted to storage for ${mcpServer.name}`);
+              } catch (storageError) {
+                log.warn(`⚠️ Failed to persist session ID for ${mcpServer.name}:`, storageError);
+                // Non-critical error, continue
+              }
             }
-          );
-
-          // Set up event handlers for better error tracking and debugging
-          httpTransport.onerror = (error: Error) => {
-            log.error(`❌ Transport error for ${mcpServer.name}:`, error);
-            // You could broadcast this error to UI or handle reconnection here
-          };
-
-          httpTransport.onclose = () => {
-            log.info(`🔌 Transport closed for ${mcpServer.name}`);
-            // Clean up or notify UI that connection was closed
-          };
-
-          httpTransport.onmessage = (message: any) => {
-            log.info(`📨 Message from ${mcpServer.name}:`, message);
-            // You can intercept and log messages here if needed
-          };
-
-          // Create MCP client with the configured transport
-          mcpClient = await createMCPClient({ transport: httpTransport as any });
-
-          // Store session ID for future reconnections (persistence)
-          if ((httpTransport as any).sessionId) {
-            const sessionId = (httpTransport as any).sessionId;
-            sessionIds.set(mcpServer.id, sessionId);
-            log.info(`📝 Session ID stored for ${mcpServer.name}: ${sessionId}`);
-
-            // Optionally persist to chrome.storage for long-term persistence
-            try {
-              await chrome.storage.local.set({
-                [`mcp.${mcpServer.id}.sessionId`]: sessionId
-              });
-              log.info(`💾 Session ID persisted to storage for ${mcpServer.name}`);
-            } catch (storageError) {
-              log.warn(`⚠️ Failed to persist session ID for ${mcpServer.name}:`, storageError);
-            }
+          } catch (transportError) {
+            // Categorize transport creation errors
+            const error = MCPError.connectionFailed(
+              mcpServer.id,
+              `StreamableHTTP transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
+            );
+            errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
+            log.error(`❌ StreamableHTTP transport error for ${mcpServer.name}:`, error);
+            continue; // Skip to next server
           }
         } else {
           log.warn(`⚠️ Skipping ${mcpServer.name}: URL must end with /sse or /mcp`);
           continue;
         }
-        mcpClients.push(mcpClient);
 
+        mcpClients.push(mcpClient);
         log.info(`✅ MCP client created successfully for ${mcpServer.name}`);
 
-        // Get tools from the MCP server
-        const mcpTools = await mcpClient.tools();
+        // Get tools from the MCP server with error handling
+        let mcpTools;
+        try {
+          mcpTools = await mcpClient.tools();
+
+          // Validate tools response
+          if (!mcpTools || typeof mcpTools !== 'object') {
+            throw MCPError.connectionFailed(
+              mcpServer.id,
+              'Invalid tools response: expected object, got ' + typeof mcpTools
+            );
+          }
+        } catch (toolsError) {
+          const error = MCPError.connectionFailed(
+            mcpServer.id,
+            `Failed to retrieve tools: ${toolsError instanceof Error ? toolsError.message : 'Unknown error'}`
+          );
+          errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
+          log.error(`❌ Failed to get tools from ${mcpServer.name}:`, error);
+          continue; // Skip to next server
+        }
 
         log.info(`✅ MCP tools from ${mcpServer.name}:`, {
           count: Object.keys(mcpTools).length,
@@ -285,9 +350,34 @@ export async function initializeMCPClients(
         tools = { ...tools, ...filteredTools };
 
       } catch (error) {
+        // Catch-all for any unhandled errors in server initialization
+        const mcpError = MCPError.connectionFailed(
+          mcpServer.id,
+          `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+        errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error: mcpError });
         log.error(`❌ Failed to initialize MCP client for ${mcpServer.name}:`, error);
         // Continue with other servers instead of failing the entire request
       }
+    }
+
+    // Log summary of initialization
+    const successCount = mcpClients.length;
+    const failureCount = errors.length;
+    const totalCount = successCount + failureCount;
+
+    log.info(`📊 MCP initialization summary:`, {
+      total: totalCount,
+      successful: successCount,
+      failed: failureCount,
+      totalTools: Object.keys(tools).length
+    });
+
+    if (errors.length > 0) {
+      log.warn(`⚠️ Some MCP servers failed to initialize:`, errors.map(e => ({
+        server: e.serverName,
+        error: e.error.message
+      })));
     }
 
     log.info('🎯 Total MCP tools loaded:', {
@@ -304,7 +394,8 @@ export async function initializeMCPClients(
     }
 
   } catch (error) {
-    log.error('❌ Error initializing MCP clients:', error);
+    // Catch-all for catastrophic errors (shouldn't happen with per-server error handling)
+    log.error('❌ Critical error initializing MCP clients:', error);
   }
 
   return {
@@ -316,9 +407,7 @@ export async function initializeMCPClients(
     },
     sessionIds
   };
-}
-
-/**
+}/**
  * Clean up MCP clients
  */
 async function cleanupMCPClients(clients: any[]): Promise<void> {

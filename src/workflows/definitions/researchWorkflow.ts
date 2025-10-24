@@ -60,6 +60,7 @@ export const researchWorkflow: WorkflowDefinition = {
       'organizeTabsByContext',
 
       // Report generation
+      'getReportTemplate',
       'generateMarkdown',
       'generatePDF',
    ],
@@ -84,7 +85,7 @@ AVAILABLE TOOLS (FULL ACCESS FOR RESEARCH):
 - Interaction: clickByText, typeInField, pressKey, scrollPage
 - Memory: saveMemory, getMemory, listMemories
 - Tab Management: applyTabGroups, organizeTabsByContext
-- Report Generation: generateMarkdown, generatePDF
+- Report Generation: getReportTemplate, generateMarkdown, generatePDF
 
 TOOL USAGE PLAYBOOK FOR RESEARCH:
 
@@ -172,6 +173,12 @@ After completing research, present a brief summary (2-3 sentences) then auto-gen
 
 FULL REPORT TEMPLATE (for PDF/Markdown generation):
 
+⚠️ The template structure will be provided by getReportTemplate tool.
+⚠️ Use the sections returned by the tool to structure your report.
+⚠️ Each template type has customized sections appropriate for that topic.
+
+If getReportTemplate is not available or returns an error, use this fallback structure:
+
 # Research Report: [Topic]
 
 ## Research Summary
@@ -225,15 +232,54 @@ FULL REPORT TEMPLATE (for PDF/Markdown generation):
 ---
 
 WORKFLOW EXECUTION SEQUENCE:
-1. Navigate to Google → Get search results
-2. Open ${MINIMUM_SOURCES}+ relevant sources with openSearchResult
-3. Switch to each tab and read content thoroughly
-4. Extract and synthesize key information from all sources
-5. Show BRIEF 2-3 sentence summary in chat
-6. IMMEDIATELY auto-generate PDF report (DO NOT wait for user approval)
-7. After PDF downloads, ask if user wants Markdown version
-8. Generate Markdown only if user requests it
-9. Mark complete with [WORKFLOW_COMPLETE] only after user responds
+1. **Determine research type and get template** → getReportTemplate({reportType: "person|technology|company|concept|product|generic", topicName: "research subject"})
+   - Analyze the user's query to determine what type of research this is
+   - Choose the appropriate reportType:
+     * "person" - for researching people, developers, entrepreneurs, professionals
+     * "technology" - for frameworks, libraries, programming languages, tools
+     * "company" - for businesses, startups, organizations
+     * "concept" - for methodologies, best practices, abstract ideas
+     * "product" - for SaaS platforms, apps, services, specific products
+     * "generic" - for anything that doesn't fit the above categories
+   - Tool returns customized template with sections appropriate for that type
+   - Use the template structure to guide what information to gather
+2. Navigate to Google → Get search results
+3. Open ${MINIMUM_SOURCES}+ relevant sources with openSearchResult
+4. Switch to each tab and read content thoroughly
+5. Extract and synthesize key information from all sources **following template structure**
+6. Show BRIEF 2-3 sentence summary in chat
+7. IMMEDIATELY auto-generate PDF report using the template structure (DO NOT wait for user approval)
+8. After PDF downloads, ask if user wants Markdown version
+9. Generate Markdown only if user requests it
+10. Mark complete with [WORKFLOW_COMPLETE] only after user responds
+
+TEMPLATE-DRIVEN RESEARCH:
+⚠️ **CRITICAL: Always call getReportTemplate FIRST before starting research**
+
+How to use getReportTemplate:
+1. **Analyze the user's query** - What type of thing are they researching?
+2. **Choose the correct reportType** based on your analysis:
+   
+   Examples:
+   - "Who is codewarnab?" → reportType: "person", topicName: "codewarnab"
+   - "What is React?" → reportType: "technology", topicName: "React"
+   - "Research OpenAI company" → reportType: "company", topicName: "OpenAI"
+   - "Explain microservices architecture" → reportType: "concept", topicName: "Microservices"
+   - "Review Notion app" → reportType: "product", topicName: "Notion"
+   - "Research quantum computing" → reportType: "generic", topicName: "Quantum Computing"
+
+3. **Call the tool** with your determined type:
+   getReportTemplate({reportType: "person", topicName: "codewarnab"})
+
+4. **Follow the returned template** when gathering information during research
+5. **Structure your final PDF** according to the template sections
+
+Benefits of this approach:
+✅ Ensures comprehensive coverage (no missing sections)
+✅ Creates topic-appropriate reports (person bio vs tech analysis)
+✅ Structures research efficiently (know exactly what to look for)
+✅ Produces consistent, professional reports
+✅ Adapts to different research types automatically
 
 QUALITY STANDARDS:
 - Prioritize: official docs, GitHub repos, trusted tech blogs, Stack Overflow, research papers
