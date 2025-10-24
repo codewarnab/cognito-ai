@@ -14,6 +14,8 @@ import { createLogger } from '../../logger';
 import { useActionHelpers } from '../useActionHelpers';
 import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
+import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApiHelpers';
+import { BrowserAPIError } from '../../errors';
 
 const log = createLogger('Tool-NavigateTo');
 
@@ -44,8 +46,8 @@ export function useNavigateToTool() {
                     markOpened(key);
 
                     if (newTab) {
-                        // Open in new tab
-                        const tab = await chrome.tabs.create({ url });
+                        // Open in new tab using safe helper
+                        const tab = await safeTabCreate({ url });
                         log.info('📑 Opened URL in new tab', { tabId: tab.id, url });
                         return {
                             success: true,
@@ -55,12 +57,14 @@ export function useNavigateToTool() {
                         };
                     } else {
                         // Open in current tab (update active tab)
-                        const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                        const tabs = await safeTabsQuery({ active: true, currentWindow: true });
+                        const currentTab = tabs[0];
+
                         if (!currentTab || currentTab.id === undefined) {
-                            return { error: "Could not find current tab" };
+                            throw BrowserAPIError.tabNotFound(-1);
                         }
 
-                        await chrome.tabs.update(currentTab.id, { url });
+                        await safeTabUpdate(currentTab.id, { url });
                         log.info('🔄 Opened URL in current tab', { tabId: currentTab.id, url });
                         return {
                             success: true,
@@ -71,7 +75,16 @@ export function useNavigateToTool() {
                     }
                 } catch (error) {
                     log.error('[Tool] Error opening tab:', error);
-                    return { error: "Failed to open tab", details: String(error) };
+
+                    // Re-throw BrowserAPIError for proper display in CompactToolCard
+                    if (error instanceof BrowserAPIError) {
+                        throw error;
+                    }
+
+                    return {
+                        error: error instanceof Error ? error.message : "Failed to open tab",
+                        details: String(error)
+                    };
                 }
             },
         });

@@ -5,6 +5,12 @@
  * - Side panel initialization
  * - Extension lifecycle events
  * - Multi-server MCP OAuth and SSE connections
+ * 
+ * Enhanced with comprehensive error handling:
+ * - Structured error responses for all MCP operations
+ * - Connection error categorization and recovery
+ * - Token management error handling
+ * - Per-server error isolation
  */
 
 import { McpSSEClient } from './mcp/sseClient';
@@ -47,6 +53,8 @@ import type {
 } from './mcp/types';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
 import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
+import { MCPError, NetworkError } from './errors/errorTypes';
+import { buildUserMessage } from './errors/errorMessages';
 
 // ============================================================================
 // Service Worker Keep-Alive Management
@@ -543,7 +551,14 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 }
 
 /**
- * Refresh access token for any MCP server
+ * Refresh access token for any MCP server with enhanced error handling
+ * 
+ * Error handling:
+ * - Validates prerequisites (refresh token, credentials, endpoints)
+ * - Handles network errors during refresh
+ * - Falls back to endpoint re-discovery if needed
+ * - Updates scope information after refresh
+ * - Schedules next automatic refresh
  */
 async function refreshServerToken(serverId: string): Promise<boolean> {
     const state = getServerState(serverId);
@@ -551,7 +566,11 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
 
     if (!state.tokens?.refresh_token) {
         console.error(`[Background:${serverId}] No refresh token available`);
-        state.status = { ...state.status, state: 'needs-auth', error: 'No refresh token' };
+        const error = MCPError.authFailed(
+            serverId,
+            'No refresh token available. Re-authentication required.'
+        );
+        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
         broadcastStatusUpdate(serverId, state.status);
         return false;
     }
@@ -559,12 +578,16 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     // Load client credentials if not in memory
     if (!state.credentials) {
         state.credentials = await getStoredClientCredentials(serverId);
+        console.log(`[Background:${serverId}] Loaded client credentials for token refresh`);
     }
-    console.log(`[Background:${serverId}] Loaded client credentials for token refresh`, state.credentials);
 
     if (!state.credentials) {
         console.error(`[Background:${serverId}] No client credentials available for token refresh`);
-        state.status = { ...state.status, state: 'needs-auth', error: 'No client credentials' };
+        const error = MCPError.authFailed(
+            serverId,
+            'No client credentials found. Re-authentication required.'
+        );
+        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
         broadcastStatusUpdate(serverId, state.status);
         return false;
     }
@@ -596,6 +619,13 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
                 }
             } catch (discoveryError) {
                 console.error(`[Background:${serverId}] Error during OAuth endpoint re-discovery:`, discoveryError);
+                const error = MCPError.authFailed(
+                    serverId,
+                    `Failed to discover OAuth endpoints: ${discoveryError instanceof Error ? discoveryError.message : 'Unknown error'}`
+                );
+                state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
+                broadcastStatusUpdate(serverId, state.status);
+                return false;
             }
         }
     }
@@ -603,7 +633,11 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     // Final check: if still no endpoints, fail
     if (!state.oauthEndpoints) {
         console.error(`[Background:${serverId}] No OAuth endpoints available after all attempts (memory, storage, and re-discovery)`);
-        state.status = { ...state.status, state: 'needs-auth', error: 'No OAuth endpoints' };
+        const error = MCPError.authFailed(
+            serverId,
+            'OAuth endpoints unavailable. Re-authentication required.'
+        );
+        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
         broadcastStatusUpdate(serverId, state.status);
         return false;
     }
@@ -644,13 +678,27 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
         return true;
     } catch (error) {
         console.error(`[Background:${serverId}] Token refresh failed:`, error);
+
+        // Categorize the error
+        let mcpError: MCPError;
+        if (error instanceof MCPError) {
+            mcpError = error;
+        } else {
+            mcpError = MCPError.authFailed(
+                serverId,
+                `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            );
+        }
+
         // Clear invalid tokens
         await clearTokens(serverId);
         state.tokens = null;
+
+        const errorMessage = buildUserMessage(mcpError);
         state.status = {
             ...state.status,
             state: 'needs-auth',
-            error: 'Token refresh failed. Please re-authenticate.'
+            error: errorMessage
         };
         broadcastStatusUpdate(serverId, state.status);
         return false;
@@ -688,23 +736,33 @@ async function ensureValidToken(serverId: string): Promise<string | null> {
 // ============================================================================
 
 /**
- * Connect to any MCP server
+ * Connect to any MCP server with comprehensive error handling
+ * 
+ * Error handling:
+ * - Validates server configuration before connection
+ * - Categorizes connection failures (auth, network, server)
+ * - Returns structured error responses
+ * - Handles token refresh automatically
  */
 async function connectMcpServer(serverId: string): Promise<McpExtensionResponse> {
     const state = getServerState(serverId);
     const serverConfig = getServerConfig(serverId);
 
     if (!serverConfig) {
+        const error = new Error(`Server config not found for ${serverId}`);
+        console.error(`[Background:${serverId}]`, error.message);
         return {
             success: false,
-            error: `Server config not found for ${serverId}`
+            error: error.message
         };
     }
 
     if (!serverConfig.url) {
+        const error = new Error(`No URL configured for ${serverId}`);
+        console.error(`[Background:${serverId}]`, error.message);
         return {
             success: false,
-            error: `No URL configured for ${serverId}`
+            error: error.message
         };
     }
 
@@ -716,9 +774,13 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
         if (serverConfig.requiresAuthentication) {
             accessToken = await ensureValidToken(serverId);
             if (!accessToken) {
+                const error = MCPError.authFailed(
+                    serverId,
+                    'No valid access token available. Authentication required.'
+                );
                 return {
                     success: false,
-                    error: 'Authentication required'
+                    error: buildUserMessage(error)
                 };
             }
         } else {
@@ -727,7 +789,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
             console.log(`[Background:${serverId}] Server does not require authentication, proceeding without token`);
         }
 
-        // Create SSE client
+        // Create SSE client with error handling callbacks
         state.client = new McpSSEClient(
             serverId,
             serverConfig.url,
@@ -752,22 +814,69 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
             {
                 reconnectMinDelay: MCP_OAUTH_CONFIG.RECONNECT_MIN_DELAY,
                 reconnectMaxDelay: MCP_OAUTH_CONFIG.RECONNECT_MAX_DELAY,
-                reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER
+                reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER,
+                maxReconnectAttempts: 5, // Limit reconnection attempts
+                requestTimeout: 30000, // 30s timeout for requests
             }
         );
 
-        // Connect
-        await state.client.connect();
+        // Connect with timeout
+        const connectionPromise = state.client.connect();
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => {
+                reject(NetworkError.timeout(
+                    `Connection to ${serverId} timed out after 30 seconds`
+                ));
+            }, 30000);
+        });
 
-        // Initialize MCP protocol
-        await state.client.initialize();
+        await Promise.race([connectionPromise, timeoutPromise]);
 
+        // Initialize MCP protocol with timeout
+        const initPromise = state.client.initialize();
+        const initTimeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => {
+                reject(NetworkError.timeout(
+                    `Initialization of ${serverId} timed out after 30 seconds`
+                ));
+            }, 30000);
+        });
+
+        await Promise.race([initPromise, initTimeoutPromise]);
+
+        console.log(`[Background:${serverId}] Successfully connected and initialized`);
         return { success: true, data: state.client.getStatus() };
+
     } catch (error) {
         console.error(`[Background:${serverId}] MCP connection error:`, error);
+
+        // Categorize the error and provide user-friendly message
+        let errorMessage: string;
+
+        if (error instanceof MCPError || error instanceof NetworkError) {
+            errorMessage = buildUserMessage(error);
+        } else if (error instanceof Error) {
+            // Wrap generic errors in MCPError
+            const mcpError = MCPError.connectionFailed(
+                serverId,
+                error.message
+            );
+            errorMessage = buildUserMessage(mcpError);
+        } else {
+            errorMessage = 'Connection failed due to an unknown error';
+        }
+
+        // Update server state with error
+        state.status = {
+            ...state.status,
+            state: 'error',
+            error: errorMessage
+        };
+        broadcastStatusUpdate(serverId, state.status);
+
         return {
             success: false,
-            error: error instanceof Error ? error.message : 'Connection failed'
+            error: errorMessage
         };
     }
 }

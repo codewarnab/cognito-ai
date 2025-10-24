@@ -16,8 +16,20 @@ import { getMCPToolsFromBackground } from './mcpProxy';
 import { youtubeAgentAsTool } from './agents/youtubeAgent';
 import { getWorkflow } from '../workflows/registry';
 import { workflowSessionManager } from '../workflows/sessionManager';
-import { getGeminiApiKey, hasGeminiApiKey } from '../utils/geminiApiKey';
+import { getGeminiApiKey, hasGeminiApiKey, validateAndGetApiKey, markApiKeyValid, markApiKeyInvalid } from '../utils/geminiApiKey';
 import { getModelConfig } from '../utils/modelSettings';
+import {
+  APIError,
+  NetworkError,
+  isRetryableError,
+  ErrorType
+} from '../errors/errorTypes';
+import {
+  formatErrorInline,
+  formatRetryCountdown,
+  formatRetryAttempt
+} from '../errors/errorMessages';
+import { createRetryManager, RetryPresets } from '../errors/retryManager';
 
 const log = createLogger('AI-Logic');
 
@@ -52,11 +64,227 @@ function extractMalformedCallInfo(response: any): { isMalformed: boolean; code?:
 }
 
 /**
+ * Parse error from Gemini API response
+ * Handles various error formats and status codes
+ * Also updates API key validation cache based on auth errors
+ */
+async function parseGeminiErrorAsync(error: any): Promise<APIError> {
+  try {
+    // Extract status code
+    const statusCode = error?.statusCode || error?.status || error?.response?.status;
+
+    // Extract error message
+    const message = error?.message || error?.error?.message || String(error);
+    const details = error?.error?.details || error?.details || message;
+
+    // Handle specific status codes
+    if (statusCode === 429) {
+      // Rate limit - check for Retry-After header
+      const retryAfter = error?.headers?.['retry-after'] ||
+        error?.response?.headers?.['retry-after'];
+      const retryAfterMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined;
+      return APIError.rateLimitExceeded(retryAfterMs, details);
+    }
+
+    if (statusCode === 403) {
+      // Check if it's quota exceeded or permission issue
+      if (message.toLowerCase().includes('quota')) {
+        return APIError.quotaExceeded(details);
+      }
+      return new APIError({
+        message: 'Forbidden',
+        statusCode: 403,
+        retryable: false,
+        userMessage: 'Access forbidden. Please check your API permissions.',
+        technicalDetails: details,
+        errorCode: ErrorType.API_INVALID_REQUEST,
+      });
+    }
+
+    if (statusCode === 401) {
+      // Mark API key as invalid in cache
+      await markApiKeyInvalid('AUTH_FAILED_401');
+      return APIError.authFailed(details);
+    }
+
+    if (statusCode >= 500 && statusCode < 600) {
+      return APIError.serverError(statusCode, details);
+    }
+
+    // Check for network errors
+    if (error?.code === 'ETIMEDOUT' || message.includes('timeout')) {
+      return new NetworkError({
+        message: 'Request timeout',
+        retryable: true,
+        userMessage: 'Request timed out. Retrying...',
+        technicalDetails: details,
+        errorCode: ErrorType.NETWORK_TIMEOUT,
+      });
+    }
+
+    if (error?.code === 'ECONNRESET' || message.includes('connection reset')) {
+      return NetworkError.connectionReset(details);
+    }
+
+    // Default to generic API error
+    return new APIError({
+      message,
+      statusCode,
+      retryable: statusCode ? statusCode >= 500 : false,
+      userMessage: 'An error occurred while processing your request.',
+      technicalDetails: details,
+      errorCode: ErrorType.UNKNOWN_ERROR,
+    });
+  } catch (parseError) {
+    log.error('Error parsing Gemini error:', parseError);
+    return new APIError({
+      message: String(error),
+      retryable: false,
+      userMessage: 'An unexpected error occurred.',
+      technicalDetails: String(error),
+      errorCode: ErrorType.UNKNOWN_ERROR,
+    });
+  }
+}
+
+/**
+ * Synchronous version for backward compatibility
+ */
+function parseGeminiError(error: any): APIError {
+  // For synchronous contexts, we can't await the async operations
+  // So we'll use a simplified version without API key cache updates
+  try {
+    const statusCode = error?.statusCode || error?.status || error?.response?.status;
+    const message = error?.message || error?.error?.message || String(error);
+    const details = error?.error?.details || error?.details || message;
+
+    if (statusCode === 429) {
+      const retryAfter = error?.headers?.['retry-after'] ||
+        error?.response?.headers?.['retry-after'];
+      const retryAfterMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined;
+      return APIError.rateLimitExceeded(retryAfterMs, details);
+    }
+
+    if (statusCode === 403) {
+      if (message.toLowerCase().includes('quota')) {
+        return APIError.quotaExceeded(details);
+      }
+      return new APIError({
+        message: 'Forbidden',
+        statusCode: 403,
+        retryable: false,
+        userMessage: 'Access forbidden. Please check your API permissions.',
+        technicalDetails: details,
+        errorCode: ErrorType.API_INVALID_REQUEST,
+      });
+    }
+
+    if (statusCode === 401) {
+      // Note: Cache update should be done in async context
+      markApiKeyInvalid('AUTH_FAILED_401').catch(err =>
+        log.error('Failed to mark API key invalid:', err)
+      );
+      return APIError.authFailed(details);
+    }
+
+    if (statusCode >= 500 && statusCode < 600) {
+      return APIError.serverError(statusCode, details);
+    }
+
+    if (error?.code === 'ETIMEDOUT' || message.includes('timeout')) {
+      return new NetworkError({
+        message: 'Request timeout',
+        retryable: true,
+        userMessage: 'Request timed out. Retrying...',
+        technicalDetails: details,
+        errorCode: ErrorType.NETWORK_TIMEOUT,
+      });
+    }
+
+    if (error?.code === 'ECONNRESET' || message.includes('connection reset')) {
+      return NetworkError.connectionReset(details);
+    }
+
+    return new APIError({
+      message,
+      statusCode,
+      retryable: statusCode ? statusCode >= 500 : false,
+      userMessage: 'An error occurred while processing your request.',
+      technicalDetails: details,
+      errorCode: ErrorType.UNKNOWN_ERROR,
+    });
+  } catch (parseError) {
+    log.error('Error parsing Gemini error:', parseError);
+    return new APIError({
+      message: String(error),
+      retryable: false,
+      userMessage: 'An unexpected error occurred.',
+      technicalDetails: String(error),
+      errorCode: ErrorType.UNKNOWN_ERROR,
+    });
+  }
+}
+
+/**
+ * Write error message to stream with formatting
+ */
+function writeErrorToStream(
+  writer: any,
+  error: Error,
+  context?: string
+): void {
+  // Parse error into our error types
+  const appError = error instanceof APIError || error instanceof NetworkError
+    ? error
+    : parseGeminiError(error);
+
+  // Format error message for inline display
+  const errorMarkdown = formatErrorInline(appError);
+
+  // Write error to stream
+  writer.write({
+    type: 'text-delta',
+    id: 'error-' + generateId(),
+    delta: `\n\n${errorMarkdown}\n`,
+  });
+
+  log.error(`AI Stream Error [${context || 'unknown'}]:`, {
+    errorCode: appError instanceof APIError ? appError.errorCode : 'UNKNOWN',
+    message: appError.message,
+    retryable: isRetryableError(appError),
+  });
+}
+
+/**
  * Stream AI response directly from the frontend
  * Returns a UIMessageStream that can be consumed by useChat
  * 
  * Handles both local (Gemini Nano) and remote (Gemini API) modes
  * Also supports workflow mode with custom prompts and tool filtering
+ * 
+ * **Error Handling:**
+ * - Automatically retries transient errors (rate limits, network issues, server errors)
+ * - Displays user-friendly error messages inline in the chat stream
+ * - Shows retry countdown when waiting to retry
+ * - Validates API key before making requests
+ * - Marks API key as invalid after auth failures
+ * - Handles malformed function calls from AI model
+ * 
+ * **Retry Logic:**
+ * - Uses exponential backoff with jitter
+ * - Respects rate limit headers (Retry-After)
+ * - Max 3 retry attempts by default
+ * - Provides real-time countdown updates during retry delays
+ * 
+ * @param params.messages - Chat history to send to the model
+ * @param params.abortSignal - Optional signal to abort the request
+ * @param params.initialPageContext - Optional page context from conversation start
+ * @param params.onError - Optional callback for error events
+ * @param params.workflowId - Optional workflow ID for workflow-specific behavior
+ * @param params.threadId - Thread ID for workflow session management
+ * @returns UIMessageStream that can be consumed by useChat hook
+ * @throws {APIError} If API key is invalid or missing
+ * @throws {NetworkError} If network is unreachable after retries
  */
 export async function streamAIResponse(params: {
   messages: UIMessage[];
@@ -96,6 +324,49 @@ export async function streamAIResponse(params: {
   try {
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
+        // Create retry manager for this stream session
+        const retryManager = createRetryManager({
+          ...RetryPresets.Standard,
+          abortSignal,
+          onRetry: (attempt, delay, error) => {
+            log.info('Retrying AI request', { attempt, delay, error: error.message });
+
+            // Write retry status to stream
+            const seconds = Math.ceil(delay / 1000);
+            const retryMessage = formatRetryCountdown(seconds, attempt, 3);
+            writer.write({
+              type: 'data-status',
+              id: 'retry-status-' + generateId(),
+              data: {
+                status: 'retrying',
+                message: retryMessage,
+                attempt,
+                maxAttempts: 3,
+                delay,
+                timestamp: Date.now()
+              },
+              transient: true,
+            });
+          },
+          onCountdown: (remainingMs, attempt) => {
+            // Update countdown in real-time
+            const seconds = Math.ceil(remainingMs / 1000);
+            if (seconds > 0) {
+              writer.write({
+                type: 'data-status',
+                id: 'countdown-' + generateId(),
+                data: {
+                  status: 'countdown',
+                  remainingSeconds: seconds,
+                  attempt,
+                  timestamp: Date.now()
+                },
+                transient: true,
+              });
+            }
+          },
+        });
+
         try {
           log.info('Stream execute function started');
 
@@ -182,11 +453,8 @@ export async function streamAIResponse(params: {
             const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
             log.info(' Using REMOTE model:', modelName);
 
-            // Get API key
-            const apiKey = await getGeminiApiKey();
-            if (!apiKey) {
-              throw new Error('API key required for remote mode');
-            }
+            // Validate and get API key (throws APIError if invalid)
+            const apiKey = await validateAndGetApiKey();
 
             // Custom fetch to remove referrer header (fixes 403 errors in Chrome extensions)
             const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
@@ -202,7 +470,7 @@ export async function streamAIResponse(params: {
             model = google(modelName);
 
             // Define workflow-only tools (only available in workflow mode)
-            const workflowOnlyTools = ['generateMarkdown', 'generatePDF'];
+            const workflowOnlyTools = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
 
             // Get all registered tools (Chrome extension tools)
             const allExtensionTools = getAllTools();
@@ -306,132 +574,144 @@ export async function streamAIResponse(params: {
             workflowMode: !!workflowConfig
           });
 
-          const result = await streamText({
-            model,
-            messages: modelMessages,
-            tools,
-            system: enhancedPrompt,
-            abortSignal,
-            
-            stopWhen: [stepCountIs(stepCount)],
-            toolChoice: 'auto', // Let AI decide when to use tools
-            maxRetries: 20, // Retry up to 3 times on errors
-            temperature: 0.7,
-            experimental_transform: smoothStream({
-              delayInMs: 20,
-              chunking: 'word',
-            }),
-            // Log when a step completes (includes tool calls)
-            onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }) => {
-              // Check for malformed function calls or errors
-              if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {
-                log.error(' MALFORMED FUNCTION CALL DETECTED', {
-                  finishReason,
-                  text: text?.substring(0, 200),
-                  warnings: warnings,
-                  responseInfo: response ? 'Response available' : 'No response',
-                  hint: 'Malformed function call. AI SDK will automatically retry with error feedback.'
-                });
+          // Wrap streamText in retry logic for retryable errors
+          const result = await retryManager.execute(async () => {
+            try {
+              return await streamText({
+                model,
+                messages: modelMessages,
+                tools,
+                system: enhancedPrompt,
+                abortSignal,
 
-                // Write a transient status message to inform user
-                writer.write({
-                  type: 'data-status',
-                  id: 'retry-' + generateId(),
-                  data: {
-                    status: 'retrying',
-                    message: 'Correcting tool call format...',
-                    timestamp: Date.now()
-                  },
-                  transient: true,
-                });
-              }
+                stopWhen: [stepCountIs(stepCount)],
+                toolChoice: 'auto', // Let AI decide when to use tools
+                maxRetries: 20, // Internal AI SDK retries for streaming issues
+                temperature: 0.7,
+                experimental_transform: smoothStream({
+                  delayInMs: 20,
+                  chunking: 'word',
+                }),
+                // Log when a step completes (includes tool calls)
+                onStepFinish: ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }) => {
+                  // Check for malformed function calls or errors
+                  if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {
+                    log.error(' Step finished with error', {
+                      finishReason,
+                      text: text?.substring(0, 200),
+                      warnings: warnings,
+                      responseInfo: response ? 'Response available' : 'No response',
+                    });
 
-              // Check for MALFORMED_FUNCTION_CALL via response
-              const malformedInfo = extractMalformedCallInfo(response);
-              if (malformedInfo.isMalformed) {
-                log.error(' GEMINI MALFORMED_FUNCTION_CALL ERROR', {
-                  finishReason: 'MALFORMED_FUNCTION_CALL',
-                  generatedCode: malformedInfo.code?.substring(0, 500),
-                  fullText: text?.substring(0, 200),
-                  hint: 'Gemini returned Python/code instead of a function call.'
-                });
+                    // Create malformed function call error
+                    const malformedError = APIError.malformedFunctionCall(
+                      `Finish reason: ${finishReason}`,
+                      undefined
+                    );
 
-                // Write detailed error to stream
-                writer.write({
-                  type: 'data-error',
-                  id: 'malformed-' + generateId(),
-                  data: {
-                    error: 'MALFORMED_FUNCTION_CALL',
-                    message: ' The AI model generated code instead of calling a tool properly.',
-                    details: `The model tried to execute: ${malformedInfo.code?.substring(0, 200)}...`,
-                    timestamp: Date.now(),
-                    context: 'Function calling',
-                    suggestions: [
-                      'Try simplifying your request into smaller steps',
-                      'Ask the model to perform one action at a time',
-                      'Rephrase to avoid triggering code generation'
-                    ]
-                  },
-                  transient: false,
-                });
-              }
+                    // Write inline error notification to stream
+                    writer.write({
+                      type: 'text-delta',
+                      id: 'step-error-' + generateId(),
+                      delta: `\n\n⚠️ ${malformedError.userMessage}\n\n`,
+                    });
+                  }
 
-              if (toolCalls && toolCalls.length > 0) {
-                log.info('Tools called:', {
-                  count: toolCalls.length,
-                  calls: toolCalls.map(call => ({
-                    id: call.toolCallId,
-                    name: call.toolName,
-                    isAgentTool: call.toolName === 'analyzeYouTubeVideo',
-                  })),
-                });
-              }
+                  // Check for MALFORMED_FUNCTION_CALL via response
+                  const malformedInfo = extractMalformedCallInfo(response);
+                  if (malformedInfo.isMalformed) {
+                    log.error(' GEMINI MALFORMED_FUNCTION_CALL ERROR', {
+                      finishReason: 'MALFORMED_FUNCTION_CALL',
+                      generatedCode: malformedInfo.code?.substring(0, 500),
+                      fullText: text?.substring(0, 200),
+                    });
 
-              if (toolResults && toolResults.length > 0) {
-                log.info('Tool results:', {
-                  count: toolResults.length,
-                  results: toolResults.map(result => ({
-                    id: result.toolCallId,
-                    name: result.toolName,
-                    status: 'output' in result ? 'success' : 'error',
-                  })),
-                });
-              }
+                    // Create and write detailed error
+                    const malformedError = APIError.malformedFunctionCall(
+                      `The model generated: ${malformedInfo.code?.substring(0, 200)}`,
+                      undefined
+                    );
+                    writeErrorToStream(writer, malformedError, 'Malformed function call');
+                  }
 
-              log.info('Step finished:', {
-                finishReason,
-                textLength: text?.length || 0,
-                tokensUsed: usage?.totalTokens || 0,
-              });
-            },
-            // Log when the entire stream finishes
-            onFinish: async ({ text, finishReason, usage, steps }) => {
-              log.info('Stream finished:', {
-                finishReason,
-                textLength: text?.length || 0,
-                tokensUsed: usage?.totalTokens || 0,
-                stepCount: steps?.length || 0,
-                workflowMode: !!workflowId,
-                threadId: threadId || 'unknown'
-              });
+                  if (toolCalls && toolCalls.length > 0) {
+                    log.info('Tools called:', {
+                      count: toolCalls.length,
+                      calls: toolCalls.map(call => ({
+                        id: call.toolCallId,
+                        name: call.toolName,
+                        isAgentTool: call.toolName === 'analyzeYouTubeVideo',
+                      })),
+                    });
+                  }
 
-              // Check for workflow completion marker
-              if (workflowId && threadId && text) {
-                if (text.includes('[WORKFLOW_COMPLETE]')) {
-                  log.info(' WORKFLOW COMPLETION DETECTED - Ending workflow session', {
-                    threadId,
-                    workflowId
+                  if (toolResults && toolResults.length > 0) {
+                    log.info('Tool results:', {
+                      count: toolResults.length,
+                      results: toolResults.map(result => ({
+                        id: result.toolCallId,
+                        name: result.toolName,
+                        status: 'output' in result ? 'success' : 'error',
+                      })),
+                    });
+                  }
+
+                  log.info('Step finished:', {
+                    finishReason,
+                    textLength: text?.length || 0,
+                    tokensUsed: usage?.totalTokens || 0,
                   });
-                  workflowSessionManager.endSession(threadId);
-                } else {
-                  log.info(' Workflow still active - no completion marker found', {
-                    threadId,
-                    workflowId
+                },
+                // Log when the entire stream finishes
+                onFinish: async ({ text, finishReason, usage, steps }) => {
+                  log.info('Stream finished:', {
+                    finishReason,
+                    textLength: text?.length || 0,
+                    tokensUsed: usage?.totalTokens || 0,
+                    stepCount: steps?.length || 0,
+                    workflowMode: !!workflowId,
+                    threadId: threadId || 'unknown'
                   });
-                }
-              }
-            },
-          });
+
+                  // Mark API key as valid after successful completion (remote mode only)
+                  if (effectiveMode === 'remote') {
+                    markApiKeyValid().catch(err =>
+                      log.error('Failed to mark API key as valid:', err)
+                    );
+                  }
+
+                  // Check for workflow completion marker
+                  if (workflowId && threadId && text) {
+                    if (text.includes('[WORKFLOW_COMPLETE]')) {
+                      log.info(' WORKFLOW COMPLETION DETECTED - Ending workflow session', {
+                        threadId,
+                        workflowId
+                      });
+                      workflowSessionManager.endSession(threadId);
+                    } else {
+                      log.info(' Workflow still active - no completion marker found', {
+                        threadId,
+                        workflowId
+                      });
+                    }
+                  }
+                },
+              });
+            } catch (streamError) {
+              // Parse and enhance the error
+              const enhancedError = parseGeminiError(streamError);
+
+              // Log the error
+              log.error('streamText error:', {
+                errorCode: enhancedError.errorCode,
+                retryable: isRetryableError(enhancedError),
+                message: enhancedError.message,
+              });
+
+              // Throw enhanced error for retry manager to handle
+              throw enhancedError;
+            }
+          }, 'AI stream');
 
           // Merge AI stream with status stream
           log.info(' AI streamText result received, merging with UI stream...');
@@ -439,23 +719,19 @@ export async function streamAIResponse(params: {
           writer.merge(
             result.toUIMessageStream({
               onError: (error) => {
-                log.error('AI stream error', error);
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                log.error('AI stream onError callback', error);
 
-                // Write error message to the stream so it appears in chat
-                writer.write({
-                  type: 'data-error',
-                  id: 'error-' + generateId(),
-                  data: {
-                    error: errorMessage,
-                    timestamp: Date.now(),
-                    context: 'AI stream processing'
-                  },
-                  transient: false, // Keep error in history
-                });
+                // Parse error into our error types
+                const enhancedError = parseGeminiError(error);
 
-                onError?.(error instanceof Error ? error : new Error(errorMessage));
-                return ` Error: ${errorMessage}`;
+                // Write formatted error to stream
+                writeErrorToStream(writer, enhancedError, 'Stream processing');
+
+                // Call user's onError callback
+                onError?.(error instanceof Error ? error : new Error(String(error)));
+
+                // Return error message for AI SDK
+                return ` Error: ${enhancedError.userMessage}`;
               },
               onFinish: async ({ messages: finalMessages }) => {
                 log.info('UI stream completed', {
@@ -477,29 +753,31 @@ export async function streamAIResponse(params: {
           );
         } catch (error) {
           log.error('Stream execution error', error);
-          const errorMessage = error instanceof Error ? error.message : String(error);
 
-          // Write error message to the stream so it appears in chat
+          // Parse and format error
+          const enhancedError = error instanceof APIError || error instanceof NetworkError
+            ? error
+            : parseGeminiError(error);
+
+          // Write detailed error to stream
+          writeErrorToStream(writer, enhancedError, 'Stream execution');
+
+          // Also send error status
           writer.write({
-            type: 'data-error',
-            id: 'error-' + generateId(),
+            type: 'data-status',
+            id: 'status-' + generateId(),
             data: {
-              error: errorMessage,
-              timestamp: Date.now(),
-              context: 'Stream execution'
+              status: 'error',
+              errorCode: enhancedError instanceof APIError ? enhancedError.errorCode : 'UNKNOWN',
+              timestamp: Date.now()
             },
-            transient: false, // Keep error in history
+            transient: false,
           });
 
-          // Also write a text message for better visibility
-          writer.write({
-            type: 'text-delta',
-            id: 'error-text-' + generateId(),
-            delta: `\n\n **Error occurred:** ${errorMessage}\n\nPlease try again or contact support if the issue persists.`,
-          });
+          // Call user's onError callback
+          onError?.(enhancedError);
 
-          onError?.(error instanceof Error ? error : new Error(errorMessage));
-          throw error;
+          // Don't re-throw - error already written to stream
         }
       },
     });
@@ -508,12 +786,16 @@ export async function streamAIResponse(params: {
     return stream;
   } catch (error) {
     log.error(' Error creating stream', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Parse error
+    const enhancedError = error instanceof APIError || error instanceof NetworkError
+      ? error
+      : parseGeminiError(error);
 
     // Call onError callback if provided
-    onError?.(error instanceof Error ? error : new Error(errorMessage));
+    onError?.(enhancedError);
 
-    // Re-throw with enhanced message
-    throw new Error(`Failed to create AI stream: ${errorMessage}`);
+    // Re-throw with enhanced error
+    throw enhancedError;
   }
 }

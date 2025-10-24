@@ -127,6 +127,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     listTasks: FoldersIcon,
 
     // Report tools
+    getReportTemplate: BookTextIcon,
     generatePDF: BookTextIcon,
     generateMarkdown: BookTextIcon,
 };

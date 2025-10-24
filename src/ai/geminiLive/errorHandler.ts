@@ -1,6 +1,7 @@
 /**
  * Error Handler for Gemini Live API
  * Phase 9: Comprehensive error handling and edge cases
+ * Phase 3 Enhancement: Integration with centralized error system
  * 
  * Handles:
  * 1. Microphone permission denied
@@ -15,6 +16,18 @@
 
 import { createLogger } from '../../logger';
 import type { LiveAPIError, LiveAPIErrorType } from './types';
+import {
+    APIError,
+    NetworkError,
+    BrowserAPIError,
+    RetryManager,
+    RetryPresets,
+    buildUserMessage,
+    formatErrorInline,
+    parseError,
+    isRetryableError,
+    type RetryConfig,
+} from '../../errors';
 
 const log = createLogger('ErrorHandler');
 
@@ -26,69 +39,51 @@ export enum RecoveryStrategy {
     IGNORE = 'ignore'
 }
 
-export interface ErrorRecoveryConfig {
-    maxRetries?: number;
-    retryDelay?: number; // milliseconds
-    exponentialBackoff?: boolean;
-    onRetry?: (attempt: number, error: LiveAPIError) => void;
-    onFailure?: (error: LiveAPIError) => void;
-}
+// Use centralized RetryConfig, but provide a compatible interface for backward compatibility
+export type ErrorRecoveryConfig = RetryConfig;
 
 /**
  * Error recovery manager
+ * Now uses centralized RetryManager with exponential backoff
  */
 export class ErrorRecoveryManager {
-    private retryCount = new Map<string, number>();
-    private config: Required<ErrorRecoveryConfig>;
+    private retryManagers = new Map<string, RetryManager>();
+    private config: RetryConfig;
 
-    constructor(config: ErrorRecoveryConfig = {}) {
+    constructor(config: RetryConfig = {}) {
         this.config = {
-            maxRetries: config.maxRetries ?? 3,
-            retryDelay: config.retryDelay ?? 1000,
-            exponentialBackoff: config.exponentialBackoff ?? true,
-            onRetry: config.onRetry ?? (() => { }),
-            onFailure: config.onFailure ?? (() => { })
+            ...RetryPresets.Standard,
+            ...config,
         };
     }
 
     /**
-     * Execute function with retry logic
+     * Get or create a retry manager for a specific key
+     */
+    private getRetryManager(key: string): RetryManager {
+        if (!this.retryManagers.has(key)) {
+            this.retryManagers.set(key, new RetryManager(this.config));
+        }
+        return this.retryManagers.get(key)!;
+    }
+
+    /**
+     * Execute function with retry logic using centralized retry manager
      */
     async executeWithRetry<T>(
         key: string,
         fn: () => Promise<T>,
-        error?: LiveAPIError
+        customConfig?: RetryConfig
     ): Promise<T> {
-        const attempt = this.retryCount.get(key) || 0;
-
-        if (attempt >= this.config.maxRetries) {
-            log.error(`Max retries (${this.config.maxRetries}) reached for: ${key}`);
-            this.retryCount.delete(key);
-            if (error) {
-                this.config.onFailure(error);
-            }
-            throw new Error(`Max retries reached for: ${key}`);
-        }
-
-        this.retryCount.set(key, attempt + 1);
-
-        if (attempt > 0 && error) {
-            this.config.onRetry(attempt, error);
-            const delay = this.config.exponentialBackoff
-                ? this.config.retryDelay * Math.pow(2, attempt - 1)
-                : this.config.retryDelay;
-
-            log.info(`Retrying ${key} (attempt ${attempt + 1}/${this.config.maxRetries}) after ${delay}ms`);
-            await this.sleep(delay);
-        }
+        const retryManager = customConfig
+            ? new RetryManager({ ...this.config, ...customConfig })
+            : this.getRetryManager(key);
 
         try {
-            const result = await fn();
-            this.retryCount.delete(key);
-            return result;
-        } catch (err) {
-            log.error(`Attempt ${attempt + 1} failed for ${key}`, err);
-            throw err;
+            return await retryManager.execute(fn, key);
+        } catch (error) {
+            log.error(`Max retries reached for: ${key}`, error);
+            throw error;
         }
     }
 
@@ -96,18 +91,14 @@ export class ErrorRecoveryManager {
      * Reset retry count for a key
      */
     reset(key: string): void {
-        this.retryCount.delete(key);
+        this.retryManagers.delete(key);
     }
 
     /**
      * Reset all retry counts
      */
     resetAll(): void {
-        this.retryCount.clear();
-    }
-
-    private sleep(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        this.retryManagers.clear();
     }
 }
 
@@ -187,6 +178,7 @@ export class MicrophonePermissionHandler {
 
 /**
  * WebSocket connection error handler
+ * Enhanced with centralized error types and improved error detection
  */
 export class WebSocketConnectionHandler {
     private reconnectTimer: NodeJS.Timeout | null = null;
@@ -197,40 +189,108 @@ export class WebSocketConnectionHandler {
     }
 
     /**
-     * Handle connection failure with auto-retry
+     * Handle connection failure with auto-retry and typed errors
      */
     async handleConnectionFailure(
         reconnectFn: () => Promise<void>,
-        onStatusChange: (status: string) => void
+        onStatusChange: (status: string) => void,
+        errorDetails?: { code?: number; reason?: string }
     ): Promise<void> {
-        log.warn('WebSocket connection failed, attempting to reconnect...');
-        onStatusChange('Reconnecting...');
+        // Create appropriate error based on failure reason
+        const error = this.categorizeConnectionError(errorDetails);
+
+        log.warn('WebSocket connection failed', { error: error.message, errorDetails });
+
+        // Show user-friendly message
+        const userMessage = buildUserMessage(error);
+        onStatusChange(userMessage);
 
         try {
             await this.recoveryManager.executeWithRetry(
                 'websocket-connection',
-                reconnectFn
+                reconnectFn,
+                {
+                    onRetry: (attempt, delay, err) => {
+                        const retriesLeft = 3 - attempt; // Default max retries is 3
+                        onStatusChange(`Reconnecting... (${retriesLeft} attempts remaining)`);
+                    },
+                    onCountdown: (remainingMs, attempt) => {
+                        const seconds = Math.ceil(remainingMs / 1000);
+                        if (seconds > 0) {
+                            onStatusChange(`Retrying in ${seconds}s...`);
+                        }
+                    }
+                }
             );
             onStatusChange('Connected');
             log.info('WebSocket reconnected successfully');
         } catch (error) {
             log.error('Failed to reconnect after max retries', error);
-            onStatusChange('Connection Failed');
+            const finalError = parseError(error, { context: 'websocket' });
+            onStatusChange(buildUserMessage(finalError));
             throw error;
         }
     }
 
     /**
-     * Handle GoAway message from server
+     * Categorize WebSocket errors into typed errors
+     */
+    private categorizeConnectionError(details?: { code?: number; reason?: string }): Error {
+        if (!details) {
+            return NetworkError.connectionReset('WebSocket connection failed');
+        }
+
+        const { code, reason } = details;
+
+        // Connection refused (ECONNREFUSED)
+        if (reason?.includes('ECONNREFUSED') || code === 1006) {
+            return NetworkError.connectionReset('WebSocket connection refused by server');
+        }
+
+        // Timeout (ETIMEDOUT)
+        if (reason?.includes('ETIMEDOUT') || reason?.includes('timeout')) {
+            return NetworkError.timeout('WebSocket connection timed out');
+        }
+
+        // Rate limiting
+        if (code === 1008 || reason?.toLowerCase().includes('rate') || reason?.toLowerCase().includes('429')) {
+            return APIError.rateLimitExceeded(undefined, 'WebSocket rate limit exceeded');
+        }
+
+        // Session limit exceeded (already handled, but now with typed error)
+        if (reason === 'SESSION_LIMIT_EXCEEDED') {
+            return APIError.quotaExceeded('WebSocket session limit exceeded');
+        }
+
+        // Auth errors
+        if (code === 1008 || reason?.toLowerCase().includes('auth') || reason?.toLowerCase().includes('401')) {
+            return APIError.authFailed('WebSocket authentication failed');
+        }
+
+        // Server errors
+        if (code && code >= 1011 && code <= 1015) {
+            return APIError.serverError(code, `WebSocket server error: ${reason || 'Unknown'}`);
+        }
+
+        // Generic network error
+        return NetworkError.connectionReset(`WebSocket closed: ${reason || `Code ${code}`}`);
+    }
+
+    /**
+     * Handle GoAway message from server with user-friendly explanations
      */
     handleGoAway(reason: string, onWarning: (message: string) => void): void {
         log.warn('Received GoAway from server', { reason });
 
-        const warningMessage = reason === 'SESSION_LIMIT_EXCEEDED'
-            ? 'Session limit reached. The conversation will end soon.'
-            : `Server is closing the connection: ${reason}`;
+        let error: Error;
+        if (reason === 'SESSION_LIMIT_EXCEEDED') {
+            error = APIError.quotaExceeded('The session limit has been reached. The conversation will end soon.');
+        } else {
+            error = NetworkError.connectionReset(`Server is closing the connection: ${reason}`);
+        }
 
-        onWarning(warningMessage);
+        const userMessage = buildUserMessage(error);
+        onWarning(userMessage);
     }
 
     /**
@@ -291,10 +351,11 @@ export class AudioContextHandler {
 
 /**
  * Tool execution error handler
+ * Enhanced with comprehensive error categorization and retry logic
  */
 export class ToolExecutionHandler {
     /**
-     * Handle tool execution error
+     * Handle tool execution error with categorization and formatting
      */
     static handleToolError(
         toolName: string,
@@ -303,47 +364,121 @@ export class ToolExecutionHandler {
     ): {
         errorResponse: any;
         shouldRetry: boolean;
+        formattedError: string;
     } {
         log.error(`Tool execution failed: ${toolName}`, { error, args });
 
-        // Categorize error
-        const isRetryable = this.isRetryableError(error);
-        const errorMessage = this.formatErrorMessage(toolName, error);
+        // Parse and categorize the error
+        const typedError = this.categorizeToolError(error, toolName);
+        const shouldRetry = isRetryableError(typedError);
+
+        // Build user-friendly message
+        const userMessage = buildUserMessage(typedError, {
+            toolName,
+            reason: error.message,
+        });
+
+        // Build formatted error for inline display
+        const formattedError = formatErrorInline(typedError, {
+            toolName,
+            args: JSON.stringify(args).substring(0, 100),
+        });
 
         return {
             errorResponse: {
-                error: errorMessage,
+                error: userMessage,
                 details: error.message,
                 toolName,
-                args
+                args,
+                retryable: shouldRetry,
+                errorCode: typedError instanceof BrowserAPIError ||
+                    typedError instanceof NetworkError ||
+                    typedError instanceof APIError
+                    ? (typedError as any).errorCode
+                    : 'UNKNOWN_ERROR',
             },
-            shouldRetry: isRetryable
+            shouldRetry,
+            formattedError,
         };
     }
 
     /**
-     * Check if error is retryable
+     * Categorize tool errors into typed errors
      */
-    private static isRetryableError(error: Error): boolean {
+    private static categorizeToolError(error: Error, toolName: string): Error {
+        const message = error.message.toLowerCase();
+
+        // Network errors
+        if (message.includes('timeout') || message.includes('etimedout')) {
+            return NetworkError.timeout(`Tool ${toolName} timed out: ${error.message}`);
+        }
+        if (message.includes('network') || message.includes('econnreset')) {
+            return NetworkError.connectionReset(`Network error in ${toolName}: ${error.message}`);
+        }
+        if (message.includes('enotfound') || message.includes('dns')) {
+            return NetworkError.dnsFailed(`DNS error in ${toolName}: ${error.message}`);
+        }
+
+        // Permission errors
+        if (message.includes('permission denied') || message.includes('notallowederror')) {
+            return BrowserAPIError.permissionDenied(toolName, error.message);
+        }
+        if (message.includes('tab') && message.includes('access')) {
+            return BrowserAPIError.tabAccessDenied(`Cannot access tab in ${toolName}: ${error.message}`);
+        }
+
+        // API errors
+        if (message.includes('rate limit') || message.includes('429')) {
+            return APIError.rateLimitExceeded(undefined, `Rate limit in ${toolName}: ${error.message}`);
+        }
+        if (message.includes('quota') || message.includes('403')) {
+            return APIError.quotaExceeded(`Quota exceeded in ${toolName}: ${error.message}`);
+        }
+        if (message.includes('unauthorized') || message.includes('401')) {
+            return APIError.authFailed(`Auth failed in ${toolName}: ${error.message}`);
+        }
+
+        // Validation errors (malformed arguments)
+        if (message.includes('invalid') || message.includes('malformed') || message.includes('validation')) {
+            return APIError.malformedFunctionCall(
+                `Invalid arguments for ${toolName}: ${error.message}`,
+                toolName
+            );
+        }
+
+        // Return original error if no specific categorization
+        return error;
+    }
+
+    /**
+     * Check if error is retryable (enhanced patterns)
+     */
+    static isRetryableError(error: Error): boolean {
+        // Use centralized retry logic first
+        if (isRetryableError(error)) {
+            return true;
+        }
+
+        // Additional patterns specific to tool execution
         const retryablePatterns = [
             /timeout/i,
             /network/i,
             /connection/i,
             /ECONNRESET/i,
-            /ETIMEDOUT/i
+            /ETIMEDOUT/i,
+            /rate.*limit/i,
+            /429/i,
+            /quota.*exceeded/i,
+            /403/i,
+            /server.*error/i,
+            /503/i,
+            /502/i,
+            /500/i,
         ];
 
         return retryablePatterns.some(pattern =>
             pattern.test(error.message) || pattern.test(error.name)
         );
-    }
-
-    /**
-     * Format error message for AI
-     */
-    private static formatErrorMessage(toolName: string, error: Error): string {
-        const message = error.message || 'Unknown error';
-        return `Failed to execute ${toolName}: ${message}. Please try again or use a different approach.`;
     }
 }
 
@@ -510,6 +645,7 @@ export class ModeSwitchGuard {
 
 /**
  * Comprehensive error handler coordinator
+ * Enhanced with centralized error system integration
  */
 export class GeminiLiveErrorHandler {
     private recoveryManager: ErrorRecoveryManager;
@@ -544,6 +680,34 @@ export class GeminiLiveErrorHandler {
 
     getModeSwitchGuard(): ModeSwitchGuard {
         return this.modeSwitchGuard;
+    }
+
+    /**
+     * Parse any error into a typed error for better handling
+     */
+    parseError(error: unknown, context?: {
+        toolName?: string;
+        serverName?: string;
+        statusCode?: number;
+    }): Error {
+        return parseError(error, {
+            context: 'gemini-live',
+            ...context,
+        });
+    }
+
+    /**
+     * Format error for display in UI
+     */
+    formatErrorForUI(error: Error, variables?: Record<string, any>): string {
+        return formatErrorInline(error, variables);
+    }
+
+    /**
+     * Get user-friendly error message
+     */
+    getUserMessage(error: Error, variables?: Record<string, any>): string {
+        return buildUserMessage(error, variables);
     }
 
     /**

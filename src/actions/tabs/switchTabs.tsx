@@ -12,6 +12,8 @@ import { createLogger } from '../../logger';
 import { useActionHelpers } from '../useActionHelpers';
 import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
+import { safeTabsQuery, safeTabUpdate } from '../chromeApiHelpers';
+import { BrowserAPIError } from '../../errors';
 
 const log = createLogger('Tool-SwitchTabs');
 
@@ -47,20 +49,17 @@ export function useSwitchTabsTool() {
                     let targetTab: chrome.tabs.Tab | undefined;
 
                     if (tabId) {
-                        // Look up by tab ID
-                        const tabs = await chrome.tabs.query({});
+                        // Look up by tab ID using safe helper
+                        const tabs = await safeTabsQuery({});
                         targetTab = tabs.find(t => t.id === tabId);
 
                         if (!targetTab) {
-                            return {
-                                error: `Tab with ID ${tabId} not found`,
-                                success: false
-                            };
+                            throw BrowserAPIError.tabNotFound(tabId);
                         }
                         log.info('📌 Found tab by ID', { tabId, url: targetTab.url });
                     } else if (url) {
                         // Look up by URL (exact or partial match)
-                        const tabs = await chrome.tabs.query({});
+                        const tabs = await safeTabsQuery({});
 
                         // First try exact match
                         targetTab = tabs.find(t => urlsEqual(t.url || '', url));
@@ -97,8 +96,16 @@ export function useSwitchTabsTool() {
                         };
                     }
 
-                    // Focus the tab
-                    await focusTab(targetTab);
+                    // Focus the tab using safe helper
+                    if (!targetTab.id) {
+                        throw BrowserAPIError.tabNotFound(-1);
+                    }
+
+                    await safeTabUpdate(targetTab.id, { active: true });
+                    if (targetTab.windowId) {
+                        await chrome.windows.update(targetTab.windowId, { focused: true });
+                    }
+
                     log.info('✅ Switched to tab', { tabId: targetTab.id, url: targetTab.url });
 
                     return {
@@ -111,8 +118,14 @@ export function useSwitchTabsTool() {
 
                 } catch (error) {
                     log.error('[Tool] Error switching tabs:', error);
+
+                    // Re-throw BrowserAPIError for proper display in CompactToolCard
+                    if (error instanceof BrowserAPIError) {
+                        throw error;
+                    }
+
                     return {
-                        error: "Failed to switch tabs",
+                        error: error instanceof Error ? error.message : "Failed to switch tabs",
                         details: String(error),
                         success: false
                     };

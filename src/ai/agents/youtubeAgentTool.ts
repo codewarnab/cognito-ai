@@ -7,6 +7,7 @@
 
 import { GoogleGenerativeAI, SchemaType, type FunctionDeclaration } from '@google/generative-ai';
 import { createLogger } from '../../logger';
+import { ExternalServiceError, NetworkError, BrowserAPIError, parseError } from '../../errors';
 
 const log = createLogger('YouTube-Agent-Tool');
 
@@ -45,6 +46,16 @@ async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; dur
                 return undefined;
             }
 
+            if (response.status === 403) {
+                log.warn('⚠️ Video is restricted or private', errorData);
+                throw ExternalServiceError.youtubeError(403, 'This video is restricted, private, or unavailable.');
+            }
+
+            if (response.status === 429) {
+                log.warn('⚠️ YouTube API rate limit hit', errorData);
+                throw ExternalServiceError.youtubeError(429, 'YouTube API rate limit exceeded. Please try again later.');
+            }
+
             if (response.status === 503) {
                 log.warn('⚠️ Transcript service temporarily unavailable (YouTube API changes)', errorData);
                 return undefined;
@@ -63,6 +74,18 @@ async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; dur
 
         return data;
     } catch (error) {
+        // Re-throw if it's already a typed error
+        if (error instanceof ExternalServiceError) {
+            throw error;
+        }
+
+        // Check for network errors
+        const parsedError = parseError(error, { serviceName: 'YouTube' });
+        if (parsedError instanceof NetworkError) {
+            log.warn('⚠️ Network error fetching transcript:', parsedError.userMessage);
+            throw parsedError;
+        }
+
         log.warn('⚠️ Could not fetch transcript (will use video analysis):', error);
         return undefined;
     }
@@ -112,7 +135,12 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
             isYouTubePage: tab.url?.includes('youtube.com/watch')
         });
 
-        if (!tab.id || !tab.url?.includes('youtube.com/watch')) {
+        if (!tab.id) {
+            log.warn('⚠️ No active tab found');
+            return undefined;
+        }
+
+        if (!tab.url?.includes('youtube.com/watch')) {
             log.warn('⚠️ Active tab is not a YouTube video page', {
                 tabId: tab.id,
                 tabUrl: tab.url
@@ -190,6 +218,15 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
 
         return duration;
     } catch (error) {
+        // Check for Chrome API permission errors
+        const parsedError = parseError(error, { context: 'chrome-api' });
+
+        if (parsedError instanceof BrowserAPIError) {
+            log.error('❌ Browser API error getting video duration:', parsedError.userMessage);
+            // Don't throw - just return undefined and fallback to video analysis
+            return undefined;
+        }
+
         log.error('❌ Error getting video duration:', error);
         return undefined;
     }
@@ -596,10 +633,17 @@ export async function executeYouTubeAnalysis(args: { question: string; youtubeUr
     } catch (error) {
         log.error('❌ YouTube Analysis error', error);
 
+        // Parse the error into a typed error for better user messaging
+        const parsedError = parseError(error, { serviceName: 'YouTube' });
+
+        // Return structured error that will be displayed in CompactToolCard
         return {
             success: false,
-            error: error instanceof Error ? error.message : String(error),
-            answer: `I encountered an error analyzing the YouTube video: ${error instanceof Error ? error.message : String(error)}`,
+            error: parsedError.message,
+            errorType: parsedError.constructor.name,
+            answer: parsedError instanceof ExternalServiceError || parsedError instanceof NetworkError
+                ? parsedError.userMessage
+                : `I encountered an error analyzing the YouTube video: ${parsedError.message}`,
         };
     }
 }
