@@ -312,9 +312,10 @@ export async function streamAIResponse(params: {
             tools,
             system: enhancedPrompt,
             abortSignal,
+            
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools
-            maxRetries: 3, // Retry up to 3 times on errors
+            maxRetries: 20, // Retry up to 3 times on errors
             temperature: 0.7,
             experimental_transform: smoothStream({
               delayInMs: 20,

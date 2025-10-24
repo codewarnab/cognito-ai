@@ -51,8 +51,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const uploadIconRef = useRef<any>(null);
     const paperclipIconRef = useRef<any>(null);
+    const composerRef = useRef<HTMLDivElement>(null);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
 
@@ -64,7 +64,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Handle file selection
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
+        await processFiles(files);
+        // Reset input
+        e.target.value = '';
+    };
 
+    // Process files (shared between file input and paste)
+    const processFiles = async (files: File[]) => {
         for (const file of files) {
             const validation = validateFile(file);
 
@@ -91,9 +97,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 { id, file, preview, type }
             ]);
         }
+    };
 
-        // Reset input
-        e.target.value = '';
+    // Handle paste event for file pasting
+    const handlePaste = async (e: ClipboardEvent) => {
+        // Check if there are files in the clipboard
+        if (!e.clipboardData?.files.length) {
+            return;
+        }
+
+        // Prevent default paste behavior when pasting files
+        e.preventDefault();
+
+        const files = Array.from(e.clipboardData.files);
+        await processFiles(files);
     };
 
     // Remove attachment
@@ -143,6 +160,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             setShowSlashDropdown(false);
         }
     };
+
+    // Add paste event listener for file pasting
+    React.useEffect(() => {
+        const composerElement = composerRef.current;
+        if (!composerElement) return;
+
+        composerElement.addEventListener('paste', handlePaste as any);
+
+        return () => {
+            composerElement.removeEventListener('paste', handlePaste as any);
+        };
+    }, []);
 
     // Show suggestions when there are no messages and no active workflow
     const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow;
@@ -234,7 +263,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     onChange={handleFileChange}
                 />
 
-                <div className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
+                <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
                     {/* Workflow Badge - shows when workflow is active */}
                     {activeWorkflow && (
                         <WorkflowBadge
