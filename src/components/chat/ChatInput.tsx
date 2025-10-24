@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { UploadIcon } from '../UploadIcon';
-import { VoiceInput } from '../../audio/VoiceInput';
+import { VoiceInput, type VoiceInputHandle } from '../../audio/VoiceInput';
 import { ModeSelector } from './ModeSelector';
 import { LocalBanner } from './LocalBanner';
 import { SendIcon } from './icons/SendIcon';
@@ -23,7 +23,8 @@ interface ChatInputProps {
     onSendMessage: (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => void;
     isLoading: boolean;
     isRecording?: boolean;
-    onMicClick?: () => void;
+    onRecordingChange?: (isRecording: boolean) => void;
+    voiceInputRef?: React.RefObject<VoiceInputHandle>;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
@@ -40,7 +41,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onSendMessage,
     isLoading,
     isRecording,
-    onMicClick,
+    onRecordingChange,
+    voiceInputRef: externalVoiceInputRef,
     onStop,
     pendingMessageId,
     nextMessageId,
@@ -53,6 +55,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const paperclipIconRef = useRef<any>(null);
     const composerRef = useRef<HTMLDivElement>(null);
+    const internalVoiceInputRef = useRef<VoiceInputHandle>(null);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
 
@@ -60,6 +63,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDefinition | null>(null);
     const [showSlashDropdown, setShowSlashDropdown] = useState(false);
     const [slashSearchQuery, setSlashSearchQuery] = useState('');
+
+    // Use external ref if provided, otherwise use local ref
+    const voiceInputRef = externalVoiceInputRef || internalVoiceInputRef;
 
     // Handle file selection
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,7 +219,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
             {/* Suggested Actions */}
             <AnimatePresence>
-                {showSuggestedActions && (
+                {showSuggestedActions && !isRecording && (
                     <motion.div
                         key="suggested-actions-container"
                         initial={{ opacity: 0, y: 20 }}
@@ -354,23 +360,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         <div className="copilot-composer-actions">
                             {/* Voice Input */}
                             <VoiceInput
+                                ref={voiceInputRef}
                                 onTranscript={(text) => setInput(text)}
                                 onRecordingChange={(recording) => {
-                                    // External recording state is managed by parent component
-                                    // The pill animation will show based on external state
+                                    // Notify parent about recording state for pill UI
+                                    onRecordingChange?.(recording);
                                 }}
                                 onRecordingComplete={(finalText) => {
-                                    const workflowId = activeWorkflow?.id;
-                                    onSendMessage(finalText, attachments, workflowId);
-                                    setInput('');
-                                    setAttachments([]);
-                                    if (activeWorkflow) {
-                                        setActiveWorkflow(null);
-                                    }
+                                    // Just set the input text, don't auto-send
+                                    setInput(finalText);
+                                    // Focus the textarea so user can review and send
+                                    textareaRef.current?.focus();
                                 }}
                                 className="copilot-voice-input"
-                                externalRecordingState={isRecording}
-                                onExternalRecordingToggle={onMicClick}
                             />
 
                             {/* Paperclip - File Upload */}

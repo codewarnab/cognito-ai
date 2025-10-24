@@ -1,13 +1,8 @@
-/**
- * Custom CopilotKit Chat Window Component
- * Adapted for Chrome Extension Side Panel
- * MERGED VERSION: Voice Input + Stop Button + Thread Management + Memory Panel
- */
-
 import React, { useState, useEffect } from 'react';
 import { ChatHeader } from './chat/ChatHeader';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatInput } from './chat/ChatInput';
+import type { VoiceInputHandle } from '../audio/VoiceInput';
 import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
 import type { Message, AIMode, RemoteModelType, ModelState } from './chat/types';
@@ -30,7 +25,8 @@ interface CopilotChatWindowProps {
     pendingMessageId?: string | null;
     nextMessageId?: string;
     isRecording?: boolean;
-    onMicClick?: () => void;
+    onRecordingChange?: (isRecording: boolean) => void;
+    voiceInputRef?: React.RefObject<VoiceInputHandle>;
 }
 
 export function CopilotChatWindow({
@@ -51,7 +47,8 @@ export function CopilotChatWindow({
     pendingMessageId,
     nextMessageId,
     isRecording,
-    onMicClick,
+    onRecordingChange,
+    voiceInputRef,
 }: CopilotChatWindowProps) {
     const [modelState, setModelState] = useState<ModelState>({
         mode: 'local',
@@ -133,7 +130,8 @@ export function CopilotChatWindow({
                 onSendMessage={onSendMessage}
                 isLoading={isLoading}
                 isRecording={isRecording}
-                onMicClick={onMicClick}
+                onRecordingChange={onRecordingChange}
+                voiceInputRef={voiceInputRef}
                 onStop={onStop}
                 pendingMessageId={pendingMessageId}
                 nextMessageId={nextMessageId}

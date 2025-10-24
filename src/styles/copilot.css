@@ -1196,28 +1196,7 @@ body {
     pointer-events: none;
 }
 
-.voice-recording-pill {
-    position: absolute !important;
-    top: -50px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    background: rgba(26, 38, 55, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 24px !important;
-    padding: 8px 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
-    cursor: pointer !important;
-    z-index: 9999 !important;
-    backdrop-filter: blur(12px) !important;
-    width: max-content !important;
-    max-width: 90% !important;
-    margin: 0 !important;
-    right: auto !important;
-}
+/* Voice recording pill styles moved to voice-recording-pill.css */
 
 .recording-pulse {
     display: flex;
@@ -1317,30 +1296,6 @@ body {
     text-decoration: underline;
 }
 
-/* Voice Recording Pill Styles */
-.voice-recording-pill {
-    position: absolute !important;
-    top: -50px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    background: rgba(26, 38, 55, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 24px !important;
-    padding: 8px 16px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
-    cursor: pointer !important;
-    z-index: 9999 !important;
-    backdrop-filter: blur(12px) !important;
-    width: max-content !important;
-    max-width: 90% !important;
-    margin: 0 !important;
-    right: auto !important;
-}
-
 /* Suggested Actions Styles */
 .suggested-actions-container {
     margin-bottom: 12px;
@@ -1412,22 +1367,22 @@ body {
         padding: 0;
         margin-bottom: 8px;
     }
-    
+
     .suggested-actions-grid {
         gap: 6px;
     }
-    
+
     .suggested-action-button {
         padding: 16px 18px;
         min-height: 65px;
         max-height: 75px;
         font-size: 14px;
     }
-    
+
     .suggested-action-title {
         font-size: 14px;
     }
-    
+
     .suggested-action-label {
         font-size: 13px;
     }
@@ -1440,18 +1395,18 @@ body {
         grid-template-rows: repeat(2, 1fr);
         gap: 6px;
     }
-    
+
     .suggested-action-button {
         padding: 14px 16px;
         min-height: 60px;
         max-height: 70px;
         font-size: 13px;
     }
-    
+
     .suggested-action-title {
         font-size: 13px;
     }
-    
+
     .suggested-action-label {
         font-size: 12px;
     }
