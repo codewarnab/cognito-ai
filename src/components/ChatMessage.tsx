@@ -2,8 +2,55 @@ import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import rehypeHighlight from 'rehype-highlight';
 import type { UIMessage } from 'ai';
 import { ToolPartRenderer } from '../ai/ToolPartRenderer';
+
+// Custom code block component with copy button
+function CodeBlock({ node, inline, className, children, ...props }: any) {
+    const [copied, setCopied] = useState(false);
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    const handleCopy = async () => {
+        const code = String(children).replace(/\n$/, '');
+        try {
+            await navigator.clipboard.writeText(code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy code:', err);
+        }
+    };
+
+    if (inline) {
+        return (
+            <code className={className} {...props}>
+                {children}
+            </code>
+        );
+    }
+
+    return (
+        <div className="code-block-wrapper">
+            <div className="code-block-header">
+                {language && <span className="code-block-language">{language}</span>}
+                <button
+                    className="code-block-copy-btn"
+                    onClick={handleCopy}
+                    title="Copy code"
+                >
+                    {copied ? '✓ Copied' : '📋 Copy'}
+                </button>
+            </div>
+            <pre>
+                <code className={className} {...props}>
+                    {children}
+                </code>
+            </pre>
+        </div>
+    );
+}
 
 interface ChatMessageProps {
     message: UIMessage;
@@ -105,7 +152,13 @@ export function ChatMessage({ message, onCopy, onRegenerate }: ChatMessageProps)
                                 <div key={`text-${index}`} className={`message-content ${isError ? 'error' : ''}`}>
                                     {message.role === 'assistant' ? (
                                         <div className="markdown-content">
-                                            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                                            <ReactMarkdown
+                                                remarkPlugins={[remarkGfm, remarkBreaks]}
+                                                rehypePlugins={[rehypeHighlight]}
+                                                components={{
+                                                    code: CodeBlock
+                                                }}
+                                            >
                                                 {part.text}
                                             </ReactMarkdown>
                                         </div>

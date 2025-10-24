@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import { ToolUIProvider } from "./ai/ToolUIContext";
@@ -9,6 +9,8 @@ import { ReminderPanel } from "./components/ReminderPanel";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
 import { VoiceModeUI } from "./components/voice/VoiceModeUI";
+import { VoiceRecordingPill } from "./components/VoiceRecordingPill";
+import type { VoiceInputHandle } from "./audio/VoiceInput";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
@@ -17,6 +19,7 @@ import "./styles/mentions.css";
 import "./styles/thread-sidepanel.css";
 import "./styles/reminder.css";
 import "./styles/workflows.css";
+import "./styles/voice-recording-pill.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -68,6 +71,7 @@ function AIChatContent() {
     const [behavioralPreferences, setBehavioralPreferences] = useState<Record<string, unknown>>({});
     const sessionIdRef = useRef<string>(Date.now().toString());
     const audioLinesIconRef = useRef<AudioLinesIconHandle>(null);
+    const voiceInputRef = useRef<VoiceInputHandle>(null);
 
     // Use AI SDK v5 chat hook with ChromeExtensionTransport
     const aiChat = useAIChat({
@@ -512,21 +516,21 @@ function AIChatContent() {
         await setLastActiveThreadId(threadId);
     };
 
-    // Handle microphone click for voice recording
-    const handleMicClick = () => {
-        const newRecordingState = !isRecording;
+    // Handle voice recording state changes from VoiceInput
+    const handleRecordingChange = (recording: boolean) => {
+        setIsRecording(recording);
 
-        if (isRecording) {
-            // Stop animation and hide pill immediately
+        if (recording) {
+            // Show pill and start animation when recording starts
+            setShowPill(true);
+            audioLinesIconRef.current?.startAnimation();
+            log.info("Voice recording started");
+        } else {
+            // Hide pill and stop animation when recording stops
             audioLinesIconRef.current?.stopAnimation();
             setShowPill(false);
-        } else {
-            // Show pill and start recording
-            setShowPill(true);
+            log.info("Voice recording stopped");
         }
-
-        setIsRecording(newRecordingState);
-        log.info("Microphone clicked", { isRecording: newRecordingState });
     };
 
     // Animation is now controlled by motion component callbacks
@@ -575,36 +579,19 @@ function AIChatContent() {
                         isLoading={isLoading}
                         messagesEndRef={messagesEndRef}
                         isRecording={isRecording}
-                        onMicClick={handleMicClick}
+                        onRecordingChange={handleRecordingChange}
+                        voiceInputRef={voiceInputRef}
                     />
 
                     {/* Floating Recording Pill - Only in text mode */}
-                    <AnimatePresence mode="wait">
-                        {showPill && (
-                            <motion.div
-                                className="voice-recording-pill"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                transition={{ duration: 0.15, ease: 'easeOut' }}
-                                onAnimationStart={() => {
-                                    audioLinesIconRef.current?.startAnimation();
-                                }}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    handleMicClick();
-                                }}
-                            >
-                                <AudioLinesIcon
-                                    ref={audioLinesIconRef}
-                                    size={16}
-                                    style={{ color: 'white' }}
-                                />
-                                <span className="recording-text">Click to finish recording</span>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                    <VoiceRecordingPill
+                        ref={audioLinesIconRef}
+                        isVisible={showPill}
+                        onStopRecording={() => {
+                            // Stop the voice recording
+                            voiceInputRef.current?.stopRecording();
+                        }}
+                    />
 
                     {/* Voice Mode FAB - Only in text mode */}
                     <motion.button

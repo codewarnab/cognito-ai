@@ -3,7 +3,7 @@
  * Speech-to-text with silence detection
  */
 
-import React, { useState } from 'react';
+import React, { useState, useImperativeHandle, forwardRef } from 'react';
 import { useSpeechRecognition } from './useSpeechRecognition';
 import { checkMicrophonePermission, openMicrophoneSettings } from './micPermission';
 import { createLogger } from '../logger';
@@ -19,11 +19,14 @@ interface VoiceInputProps {
   className?: string;
   lang?: string;
   silenceTimeout?: number;
-  externalRecordingState?: boolean;
-  onExternalRecordingToggle?: () => void;
 }
 
-export function VoiceInput({
+export interface VoiceInputHandle {
+  startRecording: () => Promise<void>;
+  stopRecording: () => void;
+}
+
+export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
   onTranscript,
   onRecordingChange,
   onInterimTranscript,
@@ -31,11 +34,9 @@ export function VoiceInput({
   className = '',
   lang = 'en-IN',
   silenceTimeout = 3000,
-  externalRecordingState,
-  onExternalRecordingToggle,
-}: VoiceInputProps) {
+}, ref) => {
   const [permissionStatus, setPermissionStatus] = useState<'unknown' | 'checking' | 'granted' | 'denied'>('unknown');
-  
+
   const {
     isRecording: internalIsRecording,
     transcript,
@@ -65,8 +66,18 @@ export function VoiceInput({
     },
   });
 
-  // Use external recording state if provided, otherwise use internal state
-  const isRecording = externalRecordingState !== undefined ? externalRecordingState : internalIsRecording;
+  const isRecording = internalIsRecording;
+
+  // Expose imperative handle for parent to control recording
+  useImperativeHandle(ref, () => ({
+    startRecording: async () => {
+      setPermissionStatus('checking');
+      await startRecording();
+      const status = await checkMicrophonePermission();
+      setPermissionStatus(status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'unknown');
+    },
+    stopRecording,
+  }));
 
   React.useEffect(() => {
     onRecordingChange?.(isRecording);
@@ -91,15 +102,7 @@ export function VoiceInput({
 
   const handleToggleRecording = async () => {
     console.log('VoiceInput: handleToggleRecording called, isRecording:', isRecording);
-    
-    // If external handler is provided, use it instead of internal logic
-    if (onExternalRecordingToggle) {
-      console.log('VoiceInput: Using external recording toggle');
-      onExternalRecordingToggle();
-      return;
-    }
-    
-    // Fallback to internal recording logic
+
     if (isRecording) {
       console.log('VoiceInput: Stopping recording');
       stopRecording();
@@ -141,11 +144,11 @@ export function VoiceInput({
           onClick={handleToggleRecording}
           aria-label="Start recording"
           title={
-            permissionStatus === 'denied' 
-              ? 'Microphone access denied - click for help' 
+            permissionStatus === 'denied'
+              ? 'Microphone access denied - click for help'
               : permissionStatus === 'checking'
-              ? 'Requesting permission...'
-              : 'Click to speak'
+                ? 'Requesting permission...'
+                : 'Click to speak'
           }
         >
           <div className="microphone-icon">
@@ -190,7 +193,7 @@ export function VoiceInput({
           <span className="voice-error-icon">⚠️</span>
           <span className="voice-error-text">{error}</span>
           {error.includes('denied') && (
-            <button 
+            <button
               className="voice-settings-button"
               onClick={handleOpenSettings}
               title="Open microphone settings help"
@@ -202,4 +205,6 @@ export function VoiceInput({
       )}
     </div>
   );
-}
+});
+
+VoiceInput.displayName = 'VoiceInput';
