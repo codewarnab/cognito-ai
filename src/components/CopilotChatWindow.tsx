@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChatHeader } from './chat/ChatHeader';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatInput } from './chat/ChatInput';
+import { ErrorNotification } from './chat/ErrorNotification';
 import type { VoiceInputHandle } from '../audio/VoiceInput';
 import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
@@ -55,6 +56,10 @@ export function CopilotChatWindow({
         remoteModel: 'gemini-2.5-flash',
         hasApiKey: false,
     });
+    const [errorNotification, setErrorNotification] = useState<{
+        message: string;
+        type: 'error' | 'warning' | 'info';
+    } | null>(null);
 
     // Load initial state
     useEffect(() => {
@@ -70,6 +75,23 @@ export function CopilotChatWindow({
             });
         }
         loadModelState();
+    }, []);
+
+    // Listen for API key changes in storage
+    useEffect(() => {
+        const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+            if (areaName === 'local' && changes.gemini_api_key) {
+                // API key was added or removed
+                const hasKey = !!changes.gemini_api_key.newValue;
+                setModelState(prev => ({
+                    ...prev,
+                    hasApiKey: hasKey,
+                }));
+            }
+        };
+
+        chrome.storage.onChanged.addListener(handleStorageChange);
+        return () => chrome.storage.onChanged.removeListener(handleStorageChange);
     }, []);
 
     // Track conversation start mode
@@ -106,14 +128,41 @@ export function CopilotChatWindow({
         setModelState(prev => ({ ...prev, remoteModel }));
     };
 
+    const handleError = (message: string, type: 'error' | 'warning' | 'info' = 'error') => {
+        setErrorNotification({ message, type });
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            setErrorNotification(null);
+        }, 5000);
+    };
+
+    const handleApiKeySaved = async () => {
+        // Refresh API key state when dialog saves the key
+        const hasKey = await hasGeminiApiKey();
+        setModelState(prev => ({
+            ...prev,
+            hasApiKey: hasKey,
+        }));
+    };
+
     return (
         <div className="copilot-chat-window">
+            {/* Error Notification */}
+            {errorNotification && (
+                <ErrorNotification
+                    message={errorNotification.message}
+                    type={errorNotification.type}
+                    onDismiss={() => setErrorNotification(null)}
+                />
+            )}
+
             <ChatHeader
                 onSettingsClick={onSettingsClick}
                 onThreadsClick={onThreadsClick}
                 onNewThreadClick={handleNewThread}
                 onMemoryClick={onMemoryClick}
                 onRemindersClick={onRemindersClick}
+                onApiKeySaved={handleApiKeySaved}
             />
 
             <ChatMessages
@@ -138,7 +187,8 @@ export function CopilotChatWindow({
                 modelState={modelState}
                 onModeChange={handleModeChange}
                 onModelChange={handleModelChange}
-                onSettingsClick={onSettingsClick}
+                onApiKeySaved={handleApiKeySaved}
+                onError={handleError}
             />
         </div>
     );

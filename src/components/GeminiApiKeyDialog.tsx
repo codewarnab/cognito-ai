@@ -7,30 +7,37 @@ import {
     DialogHeader,
     DialogTitle,
 } from './ui/dialog';
+import { ModelDropdown } from './chat/ModelDropdown';
 import { createLogger } from '../logger';
 import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../utils/geminiApiKey';
+import { getModelConfig, setModelConfig } from '../utils/modelSettings';
+import type { RemoteModelType } from './chat/types';
 
 const log = createLogger('GeminiApiKeyDialog');
 
 interface GeminiApiKeyDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    onApiKeySaved?: () => void;
 }
 
 export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
     isOpen,
     onClose,
+    onApiKeySaved,
 }) => {
     const [apiKey, setApiKey] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showKey, setShowKey] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+    const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-2.5-flash');
 
     // Load existing API key when dialog opens
     useEffect(() => {
         if (isOpen) {
             loadApiKey();
+            loadModelConfig();
             setNotification(null); // Clear notifications when dialog opens
         }
     }, [isOpen]);
@@ -50,6 +57,15 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
         }
     };
 
+    const loadModelConfig = async () => {
+        try {
+            const config = await getModelConfig();
+            setSelectedModel(config.remoteModel);
+        } catch (error) {
+            log.error('Failed to load model config', error);
+        }
+    };
+
     const handleSave = async () => {
         if (!apiKey.trim()) {
             setNotification({ type: 'error', message: 'Please enter an API key' });
@@ -60,8 +76,15 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
             setIsSaving(true);
             setNotification(null);
             await setGeminiApiKey(apiKey.trim());
-            log.info('Gemini API key saved successfully');
-            setNotification({ type: 'success', message: 'API key saved successfully!' });
+            await setModelConfig({ remoteModel: selectedModel });
+            log.info('Gemini API key and model saved successfully');
+            setNotification({ type: 'success', message: 'API key and model saved successfully!' });
+            
+            // Notify parent that API key was saved
+            if (onApiKeySaved) {
+                onApiKeySaved();
+            }
+            
             // Close dialog after a short delay to show success message
             setTimeout(() => {
                 onClose();
@@ -206,6 +229,66 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
                             >
                                 {showKey ? 'Hide' : 'Show'}
                             </button>
+                        </div>
+                    </div>
+
+                    {/* Model Selector */}
+                    <div>
+                        <label
+                            htmlFor="model-selector"
+                            style={{
+                                display: 'block',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                marginBottom: '0.5rem',
+                                color: 'var(--text-secondary)',
+                            }}
+                        >
+                            Default Model
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <select
+                                id="model-selector"
+                                value={selectedModel}
+                                onChange={(e) => setSelectedModel(e.target.value as RemoteModelType)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--border-color)',
+                                    fontSize: '0.875rem',
+                                    background: 'var(--bg-tertiary)',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    appearance: 'none',
+                                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'right 0.5rem center',
+                                    backgroundSize: '1.25rem',
+                                    paddingRight: '2.5rem',
+                                }}
+                                onFocus={(e) => {
+                                    e.target.style.borderColor = 'var(--border-color-focus)';
+                                    e.target.style.background = 'var(--bg-quaternary)';
+                                    e.target.style.backgroundImage = `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`;
+                                    e.target.style.backgroundRepeat = 'no-repeat';
+                                    e.target.style.backgroundPosition = 'right 0.5rem center';
+                                    e.target.style.backgroundSize = '1.25rem';
+                                }}
+                                onBlur={(e) => {
+                                    e.target.style.borderColor = 'var(--border-color)';
+                                    e.target.style.background = 'var(--bg-tertiary)';
+                                    e.target.style.backgroundImage = `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`;
+                                    e.target.style.backgroundRepeat = 'no-repeat';
+                                    e.target.style.backgroundPosition = 'right 0.5rem center';
+                                    e.target.style.backgroundSize = '1.25rem';
+                                }}
+                            >   <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                                <option value="gemini-2.5-flash-image">Gemini Nano Banana</option>
+                            </select>
                         </div>
                     </div>
 
