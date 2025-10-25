@@ -184,24 +184,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     const suggestedActions = [
         {
-            title: 'How can I improve',
-            label: 'my time management skills?',
-            action: 'How can I improve my time management skills?',
+            title: 'Search for React tutorials',
+            label: 'and organize my tabs',
+            action: 'Search for React tutorials and organize my tabs',
         },
         {
-            title: 'Suggest ideas for',
-            label: 'a creative writing project',
-            action: 'Suggest ideas for a creative writing project',
+            title: 'Find my recent GitHub visits',
+            label: 'from this morning',
+            action: 'Find my recent GitHub visits from this morning',
         },
         {
-            title: 'What are some tips',
-            label: 'for staying motivated?',
-            action: 'What are some tips for staying motivated?',
+            title: 'Set a reminder for',
+            label: 'my meeting tomorrow at 2pm',
+            action: 'Set a reminder for my meeting tomorrow at 2pm',
         },
         {
-            title: 'Help me brainstorm',
-            label: 'ideas for a new hobby',
-            action: 'Help me brainstorm ideas for a new hobby',
+            title: 'Analyze this YouTube video',
+            label: 'and summarize the key points',
+            action: 'Analyze this YouTube video and summarize the key points',
         },
     ];
 
@@ -213,9 +213,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     return (
         <div className="copilot-input-container">
             {/* Show banner when in local mode */}
-            {modelState.mode === 'local' && (
-                <LocalBanner onSettingsClick={onSettingsClick} />
-            )}
+            <AnimatePresence>
+                {modelState.mode === 'local' && (
+                    <motion.div
+                        key="local-banner"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                    >
+                        <LocalBanner onSettingsClick={onSettingsClick} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Suggested Actions */}
             <AnimatePresence>
@@ -242,9 +252,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                         className="suggested-action-button"
                                     >
                                         <span className="suggested-action-title">{suggestedAction.title}</span>
-                                        <span className="suggested-action-label">
-                                            {suggestedAction.label}
-                                        </span>
                                     </button>
                                 </motion.div>
                             ))}

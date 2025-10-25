@@ -4,8 +4,9 @@ import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import { ToolUIProvider } from "./ai/ToolUIContext";
 import { ThreadListSidePanel } from "./components/ThreadListSidePanel";
-import { MemoryPanel } from "./components/MemoryPanel";
+import { MemorySidebar } from "./components/MemorySidebar";
 import { ReminderPanel } from "./components/ReminderPanel";
+import { OnboardingScreen } from "./components/OnboardingScreen";
 import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
 import { VoiceModeUI } from "./components/voice/VoiceModeUI";
@@ -15,11 +16,14 @@ import "./styles/copilot.css";
 import "./styles/mcp.css";
 import "./styles/mcp-tools.css";
 import "./styles/memory.css";
+import "./styles/memory-sidebar.css";
 import "./styles/mentions.css";
 import "./styles/thread-sidepanel.css";
 import "./styles/reminder.css";
 import "./styles/workflows.css";
 import "./styles/voice-recording-pill.css";
+import "./styles/onboarding.css";
+import "./styles/local-banner.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -61,6 +65,8 @@ function AIChatContent() {
     const [showThreads, setShowThreads] = useState(false);
     const [showMemory, setShowMemory] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(false); // Start as false, will be set to true if needed
+    const [showChatInterface, setShowChatInterface] = useState(false); // Controls chat interface visibility
     const [isRecording, setIsRecording] = useState(false);
     const [showPill, setShowPill] = useState(false);
     const [mode, setMode] = useState<ChatMode>('text');
@@ -108,6 +114,87 @@ function AIChatContent() {
             }
         };
         loadApiKey();
+    }, []);
+
+    // Check if onboarding should be shown
+    useEffect(() => {
+        const checkOnboardingStatus = async () => {
+            try {
+                const result = await chrome.storage.local.get(['onboarding_completed']);
+                log.info('Onboarding status check', { 
+                    onboarding_completed: result.onboarding_completed,
+                    showOnboarding: showOnboarding 
+                });
+                if (result.onboarding_completed) {
+                    setShowOnboarding(false);
+                    setShowChatInterface(true); // Show chat interface if onboarding already completed
+                    log.info('Onboarding already completed, hiding onboarding');
+                } else {
+                    setShowOnboarding(true);
+                    setShowChatInterface(false); // Hide chat interface during onboarding
+                    log.info('Onboarding not completed, showing onboarding');
+                }
+            } catch (error) {
+                log.error('Failed to check onboarding status', error);
+            }
+        };
+        checkOnboardingStatus();
+    }, []);
+
+    // Handle onboarding completion
+    const handleOnboardingComplete = async () => {
+        try {
+            await chrome.storage.local.set({ onboarding_completed: true });
+            setShowOnboarding(false);
+            // Add a 10-second delay before showing chat interface
+            setTimeout(() => {
+                setShowChatInterface(true);
+                log.info('Chat interface shown 10 seconds after onboarding');
+            }, 10000); // 10 seconds delay
+            log.info('Onboarding completed, chat interface will appear in 10 seconds');
+        } catch (error) {
+            log.error('Failed to save onboarding status', error);
+            setShowOnboarding(false);
+            setShowChatInterface(true);
+        }
+    };
+
+    // Handle onboarding skip
+    const handleOnboardingSkip = () => {
+        setShowOnboarding(false);
+        // Show chat interface immediately when skipped
+        setTimeout(() => {
+            setShowChatInterface(true);
+        }, 100);
+    };
+
+    // Reset onboarding for testing (can be called from console)
+    const resetOnboarding = async () => {
+        try {
+            await chrome.storage.local.remove(['onboarding_completed']);
+            setShowOnboarding(true);
+            log.info('Onboarding reset');
+        } catch (error) {
+            log.error('Failed to reset onboarding', error);
+        }
+    };
+
+    // Expose functions globally for testing
+    useEffect(() => {
+        (window as any).resetOnboarding = resetOnboarding;
+        (window as any).showOnboarding = () => {
+            setShowOnboarding(true);
+            setShowChatInterface(false);
+        };
+        (window as any).hideOnboarding = () => {
+            setShowOnboarding(false);
+            setShowChatInterface(true);
+        };
+        return () => {
+            delete (window as any).resetOnboarding;
+            delete (window as any).showOnboarding;
+            delete (window as any).hideOnboarding;
+        };
     }, []);
 
     // Handle mode change with cleanup
@@ -540,13 +627,31 @@ function AIChatContent() {
         return <McpManager onBack={() => setShowMcp(false)} />;
     }
 
+    // Show onboarding screen if enabled
+    if (showOnboarding) {
+        log.info('Rendering onboarding screen', { showOnboarding });
+        return (
+            <OnboardingScreen
+                onComplete={handleOnboardingComplete}
+                onSkip={handleOnboardingSkip}
+                showSkip={true}
+            />
+        );
+    }
+
+
+    // Only render chat interface and overlays when not in onboarding/loading
+    if (!showChatInterface) {
+        return null; // Don't render anything when chat interface is hidden
+    }
+
     return (
         <>
             {/* MCP and Tools commented out for now */}
             {/* <ToolRenderer /> */}
 
-            {/* Memory Panel - Side panel overlay */}
-            <MemoryPanel isOpen={showMemory} onClose={() => setShowMemory(false)} />
+            {/* Memory Sidebar - Right sliding sidebar */}
+            <MemorySidebar isOpen={showMemory} onClose={() => setShowMemory(false)} />
 
             {/* Reminder Panel - Side panel overlay */}
             <ReminderPanel isOpen={showReminders} onClose={() => setShowReminders(false)} />
@@ -560,8 +665,16 @@ function AIChatContent() {
                 onNewThread={handleNewThread}
             />
 
-            {/* Conditional rendering based on mode */}
-            {mode === 'text' ? (
+            {/* Chat Interface with slide-in animation */}
+            {showChatInterface && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="chat-interface-container"
+                >
+                    {/* Conditional rendering based on mode */}
+                    {mode === 'text' ? (
                 <>
                     <CopilotChatWindow
                         messages={messages.filter(m => m.role !== 'system') as any}
@@ -618,6 +731,8 @@ function AIChatContent() {
                     apiKey={apiKey}
                     systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
                 />
+            )}
+                </motion.div>
             )}
         </>
     );

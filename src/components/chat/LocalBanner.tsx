@@ -11,12 +11,12 @@ export const LocalBanner: React.FC<LocalBannerProps> = ({ onSettingsClick }) => 
       <div className="local-mode-banner-content">
         <AlertCircle size={16} className="local-mode-icon" />
         <div className="local-mode-text">
-          <strong>Local Mode</strong> - Limited functionality.
+          <span className="local-mode-title">Local Mode</span> - Limited functionality.
           <button 
             onClick={onSettingsClick}
-            className="local-mode-settings-link"
+            className="local-mode-settings-button"
           >
-            Add API key in Settings  
+            Add API key in Settings
           </button>
           to unlock all features.
         </div>

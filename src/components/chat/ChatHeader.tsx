@@ -31,7 +31,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     return (
         <div className="copilot-header">
             <div className="copilot-header-content">
-                {/* Sidebar toggle (opens Chat History side panel) */}
+                {/* Sidebar toggle */}
                 <div className="copilot-header-left">
                     {onThreadsClick && (
                         <button

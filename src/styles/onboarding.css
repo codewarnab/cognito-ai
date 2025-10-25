@@ -1,0 +1,381 @@
+/* Onboarding Screen Styles */
+.onboarding-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0a0e1a;
+    display: flex;
+    flex-direction: column;
+    z-index: 9999; /* Higher z-index to ensure it's above everything */
+    overflow: hidden;
+    animation: fadeInScreen 0.5s ease-out;
+    /* Ensure it covers everything */
+    width: 100vw;
+    height: 100vh;
+}
+
+@keyframes fadeInScreen {
+    from {
+        opacity: 0;
+        background: #000000;
+    }
+    to {
+        opacity: 1;
+        background: #0a0e1a;
+    }
+}
+
+/* Subtle background pattern */
+.onboarding-screen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.01) 0%, transparent 50%);
+    z-index: -1;
+}
+
+.onboarding-skip {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    color: #888888;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    z-index: 1001;
+}
+
+.onboarding-skip:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.onboarding-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.onboarding-logo {
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.onboarding-logo img {
+    border-radius: 12px;
+    transition: transform 0.3s ease;
+}
+
+.onboarding-logo:hover img {
+    transform: scale(1.05);
+}
+
+.onboarding-text {
+    max-width: 400px;
+    margin-bottom: 60px;
+}
+
+.onboarding-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 16px 0;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.onboarding-subtitle {
+    font-size: 18px;
+    font-weight: 500;
+    color: #e4e6eb;
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+}
+
+.onboarding-description {
+    font-size: 14px;
+    color: #888888;
+    margin: 0;
+    line-height: 1.6;
+}
+
+
+/* Animation keyframes */
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Enhanced logo animation */
+.onboarding-logo {
+    position: relative;
+}
+
+.onboarding-logo::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: linear-gradient(45deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        rgba(255, 255, 255, 0.1) 100%);
+    border-radius: 20px;
+    opacity: 0;
+    animation: shimmer 2s ease-in-out infinite;
+    z-index: -1;
+}
+
+.onboarding-logo:hover::before {
+    opacity: 1;
+}
+
+/* Enhanced progress dots animation */
+.progress-dot {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-dot.active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.4) 50%, 
+        transparent 100%);
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Smooth transitions for interactive elements */
+.onboarding-skip,
+.progress-dot {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced hover effects */
+.onboarding-logo:hover {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.onboarding-title {
+    position: relative;
+    overflow: hidden;
+}
+
+.onboarding-title::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.2) 50%, 
+        transparent 100%);
+    animation: shimmer 3s ease-in-out infinite;
+    animation-delay: 1s;
+}
+
+/* Chat Interface Container */
+.chat-interface-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* Loading Screen Styles */
+.loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0a0e1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    width: 100vw;
+    height: 100vh;
+}
+
+.loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 400px;
+    padding: 40px 20px;
+}
+
+.loading-logo {
+    margin-bottom: 30px;
+}
+
+.loading-logo img {
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.loading-text {
+    margin-bottom: 40px;
+}
+
+.loading-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0 0 12px 0;
+    background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.loading-subtitle {
+    font-size: 14px;
+    color: #888888;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.loading-countdown {
+    margin-bottom: 30px;
+}
+
+.countdown-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
+}
+
+.countdown-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0a0e1a;
+}
+
+.countdown-text {
+    font-size: 12px;
+    color: #888888;
+    margin: 0;
+}
+
+.loading-progress {
+    width: 100%;
+    max-width: 300px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffffff 0%, #a0a0a0 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive design */
+@media (max-width: 400px) {
+    .onboarding-title {
+        font-size: 28px;
+    }
+    
+    .onboarding-subtitle {
+        font-size: 16px;
+    }
+    
+    .onboarding-description {
+        font-size: 13px;
+    }
+    
+    .onboarding-logo img {
+        width: 100px;
+        height: 100px;
+    }
+}

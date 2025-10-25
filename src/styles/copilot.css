@@ -64,6 +64,21 @@ body {
     /* Allow shrinking */
 }
 
+.copilot-header-logo {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+}
+
+.copilot-header-logo img {
+    border-radius: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.copilot-header-logo img:hover {
+    opacity: 0.8;
+}
+
 .copilot-header-actions {
     display: flex;
     align-items: center;
