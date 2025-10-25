@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import * as memoryStore from '../../memory/store';
 import { type MemoryCategory } from '../../memory/types';
 import type { ToolUIState } from '../../ai/ToolUIContext';
@@ -60,7 +60,10 @@ export function useListMemories() {
             },
         });
 
-        // Using default CompactToolRenderer - no custom UI needed
+        // Use CompactToolRenderer for consistent modern UI
+        registerToolUI('listMemories', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        });
 
         log.info('✅ listMemories tool registration complete');
 

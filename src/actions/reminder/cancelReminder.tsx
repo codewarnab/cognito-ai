@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { useEffect } from 'react';
 import { createLogger } from "../../logger";
-import { ToolCard } from "../../components/ui/ToolCard";
+import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { findReminder, deleteReminder } from "./storage";
@@ -50,8 +50,10 @@ export function useCancelReminderAction() {
             },
         });
 
-        // Register the UI renderer for this tool
-        // Using default CompactToolRenderer - no custom UI needed
+        // Use CompactToolRenderer for consistent modern UI
+        registerToolUI('cancelReminder', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        });
 
         log.info('✅ cancelReminder tool registration complete');
 

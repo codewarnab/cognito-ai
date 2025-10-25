@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
-import { ToolCard } from "../../components/ui/ToolCard";
+import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
 import { registerTool } from "../../ai/toolRegistryUtils";
 import { useToolUI } from "../../ai/ToolUIContext";
 import type { ToolUIState } from "../../ai/ToolUIContext";
@@ -81,7 +81,10 @@ export function useFocusElementTool() {
             },
         });
 
-        // Using default CompactToolRenderer - no custom UI needed
+        // Use CompactToolRenderer for consistent modern UI
+        registerToolUI('focusElement', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        });
 
         log.info('✅ focusElement tool registration complete');
 

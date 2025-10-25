@@ -209,6 +209,27 @@ const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
     return { action: 'Click failed' };
 };
 
+const focusElementFormatter: ActionFormatter = ({ state, input }) => {
+    const selector = input?.selector;
+
+    if (state === 'loading') {
+        return {
+            action: 'Focusing element',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Element focused',
+            description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    return {
+        action: 'Focus failed',
+        description: selector ? truncateText(selector, 40) : undefined
+    };
+};
+
 const clickByTextFormatter: ActionFormatter = ({ state, input, output }) => {
     const searchText = input?.text;
     const clicked = output?.clicked;
@@ -279,6 +300,30 @@ const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
         };
     }
     return { action: 'Key press failed' };
+};
+
+const globalTypeTextFormatter: ActionFormatter = ({ state, input, output }) => {
+    const text = input?.text || '';
+    const preview = text.substring(0, 20);
+    const displayText = text.length > 20 ? preview + '...' : preview;
+    const typed = output?.typed || text.length;
+
+    if (state === 'loading') {
+        return {
+            action: 'Typing text',
+            description: `"${displayText}"`
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Text typed',
+            description: `${typed} characters`
+        };
+    }
+    return {
+        action: 'Typing failed',
+        description: displayText ? `"${displayText}"` : undefined
+    };
 };
 
 const scrollFormatter: ActionFormatter = ({ state, input }) => {
@@ -674,6 +719,28 @@ const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
     return { action: 'Failed to list memories' };
 };
 
+const cancelReminderFormatter: ActionFormatter = ({ state, input, output }) => {
+    const identifier = input?.identifier;
+    const title = output?.title || identifier;
+
+    if (state === 'loading') {
+        return {
+            action: 'Cancelling reminder',
+            description: identifier ? truncateText(identifier, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        return {
+            action: 'Reminder cancelled',
+            description: title ? truncateText(title, 40) : undefined
+        };
+    }
+    return {
+        action: 'Failed to cancel reminder',
+        description: identifier ? truncateText(identifier, 40) : undefined
+    };
+};
+
 // History Tools
 const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
     const query = input?.query;
@@ -926,9 +993,11 @@ const formatters: Record<string, ActionFormatter> = {
     clickElement: clickElementFormatter,
     click: clickElementFormatter,
     clickByText: clickByTextFormatter,
+    focusElement: focusElementFormatter,
     typeInField: typeInFieldFormatter,
     type: typeInFieldFormatter,
     pressKey: pressKeyFormatter,
+    globalTypeText: globalTypeTextFormatter,
     scroll: scrollFormatter,
     waitForElement: waitForElementFormatter,
     waitFor: waitForElementFormatter,
@@ -952,6 +1021,9 @@ const formatters: Record<string, ActionFormatter> = {
     retrieveMemory: getMemoryFormatter,
     deleteMemory: deleteMemoryFormatter,
     listMemories: listMemoriesFormatter,
+
+    // Reminders
+    cancelReminder: cancelReminderFormatter,
 
     // History
     getHistory: getHistoryFormatter,

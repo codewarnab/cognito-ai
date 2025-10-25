@@ -69,6 +69,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     focusElement: CursorClickIcon,
     typeInField: KeyboardIcon,
     pressKey: KeyboardIcon,
+    globalTypeText: KeyboardIcon,
     scroll: ArrowBigDownDashIcon,
     search: SearchIcon,
     chromeSearch: SearchIcon,
