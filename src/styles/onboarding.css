@@ -66,17 +66,19 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100%;
+    justify-content: space-between;
+    height: 100vh;
     padding: 40px 20px;
     text-align: center;
+    box-sizing: border-box;
 }
 
 .onboarding-logo {
-    margin-bottom: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1;
+    margin: 20px 0;
 }
 
 .onboarding-logo img {
@@ -88,16 +90,119 @@
     transform: scale(1.05);
 }
 
+/* Footer Navigation */
+.onboarding-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    margin: 0 20px 20px 20px;
+    flex-shrink: 0;
+}
+
+.onboarding-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.onboarding-progress-bar {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.onboarding-progress-fill {
+    width: 33%;
+    height: 100%;
+    background: #ffffff;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.onboarding-progress-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.onboarding-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+.onboarding-dot.active {
+    background: #ffffff;
+    transform: scale(1.2);
+}
+
+.onboarding-navigation {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.onboarding-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.onboarding-nav-btn--back {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-nav-btn--back:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.onboarding-nav-btn--next {
+    width: 80px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-nav-btn--next:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+}
+
 .onboarding-text {
     max-width: 400px;
-    margin-bottom: 60px;
+    margin-bottom: 10px;
+    margin-top: 20px;
 }
 
 .onboarding-title {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 700;
     color: #ffffff;
-    margin: 0 0 16px 0;
+    margin: 0 0 12px 0;
     background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -105,15 +210,15 @@
 }
 
 .onboarding-subtitle {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     color: #e4e6eb;
-    margin: 0 0 20px 0;
+    margin: 0 0 16px 0;
     line-height: 1.4;
 }
 
 .onboarding-description {
-    font-size: 14px;
+    font-size: 13px;
     color: #888888;
     margin: 0;
     line-height: 1.6;
@@ -363,19 +468,28 @@
 /* Responsive design */
 @media (max-width: 400px) {
     .onboarding-title {
-        font-size: 28px;
+        font-size: 20px;
     }
     
     .onboarding-subtitle {
-        font-size: 16px;
+        font-size: 14px;
     }
     
     .onboarding-description {
-        font-size: 13px;
+        font-size: 12px;
     }
     
     .onboarding-logo img {
-        width: 100px;
-        height: 100px;
+        width: 280px;
+        height: 280px;
+    }
+    
+    .onboarding-footer {
+        margin-top: 20px;
+        gap: 16px;
+    }
+    
+    .onboarding-nav-btn--next {
+        width: 70px;
     }
 }
