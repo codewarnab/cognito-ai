@@ -39,6 +39,88 @@ body {
     bottom: 0;
 }
 
+/* Error Notification */
+.error-notification {
+    position: fixed;
+    top: 70px;
+    left: 8%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: 90%;
+    width: auto;
+    min-width: 300px;
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.error-notification-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.error-notification-warning {
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.error-notification-info {
+    background: rgba(59, 130, 246, 0.15);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.error-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.error-notification-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.error-notification-error .error-notification-icon {
+    color: #ef4444;
+}
+
+.error-notification-warning .error-notification-icon {
+    color: #fbbf24;
+}
+
+.error-notification-info .error-notification-icon {
+    color: #3b82f6;
+}
+
+.error-notification-message {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.error-notification-dismiss {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.error-notification-dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
 /* Header */
 .copilot-header {
     padding: 12px 16px;

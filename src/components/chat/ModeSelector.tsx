@@ -11,6 +11,7 @@ interface ModeSelectorProps {
     onModelChange: (model: RemoteModelType) => void;
     showModeDropdown: boolean;
     onToggleDropdown: (show: boolean) => void;
+    onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({
@@ -19,6 +20,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     onModelChange,
     showModeDropdown,
     onToggleDropdown,
+    onError,
 }) => {
     const { mode, remoteModel, hasApiKey, conversationStartMode } = modelState;
     
@@ -34,21 +36,23 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         const allowed = await canSwitchMode(mode, newMode);
         
         if (!allowed) {
-            alert(
-                'ΓÜá∩╕Å Cannot switch to Local mode\n\n' +
-                'This conversation started with Remote mode and uses advanced features. ' +
-                'Switching to Local would break functionality.\n\n' +
-                'Please start a new conversation to use Local mode.'
-            );
+            if (onError) {
+                onError(
+                    'Cannot switch to Local mode. This conversation started with Remote mode and uses advanced features. Please start a new conversation to use Local mode.',
+                    'warning'
+                );
+            }
             return;
         }
         
         // Check if remote mode has API key
         if (newMode === 'remote' && !hasApiKey) {
-            alert(
-                'API Key Required\n\n' +
-                'Please add your Gemini API key in Settings   to use Remote mode.'
-            );
+            if (onError) {
+                onError(
+                    'API Key Required. Please add your Gemini API key in Settings to use Remote mode.',
+                    'warning'
+                );
+            }
             return;
         }
         
@@ -90,15 +94,6 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                         )}
                         <span className="mode-label">{mode === 'local' ? 'Local' : 'Cloud'}</span>
                     </button>
-                    
-                    <span className="model-name-display">{modelName}</span>
-                    
-                    {mode === 'remote' && (
-                        <ModelDropdown
-                            currentModel={remoteModel}
-                            onModelChange={onModelChange}
-                        />
-                    )}
                 </div>
             ) : (
                 <div className="copilot-mode-expanded">

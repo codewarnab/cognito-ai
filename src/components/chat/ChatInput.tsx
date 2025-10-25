@@ -31,7 +31,8 @@ interface ChatInputProps {
     modelState: ModelState;
     onModeChange: (mode: AIMode) => void;
     onModelChange: (model: RemoteModelType) => void;
-    onSettingsClick?: () => void;
+    onApiKeySaved?: () => void;
+    onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -49,7 +50,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     modelState,
     onModeChange,
     onModelChange,
-    onSettingsClick,
+    onApiKeySaved,
+    onError,
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -214,7 +216,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className="copilot-input-container">
             {/* Show banner when in local mode */}
             {modelState.mode === 'local' && (
-                <LocalBanner onSettingsClick={onSettingsClick} />
+                <LocalBanner onApiKeySaved={onApiKeySaved} />
             )}
 
             {/* Suggested Actions */}
@@ -354,6 +356,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             onModelChange={onModelChange}
                             showModeDropdown={showModeDropdown}
                             onToggleDropdown={setShowModeDropdown}
+                            onError={onError}
                         />
 
                         {/* Action Buttons - Bottom Right */}
