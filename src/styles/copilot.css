@@ -752,6 +752,21 @@ body {
     color: rgba(255, 255, 255, 0.85);
 }
 
+/* Disabled state for action buttons (e.g., attach) when in Local mode */
+.copilot-action-button[aria-disabled="true"],
+.copilot-action-button.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.copilot-action-button[aria-disabled="true"]:hover,
+.copilot-action-button.disabled:hover {
+    background: transparent;
+    transform: none;
+    color: rgba(255, 255, 255, 0.4);
+}
+
 .copilot-action-button:active {
     background: rgba(255, 255, 255, 0.12);
 }

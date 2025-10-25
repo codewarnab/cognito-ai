@@ -183,6 +183,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // Show suggestions when there are no messages and no active workflow
     const [showSuggestions, setShowSuggestions] = useState(true);
+    const isLocalMode = modelState.mode === 'local';
     const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0;
 
     const suggestedActions = [
@@ -390,15 +391,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             {/* Paperclip - File Upload */}
                             <button
                                 type="button"
-                                className="copilot-action-button"
-                                title="Attach file (Images, PDFs, Documents)"
+                                className={`copilot-action-button ${isLocalMode ? 'disabled' : ''}`}
+                                title={isLocalMode ? 'Switch to Cloud mode to use file attachments' : 'Attach file (Images, PDFs, Documents)'}
                                 tabIndex={-1}
+                                aria-disabled={isLocalMode}
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    if (isLocalMode) {
+                                        // Do not open file picker in local mode
+                                        return;
+                                    }
                                     fileInputRef.current?.click();
                                 }}
-                                onMouseEnter={() => paperclipIconRef.current?.startAnimation()}
-                                onMouseLeave={() => paperclipIconRef.current?.stopAnimation()}
+                                onMouseEnter={() => {
+                                    if (!isLocalMode) paperclipIconRef.current?.startAnimation();
+                                }}
+                                onMouseLeave={() => {
+                                    if (!isLocalMode) paperclipIconRef.current?.stopAnimation();
+                                }}
                             >
                                 <PaperclipIcon ref={paperclipIconRef} size={16} />
                             </button>
