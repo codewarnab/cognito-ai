@@ -174,7 +174,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
                     aria-label="Delete"
                     title="Delete memory"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={13} />
                   </button>
                 </div>
                 <div className="memory-item-value">{String(memory.value)}</div>
@@ -241,11 +241,11 @@ export function ConsentPrompt({
       </div>
       <div className="consent-prompt-actions">
         <button className="consent-btn consent-btn-yes" onClick={onYes}>
-          <Check size={14} />
+          <Check size={12} />
           Yes
         </button>
         <button className="consent-btn consent-btn-no" onClick={onNo}>
-          <XIcon size={14} />
+          <XIcon size={12} />
           No
         </button>
         {onNeverAsk && (

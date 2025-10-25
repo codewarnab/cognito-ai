@@ -179,8 +179,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         };
     }, []);
 
-    // Show suggestions when there are no messages and no active workflow
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow;
+    // Show suggestions when there are no messages, no active workflow, and NOT in local mode
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && modelState.mode !== 'local';
 
     const suggestedActions = [
         {

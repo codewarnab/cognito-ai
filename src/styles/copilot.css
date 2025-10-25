@@ -358,6 +358,8 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px;
+    padding-bottom: 180px;
+    /* Extra bottom padding to ensure space for absolutely positioned suggestions */
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -495,6 +497,8 @@ body {
     flex-shrink: 0;
     position: relative;
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    /* Ensure input container is above messages */
 }
 
 .copilot-input-form {
@@ -1172,6 +1176,8 @@ body {
 
 .copilot-input-form {
     position: relative;
+    z-index: 1;
+    /* Ensure form is above suggestions backdrop */
 }
 
 .copilot-mode-expanded-option svg {
@@ -1311,11 +1317,20 @@ body {
     text-decoration: underline;
 }
 
-/* Suggested Actions Styles */
+/* Suggested Actions Styles - Absolutely positioned to prevent layout shift */
 .suggested-actions-container {
+    position: absolute;
+    bottom: 100%;
+    /* Position above the input form */
+    left: 0;
+    right: 0;
     margin-bottom: 12px;
-    padding: 0;
+    padding: 0 16px;
+    /* Match container padding */
     max-width: 100%;
+    pointer-events: auto;
+    z-index: 0;
+    /* Below the form but above messages */
 }
 
 .suggested-actions-grid {
@@ -1379,7 +1394,8 @@ body {
 /* Mobile adjustments */
 @media (max-width: 480px) {
     .suggested-actions-container {
-        padding: 0;
+        padding: 0 16px;
+        /* Maintain padding for absolute positioning */
         margin-bottom: 8px;
     }
 
