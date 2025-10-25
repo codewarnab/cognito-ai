@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import logoImage from '../../assets/logo.png';
 
 interface OnboardingScreenProps {
@@ -60,7 +61,34 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
             {/* Main content */}
             <div className="onboarding-content">
-                {/* Logo with slide-in animation */}
+                {/* Welcome text at the top */}
+                <motion.div
+                    className="onboarding-text"
+                    initial={{ 
+                        opacity: 0, 
+                        y: -30
+                    }}
+                    animate={isVisible ? { 
+                        opacity: 1, 
+                        y: 0
+                    } : {}}
+                    transition={{ 
+                        duration: 0.6, 
+                        ease: "easeOut",
+                        delay: 0.2
+                    }}
+                >
+                    <h1 className="onboarding-title">Welcome to Chrome AI</h1>
+                    <p className="onboarding-subtitle">
+                        Your Autonomous AI Browser Agent
+                    </p>
+                    <p className="onboarding-description">
+                        I can browse, click, fill forms, manage tabs, and execute tasks end-to-end. 
+                        Just tell me what you need!
+                    </p>
+                </motion.div>
+
+                {/* Logo in the center with slide-in animation */}
                 <motion.div
                     className="onboarding-logo"
                     initial={{ 
@@ -76,43 +104,59 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                     transition={{ 
                         duration: 0.8, 
                         ease: "easeOut",
-                        delay: 0.2
+                        delay: 0.6
                     }}
                 >
                     <img 
                         src={logoImage} 
                         alt="Chrome AI Agent" 
-                        width={120} 
-                        height={120}
+                        width={400} 
+                        height={400}
                         style={{ objectFit: 'contain' }}
                     />
                 </motion.div>
 
-                {/* Welcome text with slide-in animation */}
+                {/* Footer Navigation */}
                 <motion.div
-                    className="onboarding-text"
+                    className="onboarding-footer"
                     initial={{ 
                         opacity: 0, 
-                        y: 30
+                        y: 20
                     }}
                     animate={isVisible ? { 
                         opacity: 1, 
                         y: 0
                     } : {}}
                     transition={{ 
-                        duration: 0.6, 
+                        duration: 0.4, 
                         ease: "easeOut",
-                        delay: 0.6
+                        delay: 0.8
                     }}
                 >
-                    <h1 className="onboarding-title">Welcome to Chrome AI</h1>
-                    <p className="onboarding-subtitle">
-                        Your Autonomous AI Browser Agent
-                    </p>
-                    <p className="onboarding-description">
-                        I can browse, click, fill forms, manage tabs, and execute tasks end-to-end. 
-                        Just tell me what you need!
-                    </p>
+                    {/* Progress Indicator */}
+                    <div className="onboarding-progress">
+                        <div className="onboarding-progress-bar">
+                            <div className="onboarding-progress-fill"></div>
+                        </div>
+                        <div className="onboarding-progress-dots">
+                            <div className="onboarding-dot active"></div>
+                            <div className="onboarding-dot"></div>
+                            <div className="onboarding-dot"></div>
+                        </div>
+                    </div>
+
+                    {/* Navigation Buttons */}
+                    <div className="onboarding-navigation">
+                        <button className="onboarding-nav-btn onboarding-nav-btn--back">
+                            <ChevronLeft size={20} />
+                        </button>
+                        <button 
+                            className="onboarding-nav-btn onboarding-nav-btn--next"
+                            onClick={handleSkip}
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
                 </motion.div>
 
             </div>

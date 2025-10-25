@@ -20,7 +20,7 @@
 
 .reminder-panel-loading p {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
     font-weight: 500;
     margin: 0;
 }
@@ -36,7 +36,7 @@
 }
 
 .reminder-panel-empty svg {
-    color: rgba(255, 255, 255, 0.2);
+    color: var(--text-quaternary, rgba(255, 255, 255, 0.35));
     margin-bottom: 8px;
 }
 
@@ -44,13 +44,13 @@
     font-size: 16px;
     font-weight: 600;
     margin: 0;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary, #ffffff);
     letter-spacing: -0.01em;
 }
 
 .reminder-panel-empty-hint {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     line-height: 1.6;
     max-width: 280px;
 }
@@ -63,8 +63,8 @@
 }
 
 .reminder-panel-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-secondary, #0f1420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
     padding: 16px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -80,15 +80,15 @@
     right: 0;
     height: 2px;
     background: linear-gradient(90deg,
-            rgba(99, 102, 241, 0.5) 0%,
-            rgba(168, 85, 247, 0.5) 100%);
+            var(--blue-stride, #1264FF) 0%,
+            rgba(18, 100, 255, 0.7) 100%);
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 
 .reminder-panel-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--bg-tertiary, #141f30);
+    border-color: var(--border-color-hover, rgba(255, 255, 255, 0.12));
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -113,7 +113,7 @@
 .reminder-panel-item-title {
     font-size: 15px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary, #ffffff);
     margin: 0;
     flex: 1;
     line-height: 1.5;
@@ -122,7 +122,7 @@
 
 .reminder-panel-item-description {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
     margin: 0;
     line-height: 1.6;
     padding-right: 24px;
@@ -133,13 +133,13 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     font-weight: 500;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-tertiary, #141f30);
     padding: 6px 10px;
     border-radius: 6px;
     width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
 .reminder-panel-item-time svg {
@@ -152,7 +152,7 @@
     border: none;
     padding: 6px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     border-radius: 6px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
