@@ -8,6 +8,7 @@ interface ChatHeaderProps {
     onNewThreadClick?: () => void;
     onMemoryClick?: () => void;
     onRemindersClick?: () => void;
+    onApiKeySaved?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -16,6 +17,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onNewThreadClick,
     onMemoryClick,
     onRemindersClick,
+    onApiKeySaved,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
     const [showGeminiDialog, setShowGeminiDialog] = useState(false);
@@ -124,6 +126,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <GeminiApiKeyDialog
                 isOpen={showGeminiDialog}
                 onClose={() => setShowGeminiDialog(false)}
+                onApiKeySaved={onApiKeySaved}
             />
         </div>
     );
