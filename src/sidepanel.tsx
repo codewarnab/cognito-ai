@@ -121,9 +121,9 @@ function AIChatContent() {
         const checkOnboardingStatus = async () => {
             try {
                 const result = await chrome.storage.local.get(['onboarding_completed']);
-                log.info('Onboarding status check', { 
+                log.info('Onboarding status check', {
                     onboarding_completed: result.onboarding_completed,
-                    showOnboarding: showOnboarding 
+                    showOnboarding: showOnboarding
                 });
                 if (result.onboarding_completed) {
                     setShowOnboarding(false);
@@ -146,12 +146,8 @@ function AIChatContent() {
         try {
             await chrome.storage.local.set({ onboarding_completed: true });
             setShowOnboarding(false);
-            // Add a 10-second delay before showing chat interface
-            setTimeout(() => {
-                setShowChatInterface(true);
-                log.info('Chat interface shown 10 seconds after onboarding');
-            }, 10000); // 10 seconds delay
-            log.info('Onboarding completed, chat interface will appear in 10 seconds');
+            setShowChatInterface(true);
+            log.info('Onboarding completed, showing chat interface');
         } catch (error) {
             log.error('Failed to save onboarding status', error);
             setShowOnboarding(false);
@@ -160,12 +156,17 @@ function AIChatContent() {
     };
 
     // Handle onboarding skip
-    const handleOnboardingSkip = () => {
-        setShowOnboarding(false);
-        // Show chat interface immediately when skipped
-        setTimeout(() => {
+    const handleOnboardingSkip = async () => {
+        try {
+            await chrome.storage.local.set({ onboarding_completed: true });
+            setShowOnboarding(false);
             setShowChatInterface(true);
-        }, 100);
+            log.info('Onboarding skipped, showing chat interface');
+        } catch (error) {
+            log.error('Failed to save onboarding skip status', error);
+            setShowOnboarding(false);
+            setShowChatInterface(true);
+        }
     };
 
     // Reset onboarding for testing (can be called from console)
@@ -675,63 +676,63 @@ function AIChatContent() {
                 >
                     {/* Conditional rendering based on mode */}
                     {mode === 'text' ? (
-                <>
-                    <CopilotChatWindow
-                        messages={messages.filter(m => m.role !== 'system') as any}
-                        input={input}
-                        setInput={setInput}
-                        onSendMessage={handleSendMessage}
-                        onKeyDown={handleKeyPress}
-                        onClearChat={handleClearChat}
-                        onSettingsClick={() => setShowMcp(true)}
-                        onThreadsClick={() => setShowThreads(true)}
-                        onMemoryClick={() => setShowMemory(true)}
-                        onRemindersClick={() => setShowReminders(true)}
-                        onNewThreadClick={handleNewThread}
-                        onStop={stop}
-                        isLoading={isLoading}
-                        messagesEndRef={messagesEndRef}
-                        isRecording={isRecording}
-                        onRecordingChange={handleRecordingChange}
-                        voiceInputRef={voiceInputRef}
-                    />
+                        <>
+                            <CopilotChatWindow
+                                messages={messages.filter(m => m.role !== 'system') as any}
+                                input={input}
+                                setInput={setInput}
+                                onSendMessage={handleSendMessage}
+                                onKeyDown={handleKeyPress}
+                                onClearChat={handleClearChat}
+                                onSettingsClick={() => setShowMcp(true)}
+                                onThreadsClick={() => setShowThreads(true)}
+                                onMemoryClick={() => setShowMemory(true)}
+                                onRemindersClick={() => setShowReminders(true)}
+                                onNewThreadClick={handleNewThread}
+                                onStop={stop}
+                                isLoading={isLoading}
+                                messagesEndRef={messagesEndRef}
+                                isRecording={isRecording}
+                                onRecordingChange={handleRecordingChange}
+                                voiceInputRef={voiceInputRef}
+                            />
 
-                    {/* Floating Recording Pill - Only in text mode */}
-                    <VoiceRecordingPill
-                        ref={audioLinesIconRef}
-                        isVisible={showPill}
-                        onStopRecording={() => {
-                            // Stop the voice recording
-                            voiceInputRef.current?.stopRecording();
-                        }}
-                    />
+                            {/* Floating Recording Pill - Only in text mode */}
+                            <VoiceRecordingPill
+                                ref={audioLinesIconRef}
+                                isVisible={showPill}
+                                onStopRecording={() => {
+                                    // Stop the voice recording
+                                    voiceInputRef.current?.stopRecording();
+                                }}
+                            />
 
-                    {/* Voice Mode FAB - Only in text mode */}
-                    <motion.button
-                        className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
-                        onClick={() => handleModeChange('voice')}
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{
-                            type: 'spring',
-                            stiffness: 260,
-                            damping: 20,
-                            delay: 0.1
-                        }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        title="Switch to Voice Mode"
-                    >
-                        <AudioLinesIcon size={20} />
-                    </motion.button>
-                </>
-            ) : (
-                <VoiceModeUI
-                    onBack={() => setMode('text')}
-                    apiKey={apiKey}
-                    systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
-                />
-            )}
+                            {/* Voice Mode FAB - Only in text mode */}
+                            <motion.button
+                                className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
+                                onClick={() => handleModeChange('voice')}
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 260,
+                                    damping: 20,
+                                    delay: 0.1
+                                }}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                title="Switch to Voice Mode"
+                            >
+                                <AudioLinesIcon size={20} />
+                            </motion.button>
+                        </>
+                    ) : (
+                        <VoiceModeUI
+                            onBack={() => setMode('text')}
+                            apiKey={apiKey}
+                            systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
+                        />
+                    )}
                 </motion.div>
             )}
         </>
