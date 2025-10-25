@@ -12,9 +12,9 @@
 import { experimental_createMCPClient as createMCPClient } from 'ai';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createLogger } from '../logger';
-import { MCPError, NetworkError, ErrorType } from '../errors/errorTypes';
+import { MCPError, ErrorType } from '../errors/errorTypes';
 import { RetryManager, RetryPresets } from '../errors/retryManager';
-import { buildUserMessage, formatErrorInline } from '../errors/errorMessages';
+import { buildUserMessage } from '../errors/errorMessages';
 
 const log = createLogger('MCP-Client');
 
@@ -179,12 +179,22 @@ export async function initializeMCPClients(
           log.info(`🔧 Creating MCP client with SSE transport`);
 
           try {
-            mcpClient = await createMCPClient({
-              transport: {
-                type: 'sse',
-                url: url,
-                headers,
+            // Use RetryManager for connection with automatic retry
+            const retryManager = new RetryManager({
+              ...RetryPresets.Quick,
+              onRetry: (attempt, delay, error) => {
+                log.info(`🔄 Retrying SSE connection for ${mcpServer.name} (attempt ${attempt}, delay ${delay}ms)`);
               }
+            });
+
+            mcpClient = await retryManager.execute(async () => {
+              return await createMCPClient({
+                transport: {
+                  type: 'sse',
+                  url: url,
+                  headers,
+                }
+              });
             });
           } catch (transportError) {
             // Categorize transport creation errors
@@ -193,50 +203,63 @@ export async function initializeMCPClients(
               `SSE transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
             );
             errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
-            log.error(`❌ SSE transport error for ${mcpServer.name}:`, error);
+            const userMessage = buildUserMessage(error, { serverName: mcpServer.name });
+            log.error(`❌ SSE transport error for ${mcpServer.name}: ${userMessage}`, error);
             continue; // Skip to next server
           }
         } else if (url.endsWith('/mcp')) {
           log.info(`🔧 Creating MCP client with StreamableHTTP transport`);
 
           try {
-            // Create StreamableHTTP transport with advanced features
-            const httpTransport = new StreamableHTTPClientTransport(
-              new URL(url),
-              {
-                // Custom request configuration
-                requestInit: {
-                  headers,
-                  // Add CORS and credentials if needed
-                  // credentials: 'include',
-                  // mode: 'cors',
-                },
-
-                // DO NOT pass sessionId during initialization - let server assign a fresh one
-                // Session IDs are only for reconnection after disconnect, not initial connection
-                sessionId: undefined,
-
-                // Reconnection options with exponential backoff
-                reconnectionOptions: {
-                  maxReconnectionDelay: 30000, // 30 seconds max
-                  initialReconnectionDelay: 1000, // 1 second initial
-                  reconnectionDelayGrowFactor: 1.5, // Exponential backoff factor
-                  maxRetries: 3, // Maximum retry attempts
-                },
-
-                // Custom fetch implementation (if needed for Chrome extension environment)
-                // fetch: customFetch,
+            // Use RetryManager for connection with automatic retry
+            const retryManager = new RetryManager({
+              ...RetryPresets.Standard,
+              onRetry: (attempt, delay, error) => {
+                log.info(`🔄 Retrying HTTP connection for ${mcpServer.name} (attempt ${attempt}, delay ${delay}ms)`);
               }
-            );
+            });
+
+            const httpTransport = await retryManager.execute(async () => {
+              // Create StreamableHTTP transport with advanced features
+              const transport = new StreamableHTTPClientTransport(
+                new URL(url),
+                {
+                  // Custom request configuration
+                  requestInit: {
+                    headers,
+                    // Add CORS and credentials if needed
+                    // credentials: 'include',
+                    // mode: 'cors',
+                  },
+
+                  // DO NOT pass sessionId during initialization - let server assign a fresh one
+                  // Session IDs are only for reconnection after disconnect, not initial connection
+                  sessionId: undefined,
+
+                  // Reconnection options with exponential backoff
+                  reconnectionOptions: {
+                    maxReconnectionDelay: 30000, // 30 seconds max
+                    initialReconnectionDelay: 1000, // 1 second initial
+                    reconnectionDelayGrowFactor: 1.5, // Exponential backoff factor
+                    maxRetries: 3, // Maximum retry attempts
+                  },
+
+                  // Custom fetch implementation (if needed for Chrome extension environment)
+                  // fetch: customFetch,
+                }
+              );
+
+              return transport;
+            });
 
             // Set up event handlers for better error tracking and debugging
             httpTransport.onerror = (error: Error) => {
-              log.error(`❌ Transport error for ${mcpServer.name}:`, error);
-              // Track transport errors for this server
               const mcpError = MCPError.connectionFailed(
                 mcpServer.id,
                 `Transport error: ${error.message}`
               );
+              const userMessage = buildUserMessage(mcpError, { serverName: mcpServer.name });
+              log.error(`❌ Transport error for ${mcpServer.name}: ${userMessage}`, error);
               // Error is logged but connection continues via retry logic
             };
 
@@ -277,7 +300,8 @@ export async function initializeMCPClients(
               `StreamableHTTP transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
             );
             errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
-            log.error(`❌ StreamableHTTP transport error for ${mcpServer.name}:`, error);
+            const userMessage = buildUserMessage(error, { serverName: mcpServer.name });
+            log.error(`❌ StreamableHTTP transport error for ${mcpServer.name}: ${userMessage}`, error);
             continue; // Skip to next server
           }
         } else {
@@ -288,25 +312,37 @@ export async function initializeMCPClients(
         mcpClients.push(mcpClient);
         log.info(`✅ MCP client created successfully for ${mcpServer.name}`);
 
-        // Get tools from the MCP server with error handling
+        // Get tools from the MCP server with error handling and retry
         let mcpTools;
         try {
-          mcpTools = await mcpClient.tools();
+          const retryManager = new RetryManager({
+            ...RetryPresets.Quick,
+            onRetry: (attempt, delay) => {
+              log.info(`🔄 Retrying tool retrieval for ${mcpServer.name} (attempt ${attempt})`);
+            }
+          });
 
-          // Validate tools response
-          if (!mcpTools || typeof mcpTools !== 'object') {
-            throw MCPError.connectionFailed(
-              mcpServer.id,
-              'Invalid tools response: expected object, got ' + typeof mcpTools
-            );
-          }
+          mcpTools = await retryManager.execute(async () => {
+            const tools = await mcpClient.tools();
+
+            // Validate tools response
+            if (!tools || typeof tools !== 'object') {
+              throw MCPError.connectionFailed(
+                mcpServer.id,
+                'Invalid tools response: expected object, got ' + typeof tools
+              );
+            }
+
+            return tools;
+          });
         } catch (toolsError) {
           const error = MCPError.connectionFailed(
             mcpServer.id,
             `Failed to retrieve tools: ${toolsError instanceof Error ? toolsError.message : 'Unknown error'}`
           );
           errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
-          log.error(`❌ Failed to get tools from ${mcpServer.name}:`, error);
+          const userMessage = buildUserMessage(error, { serverName: mcpServer.name });
+          log.error(`❌ Failed to get tools from ${mcpServer.name}: ${userMessage}`, error);
           continue; // Skip to next server
         }
 
@@ -356,7 +392,8 @@ export async function initializeMCPClients(
           `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
         errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error: mcpError });
-        log.error(`❌ Failed to initialize MCP client for ${mcpServer.name}:`, error);
+        const userMessage = buildUserMessage(mcpError, { serverName: mcpServer.name });
+        log.error(`❌ Failed to initialize MCP client for ${mcpServer.name}: ${userMessage}`, error);
         // Continue with other servers instead of failing the entire request
       }
     }
@@ -376,7 +413,8 @@ export async function initializeMCPClients(
     if (errors.length > 0) {
       log.warn(`⚠️ Some MCP servers failed to initialize:`, errors.map(e => ({
         server: e.serverName,
-        error: e.error.message
+        error: e.error.message,
+        userMessage: buildUserMessage(e.error, { serverName: e.serverName })
       })));
     }
 

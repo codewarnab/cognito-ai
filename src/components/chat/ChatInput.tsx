@@ -182,7 +182,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }, []);
 
     // Show suggestions when there are no messages and no active workflow
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow;
+    const [showSuggestions, setShowSuggestions] = useState(true);
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0;
 
     const suggestedActions = [
         {
@@ -209,8 +210,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     const handleSuggestionClick = (action: string) => {
         setInput(action);
+        setShowSuggestions(false);
         textareaRef.current?.focus();
     };
+
+    // Reset suggestions visibility when input is cleared and no messages exist
+    React.useEffect(() => {
+        if (messages.length === 0 && !input.trim()) {
+            setShowSuggestions(true);
+        }
+    }, [messages.length, input]);
 
     return (
         <div className="copilot-input-container">
