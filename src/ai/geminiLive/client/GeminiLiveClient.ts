@@ -79,7 +79,7 @@ export class GeminiLiveClient {
             maxRetries: 3,
             retryDelay: 1000,
             exponentialBackoff: true,
-            onRetry: (attempt, error) => {
+            onRetry: (attempt, delay, error) => {
                 log.warn(`Retrying after error (attempt ${attempt})`, error);
                 this.updateStatus('Retrying...');
             },

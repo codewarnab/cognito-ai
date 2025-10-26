@@ -24,7 +24,7 @@ export interface ErrorRecoveryConfig {
     maxRetries?: number;
     retryDelay?: number;
     exponentialBackoff?: boolean;
-    onRetry?: (attempt: number, error: Error) => void;
+    onRetry?: (attempt: number, delay: number, error: Error) => void;
     onFailure?: (error: Error) => void;
 }
 

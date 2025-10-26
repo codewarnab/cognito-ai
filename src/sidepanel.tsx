@@ -241,6 +241,27 @@ function AIChatContent() {
         loadApiKey();
     }, []);
 
+    // Listen for API key changes in storage
+    useEffect(() => {
+        const handleStorageChange = (
+            changes: { [key: string]: chrome.storage.StorageChange },
+            areaName: string
+        ) => {
+            if (areaName === 'local' && changes.gemini_api_key) {
+                // API key was added, updated, or removed
+                const newApiKey = changes.gemini_api_key.newValue || '';
+                setApiKey(newApiKey);
+                log.debug('API key updated from storage change:', newApiKey ? 'set' : 'removed');
+            }
+        };
+
+        chrome.storage.onChanged.addListener(handleStorageChange);
+
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+        };
+    }, []);
+
     // Check if onboarding should be shown with improved error handling
     useEffect(() => {
         const checkOnboardingStatus = async () => {
