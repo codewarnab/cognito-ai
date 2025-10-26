@@ -15,6 +15,7 @@ import { SlashCommandDropdown } from './SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
 import type { WorkflowDefinition } from '../../workflows/types';
 import { replaceSlashCommand } from '../../utils/slashCommandUtils';
+import { useSuggestions } from '../../hooks/useSuggestions';
 
 interface ChatInputProps {
     messages: Message[];
@@ -184,30 +185,37 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Show suggestions when there are no messages and no active workflow
     const [showSuggestions, setShowSuggestions] = useState(true);
     const isLocalMode = modelState.mode === 'local';
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0 && !isLocalMode;
 
-    const suggestedActions = [
+    // Use AI suggestions hook
+    const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(modelState, messages.length);
+
+    // Fallback suggestions (static) - only shown when generation fails
+    const FALLBACK_SUGGESTIONS = [
         {
             title: 'Search for React tutorials',
-            label: 'and organize my tabs',
             action: 'Search for React tutorials and organize my tabs',
         },
         {
             title: 'Find my recent GitHub visits',
-            label: 'from this morning',
             action: 'Find my recent GitHub visits from this morning',
         },
         {
             title: 'Set a reminder for',
-            label: 'my meeting tomorrow at 2pm',
             action: 'Set a reminder for my meeting tomorrow at 2pm',
         },
         {
             title: 'Analyze this YouTube video',
-            label: 'and summarize the key points',
             action: 'Analyze this YouTube video and summarize the key points',
         },
     ];
+
+    // Determine which suggestions to show:
+    // - If generating: show skeleton/loading (no suggestions yet)
+    // - If AI suggestions available: show AI suggestions
+    // - If error occurred: show fallback suggestions
+    const suggestedActions = aiSuggestions || (suggestionError ? FALLBACK_SUGGESTIONS : []);
+
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0 && !isLocalMode;
 
     const handleSuggestionClick = (action: string) => {
         setInput(action);
@@ -235,24 +243,39 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         transition={{ duration: 0.2 }}
                         className="suggested-actions-container"
                     >
-                        <div className="suggested-actions-grid">
-                            {suggestedActions.map((suggestedAction, index) => (
-                                <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    transition={{ delay: 0.05 * index }}
-                                    key={`suggested-action-${index}`}
-                                >
-                                    <button
-                                        onClick={() => handleSuggestionClick(suggestedAction.action)}
-                                        className="suggested-action-button"
+                        {/* Show loading indicator when generating (no suggestions yet) */}
+                        {isGenerating && suggestedActions.length === 0 ? (
+                            <div className="suggested-actions-loading-state">
+                                <div className="loading-shimmer">Generating contextual suggestions...</div>
+                                <div className="suggested-actions-grid">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={`skeleton-${i}`} className="suggested-action-skeleton">
+                                            <div className="skeleton-shimmer"></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            /* Show actual suggestions (AI or fallback on error) */
+                            <div className="suggested-actions-grid">
+                                {suggestedActions.map((suggestedAction, index) => (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 20 }}
+                                        transition={{ delay: 0.05 * index }}
+                                        key={`suggested-action-${index}`}
                                     >
-                                        <span className="suggested-action-title">{suggestedAction.title}</span>
-                                    </button>
-                                </motion.div>
-                            ))}
-                        </div>
+                                        <button
+                                            onClick={() => handleSuggestionClick(suggestedAction.action)}
+                                            className="suggested-action-button"
+                                        >
+                                            <span className="suggested-action-title">{suggestedAction.title}</span>
+                                        </button>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

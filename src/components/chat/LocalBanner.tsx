@@ -12,7 +12,7 @@ export const LocalBanner: React.FC<LocalBannerProps> = ({ onSettingsClick }) => 
         <AlertCircle size={16} className="local-mode-icon" />
         <div className="local-mode-text">
           <span className="local-mode-title">Local Mode</span> - Limited functionality.
-          <button 
+          <button
             onClick={onSettingsClick}
             className="local-mode-settings-button"
           >
