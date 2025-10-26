@@ -179,7 +179,7 @@ export class GeminiLiveSessionManager {
     private async prepareSessionConfig(): Promise<any> {
         const config: any = {
             model: this.config.model || GEMINI_LIVE_MODELS.NATIVE_AUDIO,
-            responseModalities: [Modality.AUDIO],
+            responseModalities: [Modality.AUDIO] as Modality[],
             speechConfig: {
                 voiceConfig: {
                     prebuiltVoiceConfig: {
