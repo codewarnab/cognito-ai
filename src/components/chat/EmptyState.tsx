@@ -1,11 +1,17 @@
 import React from 'react';
-import { RobotIcon } from './icons/RobotIcon';
+import logoImage from '../../../assets/logo.png';
 
 export const EmptyState: React.FC = () => {
     return (
         <div className="copilot-empty-state">
-            <div className="copilot-empty-icon">
-                <RobotIcon size={48} />
+            <div className="copilot-empty-icon" style={{ marginTop: '60px', marginBottom: '0px' }}>
+                <img 
+                    src={logoImage} 
+                    alt="Cognito" 
+                    width={120} 
+                    height={120}
+                    style={{ objectFit: 'contain' }}
+                />
             </div>
             <p>👋 Hi! I'm your autonomous AI assistant.</p>
             <p className="copilot-empty-subtitle">

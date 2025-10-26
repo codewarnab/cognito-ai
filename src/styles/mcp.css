@@ -5,8 +5,8 @@
     flex-direction: column;
     height: 100vh;
     max-height: 100vh;
-    background: #1a1a1a;
-    color: #ffffff;
+    background: var(--bg-primary, #0a0e1a);
+    color: var(--text-primary, #ffffff);
     overflow: hidden;
 }
 
@@ -16,8 +16,8 @@
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
-    border-bottom: 1px solid #404040;
-    background: #1a1a1a;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: var(--bg-primary, #0a0e1a);
 }
 
 .mcp-header__back-btn {
@@ -30,14 +30,14 @@
     background: transparent;
     border: none;
     border-radius: 6px;
-    color: #a3a3a3;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .mcp-header__back-btn:hover {
-    background: #262626;
-    color: #ffffff;
+    background: var(--bg-tertiary, #141f30);
+    color: var(--text-primary, #ffffff);
 }
 
 .mcp-header__back-btn:focus-visible {
@@ -49,42 +49,42 @@
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
 }
 
 /* Search Bar */
 .mcp-search-container {
     padding: 16px 20px;
-    background: #1a1a1a;
-    border-bottom: 1px solid #404040;
+    background: var(--bg-primary, #0a0e1a);
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
 .mcp-search-wrapper {
     position: relative;
     display: flex;
     align-items: center;
-    background: #262626;
-    border: 1px solid #404040;
+    background: var(--bg-secondary, #0f1420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
     border-radius: 10px;
     transition: all 0.2s ease;
 }
 
 .mcp-search-wrapper:focus-within {
-    background: #2a2a2a;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: var(--bg-tertiary, #141f30);
+    border-color: var(--blue-stride, #1264FF);
+    box-shadow: 0 0 0 3px rgba(18, 100, 255, 0.1);
 }
 
 .mcp-search-icon {
     position: absolute;
     left: 14px;
-    color: #a3a3a3;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     pointer-events: none;
     transition: color 0.2s ease;
 }
 
 .mcp-search-wrapper:focus-within .mcp-search-icon {
-    color: #3b82f6;
+    color: var(--blue-stride, #1264FF);
 }
 
 .mcp-search-input {
@@ -93,13 +93,13 @@
     background: transparent;
     border: none;
     outline: none;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
     font-size: 14px;
     font-family: inherit;
 }
 
 .mcp-search-input::placeholder {
-    color: #737373;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
 }
 
 .mcp-search-clear {
@@ -164,7 +164,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
-    background: #1a1a1a;
+    background: var(--bg-primary, #0a0e1a);
     min-height: 0;
     max-height: calc(100vh - 145px);
     /* Subtract header height (65px) + search bar height (80px) */
@@ -186,16 +186,16 @@
     flex-direction: column;
     gap: 12px;
     padding: 16px 20px;
-    background: #262626;
-    border: 1px solid #404040;
+    background: var(--bg-secondary, #0f1420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
     transition: all 0.2s ease;
     overflow: visible;
 }
 
 .mcp-card:hover {
-    background: #2a2a2a;
-    border-color: #525252;
+    background: var(--bg-tertiary, #141f30);
+    border-color: var(--border-color-hover, rgba(255, 255, 255, 0.12));
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -233,7 +233,7 @@
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
 }
 
 .mcp-card__name-container {
@@ -546,22 +546,22 @@
 }
 
 .btn--primary {
-    background: #3b82f6;
-    color: white;
+    background: var(--blue-stride, #1264FF);
+    color: var(--text-primary, #ffffff);
 }
 
 .btn--primary:hover:not(:disabled) {
-    background: #2563eb;
+    background: #0d4fd8;
 }
 
 .btn--secondary {
     background: transparent;
-    color: #ffffff;
-    border: 1px solid #404040;
+    color: var(--text-primary, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
 .btn--secondary:hover:not(:disabled) {
-    background: #333333;
+    background: var(--bg-tertiary, #141f30);
 }
 
 .btn--danger {

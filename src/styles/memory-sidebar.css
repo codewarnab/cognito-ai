@@ -1,0 +1,405 @@
+/**
+ * Memory Sidebar Styles
+ * Right-sliding sidebar for memory management
+ */
+
+/* Backdrop */
+.memory-sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+/* Sidebar Container */
+.memory-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 320px !important;
+    max-width: 320px !important;
+    min-width: 320px !important;
+    background: var(--bg-primary, #0a0e1a) !important;
+    border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.08)) !important;
+    z-index: 1001 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden;
+    transform: translateX(0) !important;
+}
+
+/* Header */
+.memory-sidebar-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 12px 12px 10px;
+    background: var(--bg-primary, #0a0e1a);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.memory-sidebar-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.memory-sidebar-header-content h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.memory-sidebar-icon {
+    color: var(--text-primary, #ffffff);
+    flex-shrink: 0;
+}
+
+.memory-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.memory-sidebar-close:hover {
+    background: var(--bg-tertiary, #141f30);
+    color: var(--text-primary, #ffffff);
+}
+
+/* Settings */
+.memory-sidebar-settings {
+    padding: 10px 12px;
+    background: var(--bg-secondary, #0f1420);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.memory-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary, #ffffff);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 500;
+}
+
+.memory-toggle-label input[type="checkbox"] {
+    cursor: pointer;
+    accent-color: var(--text-primary, #ffffff);
+}
+
+/* Search */
+.memory-sidebar-search {
+    padding: 8px 12px;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.memory-search-input {
+    width: 100%;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 6px;
+    font-size: 12px;
+    background: var(--bg-tertiary, #141f30);
+    color: var(--text-primary, #ffffff);
+    transition: all 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+    box-sizing: border-box;
+    text-align: left;
+    margin: 0;
+    display: block;
+    line-height: 1.4;
+}
+
+.memory-search-input::placeholder {
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+    opacity: 1;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.memory-search-input:focus {
+    outline: none;
+    border-color: var(--blue-stride, #1264FF);
+    box-shadow: 0 0 0 3px rgba(18, 100, 255, 0.1);
+}
+
+/* Tabs */
+.memory-sidebar-tabs {
+    display: flex;
+    gap: 3px;
+    padding: 8px 12px;
+    background: var(--bg-primary, #0a0e1a);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.memory-tab {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: var(--bg-tertiary, #141f30);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.memory-tab:hover {
+    background: var(--bg-quaternary, #1a2637);
+    color: var(--text-primary, #ffffff);
+}
+
+.memory-tab.active {
+    background: var(--blue-stride, #1264FF);
+    border-color: var(--blue-stride, #1264FF);
+    color: var(--white-stream, #ffffff);
+    font-weight: 600;
+}
+
+/* Content */
+.memory-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 12px;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.memory-sidebar-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+.memory-sidebar-empty {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.memory-empty-icon {
+    margin-bottom: 16px;
+    color: var(--text-quaternary, rgba(255, 255, 255, 0.35));
+}
+
+.memory-sidebar-empty p {
+    margin: 8px 0;
+    color: var(--text-primary, #ffffff);
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+.memory-empty-subtitle {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    font-size: 13px !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+/* Memory List */
+.memory-sidebar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Memory Item */
+.memory-item {
+    padding: 12px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: var(--bg-secondary, #0f1420);
+}
+
+.memory-item:hover {
+    border-color: var(--blue-stride, #1264FF);
+    box-shadow: 0 2px 8px rgba(18, 100, 255, 0.1);
+}
+
+.memory-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.memory-item-key {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary, #ffffff);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: -0.01em;
+}
+
+.memory-pin {
+    color: var(--blue-stride, #1264FF);
+    flex-shrink: 0;
+}
+
+.memory-item-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.memory-item-delete:hover {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+}
+
+.memory-item-value {
+    font-size: 13px;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    margin-bottom: 12px;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+.memory-item-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 11px;
+    color: var(--text-quaternary, rgba(255, 255, 255, 0.35));
+}
+
+.memory-category-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.memory-category-badge.fact {
+    background: rgba(18, 100, 255, 0.2);
+    color: var(--blue-stride, #1264FF);
+}
+
+.memory-category-badge.behavior {
+    background: rgba(18, 100, 255, 0.2);
+    color: var(--text-primary, #ffffff);
+}
+
+.memory-source,
+.memory-date {
+    color: var(--text-quaternary, rgba(255, 255, 255, 0.35));
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+/* Footer */
+.memory-sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    text-align: center;
+    background: var(--bg-secondary, #0f1420);
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.memory-sidebar-footer p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
+}
+
+.memory-footer-icon {
+    color: var(--blue-stride, #1264FF);
+    flex-shrink: 0;
+}
+
+/* Scrollbar styling */
+.memory-sidebar-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.memory-sidebar-content::-webkit-scrollbar-track {
+    background: var(--bg-primary, #0a0e1a);
+}
+
+.memory-sidebar-content::-webkit-scrollbar-thumb {
+    background: var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 3px;
+}
+
+.memory-sidebar-content::-webkit-scrollbar-thumb:hover {
+    background: var(--border-color-hover, rgba(255, 255, 255, 0.12));
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .memory-sidebar {
+        background: var(--bg-primary, #0a0e1a) !important;
+    }
+    
+    .memory-sidebar-header,
+    .memory-sidebar-settings,
+    .memory-sidebar-footer {
+        background: var(--bg-secondary, #0f1420);
+    }
+    
+    .memory-item {
+        background: var(--bg-secondary, #0f1420);
+    }
+}
