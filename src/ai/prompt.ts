@@ -83,9 +83,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    - Keywords indicating history search: 'what was that...', 'find that site/page/article...', 'when did I visit...', 'that [thing] I saw/read/looked at...'",
                 "    - Use searchHistory with relevant query: 'that React article' → searchHistory('React')",
                 "    - Apply time context: 'yesterday' = 24h, 'last week' = 168h, 'recently' = 48h, 'this morning' = 12h",
-                "    - Use getRecentHistory for vague time references like 'recently' or 'today'",
-                "    - CRITICAL: When user asks about specific time periods (this morning, yesterday, last week), ALWAYS use time filters and NEVER mention lifetime visit counts",
-                "    - For 'this morning' queries: use getRecentHistory(hours=12) or searchHistory with startTime/endTime for today 6AM to now",
                 "    - If found in history, you can navigate to it or provide the info directly",
 
                 "  Step 1: If current page doesn't answer the question AND it's not about history, navigateTo 'https://www.google.com/search?q=' + encodeURIComponent(query)",

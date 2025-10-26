@@ -8,14 +8,12 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
-import { ToolCard } from '../../components/ui/ToolCard';
 import { canonicalizeKey } from '../../memory/types';
-import type { ToolUIState } from '../../ai/ToolUIContext';
 
 const log = createLogger('Tool-SuggestSaveMemory');
 
 export function useSuggestSaveMemory() {
-    const { registerToolUI, unregisterToolUI } = useToolUI();
+    const {  unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering suggestSaveMemory tool...');
