@@ -3,6 +3,7 @@ import { ChatHeader } from './chat/ChatHeader';
 import { ChatMessages } from './chat/ChatMessages';
 import { ChatInput } from './chat/ChatInput';
 import { ErrorNotification } from './chat/ErrorNotification';
+import { GeminiApiKeyDialog } from './GeminiApiKeyDialog';
 import type { VoiceInputHandle } from '../audio/VoiceInput';
 import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
@@ -60,6 +61,7 @@ export function CopilotChatWindow({
         message: string;
         type: 'error' | 'warning' | 'info';
     } | null>(null);
+    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
 
     // Load initial state
     useEffect(() => {
@@ -145,6 +147,10 @@ export function CopilotChatWindow({
         }));
     };
 
+    const handleOpenApiKeyDialog = () => {
+        setShowApiKeyDialog(true);
+    };
+
     return (
         <div className="copilot-chat-window">
             {/* Error Notification */}
@@ -170,6 +176,8 @@ export function CopilotChatWindow({
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
                 pendingMessageId={pendingMessageId}
+                isLocalMode={modelState.mode === 'local'}
+                onConfigureApiKey={handleOpenApiKeyDialog}
             />
 
             <ChatInput
@@ -189,6 +197,13 @@ export function CopilotChatWindow({
                 onModelChange={handleModelChange}
                 onApiKeySaved={handleApiKeySaved}
                 onError={handleError}
+            />
+
+            {/* Gemini API Key Dialog */}
+            <GeminiApiKeyDialog
+                isOpen={showApiKeyDialog}
+                onClose={() => setShowApiKeyDialog(false)}
+                onApiKeySaved={handleApiKeySaved}
             />
         </div>
     );

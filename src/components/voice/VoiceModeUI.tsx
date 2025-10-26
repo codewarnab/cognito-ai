@@ -11,7 +11,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive';
 import { getGeminiLiveManager } from '../../ai/geminiLive/GeminiLiveManager';
-import { AudioOrb3D } from './AudioOrb3D';
 import { VoicePoweredOrb } from './VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
 import type { VoiceModeStatus } from '../../ai/geminiLive/types';
@@ -133,16 +132,10 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                 // Initialize error handler
                 const errorHandler = new GeminiLiveErrorHandler({
                     maxRetries: 3,
-                    retryDelay: 1000,
-                    exponentialBackoff: true,
                     onRetry: (attempt, err) => {
                         setWarningMessage(`Retrying... (attempt ${attempt}/3)`);
                         log.warn('Retrying after error:', attempt, err);
                     },
-                    onFailure: (err) => {
-                        setError(err.message);
-                        log.error('Max retries failed:', err);
-                    }
                 });
                 errorHandlerRef.current = errorHandler;
 

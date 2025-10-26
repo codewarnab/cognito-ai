@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { UploadIcon } from '../UploadIcon';
 import { VoiceInput, type VoiceInputHandle } from '../../audio/VoiceInput';
 import { ModeSelector } from './ModeSelector';
-import { LocalBanner } from './LocalBanner';
 import { SendIcon } from './icons/SendIcon';
 import { StopIcon } from './icons/StopIcon';
 import { PaperclipIcon } from './icons/PaperclipIcon';
@@ -15,7 +14,7 @@ import { SlashCommandDropdown } from './SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
 import type { WorkflowDefinition } from '../../workflows/types';
 import { replaceSlashCommand } from '../../utils/slashCommandUtils';
-import { useSuggestions } from '../../hooks/useSuggestions';
+import { SuggestedActions } from './SuggestedActions';
 
 interface ChatInputProps {
     messages: Message[];
@@ -182,103 +181,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         };
     }, []);
 
-    // Show suggestions when there are no messages and no active workflow
-    const [showSuggestions, setShowSuggestions] = useState(true);
-    const isLocalMode = modelState.mode === 'local';
-
-    // Use AI suggestions hook
-    const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(modelState, messages.length);
-
-    // Fallback suggestions (static) - only shown when generation fails
-    const FALLBACK_SUGGESTIONS = [
-        {
-            title: 'Search for React tutorials',
-            action: 'Search for React tutorials and organize my tabs',
-        },
-        {
-            title: 'Find my recent GitHub visits',
-            action: 'Find my recent GitHub visits from this morning',
-        },
-        {
-            title: 'Set a reminder for',
-            action: 'Set a reminder for my meeting tomorrow at 2pm',
-        },
-        {
-            title: 'Analyze this YouTube video',
-            action: 'Analyze this YouTube video and summarize the key points',
-        },
-    ];
-
-    // Determine which suggestions to show:
-    // - If generating: show skeleton/loading (no suggestions yet)
-    // - If AI suggestions available: show AI suggestions
-    // - If error occurred: show fallback suggestions
-    const suggestedActions = aiSuggestions || (suggestionError ? FALLBACK_SUGGESTIONS : []);
-
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0 && !isLocalMode;
-
     const handleSuggestionClick = (action: string) => {
         setInput(action);
-        setShowSuggestions(false);
         textareaRef.current?.focus();
     };
 
-    // Reset suggestions visibility when input is cleared and no messages exist
-    React.useEffect(() => {
-        if (messages.length === 0 && !input.trim()) {
-            setShowSuggestions(true);
-        }
-    }, [messages.length, input]);
+    const isLocalMode = modelState.mode === 'local';
 
     return (
         <div className="copilot-input-container">
             {/* Suggested Actions */}
-            <AnimatePresence>
-                {showSuggestedActions && !isRecording && (
-                    <motion.div
-                        key="suggested-actions-container"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.2 }}
-                        className="suggested-actions-container"
-                    >
-                        {/* Show loading indicator when generating (no suggestions yet) */}
-                        {isGenerating && suggestedActions.length === 0 ? (
-                            <div className="suggested-actions-loading-state">
-                                <div className="loading-shimmer">Generating contextual suggestions...</div>
-                                <div className="suggested-actions-grid">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div key={`skeleton-${i}`} className="suggested-action-skeleton">
-                                            <div className="skeleton-shimmer"></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ) : (
-                            /* Show actual suggestions (AI or fallback on error) */
-                            <div className="suggested-actions-grid">
-                                {suggestedActions.map((suggestedAction, index) => (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: 20 }}
-                                        transition={{ delay: 0.05 * index }}
-                                        key={`suggested-action-${index}`}
-                                    >
-                                        <button
-                                            onClick={() => handleSuggestionClick(suggestedAction.action)}
-                                            className="suggested-action-button"
-                                        >
-                                            <span className="suggested-action-title">{suggestedAction.title}</span>
-                                        </button>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <SuggestedActions
+                messages={messages}
+                input={input}
+                isLoading={isLoading}
+                activeWorkflow={activeWorkflow}
+                attachments={attachments}
+                isRecording={isRecording}
+                modelState={modelState}
+                onSuggestionClick={handleSuggestionClick}
+            />
 
             <form
                 onSubmit={(e) => {

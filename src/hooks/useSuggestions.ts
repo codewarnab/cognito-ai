@@ -14,7 +14,7 @@ import type { ModelState } from '../components/chat/types';
 const log = createLogger('UseSuggestions');
 
 // Debounce delay: 2 seconds after page change
-const DEBOUNCE_DELAY_MS = 2000;
+const DEBOUNCE_DELAY_MS = 1000;
 
 interface UseSuggestionsResult {
     suggestions: Suggestion[] | null;
@@ -39,6 +39,7 @@ export function useSuggestions(
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const isGeneratingRef = useRef(false);
     const lastGeneratedUrlRef = useRef<string>('');
+    const previousModeRef = useRef<string>(modelState.mode);
 
     // Only generate suggestions in cloud mode when no messages
     const shouldGenerate = modelState.mode === 'remote' && messagesLength === 0;
@@ -198,6 +199,30 @@ export function useSuggestions(
             }
         };
     }, [shouldGenerate]);
+
+    /**
+     * Detect mode switch from local to cloud and trigger suggestion generation
+     */
+    useEffect(() => {
+        const previousMode = previousModeRef.current;
+        const currentMode = modelState.mode;
+
+        // Update the ref for next comparison
+        previousModeRef.current = currentMode;
+
+        // Detect switch from local to cloud
+        if (previousMode === 'local' && currentMode === 'remote' && messagesLength === 0) {
+            log.info('Detected mode switch from local to cloud, generating suggestions');
+
+            // Get current URL and generate suggestions immediately (no debounce)
+            getCurrentTabUrl().then(url => {
+                if (url) {
+                    setCurrentUrl(url);
+                    generateSuggestions(url);
+                }
+            });
+        }
+    }, [modelState.mode, messagesLength]);
 
     // Reset when switching modes or when messages appear
     useEffect(() => {
