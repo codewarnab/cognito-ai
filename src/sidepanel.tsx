@@ -47,6 +47,7 @@ import type { UIMessage } from "ai";
 import { extractPageContext, formatPageContextForAI } from "./utils/pageContextExtractor";
 import { processFile, getFileIcon, formatFileSize } from "./utils/fileProcessor";
 import type { FileAttachmentData } from "./components/chat/FileAttachment";
+import { getModelConfig, setConversationStartMode } from "./utils/modelSettings";
 
 // Type definition for chat mode
 type ChatMode = 'text' | 'voice';
@@ -65,8 +66,9 @@ function AIChatContent() {
     const [showThreads, setShowThreads] = useState(false);
     const [showMemory, setShowMemory] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
-    const [showOnboarding, setShowOnboarding] = useState(false); // Start as false, will be set to true if needed
-    const [showChatInterface, setShowChatInterface] = useState(false); // Controls chat interface visibility
+    // Lazy initialization for onboarding state - will be hydrated in useEffect
+    const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null); // null = loading
+    const [showChatInterface, setShowChatInterface] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [showPill, setShowPill] = useState(false);
     const [mode, setMode] = useState<ChatMode>('text');
@@ -79,14 +81,134 @@ function AIChatContent() {
     const audioLinesIconRef = useRef<AudioLinesIconHandle>(null);
     const voiceInputRef = useRef<VoiceInputHandle>(null);
 
+    // Reset onboarding for testing (can be called from console)
+    const resetOnboarding = async () => {
+        try {
+            await chrome.storage.local.remove(['onboarding_completed']);
+            setShowOnboarding(true);
+            setShowChatInterface(false);
+            log.info('Onboarding reset');
+        } catch (error) {
+            log.error('Failed to reset onboarding', error);
+        }
+    };
+
+    // Expose test functions globally (defined once, not in effect)
+    if (typeof window !== 'undefined') {
+        (window as any).resetOnboarding = resetOnboarding;
+        (window as any).showOnboarding = () => {
+            setShowOnboarding(true);
+            setShowChatInterface(false);
+        };
+        (window as any).hideOnboarding = () => {
+            setShowOnboarding(false);
+            setShowChatInterface(true);
+        };
+    }
+
     // Use AI SDK v5 chat hook with ChromeExtensionTransport
     const aiChat = useAIChat({
         threadId: currentThreadId || 'default',
         onError: (error) => {
             log.error('AI Chat error', error);
         },
-        onFinish: (result) => {
+        onFinish: async (result) => {
             log.info('AI response finished', { messageId: result.message.id });
+
+            // Save messages to IndexedDB after AI response completes
+            if (result.messages && result.messages.length > 0 && currentThreadId) {
+                try {
+                    // Clear existing messages for this thread and save new ones
+                    await clearThreadMessages(currentThreadId);
+
+                    // Store complete UIMessage objects to preserve tool calls and results
+                    const dbMessages: ChatMessage[] = result.messages
+                        .map((msg, index) => {
+                            // Filter out transient parts (temporary status messages)
+                            const messageWithoutTransient = {
+                                ...msg,
+                                parts: msg.parts?.filter((part: any) => !part.transient)
+                            };
+
+                            // Extract timestamp from createdAt or use index-based timestamp
+                            let timestamp: number;
+                            if ((msg as any).createdAt) {
+                                timestamp = new Date((msg as any).createdAt).getTime();
+                            } else {
+                                // Use base timestamp + index to ensure proper ordering
+                                timestamp = Date.now() + index;
+                            }
+
+                            return {
+                                id: msg.id,
+                                threadId: currentThreadId,
+                                message: messageWithoutTransient, // Store complete UIMessage
+                                timestamp,
+                                sequenceNumber: index, // Preserve exact order
+                            };
+                        });
+
+                    if (dbMessages.length > 0) {
+                        await db.chatMessages.bulkAdd(dbMessages);
+
+                        // Count messages with tool calls for logging
+                        const toolCallCount = dbMessages.filter(msg =>
+                            msg.message.parts?.some((p: any) =>
+                                p.type === 'tool-call' ||
+                                p.type === 'tool-result'
+                            )
+                        ).length;
+
+                        const totalToolParts = dbMessages.reduce((sum, msg) =>
+                            sum + (msg.message.parts?.filter((p: any) =>
+                                p.type === 'tool-call' ||
+                                p.type === 'tool-result'
+                            ).length || 0), 0
+                        );
+
+                        log.info("💾 Saved thread messages to DB after AI response", {
+                            threadId: currentThreadId,
+                            totalMessages: dbMessages.length,
+                            messagesWithTools: toolCallCount,
+                            totalToolParts,
+                            preservesToolUI: true
+                        });
+                    }
+
+                    // Generate thread title after assistant response (non-blocking)
+                    if (result.messages.length >= 2 && result.message.role === 'assistant') {
+                        log.info("Generating thread title after assistant response");
+
+                        // Get all user and assistant messages for full context
+                        const conversationContext = result.messages
+                            .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+                            .map((msg) => {
+                                const text = msg.parts
+                                    ?.filter((part: any) => part.type === 'text')
+                                    .map((part: any) => part.text)
+                                    .join('') || '';
+                                return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
+                            })
+                            .join('\n\n');
+
+                        // Generate title asynchronously (don't block)
+                        generateThreadTitle(conversationContext, {
+                            maxLength: 40,
+                            context: 'This is a chat conversation. Generate a concise headline summarizing the main topic.',
+                            onDownloadProgress: (progress) => {
+                                log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
+                            }
+                        }).then(title => {
+                            updateThreadTitle(currentThreadId, title);
+                            log.info("Updated thread title after AI response", { threadId: currentThreadId, title });
+                        }).catch(error => {
+                            log.error("Failed to generate thread title", error);
+                        });
+                    }
+                } catch (error) {
+                    log.error("Failed to save messages after AI response", error);
+                }
+            }
         },
     });
 
@@ -100,7 +222,7 @@ function AIChatContent() {
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
-    // Load API key from storage
+    // Load API key from storage with improved error handling
     useEffect(() => {
         const loadApiKey = async () => {
             try {
@@ -108,34 +230,39 @@ function AIChatContent() {
                 if (result.gemini_api_key) {
                     setApiKey(result.gemini_api_key);
                     log.debug('API key loaded from storage');
+                } else {
+                    log.debug('No API key found in storage');
                 }
             } catch (error) {
                 log.error('Failed to load API key', error);
+                // Fail silently - API key is optional
             }
         };
         loadApiKey();
     }, []);
 
-    // Check if onboarding should be shown
+    // Check if onboarding should be shown with improved error handling
     useEffect(() => {
         const checkOnboardingStatus = async () => {
             try {
                 const result = await chrome.storage.local.get(['onboarding_completed']);
                 log.info('Onboarding status check', {
                     onboarding_completed: result.onboarding_completed,
-                    showOnboarding: showOnboarding
                 });
                 if (result.onboarding_completed) {
                     setShowOnboarding(false);
-                    setShowChatInterface(true); // Show chat interface if onboarding already completed
+                    setShowChatInterface(true);
                     log.info('Onboarding already completed, hiding onboarding');
                 } else {
                     setShowOnboarding(true);
-                    setShowChatInterface(false); // Hide chat interface during onboarding
+                    setShowChatInterface(false);
                     log.info('Onboarding not completed, showing onboarding');
                 }
             } catch (error) {
                 log.error('Failed to check onboarding status', error);
+                // On error, default to showing chat interface (fail gracefully)
+                setShowOnboarding(false);
+                setShowChatInterface(true);
             }
         };
         checkOnboardingStatus();
@@ -169,35 +296,6 @@ function AIChatContent() {
         }
     };
 
-    // Reset onboarding for testing (can be called from console)
-    const resetOnboarding = async () => {
-        try {
-            await chrome.storage.local.remove(['onboarding_completed']);
-            setShowOnboarding(true);
-            log.info('Onboarding reset');
-        } catch (error) {
-            log.error('Failed to reset onboarding', error);
-        }
-    };
-
-    // Expose functions globally for testing
-    useEffect(() => {
-        (window as any).resetOnboarding = resetOnboarding;
-        (window as any).showOnboarding = () => {
-            setShowOnboarding(true);
-            setShowChatInterface(false);
-        };
-        (window as any).hideOnboarding = () => {
-            setShowOnboarding(false);
-            setShowChatInterface(true);
-        };
-        return () => {
-            delete (window as any).resetOnboarding;
-            delete (window as any).showOnboarding;
-            delete (window as any).hideOnboarding;
-        };
-    }, []);
-
     // Handle mode change with cleanup
     const handleModeChange = async (newMode: ChatMode) => {
         if (mode === newMode) return;
@@ -212,7 +310,7 @@ function AIChatContent() {
         setMode(newMode);
     };
 
-    // Track current tab context
+    // Track current tab context using Chrome events instead of polling
     useEffect(() => {
         const updateTabContext = async () => {
             try {
@@ -224,9 +322,35 @@ function AIChatContent() {
                 log.error("Failed to get current tab", error);
             }
         };
+
+        // Initial load
         updateTabContext();
-        const interval = setInterval(updateTabContext, 2000);
-        return () => clearInterval(interval);
+
+        // Listen for tab activation (user switches tabs)
+        const handleTabActivated = () => {
+            updateTabContext();
+        };
+
+        // Listen for tab updates (URL or title changes)
+        const handleTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+            // Only update if URL or title changed for the active tab
+            if (changeInfo.url || changeInfo.title) {
+                chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
+                    if (activeTab && activeTab.id === tabId) {
+                        updateTabContext();
+                    }
+                });
+            }
+        };
+
+        // Add event listeners
+        chrome.tabs.onActivated.addListener(handleTabActivated);
+        chrome.tabs.onUpdated.addListener(handleTabUpdated);
+
+        return () => {
+            chrome.tabs.onActivated.removeListener(handleTabActivated);
+            chrome.tabs.onUpdated.removeListener(handleTabUpdated);
+        };
     }, []);
 
     // Load behavioral preferences for context injection
@@ -240,8 +364,9 @@ function AIChatContent() {
             }
         };
         loadPreferences();
-        // Refresh every 30 seconds
-        const interval = setInterval(loadPreferences, 30000);
+        // Refresh every 5 minutes (increased from 30 seconds to reduce overhead)
+        // Preferences don't change frequently, so less aggressive polling is acceptable
+        const interval = setInterval(loadPreferences, 300000);
         return () => clearInterval(interval);
     }, []);
 
@@ -305,118 +430,6 @@ function AIChatContent() {
         loadMessages();
     }, [currentThreadId]); // Reload when thread changes
 
-    // Save messages to IndexedDB when they change
-    useEffect(() => {
-        const saveMessages = async () => {
-            if (messages.length === 0 || !currentThreadId) return;
-
-            try {
-                // Clear existing messages for this thread and save new ones
-                await clearThreadMessages(currentThreadId);
-
-                // Store complete UIMessage objects to preserve tool calls and results
-                const dbMessages: ChatMessage[] = messages
-                    .map((msg, index) => {
-                        // Filter out transient parts (temporary status messages)
-                        const messageWithoutTransient = {
-                            ...msg,
-                            parts: msg.parts?.filter((part: any) => !part.transient)
-                        };
-
-                        // Extract timestamp from createdAt or use index-based timestamp
-                        let timestamp: number;
-                        if ((msg as any).createdAt) {
-                            timestamp = new Date((msg as any).createdAt).getTime();
-                        } else {
-                            // Use base timestamp + index to ensure proper ordering
-                            timestamp = Date.now() + index;
-                        }
-
-                        return {
-                            id: msg.id,
-                            threadId: currentThreadId,
-                            message: messageWithoutTransient, // Store complete UIMessage
-                            timestamp,
-                            sequenceNumber: index, // Preserve exact order
-                        };
-                    });
-
-                if (dbMessages.length > 0) {
-                    await db.chatMessages.bulkAdd(dbMessages);
-
-                    // Count messages with tool calls for logging
-                    const toolCallCount = dbMessages.filter(msg =>
-                        msg.message.parts?.some((p: any) =>
-                            p.type === 'tool-call' ||
-                            p.type === 'tool-result'
-                        )
-                    ).length;
-
-                    const totalToolParts = dbMessages.reduce((sum, msg) =>
-                        sum + (msg.message.parts?.filter((p: any) =>
-                            p.type === 'tool-call' ||
-                            p.type === 'tool-result'
-                        ).length || 0), 0
-                    );
-
-                    log.info("💾 Saved thread messages to DB with complete UIMessage structure", {
-                        threadId: currentThreadId,
-                        totalMessages: dbMessages.length,
-                        messagesWithTools: toolCallCount,
-                        totalToolParts,
-                        preservesToolUI: true
-                    });
-                }
-
-                // Generate thread title after every assistant response (non-blocking)
-                if (messages.length >= 2) {
-                    const lastMessage = messages[messages.length - 1];
-
-                    // Check if the last message is from the assistant
-                    if (lastMessage && lastMessage.role === 'assistant') {
-                        log.info("Generating thread title after assistant response");
-
-                        // Get all user and assistant messages for full context
-                        const userMessages = messages.filter((msg) => msg.role === 'user');
-                        const assistantMessages = messages.filter((msg) => msg.role === 'assistant');
-
-                        if (userMessages.length > 0 && assistantMessages.length > 0) {
-                            // Combine ALL user and assistant messages for comprehensive context
-                            const conversationContext = messages
-                                .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
-                                .map((msg) => {
-                                    const text = msg.parts
-                                        ?.filter((part: any) => part.type === 'text')
-                                        .map((part: any) => part.text)
-                                        .join('') || '';
-                                    return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
-                                })
-                                .join('\n\n');
-
-                            // Generate title asynchronously (don't block)
-                            generateThreadTitle(conversationContext, {
-                                maxLength: 40,
-                                context: 'This is a chat conversation. Generate a concise headline summarizing the main topic.',
-                                onDownloadProgress: (progress) => {
-                                    log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
-                                }
-                            }).then(title => {
-                                updateThreadTitle(currentThreadId, title);
-                                log.info("Updated thread title in background", { threadId: currentThreadId, title });
-                            }).catch(error => {
-                                log.error("Failed to generate thread title in background", error);
-                            });
-                        }
-                    }
-                }
-            } catch (error) {
-                log.error("Failed to save thread messages", error);
-            }
-        };
-
-        saveMessages();
-    }, [JSON.stringify(messages), currentThreadId]); // Save when messages or thread changes
-
     // Auto-scroll to bottom when messages change
     useEffect(() => {
         log.debug("Messages changed", { count: messages.length });
@@ -444,6 +457,20 @@ function AIChatContent() {
             attachmentCount: attachments?.length || 0,
             workflowId: workflowId || 'none'
         });
+
+        // Track conversation start mode on first message
+        if (messages.length === 0) {
+            try {
+                const config = await getModelConfig();
+                if (!config.conversationStartMode) {
+                    // First message in conversation - lock the mode
+                    await setConversationStartMode(config.mode);
+                    log.info("Locked conversation mode", { mode: config.mode });
+                }
+            } catch (error) {
+                log.warn("Failed to set conversation start mode", error);
+            }
+        }
 
         // Only clear input if we're using the input state (not voice input)
         if (messageText === undefined) {

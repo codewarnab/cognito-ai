@@ -27,7 +27,7 @@ export function useSpeechRecognition(
   options: SpeechRecognitionOptions = {}
 ): UseSpeechRecognitionReturn {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  
+
   // State
   const [isRecording, setIsRecording] = useState(false);
   const [state, setState] = useState<RecognitionState>('idle');
@@ -49,7 +49,7 @@ export function useSpeechRecognition(
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     setIsSupported(!!SpeechRecognition);
-    
+
     if (!SpeechRecognition) {
       log.warn('Speech Recognition API not supported in this browser');
     }
@@ -71,7 +71,7 @@ export function useSpeechRecognition(
   // Start silence detection
   const startSilenceDetection = useCallback(() => {
     clearSilenceTimers();
-    
+
     startTimeRef.current = Date.now();
     setSilenceTimeRemaining(opts.silenceTimeout!);
 
@@ -80,7 +80,7 @@ export function useSpeechRecognition(
       const elapsed = Date.now() - startTimeRef.current;
       const remaining = Math.max(0, opts.silenceTimeout! - elapsed);
       setSilenceTimeRemaining(remaining);
-      
+
       if (remaining === 0) {
         clearInterval(silenceCountdownRef.current!);
         silenceCountdownRef.current = null;
@@ -90,15 +90,15 @@ export function useSpeechRecognition(
     // Auto-stop timer
     silenceTimerRef.current = setTimeout(() => {
       log.info('Silence detected - auto-stopping recording');
-      
+
       // Get final transcript before stopping
       const finalText = finalTranscriptRef.current;
-      
+
       // Clear state immediately
       clearSilenceTimers();
       setIsRecording(false);
       setState('idle');
-      
+
       // Stop recognition
       if (recognitionRef.current) {
         try {
@@ -107,7 +107,7 @@ export function useSpeechRecognition(
           log.error('Error stopping recognition', err);
         }
       }
-      
+
       // Trigger callback immediately
       opts.onSilenceDetected?.();
       if (finalText && finalText.trim()) {
@@ -137,7 +137,7 @@ export function useSpeechRecognition(
         setIsRecording(false);
         setState('idle');
         log.info('Recording stopped');
-        
+
         // Trigger final transcript callback
         if (finalTranscript && opts.onFinalTranscript) {
           opts.onFinalTranscript(finalTranscript);
@@ -166,21 +166,21 @@ export function useSpeechRecognition(
       // Request microphone permission first
       log.info('Requesting microphone permission...');
       const permissionResult = await requestMicrophoneWithUI();
-      
+
       if (!permissionResult.granted) {
         const errorMsg = permissionResult.error || 'Microphone access denied';
         log.error('Microphone permission denied', permissionResult);
         setError(errorMsg);
         setState('error');
-        opts.onError?.({ 
-          error: permissionResult.errorType || 'permission-denied', 
-          message: errorMsg 
+        opts.onError?.({
+          error: permissionResult.errorType || 'permission-denied',
+          message: errorMsg
         });
         return;
       }
-      
+
       log.info('Microphone permission granted, starting recognition...');
-      
+
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
 
@@ -210,7 +210,7 @@ export function useSpeechRecognition(
           setInterimTranscript(interim);
           setTranscript(finalTranscript + interim);
         }
-        
+
         if (final) {
           const newFinal = finalTranscript + final;
           setFinalTranscript(newFinal);
@@ -223,7 +223,7 @@ export function useSpeechRecognition(
         // Reset silence timer on speech detection
         clearSilenceTimers();
         startSilenceDetection();
-        
+
         log.debug('Speech detected', { interim, final });
       };
 
@@ -234,7 +234,7 @@ export function useSpeechRecognition(
         setError(errorMsg);
         setState('error');
         opts.onError?.({ error: event.error, message: errorMsg });
-        
+
         clearSilenceTimers();
         setIsRecording(false);
       };
@@ -246,7 +246,7 @@ export function useSpeechRecognition(
         clearSilenceTimers();
         setIsRecording(false);
         setState('idle');
-        
+
         // Only trigger callback if we still have text (wasn't triggered by silence timeout)
         if (finalText && finalText.trim()) {
           log.info('Triggering onFinalTranscript callback from onend', { text: finalText });
@@ -267,12 +267,12 @@ export function useSpeechRecognition(
 
       recognitionRef.current = recognition;
       recognition.start();
-      
+
     } catch (err: any) {
-      const errorMsg = err.name === 'NotAllowedError' 
-        ? 'Microphone permission denied' 
+      const errorMsg = err.name === 'NotAllowedError'
+        ? 'Microphone permission denied'
         : 'Failed to start recording';
-      
+
       log.error(errorMsg, err);
       setError(errorMsg);
       setState('error');
@@ -287,9 +287,20 @@ export function useSpeechRecognition(
     clearSilenceTimers,
   ]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - consolidate all timer and recognition cleanup
   useEffect(() => {
     return () => {
+      // Clear all timers
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+      }
+      if (silenceCountdownRef.current) {
+        clearInterval(silenceCountdownRef.current);
+        silenceCountdownRef.current = null;
+      }
+
+      // Stop recognition
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -297,9 +308,8 @@ export function useSpeechRecognition(
           // Ignore errors on cleanup
         }
       }
-      clearSilenceTimers();
     };
-  }, [clearSilenceTimers]);
+  }, []); // No dependencies - cleanup function uses refs directly
 
   return {
     // State
@@ -311,7 +321,7 @@ export function useSpeechRecognition(
     error,
     isSupported,
     silenceTimeRemaining,
-    
+
     // Actions
     startRecording,
     stopRecording,

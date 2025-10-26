@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { TextMorph } from '../ui/TextMorph';
@@ -47,7 +47,8 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     modelState,
     onSuggestionClick,
 }) => {
-    const [showSuggestions, setShowSuggestions] = useState(true);
+    // Track if user has manually dismissed suggestions
+    const [userDismissed, setUserDismissed] = useState(false);
     const isLocalMode = modelState.mode === 'local';
 
     // Use AI suggestions hook
@@ -59,19 +60,22 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // - If error occurred: show fallback suggestions
     const suggestedActions = aiSuggestions || (suggestionError ? FALLBACK_SUGGESTIONS : []);
 
+    // Calculate if suggestions should be shown based on conditions
+    // Reset userDismissed when input is cleared and no messages exist
+    const shouldShowSuggestions = messages.length === 0 && !input.trim();
+    const showSuggestions = shouldShowSuggestions ? true : userDismissed;
+
+    // Reset dismissal state when conditions allow showing suggestions again
+    if (shouldShowSuggestions && userDismissed) {
+        setUserDismissed(false);
+    }
+
     const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0 && !isLocalMode;
 
     const handleSuggestionClick = (action: string) => {
         onSuggestionClick(action);
-        setShowSuggestions(false);
+        setUserDismissed(true);
     };
-
-    // Reset suggestions visibility when input is cleared and no messages exist
-    useEffect(() => {
-        if (messages.length === 0 && !input.trim()) {
-            setShowSuggestions(true);
-        }
-    }, [messages.length, input]);
 
     return (
         <AnimatePresence>
