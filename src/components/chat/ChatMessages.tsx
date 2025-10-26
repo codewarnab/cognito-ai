@@ -70,6 +70,8 @@ interface ChatMessagesProps {
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     pendingMessageId?: string | null;
+    isLocalMode?: boolean;
+    onConfigureApiKey?: () => void;
 }
 
 /**
@@ -150,11 +152,13 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     isLoading,
     messagesEndRef,
     pendingMessageId,
+    isLocalMode,
+    onConfigureApiKey,
 }) => {
     return (
         <div className="copilot-messages">
             {messages.length === 0 ? (
-                <EmptyState />
+                <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
             ) : (
                 <AnimatePresence>
                     {messages
