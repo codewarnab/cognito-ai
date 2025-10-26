@@ -1,6 +1,7 @@
 /**
  * Suggestion Generator Service
- * Uses Vercel AI SDK's generateObject to create context-aware suggestions
+ * Uses Vercel AI SDK's generateObject (remote) or Chrome's Prompt API (local)
+ * to create context-aware suggestions
  */
 
 import { generateObject } from 'ai';
@@ -8,6 +9,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { createLogger } from '../logger';
 import type { PageContext } from '../utils/pageContextExtractor';
+import { generateLocalContextualSuggestions } from './localSuggestionGenerator';
 
 const log = createLogger('SuggestionGenerator');
 
@@ -27,35 +29,53 @@ export type Suggestion = {
 };
 
 /**
- * Generate contextual suggestions using AI
+ * Generate contextual suggestions using AI (remote or local)
+ * @param pageContext - Current page context
+ * @param apiKey - Optional API key for remote mode. If not provided, uses local AI
  */
 export async function generateContextualSuggestions(
     pageContext: PageContext | null,
-    apiKey: string
+    apiKey?: string
 ): Promise<Suggestion[] | null> {
     try {
-        // Create Google AI provider
-        const google = createGoogleGenerativeAI({
-            apiKey,
-        });
-
-        const model = google('gemini-2.0-flash-exp');
-
-        // Build prompt with page context
-        const prompt = buildSuggestionPrompt(pageContext);
-
-        log.info('Generating suggestions for:', pageContext?.url || 'unknown page');
-
-        // Generate suggestions with retry logic
-        const result = await generateWithRetry(model, prompt);
-
-        if (!result?.suggestions || result.suggestions.length !== 4) {
-            log.warn('Invalid suggestions result:', result);
-            return null;
+        // If no API key provided, try local AI first
+        if (!apiKey) {
+            log.info('No API key provided, using local AI for suggestions');
+            return await generateLocalContextualSuggestions(pageContext);
         }
 
-        log.info('Generated suggestions successfully');
-        return result.suggestions;
+        // Remote mode: Use Gemini API
+        try {
+            // Create Google AI provider
+            const google = createGoogleGenerativeAI({
+                apiKey,
+            });
+
+            const model = google('gemini-2.5-flash-lite');
+
+            // Build prompt with page context
+            const prompt = buildSuggestionPrompt(pageContext);
+
+            log.info('Generating remote suggestions for:', pageContext?.url || 'unknown page');
+
+            // Generate suggestions with retry logic
+            const result = await generateWithRetry(model, prompt);
+
+            if (!result?.suggestions || result.suggestions.length !== 4) {
+                log.warn('Invalid suggestions result:', result);
+                // Fallback to local if remote fails
+                log.info('Falling back to local AI');
+                return await generateLocalContextualSuggestions(pageContext);
+            }
+
+            log.info('Generated remote suggestions successfully');
+            return result.suggestions;
+
+        } catch (error) {
+            log.error('Remote suggestion generation failed, falling back to local:', error);
+            // Fallback to local AI if remote fails
+            return await generateLocalContextualSuggestions(pageContext);
+        }
 
     } catch (error) {
         log.error('Failed to generate suggestions:', error);

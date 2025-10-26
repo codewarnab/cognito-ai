@@ -50,7 +50,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
 
             // Wait for all promises to complete
             const results = await Promise.all(statusPromises)
-            
+
             // Build the statuses object from successful results
             const newStatuses: Record<string, any> = {}
             results.forEach(result => {
@@ -143,6 +143,18 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     return (
         <div className="mcp-panel">
             <McpHeader title="MCP Server Management" onBack={onBack} />
+
+            {/* Note about local mode */}
+            <div style={{
+                padding: '0.75rem 1rem',
+                margin: '0 1rem 0.5rem 1rem',
+                backgroundColor: 'var(--bg-secondary)',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                color: 'var(--text-secondary)'
+            }}>
+                Note: MCP servers only work in remote mode
+            </div>
 
             {/* Search Bar */}
             <div className="mcp-search-container">
