@@ -309,7 +309,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "getSearchResults - Parse Google/Bing search results into structured data (rank, title, href, hostname, snippet)",
                 "openSearchResult - Navigate to a specific search result by rank",
                 "searchHistory - Search browser history by text query with time filters (CRITICAL: use time filters for time-based queries)",
-                "getRecentHistory - Get recent browsing history within specific time window (perfect for 'this morning', 'yesterday' queries)",
                 "getUrlVisits - Get detailed visit information for specific URLs",
                 "getYoutubeTranscript - Fetch transcript/captions from active YouTube video with optional language and time limit (only works on youtube.com/watch pages)",
                 "analyzeYouTubeVideo - SPECIALIZED AI AGENT for deep YouTube video analysis. Uses Gemini's native video understanding to analyze ANY YouTube video and answer questions about its content. Parameters: youtubeUrl (full YouTube URL), question (specific question about the video). This agent can understand video content, extract insights, provide timestamps, and answer complex questions about videos. Use this for ANY YouTube-related questions or analysis requests.",
