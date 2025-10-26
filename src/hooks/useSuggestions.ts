@@ -1,6 +1,7 @@
 /**
  * Suggestions Hook
  * React hook managing suggestion state, page tracking, and debounced updates
+ * Supports both local (Gemini Nano) and remote (Gemini API) modes
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -13,7 +14,7 @@ import type { ModelState } from '../components/chat/types';
 
 const log = createLogger('UseSuggestions');
 
-// Debounce delay: 2 seconds after page change
+// Debounce delay: 1 seconds after page change
 const DEBOUNCE_DELAY_MS = 1000;
 
 interface UseSuggestionsResult {
@@ -24,7 +25,8 @@ interface UseSuggestionsResult {
 
 /**
  * Hook for managing AI-generated contextual suggestions
- * Only active in cloud mode when no messages exist
+ * Active in both local and remote modes when no messages exist
+ * Uses local AI (Gemini Nano) in local mode, Gemini API in remote mode
  */
 export function useSuggestions(
     modelState: ModelState,
@@ -43,8 +45,8 @@ export function useSuggestions(
     const previousMessagesLengthRef = useRef<number>(messagesLength);
     const shouldGenerateRef = useRef<boolean>(false);
 
-    // Only generate suggestions in cloud mode when no messages
-    const shouldGenerate = modelState.mode === 'remote' && messagesLength === 0;
+    // Generate suggestions in both local and remote modes when no messages
+    const shouldGenerate = messagesLength === 0;
 
     // Update refs for next render
     shouldGenerateRef.current = shouldGenerate;
@@ -70,7 +72,7 @@ export function useSuggestions(
             setIsGenerating(true);
             setError(null);
 
-            log.info('Generating suggestions for:', url);
+            log.info('Generating suggestions for:', url, 'mode:', modelState.mode);
 
             // Check cache first
             const cached = suggestionCache.getSuggestions(url);
@@ -81,19 +83,23 @@ export function useSuggestions(
                 return;
             }
 
-            // Get API key
+            // Get API key (optional - if not available, will use local AI)
             const apiKey = await getGeminiApiKey();
-            if (!apiKey) {
-                log.warn('No API key available, cannot generate suggestions');
-                setError(new Error('No API key'));
+
+            if (modelState.mode === 'remote' && !apiKey) {
+                log.warn('Remote mode but no API key available');
+                // Don't set error, just skip (or could fallback to local)
                 return;
             }
 
             // Extract page context
             const pageContext = await extractPageContext();
 
-            // Generate suggestions
-            const newSuggestions = await generateContextualSuggestions(pageContext, apiKey);
+            // Generate suggestions (will use local AI if no apiKey)
+            const newSuggestions = await generateContextualSuggestions(
+                pageContext,
+                modelState.mode === 'remote' ? apiKey : undefined
+            );
 
             if (newSuggestions) {
                 // Update cache
@@ -169,13 +175,13 @@ export function useSuggestions(
         previousModeRef.current = currentMode;
         previousMessagesLengthRef.current = currentMessagesLength;
 
-        // Handle mode switch from local to cloud with no messages
-        const modeSwitchedToCloud = previousMode === 'local' && currentMode === 'remote' && currentMessagesLength === 0;
+        // Handle mode switch to either local or remote with no messages
+        const modeSwitched = previousMode !== currentMode && currentMessagesLength === 0;
 
         // Handle messages being cleared (going back to 0)
-        const messagesCleared = previousMessagesLength > 0 && currentMessagesLength === 0 && currentMode === 'remote';
+        const messagesCleared = previousMessagesLength > 0 && currentMessagesLength === 0;
 
-        // Clear suggestions when not in cloud mode or when messages exist
+        // Clear suggestions when messages exist
         if (!shouldGenerate) {
             setSuggestions(null);
             setError(null);
@@ -183,11 +189,12 @@ export function useSuggestions(
             return;
         }
 
-        // If mode just switched to cloud or messages were cleared, generate immediately
-        if (modeSwitchedToCloud || messagesCleared) {
+        // If mode just switched or messages were cleared, generate immediately
+        if (modeSwitched || messagesCleared) {
             log.info('Detected trigger for immediate suggestion generation', {
-                modeSwitchedToCloud,
-                messagesCleared
+                modeSwitched,
+                messagesCleared,
+                mode: currentMode
             });
 
             getCurrentTabUrl().then(url => {

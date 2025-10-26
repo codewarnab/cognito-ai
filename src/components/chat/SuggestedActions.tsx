@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSuggestions } from '../../hooks/useSuggestions';
 import { TextMorph } from '../ui/TextMorph';
 import type { Message, ModelState } from './types';
 import type { FileAttachmentData } from './FileAttachment';
 import type { WorkflowDefinition } from '../../workflows/types';
+import { createLogger } from '../../logger';
+
+const log = createLogger('SuggestedActions');
 
 interface SuggestedActionsProps {
     messages: Message[];
@@ -54,6 +57,18 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // Use AI suggestions hook
     const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(modelState, messages.length);
 
+    // Debug logging
+    useEffect(() => {
+        log.info('SuggestedActions state:', {
+            mode: modelState.mode,
+            messagesLength: messages.length,
+            aiSuggestions: aiSuggestions?.length || 0,
+            isGenerating,
+            suggestionError: suggestionError?.message,
+            showSuggestedActions: messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0
+        });
+    }, [aiSuggestions, isGenerating, suggestionError, messages.length, modelState.mode]);
+
     // Determine which suggestions to show:
     // - If generating: show skeleton/loading (no suggestions yet)
     // - If AI suggestions available: show AI suggestions
@@ -70,7 +85,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         setUserDismissed(false);
     }
 
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0 && !isLocalMode;
+    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0;
 
     const handleSuggestionClick = (action: string) => {
         onSuggestionClick(action);
