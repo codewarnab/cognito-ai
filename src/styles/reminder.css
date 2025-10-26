@@ -1,4 +1,4 @@
-/* Reminder Panel Styles - Vercel-inspired modern design */
+/* Reminder Panel Styles - Matching Memory Panel Design */
 
 .reminder-panel-loading {
     display: flex;
@@ -7,6 +7,7 @@
     justify-content: center;
     padding: 60px 24px;
     gap: 20px;
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .reminder-panel-loading .spinner {
@@ -21,8 +22,9 @@
 .reminder-panel-loading p {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.6);
-    font-weight: 500;
+    font-weight: 400;
     margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .reminder-panel-empty {
@@ -36,65 +38,47 @@
 }
 
 .reminder-panel-empty svg {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.3);
     margin-bottom: 8px;
 }
 
 .reminder-panel-empty p {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0;
-    color: rgba(255, 255, 255, 0.9);
-    letter-spacing: -0.01em;
+    font-size: 14px;
+    font-weight: 400;
+    margin: 8px 0;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .reminder-panel-empty-hint {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
     line-height: 1.6;
     max-width: 280px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
 }
 
 .reminder-panel-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 20px;
 }
 
 .reminder-panel-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s;
     position: relative;
     overflow: hidden;
 }
 
-.reminder-panel-item::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg,
-            rgba(99, 102, 241, 0.5) 0%,
-            rgba(168, 85, 247, 0.5) 100%);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
 .reminder-panel-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.12);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.reminder-panel-item:hover::before {
-    opacity: 1;
+    border-color: rgba(18, 100, 255, 0.5);
+    box-shadow: 0 2px 8px rgba(18, 100, 255, 0.1);
 }
 
 .reminder-panel-item-content {
@@ -108,38 +92,39 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+    margin-bottom: 6px;
 }
 
 .reminder-panel-item-title {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: #ffffff;
     margin: 0;
     flex: 1;
-    line-height: 1.5;
+    line-height: 1.4;
     letter-spacing: -0.01em;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .reminder-panel-item-description {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.65);
-    margin: 0;
-    line-height: 1.6;
-    padding-right: 24px;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-weight: 400;
 }
 
 .reminder-panel-item-time {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.5);
-    font-weight: 500;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 6px 10px;
-    border-radius: 6px;
+    font-weight: 400;
+    padding: 2px 0;
     width: fit-content;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .reminder-panel-item-time svg {
@@ -150,11 +135,11 @@
 .reminder-panel-delete-btn {
     background: transparent;
     border: none;
-    padding: 6px;
+    padding: 2px 6px;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.4);
-    border-radius: 6px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 4px;
+    transition: all 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -162,13 +147,8 @@
 }
 
 .reminder-panel-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.15);
-    color: rgb(239, 68, 68);
-    transform: scale(1.05);
-}
-
-.reminder-panel-delete-btn:active {
-    transform: scale(0.95);
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff4444;
 }
 
 @keyframes spin {

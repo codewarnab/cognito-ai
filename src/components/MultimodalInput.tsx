@@ -184,24 +184,24 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'How can I improve',
-      label: 'my time management skills?',
-      action: 'How can I improve my time management skills?',
+      title: 'Search for React tutorials',
+      label: 'and organize my tabs',
+      action: 'Search for React tutorials and organize my tabs',
     },
     {
-      title: 'Suggest ideas for',
-      label: 'a creative writing project',
-      action: 'Suggest ideas for a creative writing project',
+      title: 'Find my recent GitHub visits',
+      label: 'from this morning',
+      action: 'Find my recent GitHub visits from this morning',
     },
     {
-      title: 'What are some tips',
-      label: 'for staying motivated?',
-      action: 'What are some tips for staying motivated?',
+      title: 'Set a reminder for',
+      label: 'my meeting tomorrow at 2pm',
+      action: 'Set a reminder for my meeting tomorrow at 2pm',
     },
     {
-      title: 'Help me brainstorm',
-      label: 'ideas for a new hobby',
-      action: 'Help me brainstorm ideas for a new hobby',
+      title: 'Analyze this YouTube video',
+      label: 'and summarize the key points',
+      action: 'Analyze this YouTube video and summarize the key points',
     },
   ];
 
@@ -227,9 +227,6 @@ function PureSuggestedActions({
                        bg-transparent hover:bg-white/10 text-white hover:text-white"
           >
             <span className="font-medium">{suggestedAction.title}</span>
-            <span className="text-white/60">
-              {suggestedAction.label}
-            </span>
           </Button>
         </motion.div>
       ))}
