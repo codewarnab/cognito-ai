@@ -91,7 +91,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
             {/* Main content */}
             <div className="onboarding-content">
                 {/* Animated Page Content */}
-                <div style={{ flex: 1, overflow: 'hidden', position: 'relative', width: '100%' }}>
+                <div className="onboarding-page-wrapper">
                     <AnimatePresence mode="sync" initial={false} custom={direction}>
                         <motion.div
                             key={page}
@@ -102,7 +102,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                                 x: { type: "spring", stiffness: 300, damping: 35 },
                                 opacity: { duration: 0.2 }
                             }}
-                            style={{ position: 'absolute', inset: 0, width: '100%' }}
+                            className="onboarding-page-slide"
                         >
                             {renderPage()}
                         </motion.div>

@@ -68,11 +68,14 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    height: 100vh;
-    padding: 40px 20px;
+    justify-content: flex-start;
+    min-height: 100vh;
+    height: auto;
+    padding: 40px 20px 60px 20px;
     text-align: center;
     box-sizing: border-box;
+    overflow-y: auto;
+    gap: 20px;
 }
 
 .onboarding-logo {
@@ -96,10 +99,12 @@
     padding: 20px;
     background: transparent;
     border-radius: 12px;
-    margin: 0 20px 20px 20px;
+    margin: 0;
     flex-shrink: 0;
-    width: calc(100% - 40px);
+    width: 100%;
     max-width: 500px;
+    position: relative;
+    z-index: 10;
 }
 
 .onboarding-progress {
@@ -190,7 +195,7 @@
 .onboarding-text {
     max-width: 400px;
     margin-bottom: 20px;
-    margin-top: 60px;
+    margin-top: 0px;
 }
 
 .onboarding-title {
@@ -461,7 +466,7 @@
 /* Button Animations - Converted from Tailwind */
 .onboarding-button-container {
     position: relative;
-    height: 46px;
+    height: 60px;
     width: 100%;
 }
 
@@ -555,8 +560,85 @@
     align-items: center;
     justify-content: flex-start;
     flex: 1;
+    min-height: 0;
     padding: 20px;
     text-align: center;
+    width: 100%;
+    max-width: 100%;
+    gap: 20px;
+}
+
+/* Page content wrapper for animations */
+.onboarding-page-wrapper {
+    flex: 1;
+    overflow: visible;
+    position: relative;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.onboarding-page-slide {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+}
+
+/* Image container and image styles */
+.onboarding-image-container {
+    margin-top: -40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    overflow: visible;
+    width: 100%;
+    min-height: 400px;
+    max-height: none;
+    padding: 5px 20px;
+    box-sizing: border-box;
+}
+
+.onboarding-image {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: none;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+
+/* Specific page content variants */
+.onboarding-page-content--features,
+.onboarding-page-content--capabilities,
+.onboarding-page-content--get-started {
+    gap: 1.25rem;
+    padding-top: 0;
+}
+
+.onboarding-page-content--features .onboarding-text,
+.onboarding-page-content--capabilities .onboarding-text,
+.onboarding-page-content--get-started .onboarding-text {
+    margin-bottom: 0;
+}
+
+.onboarding-page-content--features .onboarding-title,
+.onboarding-page-content--capabilities .onboarding-title,
+.onboarding-page-content--get-started .onboarding-title {
+    margin-bottom: 0.5rem;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.onboarding-page-content--features .onboarding-subtitle,
+.onboarding-page-content--capabilities .onboarding-subtitle,
+.onboarding-page-content--get-started .onboarding-subtitle {
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
 }
 
 /* Features Grid */
@@ -683,35 +765,676 @@
     margin: 0;
 }
 
-/* Responsive design */
-@media (max-width: 400px) {
+/* Responsive design - Mobile First Approach */
+
+/* Extra small devices (phones, 320px and up) */
+@media (max-width: 480px) {
+    .onboarding-content {
+        padding: 20px 16px 40px 16px;
+        min-height: 100vh;
+        height: auto;
+        gap: 16px;
+    }
+
+    .onboarding-skip {
+        top: 16px;
+        right: 16px;
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+
     .onboarding-title {
-        font-size: 20px;
+        font-size: clamp(1.5rem, 8vw, 2rem);
+        margin-bottom: 12px;
+        line-height: 1.2;
     }
 
     .onboarding-subtitle {
-        font-size: 14px;
+        font-size: clamp(0.8rem, 4vw, 0.9rem);
+        line-height: 1.4;
+        margin-bottom: 12px;
     }
 
     .onboarding-description {
-        font-size: 12px;
+        font-size: clamp(0.75rem, 3.5vw, 0.85rem);
+        line-height: 1.5;
+    }
+
+    .onboarding-text {
+        max-width: 100%;
+        margin-bottom: 16px;
+        margin-top: 20px;
+        padding: 0 8px;
+    }
+
+    .onboarding-logo {
+        margin: 20px 0;
     }
 
     .onboarding-logo img {
-        width: 280px;
-        height: 280px;
+        width: clamp(200px, 60vw, 240px);
+        height: clamp(200px, 60vw, 240px);
     }
 
     .onboarding-footer {
-        margin-top: 20px;
+        margin: 0;
+        padding: 16px;
         gap: 16px;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .onboarding-nav-btn {
+        font-size: 13px;
+    }
+
+    .onboarding-nav-btn--back {
+        width: 36px;
+        height: 36px;
     }
 
     .onboarding-nav-btn--next {
         width: 70px;
+        height: 36px;
     }
 
     .onboarding-features-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .onboarding-feature-card {
+        padding: 16px;
+    }
+
+    .feature-icon {
+        width: 40px;
+        height: 40px;
+        margin-bottom: 10px;
+    }
+
+    .onboarding-feature-card h3 {
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .onboarding-feature-card p {
+        font-size: 11px;
+    }
+
+    .onboarding-getting-started {
+        gap: 16px;
+        margin-top: 20px;
+    }
+
+    .onboarding-step {
+        gap: 12px;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .step-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .onboarding-step h3 {
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .onboarding-step p {
+        font-size: 11px;
+    }
+
+    .onboarding-final-message {
+        margin-top: 20px;
+        padding: 12px;
+    }
+
+    .onboarding-final-message p {
+        font-size: 12px;
+    }
+
+    /* Button container responsive adjustments */
+    .onboarding-button-container {
+        height: 56px;
+    }
+
+    .onboarding-button {
+        padding: 10px 14px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    /* Page content adjustments */
+    .onboarding-page-content {
+        padding: 16px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -30px;
+        flex: 1;
+        min-height: 350px;
+        max-height: none;
+        padding: 4px 16px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+    }
+}
+
+/* Small devices (landscape phones, 481px and up) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .onboarding-content {
+        padding: 30px 24px 40px 24px;
+        min-height: 100vh;
+        height: auto;
+        gap: 18px;
+    }
+
+    .onboarding-skip {
+        top: 20px;
+        right: 20px;
+    }
+
+    .onboarding-title {
+        font-size: clamp(1.75rem, 6vw, 2.25rem);
+        margin-bottom: 14px;
+    }
+
+    .onboarding-subtitle {
+        font-size: clamp(0.9rem, 3.5vw, 1rem);
+        margin-bottom: 14px;
+    }
+
+    .onboarding-text {
+        max-width: 90%;
+        margin-bottom: 18px;
+        margin-top: 30px;
+    }
+
+    .onboarding-logo {
+        margin: 30px 0;
+    }
+
+    .onboarding-logo img {
+        width: clamp(240px, 50vw, 280px);
+        height: clamp(240px, 50vw, 280px);
+    }
+
+    .onboarding-footer {
+        margin: 0;
+        padding: 18px;
+        width: 100%;
+        flex-shrink: 0;
+    }
+
+    .onboarding-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin-top: 25px;
+    }
+
+    .onboarding-feature-card {
+        padding: 18px;
+    }
+
+    .onboarding-getting-started {
+        gap: 18px;
+        margin-top: 25px;
+    }
+
+    .onboarding-step {
+        gap: 14px;
+    }
+
+    /* Button container adjustments */
+    .onboarding-button-container {
+        height: 58px;
+    }
+
+    .onboarding-button {
+        padding: 11px 15px;
+        font-size: 14px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -35px;
+        flex: 1;
+        min-height: 380px;
+        max-height: none;
+        padding: 5px 18px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+    }
+}
+
+/* Medium devices (tablets, 769px and up) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .onboarding-content {
+        padding: 40px 32px 40px 32px;
+        min-height: 100vh;
+        height: auto;
+        gap: 20px;
+    }
+
+    .onboarding-title {
+        font-size: clamp(2rem, 4vw, 2.5rem);
+        margin-bottom: 16px;
+    }
+
+    .onboarding-subtitle {
+        font-size: clamp(1rem, 2.5vw, 1.1rem);
+        margin-bottom: 16px;
+    }
+
+    .onboarding-text {
+        max-width: 80%;
+        margin-bottom: 20px;
+        margin-top: 40px;
+    }
+
+    .onboarding-logo {
+        margin: 40px 0;
+    }
+
+    .onboarding-logo img {
+        width: clamp(260px, 40vw, 300px);
+        height: clamp(260px, 40vw, 300px);
+    }
+
+    .onboarding-footer {
+        margin: 0;
+        padding: 20px;
+        width: 100%;
+        max-width: 600px;
+        flex-shrink: 0;
+    }
+
+    .onboarding-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 30px;
+        max-width: 600px;
+    }
+
+    .onboarding-feature-card {
+        padding: 20px;
+    }
+
+    .onboarding-getting-started {
+        gap: 20px;
+        margin-top: 30px;
+        max-width: 500px;
+    }
+
+    .onboarding-step {
+        gap: 16px;
+    }
+
+    /* Button container adjustments */
+    .onboarding-button-container {
+        height: 60px;
+    }
+
+    .onboarding-button {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -40px;
+        flex: 1;
+        min-height: 420px;
+        max-height: none;
+        padding: 5px 20px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+    }
+}
+
+/* Large devices (desktops, 1025px and up) */
+@media (min-width: 1025px) {
+    .onboarding-content {
+        padding: 20px 20px 40px 20px;
+        min-height: 100vh;
+        height: auto;
+        gap: 20px;
+    }
+
+    .onboarding-title {
+        font-size: clamp(2.25rem, 3vw, 2.75rem);
+        margin-bottom: 16px;
+    }
+
+    .onboarding-subtitle {
+        font-size: clamp(1.1rem, 2vw, 1.2rem);
+        margin-bottom: 16px;
+    }
+
+    .onboarding-text {
+        max-width: 500px;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+
+    .onboarding-logo {
+        margin: 20px 0;
+    }
+
+    .onboarding-logo img {
+        width: clamp(280px, 30vw, 320px);
+        height: clamp(280px, 30vw, 320px);
+    }
+
+    .onboarding-footer {
+        margin: 0;
+        padding: 20px;
+        width: 100%;
+        max-width: 500px;
+        flex-shrink: 0;
+    }
+
+    .onboarding-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 30px;
+        max-width: 500px;
+    }
+
+    .onboarding-feature-card {
+        padding: 20px;
+    }
+
+    .onboarding-getting-started {
+        gap: 20px;
+        margin-top: 30px;
+        max-width: 400px;
+    }
+
+    .onboarding-step {
+        gap: 16px;
+    }
+
+    /* Button container adjustments */
+    .onboarding-button-container {
+        height: 60px;
+    }
+
+    .onboarding-button {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -40px;
+        flex: 1;
+        min-height: 420px;
+        max-height: none;
+        padding: 5px 20px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+    }
+}
+
+/* Extra large devices (large desktops, 1440px and up) */
+@media (min-width: 1440px) {
+    .onboarding-content {
+        padding: 20px 40px 40px 40px;
+        min-height: 100vh;
+        height: auto;
+        gap: 24px;
+    }
+
+    .onboarding-title {
+        font-size: 2.75rem;
+        margin-bottom: 20px;
+    }
+
+    .onboarding-subtitle {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+    }
+
+    .onboarding-text {
+        max-width: 600px;
+        margin-bottom: 24px;
+        margin-top: 20px;
+    }
+
+    .onboarding-logo {
+        margin: 20px 0;
+    }
+
+    .onboarding-logo img {
+        width: 320px;
+        height: 320px;
+    }
+
+    .onboarding-footer {
+        margin: 0;
+        padding: 24px;
+        width: 100%;
+        max-width: 600px;
+        flex-shrink: 0;
+    }
+
+    .onboarding-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-top: 40px;
+        max-width: 600px;
+    }
+
+    .onboarding-feature-card {
+        padding: 24px;
+    }
+
+    .onboarding-getting-started {
+        gap: 24px;
+        margin-top: 40px;
+        max-width: 500px;
+    }
+
+    .onboarding-step {
+        gap: 20px;
+    }
+
+    /* Button container adjustments */
+    .onboarding-button-container {
+        height: 64px;
+    }
+
+    .onboarding-button {
+        padding: 14px 18px;
+        font-size: 15px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -45px;
+        flex: 1;
+        min-height: 450px;
+        max-height: none;
+        padding: 6px 24px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
+    }
+}
+
+/* Landscape orientation adjustments for mobile devices */
+@media (max-height: 500px) and (orientation: landscape) {
+    .onboarding-content {
+        padding: 16px 20px 20px 20px;
+        min-height: 100vh;
+        height: auto;
+        gap: 12px;
+    }
+
+    .onboarding-text {
+        margin-top: 10px;
+        margin-bottom: 10px;
+    }
+
+    .onboarding-logo {
+        margin: 10px 0;
+    }
+
+    .onboarding-logo img {
+        width: clamp(120px, 20vh, 160px);
+        height: clamp(120px, 20vh, 160px);
+    }
+
+    .onboarding-footer {
+        margin: 0;
+        padding: 12px;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    .onboarding-title {
+        font-size: clamp(1.25rem, 6vh, 1.75rem);
+        margin-bottom: 8px;
+    }
+
+    .onboarding-subtitle {
+        font-size: clamp(0.8rem, 3vh, 1rem);
+        margin-bottom: 8px;
+    }
+
+    .onboarding-features-grid {
+        margin-top: 15px;
+    }
+
+    .onboarding-getting-started {
+        margin-top: 15px;
+    }
+
+    .onboarding-page-wrapper {
+        flex: 1;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+    }
+
+    .onboarding-page-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+    }
+
+    .onboarding-image-container {
+        margin-top: -25px;
+        flex: 1;
+        min-height: 250px;
+        max-height: none;
+        padding: 3px 12px;
+    }
+
+    .onboarding-image {
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: none;
+        object-fit: contain;
     }
 }
