@@ -33,4 +33,5 @@ export interface ModelState {
     remoteModel: RemoteModelType;
     hasApiKey: boolean;
     conversationStartMode?: AIMode;
+    isLoading?: boolean;
 }

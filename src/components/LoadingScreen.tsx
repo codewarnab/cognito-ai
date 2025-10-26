@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import logoImage from '../../assets/logo.png';
 
@@ -8,20 +8,40 @@ interface LoadingScreenProps {
 
 export const LoadingScreen: React.FC<LoadingScreenProps> = ({ duration = 10 }) => {
     const [countdown, setCountdown] = useState(duration);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const durationRef = useRef(duration);
+
+    // Update duration ref when prop changes
+    useEffect(() => {
+        durationRef.current = duration;
+        setCountdown(duration);
+    }, [duration]);
 
     useEffect(() => {
-        const timer = setInterval(() => {
+        // Use callback to avoid recreating function on each tick
+        const tick = () => {
             setCountdown(prev => {
                 if (prev <= 1) {
-                    clearInterval(timer);
+                    if (timerRef.current) {
+                        clearInterval(timerRef.current);
+                        timerRef.current = null;
+                    }
                     return 0;
                 }
                 return prev - 1;
             });
-        }, 1000);
+        };
 
-        return () => clearInterval(timer);
-    }, [duration]);
+        // Start timer only once on mount
+        timerRef.current = setInterval(tick, 1000);
+
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+        };
+    }, []); // Empty deps - only run on mount/unmount
 
     return (
         <div className="loading-screen">
@@ -29,20 +49,20 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ duration = 10 }) =
                 {/* Logo with subtle animation */}
                 <motion.div
                     className="loading-logo"
-                    animate={{ 
+                    animate={{
                         rotate: [0, 5, -5, 0],
                         scale: [1, 1.05, 1]
                     }}
-                    transition={{ 
-                        duration: 2, 
-                        repeat: Infinity, 
-                        ease: "easeInOut" 
+                    transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut"
                     }}
                 >
-                    <img 
-                        src={logoImage} 
-                        alt="Chrome AI Agent" 
-                        width={80} 
+                    <img
+                        src={logoImage}
+                        alt="Chrome AI Agent"
+                        width={80}
                         height={80}
                         style={{ objectFit: 'contain' }}
                     />

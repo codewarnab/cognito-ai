@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
 import { GeminiApiKeyDialog } from '../GeminiApiKeyDialog';
 
@@ -21,13 +21,28 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
     const [showGeminiDialog, setShowGeminiDialog] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
+    // Handle clicks outside menu to close it
     useEffect(() => {
-        const handleClickOutside = () => setShowHeaderMenu(false);
-        if (showHeaderMenu) {
-            window.addEventListener('click', handleClickOutside, { once: true });
-        }
-        return () => window.removeEventListener('click', handleClickOutside);
+        if (!showHeaderMenu) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            // Check if click is outside the menu wrapper
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setShowHeaderMenu(false);
+            }
+        };
+
+        // Add listener on next tick to avoid immediate closure
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 0);
+
+        return () => {
+            clearTimeout(timeoutId);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, [showHeaderMenu]);
 
     return (
@@ -74,7 +89,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     )}
 
                     {/* Kebab Menu (Three dots) */}
-                    <div className="copilot-header-menu-wrapper">
+                    <div className="copilot-header-menu-wrapper" ref={menuRef}>
                         <button
                             className="copilot-header-button"
                             onClick={(e) => {
@@ -88,7 +103,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                         </button>
 
                         {showHeaderMenu && (
-                            <div className="copilot-header-menu" onClick={(e) => e.stopPropagation()}>
+                            <div className="copilot-header-menu">
                                 <button
                                     className="copilot-header-menu-item"
                                     onClick={() => {

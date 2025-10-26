@@ -23,16 +23,20 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
   const [filter, setFilter] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [saveSuggestionsEnabled, setSaveSuggestionsEnabled] = useState(true);
 
-  // Load memories
+  // Load memories with improved error handling
   const loadMemories = async () => {
     setLoading(true);
+    setError(null);
     try {
       const allMemories = await memoryStore.listMemories();
       setMemories(allMemories);
-    } catch (error) {
-      log.error("Failed to load memories", error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to load memories";
+      log.error("Failed to load memories", err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -44,15 +48,16 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
     }
   }, [isOpen]);
 
-  // Handle delete
+  // Handle delete with improved error handling
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this memory?")) {
       try {
         await memoryStore.deleteMemory(id);
         await loadMemories();
-      } catch (error) {
-        log.error("Failed to delete memory", error);
-        alert("Failed to delete memory");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to delete memory";
+        log.error("Failed to delete memory", err);
+        setError(errorMessage);
       }
     }
   };
@@ -142,6 +147,12 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
 
         {/* Memory List */}
         <div className="memory-panel-list">
+          {error && (
+            <div className="memory-panel-error">
+              <p>Error: {error}</p>
+              <button onClick={loadMemories}>Retry</button>
+            </div>
+          )}
           {loading ? (
             <div className="memory-panel-loading">Loading memories...</div>
           ) : filteredMemories.length === 0 ? (

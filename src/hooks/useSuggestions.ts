@@ -40,9 +40,14 @@ export function useSuggestions(
     const isGeneratingRef = useRef(false);
     const lastGeneratedUrlRef = useRef<string>('');
     const previousModeRef = useRef<string>(modelState.mode);
+    const previousMessagesLengthRef = useRef<number>(messagesLength);
+    const shouldGenerateRef = useRef<boolean>(false);
 
     // Only generate suggestions in cloud mode when no messages
     const shouldGenerate = modelState.mode === 'remote' && messagesLength === 0;
+
+    // Update refs for next render
+    shouldGenerateRef.current = shouldGenerate;
 
     /**
      * Generate suggestions for a URL
@@ -129,9 +134,10 @@ export function useSuggestions(
             clearTimeout(debounceTimerRef.current);
         }
 
-        // Debounce: wait 2 seconds before generating
+        // Debounce: wait before generating
         debounceTimerRef.current = setTimeout(() => {
-            if (shouldGenerate) {
+            // Check current shouldGenerate state via ref
+            if (shouldGenerateRef.current) {
                 generateSuggestions(newUrl);
             }
         }, DEBOUNCE_DELAY_MS);
@@ -151,22 +157,71 @@ export function useSuggestions(
     };
 
     /**
-     * Initialize and listen to tab changes
+     * Handle mode switches and message count changes
      */
     useEffect(() => {
-        // Only set up listeners in cloud mode
+        const previousMode = previousModeRef.current;
+        const previousMessagesLength = previousMessagesLengthRef.current;
+        const currentMode = modelState.mode;
+        const currentMessagesLength = messagesLength;
+
+        // Update refs for next comparison
+        previousModeRef.current = currentMode;
+        previousMessagesLengthRef.current = currentMessagesLength;
+
+        // Handle mode switch from local to cloud with no messages
+        const modeSwitchedToCloud = previousMode === 'local' && currentMode === 'remote' && currentMessagesLength === 0;
+
+        // Handle messages being cleared (going back to 0)
+        const messagesCleared = previousMessagesLength > 0 && currentMessagesLength === 0 && currentMode === 'remote';
+
+        // Clear suggestions when not in cloud mode or when messages exist
         if (!shouldGenerate) {
-            // Clear suggestions when not in cloud mode or when messages exist
             setSuggestions(null);
             setError(null);
+            lastGeneratedUrlRef.current = '';
             return;
         }
 
-        // Get initial URL
-        getCurrentTabUrl().then(handleUrlChange);
+        // If mode just switched to cloud or messages were cleared, generate immediately
+        if (modeSwitchedToCloud || messagesCleared) {
+            log.info('Detected trigger for immediate suggestion generation', {
+                modeSwitchedToCloud,
+                messagesCleared
+            });
 
+            getCurrentTabUrl().then(url => {
+                if (url) {
+                    setCurrentUrl(url);
+                    generateSuggestions(url);
+                }
+            });
+        }
+    }, [shouldGenerate, modelState.mode, messagesLength]);
+
+    /**
+     * Initialize current URL on mount
+     */
+    useEffect(() => {
+        if (!currentUrl && shouldGenerate) {
+            getCurrentTabUrl().then(url => {
+                if (url && shouldGenerateRef.current) {
+                    handleUrlChange(url);
+                }
+            });
+        }
+    }, [currentUrl, shouldGenerate]);
+
+    /**
+     * Listen to tab changes - only created once on mount
+     * Uses refs to access latest state without recreating listeners
+     */
+    useEffect(() => {
         // Listen to tab updates
         const handleTabUpdate = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+            // Check latest shouldGenerate state via ref
+            if (!shouldGenerateRef.current) return;
+
             if (changeInfo.url && tab.active) {
                 handleUrlChange(changeInfo.url);
             }
@@ -174,6 +229,9 @@ export function useSuggestions(
 
         // Listen to tab activation
         const handleTabActivated = async (activeInfo: chrome.tabs.TabActiveInfo) => {
+            // Check latest shouldGenerate state via ref
+            if (!shouldGenerateRef.current) return;
+
             try {
                 const tab = await chrome.tabs.get(activeInfo.tabId);
                 if (tab.url) {
@@ -184,11 +242,11 @@ export function useSuggestions(
             }
         };
 
-        // Add listeners
+        // Add listeners once
         chrome.tabs.onUpdated.addListener(handleTabUpdate);
         chrome.tabs.onActivated.addListener(handleTabActivated);
 
-        // Cleanup
+        // Cleanup only on unmount
         return () => {
             chrome.tabs.onUpdated.removeListener(handleTabUpdate);
             chrome.tabs.onActivated.removeListener(handleTabActivated);
@@ -198,40 +256,7 @@ export function useSuggestions(
                 clearTimeout(debounceTimerRef.current);
             }
         };
-    }, [shouldGenerate]);
-
-    /**
-     * Detect mode switch from local to cloud and trigger suggestion generation
-     */
-    useEffect(() => {
-        const previousMode = previousModeRef.current;
-        const currentMode = modelState.mode;
-
-        // Update the ref for next comparison
-        previousModeRef.current = currentMode;
-
-        // Detect switch from local to cloud
-        if (previousMode === 'local' && currentMode === 'remote' && messagesLength === 0) {
-            log.info('Detected mode switch from local to cloud, generating suggestions');
-
-            // Get current URL and generate suggestions immediately (no debounce)
-            getCurrentTabUrl().then(url => {
-                if (url) {
-                    setCurrentUrl(url);
-                    generateSuggestions(url);
-                }
-            });
-        }
-    }, [modelState.mode, messagesLength]);
-
-    // Reset when switching modes or when messages appear
-    useEffect(() => {
-        if (!shouldGenerate) {
-            setSuggestions(null);
-            setError(null);
-            lastGeneratedUrlRef.current = '';
-        }
-    }, [shouldGenerate]);
+    }, []); // Empty deps - listeners created once, use refs for latest state
 
     return {
         suggestions,

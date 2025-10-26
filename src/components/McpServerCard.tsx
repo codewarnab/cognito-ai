@@ -42,6 +42,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     const clearSuccessTimeoutRef = useRef<number | null>(null)
     const clearHealthStatusTimeoutRef = useRef<number | null>(null)
     const cardRef = useRef<HTMLDivElement>(null)
+    const tooltipRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         return () => {
@@ -113,24 +114,25 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
 
     // Handle clicking outside tooltip to close it
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (showTooltip && !event.composedPath().some((el) => {
-                const target = el as Element
-                return target.classList?.contains('mcp-card__info-container') ||
-                    target.classList?.contains('mcp-card__tooltip')
-            })) {
-                setShowTooltip(false)
-            }
-        }
+        if (!showTooltip) return;
 
-        if (showTooltip) {
-            document.addEventListener('mousedown', handleClickOutside)
-        }
+        const handleClickOutside = (event: MouseEvent) => {
+            // Check if click is outside the tooltip container
+            if (tooltipRef.current && !tooltipRef.current.contains(event.target as Node)) {
+                setShowTooltip(false);
+            }
+        };
+
+        // Add listener on next tick to avoid immediate closure
+        const timeoutId = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 0);
 
         return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
-        }
-    }, [showTooltip])
+            clearTimeout(timeoutId);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showTooltip]);
 
 
     const loadStatus = async () => {
@@ -347,10 +349,13 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                             )}
                         </div>
                         {!isNarrowView && (
-                            <div className="mcp-card__info-container">
+                            <div className="mcp-card__info-container" ref={tooltipRef}>
                                 <button
                                     className="mcp-card__info-btn"
-                                    onClick={() => setShowTooltip(!showTooltip)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowTooltip(!showTooltip);
+                                    }}
                                     aria-label={`Show information about ${name}`}
                                     title={`Show information about ${name}`}
                                 >

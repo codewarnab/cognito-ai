@@ -79,18 +79,18 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
     stopRecording,
   }));
 
+  // Combined effect for all side effects - optimized with proper dependencies
   React.useEffect(() => {
+    // Notify parent of recording state changes
     onRecordingChange?.(isRecording);
-  }, [isRecording, onRecordingChange]);
 
-  // Update interim transcript in real-time
-  React.useEffect(() => {
+    // Update interim transcript in real-time
     if (interimTranscript) {
       onInterimTranscript?.(interimTranscript);
     }
-  }, [interimTranscript, onInterimTranscript]);
+  }, [isRecording, interimTranscript, onRecordingChange, onInterimTranscript]);
 
-  // Check permission status when component mounts
+  // Check permission status when component mounts - runs once
   React.useEffect(() => {
     const checkPermission = async () => {
       setPermissionStatus('checking');

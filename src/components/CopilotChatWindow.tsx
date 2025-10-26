@@ -52,10 +52,15 @@ export function CopilotChatWindow({
     onRecordingChange,
     voiceInputRef,
 }: CopilotChatWindowProps) {
-    const [modelState, setModelState] = useState<ModelState>({
-        mode: 'local',
-        remoteModel: 'gemini-2.5-flash',
-        hasApiKey: false,
+    // Lazy initialization: compute initial state synchronously
+    const [modelState, setModelState] = useState<ModelState>(() => {
+        // Return a default state; will be hydrated in useEffect
+        return {
+            mode: 'local',
+            remoteModel: 'gemini-2.5-flash',
+            hasApiKey: false,
+            isLoading: true, // Track loading state
+        };
     });
     const [errorNotification, setErrorNotification] = useState<{
         message: string;
@@ -63,18 +68,28 @@ export function CopilotChatWindow({
     } | null>(null);
     const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
 
-    // Load initial state
+    // Load initial state with error handling
     useEffect(() => {
         async function loadModelState() {
-            const config = await getModelConfig();
-            const hasKey = await hasGeminiApiKey();
+            try {
+                const config = await getModelConfig();
+                const hasKey = await hasGeminiApiKey();
 
-            setModelState({
-                mode: config.mode,
-                remoteModel: config.remoteModel,
-                hasApiKey: hasKey,
-                conversationStartMode: config.conversationStartMode,
-            });
+                setModelState({
+                    mode: config.mode,
+                    remoteModel: config.remoteModel,
+                    hasApiKey: hasKey,
+                    conversationStartMode: config.conversationStartMode,
+                    isLoading: false,
+                });
+            } catch (error) {
+                console.error('Failed to load model state:', error);
+                // Set error state but keep defaults
+                setModelState(prev => ({
+                    ...prev,
+                    isLoading: false,
+                }));
+            }
         }
         loadModelState();
     }, []);
@@ -95,18 +110,6 @@ export function CopilotChatWindow({
         chrome.storage.onChanged.addListener(handleStorageChange);
         return () => chrome.storage.onChanged.removeListener(handleStorageChange);
     }, []);
-
-    // Track conversation start mode
-    useEffect(() => {
-        if (messages.length === 1 && !modelState.conversationStartMode) {
-            // First message sent - lock the conversation mode
-            setConversationStartMode(modelState.mode);
-            setModelState(prev => ({
-                ...prev,
-                conversationStartMode: prev.mode,
-            }));
-        }
-    }, [messages.length, modelState.mode, modelState.conversationStartMode]);
 
     // Clear conversation mode on new thread
     const handleNewThread = () => {
@@ -140,11 +143,15 @@ export function CopilotChatWindow({
 
     const handleApiKeySaved = async () => {
         // Refresh API key state when dialog saves the key
-        const hasKey = await hasGeminiApiKey();
-        setModelState(prev => ({
-            ...prev,
-            hasApiKey: hasKey,
-        }));
+        try {
+            const hasKey = await hasGeminiApiKey();
+            setModelState(prev => ({
+                ...prev,
+                hasApiKey: hasKey,
+            }));
+        } catch (error) {
+            console.error('Failed to check API key status:', error);
+        }
     };
 
     const handleOpenApiKeyDialog = () => {
