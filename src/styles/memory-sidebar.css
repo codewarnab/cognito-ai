@@ -32,6 +32,9 @@
     box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3) !important;
     overflow: hidden;
     transform: translateX(0) !important;
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
 
 /* Header */
@@ -77,7 +80,10 @@
     color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .memory-sidebar-close:hover {
