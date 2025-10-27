@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { AnimatePresence, motion } from 'framer-motion';
 import { X, Brain, Pin, Trash2, Check, X as XIcon, Lightbulb } from "lucide-react";
 import { FoldersIcon } from "./FoldersIcon";
 import * as memoryStore from "../memory/store";
@@ -26,7 +25,6 @@ export function MemorySidebar({ isOpen, onClose }: MemorySidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [saveSuggestionsEnabled, setSaveSuggestionsEnabled] = useState(true);
-
   // Load memories
   const loadMemories = async () => {
     setLoading(true);
@@ -81,28 +79,15 @@ export function MemorySidebar({ isOpen, onClose }: MemorySidebarProps) {
   const factCount = memories.filter((m) => m.category === "fact").length;
   const behaviorCount = memories.filter((m) => m.category === "behavior").length;
 
+  if (!isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            className="memory-sidebar-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-          />
-          
-          {/* Sidebar */}
-          <motion.div
-            className="memory-sidebar"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          >
+    <>
+      {/* Backdrop */}
+      <div className="memory-sidebar-backdrop" onClick={onClose} />
+      
+      {/* Sidebar */}
+      <div className="memory-sidebar">
             {/* Header */}
             <div className="memory-sidebar-header">
               <div className="memory-sidebar-header-content">
@@ -224,9 +209,7 @@ export function MemorySidebar({ isOpen, onClose }: MemorySidebarProps) {
                 Ask me to save, list, or delete memories anytime!
               </p>
             </div>
-          </motion.div>
+          </div>
         </>
-      )}
-    </AnimatePresence>
-  );
+      );
 }
