@@ -8,13 +8,9 @@ import { z } from 'zod';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createLogger } from '../../logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../errors';
+import { validateAndGetApiKey } from '../../utils/geminiApiKey';
 
 const log = createLogger('YouTube-Agent');
-
-// Initialize Google AI for the YouTube agent
-// const apiKey = "AIzaSyDfXA4zlJBIxxWL-ubL46cy8bf6FBWC3u0";
-const apiKey = "AIzaSyAxTFyeqmms2eV9zsp6yZpCSAHGZebHzqc";
-const genAI = new GoogleGenerativeAI(apiKey);
 
 // Maximum chunk duration in seconds (30 minutes)
 const MAX_CHUNK_DURATION = 30 * 60; // 1800 seconds
@@ -237,17 +233,21 @@ async function analyzeVideoChunk(
     endOffset?: number,
     chunkInfo?: string
 ): Promise<string> {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    try {
+        // Get API key from storage and initialize Google AI
+        const apiKey = await validateAndGetApiKey();
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-    // If transcript is available, use text-based analysis
-    if (transcript) {
-        log.info('📝 Using transcript-based analysis', { transcriptLength: transcript.length });
+        // If transcript is available, use text-based analysis
+        if (transcript) {
+            log.info('📝 Using transcript-based analysis', { transcriptLength: transcript.length });
 
-        const timeRange = startOffset !== undefined && endOffset !== undefined
-            ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
-            : '';
+            const timeRange = startOffset !== undefined && endOffset !== undefined
+                ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
+                : '';
 
-        const systemPrompt = `You are a specialized YouTube video analysis expert${chunkInfo ? ` analyzing ${chunkInfo}` : ''}.
+            const systemPrompt = `You are a specialized YouTube video analysis expert${chunkInfo ? ` analyzing ${chunkInfo}` : ''}.
   
 You have access to the complete transcript of the video, which allows you to provide precise answers with accurate quotes.
 
@@ -263,20 +263,20 @@ ${chunkInfo ? `IMPORTANT: You are analyzing ${chunkInfo}${timeRange}. Focus on c
 Always be thorough, accurate, and cite specific quotes from the transcript when relevant.
 Focus on directly answering the user's specific question about the video.`;
 
-        const prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\nUser Question: ${question}`;
+            const prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\nUser Question: ${question}`;
 
-        const result = await model.generateContent([{ text: prompt }]);
-        return result.response.text();
-    }
+            const result = await model.generateContent([{ text: prompt }]);
+            return result.response.text();
+        }
 
-    // Fallback to video-based analysis if no transcript
-    log.info('🎥 Using video-based analysis (no transcript available)');
+        // Fallback to video-based analysis if no transcript
+        log.info('🎥 Using video-based analysis (no transcript available)');
 
-    const timeRange = startOffset !== undefined && endOffset !== undefined
-        ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
-        : '';
+        const timeRange = startOffset !== undefined && endOffset !== undefined
+            ? ` (analyzing ${formatDuration(startOffset)} to ${formatDuration(endOffset)})`
+            : '';
 
-    const systemPrompt = `You are a specialized YouTube video analysis expert${chunkInfo ? ` analyzing ${chunkInfo}` : ''}.
+        const systemPrompt = `You are a specialized YouTube video analysis expert${chunkInfo ? ` analyzing ${chunkInfo}` : ''}.
   
 Your capabilities:
 - Understanding video content directly through Gemini's native video analysis
@@ -290,35 +290,42 @@ ${chunkInfo ? `IMPORTANT: You are analyzing ${chunkInfo}${timeRange}. Focus on c
 Always be thorough, accurate, and cite specific moments from the video when relevant.
 Focus on directly answering the user's specific question about the video.`;
 
-    const prompt = `${systemPrompt}\n\nUser Question: ${question}`;
+        const prompt = `${systemPrompt}\n\nUser Question: ${question}`;
 
-    // Build the parts for the request
-    const parts: any[] = [
-        {
-            text: prompt,
-        },
-    ];
+        // Build the parts for the request
+        const parts: any[] = [
+            {
+                text: prompt,
+            },
+        ];
 
-    // Add video file data with optional time offsets
-    const videoPart: any = {
-        fileData: {
-            mimeType: "video/*",
-            fileUri: youtubeUrl,
-        },
-    };
-
-    // Add video metadata with time offsets if specified
-    if (startOffset !== undefined && endOffset !== undefined) {
-        videoPart.videoMetadata = {
-            startOffset: `${startOffset}s`,
-            endOffset: `${endOffset}s`,
+        // Add video file data with optional time offsets
+        const videoPart: any = {
+            fileData: {
+                mimeType: "video/*",
+                fileUri: youtubeUrl,
+            },
         };
+
+        // Add video metadata with time offsets if specified
+        if (startOffset !== undefined && endOffset !== undefined) {
+            videoPart.videoMetadata = {
+                startOffset: `${startOffset}s`,
+                endOffset: `${endOffset}s`,
+            };
+        }
+
+        parts.push(videoPart);
+
+        const result = await model.generateContent(parts);
+        return result.response.text();
+    } catch (error) {
+        log.error('❌ Error in analyzeVideoChunk:', error);
+
+        // Parse and re-throw the error so it propagates up
+        const parsedError = parseError(error, { serviceName: 'Gemini Video Analysis' });
+        throw parsedError;
     }
-
-    parts.push(videoPart);
-
-    const result = await model.generateContent(parts);
-    return result.response.text();
 }
 
 /**
@@ -395,6 +402,10 @@ async function analyzeYouTubeVideo(
         // If there are many chunks, create a final summary
         if (numChunks > 3) {
             log.info('Creating final consolidated summary from all chunks');
+
+            // Get API key from storage and initialize Google AI
+            const apiKey = await validateAndGetApiKey();
+            const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
             const consolidationPrompt = `You are synthesizing analysis from ${numChunks} parts of a ${formatDuration(videoDuration)} video.
@@ -548,18 +559,27 @@ export const youtubeAgentAsTool = tool({
             let finalDuration = videoDuration;
             let transcript: string | undefined;
 
-            if (transcriptData) {
-                finalDuration = transcriptData.duration * 60; // API returns duration in minutes, we need seconds
+            if (transcriptData && transcriptData.transcript) {
+                // We have a transcript! Use it regardless of title/duration
                 transcript = transcriptData.transcript;
+
+                // Use duration from API if available, otherwise use provided or extract it
+                if (transcriptData.duration) {
+                    finalDuration = transcriptData.duration * 60; // API returns duration in minutes, we need seconds
+                }
+
                 log.info('✅ Transcript available', {
                     duration: finalDuration,
-                    formatted: formatDuration(finalDuration),
+                    formatted: finalDuration ? formatDuration(finalDuration) : 'unknown',
                     transcriptLength: transcript.length,
                 });
             } else {
-                // If transcript not available and duration not provided, try to extract duration from page
+                // No transcript available - we'll need to use video analysis
+                log.info('ℹ️ No transcript available, will use Gemini video analysis');
+
+                // Try to get duration for chunking if not provided
                 if (!finalDuration) {
-                    log.info('Transcript not available, attempting to extract duration from page');
+                    log.info('Attempting to extract duration from page for chunking');
                     finalDuration = await getVideoDuration(youtubeUrl);
                 }
 

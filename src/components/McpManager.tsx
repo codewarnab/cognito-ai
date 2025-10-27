@@ -147,11 +147,12 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             {/* Note about local mode */}
             <div style={{
                 padding: '0.75rem 1rem',
-                margin: '0 1rem 0.5rem 1rem',
-                backgroundColor: 'var(--bg-secondary)',
+                margin: '1rem 1rem 0.5rem 1rem',
+                backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
                 borderRadius: '8px',
                 fontSize: '0.8rem',
-                color: 'var(--text-secondary)'
+                color: 'var(--text-primary)'
             }}>
                 Note: MCP servers only work in remote mode
             </div>
