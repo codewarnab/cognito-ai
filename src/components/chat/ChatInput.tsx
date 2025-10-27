@@ -117,6 +117,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         // Prevent default paste behavior when pasting files
         e.preventDefault();
 
+        // Check if in local mode and show toast
+        if (modelState.mode === 'local') {
+            onError?.('File attachments are not supported in Local mode. Please switch to Cloud mode to attach files.', 'warning');
+            return;
+        }
+
         const files = Array.from(e.clipboardData.files);
         await processFiles(files);
     };
@@ -129,6 +135,37 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Handle send with attachments
     const handleSend = () => {
         if (!input.trim() && attachments.length === 0) return;
+
+        // Check word count limit for local mode
+        if (modelState.mode === 'local') {
+            // Count total words in all messages + current input
+            let totalWords = 0;
+
+            // Count words in existing messages
+            for (const msg of messages) {
+                if (msg.parts && msg.parts.length > 0) {
+                    for (const part of msg.parts) {
+                        if (part.type === 'text' && part.text) {
+                            totalWords += part.text.split(/\s+/).filter(word => word.length > 0).length;
+                        }
+                    }
+                }
+            }
+
+            // Count words in current input
+            totalWords += input.split(/\s+/).filter(word => word.length > 0).length;
+
+            const WORD_LIMIT = 500;
+
+            if (totalWords > WORD_LIMIT) {
+                // Show toast notification
+                onError?.(
+                    `⚠️ Input too large for Local Mode. Your conversation has ${totalWords} words (limit: ${WORD_LIMIT} words). Please start a new conversation or switch to Remote Mode for unlimited context.`,
+                    'warning'
+                );
+                return; // Don't send the message
+            }
+        }
 
         // If workflow is active, add workflow metadata to message
         if (activeWorkflow) {

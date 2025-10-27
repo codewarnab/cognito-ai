@@ -3,6 +3,8 @@
 
 let creating = false;
 let ready = false;
+let cachedSummarizer = null;
+let lastSummarizerOptions = null;
 
 async function getAvailability() {
     if (!window.Summarizer) return { ok: false, code: 'unavailable', message: 'Summarizer API not present' };
@@ -42,23 +44,53 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 if (availability === 'downloadable') {
                     summarizerOptions.monitor = (m) => {
                         m.addEventListener('downloadprogress', (e) => {
-                            chrome.runtime.sendMessage({
-                                type: 'summarize:progress',
-                                payload: { requestId, loaded: e.loaded ?? 0 }
-                            }).catch(() => {});
+                            // Throttle progress updates - only send every 10%
+                            const progress = e.loaded ?? 0;
+                            const progressPercent = Math.floor(progress * 10); // 0-10 range
+
+                            // Only send if this is a new 10% increment
+                            if (!window._lastProgressPercent || window._lastProgressPercent !== progressPercent) {
+                                window._lastProgressPercent = progressPercent;
+                                chrome.runtime.sendMessage({
+                                    type: 'summarize:progress',
+                                    payload: { requestId, loaded: progress }
+                                }).catch(() => { });
+                            }
                         });
                     };
                 }
 
-                creating = true;
+                // Check if we can reuse the cached summarizer
+                const optionsKey = JSON.stringify(summarizerOptions);
+                let summarizer;
 
-                const summarizer = await window.Summarizer.create(summarizerOptions);
+                if (cachedSummarizer && lastSummarizerOptions === optionsKey) {
+                    console.log('[Offscreen] Reusing cached summarizer');
+                    summarizer = cachedSummarizer;
+                } else {
+                    creating = true;
 
-                creating = false;
-                ready = true;
+                    // Clean up old summarizer if exists
+                    if (cachedSummarizer) {
+                        try {
+                            cachedSummarizer.destroy();
+                        } catch (e) {
+                            console.warn('[Offscreen] Error destroying old summarizer:', e);
+                        }
+                    }
+
+                    summarizer = await window.Summarizer.create(summarizerOptions);
+
+                    // Cache the summarizer for reuse
+                    cachedSummarizer = summarizer;
+                    lastSummarizerOptions = optionsKey;
+
+                    creating = false;
+                    ready = true;
+                }
 
                 const summary = await summarizer.summarize(String(text || ''), { context });
-                summarizer.destroy();
+                // Don't destroy - keep cached for next use
 
                 sendResponse({ ok: true, summary });
             } catch (err) {

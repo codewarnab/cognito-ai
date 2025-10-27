@@ -24,6 +24,7 @@ import "./styles/workflows.css";
 import "./styles/voice-recording-pill.css";
 import "./styles/onboarding.css";
 import "./styles/local-banner.css";
+import "./styles/model-download-toast.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -176,34 +177,53 @@ function AIChatContent() {
                     }
 
                     // Generate thread title after assistant response (non-blocking)
+                    // Only generate if: 1) enough messages, 2) is assistant response, 3) thread doesn't have a custom title
                     if (result.messages.length >= 2 && result.message.role === 'assistant') {
-                        log.info("Generating thread title after assistant response");
+                        // Check if thread already has a title
+                        const currentThread = await db.chatThreads.get(currentThreadId);
+                        const hasCustomTitle = currentThread?.title &&
+                            currentThread.title !== 'New Chat' &&
+                            !currentThread.title.startsWith('Chat ');
 
-                        // Get all user and assistant messages for full context
-                        const conversationContext = result.messages
-                            .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
-                            .map((msg) => {
-                                const text = msg.parts
-                                    ?.filter((part: any) => part.type === 'text')
-                                    .map((part: any) => part.text)
-                                    .join('') || '';
-                                return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
-                            })
-                            .join('\n\n');
+                        // Only generate title if none exists yet
+                        if (!hasCustomTitle) {
+                            log.info("Generating thread title after assistant response");
 
-                        // Generate title asynchronously (don't block)
-                        generateThreadTitle(conversationContext, {
-                            maxLength: 40,
-                            context: 'This is a chat conversation. Generate a concise headline summarizing the main topic.',
-                            onDownloadProgress: (progress) => {
-                                log.info(`Summarizer model download: ${(progress * 100).toFixed(1)}%`);
-                            }
-                        }).then(title => {
-                            updateThreadTitle(currentThreadId, title);
-                            log.info("Updated thread title after AI response", { threadId: currentThreadId, title });
-                        }).catch(error => {
-                            log.error("Failed to generate thread title", error);
-                        });
+                            // Get all user and assistant messages for full context
+                            const conversationContext = result.messages
+                                .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+                                .map((msg) => {
+                                    const text = msg.parts
+                                        ?.filter((part: any) => part.type === 'text')
+                                        .map((part: any) => part.text)
+                                        .join('') || '';
+                                    return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
+                                })
+                                .join('\n\n');
+
+                            // Generate title asynchronously (don't block)
+                            generateThreadTitle(conversationContext, {
+                                maxLength: 40,
+                                context: 'This is a chat conversation. Generate a concise headline summarizing the main topic.',
+                                onDownloadProgress: (progress) => {
+                                    // Only log at 25%, 50%, 75%, 100%
+                                    const percent = Math.floor(progress * 100);
+                                    if (percent % 25 === 0) {
+                                        log.info(`Summarizer model download: ${percent}%`);
+                                    }
+                                }
+                            }).then(title => {
+                                updateThreadTitle(currentThreadId, title);
+                                log.info("Updated thread title after AI response", { threadId: currentThreadId, title });
+                            }).catch(error => {
+                                log.error("Failed to generate thread title", error);
+                            });
+                        } else {
+                            log.info("Skipping title generation - thread already has a custom title", {
+                                threadId: currentThreadId,
+                                currentTitle: currentThread.title
+                            });
+                        }
                     }
                 } catch (error) {
                     log.error("Failed to save messages after AI response", error);

@@ -199,6 +199,109 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
 }
 
 /**
+ * Extract video description from YouTube page
+ * @param youtubeUrl - The YouTube video URL
+ * @returns Video description or undefined if not found
+ */
+async function getVideoDescription(youtubeUrl: string): Promise<string | undefined> {
+    try {
+        log.info('📝 Attempting to extract video description', { youtubeUrl });
+
+        // Query the active tab
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+        if (!tab.id || !tab.url?.includes('youtube.com/watch')) {
+            log.warn('⚠️ Active tab is not a YouTube video page');
+            return undefined;
+        }
+
+        log.info('💉 Injecting script to extract description from page', { tabId: tab.id });
+
+        // Execute script to extract description from page
+        const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+                return new Promise((resolve) => {
+                    try {
+                        console.log('[YT Description] Starting extraction...');
+
+                        // Find the main description container element
+                        const descriptionExpander = document.getElementById('description-inline-expander');
+
+                        if (!descriptionExpander) {
+                            console.error('[YT Description] Could not find description container');
+                            resolve(undefined);
+                            return;
+                        }
+
+                        // Check if the description is currently collapsed
+                        const isCollapsed = !descriptionExpander.hasAttribute('is-expanded');
+
+                        // Function to extract the description text
+                        const extractDescription = () => {
+                            const fullDescriptionElement = descriptionExpander.querySelector('#description-inline-expander #description-inner yt-attributed-string');
+                            if (fullDescriptionElement && fullDescriptionElement.textContent) {
+                                const description = fullDescriptionElement.textContent.trim();
+                                console.log('[YT Description] Successfully extracted description, length:', description.length);
+                                return description;
+                            } else {
+                                console.error('[YT Description] Could not find description text element');
+                                return undefined;
+                            }
+                        };
+
+                        // If collapsed, expand first
+                        if (isCollapsed) {
+                            console.log('[YT Description] Description is collapsed, expanding...');
+                            const expandButton = descriptionExpander.querySelector('#expand') as HTMLElement;
+
+                            if (expandButton) {
+                                expandButton.click();
+                                // Wait for DOM to update
+                                setTimeout(() => {
+                                    const description = extractDescription();
+                                    // Collapse back to original state
+                                    const collapseButton = descriptionExpander.querySelector('#collapse') as HTMLElement;
+                                    if (collapseButton) {
+                                        collapseButton.click();
+                                    }
+                                    resolve(description);
+                                }, 500);
+                            } else {
+                                console.error('[YT Description] Could not find expand button');
+                                resolve(undefined);
+                            }
+                        } else {
+                            // Already expanded, extract directly
+                            console.log('[YT Description] Description already expanded');
+                            resolve(extractDescription());
+                        }
+                    } catch (error) {
+                        console.error('[YT Description] Error extracting description:', error);
+                        resolve(undefined);
+                    }
+                });
+            },
+        });
+
+        const description = results[0]?.result;
+
+        if (description && typeof description === 'string') {
+            log.info('✅ Video description extracted successfully', {
+                descriptionLength: description.length,
+            });
+            return description;
+        } else {
+            log.warn('⚠️ Could not extract video description from page');
+            return undefined;
+        }
+    } catch (error) {
+        log.error('❌ Error getting video description:', error);
+        return undefined;
+    }
+}
+
+/**
  * Format seconds to readable time format (e.g., "1h 30m" or "45m 30s")
  */
 function formatDuration(seconds: number): string {
@@ -554,10 +657,16 @@ export const youtubeAgentAsTool = tool({
         try {
             // Try to fetch transcript first (preferred method - faster and more accurate)
             log.info('Attempting to fetch transcript');
-            const transcriptData = await fetchTranscript(youtubeUrl);
+
+            // Fetch transcript and description in parallel for efficiency
+            const [transcriptData, videoDescription] = await Promise.all([
+                fetchTranscript(youtubeUrl),
+                getVideoDescription(youtubeUrl)
+            ]);
 
             let finalDuration = videoDuration;
             let transcript: string | undefined;
+            let description: string | undefined = videoDescription;
 
             if (transcriptData && transcriptData.transcript) {
                 // We have a transcript! Use it regardless of title/duration
@@ -572,6 +681,7 @@ export const youtubeAgentAsTool = tool({
                     duration: finalDuration,
                     formatted: finalDuration ? formatDuration(finalDuration) : 'unknown',
                     transcriptLength: transcript.length,
+                    hasDescription: !!description,
                 });
             } else {
                 // No transcript available - we'll need to use video analysis
@@ -594,12 +704,43 @@ export const youtubeAgentAsTool = tool({
                 }
             }
 
-            // Use Gemini's direct video understanding to analyze the YouTube video
-            const answer = await analyzeYouTubeVideo(youtubeUrl, question, finalDuration, transcript);
+            // Try to analyze the YouTube video
+            let answer: string;
+            let usedDescription = false;
 
-            log.info('✅ YouTube Agent completed', {
+            try {
+                // Use Gemini's direct video understanding to analyze the YouTube video
+                answer = await analyzeYouTubeVideo(youtubeUrl, question, finalDuration, transcript);
+            } catch (videoAnalysisError) {
+                // Video analysis failed - use description as fallback if available
+                if (description) {
+                    log.warn('⚠️ Video analysis failed, using description as fallback', videoAnalysisError);
+                    usedDescription = true;
+
+                    // Get API key and analyze based on description
+                    const apiKey = await validateAndGetApiKey();
+                    const genAI = new GoogleGenerativeAI(apiKey);
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+                    const descriptionPrompt = `⚠️ Note: Unable to directly analyze the video content. The following answer is generated based on the video description only.
+
+Video Description:
+${description}
+
+User Question: ${question}
+
+Please answer the question based on the video description above. Be clear that this is based on the description, not the actual video content.`;
+
+                    const result = await model.generateContent([{ text: descriptionPrompt }]);
+                    answer = `⚠️ **Note:** Unable to directly analyze the video. The following response is based on the video description.\n\n---\n\n${result.response.text()}`;
+                } else {
+                    // No description available either - re-throw the error
+                    throw videoAnalysisError;
+                }
+            } log.info('✅ YouTube Agent completed', {
                 textLength: answer.length,
                 usedTranscript: !!transcript,
+                usedDescription,
                 wasChunked: finalDuration ? finalDuration > MAX_CHUNK_DURATION && !transcript : false,
             });
 
@@ -608,6 +749,7 @@ export const youtubeAgentAsTool = tool({
                 videoUrl: youtubeUrl,
                 videoDuration: finalDuration,
                 usedTranscript: !!transcript,
+                usedDescription,
                 wasChunked: finalDuration ? finalDuration > MAX_CHUNK_DURATION && !transcript : false,
             };
 

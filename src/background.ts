@@ -1418,6 +1418,22 @@ async function initializeServerStatus(serverId: string): Promise<void> {
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     console.log('[Background] Received message:', message.type, message);
 
+    // Handle model download progress broadcasts
+    if (message.type === 'MODEL_DOWNLOAD_PROGRESS') {
+        console.log('[Background] Relaying model download progress to sidepanel:', message.data);
+
+        // Broadcast to all extension contexts (especially sidepanel)
+        chrome.runtime.sendMessage({
+            type: 'MODEL_DOWNLOAD_PROGRESS_UPDATE',
+            data: message.data,
+        }).catch((error) => {
+            console.debug('[Background] No listeners for download progress update:', error);
+        });
+
+        sendResponse({ success: true });
+        return true;
+    }
+
     // Handle general MCP messages
     if (message.type === 'mcp/servers/get') {
         (async () => {

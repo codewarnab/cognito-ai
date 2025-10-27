@@ -19,6 +19,11 @@ import { workflowSessionManager } from '../workflows/sessionManager';
 import { getGeminiApiKey, hasGeminiApiKey, validateAndGetApiKey, markApiKeyValid, markApiKeyInvalid } from '../utils/geminiApiKey';
 import { getModelConfig } from '../utils/modelSettings';
 import {
+  downloadLanguageModel,
+  downloadSummarizer,
+  type DownloadProgressEvent,
+} from './modelDownloader';
+import {
   APIError,
   NetworkError,
   isRetryableError,
@@ -416,9 +421,64 @@ export async function streamAIResponse(params: {
 
           if (effectiveMode === 'local') {
             // ========== LOCAL MODE (Gemini Nano) ==========
-            log.info(' Using LOCAL Gemini Nano');
+            log.info('🔧 Using LOCAL Gemini Nano');
 
-            // Get local model
+            // Download Language Model with progress tracking
+            let languageModelSession: any
+            try {
+              languageModelSession = await downloadLanguageModel((progress: DownloadProgressEvent) => {
+                const percentage = Math.round(progress.loaded * 100);
+                log.info(`📥 Language Model download: ${percentage}%`);
+
+                // Send download progress status to UI (shown as toast)
+                writer.write({
+                  type: 'data-status',
+                  id: 'language-model-download-' + generateId(),
+                  data: {
+                    status: 'downloading',
+                    model: 'language',
+                    progress: percentage,
+                    message: `Downloading Language Model... ${percentage}%`,
+                    timestamp: Date.now(),
+                  },
+                  transient: true,
+                });
+              });
+
+              log.info('✅ Language Model ready');
+            } catch (error) {
+              log.error('❌ Failed to download Language Model:', error);
+              throw new Error(`Language Model unavailable: ${error instanceof Error ? error.message : String(error)}`);
+            }
+
+            // Download Summarizer Model with progress tracking
+            try {
+              await downloadSummarizer((progress: DownloadProgressEvent) => {
+                const percentage = Math.round(progress.loaded * 100);
+                log.info(`📥 Summarizer download: ${percentage}%`);
+
+                // Send download progress status to UI (shown as toast)
+                writer.write({
+                  type: 'data-status',
+                  id: 'summarizer-download-' + generateId(),
+                  data: {
+                    status: 'downloading',
+                    model: 'summarizer',
+                    progress: percentage,
+                    message: `Downloading Summarizer... ${percentage}%`,
+                    timestamp: Date.now(),
+                  },
+                  transient: true,
+                });
+              });
+
+              log.info('✅ Summarizer ready');
+            } catch (error) {
+              // Summarizer is optional, just log warning
+              log.warn('⚠️ Summarizer unavailable:', error);
+            }
+
+            // Get local model using the downloaded language model session
             model = builtInAI();
 
             // Get limited tool set (basic tools only) from tool registry
@@ -431,7 +491,7 @@ export async function streamAIResponse(params: {
                   workflowConfig.allowedTools.includes(name)
                 )
               );
-              log.info(' Filtered local tools for workflow:', {
+              log.info('🔧 Filtered local tools for workflow:', {
                 workflow: workflowConfig.name,
                 allowed: workflowConfig.allowedTools,
                 filtered: Object.keys(tools)
@@ -440,7 +500,7 @@ export async function streamAIResponse(params: {
               tools = localTools;
             }
 
-            log.info(' Local tools available:', {
+            log.info('🔧 Local tools available:', {
               count: Object.keys(tools).length,
               names: Object.keys(tools)
             });
@@ -546,10 +606,13 @@ export async function streamAIResponse(params: {
           }
 
           // Build enhanced prompt with initial page context if available
+          // Skip page context for local mode (Gemini Nano)
           let enhancedPrompt = systemPrompt;
-          if (initialPageContext) {
+          if (initialPageContext && effectiveMode === 'remote') {
             enhancedPrompt = `${enhancedPrompt}\n\n[INITIAL PAGE CONTEXT - Captured at thread start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started. If you navigate to different pages or need updated context, use the readPageContent or getActiveTab tools.`;
             log.info(' Enhanced system prompt with initial page context');
+          } else if (initialPageContext && effectiveMode === 'local') {
+            log.info(' Skipping initial page context for local mode');
           }
 
           if (workflowConfig) {
@@ -698,7 +761,32 @@ export async function streamAIResponse(params: {
                 },
               });
             } catch (streamError) {
-              // Parse and enhance the error
+              // Check for local mode quota exceeded error
+              const errorMessage = streamError instanceof Error ? streamError.message : String(streamError);
+              const errorName = streamError instanceof Error ? streamError.name : '';
+
+              // Handle QuotaExceededError specifically for local mode
+              if ((errorName === 'QuotaExceededError' || errorMessage.includes('input is too large')) && effectiveMode === 'local') {
+                log.error('Local mode quota exceeded - input too large', {
+                  messageCount: modelMessages.length,
+                  errorMessage
+                });
+
+                // Create user-friendly error
+                const quotaError = new APIError({
+                  message: 'The input is too large for Gemini Nano',
+                  statusCode: 413,
+                  retryable: false,
+                  userMessage: '⚠️ Input too large for Local Mode. The conversation or page content is too large for Gemini Nano. Please start a new conversation or switch to Remote Mode for larger context.',
+                  technicalDetails: errorMessage,
+                  errorCode: ErrorType.API_QUOTA_EXCEEDED,
+                });
+
+                // Call onError callback to show toast
+                onError?.(quotaError);
+
+                throw quotaError;
+              }              // Parse and enhance the error
               const enhancedError = parseGeminiError(streamError);
 
               // Log the error

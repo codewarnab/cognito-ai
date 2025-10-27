@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
 import { CloudCogIcon } from '../CloudCogIcon';
 import { LaptopMinimalCheckIcon } from '../LaptopMinimalCheckIcon';
-import { ModelDropdown } from './ModelDropdown';
 import { canSwitchMode } from '../../utils/modelSettings';
 import type { AIMode, RemoteModelType, ModelState } from './types';
 

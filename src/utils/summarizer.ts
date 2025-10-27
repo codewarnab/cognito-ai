@@ -38,21 +38,21 @@ export interface SummarizerOptions {
  */
 declare global {
     interface Window {
-            Summarizer: {
-                availability():  'unavailable' | 'downloadable' | 'downloading' | 'available';
-                create(options?: {
-                    type?: string;
-                    format?: string;
-                    length?: string;
-                    sharedContext?: string;
-                    monitor?: (monitor: any) => void;
-                }): Promise<{
-                    summarize(text: string, options?: { context?: string }): Promise<string>;
-                    summarizeStreaming(text: string, options?: { context?: string }): AsyncIterable<string>;
-                    destroy(): void;
-                }>;
-            };
-        }
+        Summarizer: {
+            availability(): 'unavailable' | 'downloadable' | 'downloading' | 'available';
+            create(options?: {
+                type?: string;
+                format?: string;
+                length?: string;
+                sharedContext?: string;
+                monitor?: (monitor: any) => void;
+            }): Promise<{
+                summarize(text: string, options?: { context?: string }): Promise<string>;
+                summarizeStreaming(text: string, options?: { context?: string }): AsyncIterable<string>;
+                destroy(): void;
+            }>;
+        };
+    }
 }
 
 
@@ -102,11 +102,19 @@ export async function generateHeadline(
 
     // Subscribe to progress events for this requestId
     const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    let lastProgressReported = -1;
+
     const progressListener = (msg: any) => {
         if (msg?.type === 'summarize:progress' && msg?.payload?.requestId === requestId) {
             const loaded = typeof msg.payload.loaded === 'number' ? msg.payload.loaded : 0;
-            onDownloadProgress?.(loaded);
-            log.info(`Model download progress: ${(loaded * 100).toFixed(1)}%`);
+            const progressPercent = Math.floor(loaded * 100);
+
+            // Only report progress changes >= 10%
+            if (progressPercent - lastProgressReported >= 10) {
+                lastProgressReported = progressPercent;
+                onDownloadProgress?.(loaded);
+                log.info(`Model download progress: ${progressPercent}%`);
+            }
         }
     };
     chrome.runtime.onMessage.addListener(progressListener);
@@ -136,7 +144,7 @@ export async function generateHeadline(
         log.info('Raw headline generated:', headline);
 
         // Truncate if needed
-        const finalHeadline = headline.length > maxLength 
+        const finalHeadline = headline.length > maxLength
             ? headline.slice(0, maxLength) + '...'
             : headline;
 
@@ -192,7 +200,7 @@ export function generateFallbackTitle(text: string, maxLength: number = 40): str
         return 'New Chat';
     }
 
-    return cleanText.length > maxLength 
+    return cleanText.length > maxLength
         ? cleanText.slice(0, maxLength) + '...'
         : cleanText;
 }

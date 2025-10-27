@@ -57,3 +57,8 @@ ObjectlengthFormatted: "minutes"lengthSeconds: undefinedtitle: undefinedvideoId:
 10: add pasting support 
 
 test voice mode in production build 
+
+
+add warning for enabling multiple mcps 
+add troubleshooting / faq 
+persisiting enabled disabled tool settings 

@@ -4,6 +4,7 @@ import { ChatMessages } from './chat/ChatMessages';
 import { ChatInput } from './chat/ChatInput';
 import { ErrorNotification } from './chat/ErrorNotification';
 import { GeminiApiKeyDialog } from './GeminiApiKeyDialog';
+import { ModelDownloadToastContainer } from './ModelDownloadToast';
 import type { VoiceInputHandle } from '../audio/VoiceInput';
 import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
@@ -160,6 +161,9 @@ export function CopilotChatWindow({
 
     return (
         <div className="copilot-chat-window">
+            {/* Model Download Progress Toasts */}
+            <ModelDownloadToastContainer />
+
             {/* Error Notification */}
             {errorNotification && (
                 <ErrorNotification
