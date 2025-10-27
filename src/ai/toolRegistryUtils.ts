@@ -13,6 +13,8 @@ export interface ToolDefinition {
   description: string;
   parameters: z.ZodSchema;
   execute: (args: any) => Promise<any>;
+  /** Optional: Validate execution context before running the tool */
+  validateContext?: () => Promise<{ valid: boolean; error?: string }>;
 }
 
 /**
@@ -28,7 +30,7 @@ export function registerTool(definition: ToolDefinition) {
     log.warn('⚠️ Tool already registered, skipping duplicate registration:', definition.name);
     return; // Don't re-register
   }
-  
+
   tools.set(definition.name, definition);
   log.info('✅ Registered tool:', { name: definition.name, description: definition.description });
   log.info('📊 Total tools registered:', tools.size);
@@ -40,13 +42,23 @@ export function registerTool(definition: ToolDefinition) {
  */
 export function getAllTools(): Record<string, { description: string; inputSchema: z.ZodSchema; execute: (args: any) => Promise<any> }> {
   const toolsObject: Record<string, any> = {};
-  
+
   tools.forEach((tool, name) => {
     toolsObject[name] = {
       description: tool.description,
       inputSchema: tool.parameters, // AI SDK v5 uses inputSchema
       execute: async (args: any) => {
         log.info(`🔧 EXECUTING TOOL: ${name}`, { args });
+
+        // Run pre-execution validation if defined
+        if (tool.validateContext) {
+          const validation = await tool.validateContext();
+          if (!validation.valid) {
+            log.warn(`⛔ TOOL VALIDATION FAILED: ${name}`, { error: validation.error });
+            return { error: validation.error, validationFailed: true };
+          }
+        }
+
         try {
           const result = await tool.execute(args);
           log.info(`✅ TOOL COMPLETED: ${name}`, { result });
@@ -58,9 +70,9 @@ export function getAllTools(): Record<string, { description: string; inputSchema
       },
     };
   });
-  
+
   log.info('🔍 getAllTools called, returning tools:', { count: Object.keys(toolsObject).length, names: Object.keys(toolsObject) });
-  
+
   return toolsObject;
 }
 

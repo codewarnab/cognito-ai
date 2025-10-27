@@ -55,6 +55,25 @@ export function useOpenSearchResultTool() {
                 (data) => (data.rank !== undefined) !== (data.ranks !== undefined),
                 { message: 'Provide either rank (single) OR ranks (multiple), not both' }
             ),
+            validateContext: async () => {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    const url = tab?.url || '';
+                    const isSearchPage = (url.includes('google.com') && url.includes('/search')) ||
+                        (url.includes('bing.com') && url.includes('/search'));
+
+                    if (!isSearchPage) {
+                        return {
+                            valid: false,
+                            error: `Cannot use openSearchResult - not on a search page. Current URL: ${url}. You must first navigate to Google or Bing search using: navigateTo(url="https://www.google.com/search?q=YOUR_QUERY"), then call getSearchResults, then use this tool.`
+                        };
+                    }
+
+                    return { valid: true };
+                } catch (error) {
+                    return { valid: false, error: `Failed to validate context: ${(error as Error).message}` };
+                }
+            },
             execute: async ({ rank, ranks }) => {
                 const ranksToOpen = ranks || (rank !== undefined ? [rank] : []);
 
