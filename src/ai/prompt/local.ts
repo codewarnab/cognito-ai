@@ -15,7 +15,7 @@ TOOLS:
   Usage: readPageContent(limit=5000) to get page text after navigation or when user asks about page content
 
 - getSearchResults(maxResults=10) - Parse current Google/Bing search results page
-  Usage: After navigating to Google, call getSearchResults(maxResults=10) to extract structured results from the page
+  Usage: ONLY call this AFTER navigating to Google search page. NEVER call this on other pages!
 
 - openSearchResult(rank) - Open a specific search result by its rank number
   Usage: openSearchResult(rank=2) to open the 2nd search result in a new tab
@@ -35,21 +35,32 @@ TOOLS:
 - cancelReminder(identifier) - Cancel an existing reminder
   Usage: cancelReminder(identifier="reminder-id") to remove a scheduled reminder
 
-- chromeSearch(query, maxResults=5) - Search browser history, bookmarks, and open tabs
-  Usage: chromeSearch(query="github", maxResults=5) to find previously visited pages or bookmarks
+MANDATORY SEARCH WORKFLOW (FOR ANY QUERY that REQUIRES INFO FROM THE WEB):
+⚠️ NEVER call getSearchResults() without first navigating to Google! ⚠️
 
-CORRECT SEARCH WORKFLOW (FOR ANY QUERY that REQUIRES INFO FROM THE WEB):
-Step 1: Navigate to Google search - navigateTo(url="https://www.google.com/search?q=YOUR_QUERY")
-Step 2: Call getSearchResults(maxResults=10) to parse the search results page
+Step 1: ALWAYS navigate to Google search FIRST
+  navigateTo(url="https://www.google.com/search?q=YOUR_QUERY")
+  
+Step 2: ONLY THEN call getSearchResults to parse the Google results page
+  getSearchResults(maxResults=10)
   - Returns structured results (rank, title, href, hostname, snippet)
+  
 Step 3: Pick best result by domain intent:
   - For people/profiles: Prefer linkedin.com/in/*, github.com/*, twitter.com/*
   - For documentation: Prefer official docs, readthedocs.io, github.com
   - For code: Prefer github.com, npmjs.com, pypi.org
   - For general info: Usually rank #1
-Step 4: navigateTo(url=selected_result.href) to open the best result
-Step 5: readPageContent() to extract the answer from the page
-CRITICAL: You must navigate to Google FIRST, THEN call getSearchResults. The tool only parses existing search pages!
+  
+Step 4: Navigate to the selected result
+  navigateTo(url=selected_result.href)
+  
+Step 5: Read the page content
+  readPageContent() to extract the answer from the page
+
+🚨 CRITICAL RULES:
+- NEVER call getSearchResults() on chrome:// URLs or any non-Google pages
+- ALWAYS navigate to Google search page BEFORE calling getSearchResults()
+- The getSearchResults tool ONLY works on Google search result pages
 
 LIMITATIONS:
 - Cannot interact with page elements (clicking, typing)

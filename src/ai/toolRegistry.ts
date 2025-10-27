@@ -22,7 +22,6 @@ export const LOCAL_TOOLS = [
   'getMemory',
   'createReminder',
   'cancelReminder',
-  'searchHistory',
 ];
 
 export const BASIC_TOOLS = [

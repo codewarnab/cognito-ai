@@ -194,6 +194,35 @@ export function registerSelectionActions() {
       parameters: z.object({
         limit: z.number().optional().describe("Maximum characters to extract. Recommended: 10000-30000 for large pages. If not specified, intelligently cleans and limits content to ~50k chars."),
       }),
+      validateContext: async () => {
+        try {
+          const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+          const url = tab?.url || '';
+
+          // Check for restricted protocols that don't allow content scripts
+          const restrictedProtocols = ['chrome:', 'chrome-extension:', 'about:', 'edge:', 'devtools:', 'view-source:'];
+          const isRestricted = restrictedProtocols.some(protocol => url.startsWith(protocol));
+
+          if (isRestricted) {
+            return {
+              valid: false,
+              error: `Cannot read content from restricted pages. Current URL: ${url}. This tool only works on regular web pages (http/https). Try navigating to a web page first.`
+            };
+          }
+
+          // Check for chrome web store
+          if (url.includes('chrome.google.com/webstore')) {
+            return {
+              valid: false,
+              error: `Cannot read content from Chrome Web Store pages. Current URL: ${url}. Chrome restricts extensions from accessing Web Store pages.`
+            };
+          }
+
+          return { valid: true };
+        } catch (error) {
+          return { valid: false, error: `Failed to validate context: ${(error as Error).message}` };
+        }
+      },
       execute: async ({ limit }) => {
         try {
           log.info("TOOL CALL: readPageContent", { limit });

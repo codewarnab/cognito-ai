@@ -15,7 +15,7 @@ const log = createLogger('Tool-GetSearchResults');
  * Hook to register the getSearchResults tool
  */
 export function useGetSearchResultsTool() {
-    const {  unregisterToolUI } = useToolUI();
+    const { unregisterToolUI } = useToolUI();
     const lastCallRef = useRef<{ args: any; timestamp: number } | null>(null);
 
     const shouldProcess = (toolName: string, args: any) => {
@@ -48,6 +48,24 @@ export function useGetSearchResultsTool() {
                     .describe('Maximum number of results to return (default: 10)')
                     .default(10),
             }),
+            validateContext: async () => {
+                try {
+                    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    const url = tab?.url || '';
+                    const isSearchPage = url.includes('google.com/search') || url.includes('bing.com/search');
+
+                    if (!isSearchPage) {
+                        return {
+                            valid: false,
+                            error: `Cannot use getSearchResults - not on a search page. Current URL: ${url}. You must first navigate to Google or Bing search using: navigateTo(url="https://www.google.com/search?q=YOUR_QUERY")`
+                        };
+                    }
+
+                    return { valid: true };
+                } catch (error) {
+                    return { valid: false, error: `Failed to validate context: ${(error as Error).message}` };
+                }
+            },
             execute: async ({ maxResults = 10 }) => {
                 if (!shouldProcess("getSearchResults", { maxResults })) {
                     return { skipped: true, reason: "duplicate" };
@@ -57,6 +75,20 @@ export function useGetSearchResultsTool() {
                     log.info("TOOL CALL: getSearchResults", { maxResults });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                     if (!tab?.id) return { error: "No active tab" };
+
+                    // ⚠️ CRITICAL: Validate we're on a search page
+                    const url = tab.url || '';
+                    const isSearchPage = url.includes('google.com/search') || url.includes('bing.com/search');
+
+                    if (!isSearchPage) {
+                        log.warn("getSearchResults called on non-search page", { url });
+                        return {
+                            error: "NOT_ON_SEARCH_PAGE",
+                            message: "This tool only works on Google or Bing search results pages. Please navigate to a search page first using navigateTo(url='https://www.google.com/search?q=YOUR_QUERY')",
+                            currentUrl: url,
+                            hint: "Navigate to google.com/search or bing.com/search first"
+                        };
+                    }
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
