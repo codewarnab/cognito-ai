@@ -9,7 +9,7 @@
  */
 
 import { createLogger } from '../../logger';
-import { requestMicrophoneWithUI } from '../../audio/micPermission';
+import { requestMicrophoneWithUI, diagnoseMicrophoneAccess } from '../../audio/micPermission';
 
 const log = createLogger('AudioManager');
 
@@ -93,12 +93,37 @@ export class AudioCapture {
 
         log.info('Initializing audio capture', { sampleRate, channels, bufferSize });
 
+        // Run diagnostics first to provide better error messages
+        const diagnostics = await diagnoseMicrophoneAccess();
+        log.info('Microphone diagnostics:', diagnostics);
+
+        if (diagnostics.errors.length > 0) {
+            log.warn('Potential microphone access issues detected:', diagnostics.errors);
+        }
+
         // Request microphone permission
         const permissionResult = await requestMicrophoneWithUI();
         if (!permissionResult.granted) {
             const error = permissionResult.error || 'Microphone permission denied';
-            log.error('Microphone permission failed', error);
-            throw new Error(error);
+            log.error('Microphone permission failed', {
+                error,
+                errorType: permissionResult.errorType,
+                diagnostics
+            });
+
+            // Provide more detailed error message based on diagnostics
+            let detailedError = error;
+            if (!diagnostics.hasGetUserMedia) {
+                detailedError += '\n\ngetUserMedia API is not available. Make sure you are using a compatible browser.';
+            }
+            if (!diagnostics.isSecureContext) {
+                detailedError += '\n\nPage must be served over HTTPS or from an extension context.';
+            }
+            if (diagnostics.permissionState === 'denied') {
+                detailedError += '\n\nTo fix: Go to chrome://extensions → Find this extension → Details → Permissions → Enable microphone access.';
+            }
+
+            throw new Error(detailedError);
         }
 
         // Create audio context with specified sample rate
@@ -122,7 +147,22 @@ export class AudioCapture {
             });
         } catch (error) {
             log.error('Failed to get microphone stream', error);
-            throw new Error('Failed to access microphone: ' + (error as Error).message);
+
+            // Provide specific error message based on the error type
+            const err = error as DOMException;
+            let errorMessage = 'Failed to access microphone: ' + err.message;
+
+            if (err.name === 'NotAllowedError') {
+                errorMessage = 'Microphone access was denied. Please click "Allow" when prompted, or enable microphone permissions in your browser settings.\n\n';
+                errorMessage += '1. Check extension permissions: chrome://extensions → Find this extension → Details → Permissions\n';
+                errorMessage += '2. Check site permissions: Click lock icon in address bar → Site settings → Microphone';
+            } else if (err.name === 'NotFoundError') {
+                errorMessage = 'No microphone found. Please connect a microphone and try again.';
+            } else if (err.name === 'NotReadableError') {
+                errorMessage = 'Microphone is already in use by another application. Please close other apps using the microphone.';
+            }
+
+            throw new Error(errorMessage);
         }
 
         // Create media stream source

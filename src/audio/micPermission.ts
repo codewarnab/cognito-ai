@@ -31,16 +31,16 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
     // Request microphone access
     log.info('Requesting microphone permission...');
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    
+
     // Stop the stream immediately - we just needed permission
     stream.getTracks().forEach(track => track.stop());
-    
+
     log.info('Microphone permission granted');
     return { granted: true };
-    
+
   } catch (error: any) {
     log.error('Microphone permission error', error);
-    
+
     if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
       return {
         granted: false,
@@ -48,7 +48,7 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
         errorType: 'not-allowed',
       };
     }
-    
+
     if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
       return {
         granted: false,
@@ -56,7 +56,7 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
         errorType: 'not-found',
       };
     }
-    
+
     return {
       granted: false,
       error: error.message || 'Failed to access microphone',
@@ -79,9 +79,9 @@ export async function checkMicrophonePermission(): Promise<'granted' | 'denied' 
     // Query microphone permission status
     const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
     log.info('Microphone permission status:', result.state);
-    
+
     return result.state as 'granted' | 'denied' | 'prompt';
-    
+
   } catch (error) {
     log.warn('Could not check microphone permission', error);
     return 'prompt';
@@ -106,7 +106,7 @@ Alternatively:
 - Go to chrome://settings/content/microphone
 - Make sure microphone access is allowed for this extension
   `.trim();
-  
+
   log.info('Microphone settings instructions:', instructions);
   return instructions;
 }
@@ -117,12 +117,12 @@ Alternatively:
 export async function requestMicrophoneWithUI(): Promise<MicPermissionResult> {
   // First check if already granted
   const status = await checkMicrophonePermission();
-  
+
   if (status === 'granted') {
     log.info('Microphone permission already granted');
     return { granted: true };
   }
-  
+
   if (status === 'denied') {
     log.warn('Microphone permission was previously denied');
     return {
@@ -131,7 +131,67 @@ export async function requestMicrophoneWithUI(): Promise<MicPermissionResult> {
       errorType: 'not-allowed',
     };
   }
-  
+
   // Request permission
   return requestMicrophonePermission();
+}
+
+/**
+ * Diagnose microphone access issues
+ * Helpful for debugging permission problems
+ */
+export async function diagnoseMicrophoneAccess(): Promise<{
+  hasGetUserMedia: boolean;
+  permissionState: string;
+  isSecureContext: boolean;
+  hasMediaDevices: boolean;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+
+  // Check getUserMedia availability
+  const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  if (!hasGetUserMedia) {
+    errors.push('getUserMedia API not available');
+  }
+
+  // Check Permissions API
+  let permissionState = 'unknown';
+  if (navigator.permissions) {
+    try {
+      const result = await navigator.permissions.query({
+        name: 'microphone' as PermissionName
+      });
+      permissionState = result.state;
+    } catch (e) {
+      permissionState = 'query-failed';
+      errors.push(`Permissions API error: ${e}`);
+    }
+  } else {
+    errors.push('Permissions API not available');
+  }
+
+  // Check secure context
+  const isSecureContext = window.isSecureContext;
+  if (!isSecureContext) {
+    errors.push('Not in secure context (HTTPS required)');
+  }
+
+  // Check MediaDevices
+  const hasMediaDevices = !!navigator.mediaDevices;
+  if (!hasMediaDevices) {
+    errors.push('MediaDevices API not available');
+  }
+
+  const diagnostics = {
+    hasGetUserMedia,
+    permissionState,
+    isSecureContext,
+    hasMediaDevices,
+    errors
+  };
+
+  log.info('Microphone diagnostics:', diagnostics);
+
+  return diagnostics;
 }
