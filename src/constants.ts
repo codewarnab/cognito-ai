@@ -32,7 +32,9 @@ export const COPILOT_RUNTIME_URL_DEFAULT = " http://localhost:3000/";
  */
 export const MCP_OAUTH_CONFIG = {
     /** OAuth redirect URI - Chrome extension identity redirect (same for all servers) */
-    REDIRECT_URI: "https://finfnkhchelfofloocidpepacfbajmlh.chromiumapp.org/",
+    // NOTE: This will be dynamically set at runtime using chrome.identity.getRedirectURL()
+    // to ensure it matches the actual extension ID in both dev and prod builds
+    REDIRECT_URI: "", // Will be set at runtime
 
     /** Storage key prefix format: oauth.{serverId}.tokens */
     STORAGE_KEY_PREFIX: "oauth",

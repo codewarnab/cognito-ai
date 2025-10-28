@@ -57,6 +57,28 @@ import { MCPError, NetworkError } from './errors/errorTypes';
 import { buildUserMessage } from './errors/errorMessages';
 
 // ============================================================================
+// Dynamic OAuth Redirect URI Initialization
+// ============================================================================
+
+/**
+ * Initialize the OAuth redirect URI dynamically based on the actual extension ID
+ * This ensures dev and prod builds use the correct redirect URI
+ */
+function initializeOAuthRedirectURI(): void {
+    if (!MCP_OAUTH_CONFIG.REDIRECT_URI) {
+        // Get the correct redirect URI for this extension
+        const redirectURL = chrome.identity.getRedirectURL();
+        console.log('[Background] Initializing OAuth redirect URI:', redirectURL);
+
+        // Mutate the const object (this is safe at runtime)
+        (MCP_OAUTH_CONFIG as any).REDIRECT_URI = redirectURL;
+    }
+}
+
+// Initialize redirect URI immediately when service worker loads
+initializeOAuthRedirectURI();
+
+// ============================================================================
 // Service Worker Keep-Alive Management
 // ============================================================================
 
