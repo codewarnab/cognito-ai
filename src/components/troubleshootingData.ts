@@ -179,4 +179,25 @@ export const troubleshootingData: TroubleshootingItem[] = [
             'Restart Chrome after enabling the flags and downloading the model',
         ],
     },
+    {
+        id: '12',
+        issue: 'Local AI download progress not showing in chat',
+        causes: [
+            'Download progress monitoring not implemented in chat interface',
+            'Local AI model download happens in background without UI feedback',
+            'Progress events not properly connected to chat display',
+        ],
+        solutions: [
+            'Currently if the local AI is downloadable it downloads it but we are unable to add the progress in chat so left it open for sometime then come back',
+            'You can try running this code in console of any tab to monitor download progress:',
+            'const session = await LanguageModel.create({',
+            '  monitor(m) {',
+            '    m.addEventListener(\'downloadprogress\', (e) => {',
+            '      console.log(`Downloaded ${e.loaded * 100}%`);',
+            '    });',
+            '  },',
+            '});',
+            'This will show download progress in the browser console',
+        ],
+    },
 ];
