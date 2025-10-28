@@ -200,6 +200,156 @@
     }
 }
 
+/* Inline code with copy functionality */
+.inline-code-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: baseline;
+}
+
+.inline-code-clickable {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    position: relative;
+}
+
+/* Link-specific styling for inline code */
+.inline-code-link {
+    color: rgb(37, 99, 235) !important;
+    background: transparent !important;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    padding: 0 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .inline-code-link {
+        color: rgb(96, 165, 250) !important;
+        background: transparent !important;
+    }
+}
+
+.inline-code-link:hover {
+    text-decoration-style: solid !important;
+    color: rgb(29, 78, 216) !important;
+    background: transparent !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .inline-code-link:hover {
+        color: rgb(147, 197, 253) !important;
+        background: transparent !important;
+    }
+}
+
+.inline-code-clickable:hover {
+    background: rgb(209 213 219) !important;
+    transform: translateY(-1px);
+}
+
+/* Links should not have background on hover */
+.inline-code-link:hover {
+    background: transparent !important;
+    transform: translateY(0) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .inline-code-clickable:hover {
+        background: rgb(63 63 70) !important;
+    }
+
+    /* Links should not have background on hover in dark mode */
+    .inline-code-link:hover {
+        background: transparent !important;
+    }
+}
+
+.inline-code-clickable:active {
+    transform: translateY(0);
+}
+
+.inline-code-tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    padding: 4px 8px;
+    background: rgba(24, 24, 27, 0.75);
+    backdrop-filter: blur(8px);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 10px;
+    font-weight: 400;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: tooltip-fade-in 0.2s ease-out forwards;
+    opacity: 0;
+}
+
+@keyframes tooltip-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.inline-code-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-1px) rotate(45deg);
+    width: 6px;
+    height: 6px;
+    background: rgba(24, 24, 27, 0.75);
+    backdrop-filter: blur(8px);
+    border-radius: 0 0 1px 0;
+    z-index: -1;
+}
+
+.inline-code-tooltip-success {
+    background: rgba(34, 197, 94, 0.75);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.inline-code-tooltip-success::after {
+    background: rgba(34, 197, 94, 0.75);
+}
+
+@media (prefers-color-scheme: dark) {
+    .inline-code-tooltip {
+        background: rgba(250, 250, 250, 0.65);
+        backdrop-filter: blur(10px);
+        color: rgba(24, 24, 27, 0.85);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .inline-code-tooltip::after {
+        background: rgba(250, 250, 250, 0.65);
+        backdrop-filter: blur(10px);
+    }
+
+    .inline-code-tooltip-success {
+        background: rgba(34, 197, 94, 0.75);
+        color: rgba(255, 255, 255, 0.95);
+    }
+
+    .inline-code-tooltip-success::after {
+        background: rgba(34, 197, 94, 0.75);
+    }
+}
+
 .markdown-content pre {
     background: rgba(0, 0, 0, 0.1);
     padding: 0;

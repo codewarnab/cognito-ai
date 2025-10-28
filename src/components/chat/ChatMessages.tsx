@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
+import rehypeHighlight from 'rehype-highlight';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '../MentionBadge';
 import { ToolPartRenderer } from '../../ai/ToolPartRenderer';
@@ -9,6 +10,104 @@ import type { Message } from './types';
 import { getMessageContent, hasToolCalls } from './utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
+
+// Custom inline code component with tooltip and copy functionality
+function InlineCode({ children, ...props }: any) {
+    const [copied, setCopied] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
+
+    // Check if the content is a URL
+    const content = String(children).replace(/\n$/, '');
+    const isUrl = /^https?:\/\//i.test(content);
+
+    const handleClick = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isUrl) {
+            // Open URL in new tab
+            window.open(content, '_blank', 'noopener,noreferrer');
+        } else {
+            // Copy non-URL content
+            try {
+                await navigator.clipboard.writeText(content);
+                setCopied(true);
+                setTimeout(() => {
+                    setCopied(false);
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy code:', err);
+            }
+        }
+    };
+
+    return (
+        <span
+            className="inline-code-wrapper"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+        >
+            <code
+                className={`inline-code-clickable ${isUrl ? 'inline-code-link' : ''}`}
+                onClick={handleClick}
+                {...props}
+            >
+                {children}
+            </code>
+            {(showTooltip || copied) && (
+                <span className={`inline-code-tooltip ${copied ? 'inline-code-tooltip-success' : ''}`}>
+                    {copied ? '✓ Copied!' : isUrl ? 'Click to open' : 'Click to copy'}
+                </span>
+            )}
+        </span>
+    );
+}
+
+// Custom code block component with copy button
+function CodeBlock({ node, inline, className, children, ...props }: any) {
+    const [copied, setCopied] = useState(false);
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : '';
+
+    const handleCopy = async () => {
+        const code = String(children).replace(/\n$/, '');
+        try {
+            await navigator.clipboard.writeText(code);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy code:', err);
+        }
+    };
+
+    // Render inline code without wrapper - check both inline prop and node data
+    const isInline = inline || node?.properties?.inline || !className?.includes('language-');
+
+    if (isInline) {
+        return <InlineCode {...props}>{children}</InlineCode>;
+    }
+
+    // Render block code with wrapper and copy button
+    return (
+        <div className="code-block-wrapper">
+            <div className="code-block-header">
+                {language && <span className="code-block-language">{language}</span>}
+                <button
+                    className="code-block-copy-btn"
+                    onClick={handleCopy}
+                    title="Copy code"
+                >
+                    {copied ? '✓ Copied' : '📋 Copy'}
+                </button>
+            </div>
+            <pre>
+                <code className={className} {...props}>
+                    {children}
+                </code>
+            </pre>
+        </div>
+    );
+}
 
 // Custom components to handle streaming markdown gracefully
 const markdownComponents = {
@@ -21,6 +120,7 @@ const markdownComponents = {
             </a>
         );
     },
+    code: CodeBlock,
     // Add other custom components as needed
 };
 
@@ -56,6 +156,7 @@ const SafeMarkdown: React.FC<{ children: string }> = ({ children }) => {
         <MarkdownErrorBoundary fallback={children}>
             <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkBreaks]}
+                rehypePlugins={[rehypeHighlight]}
                 components={markdownComponents}
                 skipHtml={true}
             >
