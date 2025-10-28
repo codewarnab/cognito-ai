@@ -9,14 +9,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createLogger } from '../../logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../errors';
 import { validateAndGetApiKey } from '../../utils/geminiApiKey';
+import { TRANSCRIPT_API_URL } from '../../constants';
 
 const log = createLogger('YouTube-Agent');
 
 // Maximum chunk duration in seconds (30 minutes)
 const MAX_CHUNK_DURATION = 30 * 60; // 1800 seconds
 
-// Transcript API endpoint
-const TRANSCRIPT_API_URL = 'https://youtube-transcript-generator-five.vercel.app/simple-transcript';
+// Transcript API endpoint is centralized in constants.ts
 
 /**
  * Fetch transcript from the deployed API

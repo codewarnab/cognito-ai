@@ -70,3 +70,9 @@ export const SERVER_SPECIFIC_CONFIGS: Record<string, {
  */
 export const TOOLS_WARNING_THRESHOLD = 40 as const;
 
+/**
+ * External API Endpoints
+ */
+export const TRANSCRIPT_API_URL =
+    'https://youtube-transcript-generator-five.vercel.app/simple-transcript' as const;
+

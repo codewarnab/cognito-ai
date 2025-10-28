@@ -69,6 +69,58 @@ pnpm build
 
 The production-ready extension will be available in the `build/chrome-mv3-prod` directory.
 
+## Deploy the YouTube Transcript API (Vercel)
+
+This project includes a small API for fetching YouTube transcripts located in `youtube-transcript-generator/`. Deploying it to Vercel is the quickest way to get a stable endpoint.
+
+### Steps (Windows PowerShell)
+
+```powershell
+# 1) Go to the API folder
+cd .\youtube-transcript-generator
+
+# 2) (Optional) Install Vercel CLI if you don't have it
+npm install -g vercel
+
+# 3) Login to Vercel (opens a browser flow)
+vercel login
+
+# 4) Deploy (accept prompts, then deploy to Production)
+vercel --prod
+```
+
+Notes:
+- The folder already has a `vercel.json` routing config and an `index.js` Express handler. No extra config needed.
+- The API exposes `POST /simple-transcript` and `GET /health`.
+- After deploy, Vercel will print your URL, e.g. `https://your-app-name.vercel.app`.
+
+### Point the extension to your deployment
+
+Edit `src/constants.ts` and set `TRANSCRIPT_API_URL` to your deployed URL with the endpoint path:
+
+```
+https://YOUR-VERCEL-URL/simple-transcript
+```
+
+Example change in `src/constants.ts`:
+- From: the default hosted URL
+- To: `https://your-app-name.vercel.app/simple-transcript`
+
+You can verify the API quickly:
+
+```powershell
+# Health check
+curl https://your-app-name.vercel.app/health
+
+# Example transcript request
+curl -X POST ^
+	-H "Content-Type: application/json" ^
+	-d '{"url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ"}' ^
+	https://your-app-name.vercel.app/simple-transcript
+```
+
+Once updated, rebuild the extension (dev or prod) and reload it in Chrome.
+
 ## Project Structure
 
 ```
@@ -126,3 +178,4 @@ If you encounter any issues during setup, please:
 1. Check the [existing issues](https://github.com/codewarnab/cognito-ai/issues)
 2. Create a new issue with details about your problem
 3. Include your environment information (OS, Node version, etc.)
+
