@@ -22,6 +22,8 @@ import {
     TabVisibilityHandler,
     ModeSwitchGuard
 } from '../../ai/geminiLive/errorHandler';
+import { CircleHelp } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '../ui/Popover';
 import { createLogger } from '../../logger';
 import './VoiceModeUI.css';
 
@@ -51,6 +53,8 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     const [isUserSpeaking, setIsUserSpeaking] = useState(false);
     const [isExecutingTools, setIsExecutingTools] = useState(false);
     const [showSetupNotification, setShowSetupNotification] = useState(false);
+    const [isMicrophoneError, setIsMicrophoneError] = useState(false);
+    const [showMicHelpPopover, setShowMicHelpPopover] = useState(false);
 
     // Refs
     const liveClientRef = useRef<GeminiLiveClient | null>(null);
@@ -181,11 +185,17 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     onError: (err) => {
                         log.error('Live API error:', err);
 
-                        // Handle specific error types
-                        if (err.type === 'AUDIO_CAPTURE') {
+                        // Check if this is a microphone permission error
+                        const isMicError = err.type === 'AUDIO_CAPTURE' ||
+                            err.message.toLowerCase().includes('microphone') ||
+                            err.message.toLowerCase().includes('permission');
+
+                        if (isMicError) {
+                            setIsMicrophoneError(true);
                             const permissionError = MicrophonePermissionHandler.handlePermissionDenied();
                             setError(permissionError.message);
                         } else {
+                            setIsMicrophoneError(false);
                             setError(err.message);
                         }
 
@@ -261,13 +271,23 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                     }, 3000);
                 } catch (err) {
                     log.error('Failed to auto-start session:', err);
-                    setError(err instanceof Error ? err.message : 'Failed to auto-start voice session');
+                    const errorMsg = err instanceof Error ? err.message : 'Failed to auto-start voice session';
+                    const isMicError = errorMsg.toLowerCase().includes('microphone') ||
+                        errorMsg.toLowerCase().includes('permission');
+                    log.info('🔍 Error detection:', { errorMsg, isMicError });
+                    setIsMicrophoneError(isMicError);
+                    setError(errorMsg);
                     setIsRecording(false);
                     setShowSetupNotification(false);
                 }
             } catch (err) {
                 log.error('Failed to initialize client:', err);
-                setError(err instanceof Error ? err.message : 'Failed to initialize voice mode');
+                const errorMsg = err instanceof Error ? err.message : 'Failed to initialize voice mode';
+                const isMicError = errorMsg.toLowerCase().includes('microphone') ||
+                    errorMsg.toLowerCase().includes('permission');
+                log.info('🔍 Error detection (init):', { errorMsg, isMicError });
+                setIsMicrophoneError(isMicError);
+                setError(errorMsg);
                 isInitializingRef.current = false;
             }
         };
@@ -584,10 +604,190 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
                         <path d="M10 6V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                         <circle cx="10" cy="13" r="1" fill="currentColor" />
                     </svg>
-                    <span>{error}</span>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ flex: 1 }}>{error}</span>
+                        {isMicrophoneError && (
+                            <Popover open={showMicHelpPopover} onOpenChange={setShowMicHelpPopover}>
+                                <PopoverTrigger asChild>
+                                    <button
+                                        className="voice-mode-mic-help-button"
+                                        title="How to fix microphone permission"
+                                        style={{
+                                            width: '36px',
+                                            height: '36px',
+                                            borderRadius: '50%',
+                                            background: 'rgba(59, 130, 246, 0.15)',
+                                            border: '1.5px solid rgba(59, 130, 246, 0.4)',
+                                            color: 'rgba(96, 165, 250, 1)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s ease',
+                                            padding: 0,
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.25)';
+                                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+                                            e.currentTarget.style.transform = 'scale(1.05)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+                                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                                            e.currentTarget.style.transform = 'scale(1)';
+                                        }}
+                                    >
+                                        <CircleHelp size={20} />
+                                    </button>
+                                </PopoverTrigger>
+
+                                <PopoverContent
+                                    align="end"
+                                    side="top"
+                                    sideOffset={10}
+                                    style={{
+                                        width: '380px',
+                                        background: 'rgba(15, 20, 35, 0.98)',
+                                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                                        borderRadius: '12px',
+                                        padding: '20px',
+                                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(59, 130, 246, 0.2)',
+                                        backdropFilter: 'blur(20px)',
+                                        color: 'white',
+                                    }}
+                                >
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: '16px'
+                                    }}>
+                                        <h3 style={{
+                                            margin: 0,
+                                            fontSize: '16px',
+                                            fontWeight: '600',
+                                            color: 'rgba(96, 165, 250, 1)',
+                                        }}>
+                                            How to Fix Microphone Permission
+                                        </h3>
+                                        <button
+                                            onClick={() => setShowMicHelpPopover(false)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: 'rgba(255, 255, 255, 0.6)',
+                                                fontSize: '24px',
+                                                cursor: 'pointer',
+                                                padding: 0,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '14px',
+                                        fontSize: '14px',
+                                        lineHeight: '1.6',
+                                        color: 'rgba(255, 255, 255, 0.85)',
+                                    }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <span style={{
+                                                minWidth: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                color: 'rgba(96, 165, 250, 1)',
+                                            }}>1</span>
+                                            <p style={{ margin: 0 }}>
+                                                <strong>Pin the extension</strong> by clicking the puzzle icon in your browser toolbar
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <span style={{
+                                                minWidth: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                color: 'rgba(96, 165, 250, 1)',
+                                            }}>2</span>
+                                            <p style={{ margin: 0 }}>
+                                                <strong>Right-click</strong> on the Cognito extension icon
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <span style={{
+                                                minWidth: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                color: 'rgba(96, 165, 250, 1)',
+                                            }}>3</span>
+                                            <p style={{ margin: 0 }}>
+                                                Click on <strong>"View web permissions"</strong>
+                                            </p>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <span style={{
+                                                minWidth: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontWeight: '600',
+                                                fontSize: '13px',
+                                                color: 'rgba(96, 165, 250, 1)',
+                                            }}>4</span>
+                                            <p style={{ margin: 0 }}>
+                                                Set the <strong>Microphone permission to "Allow"</strong>
+                                            </p>
+                                        </div>
+
+                                        <div style={{
+                                            marginTop: '8px',
+                                            padding: '12px',
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '8px',
+                                            fontSize: '13px',
+                                        }}>
+                                            <strong style={{ color: 'rgba(52, 211, 153, 1)' }}>💡 Tip:</strong> After allowing permission reopen Voice Mode.
+                                        </div>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    </div>
                     <button
                         className="voice-mode-error-dismiss"
-                        onClick={() => setError(null)}
+                        onClick={() => {
+                            setError(null);
+                            setIsMicrophoneError(false);
+                            setShowMicHelpPopover(false);
+                        }}
                         aria-label="Dismiss error"
                     >
                         ×
