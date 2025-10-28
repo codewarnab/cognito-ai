@@ -9,8 +9,8 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { VoiceModeStatus, LiveAPIError } from '../types';
-import { LiveAPIErrorType, AUDIO_CONFIG } from '../types';
+import type { VoiceModeStatus } from '../types';
+import { LiveAPIErrorType, AUDIO_CONFIG, LiveAPIError } from '../types';
 import { AudioManager } from '../audioManager';
 import {
     GeminiLiveErrorHandler,
@@ -169,11 +169,23 @@ export class GeminiLiveClient {
                     log.info('GeminiLiveClient initialized successfully');
 
                 } catch (error) {
-                    const liveError = {
-                        type: LiveAPIErrorType.INITIALIZATION,
-                        message: 'Failed to initialize Gemini Live Client',
-                        originalError: error as Error
-                    } as LiveAPIError;
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    const liveError = new LiveAPIError(
+                        LiveAPIErrorType.INITIALIZATION,
+                        `Failed to initialize Gemini Live Client: ${errorMessage}`,
+                        error instanceof Error ? error : undefined
+                    );
+
+                    log.error('Initialization failed:', {
+                        type: liveError.type,
+                        message: liveError.message,
+                        error: error instanceof Error ? {
+                            name: error.name,
+                            message: error.message,
+                            stack: error.stack
+                        } : error
+                    });
+
                     this.handleError(liveError);
                     throw liveError;
                 }
@@ -233,11 +245,12 @@ export class GeminiLiveClient {
 
                 } catch (error) {
                     this.connectionRetryCount++;
-                    const liveError = {
-                        type: LiveAPIErrorType.CONNECTION,
-                        message: `Failed to connect to Live API on client #${this.instanceId}`,
-                        originalError: error as Error
-                    } as LiveAPIError;
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    const liveError = new LiveAPIError(
+                        LiveAPIErrorType.CONNECTION,
+                        `Failed to connect to Live API on client #${this.instanceId}: ${errorMessage}`,
+                        error instanceof Error ? error : undefined
+                    );
                     this.handleError(liveError);
                     throw liveError;
                 } finally {
@@ -449,11 +462,11 @@ export class GeminiLiveClient {
 
     private handleSessionError(error: Error): void {
         log.error('Live API session error', error);
-        const liveError = {
-            type: LiveAPIErrorType.CONNECTION,
-            message: 'Live API session error',
-            originalError: error
-        } as LiveAPIError;
+        const liveError = new LiveAPIError(
+            LiveAPIErrorType.CONNECTION,
+            `Live API session error: ${error.message}`,
+            error
+        );
         this.handleError(liveError);
         this.updateStatus('Error');
     }
@@ -473,10 +486,10 @@ export class GeminiLiveClient {
 
         if (wasImmediateClose && !isNormalClose) {
             log.error('Session closed immediately - possible auth issue');
-            const authError = {
-                type: LiveAPIErrorType.CONNECTION,
-                message: 'Failed to authenticate with Gemini Live API'
-            } as LiveAPIError;
+            const authError = new LiveAPIError(
+                LiveAPIErrorType.CONNECTION,
+                'Failed to authenticate with Gemini Live API. Please check your API key.'
+            );
             this.handleError(authError);
         }
     }
@@ -515,11 +528,12 @@ export class GeminiLiveClient {
             });
         } catch (error) {
             log.error('Failed to resume audio context', error);
-            const liveError = {
-                type: LiveAPIErrorType.AUDIO_PLAYBACK,
-                message: 'Audio context suspended',
-                originalError: error as Error
-            } as LiveAPIError;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const liveError = new LiveAPIError(
+                LiveAPIErrorType.AUDIO_PLAYBACK,
+                `Audio context suspended: ${errorMessage}`,
+                error instanceof Error ? error : undefined
+            );
             this.handleError(liveError);
         }
     }
