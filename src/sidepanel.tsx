@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import { Troubleshooting } from "./components/Troubleshooting";
+import { Features } from "./components/Features";
 import { ToolUIProvider } from "./ai/ToolUIContext";
 import { ThreadListSidePanel } from "./components/ThreadListSidePanel";
 import { MemorySidebar } from "./components/MemorySidebar";
@@ -69,6 +70,7 @@ function AIChatContent() {
     const [showMemory, setShowMemory] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
     const [showTroubleshooting, setShowTroubleshooting] = useState(false);
+    const [showFeatures, setShowFeatures] = useState(false);
     // Lazy initialization for onboarding state - will be hydrated in useEffect
     const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null); // null = loading
     const [showChatInterface, setShowChatInterface] = useState(false);
@@ -703,6 +705,13 @@ function AIChatContent() {
         return <Troubleshooting onBack={() => setShowTroubleshooting(false)} />;
     }
 
+    // Render Features page
+    if (showFeatures) {
+        return <Features onBack={() => setShowFeatures(false)} onPromptClick={(prompt) => {
+            setInput(prompt);
+        }} />;
+    }
+
     // Show onboarding screen if enabled
     if (showOnboarding) {
         log.info('Rendering onboarding screen', { showOnboarding });
@@ -764,6 +773,7 @@ function AIChatContent() {
                                 onMemoryClick={() => setShowMemory(true)}
                                 onRemindersClick={() => setShowReminders(true)}
                                 onTroubleshootingClick={() => setShowTroubleshooting(true)}
+                                onFeaturesClick={() => setShowFeatures(true)}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 isLoading={isLoading}

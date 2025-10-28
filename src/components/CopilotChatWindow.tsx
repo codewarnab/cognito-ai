@@ -25,6 +25,7 @@ interface CopilotChatWindowProps {
     onMemoryClick?: () => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
+    onFeaturesClick?: () => void;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
@@ -48,6 +49,7 @@ export function CopilotChatWindow({
     onMemoryClick,
     onRemindersClick,
     onTroubleshootingClick,
+    onFeaturesClick,
     onStop,
     pendingMessageId,
     nextMessageId,
@@ -182,6 +184,7 @@ export function CopilotChatWindow({
                 onMemoryClick={onMemoryClick}
                 onRemindersClick={onRemindersClick}
                 onTroubleshootingClick={onTroubleshootingClick}
+                onFeaturesClick={onFeaturesClick}
                 onApiKeySaved={handleApiKeySaved}
             />
 
