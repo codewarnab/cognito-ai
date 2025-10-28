@@ -64,3 +64,9 @@ export const SERVER_SPECIFIC_CONFIGS: Record<string, {
 
 };
 
+/**
+ * Tools Configuration
+ * Settings related to tool management and warnings
+ */
+export const TOOLS_WARNING_THRESHOLD = 40 as const;
+

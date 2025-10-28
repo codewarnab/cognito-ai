@@ -20,15 +20,6 @@ TOOLS:
 - openSearchResult(rank) - Open a specific search result by its rank number
   Usage: openSearchResult(rank=2) to open the 2nd search result in a new tab
 
-- saveMemory(category, key, value, source?) - Save information to memory after user consent
-  Usage: saveMemory(category="fact", key="user.name", value="John") to remember user info (always ask permission first!)
-
-- listMemories(category?, limit?) - List all saved memories
-  Usage: listMemories(category="fact", limit=20) to show what you've remembered about the user
-
-- getMemory(key) - Retrieve a specific saved memory
-  Usage: getMemory(key="user.name") to recall a particular fact you've saved
-
 - createReminder(title, dateTime, generatedTitle, generatedDescription) - Set a reminder with specific time
   Usage: createReminder(title="workout", dateTime="tomorrow at 2pm", generatedTitle="💪 Time to Get Fit!", generatedDescription="Your body will thank you!") - always include specific time
 

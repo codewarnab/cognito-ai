@@ -17,9 +17,6 @@ export const LOCAL_TOOLS = [
   'readPageContent',
   'getSearchResults',
   'openSearchResult',
-  'saveMemory',
-  'listMemories',
-  'getMemory',
   'createReminder',
   'cancelReminder',
 ];
@@ -68,7 +65,7 @@ export const BASIC_TOOLS = [
 
 export const INTERACTION_TOOLS = [
   'typeInField',
-  'clickByText', 
+  'clickByText',
   'pressKey',
   'clickElement',
   'fillInput',
@@ -87,40 +84,40 @@ export const AGENT_TOOLS = [
  */
 export function getToolsForMode(mode: AIMode): Record<string, any> {
   const allTools = getAllTools();
-  
+
   if (mode === 'local') {
     // Local mode: Only local tools
     const localTools: Record<string, any> = {};
-    
+
     LOCAL_TOOLS.forEach(toolName => {
       if (allTools[toolName]) {
         localTools[toolName] = allTools[toolName];
       }
     });
-    
-    log.info('Local mode: Returning local tools only', { 
+
+    log.info('Local mode: Returning local tools only', {
       count: Object.keys(localTools).length,
       names: Object.keys(localTools)
     });
-    
+
     return localTools;
   }
-  
+
   // Remote mode: All basic tools
   // MCP tools are added separately in remoteAI.ts
   const extensionTools: Record<string, any> = {};
-  
+
   BASIC_TOOLS.forEach(toolName => {
     if (allTools[toolName]) {
       extensionTools[toolName] = allTools[toolName];
     }
   });
-  
+
   log.info(' Remote mode: Returning all basic tools', {
     count: Object.keys(extensionTools).length,
     names: Object.keys(extensionTools)
   });
-  
+
   return extensionTools;
 }
 
@@ -136,11 +133,42 @@ export function getToolCapabilities(mode: AIMode): ToolCapabilities {
       interactionTools: false // Not available
     };
   }
-  
+
   return {
     extensionTools: true,
     mcpTools: true,
     agentTools: true,
     interactionTools: true
   };
+}
+
+/**
+ * Get count of cloud tools (extension tools + agent tools, excluding workflow-only tools)
+ * This mirrors the logic in aiLogic.ts for remote mode tool selection
+ * @returns Number of cloud tools available (excludes MCP tools)
+ */
+export function getCloudToolsCount(): number {
+  const allTools = getAllTools();
+
+  // Workflow-only tools that should be excluded from normal mode
+  const workflowOnlyTools = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
+
+  // Count extension tools (excluding workflow-only)
+  const extensionToolCount = Object.keys(allTools).filter(
+    name => !workflowOnlyTools.includes(name)
+  ).length;
+
+  // Count agent tools (currently just analyzeYouTubeVideo in non-workflow mode)
+  const agentToolCount = 1; // analyzeYouTubeVideo
+
+  const totalCount = extensionToolCount + agentToolCount;
+
+  log.info('Cloud tools count:', {
+    extension: extensionToolCount,
+    agent: agentToolCount,
+    total: totalCount,
+    excluded: workflowOnlyTools
+  });
+
+  return totalCount;
 }
