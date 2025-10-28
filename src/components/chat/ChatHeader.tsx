@@ -8,6 +8,7 @@ interface ChatHeaderProps {
     onNewThreadClick?: () => void;
     onMemoryClick?: () => void;
     onRemindersClick?: () => void;
+    onTroubleshootingClick?: () => void;
     onApiKeySaved?: () => void;
 }
 
@@ -17,6 +18,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onNewThreadClick,
     onMemoryClick,
     onRemindersClick,
+    onTroubleshootingClick,
     onApiKeySaved,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
@@ -121,6 +123,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     }}
                                 >
                                     Reminders
+                                </button>
+                                <button
+                                    className="copilot-header-menu-item"
+                                    onClick={() => {
+                                        setShowHeaderMenu(false);
+                                        onTroubleshootingClick?.();
+                                    }}
+                                >
+                                    Troubleshooting
                                 </button>
                                 <button
                                     className="copilot-header-menu-item"
