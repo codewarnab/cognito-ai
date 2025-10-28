@@ -161,4 +161,22 @@ export const troubleshootingData: TroubleshootingItem[] = [
             'Open Reminders (three dots menu) to check scheduled reminders',
         ],
     },
+    {
+        id: '11',
+        issue: 'Local mode not responding',
+        causes: [
+            'Local AI mode (Gemini Nano) is not supported or properly configured',
+            'Chrome built-in AI features not enabled',
+            'Optimization Guide model not downloaded',
+            'Insufficient storage space for AI model',
+        ],
+        solutions: [
+            'Download and install Chrome with built-in AI Latest Version',
+            'Go to chrome://flags/#prompt-api-for-gemini-nano and enable the Prompt API for Gemini Nano option',
+            'Go to chrome://flags/#optimization-guide-on-device-model and turn on the Enables optimization guide on device option',
+            'Go to chrome://components/ and check or download the latest version of Optimization Guide On Device Model',
+            'Ensure the drive where Chrome is installed has at least 20 GB of free storage space',
+            'Restart Chrome after enabling the flags and downloading the model',
+        ],
+    },
 ];
