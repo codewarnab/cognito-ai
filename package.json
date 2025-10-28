@@ -75,7 +75,8 @@
       "cookies",
       "history",
       "search",
-      "bookmarks"
+      "bookmarks",
+      "audioCapture"
     ],
     "optional_permissions": [
       "tabCapture",
