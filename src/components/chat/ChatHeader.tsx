@@ -9,6 +9,7 @@ interface ChatHeaderProps {
     onMemoryClick?: () => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
+    onFeaturesClick?: () => void;
     onApiKeySaved?: () => void;
 }
 
@@ -19,6 +20,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onMemoryClick,
     onRemindersClick,
     onTroubleshootingClick,
+    onFeaturesClick,
     onApiKeySaved,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
@@ -132,6 +134,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     }}
                                 >
                                     Troubleshooting
+                                </button>
+                                <button
+                                    className="copilot-header-menu-item"
+                                    onClick={() => {
+                                        setShowHeaderMenu(false);
+                                        onFeaturesClick?.();
+                                    }}
+                                >
+                                    Features
                                 </button>
                                 <button
                                     className="copilot-header-menu-item"
