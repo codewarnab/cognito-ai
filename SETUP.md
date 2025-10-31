@@ -158,7 +158,7 @@ Create a `.env` file in the root directory if you need to configure environment-
 
 - Clear the build cache: `rm -rf build/ .plasmo/`
 - Reinstall dependencies: `pnpm install`
-- Check for TypeScript errors: `pnpm type-check` (if available)
+- Restart the development server: `pnpm dev`
 
 ### Hot Reload Not Working
 
