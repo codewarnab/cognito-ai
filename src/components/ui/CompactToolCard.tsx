@@ -11,6 +11,7 @@ import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/cha
 import { getToolIcon } from './ToolIconMapper';
 import { formatToolAction } from './ToolActionFormatter';
 import { createLogger } from '../../logger';
+import type { CustomInputOutputRenderers } from '../../ai/ToolUIContext';
 
 const log = createLogger('CompactToolCard');
 
@@ -20,6 +21,7 @@ interface CompactToolCardProps {
     input?: any;
     output?: any;
     errorText?: string;
+    customRenderers?: CustomInputOutputRenderers;
 }
 
 export function CompactToolCard({
@@ -27,7 +29,8 @@ export function CompactToolCard({
     state,
     input,
     output,
-    errorText
+    errorText,
+    customRenderers
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
     useEffect(() => {
@@ -152,18 +155,30 @@ export function CompactToolCard({
                     {input && (
                         <div className="compact-tool-section">
                             <div className="compact-tool-label">Input:</div>
-                            <pre className="compact-tool-code">
-                                {formatContent(input)}
-                            </pre>
+                            {customRenderers?.renderInput ? (
+                                <div className="compact-tool-custom">
+                                    {customRenderers.renderInput(input)}
+                                </div>
+                            ) : (
+                                <pre className="compact-tool-code">
+                                    {formatContent(input)}
+                                </pre>
+                            )}
                         </div>
                     )}
 
                     {output && state === 'success' && (
                         <div className="compact-tool-section">
                             <div className="compact-tool-label">Output:</div>
-                            <pre className="compact-tool-code">
-                                {formatContent(output)}
-                            </pre>
+                            {customRenderers?.renderOutput ? (
+                                <div className="compact-tool-custom">
+                                    {customRenderers.renderOutput(output)}
+                                </div>
+                            ) : (
+                                <pre className="compact-tool-code">
+                                    {formatContent(output)}
+                                </pre>
+                            )}
                         </div>
                     )}
 

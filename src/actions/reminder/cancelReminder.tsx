@@ -50,9 +50,53 @@ export function useCancelReminderAction() {
             },
         });
 
-        // Use CompactToolRenderer for consistent modern UI
+        // Register UI with custom renderers
         registerToolUI('cancelReminder', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Identifier:</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                            {input.identifier}
+                        </span>
+                    </div>
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Cancelled:</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                                    {output.title}
+                                </span>
+                            </div>
+                        </>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ cancelReminder tool registration complete');

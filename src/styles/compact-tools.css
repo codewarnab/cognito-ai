@@ -189,6 +189,23 @@
     line-height: 1.4;
 }
 
+/* Custom tool renderer container */
+.compact-tool-custom {
+    background: transparent;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.compact-tool-custom a {
+    transition: opacity 0.2s ease;
+}
+
+.compact-tool-custom a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
 /* Chevron icon styling */
 .compact-tool-status svg {
     opacity: 0.7;

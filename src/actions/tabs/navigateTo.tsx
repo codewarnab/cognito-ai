@@ -89,9 +89,27 @@ export function useNavigateToTool() {
             },
         });
 
-        // Register the UI renderer for this tool - uses CompactToolRenderer
+        // Register the UI renderer for this tool - uses CompactToolRenderer with custom renderers
         registerToolUI('navigateTo', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            // Optional: Custom input renderer for navigateTo tool
+            renderInput: (input: any) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <span style={{ opacity: 0.7 }}>URL:</span>
+                    <a href={input.url} target="_blank" rel="noopener noreferrer"
+                        style={{ color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
+                        {input.url}
+                    </a>
+                </div>
+            ),
+            // Optional: Custom output renderer for navigateTo tool
+            renderOutput: (output: any) => (
+                <a href={output.url} target="_blank" rel="noopener noreferrer"
+                    style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
+                    {output.url}
+                </a>
+            )
         });
 
         log.info('✅ openTab tool registration complete');

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { useEffect, useRef } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
+import type { ToolUIState } from '../../ai/ToolUIContext';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import { createLogger } from '../../logger';
 
 const log = createLogger('Tool-GetSearchResults');
@@ -15,7 +17,7 @@ const log = createLogger('Tool-GetSearchResults');
  * Hook to register the getSearchResults tool
  */
 export function useGetSearchResultsTool() {
-    const { unregisterToolUI } = useToolUI();
+    const { registerToolUI, unregisterToolUI } = useToolUI();
     const lastCallRef = useRef<{ args: any; timestamp: number } | null>(null);
 
     const shouldProcess = (toolName: string, args: any) => {
@@ -207,7 +209,160 @@ export function useGetSearchResultsTool() {
             },
         });
 
-        // Using default CompactToolRenderer - no custom UI needed
+        // Register UI with custom renderers
+        registerToolUI('getSearchResults', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {input.maxResults !== undefined && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Max Results:</span>
+                            <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                {input.maxResults}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Found:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.count} result{output.count !== 1 ? 's' : ''}
+                                </span>
+                                {output.engine && (
+                                    <span style={{
+                                        fontSize: '11px',
+                                        padding: '2px 6px',
+                                        background: 'var(--bg-tertiary)',
+                                        borderRadius: '3px',
+                                        border: '1px solid var(--border-color)',
+                                        opacity: 0.9
+                                    }}>
+                                        {output.engine}
+                                    </span>
+                                )}
+                            </div>
+                            {output.results && output.results.length > 0 && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '3px'
+                                }}>
+                                    {output.results.slice(0, 2).map((result: any, i: number) => (
+                                        <div key={i} style={{
+                                            padding: '5px 8px',
+                                            background: 'var(--bg-tertiary)',
+                                            borderRadius: '3px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '11px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}>
+                                            <span style={{
+                                                opacity: 0.7,
+                                                fontSize: '10px',
+                                                minWidth: '20px'
+                                            }}>
+                                                #{result.rank}
+                                            </span>
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    color: 'var(--text-primary)',
+                                                    opacity: 0.9,
+                                                    fontSize: '11px',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }}>
+                                                    {result.title}
+                                                </div>
+                                                <div style={{
+                                                    color: 'var(--text-secondary)',
+                                                    fontSize: '10px',
+                                                    opacity: 0.6,
+                                                    marginTop: '1px'
+                                                }}>
+                                                    {result.hostname}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {output.results.length > 2 && (
+                                        <div style={{
+                                            fontSize: '10px',
+                                            opacity: 0.5,
+                                            padding: '3px 6px',
+                                            textAlign: 'center'
+                                        }}>
+                                            +{output.results.length - 2} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                    {output.error === 'NOT_ON_SEARCH_PAGE' ? 'Not on search page' : output.error}
+                                </span>
+                            </div>
+                            {output.message && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    marginTop: '2px'
+                                }}>
+                                    {output.message}
+                                </div>
+                            )}
+                            {output.hint && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    marginTop: '2px'
+                                }}>
+                                    💡 {output.hint}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.skipped && (
+                        <div style={{ fontSize: '11px', opacity: 0.6 }}>
+                            Skipped (duplicate call)
+                        </div>
+                    )}
+                </div>
+            )
+        });
 
         log.info('✅ getSearchResults tool registration complete');
 

@@ -80,9 +80,101 @@ export function useGetAllTabs() {
             },
         });
 
-        // Register the UI renderer for this tool - uses CompactToolRenderer
+        // Register UI with custom renderers
         registerToolUI('getAllTabs', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Total tabs:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.count}
+                                </span>
+                            </div>
+                            {output.tabs && output.tabs.length > 0 && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '3px'
+                                }}>
+                                    {output.tabs.slice(0, 3).map((tab: any, i: number) => (
+                                        <div key={i} style={{
+                                            padding: '5px 8px',
+                                            background: 'var(--bg-tertiary)',
+                                            borderRadius: '3px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '11px'
+                                        }}>
+                                            <div style={{
+                                                color: 'var(--text-primary)',
+                                                opacity: 0.9,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                marginBottom: '2px'
+                                            }}>
+                                                {tab.active && <span style={{ opacity: 0.6, marginRight: '4px' }}>●</span>}
+                                                {tab.title}
+                                            </div>
+                                            <div style={{
+                                                fontSize: '10px',
+                                                opacity: 0.6,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                            }}>
+                                                {tab.url}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {output.tabs.length > 3 && (
+                                        <div style={{
+                                            fontSize: '10px',
+                                            opacity: 0.5,
+                                            padding: '3px 6px',
+                                            textAlign: 'center'
+                                        }}>
+                                            +{output.tabs.length - 3} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                    {output.error}
+                                </span>
+                            </div>
+                            {output.details && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    marginTop: '2px'
+                                }}>
+                                    {output.details}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ getAllTabs tool registration complete');

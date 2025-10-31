@@ -5,9 +5,11 @@
 
 import { CompactToolCard } from '../components/ui/CompactToolCard';
 import type { ToolUIState } from './ToolUIContext';
+import { useToolUI } from './ToolUIContext';
 
 export function CompactToolRenderer({ state }: { state: ToolUIState }) {
     const { toolName, state: toolState, input, output, errorText } = state;
+    const { getCustomRenderers } = useToolUI();
 
     // Map tool state to UI state
     // Special handling: if output exists but has success:false or error:true, treat as error
@@ -24,6 +26,9 @@ export function CompactToolRenderer({ state }: { state: ToolUIState }) {
         ? (typeof output.error === 'string' ? output.error : output.answer || errorText)
         : errorText;
 
+    // Get custom renderers for this tool (if any)
+    const customRenderers = getCustomRenderers(toolName);
+
     return (
         <CompactToolCard
             toolName={toolName}
@@ -31,6 +36,7 @@ export function CompactToolRenderer({ state }: { state: ToolUIState }) {
             input={input}
             output={output}
             errorText={displayErrorText}
+            customRenderers={customRenderers}
         />
     );
 }

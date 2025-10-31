@@ -105,9 +105,103 @@ export function useScrollPageTool() {
             },
         });
 
-        // Register the UI renderer for this tool - uses CompactToolRenderer
+        // Register the UI renderer for this tool - uses CompactToolRenderer with custom renderers
         registerToolUI('scrollPage', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Direction:</span>
+                        <span style={{
+                            fontSize: '11px',
+                            padding: '2px 6px',
+                            opacity: 0.9,
+                            background: 'var(--bg-tertiary)',
+                            borderRadius: '3px',
+                            border: '1px solid var(--border-color)'
+                        }}>
+                            {input.direction}
+                        </span>
+                    </div>
+                    {input.amount !== undefined && input.direction !== 'top' && input.direction !== 'bottom' && input.direction !== 'to-element' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Amount:</span>
+                            <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                {input.amount}px
+                            </span>
+                        </div>
+                    )}
+                    {input.selector && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Target:</span>
+                            <code style={{
+                                fontSize: '11px',
+                                padding: '2px 6px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '3px',
+                                border: '1px solid var(--border-color)',
+                                opacity: 0.9
+                            }}>
+                                {input.selector}
+                            </code>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Action:</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                                    Scrolled {output.direction}
+                                </span>
+                            </div>
+                            {output.scrollDistance !== undefined && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', opacity: 0.7 }}>Distance:</span>
+                                    <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                        {output.scrollDistance}px
+                                    </span>
+                                </div>
+                            )}
+                            {output.scrolledFrom !== undefined && output.scrolledTo !== undefined && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)'
+                                }}>
+                                    {output.scrolledFrom}px → {output.scrolledTo}px
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ scrollPage tool registration complete');
