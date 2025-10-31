@@ -11,6 +11,7 @@ import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
 import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
+import { tabManager } from './TabManager';
 
 const log = createLogger('Tool-GetAllTabs');
 
@@ -31,7 +32,9 @@ export function useGetAllTabs() {
             execute: async () => {
                 try {
                     log.info("TOOL CALL: getAllTabs");
-                    const tabs = await chrome.tabs.query({});
+
+                    // Use TabManager for O(1) cached access with real-time sync
+                    const tabs = await tabManager.getAllTabs();
 
                     if (!tabs || tabs.length === 0) {
                         log.warn("No tabs found");
@@ -53,7 +56,11 @@ export function useGetAllTabs() {
                         index: tab.index
                     }));
 
-                    log.info('✅ Retrieved all tabs', { count: tabs.length });
+                    const stats = tabManager.getStats();
+                    log.info('✅ Retrieved all tabs from cache', {
+                        count: tabs.length,
+                        domains: stats.totalDomains
+                    });
 
                     return {
                         success: true,

@@ -13,6 +13,7 @@ import { useToolUI } from '../../ai/ToolUIContext';
 import { createLogger } from '../../logger';
 import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import type { ToolUIState } from '../../ai/ToolUIContext';
+import { tabManager } from './TabManager';
 
 const log = createLogger('Tool-OrganizeTabsByContext');
 
@@ -47,8 +48,8 @@ export function useOrganizeTabsByContextTool() {
                         };
                     }
 
-                    // Get all tabs
-                    const tabs = await chrome.tabs.query({});
+                    // Use TabManager for efficient O(n) tab organization with cached data
+                    const tabs = await tabManager.getAllTabs();
 
                     // Filter out special URLs
                     const validTabs = tabs.filter(tab => {
@@ -72,6 +73,13 @@ export function useOrganizeTabsByContextTool() {
                         url: tab.url || '',
                         domain: new URL(tab.url!).hostname
                     }));
+
+                    const stats = tabManager.getStats();
+                    log.info('✅ Prepared tabs for organization', {
+                        totalTabs: validTabs.length,
+                        totalDomains: stats.totalDomains,
+                        maxGroups
+                    });
 
                     // Return tab information for AI to analyze and group
                     // The AI will analyze these tabs and suggest groups based on context

@@ -19,14 +19,6 @@ export const CHROME_AI_LIMITS = {
 } as const;
 
 /**
- * CopilotKit Configuration
- * Edit this URL to point to your hosted Copilot Runtime endpoint
- * Example: "https://your-runtime.example.com/api/copilotkit"
- */
-export const COPILOT_RUNTIME_URL = " http://localhost:3000/api" as string; // TODO: Edit this URL
-export const COPILOT_RUNTIME_URL_DEFAULT = " http://localhost:3000/";
-
-/**
  * Generic MCP OAuth Configuration
  * Applies to all MCP servers with OAuth authentication
  */
