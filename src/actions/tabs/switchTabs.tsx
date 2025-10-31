@@ -133,9 +133,95 @@ export function useSwitchTabsTool() {
             },
         });
 
-        // Register the UI renderer for this tool - uses CompactToolRenderer
+        // Register the UI renderer for this tool - uses CompactToolRenderer with custom renderers
         registerToolUI('switchTabs', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {input.url && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>URL:</span>
+                            <a href={input.url} target="_blank" rel="noopener noreferrer"
+                                style={{ color: 'var(--text-primary)', fontSize: '12px', textDecoration: 'none' }}>
+                                {input.url}
+                            </a>
+                        </div>
+                    )}
+                    {input.tabId !== undefined && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Tab ID:</span>
+                            <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                {input.tabId}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Switched to:</span>
+                                <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                                    {output.title || 'Tab'}
+                                </span>
+                            </div>
+                            {output.url && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', opacity: 0.7 }}>URL:</span>
+                                    <a href={output.url} target="_blank" rel="noopener noreferrer"
+                                        style={{ color: 'var(--text-primary)', fontSize: '12px', textDecoration: 'none' }}>
+                                        {output.url}
+                                    </a>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Tab ID:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.tabId}
+                                </span>
+                            </div>
+                        </>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                    {output.availableTabsSample && (
+                        <div style={{
+                            marginTop: '4px',
+                            fontSize: '11px',
+                            opacity: 0.6,
+                            borderTop: '1px solid var(--border-color)',
+                            paddingTop: '6px'
+                        }}>
+                            <div>Available tabs (sample):</div>
+                            {output.availableTabsSample.slice(0, 3).map((tab: any, i: number) => (
+                                <div key={i} style={{ paddingLeft: '8px', marginTop: '2px' }}>
+                                    ID {tab.id}: {tab.url}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ switchTabs tool registration complete');

@@ -53,9 +53,93 @@ export function useGetMemory() {
             },
         });
 
-        // Use CompactToolRenderer for consistent modern UI
+        // Register UI with custom renderers
         registerToolUI('getMemory', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Key:</span>
+                        <code style={{
+                            fontSize: '11px',
+                            padding: '2px 6px',
+                            background: 'var(--bg-tertiary)',
+                            borderRadius: '3px',
+                            border: '1px solid var(--border-color)',
+                            opacity: 0.9
+                        }}>
+                            {input.key}
+                        </code>
+                    </div>
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.found && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Key:</span>
+                                <code style={{
+                                    fontSize: '11px',
+                                    padding: '2px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    opacity: 0.9
+                                }}>
+                                    {output.key}
+                                </code>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Value:</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                                    {output.value}
+                                </span>
+                            </div>
+                            {output.category && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '12px', opacity: 0.7 }}>Category:</span>
+                                    <span style={{
+                                        fontSize: '11px',
+                                        padding: '2px 6px',
+                                        background: 'var(--bg-tertiary)',
+                                        borderRadius: '3px',
+                                        border: '1px solid var(--border-color)',
+                                        opacity: 0.9
+                                    }}>
+                                        {output.category}
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {!output.found && !output.error && (
+                        <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                            Memory not found
+                        </div>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ getMemory tool registration complete');

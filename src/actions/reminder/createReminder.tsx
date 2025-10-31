@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { createLogger } from "../../logger";
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
+import type { ToolUIState } from '../../ai/ToolUIContext';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import { parseDateTimeToEpoch } from "./utils";
 import { saveReminder } from "./storage";
 import type { Reminder } from "./types";
@@ -77,8 +79,111 @@ export function useCreateReminderAction() {
             },
         });
 
-        // Register the UI renderer for this tool
-        // Using default CompactToolRenderer - no custom UI needed
+        // Register UI with custom renderers
+        registerToolUI('createReminder', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Task:</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                            {input.title}
+                        </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>When:</span>
+                        <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                            {input.dateTime}
+                        </span>
+                    </div>
+                    {input.generatedTitle && (
+                        <div style={{
+                            marginTop: '4px',
+                            padding: '6px 8px',
+                            background: 'var(--bg-tertiary)',
+                            borderRadius: '3px',
+                            border: '1px solid var(--border-color)',
+                            fontSize: '11px'
+                        }}>
+                            <div style={{ color: 'var(--text-primary)', opacity: 0.9, marginBottom: '2px' }}>
+                                {input.generatedTitle}
+                            </div>
+                            {input.generatedDescription && (
+                                <div style={{ fontSize: '10px', opacity: 0.6 }}>
+                                    {input.generatedDescription}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Reminder set for:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.when}
+                                </span>
+                            </div>
+                            <div style={{
+                                marginTop: '4px',
+                                padding: '6px 8px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '3px',
+                                border: '1px solid var(--border-color)',
+                                fontSize: '11px'
+                            }}>
+                                <div style={{ color: 'var(--text-primary)', opacity: 0.9, marginBottom: '2px' }}>
+                                    {output.generatedTitle}
+                                </div>
+                                {output.generatedDescription && (
+                                    <div style={{ fontSize: '10px', opacity: 0.6 }}>
+                                        {output.generatedDescription}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                    {output.error && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                    {output.error}
+                                </span>
+                            </div>
+                            {output.details && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    marginTop: '2px'
+                                }}>
+                                    {output.details}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )
+        });
 
         log.info('✅ createReminder tool registration complete');
 

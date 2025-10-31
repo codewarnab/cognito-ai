@@ -60,9 +60,131 @@ export function useListMemories() {
             },
         });
 
-        // Use CompactToolRenderer for consistent modern UI
+        // Register UI with custom renderers
         registerToolUI('listMemories', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {input.category && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Category:</span>
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '2px 6px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '3px',
+                                border: '1px solid var(--border-color)',
+                                opacity: 0.9
+                            }}>
+                                {input.category}
+                            </span>
+                        </div>
+                    )}
+                    {input.limit && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Limit:</span>
+                            <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                {input.limit}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Found:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.count} {output.count === 1 ? 'memory' : 'memories'}
+                                </span>
+                            </div>
+                            {output.memories && output.memories.length > 0 && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '3px'
+                                }}>
+                                    {output.memories.slice(0, 3).map((memory: any, i: number) => (
+                                        <div key={i} style={{
+                                            padding: '5px 8px',
+                                            background: 'var(--bg-tertiary)',
+                                            borderRadius: '3px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '11px'
+                                        }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                marginBottom: '2px'
+                                            }}>
+                                                <code style={{
+                                                    fontSize: '10px',
+                                                    padding: '1px 4px',
+                                                    background: 'var(--bg-primary)',
+                                                    borderRadius: '2px',
+                                                    opacity: 0.9
+                                                }}>
+                                                    {memory.key}
+                                                </code>
+                                                <span style={{
+                                                    fontSize: '10px',
+                                                    padding: '1px 4px',
+                                                    background: 'var(--bg-primary)',
+                                                    borderRadius: '2px',
+                                                    opacity: 0.7
+                                                }}>
+                                                    {memory.category}
+                                                </span>
+                                            </div>
+                                            <div style={{
+                                                color: 'var(--text-primary)',
+                                                opacity: 0.9,
+                                                fontSize: '11px'
+                                            }}>
+                                                {memory.value}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {output.memories.length > 3 && (
+                                        <div style={{
+                                            fontSize: '10px',
+                                            opacity: 0.5,
+                                            padding: '3px 6px',
+                                            textAlign: 'center'
+                                        }}>
+                                            +{output.memories.length - 3} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ listMemories tool registration complete');

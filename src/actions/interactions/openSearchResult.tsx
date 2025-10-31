@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { useEffect, useRef } from 'react';
 import { registerTool } from '../../ai/toolRegistryUtils';
 import { useToolUI } from '../../ai/ToolUIContext';
+import type { ToolUIState } from '../../ai/ToolUIContext';
+import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
 import { createLogger } from '../../logger';
 
 const log = createLogger('Tool-OpenSearchResult');
@@ -250,7 +252,147 @@ export function useOpenSearchResultTool() {
             },
         });
 
-        // Using default CompactToolRenderer - no custom UI needed
+        // Register UI with custom renderers
+        registerToolUI('openSearchResult', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {input.rank !== undefined && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Rank:</span>
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '2px 6px',
+                                opacity: 0.9,
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '3px',
+                                border: '1px solid var(--border-color)'
+                            }}>
+                                #{input.rank}
+                            </span>
+                        </div>
+                    )}
+                    {input.ranks !== undefined && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Ranks:</span>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                {input.ranks.map((r: number, i: number) => (
+                                    <span key={i} style={{
+                                        fontSize: '11px',
+                                        padding: '2px 6px',
+                                        opacity: 0.9,
+                                        background: 'var(--bg-tertiary)',
+                                        borderRadius: '3px',
+                                        border: '1px solid var(--border-color)'
+                                    }}>
+                                        #{r}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Opened:</span>
+                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                                    {output.openedCount} tab{output.openedCount !== 1 ? 's' : ''}
+                                </span>
+                            </div>
+                            {output.tabs && output.tabs.length > 0 && (
+                                <div style={{
+                                    marginTop: '4px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '4px'
+                                }}>
+                                    {output.tabs.map((tab: any, i: number) => (
+                                        <div key={i} style={{
+                                            padding: '6px 8px',
+                                            background: 'var(--bg-tertiary)',
+                                            borderRadius: '4px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '11px'
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                                                <span style={{
+                                                    opacity: 0.7,
+                                                    background: 'var(--bg-primary)',
+                                                    padding: '1px 4px',
+                                                    borderRadius: '2px'
+                                                }}>
+                                                    #{tab.rank}
+                                                </span>
+                                                <span style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
+                                                    {tab.title}
+                                                </span>
+                                            </div>
+                                            <a href={tab.url} target="_blank" rel="noopener noreferrer"
+                                                style={{
+                                                    color: 'var(--text-secondary)',
+                                                    fontSize: '10px',
+                                                    textDecoration: 'none',
+                                                    opacity: 0.7,
+                                                    display: 'block',
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }}>
+                                                {tab.url}
+                                            </a>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                    {output.error}
+                                </span>
+                            </div>
+                            {output.hint && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    opacity: 0.6,
+                                    padding: '4px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)',
+                                    marginTop: '2px'
+                                }}>
+                                    💡 {output.hint}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.skipped && (
+                        <div style={{ fontSize: '11px', opacity: 0.6 }}>
+                            Skipped (duplicate call)
+                        </div>
+                    )}
+                </div>
+            )
+        });
 
         log.info('✅ openSearchResult tool registration complete');
 

@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { z } from "zod";
 import { registerTool } from "../ai/toolRegistryUtils";
 import { useToolUI } from "../ai/ToolUIContext";
+import type { ToolUIState } from "../ai/ToolUIContext";
+import { CompactToolRenderer } from "../ai/CompactToolRenderer";
 import { createLogger } from "../logger";
 
 // ===========================
@@ -174,7 +176,55 @@ export function registerSelectionActions() {
       },
     });
 
-    // Using default CompactToolRenderer - no custom UI needed
+    // Register UI with custom renderers
+    registerToolUI('getSelectedText', (state: ToolUIState) => {
+      return <CompactToolRenderer state={state} />;
+    }, {
+      renderOutput: (output: any) => (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)'
+        }}>
+          {output.success && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', opacity: 0.7 }}>Length:</span>
+                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                  {output.length} characters
+                </span>
+              </div>
+              {output.selectedText && (
+                <div style={{
+                  marginTop: '4px',
+                  padding: '8px',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {output.selectedText}
+                </div>
+              )}
+            </>
+          )}
+          {output.error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                {output.error}
+              </span>
+            </div>
+          )}
+        </div>
+      )
+    });
 
     log.info('✅ getSelectedText tool registration complete');
 
@@ -232,98 +282,121 @@ export function registerSelectionActions() {
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
-              // Animation: Vertical Scan (Option A)
-              try {
-                const css = `
-                  @keyframes ai-vertical-scan-left {
-                    0% { top: 0; opacity: 1; }
-                    100% { top: 100%; opacity: 0.8; }
+              return new Promise((resolve) => {
+                // Wait for page to be fully loaded
+                const waitForLoad = () => {
+                  if (document.readyState === 'complete') {
+                    performRead();
+                  } else {
+                    window.addEventListener('load', performRead, { once: true });
+                    // Fallback timeout in case load event doesn't fire
+                    setTimeout(performRead, 5000);
                   }
-                  @keyframes ai-vertical-scan-right {
-                    0% { top: 0; opacity: 1; }
-                    100% { top: 100%; opacity: 0.8; }
-                  }
-                  .ai-vertical-scan-line {
-                    position: fixed;
-                    width: 3px;
-                    height: 100px;
-                    background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.8), transparent);
-                    z-index: 999999;
-                    pointer-events: none;
-                    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-                  }
-                `;
-                const style = document.createElement('style');
-                style.id = 'ai-vertical-scan-style';
-                style.textContent = css;
-                document.head.appendChild(style);
+                };
 
-                // Create left and right scan lines
-                const leftLine = document.createElement('div');
-                leftLine.className = 'ai-vertical-scan-line';
-                leftLine.style.left = '0';
-                leftLine.style.top = '0';
-                leftLine.style.animation = 'ai-vertical-scan-left 400ms ease-in-out';
-
-                const rightLine = document.createElement('div');
-                rightLine.className = 'ai-vertical-scan-line';
-                rightLine.style.right = '0';
-                rightLine.style.top = '0';
-                rightLine.style.animation = 'ai-vertical-scan-right 400ms ease-in-out';
-
-                document.body.appendChild(leftLine);
-                document.body.appendChild(rightLine);
-
-                setTimeout(() => {
+                const performRead = () => {
+                  // Animation: Vertical Scan (Option A)
                   try {
-                    leftLine.remove();
-                    rightLine.remove();
-                    document.getElementById('ai-vertical-scan-style')?.remove();
+                    const css = `
+                      @keyframes ai-vertical-scan-left {
+                        0% { top: 0; opacity: 1; }
+                        100% { top: 100%; opacity: 0.8; }
+                      }
+                      @keyframes ai-vertical-scan-right {
+                        0% { top: 0; opacity: 1; }
+                        100% { top: 100%; opacity: 0.8; }
+                      }
+                      .ai-vertical-scan-line {
+                        position: fixed;
+                        width: 3px;
+                        height: 100px;
+                        background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.8), transparent);
+                        z-index: 999999;
+                        pointer-events: none;
+                        box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+                      }
+                    `;
+                    const style = document.createElement('style');
+                    style.id = 'ai-vertical-scan-style';
+                    style.textContent = css;
+                    document.head.appendChild(style);
+
+                    // Create left and right scan lines
+                    const leftLine = document.createElement('div');
+                    leftLine.className = 'ai-vertical-scan-line';
+                    leftLine.style.left = '0';
+                    leftLine.style.top = '0';
+                    leftLine.style.animation = 'ai-vertical-scan-left 400ms ease-in-out';
+
+                    const rightLine = document.createElement('div');
+                    rightLine.className = 'ai-vertical-scan-line';
+                    rightLine.style.right = '0';
+                    rightLine.style.top = '0';
+                    rightLine.style.animation = 'ai-vertical-scan-right 400ms ease-in-out';
+
+                    document.body.appendChild(leftLine);
+                    document.body.appendChild(rightLine);
+
+                    setTimeout(() => {
+                      try {
+                        leftLine.remove();
+                        rightLine.remove();
+                        document.getElementById('ai-vertical-scan-style')?.remove();
+                      } catch (e) { }
+                    }, 400);
                   } catch (e) { }
-                }, 400);
-              } catch (e) { }
 
-              const body = document.body;
-              const title = document.title;
+                  const body = document.body;
+                  const title = document.title;
 
-              // Clone the body to avoid modifying the actual page
-              const clonedBody = body.cloneNode(true) as HTMLElement;
+                  // Clone the body to avoid modifying the actual page
+                  const clonedBody = body.cloneNode(true) as HTMLElement;
 
-              // Remove unnecessary elements that add noise
-              const tagsToRemove = [
-                'script', 'style', 'noscript', 'iframe', 'embed', 'object',
-                'svg', 'canvas', 'map', 'video', 'audio', 'picture',
-                'nav', 'footer', 'aside', 'form', 'button', 'input', 'select', 'textarea',
-                '[role="banner"]', '[role="navigation"]', '[role="complementary"]',
-                '[role="contentinfo"]', '[aria-hidden="true"]',
-                '.ad', '.ads', '.advertisement', '.cookie-banner', '.popup',
-                '.sidebar', '.widget', '.comment', '.comments', '.social-share'
-              ];
+                  // Remove unnecessary elements that add noise
+                  const tagsToRemove = [
+                    'script', 'style', 'noscript', 'iframe', 'embed', 'object',
+                    'svg', 'canvas', 'map', 'video', 'audio', 'picture',
+                    'nav', 'footer', 'aside', 'form', 'button', 'input', 'select', 'textarea',
+                    '[role="banner"]', '[role="navigation"]', '[role="complementary"]',
+                    '[role="contentinfo"]', '[aria-hidden="true"]',
+                    '.ad', '.ads', '.advertisement', '.cookie-banner', '.popup',
+                    '.sidebar', '.widget', '.comment', '.comments', '.social-share'
+                  ];
 
-              tagsToRemove.forEach(selector => {
-                clonedBody.querySelectorAll(selector).forEach(el => el.remove());
+                  tagsToRemove.forEach(selector => {
+                    clonedBody.querySelectorAll(selector).forEach(el => el.remove());
+                  });
+
+                  // Get the cleaned text content
+                  let textContent = clonedBody.innerText || clonedBody.textContent || "";
+
+                  // Clean up whitespace and extra newlines
+                  textContent = textContent
+                    .replace(/\n\s*\n\s*\n/g, '\n\n') // Reduce multiple blank lines to double newline
+                    .replace(/[ \t]+/g, ' ') // Normalize spaces
+                    .replace(/^\s+|\s+$/gm, '') // Trim lines
+                    .trim();
+
+                  resolve({
+                    title,
+                    content: textContent,
+                    url: window.location.href,
+                    originalLength: textContent.length
+                  });
+                };
+
+                waitForLoad();
               });
-
-              // Get the cleaned text content
-              let textContent = clonedBody.innerText || clonedBody.textContent || "";
-
-              // Clean up whitespace and extra newlines
-              textContent = textContent
-                .replace(/\n\s*\n\s*\n/g, '\n\n') // Reduce multiple blank lines to double newline
-                .replace(/[ \t]+/g, ' ') // Normalize spaces
-                .replace(/^\s+|\s+$/gm, '') // Trim lines
-                .trim();
-
-              return {
-                title,
-                content: textContent,
-                url: window.location.href,
-                originalLength: textContent.length
-              };
             }
           });
 
-          const pageData = results[0]?.result;
+          const pageData = results[0]?.result as {
+            title: string;
+            content: string;
+            url: string;
+            originalLength: number;
+          } | undefined;
+
           if (!pageData) return { error: "Failed to extract page content" };
 
           let finalContent = pageData.content;
@@ -379,7 +452,85 @@ export function registerSelectionActions() {
       },
     });
 
-    // Using default CompactToolRenderer - no custom UI needed
+    // Register UI with custom renderers
+    registerToolUI('readPageContent', (state: ToolUIState) => {
+      return <CompactToolRenderer state={state} />;
+    }, {
+      renderInput: (input: any) => (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)'
+        }}>
+          {input.limit !== undefined && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>Limit:</span>
+              <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                {input.limit.toLocaleString()} characters
+              </span>
+            </div>
+          )}
+        </div>
+      ),
+      renderOutput: (output: any) => (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px',
+          fontSize: '13px',
+          color: 'var(--text-secondary)'
+        }}>
+          {output.success && (
+            <>
+              {output.title && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', opacity: 0.7 }}>Page:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                    {output.title}
+                  </span>
+                </div>
+              )}
+              {output.url && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', opacity: 0.7 }}>URL:</span>
+                  <a href={output.url} target="_blank" rel="noopener noreferrer"
+                    style={{ color: 'var(--text-primary)', fontSize: '12px', textDecoration: 'none' }}>
+                    {output.url.length > 50 ? output.url.slice(0, 47) + '...' : output.url}
+                  </a>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', opacity: 0.7 }}>Extracted:</span>
+                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                  {output.contentLength.toLocaleString()} characters
+                </span>
+              </div>
+              {output.truncated && output.originalLength && (
+                <div style={{
+                  fontSize: '11px',
+                  opacity: 0.6,
+                  padding: '4px 6px',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: '3px',
+                  border: '1px solid var(--border-color)'
+                }}>
+                  Content truncated from {output.originalLength.toLocaleString()} chars
+                </div>
+              )}
+            </>
+          )}
+          {output.error && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                {output.error}
+              </span>
+            </div>
+          )}
+        </div>
+      )
+    });
 
     log.info('✅ readPageContent tool registration complete');
 

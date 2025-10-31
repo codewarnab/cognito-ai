@@ -47,9 +47,70 @@ export function useDeleteMemory() {
             },
         });
 
-        // Use CompactToolRenderer for consistent modern UI
+        // Register UI with custom renderers
         registerToolUI('deleteMemory', (state: ToolUIState) => {
             return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Key:</span>
+                        <code style={{
+                            fontSize: '11px',
+                            padding: '2px 6px',
+                            background: 'var(--bg-tertiary)',
+                            borderRadius: '3px',
+                            border: '1px solid var(--border-color)',
+                            opacity: 0.9
+                        }}>
+                            {input.key}
+                        </code>
+                    </div>
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Deleted:</span>
+                            <code style={{
+                                fontSize: '11px',
+                                padding: '2px 6px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '3px',
+                                border: '1px solid var(--border-color)',
+                                opacity: 0.9
+                            }}>
+                                {output.key}
+                            </code>
+                        </div>
+                    )}
+                    {!output.success && output.message && (
+                        <div style={{ fontSize: '12px', opacity: 0.7 }}>
+                            {output.message}
+                        </div>
+                    )}
+                    {output.error && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                                {output.error}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )
         });
 
         log.info('✅ deleteMemory tool registration complete');

@@ -626,7 +626,7 @@ export async function streamAIResponse(params: {
           const modelMessages = convertToModelMessages(messages);
 
           // Determine step count based on mode and workflow
-          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 10);
+          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 20);
 
           // Stream with appropriate configuration
           log.info(' Starting streamText...', {
