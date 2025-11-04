@@ -1,0 +1,80 @@
+/* Continue Button Styles - Minimal and subtle, matching tool cards and action buttons */
+
+.continue-button-container {
+    display: flex;
+    justify-content: flex-start;
+    margin: 6px 0;
+    padding: 0;
+}
+
+.continue-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.continue-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color-hover);
+}
+
+.continue-button:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(0.98);
+}
+
+.continue-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.continue-button-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.continue-button:hover:not(:disabled) .continue-button-icon {
+    color: var(--text-primary);
+}
+
+.continue-button-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
+
+.continue-button-text {
+    line-height: 1;
+}
+
+/* Animation when button appears */
+@keyframes slideInFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.continue-button-container {
+    animation: slideInFromBottom 0.3s ease-out;
+}

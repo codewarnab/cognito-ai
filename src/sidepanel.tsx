@@ -27,6 +27,7 @@ import "./styles/voice-recording-pill.css";
 import "./styles/onboarding.css";
 import "./styles/local-banner.css";
 import "./styles/model-download-toast.css";
+import "./styles/continue-button.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -636,6 +637,14 @@ function AIChatContent() {
         }
     };
 
+    // Handle continue button click - sends a continue message to AI
+    const handleContinue = () => {
+        log.info("Continue button clicked - sending continue message");
+        sendMessage({
+            text: "Please continue from where you left off. Complete any remaining tasks or tool calls that were interrupted by the step limit."
+        });
+    };
+
     // Handle clearing all messages for current thread
     const handleClearChat = async () => {
         if (!currentThreadId) return;
@@ -776,6 +785,7 @@ function AIChatContent() {
                                 onFeaturesClick={() => setShowFeatures(true)}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
+                                onContinue={handleContinue}
                                 isLoading={isLoading}
                                 messagesEndRef={messagesEndRef}
                                 isRecording={isRecording}

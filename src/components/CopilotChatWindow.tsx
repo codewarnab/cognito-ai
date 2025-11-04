@@ -32,6 +32,7 @@ interface CopilotChatWindowProps {
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
     voiceInputRef?: React.RefObject<VoiceInputHandle>;
+    onContinue?: () => void; // Callback for continue button
 }
 
 export function CopilotChatWindow({
@@ -56,6 +57,7 @@ export function CopilotChatWindow({
     isRecording,
     onRecordingChange,
     voiceInputRef,
+    onContinue,
 }: CopilotChatWindowProps) {
     // Lazy initialization: compute initial state synchronously
     const [modelState, setModelState] = useState<ModelState>(() => {
@@ -195,6 +197,7 @@ export function CopilotChatWindow({
                 pendingMessageId={pendingMessageId}
                 isLocalMode={modelState.mode === 'local'}
                 onConfigureApiKey={handleOpenApiKeyDialog}
+                onContinue={onContinue}
             />
 
             <ChatInput

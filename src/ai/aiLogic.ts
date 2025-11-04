@@ -626,7 +626,7 @@ export async function streamAIResponse(params: {
           const modelMessages = convertToModelMessages(messages);
 
           // Determine step count based on mode and workflow
-          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 20);
+          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 2);
 
           // Stream with appropriate configuration
           log.info(' Starting streamText...', {
@@ -735,6 +735,36 @@ export async function streamAIResponse(params: {
                     workflowMode: !!workflowId,
                     threadId: threadId || 'unknown'
                   });
+
+                  // Check if we hit the step count limit
+                  const hitStepLimit = steps && steps.length >= stepCount;
+                  const lastStepHasToolCalls = steps && steps.length > 0 &&
+                    steps[steps.length - 1].toolCalls &&
+                    steps[steps.length - 1].toolCalls.length > 0;
+
+                  // If we hit the step limit, show continue button
+                  // finishReason can be 'stop', 'length', 'tool-calls', etc.
+                  if (hitStepLimit && finishReason) {
+                    log.info('Step count limit reached - continue button should be shown', {
+                      stepCount: steps.length,
+                      maxStepCount: stepCount,
+                      lastStepHasToolCalls,
+                      finishReason
+                    });
+
+                    // Write a data part indicating continue is available
+                    writer.write({
+                      type: 'data-status',
+                      id: 'continue-available-' + generateId(),
+                      data: {
+                        status: 'continue-available',
+                        stepCount: steps.length,
+                        maxStepCount: stepCount,
+                        timestamp: Date.now()
+                      },
+                      transient: false, // Keep this in history so it persists
+                    });
+                  }
 
                   // Mark API key as valid after successful completion (remote mode only)
                   if (effectiveMode === 'remote') {
