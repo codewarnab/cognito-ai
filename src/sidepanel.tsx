@@ -13,6 +13,7 @@ import { AudioLinesIcon } from "./components/AudioLinesIcon";
 import type { AudioLinesIconHandle } from "./components/AudioLinesIcon";
 import { VoiceModeUI } from "./components/voice/VoiceModeUI";
 import { VoiceRecordingPill } from "./components/VoiceRecordingPill";
+import { ContextWarning } from "./components/chat/ContextWarning";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 import "./styles/copilot.css";
 import "./styles/mcp.css";
@@ -28,6 +29,8 @@ import "./styles/onboarding.css";
 import "./styles/local-banner.css";
 import "./styles/model-download-toast.css";
 import "./styles/continue-button.css";
+import "./styles/context-indicator.css";
+import "./styles/context-warning.css";
 import "./sidepanel.css";
 import { createLogger } from "./logger";
 import { useRegisterAllActions } from "./actions/registerAll";
@@ -83,6 +86,7 @@ function AIChatContent() {
     const [currentTab, setCurrentTab] = useState<{ url?: string, title?: string }>({});
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
     const [behavioralPreferences, setBehavioralPreferences] = useState<Record<string, unknown>>({});
+    const [contextWarning, setContextWarning] = useState<{ percent: number } | null>(null);
     const sessionIdRef = useRef<string>(Date.now().toString());
     const audioLinesIconRef = useRef<AudioLinesIconHandle>(null);
     const voiceInputRef = useRef<VoiceInputHandle>(null);
@@ -117,6 +121,16 @@ function AIChatContent() {
         threadId: currentThreadId || 'default',
         onError: (error) => {
             log.error('AI Chat error', error);
+        },
+        onContextWarning: (percent) => {
+            log.warn('Context limit warning triggered', { percent, threadId: currentThreadId });
+            setContextWarning({ percent });
+
+            // Auto-dismiss after 10 seconds for warning (85%), 15 seconds for critical (95%)
+            const dismissTimeout = percent >= 95 ? 15000 : 10000;
+            setTimeout(() => {
+                setContextWarning(null);
+            }, dismissTimeout);
         },
         onFinish: async (result) => {
             log.info('AI response finished', { messageId: result.message.id });
@@ -243,6 +257,8 @@ function AIChatContent() {
         status,
         stop,
         setMessages,
+        usage, // Token usage tracking
+        resetUsage, // Phase 5: Reset method for context usage
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -667,22 +683,29 @@ function AIChatContent() {
     };
 
     // Handle creating a new thread
+    // Phase 5: Ensures context is reset when creating new threads
     const handleNewThread = async () => {
         try {
             const thread = await createThread();
             setCurrentThreadId(thread.id);
             setMessages([]);
+            setContextWarning(null); // Reset context warning on new thread
+            resetUsage(); // ← Phase 5: Explicitly reset usage for new thread
             await setLastActiveThreadId(thread.id);
-            log.info("Created new thread", { threadId: thread.id });
+            log.info("✨ Created new thread with reset context", { threadId: thread.id });
         } catch (error) {
             log.error("Failed to create new thread", error);
         }
     };
 
     // Handle selecting a thread
+    // Phase 5: When switching threads, usage will be automatically loaded by useAIChat hook
     const handleThreadSelect = async (threadId: string) => {
+        log.info("🔄 Switching to thread", { threadId });
         setCurrentThreadId(threadId);
+        setContextWarning(null); // Reset warning state when switching threads
         await setLastActiveThreadId(threadId);
+        // Note: Usage will be automatically loaded from DB by useAIChat hook's useEffect
     };
 
     // Handle voice recording state changes from VoiceInput
@@ -744,6 +767,15 @@ function AIChatContent() {
             {/* MCP and Tools commented out for now */}
             {/* <ToolRenderer /> */}
 
+            {/* Context Limit Warning */}
+            {contextWarning && (
+                <ContextWarning
+                    percent={contextWarning.percent}
+                    onDismiss={() => setContextWarning(null)}
+                    onNewThread={handleNewThread}
+                />
+            )}
+
             {/* Memory Sidebar - Right sliding sidebar */}
             <MemorySidebar isOpen={showMemory} onClose={() => setShowMemory(false)} />
 
@@ -791,6 +823,7 @@ function AIChatContent() {
                                 isRecording={isRecording}
                                 onRecordingChange={handleRecordingChange}
                                 voiceInputRef={voiceInputRef}
+                                usage={usage}
                             />
 
                             {/* Floating Recording Pill - Only in text mode */}

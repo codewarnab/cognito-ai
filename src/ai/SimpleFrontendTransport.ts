@@ -12,6 +12,7 @@ import { processMessagesWithMentions } from '../utils/mentionProcessor';
 import { parseWorkflowCommand, isSlashCommand } from '../utils/slashCommandUtils';
 import { getWorkflow } from '../workflows/registry';
 import { workflowSessionManager } from '../workflows/sessionManager';
+import type { AppUsage } from './types/usage';
 
 const log = createLogger('SimpleFrontendTransport');
 
@@ -21,6 +22,14 @@ const log = createLogger('SimpleFrontendTransport');
  */
 export class SimpleFrontendTransport {
   private abortControllers = new Map<string, AbortController>();
+  private onUsageUpdate?: (usage: AppUsage) => void;
+
+  /**
+   * Set the usage update callback
+   */
+  setOnUsageUpdate(callback: (usage: AppUsage) => void) {
+    this.onUsageUpdate = callback;
+  }
 
   /**
    * Send messages to AI and get streaming response
@@ -224,6 +233,7 @@ export class SimpleFrontendTransport {
         onError: (error) => {
           log.error('AI response error', error);
         },
+        onUsageUpdate: this.onUsageUpdate, // Pass usage callback
       });
 
       log.info('📥 Stream received from streamAIResponse, returning to caller');

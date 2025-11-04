@@ -9,6 +9,7 @@ import type { VoiceInputHandle } from '../audio/VoiceInput';
 import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
 import type { Message, AIMode, RemoteModelType, ModelState } from './chat/types';
+import type { AppUsage } from '../ai/types/usage';
 
 interface CopilotChatWindowProps {
     messages: Message[];
@@ -33,6 +34,7 @@ interface CopilotChatWindowProps {
     onRecordingChange?: (isRecording: boolean) => void;
     voiceInputRef?: React.RefObject<VoiceInputHandle>;
     onContinue?: () => void; // Callback for continue button
+    usage?: AppUsage | null; // Token usage tracking
 }
 
 export function CopilotChatWindow({
@@ -58,6 +60,7 @@ export function CopilotChatWindow({
     onRecordingChange,
     voiceInputRef,
     onContinue,
+    usage, // Token usage tracking
 }: CopilotChatWindowProps) {
     // Lazy initialization: compute initial state synchronously
     const [modelState, setModelState] = useState<ModelState>(() => {
@@ -217,6 +220,7 @@ export function CopilotChatWindow({
                 onModelChange={handleModelChange}
                 onApiKeySaved={handleApiKeySaved}
                 onError={handleError}
+                usage={usage}
             />
 
             {/* Gemini API Key Dialog */}
