@@ -10,6 +10,7 @@ import type { Message } from './types';
 import { getMessageContent, hasToolCalls } from './utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
+import { ContinueButton } from './ContinueButton';
 
 // Custom inline code component with tooltip and copy functionality
 function InlineCode({ children, ...props }: any) {
@@ -173,6 +174,7 @@ interface ChatMessagesProps {
     pendingMessageId?: string | null;
     isLocalMode?: boolean;
     onConfigureApiKey?: () => void;
+    onContinue?: () => void; // Callback to send continue message
 }
 
 /**
@@ -255,129 +257,155 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     pendingMessageId,
     isLocalMode,
     onConfigureApiKey,
+    onContinue,
 }) => {
+    // Check if the last message has continue-available status
+    const showContinueButton = useMemo(() => {
+        if (isLoading || messages.length === 0) return false;
+
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.role !== 'assistant') return false;
+
+        // Check if any part has continue-available status
+        const hasContinueStatus = lastMessage.parts?.some((part: any) =>
+            part.type === 'data-status' &&
+            part.data?.status === 'continue-available'
+        );
+
+        return hasContinueStatus;
+    }, [messages, isLoading]);
+
     return (
-        <div className="copilot-messages">
-            {messages.length === 0 ? (
-                <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
-            ) : (
-                <AnimatePresence>
-                    {messages
-                        .filter(message => {
-                            // Filter out internal messages (tab context)
-                            if ((message as any).metadata?.internal) {
-                                return false;
-                            }
-                            const content = getMessageContent(message);
-                            const hasText = typeof content === 'string' && content.trim().length > 0;
-                            const hasTools = hasToolCalls(message);
+        <div className="copilot-messages">{messages.length === 0 ? (
+            <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
+        ) : (
+            <AnimatePresence>
+                {messages
+                    .filter(message => {
+                        // Filter out internal messages (tab context)
+                        if ((message as any).metadata?.internal) {
+                            return false;
+                        }
+                        const content = getMessageContent(message);
+                        const hasText = typeof content === 'string' && content.trim().length > 0;
+                        const hasTools = hasToolCalls(message);
 
-                            // Show message if it has text OR tool calls
-                            return hasText || hasTools;
-                        })
-                        .map((message, index) => {
-                            // Check if this is the pending message (currently animating)
-                            const isPendingMessage = message.role === 'user' && message.id === pendingMessageId;
+                        // Show message if it has text OR tool calls
+                        return hasText || hasTools;
+                    })
+                    .map((message, index) => {
+                        // Check if this is the pending message (currently animating)
+                        const isPendingMessage = message.role === 'user' && message.id === pendingMessageId;
 
-                            return (
-                                <motion.div
-                                    key={message.id || index}
-                                    layout="position"
-                                    layoutId={isPendingMessage ? `message-${pendingMessageId}` : undefined}
-                                    transition={{ type: 'easeOut', duration: 0.2 }}
-                                    initial={isPendingMessage ? { opacity: 0 } : undefined}
-                                    animate={isPendingMessage ? { opacity: 1 } : undefined}
-                                    className={`copilot-message copilot-message-${message.role}`}
-                                >
-                                    {message.role === 'assistant' && (
-                                        <div className="copilot-message-avatar">🤖</div>
-                                    )}
+                        return (
+                            <motion.div
+                                key={message.id || index}
+                                layout="position"
+                                layoutId={isPendingMessage ? `message-${pendingMessageId}` : undefined}
+                                transition={{ type: 'easeOut', duration: 0.2 }}
+                                initial={isPendingMessage ? { opacity: 0 } : undefined}
+                                animate={isPendingMessage ? { opacity: 1 } : undefined}
+                                className={`copilot-message copilot-message-${message.role}`}
+                            >
+                                {message.role === 'assistant' && (
+                                    <div className="copilot-message-avatar">🤖</div>
+                                )}
 
-                                    <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
-                                        {/* Render parts in their actual order - text and tools interleaved */}
-                                        {message.parts && message.parts.length > 0 && (() => {
-                                            // Merge tool-call and tool-result parts to avoid duplicate rendering
-                                            const mergedParts = mergeToolParts(message.parts);
+                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
+                                    {/* Render parts in their actual order - text and tools interleaved */}
+                                    {message.parts && message.parts.length > 0 && (() => {
+                                        // Merge tool-call and tool-result parts to avoid duplicate rendering
+                                        const mergedParts = mergeToolParts(message.parts);
 
-                                            return (
-                                                <div className="message-parts">
-                                                    {mergedParts.map((part: any, partIndex: number) => {
-                                                        // Render text parts
-                                                        if (part.type === 'text' && part.text) {
-                                                            return (
-                                                                <div key={`text-${partIndex}`} className="copilot-message-content">
-                                                                    {message.role === 'assistant' ? (
-                                                                        <div className="markdown-content">
-                                                                            <SafeMarkdown>
-                                                                                {part.text}
-                                                                            </SafeMarkdown>
+                                        return (
+                                            <div className="message-parts">
+                                                {mergedParts.map((part: any, partIndex: number) => {
+                                                    // Render text parts
+                                                    if (part.type === 'text' && part.text) {
+                                                        return (
+                                                            <div key={`text-${partIndex}`} className="copilot-message-content">
+                                                                {message.role === 'assistant' ? (
+                                                                    <div className="markdown-content">
+                                                                        <SafeMarkdown>
+                                                                            {part.text}
+                                                                        </SafeMarkdown>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="user-message-with-mentions">
+                                                                        {renderTextWithMentions(part.text)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    // Render file attachments
+                                                    if (part.type === 'file') {
+                                                        const isImage = part.mediaType?.startsWith('image/');
+                                                        const isPdf = part.mediaType === 'application/pdf';
+
+                                                        return (
+                                                            <div key={`file-${partIndex}`} className="message-file-attachment">
+                                                                {isImage ? (
+                                                                    <div className="message-file-image">
+                                                                        <img src={part.url} alt={part.name || 'Attached image'} />
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="message-file-document">
+                                                                        <div className="file-attachment-icon">
+                                                                            {isPdf ? '📕' : '📄'}
                                                                         </div>
-                                                                    ) : (
-                                                                        <div className="user-message-with-mentions">
-                                                                            {renderTextWithMentions(part.text)}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        }
+                                                                        <span className="file-attachment-name" title={part.name}>
+                                                                            {part.name || 'Document'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    }
 
-                                                        // Render file attachments
-                                                        if (part.type === 'file') {
-                                                            const isImage = part.mediaType?.startsWith('image/');
-                                                            const isPdf = part.mediaType === 'application/pdf';
+                                                    // Render tool parts
+                                                    if (
+                                                        part.type === 'tool-call' ||
+                                                        part.type === 'tool-result' ||
+                                                        part.type?.startsWith('tool-') ||
+                                                        part.type === 'dynamic-tool'
+                                                    ) {
+                                                        return (
+                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="message-tools">
+                                                                <ToolPartRenderer
+                                                                    part={part}
+                                                                    messageId={message.id || `msg-${index}`}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    }
 
-                                                            return (
-                                                                <div key={`file-${partIndex}`} className="message-file-attachment">
-                                                                    {isImage ? (
-                                                                        <div className="message-file-image">
-                                                                            <img src={part.url} alt={part.name || 'Attached image'} />
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className="message-file-document">
-                                                                            <div className="file-attachment-icon">
-                                                                                {isPdf ? '📕' : '📄'}
-                                                                            </div>
-                                                                            <span className="file-attachment-name" title={part.name}>
-                                                                                {part.name || 'Document'}
-                                                                            </span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        }
-
-                                                        // Render tool parts
-                                                        if (
-                                                            part.type === 'tool-call' ||
-                                                            part.type === 'tool-result' ||
-                                                            part.type?.startsWith('tool-') ||
-                                                            part.type === 'dynamic-tool'
-                                                        ) {
-                                                            return (
-                                                                <div key={part.toolCallId || `tool-${partIndex}`} className="message-tools">
-                                                                    <ToolPartRenderer
-                                                                        part={part}
-                                                                        messageId={message.id || `msg-${index}`}
-                                                                    />
-                                                                </div>
-                                                            );
-                                                        }
-
-                                                        // Unknown part type
+                                                    // Skip rendering data-status parts (they're metadata)
+                                                    if (part.type === 'data-status') {
                                                         return null;
-                                                    })}
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
+                                                    }
 
-                                    {message.role === 'user' && (
-                                        <div className="copilot-message-avatar">👤</div>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-                </AnimatePresence>
+                                                    // Unknown part type
+                                                    return null;
+                                                })}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {message.role === 'user' && (
+                                    <div className="copilot-message-avatar">👤</div>
+                                )}
+                            </motion.div>
+                        );
+                    })}
+            </AnimatePresence>
+        )}
+
+            {/* Continue Button - shown when AI hits step count limit */}
+            {showContinueButton && onContinue && (
+                <ContinueButton onContinue={onContinue} isLoading={isLoading} />
             )}
 
             {/* Loading Indicator */}
