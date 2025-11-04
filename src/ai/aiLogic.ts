@@ -35,6 +35,7 @@ import {
   formatRetryAttempt
 } from '../errors/errorMessages';
 import { createRetryManager, RetryPresets } from '../errors/retryManager';
+import { type AppUsage, getContextLimits } from './types/usage';
 
 const log = createLogger('AI-Logic');
 
@@ -285,6 +286,7 @@ function writeErrorToStream(
  * @param params.abortSignal - Optional signal to abort the request
  * @param params.initialPageContext - Optional page context from conversation start
  * @param params.onError - Optional callback for error events
+ * @param params.onUsageUpdate - Optional callback for token usage updates
  * @param params.workflowId - Optional workflow ID for workflow-specific behavior
  * @param params.threadId - Thread ID for workflow session management
  * @returns UIMessageStream that can be consumed by useChat hook
@@ -296,10 +298,11 @@ export async function streamAIResponse(params: {
   abortSignal?: AbortSignal;
   initialPageContext?: string;
   onError?: (error: Error) => void;
+  onUsageUpdate?: (usage: AppUsage) => void;
   workflowId?: string; // Optional workflow ID to use workflow-specific prompt and tools
   threadId?: string; // Thread ID for workflow session management
 }) {
-  const { messages, abortSignal, initialPageContext, onError, workflowId, threadId } = params;
+  const { messages, abortSignal, initialPageContext, onError, onUsageUpdate, workflowId, threadId } = params;
 
   log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
 
@@ -626,7 +629,7 @@ export async function streamAIResponse(params: {
           const modelMessages = convertToModelMessages(messages);
 
           // Determine step count based on mode and workflow
-          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 2);
+          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 20);
 
           // Stream with appropriate configuration
           log.info(' Starting streamText...', {
@@ -735,6 +738,33 @@ export async function streamAIResponse(params: {
                     workflowMode: !!workflowId,
                     threadId: threadId || 'unknown'
                   });
+
+                  // Capture and enhance usage information for remote mode only
+                  if (effectiveMode === 'remote' && usage) {
+                    const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+                    const contextLimits = getContextLimits(modelName);
+
+                    const appUsage: AppUsage = {
+                      ...usage,
+                      context: contextLimits,
+                      modelId: modelName
+                    };
+
+                    log.info('✅ Token usage tracked', {
+                      input: appUsage.inputTokens,
+                      output: appUsage.outputTokens,
+                      total: appUsage.totalTokens,
+                      cached: appUsage.cachedInputTokens,
+                      reasoning: appUsage.reasoningTokens,
+                      percentUsed: appUsage.totalTokens && appUsage.context?.totalMax
+                        ? Math.round((appUsage.totalTokens / appUsage.context.totalMax) * 100)
+                        : 0,
+                      modelId: appUsage.modelId
+                    });
+
+                    // Call usage callback to update UI
+                    onUsageUpdate?.(appUsage);
+                  }
 
                   // Check if we hit the step count limit
                   const hitStepLimit = steps && steps.length >= stepCount;

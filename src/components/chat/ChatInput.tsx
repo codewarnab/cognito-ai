@@ -15,6 +15,8 @@ import { WorkflowBadge } from './WorkflowBadge';
 import type { WorkflowDefinition } from '../../workflows/types';
 import { replaceSlashCommand } from '../../utils/slashCommandUtils';
 import { SuggestedActions } from './SuggestedActions';
+import { ContextIndicator } from './ContextIndicator';
+import type { AppUsage } from '../../ai/types/usage';
 
 interface ChatInputProps {
     messages: Message[];
@@ -33,6 +35,7 @@ interface ChatInputProps {
     onModelChange: (model: RemoteModelType) => void;
     onApiKeySaved?: () => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
+    usage?: AppUsage | null; // Token usage tracking
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -52,6 +55,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onModelChange,
     onApiKeySaved,
     onError,
+    usage, // Token usage tracking
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -361,6 +365,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                 }}
                                 className="copilot-voice-input"
                             />
+
+                            {/* Context Indicator - Shows token usage (Cloud mode only) */}
+                            {!isLocalMode && usage && (
+                                <ContextIndicator usage={usage} className="context-indicator-input" />
+                            )}
 
                             {/* Paperclip - File Upload */}
                             <button

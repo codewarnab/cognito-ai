@@ -7,6 +7,7 @@
  */
 
 import Dexie, { type Table } from 'dexie';
+import type { AppUsage } from '../ai/types/usage';
 
 // ============================================================================
 // Type Definitions
@@ -33,6 +34,7 @@ export interface ChatThread {
     createdAt: number;
     updatedAt: number;
     initialPageContext?: string; // Page context snapshot at thread creation
+    lastUsage?: AppUsage; // Track latest usage for thread
 }
 
 /**
@@ -49,6 +51,7 @@ export interface ChatMessage {
     message: any; // Store complete UIMessage as JSON (typed as 'any' to avoid circular deps)
     timestamp: number;
     sequenceNumber?: number; // Added to preserve message order
+    usage?: AppUsage; // Store usage per message
 }
 
 // ============================================================================
@@ -107,6 +110,14 @@ export class AppDB extends Dexie {
                 }
             });
         });
+
+        // Version 5: Add usage tracking fields
+        this.version(5).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp, sequenceNumber',
+            chatThreads: 'id, createdAt, updatedAt'
+        });
+        // No data migration needed - new fields are optional
     }
 }
 
@@ -357,6 +368,90 @@ export async function getDBStats(): Promise<{
         settingsCount,
         threadCount
     };
+}
+
+// ============================================================================
+// Token Usage Tracking API
+// ============================================================================
+
+/**
+ * Calculate cumulative usage for a thread
+ * Sums up all usage from all messages in the thread
+ */
+export async function getThreadUsage(threadId: string): Promise<AppUsage | null> {
+    const messages = await db.chatMessages
+        .where('threadId')
+        .equals(threadId)
+        .toArray();
+
+    if (messages.length === 0) return null;
+
+    // Sum up all usage
+    const cumulative: AppUsage = {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        cachedInputTokens: 0,
+        reasoningTokens: 0
+    };
+
+    for (const msg of messages) {
+        if (msg.usage) {
+            cumulative.inputTokens = (cumulative.inputTokens || 0) + (msg.usage.inputTokens || 0);
+            cumulative.outputTokens = (cumulative.outputTokens || 0) + (msg.usage.outputTokens || 0);
+            cumulative.totalTokens = (cumulative.totalTokens || 0) + (msg.usage.totalTokens || 0);
+            cumulative.cachedInputTokens = (cumulative.cachedInputTokens || 0) + (msg.usage.cachedInputTokens || 0);
+            cumulative.reasoningTokens = (cumulative.reasoningTokens || 0) + (msg.usage.reasoningTokens || 0);
+
+            // Copy context limits from last message with usage
+            if (msg.usage.context) {
+                cumulative.context = msg.usage.context;
+            }
+
+            // Copy model ID from last message with usage
+            if (msg.usage.modelId) {
+                cumulative.modelId = msg.usage.modelId;
+            }
+        }
+    }
+
+    return cumulative;
+}
+
+/**
+ * Update thread's last usage
+ */
+export async function updateThreadUsage(threadId: string, usage: AppUsage): Promise<void> {
+    await db.chatThreads.update(threadId, {
+        lastUsage: usage,
+        updatedAt: Date.now()
+    });
+}
+
+/**
+ * Save chat message with usage information
+ */
+export async function saveChatMessageWithUsage(
+    message: Omit<ChatMessage, 'id' | 'timestamp'>,
+    usage?: AppUsage
+): Promise<ChatMessage> {
+    const fullMessage: ChatMessage = {
+        ...message,
+        id: message.message.id || crypto.randomUUID(),
+        timestamp: Date.now(),
+        usage
+    };
+    await db.chatMessages.add(fullMessage);
+
+    // Update thread timestamp and usage
+    await db.transaction('rw', [db.chatThreads], async () => {
+        await updateThreadTimestamp(message.threadId);
+        if (usage) {
+            await updateThreadUsage(message.threadId, usage);
+        }
+    });
+
+    return fullMessage;
 }
 
 // ============================================================================

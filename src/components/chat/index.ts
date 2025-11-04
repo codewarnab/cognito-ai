@@ -9,3 +9,5 @@ export { ModeSelector } from './ModeSelector';
 export { SendIcon } from './icons/SendIcon';
 export { StopIcon } from './icons/StopIcon';
 export { RobotIcon } from './icons/RobotIcon';
+export { AnimatedCircularProgressBar } from './AnimatedCircularProgressBar';
+export { ContextIndicator } from './ContextIndicator';
