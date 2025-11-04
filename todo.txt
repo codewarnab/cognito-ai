@@ -57,6 +57,7 @@ ObjectlengthFormatted: "minutes"lengthSeconds: undefinedtitle: undefinedvideoId:
 10: add pasting support 
 
 test voice mode in production build 
+http://shadcn-css.com/
 
 
 add warning for enabling multiple mcps 
