@@ -1,0 +1,84 @@
+/**
+ * Notification Styles
+ */
+
+.error-notification {
+    position: fixed;
+    top: 70px;
+    left: 8%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    max-width: 90%;
+    width: auto;
+    min-width: 300px;
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.error-notification-error {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-notification-warning {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-notification-info {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.error-notification-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+}
+
+.error-notification-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.error-notification-error .error-notification-icon {
+    color: white;
+}
+
+.error-notification-warning .error-notification-icon {
+    color: white;
+}
+
+.error-notification-info .error-notification-icon {
+    color: white;
+}
+
+.error-notification-message {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.error-notification-dismiss {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.error-notification-dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}

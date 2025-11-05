@@ -1,0 +1,6 @@
+/**
+ * MCP (Model Context Protocol) Feature Styles
+ * Orchestrator for all MCP-related styles
+ */
+@import './base.css';
+@import './tools.css';

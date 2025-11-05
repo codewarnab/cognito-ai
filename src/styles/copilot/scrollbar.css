@@ -1,0 +1,20 @@
+/**
+ * Scrollbar Styles
+ */
+
+.copilot-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.copilot-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.copilot-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.copilot-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}

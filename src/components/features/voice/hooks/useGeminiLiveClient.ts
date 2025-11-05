@@ -3,14 +3,14 @@
  */
 
 import { useRef, useEffect, useState } from 'react';
-import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../../ai/geminiLive';
-import { getGeminiLiveManager } from '../../../ai/geminiLive/GeminiLiveManager';
+import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../../../ai/geminiLive';
+import { getGeminiLiveManager } from '../../../../ai/geminiLive/GeminiLiveManager';
 import {
     GeminiLiveErrorHandler,
     MicrophonePermissionHandler,
-} from '../../../ai/geminiLive/errorHandler';
-import { createLogger } from '../../../logger';
-import type { VoiceModeStatus } from '../../../ai/geminiLive/types';
+} from '../../../../ai/geminiLive/errorHandler';
+import { createLogger } from '../../../../logger';
+import type { VoiceModeStatus } from '../../../../ai/geminiLive/types';
 
 const log = createLogger('useGeminiLiveClient');
 

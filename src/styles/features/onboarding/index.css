@@ -1,0 +1,8 @@
+/**
+ * Onboarding Feature Styles
+ * Consolidates all onboarding-related styles
+ */
+@import './base.css';
+@import './components.css';
+@import './animations.css';
+@import './responsive.css';

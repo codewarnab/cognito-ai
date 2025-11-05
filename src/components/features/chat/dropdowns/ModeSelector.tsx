@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { CloudCogIcon, LaptopMinimalCheckIcon } from '../../../shared/effects/icons';
+import { CloudCogIcon, LaptopMinimalCheckIcon } from '../../../shared/icons';
 import { canSwitchMode } from '../../../../utils/modelSettings';
 import type { AIMode, RemoteModelType, ModelState } from '../types';
 

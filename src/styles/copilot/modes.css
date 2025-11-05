@@ -1,0 +1,71 @@
+/**
+ * Execution Mode Selector Styles
+ */
+
+.copilot-mode-inline-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.copilot-mode-inline-button:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    color: var(--text-primary);
+}
+
+.copilot-mode-inline-button:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.copilot-mode-expanded {
+    display: flex;
+    gap: 2px;
+    animation: expandModeSelector 0.15s ease-out;
+}
+
+.copilot-mode-expanded-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.copilot-mode-expanded-option:hover {
+    background: var(--glass-bg-hover);
+    border-color: var(--glass-border-hover);
+    color: var(--text-primary);
+}
+
+.copilot-mode-expanded-option:active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.copilot-mode-expanded-option.active {
+    background: rgba(74, 111, 165, 0.3);
+    color: var(--text-primary);
+    border-color: var(--button-primary-bg);
+}
+
+.copilot-mode-expanded-option svg {
+    flex-shrink: 0;
+}

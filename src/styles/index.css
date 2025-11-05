@@ -1,0 +1,40 @@
+/**
+ * Main Style Orchestrator
+ * Imports all application styles in correct order
+ * This is the single entry point for all styles
+ */
+
+/* Core foundation */
+@import './core/variables.css';
+@import './core/base.css';
+@import './core/animations.css';
+@import './core/responsive.css';
+
+/* Layout components */
+@import './layout/header.css';
+@import './layout/tabs.css';
+@import './layout/buttons.css';
+@import './layout/input.css';
+@import './layout/status.css';
+@import './layout/messages.css';
+
+/* Features */
+@import './features/copilot/index.css';
+@import './features/onboarding/index.css';
+@import './features/mcp/index.css';
+@import './features/memory/index.css';
+@import './features/threads/index.css';
+@import './features/reminders/index.css';
+@import './features/workflows/index.css';
+@import './features/mentions/index.css';
+@import './features/tools/index.css';
+
+/* Standalone components */
+@import './components/context-indicator.css';
+@import './components/context-warning.css';
+@import './components/continue-button.css';
+@import './components/local-banner.css';
+@import './components/model-download-toast.css';
+@import './components/model-selector.css';
+@import './components/voice-recording-pill.css';
+@import './components/mesh-gradient.css';
