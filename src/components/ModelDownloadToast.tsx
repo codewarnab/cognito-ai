@@ -1,30 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, CheckCircle } from 'lucide-react';
+import { Download, CheckCircle, AlertCircle } from 'lucide-react';
 import { listenToDownloadProgress, type ModelDownloadProgress } from '../utils/modelDownloadBroadcast';
 
 interface ModelDownloadToastProps {
     model: 'language' | 'summarizer';
     progress: number;
     isComplete?: boolean;
+    isError?: boolean;
+    errorMessage?: string;
 }
 
 export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
     model,
     progress,
     isComplete = false,
+    isError = false,
+    errorMessage,
 }) => {
     const [show, setShow] = useState(true);
 
-    // Auto-hide after completion
+    // Auto-hide after completion or error
     useEffect(() => {
-        if (isComplete) {
+        if (isComplete || isError) {
             const timer = setTimeout(() => {
                 setShow(false);
-            }, 3000);
+            }, isError ? 5000 : 3000); // Show errors longer
             return () => clearTimeout(timer);
         }
-    }, [isComplete]);
+    }, [isComplete, isError]);
 
     const modelName = model === 'language' ? 'Gemini Nano' : 'Summarizer';
 
@@ -36,11 +40,13 @@ export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className={`model-download-toast ${isComplete ? 'complete' : ''}`}
+                    className={`model-download-toast ${isComplete ? 'complete' : ''} ${isError ? 'error' : ''}`}
                 >
                     <div className="model-download-toast-content">
                         <div className="model-download-toast-icon">
-                            {isComplete ? (
+                            {isError ? (
+                                <AlertCircle size={20} className="icon-error" />
+                            ) : isComplete ? (
                                 <CheckCircle size={20} className="icon-success" />
                             ) : (
                                 <Download size={20} className="icon-downloading" />
@@ -48,9 +54,18 @@ export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
                         </div>
                         <div className="model-download-toast-info">
                             <div className="model-download-toast-title">
-                                {isComplete ? `${modelName} Ready` : `Downloading ${modelName}`}
+                                {isError
+                                    ? `${modelName} Download Failed`
+                                    : isComplete
+                                        ? `${modelName} Ready`
+                                        : `Downloading ${modelName}`}
                             </div>
-                            {!isComplete && (
+                            {isError && errorMessage && (
+                                <div className="model-download-toast-error-message">
+                                    {errorMessage}
+                                </div>
+                            )}
+                            {!isComplete && !isError && (
                                 <>
                                     <div className="model-download-toast-progress-bar">
                                         <div
@@ -81,8 +96,8 @@ interface ModelDownloadToastContainerProps {
  */
 export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerProps> = () => {
     const [downloads, setDownloads] = useState<{
-        language?: { progress: number; isComplete: boolean };
-        summarizer?: { progress: number; isComplete: boolean };
+        language?: { progress: number; isComplete: boolean; isError: boolean; errorMessage?: string };
+        summarizer?: { progress: number; isComplete: boolean; isError: boolean; errorMessage?: string };
     }>({});
 
     useEffect(() => {
@@ -102,7 +117,9 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
                     ...prev,
                     [progress.model]: {
                         progress: progress.progress,
-                        isComplete: progress.status === 'complete' || progress.progress >= 100,
+                        isComplete: progress.status === 'complete',
+                        isError: progress.status === 'error',
+                        errorMessage: progress.status === 'error' ? progress.message : undefined,
                     },
                 }));
             }
@@ -123,6 +140,8 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
                     model="language"
                     progress={downloads.language.progress}
                     isComplete={downloads.language.isComplete}
+                    isError={downloads.language.isError}
+                    errorMessage={downloads.language.errorMessage}
                 />
             )}
             {downloads.summarizer && (
@@ -130,6 +149,8 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
                     model="summarizer"
                     progress={downloads.summarizer.progress}
                     isComplete={downloads.summarizer.isComplete}
+                    isError={downloads.summarizer.isError}
+                    errorMessage={downloads.summarizer.errorMessage}
                 />
             )}
         </div>

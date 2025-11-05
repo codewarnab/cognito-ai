@@ -221,6 +221,16 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
             'Some pages may block content scripts',
         ],
     },
+    [ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR]: {
+        userMessage: 'Not enough disk space to download {modelName}. Please free up at least 2GB and try again, or switch to Remote Mode.',
+        technicalTemplate: 'AI model download failed due to insufficient storage. Model: {modelName}, Details: {details}',
+        suggestions: [
+            'Free up at least 20GB of disk space on your device',
+            'Switch to Remote Mode (Settings → AI Mode → Remote) which doesn\'t require downloads',
+            'Close other applications to free up memory',
+            'Delete unnecessary files from your device',
+        ],
+    },
 
     // External Service Errors
     [ErrorType.EXTERNAL_YOUTUBE_API_ERROR]: {

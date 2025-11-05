@@ -27,7 +27,8 @@ import {
   APIError,
   NetworkError,
   isRetryableError,
-  ErrorType
+  ErrorType,
+  BrowserAPIError
 } from '../errors/errorTypes';
 import {
   formatErrorInline,
@@ -451,6 +452,21 @@ export async function streamAIResponse(params: {
               log.info('✅ Language Model ready');
             } catch (error) {
               log.error('❌ Failed to download Language Model:', error);
+
+              // Check if it's our storage error
+              if (error instanceof BrowserAPIError &&
+                error.errorCode === ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR) {
+                // Write storage error to chat stream
+                writeErrorToStream(writer, error, 'Model download - insufficient storage');
+
+                // Call onError callback to potentially show toast
+                onError?.(error);
+
+                // Exit early - don't try to continue
+                return;
+              }
+
+              // For other errors, wrap in generic error message
               throw new Error(`Language Model unavailable: ${error instanceof Error ? error.message : String(error)}`);
             }
 

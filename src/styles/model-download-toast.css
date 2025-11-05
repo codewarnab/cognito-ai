@@ -26,6 +26,10 @@
     background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
 }
 
+.model-download-toast.error {
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+}
+
 .model-download-toast-content {
     display: flex;
     align-items: center;
@@ -46,6 +50,26 @@
 
 .model-download-toast-icon .icon-success {
     animation: scale-in 0.3s ease-out;
+}
+
+.model-download-toast-icon .icon-error {
+    animation: shake 0.5s ease-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
 }
 
 @keyframes download-bounce {
@@ -136,6 +160,13 @@
     color: rgba(255, 255, 255, 0.9);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
+}
+
+.model-download-toast-error-message {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.4;
+    margin-top: 2px;
 }
 
 /* Dark mode adjustments */
