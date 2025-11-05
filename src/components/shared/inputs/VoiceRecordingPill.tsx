@@ -1,7 +1,7 @@
 import { forwardRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AudioLinesIcon } from './shared/icons';
-import type { AudioLinesIconHandle } from './shared/icons';
+import { AudioLinesIcon } from '../effects/icons';
+import type { AudioLinesIconHandle } from '../effects/icons';
 
 interface VoiceRecordingPillProps {
     isVisible: boolean;

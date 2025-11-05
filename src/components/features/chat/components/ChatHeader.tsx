@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
-import { GeminiApiKeyDialog } from '../GeminiApiKeyDialog';
+import { GeminiApiKeyDialog } from '../../../shared/dialogs';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MeshGradientSVG } from '../../MeshGradientSVG';
+import { MeshGradientSVG } from '../../shared/effects';
 
 export const WelcomePage: React.FC = () => {
     return (

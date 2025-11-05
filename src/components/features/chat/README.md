@@ -124,7 +124,7 @@ All SVG icons are extracted into separate components for reusability:
 ## Usage
 
 ```typescript
-import { CopilotChatWindow } from './components/CopilotChatWindow';
+import { CopilotChatWindow } from './components/core/CopilotChatWindow';
 
 // The main component automatically uses all subcomponents
 <CopilotChatWindow

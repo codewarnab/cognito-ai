@@ -3,8 +3,8 @@
  * Displays above input field with workflow icon, name, and close button
  */
 
-import type { WorkflowDefinition } from '../../workflows/types';
-import { SearchIcon } from '../../../assets/chat/search';
+import type { WorkflowDefinition } from '../../../../workflows/types';
+import { SearchIcon } from '../../../../../assets/chat/search';
 
 interface WorkflowBadgeProps {
     workflow: WorkflowDefinition;

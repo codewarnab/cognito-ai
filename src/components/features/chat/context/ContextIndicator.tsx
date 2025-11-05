@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { AnimatedCircularProgressBar } from "./AnimatedCircularProgressBar";
-import type { AppUsage } from "../../ai/types/usage";
-import { cn } from "../../utils/cn";
+import { AnimatedCircularProgressBar } from "../components/AnimatedCircularProgressBar";
+import type { AppUsage } from "../../../../ai/types/usage";
+import { cn } from "../../../../utils/cn";
 
 interface ContextIndicatorProps {
     usage: AppUsage | null;

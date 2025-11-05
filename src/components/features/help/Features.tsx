@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { examplePrompts } from './data';
+import { examplePrompts } from '../../data';
 import './Features.css';
 
 interface FeaturesProps {

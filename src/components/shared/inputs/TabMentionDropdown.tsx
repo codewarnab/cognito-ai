@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { getAllTabs } from '../utils/tabSnapshot';
-import { extractMentions } from '../utils/mentionUtils';
+import { getAllTabs } from '../../../utils/tabSnapshot';
+import { extractMentions } from '../../../utils/mentionUtils';
 
 interface TabMentionDropdownProps {
     searchQuery: string;
@@ -31,7 +31,7 @@ export function TabMentionDropdown({
     // Load tabs on mount
     useEffect(() => {
         let mounted = true;
-        
+
         const loadTabs = async () => {
             try {
                 setLoading(true);
@@ -48,9 +48,9 @@ export function TabMentionDropdown({
                 }
             }
         };
-        
+
         loadTabs();
-        
+
         return () => {
             mounted = false;
         };

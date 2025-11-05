@@ -10,7 +10,7 @@ import { extractPageContext } from '../utils/pageContextExtractor';
 import { suggestionCache } from '../utils/suggestionCache';
 import { generateContextualSuggestions, type Suggestion } from '../ai/suggestions';
 import { getGeminiApiKey } from '../utils/geminiApiKey';
-import type { ModelState } from '../components/chat/types';
+import type { ModelState } from '../components/features/chat/types';
 
 const log = createLogger('UseSuggestions');
 

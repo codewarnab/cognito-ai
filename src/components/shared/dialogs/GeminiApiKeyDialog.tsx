@@ -6,12 +6,12 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from './ui/dialog';
-import { ModelDropdown } from './chat/ModelDropdown';
-import { createLogger } from '../logger';
-import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../utils/geminiApiKey';
-import { getModelConfig, setModelConfig } from '../utils/modelSettings';
-import type { RemoteModelType } from './chat/types';
+} from '../../ui/dialog';
+import { ModelDropdown } from '../../features/chat/dropdowns/ModelDropdown';
+import { createLogger } from '../../../logger';
+import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../../../utils/geminiApiKey';
+import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';
+import type { RemoteModelType } from '../../features/chat/types';
 
 const log = createLogger('GeminiApiKeyDialog');
 
@@ -79,12 +79,12 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
             await setModelConfig({ remoteModel: selectedModel });
             log.info('Gemini API key and model saved successfully');
             setNotification({ type: 'success', message: 'API key and model saved successfully!' });
-            
+
             // Notify parent that API key was saved
             if (onApiKeySaved) {
                 onApiKeySaved();
             }
-            
+
             // Close dialog after a short delay to show success message
             setTimeout(() => {
                 onClose();

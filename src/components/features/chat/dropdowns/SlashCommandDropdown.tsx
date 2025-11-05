@@ -4,10 +4,10 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import type { WorkflowDefinition } from '../../workflows/types';
-import { getAllWorkflows } from '../../workflows/registry';
-import { SearchIcon } from '../../../assets/chat/search';
-import type { AIMode } from './types';
+import type { WorkflowDefinition } from '../../../../workflows/types';
+import { getAllWorkflows } from '../../../../workflows/registry';
+import { SearchIcon } from '../../../../../assets/chat/search';
+import type { AIMode } from '../types';
 
 // Helper to render icon (either emoji or component)
 function renderWorkflowIcon(icon: string) {
