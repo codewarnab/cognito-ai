@@ -2,12 +2,12 @@
 
 @import './styles/core/variables.css';
 @import './styles/core/base.css';
-@import './styles/header.css';
-@import './styles/tabs.css';
-@import './styles/buttons.css';
-@import './styles/status.css';
-@import './styles/messages.css';
-@import './styles/input.css';
+@import './styles/layout/header.css';
+@import './styles/layout/tabs.css';
+@import './styles/layout/buttons.css';
+@import './styles/layout/status.css';
+@import './styles/layout/messages.css';
+@import './styles/layout/input.css';
 @import './styles/core/animations.css';
 @import './styles/core/responsive.css';
 @import './styles/tools.css';
@@ -27,7 +27,7 @@
 /* Voice Mode FAB (Floating Action Button) */
 .voice-mode-fab {
     position: fixed;
-    bottom:120px;
+    bottom: 120px;
     right: 16px;
     width: 44px;
     height: 44px;
