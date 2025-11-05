@@ -23,12 +23,20 @@ const log = createLogger('SimpleFrontendTransport');
 export class SimpleFrontendTransport {
   private abortControllers = new Map<string, AbortController>();
   private onUsageUpdate?: (usage: AppUsage) => void;
+  private onFinishCallback?: () => void;
 
   /**
    * Set the usage update callback
    */
   setOnUsageUpdate(callback: (usage: AppUsage) => void) {
     this.onUsageUpdate = callback;
+  }
+
+  /**
+   * Set the finish callback (called when AI completes response)
+   */
+  setOnFinishCallback(callback: () => void) {
+    this.onFinishCallback = callback;
   }
 
   /**
@@ -265,6 +273,7 @@ export class SimpleFrontendTransport {
           });
         },
         onUsageUpdate: this.onUsageUpdate, // Pass usage callback
+        onFinishCallback: this.onFinishCallback, // Pass finish callback for notifications
       });
 
       // Validate stream response

@@ -15,6 +15,8 @@ import { VoiceRecordingPill } from "./components/shared/inputs";
 import { ContextWarning } from "./components/features/chat/context/ContextWarning";
 import { ErrorToast } from "./components/shared/notifications";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
+import { WindowVisibilityProvider } from "./contexts/WindowVisibilityContext";
+import { initializeNotificationSound } from "./utils/soundNotification";
 
 // Styles
 import "./styles/features/copilot/index.css";
@@ -78,6 +80,7 @@ function AIChatContent() {
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
     const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
+    const [isSoundInitialized, setIsSoundInitialized] = useState(false);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -255,6 +258,40 @@ function AIChatContent() {
             };
         }
     }, [resetOnboarding, setShowOnboarding, setShowChatInterface]);
+
+    // Initialize notification sound on first user interaction
+    useEffect(() => {
+        if (isSoundInitialized) return;
+
+        const initSound = async () => {
+            try {
+                await initializeNotificationSound();
+                setIsSoundInitialized(true);
+                log.info('Notification sound initialized');
+            } catch (error) {
+                log.warn('Failed to initialize notification sound:', error);
+            }
+        };
+
+        // Initialize on any user interaction (click, keypress, focus)
+        const handleUserInteraction = () => {
+            initSound();
+            // Remove listeners after first interaction
+            document.removeEventListener('click', handleUserInteraction);
+            document.removeEventListener('keypress', handleUserInteraction);
+            window.removeEventListener('focus', handleUserInteraction);
+        };
+
+        document.addEventListener('click', handleUserInteraction);
+        document.addEventListener('keypress', handleUserInteraction);
+        window.addEventListener('focus', handleUserInteraction);
+
+        return () => {
+            document.removeEventListener('click', handleUserInteraction);
+            document.removeEventListener('keypress', handleUserInteraction);
+            window.removeEventListener('focus', handleUserInteraction);
+        };
+    }, [isSoundInitialized]);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -448,9 +485,11 @@ function AIChatContent() {
  */
 function SidePanel() {
     return (
-        <ToolUIProvider>
-            <AIChatContent />
-        </ToolUIProvider>
+        <WindowVisibilityProvider>
+            <ToolUIProvider>
+                <AIChatContent />
+            </ToolUIProvider>
+        </WindowVisibilityProvider>
     );
 }
 

@@ -1,0 +1,137 @@
+/**
+ * Sound Notification Utility
+ * Handles playing notification sounds with autoplay policy workaround
+ */
+
+import { AUDIO_PATHS, AUDIO_CONFIG } from '../constants/audio';
+
+// Memoized audio instance
+let audioInstance: HTMLAudioElement | null = null;
+let lastPlayTime = 0;
+let isInitialized = false;
+
+/**
+ * Initialize notification sound on first user interaction
+ * This unlocks autoplay by playing a silent audio first
+ */
+export const initializeNotificationSound = async (): Promise<void> => {
+    if (isInitialized) {
+        return;
+    }
+
+    try {
+        // Create and play a silent audio to unlock autoplay
+        const silentAudio = new Audio();
+        silentAudio.src = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4T8JROkAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQZDwP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+        silentAudio.volume = 0.01;
+
+        // Try to play silent audio
+        await silentAudio.play();
+
+        // Preload the actual notification sound
+        audioInstance = new Audio();
+        audioInstance.src = chrome.runtime ? chrome.runtime.getURL(AUDIO_PATHS.NOTIFICATION) : AUDIO_PATHS.NOTIFICATION;
+        audioInstance.volume = AUDIO_CONFIG.DEFAULT_VOLUME;
+        audioInstance.preload = 'auto';
+
+        // Load the audio
+        await audioInstance.load();
+
+        isInitialized = true;
+        console.log('[Sound] Notification sound initialized successfully');
+    } catch (error) {
+        console.warn('[Sound] Failed to initialize notification sound:', error);
+        // Don't throw - graceful degradation if sound can't be initialized
+    }
+};
+
+/**
+ * Play notification sound with debouncing
+ * @param volume Optional volume override (0.0 to 1.0)
+ * @returns Promise that resolves when sound starts playing (or fails gracefully)
+ */
+export const playNotificationSound = async (volume?: number): Promise<void> => {
+    try {
+        // Debouncing: Prevent multiple plays within short time
+        const now = Date.now();
+        if (now - lastPlayTime < AUDIO_CONFIG.DEBOUNCE_MS) {
+            console.log('[Sound] Debounced - too soon since last play');
+            return;
+        }
+        lastPlayTime = now;
+
+        // Initialize if not already done (fallback)
+        if (!isInitialized || !audioInstance) {
+            console.warn('[Sound] Audio not initialized, attempting to initialize now');
+            await initializeNotificationSound();
+
+            // If still not initialized, fail gracefully
+            if (!audioInstance) {
+                console.warn('[Sound] Cannot play sound - initialization failed');
+                return;
+            }
+        }
+
+        // Set volume if provided
+        if (volume !== undefined && volume >= 0 && volume <= 1) {
+            audioInstance.volume = volume;
+        }
+
+        // Reset audio to beginning (in case it was played before)
+        audioInstance.currentTime = 0;
+
+        // Play the sound
+        await audioInstance.play();
+        console.log('[Sound] Notification sound played');
+    } catch (error) {
+        // Handle autoplay blocked or other errors gracefully
+        if (error instanceof Error) {
+            if (error.name === 'NotAllowedError') {
+                console.warn('[Sound] Autoplay blocked by browser policy');
+            } else if (error.name === 'NotSupportedError') {
+                console.warn('[Sound] Audio format not supported');
+            } else {
+                console.warn('[Sound] Failed to play notification sound:', error.message);
+            }
+        } else {
+            console.warn('[Sound] Failed to play notification sound:', error);
+        }
+        // Don't throw - app should continue working even if sound fails
+    }
+};
+
+/**
+ * Set volume for notification sound
+ * @param volume Volume level (0.0 to 1.0)
+ */
+export const setNotificationVolume = (volume: number): void => {
+    if (volume < 0 || volume > 1) {
+        console.warn('[Sound] Invalid volume level:', volume);
+        return;
+    }
+
+    if (audioInstance) {
+        audioInstance.volume = volume;
+        console.log('[Sound] Volume set to:', volume);
+    }
+};
+
+/**
+ * Check if notification sound is initialized
+ */
+export const isNotificationSoundReady = (): boolean => {
+    return isInitialized && audioInstance !== null;
+};
+
+/**
+ * Clean up audio resources (call on unmount if needed)
+ */
+export const cleanupNotificationSound = (): void => {
+    if (audioInstance) {
+        audioInstance.pause();
+        audioInstance.src = '';
+        audioInstance = null;
+    }
+    isInitialized = false;
+    console.log('[Sound] Notification sound cleaned up');
+};
