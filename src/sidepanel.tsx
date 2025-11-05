@@ -16,20 +16,20 @@ import { ContextWarning } from "./components/features/chat/context/ContextWarnin
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 
 // Styles
-import "./styles/copilot.css";
+import "./styles/features/copilot/index.css";
 import "./styles/features/mcp/index.css";
 import "./styles/features/memory/index.css";
 import "./styles/features/mentions/index.css";
 import "./styles/features/threads/index.css";
 import "./styles/features/reminders/index.css";
 import "./styles/features/workflows/index.css";
-import "./styles/voice-recording-pill.css";
+import "./styles/components/voice-recording-pill.css";
 import "./styles/features/onboarding/index.css";
-import "./styles/local-banner.css";
-import "./styles/model-download-toast.css";
-import "./styles/continue-button.css";
-import "./styles/context-indicator.css";
-import "./styles/context-warning.css";
+import "./styles/components/local-banner.css";
+import "./styles/components/model-download-toast.css";
+import "./styles/components/continue-button.css";
+import "./styles/components/context-indicator.css";
+import "./styles/components/context-warning.css";
 import "./sidepanel.css";
 
 // Core functionality
