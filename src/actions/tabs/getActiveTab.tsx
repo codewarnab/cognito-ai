@@ -40,12 +40,19 @@ export function useGetActiveTab() {
                     }
 
                     const tab = tabs[0];
+
+                    // Validate tab has necessary properties
+                    if (!tab.id) {
+                        log.warn("Active tab has no ID");
+                        return { error: "Active tab has no ID" };
+                    }
+
                     log.info('✅ Retrieved active tab info', { tabId: tab.id, title: tab.title });
 
                     return {
                         success: true,
-                        title: tab.title || 'Untitled',
-                        url: tab.url || '',
+                        title: tab.title ?? 'Untitled',
+                        url: tab.url ?? '',
                         id: tab.id
                     };
                 } catch (error) {

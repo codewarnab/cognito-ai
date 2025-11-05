@@ -14,7 +14,7 @@ const log = createLogger('ChromeAPIHelpers');
 export async function safeTabsQuery(queryInfo: chrome.tabs.QueryInfo): Promise<chrome.tabs.Tab[]> {
     try {
         const tabs = await chrome.tabs.query(queryInfo);
-        return tabs;
+        return tabs ?? [];
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
 
@@ -28,11 +28,38 @@ export async function safeTabsQuery(queryInfo: chrome.tabs.QueryInfo): Promise<c
 }
 
 /**
+ * Safely get a specific tab by ID with error handling
+ */
+export async function safeTabGet(tabId: number): Promise<chrome.tabs.Tab | null> {
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        return tab ?? null;
+    } catch (error) {
+        const parsedError = parseError(error, { context: 'chrome-api' });
+
+        if (error instanceof Error && error.message.includes('No tab with id')) {
+            log.warn(`Tab not found: ${tabId}`);
+            return null;
+        }
+
+        if (error instanceof Error && error.message.includes('Cannot access')) {
+            throw BrowserAPIError.permissionDenied('tabs', 'Extension does not have permission to access tab.');
+        }
+
+        log.error('Failed to get tab:', parsedError);
+        throw parsedError;
+    }
+}
+
+/**
  * Safely create a new tab with error handling
  */
 export async function safeTabCreate(createProperties: chrome.tabs.CreateProperties): Promise<chrome.tabs.Tab> {
     try {
         const tab = await chrome.tabs.create(createProperties);
+        if (!tab) {
+            throw BrowserAPIError.tabNotFound(0);
+        }
         return tab;
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
@@ -78,7 +105,7 @@ export async function safeTabUpdate(tabId: number, updateProperties: chrome.tabs
 export async function safeScriptingExecute(injection: any): Promise<any> {
     try {
         const results = await chrome.scripting.executeScript(injection);
-        return results;
+        return results ?? [];
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
 
@@ -107,7 +134,7 @@ export async function safeScriptingExecute(injection: any): Promise<any> {
 export async function safeStorageGet(keys?: string | string[] | null): Promise<{ [key: string]: any }> {
     try {
         const result = await chrome.storage.local.get(keys);
-        return result;
+        return result ?? {};
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
 
@@ -144,7 +171,7 @@ export async function safeStorageSet(items: { [key: string]: any }): Promise<voi
 export async function safeHistorySearch(query: chrome.history.HistoryQuery): Promise<chrome.history.HistoryItem[]> {
     try {
         const results = await chrome.history.search(query);
-        return results;
+        return results ?? [];
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
 

@@ -66,7 +66,9 @@ class TabManager {
         chrome.tabs.onMoved.addListener((tabId, moveInfo) => {
             log.debug('Tab moved', { tabId, moveInfo });
             chrome.tabs.get(tabId).then(tab => {
-                this.addTabToCache(tab);
+                if (tab) {
+                    this.addTabToCache(tab);
+                }
             }).catch(err => {
                 log.error('Error refreshing moved tab', err);
             });
@@ -76,7 +78,9 @@ class TabManager {
         chrome.tabs.onAttached.addListener((tabId, attachInfo) => {
             log.debug('Tab attached', { tabId, attachInfo });
             chrome.tabs.get(tabId).then(tab => {
-                this.addTabToCache(tab);
+                if (tab) {
+                    this.addTabToCache(tab);
+                }
             }).catch(err => {
                 log.error('Error refreshing attached tab', err);
             });
@@ -87,7 +91,9 @@ class TabManager {
             log.debug('Tab replaced', { addedTabId, removedTabId });
             this.tabCache.delete(removedTabId);
             chrome.tabs.get(addedTabId).then(tab => {
-                this.addTabToCache(tab);
+                if (tab) {
+                    this.addTabToCache(tab);
+                }
             }).catch(err => {
                 log.error('Error refreshing replaced tab', err);
             });
@@ -158,6 +164,12 @@ class TabManager {
         this.initPromise = (async () => {
             log.info('Initializing tab cache...');
             const tabs = await chrome.tabs.query({});
+
+            if (!tabs || tabs.length === 0) {
+                log.warn('No tabs found during initialization');
+                this.isInitialized = true;
+                return;
+            }
 
             for (const tab of tabs) {
                 this.addTabToCache(tab);
