@@ -3,7 +3,7 @@
  * Provides a way for tools to register their UI rendering components
  */
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import  { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { createLogger } from '../../../logger';
 

@@ -2,6 +2,9 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatedCircularProgressBar } from "../components/AnimatedCircularProgressBar";
 import type { AppUsage } from "../../../../ai/types/usage";
 import { cn } from "../../../../utils/cn";
+import { createLogger } from "../../../../logger";
+
+const log = createLogger('ContextIndicator');
 
 interface ContextIndicatorProps {
     usage: AppUsage | null;
@@ -12,6 +15,16 @@ interface ContextIndicatorProps {
 export function ContextIndicator({ usage, className, onWarning }: ContextIndicatorProps) {
     const [showDetails, setShowDetails] = useState(false);
     const lastWarningPercent = useRef<number | null>(null);
+
+    // Log usage prop changes
+    useEffect(() => {
+        log.info('📊 ContextIndicator received usage prop', {
+            hasUsage: !!usage,
+            totalTokens: usage?.totalTokens,
+            hasContext: !!usage?.context,
+            contextMax: usage?.context?.totalMax
+        });
+    }, [usage]);
 
     // Calculate percentage
     const percent = useMemo(() => {

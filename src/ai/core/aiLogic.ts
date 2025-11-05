@@ -16,7 +16,7 @@ import {
   APIError,
   NetworkError,
 } from '../../errors/errorTypes';
-import { type AppUsage } from '../types/usage';
+import { type AppUsage, getContextLimits } from '../types/usage';
 import { executeStreamText } from '../stream/streamExecutor';
 import { parseGeminiError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
@@ -221,6 +221,41 @@ export async function streamAIResponse(params: {
                 log.info('UI stream completed', {
                   messageCount: finalMessages.length,
                 });
+
+                // CRITICAL: Attach usage data to the final assistant message
+                // The streamText result has the complete usage data that we need to preserve
+                if (finalMessages && finalMessages.length > 0 && effectiveMode === 'remote') {
+                  // Get the final usage from the result
+                  const finalUsage = await result.usage;
+
+                  if (finalUsage) {
+                    // Find the last assistant message and attach usage
+                    const lastAssistantMsg = finalMessages
+                      .slice()
+                      .reverse()
+                      .find((msg: any) => msg.role === 'assistant');
+
+                    if (lastAssistantMsg) {
+                      // Convert to AppUsage format with context limits
+                      const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+                      const contextLimits = getContextLimits(modelName);
+
+                      const appUsage: AppUsage = {
+                        ...finalUsage,
+                        context: contextLimits,
+                        modelId: modelName
+                      };
+
+                      // Attach usage to the message for persistence and recalculation
+                      (lastAssistantMsg as any).usage = appUsage;
+
+                      log.info('✅ Attached final usage to message', {
+                        messageId: lastAssistantMsg.id,
+                        usage: appUsage
+                      });
+                    }
+                  }
+                }
 
                 // Send completion status
                 writer.write({

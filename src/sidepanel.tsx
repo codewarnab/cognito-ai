@@ -200,11 +200,12 @@ function AIChatContent() {
         setMessages,
         usage,
         resetUsage,
+        setUsage,
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
-    // Thread management hook - now has access to all functions
+    // Thread management hook - now has access to all functions including setUsage
     const {
         currentThreadId: managedThreadId,
         handleNewThread,
@@ -214,6 +215,7 @@ function AIChatContent() {
         setMessages,
         setContextWarning,
         resetUsage,
+        setUsage,
     });
 
     // Sync managed thread ID with local state

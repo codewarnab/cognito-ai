@@ -365,11 +365,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                 className="copilot-voice-input"
                             />
 
-                            {/* Context Indicator - Shows token usage (Cloud mode only) */}
-                            {!isLocalMode && usage && (
-                                <ContextIndicator usage={usage} className="context-indicator-input" />
-                            )}
-
                             {/* Paperclip - File Upload */}
                             <button
                                 type="button"
@@ -394,6 +389,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             >
                                 <PaperclipIcon ref={paperclipIconRef} size={16} />
                             </button>
+
+                            {/* Context Indicator - Shows token usage (Cloud mode only) */}
+                            {!isLocalMode && usage && (
+                                <ContextIndicator usage={usage} className="context-indicator-input" />
+                            )}
 
                             {(input.trim() || attachments.length > 0) && !isLoading && (
                                 <button

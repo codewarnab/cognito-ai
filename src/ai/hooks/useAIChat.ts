@@ -11,8 +11,9 @@ import { createLogger } from '../../logger';
 import { formatErrorInline } from '../../errors/errorMessages';
 import { APIError, NetworkError, ErrorType } from '../../errors';
 import type { AppUsage } from '../types/usage';
-import { getThreadUsage, updateThreadUsage } from '../../db';
+import { updateThreadUsage } from '../../db';
 import { debounce } from '../../utils/debounce';
+import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
 
 const log = createLogger('useAIChat');
 
@@ -29,7 +30,7 @@ export interface UseAIChatOptions {
  * Uses SimpleFrontendTransport for direct frontend AI backend
  */
 export function useAIChat(options: UseAIChatOptions) {
-  const { threadId, initialMessages, onError, onFinish, onContextWarning } = options;
+  const { threadId, onError, onFinish, onContextWarning } = options;
 
   // Track current usage for this thread
   const [currentUsage, setCurrentUsage] = useState<AppUsage | null>(null);
@@ -91,31 +92,17 @@ export function useAIChat(options: UseAIChatOptions) {
     });
   }, [transport, threadId, debouncedUsageUpdate]);
 
-  // Load initial usage from database when thread changes
-  // This ensures context resets when creating new threads
+  // Reset usage state when thread changes (for new threads)
+  // Actual usage calculation happens from messages in the effect below
   useEffect(() => {
-    if (threadId) {
-      log.info('Thread changed - loading usage', { threadId });
-
-      // Reset warning state on thread change
-      lastWarningPercent.current = null;
-
-      getThreadUsage(threadId)
-        .then(usage => {
-          if (usage) {
-            log.info('Loaded initial usage from DB', {
-              totalTokens: usage.totalTokens,
-              threadId
-            });
-            setCurrentUsage(usage);
-          } else {
-            // Reset usage for new threads (Phase 5: Context Reset)
-            log.info('✨ New thread - resetting usage to null', { threadId });
-            setCurrentUsage(null);
-          }
-        })
-        .catch(err => log.error('Failed to load thread usage:', err));
+    if (!threadId || threadId === 'default') {
+      return;
     }
+
+    // Reset warning state on thread change
+    lastWarningPercent.current = null;
+
+    log.info('🔄 Thread changed, usage will be calculated from messages', { threadId });
   }, [threadId]);
 
   // Enhanced error handler that appends formatted error to messages
@@ -159,6 +146,33 @@ export function useAIChat(options: UseAIChatOptions) {
     },
   });
 
+  // Recalculate usage from messages whenever they change
+  // This ensures the context indicator always shows up when messages are loaded
+  useEffect(() => {
+    if (!chat.messages || chat.messages.length === 0) {
+      log.info('📊 No messages, keeping current usage state');
+      return;
+    }
+
+    log.info('📊 Recalculating usage from messages', {
+      messageCount: chat.messages.length,
+      threadId
+    });
+
+    const calculatedUsage = calculateUsageFromMessages(chat.messages);
+
+    if (calculatedUsage) {
+      log.info('✅ Setting calculated usage from messages', {
+        totalTokens: calculatedUsage.totalTokens,
+        hasContext: !!calculatedUsage.context,
+        threadId
+      });
+      setCurrentUsage(calculatedUsage);
+    } else {
+      log.info('⚠️ No usage data found in messages');
+    }
+  }, [chat.messages, threadId]);
+
   // Phase 5: Explicit reset method for context usage
   const resetUsage = useCallback(() => {
     log.info('🔄 Explicitly resetting usage', { threadId });
@@ -172,6 +186,8 @@ export function useAIChat(options: UseAIChatOptions) {
     usage: currentUsage,
     // Add reset method for explicit usage reset
     resetUsage,
+    // Expose setter for external usage updates (e.g., from thread loading)
+    setUsage: setCurrentUsage,
     // Add custom cleanup method
     cleanup: () => {
       transport.cleanup(threadId);
