@@ -10,8 +10,7 @@
 @import './styles/layout/input.css';
 @import './styles/core/animations.css';
 @import './styles/core/responsive.css';
-@import './styles/tools.css';
-@import './styles/compact-tools.css';
+@import './styles/features/tools/index.css';
 @import './styles/features/threads/index.css';
 @import './styles/mentions.css';
 
