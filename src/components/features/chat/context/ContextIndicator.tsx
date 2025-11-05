@@ -26,6 +26,18 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
         });
     }, [usage]);
 
+    // Hide voice-mode-fab when showing details
+    useEffect(() => {
+        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        if (voiceFab) {
+            if (showDetails) {
+                voiceFab.style.visibility = 'hidden';
+            } else {
+                voiceFab.style.visibility = '';
+            }
+        }
+    }, [showDetails]);
+
     // Calculate percentage
     const percent = useMemo(() => {
         if (!usage?.totalTokens || !usage?.context?.totalMax) return 0;

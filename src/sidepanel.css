@@ -27,7 +27,6 @@
 .voice-mode-fab {
     position: fixed;
     bottom: 120px;
-    visibility: hidden;
     right: 16px;
     width: 44px;
     height: 44px;
