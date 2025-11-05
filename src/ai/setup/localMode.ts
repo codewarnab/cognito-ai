@@ -22,19 +22,20 @@ export interface LocalModeSetup {
 
 /**
  * Setup local mode (Gemini Nano) with model downloads
+ * @throws {BrowserAPIError} If storage is insufficient
+ * @throws {Error} If model download fails
  */
 export async function setupLocalMode(
     writer: any,
     workflowConfig: WorkflowDefinition | null,
     localSystemPrompt: string,
     onError?: (error: Error) => void
-): Promise<LocalModeSetup | null> {
+): Promise<LocalModeSetup> {
     log.info('🔧 Using LOCAL Gemini Nano');
 
     // Download Language Model with progress tracking
-    let languageModelSession: any;
     try {
-        languageModelSession = await downloadLanguageModel((progress: DownloadProgressEvent) => {
+        await downloadLanguageModel((progress: DownloadProgressEvent) => {
             const percentage = Math.round(progress.loaded * 100);
             log.info(`📥 Language Model download: ${percentage}%`);
 
@@ -66,8 +67,9 @@ export async function setupLocalMode(
             // Call onError callback to potentially show toast
             onError?.(error);
 
-            // Return null to indicate setup failed
-            return null;
+            // Throw the error instead of returning null
+            // This ensures the error is properly propagated through the stream
+            throw error;
         }
 
         // For other errors, wrap in generic error message

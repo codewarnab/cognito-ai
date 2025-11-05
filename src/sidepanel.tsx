@@ -145,12 +145,30 @@ function AIChatContent() {
                     return;
                 }
 
-                // If we recently had a browser error (within 2 seconds), ignore TypeError from stream processing
-                if (lastBrowserError && (Date.now() - lastBrowserError) < 2000) {
-                    if (error.message?.includes('Cannot read properties') || errorObj?.errorCode === 'UNKNOWN_ERROR') {
-                        log.info('Ignoring TypeError that occurred after BrowserAPIError');
+                // If we recently had a browser error (within 5 seconds), ignore TypeError from stream processing
+                // This catches errors like "Cannot read properties of undefined (reading 'text')"
+                // that occur when the AI SDK tries to process a failed response
+                if (lastBrowserError && (Date.now() - lastBrowserError) < 5000) {
+                    const isStreamProcessingError =
+                        error.message?.includes('Cannot read properties') ||
+                        error.message?.includes('Cannot access') ||
+                        error.message?.includes('is not defined') ||
+                        errorObj?.errorCode === 'UNKNOWN_ERROR';
+
+                    if (isStreamProcessingError) {
+                        log.info('Ignoring stream processing error that occurred after BrowserAPIError', {
+                            message: error.message,
+                            errorCode: errorObj?.errorCode,
+                            timeSinceBrowserError: Date.now() - lastBrowserError
+                        });
                         return;
                     }
+                }
+
+                // Clear the browser error timestamp after 5 seconds
+                if (lastBrowserError && (Date.now() - lastBrowserError) >= 5000) {
+                    log.info('Clearing browser error timestamp');
+                    setLastBrowserError(null);
                 }
 
                 // Handle other API errors normally

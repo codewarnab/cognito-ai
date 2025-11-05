@@ -223,7 +223,7 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         ],
     },
     [ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR]: {
-        userMessage: 'Not enough disk space to download {modelName}. Please free up at least 2GB and try again, or switch to Remote Mode.',
+        userMessage: 'Not enough disk space to download {modelName}. Please free up at least 20GB and try again, or switch to Remote Mode.',
         technicalTemplate: 'AI model download failed due to insufficient storage. Model: {modelName}, Details: {details}',
         suggestions: [
             'Free up at least 20GB of disk space on your device',
