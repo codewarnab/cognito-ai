@@ -36,6 +36,7 @@ export enum ErrorType {
     BROWSER_STORAGE_QUOTA_EXCEEDED = 'BROWSER_STORAGE_QUOTA_EXCEEDED',
     BROWSER_TAB_ACCESS_DENIED = 'BROWSER_TAB_ACCESS_DENIED',
     BROWSER_CONTENT_SCRIPT_FAILED = 'BROWSER_CONTENT_SCRIPT_FAILED',
+    BROWSER_AI_MODEL_STORAGE_ERROR = 'BROWSER_AI_MODEL_STORAGE_ERROR',
 
     // External Service Errors
     EXTERNAL_YOUTUBE_API_ERROR = 'EXTERNAL_YOUTUBE_API_ERROR',
@@ -424,6 +425,19 @@ export class BrowserAPIError extends BaseAppError {
             userMessage: 'Cannot interact with this page. It may be a protected browser page.',
             technicalDetails: details || 'Failed to inject content script. The page may be a chrome:// or extension page.',
             errorCode: ErrorType.BROWSER_CONTENT_SCRIPT_FAILED,
+        });
+    }
+
+    /**
+     * Create AI model storage error (insufficient disk space for downloading local models)
+     */
+    static aiModelStorageError(modelName: string, details?: string): BrowserAPIError {
+        return new BrowserAPIError({
+            message: `Insufficient storage for ${modelName}`,
+            retryable: false,
+            userMessage: `Not enough disk space to download ${modelName}. Please free up at least 2GB of storage and try again, or switch to Remote Mode which doesn't require downloads.`,
+            technicalDetails: details || `The device does not have enough space for downloading ${modelName}.`,
+            errorCode: ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR,
         });
     }
 }

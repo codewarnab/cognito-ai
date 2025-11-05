@@ -6,6 +6,7 @@
 
 import { createLogger } from '../logger';
 import { broadcastDownloadProgress } from '../utils/modelDownloadBroadcast';
+import { BrowserAPIError } from '../errors/errorTypes';
 
 const log = createLogger('ModelDownloader');
 
@@ -59,11 +60,37 @@ export async function downloadLanguageModel(
     log.info('Language Model availability:', availability);
 
     if (availability === 'no') {
-        throw new Error('Language Model is not available on this device');
+        const error = BrowserAPIError.aiModelStorageError(
+            'Gemini Nano',
+            'Language Model is not available on this device'
+        );
+
+        // Broadcast error status
+        broadcastDownloadProgress({
+            model: 'language',
+            progress: 0,
+            status: 'error',
+            message: error.userMessage,
+        });
+
+        throw error;
     }
 
     if (availability === 'readily') {
-        throw new Error('Language Model is supported but there is not enough disk space. Please free up some space.');
+        const error = BrowserAPIError.aiModelStorageError(
+            'Gemini Nano',
+            'The device does not have enough space for downloading the on-device model'
+        );
+
+        // Broadcast error status
+        broadcastDownloadProgress({
+            model: 'language',
+            progress: 0,
+            status: 'error',
+            message: error.userMessage,
+        });
+
+        throw error;
     }
 
     // Check if model is already available (no download needed)
@@ -86,47 +113,80 @@ export async function downloadLanguageModel(
         message: 'Starting Gemini Nano download...',
     });
 
-    // Create session with download progress monitoring
-    // Using any type to bypass TypeScript checks for Chrome's experimental monitor API
-    // @ts-ignore - Chrome built-in AI API (monitor not in types yet)
-    const session = await (self.LanguageModel.create as any)({
-        monitor(m: any) {
-            log.info('✅ Monitor callback registered for Language Model');
+    try {
+        // Create session with download progress monitoring
+        // Using any type to bypass TypeScript checks for Chrome's experimental monitor API
+        // @ts-ignore - Chrome built-in AI API (monitor not in types yet)
+        const session = await (self.LanguageModel.create as any)({
+            monitor(m: any) {
+                log.info('✅ Monitor callback registered for Language Model');
 
-            m.addEventListener('downloadprogress', (e: any) => {
-                const progress = e.loaded || 0;
-                const percentage = Math.round(progress * 100);
-                log.info(`Language Model download progress: ${percentage}%`);
+                m.addEventListener('downloadprogress', (e: any) => {
+                    const progress = e.loaded || 0;
+                    const percentage = Math.round(progress * 100);
+                    log.info(`Language Model download progress: ${percentage}%`);
 
-                // Broadcast to UI via chrome.runtime messaging
-                broadcastDownloadProgress({
-                    model: 'language',
-                    progress: percentage,
-                    status: percentage >= 100 ? 'complete' : 'downloading',
-                    message: `Downloading Gemini Nano... ${percentage}%`,
-                });
-
-                // Also call the callback if provided
-                if (onProgress) {
-                    onProgress({
-                        loaded: progress,
-                        modelType: 'language',
+                    // Broadcast to UI via chrome.runtime messaging
+                    broadcastDownloadProgress({
+                        model: 'language',
+                        progress: percentage,
+                        status: percentage >= 100 ? 'complete' : 'downloading',
+                        message: `Downloading Gemini Nano... ${percentage}%`,
                     });
-                }
+
+                    // Also call the callback if provided
+                    if (onProgress) {
+                        onProgress({
+                            loaded: progress,
+                            modelType: 'language',
+                        });
+                    }
+                });
+            },
+        });
+
+        // Broadcast completion
+        broadcastDownloadProgress({
+            model: 'language',
+            progress: 100,
+            status: 'complete',
+            message: 'Gemini Nano ready!',
+        });
+
+        log.info('Language Model downloaded successfully');
+        return session;
+    } catch (error) {
+        // Handle errors during download
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorName = error instanceof Error ? error.name : '';
+
+        log.error('Language Model download failed:', errorMessage);
+
+        // Check for storage/space errors
+        if (errorName === 'NotAllowedError' ||
+            errorMessage.toLowerCase().includes('not enough space') ||
+            errorMessage.toLowerCase().includes('insufficient storage') ||
+            errorMessage.toLowerCase().includes('quota')) {
+
+            const storageError = BrowserAPIError.aiModelStorageError(
+                'Gemini Nano',
+                errorMessage
+            );
+
+            // Broadcast error status
+            broadcastDownloadProgress({
+                model: 'language',
+                progress: 0,
+                status: 'error',
+                message: storageError.userMessage,
             });
-        },
-    });
 
-    // Broadcast completion
-    broadcastDownloadProgress({
-        model: 'language',
-        progress: 100,
-        status: 'complete',
-        message: 'Gemini Nano ready!',
-    });
+            throw storageError;
+        }
 
-    log.info('Language Model downloaded successfully');
-    return session;
+        // Re-throw other errors as-is
+        throw error;
+    }
 }
 
 /**
