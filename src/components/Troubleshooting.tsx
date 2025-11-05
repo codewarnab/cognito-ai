@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/Accordion';
-import { troubleshootingData } from './troubleshootingData';
+import { troubleshootingData } from './data';
 import './Troubleshooting.css';
 
 interface TroubleshootingProps {

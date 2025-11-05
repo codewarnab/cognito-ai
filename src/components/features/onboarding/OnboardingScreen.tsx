@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
-import { WelcomePage } from './onboarding/WelcomePage';
-import { FeaturesPage } from './onboarding/FeaturesPage';
-import { CapabilitiesPage } from './onboarding/CapabilitiesPage';
-import { GetStartedPage } from './onboarding/GetStartedPage';
+import { WelcomePage } from './WelcomePage';
+import { FeaturesPage } from './FeaturesPage';
+import { CapabilitiesPage } from './CapabilitiesPage';
+import { GetStartedPage } from './GetStartedPage';
 
 interface OnboardingScreenProps {
     onComplete?: () => void;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { McpHeader } from "./McpHeader"
-import { MCP_SERVERS } from "../constants/mcpServers"
-import type { McpTool } from "../mcp/types"
+import { MCP_SERVERS } from "../../../constants/mcpServers"
+import type { McpTool } from "../../../mcp/types"
 
 interface McpToolsManagerProps {
     serverId: string

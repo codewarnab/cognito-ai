@@ -1,3 +1,4 @@
+export { OnboardingScreen } from './OnboardingScreen';
 export { WelcomePage } from './WelcomePage';
 export { FeaturesPage } from './FeaturesPage';
 export { CapabilitiesPage } from './CapabilitiesPage';

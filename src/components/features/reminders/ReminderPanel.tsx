@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Trash2, Calendar } from 'lucide-react';
-import { getActiveReminders, deleteReminder } from '../actions/reminder/storage';
-import type { Reminder } from '../actions/reminder/types';
-import { createLogger } from '../logger';
+import { getActiveReminders, deleteReminder } from '../../../actions/reminder/storage';
+import type { Reminder } from '../../../actions/reminder/types';
+import { createLogger } from '../../../logger';
 
 const log = createLogger('ReminderPanel');
 

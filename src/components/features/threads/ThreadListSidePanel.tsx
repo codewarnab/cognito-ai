@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { ChatThread } from '../db';
-import { getAllThreads, deleteThread } from '../db';
-import { createLogger } from '../logger';
+import type { ChatThread } from '../../../db';
+import { getAllThreads, deleteThread } from '../../../db';
+import { createLogger } from '../../../logger';
 
 const log = createLogger('ThreadListSidePanel');
 
@@ -14,12 +14,12 @@ interface ThreadListSidePanelProps {
     onNewThread: () => void;
 }
 
-export function ThreadListSidePanel({ 
-    isOpen, 
-    onClose, 
-    currentThreadId, 
-    onThreadSelect, 
-    onNewThread 
+export function ThreadListSidePanel({
+    isOpen,
+    onClose,
+    currentThreadId,
+    onThreadSelect,
+    onNewThread
 }: ThreadListSidePanelProps) {
     const [threads, setThreads] = useState<ChatThread[]>([]);
 
@@ -43,7 +43,7 @@ export function ThreadListSidePanel({
         try {
             await deleteThread(threadId);
             await loadThreads();
-            
+
             // If we deleted the current thread, trigger new thread
             if (threadId === currentThreadId) {
                 onNewThread();
@@ -58,7 +58,7 @@ export function ThreadListSidePanel({
         const now = new Date();
         const diff = now.getTime() - date.getTime();
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
+
         if (days === 0) {
             return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         } else if (days === 1) {
@@ -88,7 +88,7 @@ export function ThreadListSidePanel({
                         transition={{ duration: 0.2 }}
                         onClick={onClose}
                     />
-                    
+
                     {/* Side Panel */}
                     <motion.div
                         className="thread-sidepanel"
@@ -102,20 +102,20 @@ export function ThreadListSidePanel({
                                 <h2>Chat History</h2>
                                 <p>Your previous conversations</p>
                             </div>
-                            <button 
-                                onClick={onClose} 
+                            <button
+                                onClick={onClose}
                                 className="thread-sidepanel-close"
                                 title="Close chat history"
                             >
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                    <path d="M18 6L6 18M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
 
                         <button onClick={onNewThread} className="thread-sidepanel-new-button">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12h14"/>
+                                <path d="M12 5v14M5 12h14" />
                             </svg>
                             New Chat
                         </button>
@@ -125,7 +125,7 @@ export function ThreadListSidePanel({
                                 <div className="thread-sidepanel-empty">
                                     <div className="thread-sidepanel-empty-icon">
                                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                                            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                                         </svg>
                                     </div>
                                     <h3>No conversations yet</h3>
@@ -149,7 +149,7 @@ export function ThreadListSidePanel({
                                                 title="Delete conversation"
                                             >
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                                                 </svg>
                                             </button>
                                         </div>

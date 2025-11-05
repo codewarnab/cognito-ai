@@ -1,5 +1,5 @@
 import React from 'react';
-import researchImage from '../../../assets/research.png';
+import researchImage from '~assets/research.png';
 
 export const CapabilitiesPage: React.FC = () => {
     return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import agentImage from '../../../assets/agent.png';
+import agentImage from '~assets/agent.png';
 
 export const FeaturesPage: React.FC = () => {
     return (

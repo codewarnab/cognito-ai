@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
-import { CloudCogIcon } from '../CloudCogIcon';
-import { LaptopMinimalCheckIcon } from '../LaptopMinimalCheckIcon';
+import { CloudCogIcon, LaptopMinimalCheckIcon } from '../shared/icons';
 import { canSwitchMode } from '../../utils/modelSettings';
 import type { AIMode, RemoteModelType, ModelState } from './types';
 
@@ -22,7 +21,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     onError,
 }) => {
     const { mode, remoteModel, hasApiKey, conversationStartMode } = modelState;
-    
+
     const cloudCogRef = useRef<any>(null);
     const laptopIconRef = useRef<any>(null);
     const cloudCogDropdownActiveRef = useRef<any>(null);
@@ -33,7 +32,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     const handleModeSwitch = async (newMode: AIMode) => {
         // Check if switch is allowed
         const allowed = await canSwitchMode(mode, newMode);
-        
+
         if (!allowed) {
             if (onError) {
                 onError(
@@ -43,7 +42,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             }
             return;
         }
-        
+
         // Check if remote mode has API key
         if (newMode === 'remote' && !hasApiKey) {
             if (onError) {
@@ -54,11 +53,11 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             }
             return;
         }
-        
+
         onModeChange(newMode);
         onToggleDropdown(false);
     };
-    
+
     // Get model display name
     const modelName = mode === 'local' ? 'Nano' : remoteModel.split('-').pop() || 'Flash';
 
