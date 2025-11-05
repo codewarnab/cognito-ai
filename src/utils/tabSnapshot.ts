@@ -47,7 +47,7 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
         const restrictedSchemes = ['chrome://', 'chrome-extension://', 'about://', 'file://', 'data://', 'blob://', 'filesystem://'];
         if (restrictedSchemes.some(scheme => tab.url?.startsWith(scheme))) {
             return {
-                url: tab.url,
+                url: tab.url || null,
                 title: tab.title || null,
                 snapshot: null,
                 error: 'Cannot access system pages'
@@ -93,20 +93,24 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
                 snapshot: null,
                 error: 'Failed to capture content'
             };
-        } catch (scriptError: any) {
+        } catch (scriptError: unknown) {
+            const errorMessage = scriptError instanceof Error
+                ? scriptError.message
+                : 'Permission denied';
             return {
                 url: tab.url || null,
                 title: tab.title || null,
                 snapshot: null,
-                error: `Cannot access page: ${scriptError.message || 'Permission denied'}`
+                error: `Cannot access page: ${errorMessage}`
             };
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         return {
             url: null,
             title: null,
             snapshot: null,
-            error: error.message || 'Unknown error'
+            error: errorMessage
         };
     }
 }

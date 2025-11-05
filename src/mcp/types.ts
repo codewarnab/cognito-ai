@@ -69,12 +69,12 @@ export interface McpMessage {
     jsonrpc: '2.0';
     id?: string | number;
     method?: string;
-    params?: any;
-    result?: any;
+    params?: Record<string, unknown>;
+    result?: unknown;
     error?: {
         code: number;
         message: string;
-        data?: any;
+        data?: unknown;
     };
 }
 
@@ -86,9 +86,9 @@ export interface McpInitializeRequest extends McpMessage {
     params: {
         protocolVersion: string;
         capabilities: {
-            experimental?: Record<string, any>;
+            experimental?: Record<string, unknown>;
             roots?: { listChanged?: boolean };
-            sampling?: Record<string, any>;
+            sampling?: Record<string, unknown>;
         };
         clientInfo: {
             name: string;
@@ -105,7 +105,7 @@ export interface McpTool {
     description?: string;
     inputSchema: {
         type: 'object';
-        properties?: Record<string, any>;
+        properties?: Record<string, unknown>;
         required?: string[];
     };
 }
@@ -183,7 +183,7 @@ export interface NotionMcpStatus {
  */
 export interface NotionMcpResponse {
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
 }
 
@@ -209,7 +209,7 @@ export type McpExtensionMessageType =
  */
 export interface McpExtensionMessage {
     type: McpExtensionMessageType | string;
-    payload?: any;
+    payload?: unknown;
 }
 
 /**
@@ -217,7 +217,7 @@ export interface McpExtensionMessage {
  */
 export interface McpExtensionResponse {
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
 }
 

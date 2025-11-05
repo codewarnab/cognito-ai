@@ -1,22 +1,54 @@
 {
   "extends": "plasmo/templates/tsconfig.base",
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "build"
   ],
   "include": [
     ".plasmo/index.d.ts",
     "./**/*.ts",
-    "./**/*.tsx"
+    "./**/*.tsx",
+    "src/types/**/*.d.ts"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "paths": {
       "~*": [
         "./src/*"
       ]
     },
-    "baseUrl": "."
+    
+    // Type checking improvements
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    
+    // Additional checks
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    
+    // Module resolution
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    
+    // Emit options
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    
+    // Skip lib check to avoid conflicts with custom type folders
+    "skipLibCheck": true
   }
 }

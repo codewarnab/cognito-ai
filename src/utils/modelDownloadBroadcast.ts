@@ -34,12 +34,18 @@ export function listenToDownloadProgress(
     callback: (progress: ModelDownloadProgress) => void
 ): () => void {
     const listener = (
-        message: any,
-        sender: chrome.runtime.MessageSender,
-        sendResponse: (response?: any) => void
+        message: unknown,
+        _sender: chrome.runtime.MessageSender,
+        _sendResponse: (response?: unknown) => void
     ) => {
-        if (message.type === 'MODEL_DOWNLOAD_PROGRESS') {
-            callback(message.data);
+        if (
+            typeof message === 'object' &&
+            message !== null &&
+            'type' in message &&
+            message.type === 'MODEL_DOWNLOAD_PROGRESS' &&
+            'data' in message
+        ) {
+            callback(message.data as ModelDownloadProgress);
         }
     };
 

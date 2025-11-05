@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, type FC } from "react";
+import { useEffect, useRef, type FC } from "react";
 import { Renderer, Program, Mesh, Triangle, Vec3 } from "ogl";
 import '../styles/VoicePoweredOrb.css';
 
@@ -35,7 +35,6 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
     const microphoneRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const dataArrayRef = useRef<Uint8Array | null>(null);
     const agentDataArrayRef = useRef<Uint8Array | null>(null);
-    const animationFrameRef = useRef<number>();
     const mediaStreamRef = useRef<MediaStream | null>(null);
 
     const vert = /* glsl */ `
@@ -199,18 +198,20 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
 
     // Voice analysis function
     const analyzeAudio = () => {
-        if (!analyserRef.current || !dataArrayRef.current) return 0;
+        const analyser = analyserRef.current;
+        const dataArray = dataArrayRef.current;
+        if (!analyser || !dataArray) return 0;
 
-        // @ts-ignore - Uint8Array type compatibility
-        analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+        // Web Audio API type compatibility - Uint8Array buffer type mismatch
+        analyser.getByteFrequencyData(dataArray as any);
 
         // Calculate RMS (Root Mean Square) for better voice detection
         let sum = 0;
-        for (let i = 0; i < dataArrayRef.current.length; i++) {
-            const value = dataArrayRef.current[i] / 255;
+        for (let i = 0; i < dataArray.length; i++) {
+            const value = dataArray[i]! / 255;
             sum += value * value;
         }
-        const rms = Math.sqrt(sum / dataArrayRef.current.length);
+        const rms = Math.sqrt(sum / dataArray.length);
 
         // Apply sensitivity and boost the signal
         const level = Math.min(rms * voiceSensitivity * 3.0, 1);
@@ -220,16 +221,20 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
 
     // Agent audio analysis function
     const analyzeAgentAudio = () => {
-        if (!agentAnalyserRef.current || !agentDataArrayRef.current) return 0;
+        const agentAnalyser = agentAnalyserRef.current;
+        const agentDataArray = agentDataArrayRef.current;
+        if (!agentAnalyser || !agentDataArray) return 0;
 
-        // @ts-ignore - Uint8Array type compatibility
-        agentAnalyserRef.current.getByteFrequencyData(agentDataArrayRef.current);    // Calculate RMS for agent audio
+        // Web Audio API type compatibility - Uint8Array buffer type mismatch
+        agentAnalyser.getByteFrequencyData(agentDataArray as any);
+
+        // Calculate RMS for agent audio
         let sum = 0;
-        for (let i = 0; i < agentDataArrayRef.current.length; i++) {
-            const value = agentDataArrayRef.current[i] / 255;
+        for (let i = 0; i < agentDataArray.length; i++) {
+            const value = agentDataArray[i]! / 255;
             sum += value * value;
         }
-        const rms = Math.sqrt(sum / agentDataArrayRef.current.length);
+        const rms = Math.sqrt(sum / agentDataArray.length);
 
         // Apply sensitivity
         const level = Math.min(rms * voiceSensitivity * 3.0, 1);
@@ -388,9 +393,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             // Clear the canvas immediately
             glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT);
 
-            // @ts-ignore - OGL type compatibility
             const geometry = new Triangle(glContext);
-            // @ts-ignore - OGL type compatibility
             program = new Program(glContext, {
                 vertex: vert,
                 fragment: frag,
@@ -410,7 +413,6 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                 },
             });
 
-            // @ts-ignore - OGL type compatibility
             const mesh = new Mesh(glContext, { geometry, program });
 
             const resize = () => {
@@ -510,7 +512,9 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                 if (rendererInstance && glContext) {
                     // Clear the canvas with transparent background before rendering
                     glContext.clear(glContext.COLOR_BUFFER_BIT | glContext.DEPTH_BUFFER_BIT);
-                    rendererInstance.render({ scene: mesh });
+                    // Note: For 2D effects, we render the mesh directly without a camera
+                    // The mesh uses a fullscreen triangle with screen-space coordinates
+                    (rendererInstance as any).render({ scene: mesh });
 
                     // Fade in canvas after first render
                     if (isFirstRender) {
@@ -576,7 +580,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
 
         const handleMicrophoneState = async () => {
             if (enableVoiceControl) {
-                const success = await initMicrophone();
+                await initMicrophone();
                 if (!isMounted) return;
                 // Update the microphone state in the WebGL context if needed
             } else {

@@ -9,7 +9,9 @@
     "dev:setup": "node scripts/copy-offscreen.js",
     "build": "plasmo build && node scripts/copy-offscreen.js",
     "package": "plasmo package",
-    "postinstall": "node scripts/patch-vfile.js "
+    "postinstall": "node scripts/patch-vfile.js ",
+    "type:check": "tsc --noEmit",
+    "type:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.23",
