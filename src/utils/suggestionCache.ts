@@ -85,7 +85,6 @@ class SuggestionCache {
      * Remove expired entries (periodic cleanup)
      */
     cleanExpired(): void {
-        const now = Date.now();
         const toDelete: string[] = [];
 
         for (const [url, cached] of this.cache.entries()) {

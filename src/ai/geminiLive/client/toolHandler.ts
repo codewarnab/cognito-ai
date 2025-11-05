@@ -14,21 +14,16 @@ import { ToolExecutionHandler } from '../errorHandler';
 import { DEFAULT_CONFIG } from './config';
 import {
     parseError,
-    isRetryableError,
-    RetryManager,
-    RetryPresets,
-    formatErrorInline,
+    isRetryableError
 } from '../../../errors';
 
 const log = createLogger('ToolHandler');
 
 export class GeminiLiveToolHandler {
     private agentToolExecutors: Map<string, (args: any) => Promise<any>> = new Map();
-    private retryManager: RetryManager;
 
     constructor() {
-        // Use Quick preset for tool execution (shorter delays, suitable for user-facing operations)
-        this.retryManager = new RetryManager(RetryPresets.Quick);
+        // Retry manager removed as it was unused
     }
 
     /**

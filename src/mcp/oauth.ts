@@ -247,7 +247,7 @@ export async function exchangeCodeForTokens(
  * Refresh access token using refresh token and dynamic client credentials
  */
 export async function refreshAccessToken(
-    serverId: string,
+    _serverId: string,
     tokenEndpoint: string,
     refreshToken: string,
     clientId: string,

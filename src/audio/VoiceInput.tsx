@@ -39,11 +39,9 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
 
   const {
     isRecording: internalIsRecording,
-    transcript,
     interimTranscript,
     error,
     isSupported,
-    silenceTimeRemaining,
     startRecording,
     stopRecording,
     resetTranscript,
@@ -121,10 +119,6 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
     const instructions = openMicrophoneSettings();
     alert(instructions);
   };
-
-  const silenceProgress = silenceTimeout ? (silenceTimeRemaining / silenceTimeout) * 100 : 0;
-  const silenceSeconds = Math.ceil(silenceTimeRemaining / 1000);
-  const showCountdown = isRecording && silenceTimeRemaining > 0 && silenceTimeRemaining < silenceTimeout;
 
   if (!isSupported) {
     return (

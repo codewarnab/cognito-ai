@@ -3,8 +3,8 @@
  * Right-sliding sidebar for memory management
  */
 
-import React, { useState, useEffect } from "react";
-import { X, Brain, Pin, Trash2, Check, X as XIcon, Lightbulb } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Brain, Pin, Trash2, Lightbulb } from "lucide-react";
 import { FoldersIcon } from "../../shared/icons";
 import * as memoryStore from "../../../memory/store";
 import type { StoredMemory } from "../../../memory/types";

@@ -5,8 +5,7 @@
 
 import type {
     FunctionDeclaration,
-    Part,
-    Content
+    Part
 } from '@google/generative-ai';
 
 /**

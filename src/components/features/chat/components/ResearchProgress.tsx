@@ -3,7 +3,6 @@
  * Shows when the research workflow is actively gathering information
  */
 
-import React from 'react';
 import { SearchIcon } from '../../../../../assets/chat/search';
 
 interface ResearchProgressProps {

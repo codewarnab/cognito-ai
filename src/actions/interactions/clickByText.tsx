@@ -33,7 +33,7 @@ export function useClickByTextTool() {
                 try {
                     log.info("TOOL CALL: clickByText", { text, fuzzy, elementType, index });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id, allFrames: true },
@@ -337,6 +337,13 @@ export function useClickByTextTool() {
                                     // Get the requested occurrence (1-based index)
                                     const targetIndex = Math.max(0, Math.min(occurrence - 1, matches.length - 1));
                                     const match = matches[targetIndex];
+
+                                    if (!match) {
+                                        return {
+                                            success: false,
+                                            error: `Could not access match at index ${targetIndex}`
+                                        };
+                                    }
 
                                     // Scroll into view
                                     scrollIntoView(match.element);

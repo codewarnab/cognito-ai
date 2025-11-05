@@ -33,8 +33,7 @@ import {
     type DynamicClientCredentials
 } from './mcp/oauth';
 import {
-    discoverOAuthEndpoints,
-    parseScopeChallenge
+    discoverOAuthEndpoints
 } from './mcp/discovery';
 import {
     selectScopes,
@@ -45,9 +44,7 @@ import type {
     McpOAuthTokens,
     OAuthState,
     McpServerStatus,
-    McpExtensionMessage,
     McpExtensionResponse,
-    McpMessage,
     OAuthEndpoints,
     McpTool
 } from './mcp/types';
@@ -129,7 +126,7 @@ function stopMCPKeepAlive(): void {
  * Check if any MCP server is currently enabled
  */
 function hasEnabledMCPServers(): boolean {
-    for (const [serverId, state] of serverStates) {
+    for (const [_serverId, state] of serverStates) {
         if (state.isEnabled) {
             return true;
         }
@@ -1173,7 +1170,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
                     onStatusChange: (status) => {
                         console.log(`[Background:${serverId}] Health check status:`, status.state);
                     },
-                    onMessage: (message) => {
+                    onMessage: (_message) => {
                         // Ignore messages during health check
                     }
                 },
@@ -1224,7 +1221,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
             // Clean up client if exists
             if (healthCheckClient) {
                 try {
-                    healthCheckClient.disconnect();
+                    (healthCheckClient as McpSSEClient).disconnect();
                 } catch (closeError) {
                     console.error(`[Background:${serverId}] Error closing client:`, closeError);
                 }
@@ -1241,7 +1238,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
         // Clean up client if exists
         if (healthCheckClient) {
             try {
-                healthCheckClient.disconnect();
+                (healthCheckClient as McpSSEClient).disconnect();
             } catch (closeError) {
                 console.error(`[Background:${serverId}] Error closing client:`, closeError);
             }
@@ -1344,7 +1341,7 @@ async function getMCPServerConfigs(): Promise<any[]> {
             const { [`mcp.${serverId}.enabled`]: isEnabled } = await chrome.storage.local.get(`mcp.${serverId}.enabled`);
             console.log(`[Background:${serverId}] Enabled status from storage:`, isEnabled);
 
-            const serverType = serverConfig.url.endsWith('/sse') ? 'sse' : 'mcp';
+            const serverType = serverConfig.url?.endsWith('/sse') ? 'sse' : 'mcp';
 
             // Add server if enabled AND either:
             // 1. Server requires authentication and has access token
@@ -1437,7 +1434,7 @@ async function initializeServerStatus(serverId: string): Promise<void> {
 // Message Handler
 // ============================================================================
 
-chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
     console.log('[Background] Received message:', message.type, message);
 
     // Handle model download progress broadcasts
@@ -1622,17 +1619,23 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
         }
 
         const id = notificationId.split(':')[1];
+        if (!id) {
+            console.warn('[Background] Invalid reminder notification ID:', notificationId);
+            return;
+        }
+
         const { reminders = {} } = await chrome.storage.local.get('reminders');
-        const reminder: Reminder | undefined = reminders[id];
+        const remindersMap = reminders as Record<string, Reminder>;
+        const reminder: Reminder | undefined = remindersMap[id];
 
         if (reminder?.url) {
             await chrome.tabs.create({ url: reminder.url });
         }
 
         // Cleanup: remove reminder and clear notification
-        if (reminders[id]) {
-            delete reminders[id];
-            await chrome.storage.local.set({ reminders });
+        if (remindersMap[id]) {
+            delete remindersMap[id];
+            await chrome.storage.local.set({ reminders: remindersMap });
         }
 
         chrome.notifications.clear(notificationId);
@@ -1781,12 +1784,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
 
     const id = alarm.name.split(':')[1];
+    if (!id) {
+        console.warn('[Background] Invalid reminder alarm name:', alarm.name);
+        return;
+    }
+
     console.log('[Background] Reminder alarm fired:', id);
 
     try {
         // Get the reminder from storage
         const { reminders = {} } = await chrome.storage.local.get('reminders');
-        const reminder: Reminder | undefined = reminders[id];
+        const remindersMap = reminders as Record<string, Reminder>;
+        const reminder: Reminder | undefined = remindersMap[id];
 
         if (!reminder) {
             console.warn('[Background] Reminder not found:', id);
@@ -1857,7 +1866,6 @@ async function ensureOffscreenDocument(): Promise<void> {
     }
 }
 
-type SummarizeAvailabilityMessage = { type: 'summarize:availability' };
 type SummarizeRequestMessage = {
     type: 'summarize:request';
     payload: {

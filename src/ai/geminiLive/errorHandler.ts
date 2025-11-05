@@ -15,7 +15,6 @@
  */
 
 import { createLogger } from '../../logger';
-import type { LiveAPIError, LiveAPIErrorType } from './types';
 import {
     APIError,
     NetworkError,
@@ -210,11 +209,11 @@ export class WebSocketConnectionHandler {
                 'websocket-connection',
                 reconnectFn,
                 {
-                    onRetry: (attempt, delay, err) => {
+                    onRetry: (attempt, _delay, _err) => {
                         const retriesLeft = 3 - attempt; // Default max retries is 3
                         onStatusChange(`Reconnecting... (${retriesLeft} attempts remaining)`);
                     },
-                    onCountdown: (remainingMs, attempt) => {
+                    onCountdown: (remainingMs, _attempt) => {
                         const seconds = Math.ceil(remainingMs / 1000);
                         if (seconds > 0) {
                             onStatusChange(`Retrying in ${seconds}s...`);

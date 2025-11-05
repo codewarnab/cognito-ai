@@ -127,12 +127,12 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
         // Query the active tab to get video duration
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         log.info('🔍 Active tab queried', {
-            tabId: tab.id,
-            tabUrl: tab.url,
-            isYouTubePage: tab.url?.includes('youtube.com/watch')
+            tabId: tab?.id,
+            tabUrl: tab?.url,
+            isYouTubePage: tab?.url?.includes('youtube.com/watch')
         });
 
-        if (!tab.id) {
+        if (!tab || !tab.id) {
             log.warn('⚠️ No active tab found');
             return undefined;
         }
@@ -167,7 +167,7 @@ async function getVideoDuration(youtubeUrl: string): Promise<number | undefined>
 
                         if (playerScript?.textContent) {
                             const match = playerScript.textContent.match(/var ytInitialPlayerResponse\s*=\s*({.+?});/);
-                            if (match) {
+                            if (match && match[1]) {
                                 ytData = JSON.parse(match[1]);
                                 console.log('[YT Duration] Successfully parsed ytData from script tag');
                             } else {
@@ -241,7 +241,7 @@ async function getVideoDescription(youtubeUrl: string): Promise<string | undefin
         // Query the active tab
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        if (!tab.id || !tab.url?.includes('youtube.com/watch')) {
+        if (!tab || !tab.id || !tab.url?.includes('youtube.com/watch')) {
             log.warn('⚠️ Active tab is not a YouTube video page');
             return undefined;
         }
@@ -684,7 +684,7 @@ export async function executeYouTubeAnalysis(args: { question: string; youtubeUr
             log.info('YouTube URL not provided, extracting from active tab');
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-            if (!tab.url) {
+            if (!tab || !tab.url) {
                 throw new Error('Could not get active tab URL');
             }
 

@@ -8,14 +8,12 @@
  * - Provides simplified API for voice interactions
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { VoiceModeStatus } from '../types';
 import { LiveAPIErrorType, AUDIO_CONFIG, LiveAPIError } from '../types';
 import { AudioManager } from '../audioManager';
 import {
     GeminiLiveErrorHandler,
-    AudioContextHandler,
-    type ErrorRecoveryConfig
+    AudioContextHandler
 } from '../errorHandler';
 import { createLogger } from '../../../logger';
 import { GeminiLiveSessionManager } from './sessionManager';
@@ -34,7 +32,6 @@ const log = createLogger('GeminiLiveClient');
  * Simplified orchestrator using dedicated handlers
  */
 export class GeminiLiveClient {
-    private legacyClient: GoogleGenerativeAI | null = null;
     private sessionManager: GeminiLiveSessionManager | null = null;
     private audioHandler: GeminiLiveAudioHandler | null = null;
     private messageHandler: GeminiLiveMessageHandler | null = null;
@@ -79,11 +76,11 @@ export class GeminiLiveClient {
             maxRetries: 3,
             retryDelay: 1000,
             exponentialBackoff: true,
-            onRetry: (attempt, delay, error) => {
+            onRetry: (attempt, _delay, error) => {
                 log.warn(`Retrying after error (attempt ${attempt})`, error);
                 this.updateStatus('Retrying...');
             },
-            onFailure: (error) => {
+            onFailure: (error: Error) => {
                 log.error('Max retries reached', error);
                 this.updateStatus('Error');
             },
@@ -125,9 +122,6 @@ export class GeminiLiveClient {
                         ? `${this.config.apiKey.substring(0, 4)}...${this.config.apiKey.substring(this.config.apiKey.length - 4)}`
                         : '****';
                     log.info('Using API key from config', { keyLength: this.config.apiKey.length, preview: keyPreview });
-
-                    // Initialize clients
-                    this.legacyClient = new GoogleGenerativeAI(this.config.apiKey);
 
                     // Initialize audio manager
                     await this.audioManager.initialize();

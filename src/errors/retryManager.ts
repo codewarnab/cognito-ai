@@ -3,7 +3,7 @@
  * Handles automatic retry logic for transient errors
  */
 
-import { BaseAppError, isRetryableError, getRetryAfter } from './errorTypes';
+import { isRetryableError, getRetryAfter } from './errorTypes';
 
 /**
  * Retry configuration for different error scenarios
@@ -223,7 +223,7 @@ export class RetryManager {
      */
     async execute<T>(
         fn: () => Promise<T>,
-        context?: string
+        _context?: string
     ): Promise<T> {
         const state: RetryState = {
             attempt: 0,

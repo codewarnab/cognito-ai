@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
 import { CompactToolRenderer } from "../../ai/tools/components";
@@ -24,7 +24,7 @@ export function useFocusElementTool() {
                 try {
                     log.info("TOOL CALL: focusElement", { selector });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
                         args: [selector],

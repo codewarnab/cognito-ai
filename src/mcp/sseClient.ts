@@ -13,13 +13,12 @@ import type {
     McpMessage,
     McpInitializeRequest,
     McpToolsListResponse,
-    McpToolCallRequest,
     McpServerStatus,
     McpConnectionState
 } from './types';
 import { MCPError, NetworkError, ErrorType } from '../errors/errorTypes';
-import { RetryManager, RetryPresets } from '../errors/retryManager';
-import { buildUserMessage, formatErrorInline } from '../errors/errorMessages';
+import { RetryManager } from '../errors/retryManager';
+import { buildUserMessage } from '../errors/errorMessages';
 
 /**
  * SSE Client configuration with retry and error handling options
@@ -61,7 +60,6 @@ export class McpSSEClient {
 
     // Transport detection
     private transportType: 'streamable-http' | 'http-sse' | null = null;
-    private initializeResult: any = null;
     private initialized = false;
     private initializePromise: Promise<void> | null = null;
     private initializeResolve: (() => void) | null = null;
@@ -70,7 +68,6 @@ export class McpSSEClient {
     // Error handling and retry
     private retryManager: RetryManager;
     private consecutiveErrors = 0;
-    private lastErrorTime = 0;
 
     constructor(
         serverId: string,
@@ -679,7 +676,7 @@ export class McpSSEClient {
         }
 
         // Reject all pending requests
-        for (const [id, pending] of this.pendingRequests) {
+        for (const [_id, pending] of this.pendingRequests) {
             pending.reject(new Error('Disconnected'));
         }
         this.pendingRequests.clear();

@@ -12,7 +12,7 @@
 import { experimental_createMCPClient as createMCPClient } from 'ai';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { createLogger } from '../../logger';
-import { MCPError, ErrorType } from '../../errors/errorTypes';
+import { MCPError } from '../../errors/errorTypes';
 import { RetryManager, RetryPresets } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';
 
@@ -40,18 +40,18 @@ export interface MCPClientManager {
   sessionIds: Map<string, string>; // Track session IDs for persistence
 }
 
-/**
- * Load stored session ID for a server from chrome.storage
- */
-async function getStoredSessionId(serverId: string): Promise<string | undefined> {
-  try {
-    const result = await chrome.storage.local.get(`mcp.${serverId}.sessionId`);
-    return result[`mcp.${serverId}.sessionId`];
-  } catch (error) {
-    log.warn(`⚠️ Failed to load session ID for ${serverId}:`, error);
-    return undefined;
-  }
-}
+// /**
+//  * Load stored session ID for a server from chrome.storage
+//  */
+// async function getStoredSessionId(serverId: string): Promise<string | undefined> {
+//   try {
+//     const result = await chrome.storage.local.get(`mcp.${serverId}.sessionId`);
+//     return result[`mcp.${serverId}.sessionId`];
+//   } catch (error) {
+//     log.warn(`⚠️ Failed to load session ID for ${serverId}:`, error);
+//     return undefined;
+//   }
+// }
 
 /**
  * Get enabled MCP server configurations from background script
@@ -182,8 +182,8 @@ export async function initializeMCPClients(
             // Use RetryManager for connection with automatic retry
             const retryManager = new RetryManager({
               ...RetryPresets.Quick,
-              onRetry: (attempt, delay, error) => {
-                log.info(`🔄 Retrying SSE connection for ${mcpServer.name} (attempt ${attempt}, delay ${delay}ms)`);
+              onRetry: (attempt, _delay, _error) => {
+                log.info(`🔄 Retrying SSE connection for ${mcpServer.name} (attempt ${attempt})`);
               }
             });
 
@@ -214,8 +214,8 @@ export async function initializeMCPClients(
             // Use RetryManager for connection with automatic retry
             const retryManager = new RetryManager({
               ...RetryPresets.Standard,
-              onRetry: (attempt, delay, error) => {
-                log.info(`🔄 Retrying HTTP connection for ${mcpServer.name} (attempt ${attempt}, delay ${delay}ms)`);
+              onRetry: (attempt, _delay, _error) => {
+                log.info(`🔄 Retrying HTTP connection for ${mcpServer.name} (attempt ${attempt})`);
               }
             });
 
@@ -317,7 +317,7 @@ export async function initializeMCPClients(
         try {
           const retryManager = new RetryManager({
             ...RetryPresets.Quick,
-            onRetry: (attempt, delay) => {
+            onRetry: (attempt, _delay) => {
               log.info(`🔄 Retrying tool retrieval for ${mcpServer.name} (attempt ${attempt})`);
             }
           });
@@ -448,33 +448,33 @@ export async function initializeMCPClients(
 }/**
  * Clean up MCP clients
  */
-async function cleanupMCPClients(clients: any[]): Promise<void> {
-  log.info('🧹 Cleaning up MCP clients...', { count: clients.length });
+// async function cleanupMCPClients(clients: any[]): Promise<void> {
+//   log.info('🧹 Cleaning up MCP clients...', { count: clients.length });
 
-  await Promise.all(
-    clients.map(async (client, index) => {
-      try {
-        // Try different cleanup methods based on client type
-        if (client.close) {
-          await client.close();
-          log.info(`✅ MCP client ${index + 1} closed`);
-        } else if (client.disconnect) {
-          await client.disconnect();
-          log.info(`✅ MCP client ${index + 1} disconnected`);
-        } else if (typeof client === 'object' && client.transport?.close) {
-          await client.transport.close();
-          log.info(`✅ MCP client ${index + 1} transport closed`);
-        } else {
-          log.warn(`⚠️ MCP client ${index + 1} has no known cleanup method`);
-        }
-      } catch (error) {
-        log.error(`❌ Error cleaning up MCP client ${index + 1}:`, error);
-      }
-    })
-  );
+//   await Promise.all(
+//     clients.map(async (client, index) => {
+//       try {
+//         // Try different cleanup methods based on client type
+//         if (client.close) {
+//           await client.close();
+//           log.info(`✅ MCP client ${index + 1} closed`);
+//         } else if (client.disconnect) {
+//           await client.disconnect();
+//           log.info(`✅ MCP client ${index + 1} disconnected`);
+//         } else if (typeof client === 'object' && client.transport?.close) {
+//           await client.transport.close();
+//           log.info(`✅ MCP client ${index + 1} transport closed`);
+//         } else {
+//           log.warn(`⚠️ MCP client ${index + 1} has no known cleanup method`);
+//         }
+//       } catch (error) {
+//         log.error(`❌ Error cleaning up MCP client ${index + 1}:`, error);
+//       }
+//     })
+//   );
 
-  log.info('✅ MCP client cleanup completed');
-}
+//   log.info('✅ MCP client cleanup completed');
+// }
 
 /**
  * Get current MCP server status

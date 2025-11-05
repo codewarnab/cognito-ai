@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
-import { listenToDownloadProgress, type ModelDownloadProgress } from '../utils/modelDownloadBroadcast';
+import type { ModelDownloadProgress } from '../../../utils/modelDownloadBroadcast';
 
 interface ModelDownloadToastProps {
     model: 'language' | 'summarizer';
@@ -28,6 +28,7 @@ export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
             }, isError ? 5000 : 3000); // Show errors longer
             return () => clearTimeout(timer);
         }
+        return undefined;
     }, [isComplete, isError]);
 
     const modelName = model === 'language' ? 'Gemini Nano' : 'Summarizer';
@@ -106,9 +107,9 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
         // Listen for download progress updates relayed from background
         const listener = (
             message: any,
-            sender: chrome.runtime.MessageSender,
-            sendResponse: (response?: any) => void
-        ) => {
+            _sender: chrome.runtime.MessageSender,
+            _sendResponse: (response?: any) => void
+        ): boolean | undefined => {
             if (message.type === 'MODEL_DOWNLOAD_PROGRESS_UPDATE') {
                 const progress: ModelDownloadProgress = message.data;
                 console.log('[ModelDownloadToast] Received update from background:', progress);
@@ -123,6 +124,7 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
                     },
                 }));
             }
+            return undefined;
         };
 
         chrome.runtime.onMessage.addListener(listener);

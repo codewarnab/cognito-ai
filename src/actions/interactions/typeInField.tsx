@@ -30,7 +30,7 @@ export function useTypeInFieldTool() {
                 try {
                     log.info("TOOL CALL: typeInField", { textLength: text.length, target, clearFirst, pressEnter });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
 
                     // Ensure arguments are serializable (undefined -> null) when sent to executeScript
                     const results = await chrome.scripting.executeScript({
@@ -122,11 +122,11 @@ export function useTypeInFieldTool() {
                                 const searchTerm = desc.toLowerCase();
 
                                 // Check for position-based queries
-                                if (searchTerm.includes('first')) return allInputs[0];
-                                if (searchTerm.includes('last')) return allInputs[allInputs.length - 1];
+                                if (searchTerm.includes('first')) return allInputs[0] || null;
+                                if (searchTerm.includes('last')) return allInputs[allInputs.length - 1] || null;
                                 if (searchTerm.match(/\d+/)) {
                                     const index = parseInt(searchTerm.match(/\d+/)![0]) - 1;
-                                    if (index >= 0 && index < allInputs.length) return allInputs[index];
+                                    if (index >= 0 && index < allInputs.length) return allInputs[index] || null;
                                 }
 
                                 // Find best match by description
@@ -172,7 +172,7 @@ export function useTypeInFieldTool() {
                                     }
                                 }
 
-                                return bestMatch?.element || allInputs[0]; // Fallback to first input
+                                return bestMatch?.element || allInputs[0] || null; // Fallback to first input
                             }
 
                             /**
@@ -222,30 +222,6 @@ export function useTypeInFieldTool() {
                                     element.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
                                     element.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
                                 }
-                            }
-
-                            /**
-                             * Simulate realistic keyboard events for a single character
-                             */
-                            function simulateKeyPress(element: Element, char: string) {
-                                const keyCode = char.charCodeAt(0);
-                                const key = char;
-                                const code = `Key${char.toUpperCase()}`;
-
-                                const baseInit: KeyboardEventInit = {
-                                    key,
-                                    code,
-                                    keyCode,
-                                    which: keyCode,
-                                    bubbles: true,
-                                    cancelable: true,
-                                    composed: true,
-                                };
-
-                                // Dispatch keyboard events
-                                element.dispatchEvent(new KeyboardEvent('keydown', baseInit));
-                                element.dispatchEvent(new KeyboardEvent('keypress', baseInit));
-                                element.dispatchEvent(new KeyboardEvent('keyup', baseInit));
                             }
 
                             /**

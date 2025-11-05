@@ -53,6 +53,8 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+
+    return undefined;
   }, [isOpen]);
 
   return (
@@ -63,7 +65,7 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
         disabled={disabled}
         type="button"
       >
-        <span className="model-name">{currentOption.label}</span>
+        <span className="model-name">{currentOption?.label}</span>
         <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
 

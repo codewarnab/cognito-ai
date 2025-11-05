@@ -98,7 +98,7 @@ export function useSuggestions(
             // Generate suggestions (will use local AI if no apiKey)
             const newSuggestions = await generateContextualSuggestions(
                 pageContext,
-                modelState.mode === 'remote' ? apiKey : undefined
+                modelState.mode === 'remote' ? (apiKey ?? undefined) : undefined
             );
 
             if (newSuggestions) {
@@ -155,7 +155,7 @@ export function useSuggestions(
     const getCurrentTabUrl = async (): Promise<string> => {
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            return tab.url || '';
+            return tab?.url || '';
         } catch (error) {
             log.error('Failed to get current tab URL:', error);
             return '';
@@ -225,7 +225,7 @@ export function useSuggestions(
      */
     useEffect(() => {
         // Listen to tab updates
-        const handleTabUpdate = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+        const handleTabUpdate = (_tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
             // Check latest shouldGenerate state via ref
             if (!shouldGenerateRef.current) return;
 
@@ -241,7 +241,7 @@ export function useSuggestions(
 
             try {
                 const tab = await chrome.tabs.get(activeInfo.tabId);
-                if (tab.url) {
+                if (tab?.url) {
                     handleUrlChange(tab.url);
                 }
             } catch (error) {
