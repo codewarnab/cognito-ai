@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ChatHeader } from './chat/ChatHeader';
-import { ChatMessages } from './chat/ChatMessages';
-import { ChatInput } from './chat/ChatInput';
-import { ErrorNotification } from './chat/ErrorNotification';
-import { GeminiApiKeyDialog } from './GeminiApiKeyDialog';
-import { ModelDownloadToastContainer } from './ModelDownloadToast';
-import type { VoiceInputHandle } from '../audio/VoiceInput';
-import { getModelConfig, setModelConfig, setConversationStartMode, clearConversationStartMode } from '../utils/modelSettings';
-import { hasGeminiApiKey } from '../utils/geminiApiKey';
-import type { Message, AIMode, RemoteModelType, ModelState } from './chat/types';
-import type { AppUsage } from '../ai/types/usage';
+import { ChatHeader } from '../features/chat/components/ChatHeader';
+import { ChatMessages } from '../features/chat/components/ChatMessages';
+import { ChatInput } from '../features/chat/components/ChatInput';
+import { ErrorNotification } from '../features/chat/components/ErrorNotification';
+import { GeminiApiKeyDialog } from '../shared/dialogs';
+import { ModelDownloadToastContainer } from '../shared/notifications';
+import type { VoiceInputHandle } from '../../audio/VoiceInput';
+import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
+import { hasGeminiApiKey } from '../../utils/geminiApiKey';
+import type { Message, AIMode, RemoteModelType, ModelState } from '../features/chat/types';
+import type { AppUsage } from '../../ai/types/usage';
 
 interface CopilotChatWindowProps {
     messages: Message[];

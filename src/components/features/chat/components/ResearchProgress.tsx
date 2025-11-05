@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { SearchIcon } from '../../../assets/chat/search';
+import { SearchIcon } from '../../../../../assets/chat/search';
 
 interface ResearchProgressProps {
     message?: string;

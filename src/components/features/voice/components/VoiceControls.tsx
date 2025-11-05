@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import './VoiceControls.css';
+import '../styles/VoiceControls.css';
 
 export interface VoiceControlsProps {
     isRecording: boolean;

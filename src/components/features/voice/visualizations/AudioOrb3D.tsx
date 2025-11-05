@@ -10,10 +10,10 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
-import { AudioAnalyser } from './AudioAnalyser';
-import { sphereVertexShader, sphereFragmentShader } from './shaders/sphereShader';
-import { backdropVertexShader, backdropFragmentShader } from './shaders/backdropShader';
-import './AudioOrb3D.css';
+import { AudioAnalyser } from '../utils/AudioAnalyser';
+import { sphereVertexShader, sphereFragmentShader } from '../shaders/sphereShader';
+import { backdropVertexShader, backdropFragmentShader } from '../shaders/backdropShader';
+import '../styles/AudioOrb3D.css';
 
 export interface AudioOrb3DProps {
     inputNode?: AudioNode;

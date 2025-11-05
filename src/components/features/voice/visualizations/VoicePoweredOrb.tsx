@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, type FC } from "react";
 import { Renderer, Program, Mesh, Triangle, Vec3 } from "ogl";
-import './VoicePoweredOrb.css';
+import '../styles/VoicePoweredOrb.css';
 
 interface VoicePoweredOrbProps {
     className?: string;

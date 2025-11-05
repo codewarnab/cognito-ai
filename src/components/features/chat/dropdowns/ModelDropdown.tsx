@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
-import type { RemoteModelType } from './types';
+import type { RemoteModelType } from '../types';
 
 interface ModelDropdownProps {
   currentModel: RemoteModelType;
@@ -38,9 +38,9 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const currentOption = MODEL_OPTIONS.find(opt => opt.value === currentModel) || MODEL_OPTIONS[0];
-  
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -48,13 +48,13 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
         setIsOpen(false);
       }
     };
-    
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
-  
+
   return (
     <div className="model-dropdown-container" ref={dropdownRef}>
       <button
@@ -66,7 +66,7 @@ export const ModelDropdown: React.FC<ModelDropdownProps> = ({
         <span className="model-name">{currentOption.label}</span>
         <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
-      
+
       {isOpen && (
         <div className="model-dropdown-menu">
           {MODEL_OPTIONS.map(option => (

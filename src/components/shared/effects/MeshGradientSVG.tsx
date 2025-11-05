@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import '../styles/mesh-gradient.css'
+import '../../../styles/mesh-gradient.css'
 
 interface MeshGradientSVGProps {
     size?: number
@@ -79,7 +79,7 @@ export function MeshGradientSVG({ size = 400 }: MeshGradientSVGProps) {
                         cy: 120 + eyeOffset.y,
                         ry: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 3, 30],
                     }}
-                    transition={{ 
+                    transition={{
                         cx: { type: "spring", stiffness: 150, damping: 15 },
                         cy: { type: "spring", stiffness: 150, damping: 15 },
                         ry: { duration: 3, repeat: Infinity, ease: "linear" }
@@ -93,7 +93,7 @@ export function MeshGradientSVG({ size = 400 }: MeshGradientSVGProps) {
                         cy: 120 + eyeOffset.y,
                         ry: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 3, 30],
                     }}
-                    transition={{ 
+                    transition={{
                         cx: { type: "spring", stiffness: 150, damping: 15 },
                         cy: { type: "spring", stiffness: 150, damping: 15 },
                         ry: { duration: 3, repeat: Infinity, ease: "linear" }
