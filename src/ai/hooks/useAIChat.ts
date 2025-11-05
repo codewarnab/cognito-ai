@@ -41,6 +41,9 @@ export function useAIChat(options: UseAIChatOptions) {
   const [currentUsage, setCurrentUsage] = useState<AppUsage | null>(null);
   const lastWarningPercent = useRef<number | null>(null);
 
+  // Store messages ref for notification preview
+  const messagesRef = useRef<UIMessage[]>([]);
+
   // Create transport instance (memoized)
   const transport = useMemo(() => new SimpleFrontendTransport(), []);
 
@@ -96,18 +99,54 @@ export function useAIChat(options: UseAIChatOptions) {
       debouncedUsageUpdate(usage);
     });
 
-    // Set up finish callback for notification sound
+    // Set up finish callback for notification sound AND Chrome notification
     transport.setOnFinishCallback(() => {
       log.info('🔔 AI response completed, checking if user is away', { isUserAway });
 
-      // Play sound ONLY if user is away (viewing another window)
+      // Only trigger notifications if user is away (viewing another window)
       if (isUserAway) {
         log.info('🔊 User is away, playing notification sound');
         playNotificationSound().catch(err => {
           log.warn('Failed to play notification sound:', err);
         });
+
+        // Send message to background to create Chrome notification
+        log.info('📬 Sending notification request to background', { threadId });
+
+        // Get the last assistant message for preview
+        const messages = messagesRef.current;
+        const lastAssistantMessage = messages
+          .slice()
+          .reverse()
+          .find((msg: any) => msg.role === 'assistant');
+
+        let messagePreview = 'Response complete. Click to view or continue.';
+        if (lastAssistantMessage) {
+          // Extract text content from the message parts
+          const parts = (lastAssistantMessage as any).parts;
+          if (parts && Array.isArray(parts)) {
+            const textPart = parts.find((part: any) => part.type === 'text');
+            if (textPart && textPart.text) {
+              const text = textPart.text;
+              messagePreview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
+            }
+          }
+        }
+
+        // Send notification creation message to background
+        chrome.runtime.sendMessage({
+          type: 'ai/notification/create',
+          payload: {
+            threadId,
+            title: 'AI Assistant Finished',
+            message: messagePreview,
+            timestamp: Date.now(),
+          },
+        }).catch(err => {
+          log.warn('Failed to send notification message to background:', err);
+        });
       } else {
-        log.info('👀 User is viewing extension, skipping notification sound');
+        log.info('👀 User is viewing extension, skipping notifications');
       }
     });
   }, [transport, threadId, debouncedUsageUpdate, isUserAway]);
@@ -173,6 +212,9 @@ export function useAIChat(options: UseAIChatOptions) {
       log.info('📊 No messages, keeping current usage state');
       return;
     }
+
+    // Update messages ref for notification preview
+    messagesRef.current = chat.messages;
 
     log.info('📊 Recalculating usage from messages', {
       messageCount: chat.messages.length,

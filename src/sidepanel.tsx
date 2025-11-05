@@ -316,6 +316,60 @@ function AIChatContent() {
         });
     };
 
+    // Phase 4: Listen for notification actions from background
+    useEffect(() => {
+        const handleNotificationAction = async (
+            message: any,
+            _sender: chrome.runtime.MessageSender,
+            sendResponse: (response?: any) => void
+        ) => {
+            if (message?.type === 'ai/notification/action') {
+                const { action, threadId } = message.payload;
+
+                log.info('📬 Received notification action from background', { action, threadId });
+
+                if (action === 'continue') {
+                    // Load the correct thread if not already active
+                    if (threadId && threadId !== currentThreadId) {
+                        log.info('🔄 Switching to thread from notification', {
+                            from: currentThreadId,
+                            to: threadId
+                        });
+                        await handleThreadSelect(threadId);
+
+                        // Wait a bit for the thread to load
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+
+                    // Trigger the continue action
+                    log.info('▶️ Triggering continue action from notification');
+                    handleContinue();
+
+                    // Scroll to latest message (will happen automatically via messagesEndRef)
+                    // Focus happens when user starts typing
+
+                    sendResponse({ success: true });
+                    return true; // Keep message channel open for async response
+                } else if (action === 'navigate' || action === 'open') {
+                    // Just open to the thread (notification body click)
+                    if (threadId && threadId !== currentThreadId) {
+                        log.info('📂 Opening thread from notification', { threadId });
+                        await handleThreadSelect(threadId);
+                    }
+                    sendResponse({ success: true });
+                    return true; // Keep message channel open for async response
+                }
+            }
+            return false;
+        };
+
+        chrome.runtime.onMessage.addListener(handleNotificationAction);
+
+        return () => {
+            chrome.runtime.onMessage.removeListener(handleNotificationAction);
+        };
+    }, [currentThreadId, handleThreadSelect, handleContinue, sendMessage]);
+
     // Handle mode change with cleanup
     const handleModeChange = async (newMode: ChatMode) => {
         if (mode === newMode) return;
