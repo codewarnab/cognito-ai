@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import '../../../styles/mesh-gradient.css'
+import '../../../styles/components/mesh-gradient.css'
 
 interface MeshGradientSVGProps {
     size?: number

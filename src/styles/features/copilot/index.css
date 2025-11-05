@@ -1,0 +1,22 @@
+/**
+ * Custom CopilotKit Chat Styles
+ * Adapted for Chrome Extension Side Panel
+ * ENHANCED VERSION: Dark theme with glassmorphism from chrome-ai
+ * 
+ * This file imports all modular CSS files for better organization and maintainability
+ */
+
+/* Import all modular CSS files */
+@import './base.css';
+@import './notifications.css';
+@import './header.css';
+@import './buttons.css';
+@import './messages.css';
+@import './input.css';
+@import './modes.css';
+@import './attachments.css';
+@import './suggestions.css';
+@import './voice.css';
+@import './markdown.css';
+@import './scrollbar.css';
+@import './animations.css';
