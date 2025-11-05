@@ -13,6 +13,7 @@ const log = createLogger('AI-StreamHelpers');
 
 /**
  * Write error message to stream with formatting
+ * Now ensures a complete message structure for proper AI SDK handling
  */
 export function writeErrorToStream(
   writer: any,
@@ -27,11 +28,15 @@ export function writeErrorToStream(
   // Format error message for inline display
   const errorMarkdown = formatErrorInline(appError);
 
-  // Write error to stream
+  // Write a complete assistant message with the error content
+  // This prevents the AI SDK from trying to access undefined properties
+  const messageId = 'error-msg-' + generateId();
+
+  // Write text content
   writer.write({
     type: 'text-delta',
-    id: 'error-' + generateId(),
-    delta: `\n\n${errorMarkdown}\n`,
+    id: messageId,
+    delta: `${errorMarkdown}\n`,
   });
 
   log.error(`AI Stream Error [${context || 'unknown'}]:`, {

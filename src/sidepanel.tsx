@@ -77,6 +77,7 @@ function AIChatContent() {
     const [mode, setMode] = useState<ChatMode>('text');
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
     const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
+    const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -129,6 +130,30 @@ function AIChatContent() {
 
             // Handle API errors and show error toast if needed
             if (error instanceof Error) {
+                const errorObj = error as any;
+
+                // If this is a BrowserAPIError, track it to avoid showing subsequent TypeErrors
+                if (errorObj?.errorCode?.includes('BROWSER_AI')) {
+                    log.info('BrowserAPIError detected - setting timestamp to ignore subsequent errors');
+                    setLastBrowserError(Date.now());
+
+                    // Show the browser error toast
+                    const errorToastState = handleAPIError(error);
+                    if (errorToastState) {
+                        setErrorToast(errorToastState);
+                    }
+                    return;
+                }
+
+                // If we recently had a browser error (within 2 seconds), ignore TypeError from stream processing
+                if (lastBrowserError && (Date.now() - lastBrowserError) < 2000) {
+                    if (error.message?.includes('Cannot read properties') || errorObj?.errorCode === 'UNKNOWN_ERROR') {
+                        log.info('Ignoring TypeError that occurred after BrowserAPIError');
+                        return;
+                    }
+                }
+
+                // Handle other API errors normally
                 const errorToastState = handleAPIError(error);
                 if (errorToastState) {
                     setErrorToast(errorToastState);

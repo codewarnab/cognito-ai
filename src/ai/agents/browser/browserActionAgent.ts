@@ -21,14 +21,10 @@ import { createLogger } from '../../../logger';
 import { getAllTools } from '../../tools/registryUtils';
 import { convertAllTools } from '../../geminiLive/toolConverter';
 import { analyzeYouTubeVideoDeclaration, executeYouTubeAnalysis } from '../youtube';
-import { BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION, BROWSER_ACTION_TOOL_DESCRIPTION, getBrowserCapabilitiesSummary } from './prompts';
+import { BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION, BROWSER_ACTION_TOOL_DESCRIPTION } from './prompts';
+import { getGeminiApiKey } from '../../../utils/geminiApiKey';
 
 const log = createLogger('Browser-Action-Agent');
-
-// Initialize Google AI for the agent
-// const apiKey = "AIzaSyAxTFyeqmms2eV9zsp6yZpCSAHGZebHzqc";
-const apiKey = "AIzaSyAdqyd9kSD_12B_WQ4Fm-Qk6IcL-6p5wjE";
-const genAI = new GoogleGenerativeAI(apiKey);
 
 // Execution tracking to prevent duplicate task execution
 const executionTracker = new Map<string, { timestamp: number; promise: Promise<string> }>();
@@ -95,6 +91,16 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
     // Create and track the execution promise
     const executionPromise = (async () => {
         try {
+            // Get the user's API key
+            const apiKey = await getGeminiApiKey();
+            if (!apiKey) {
+                log.error('❌ No Gemini API key configured');
+                return 'I cannot execute browser actions because no Gemini API key is configured. Please set up your API key in the settings.';
+            }
+
+            // Initialize Google AI with the user's API key
+            const genAI = new GoogleGenerativeAI(apiKey);
+
             // Get all available browser tools (excluding MCP tools and this agent itself)
             const allTools = getAllTools();
             const availableTools: Record<string, any> = {};
@@ -157,9 +163,9 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
 
             // Log initial response
             log.info('📥 Received initial response from model', {
-                hasFunctionCalls: !!response.functionCalls()?.length,
-                functionCallCount: response.functionCalls()?.length || 0,
-                hasText: !!response.text()
+                hasFunctionCalls: !!response?.functionCalls()?.length,
+                functionCallCount: response?.functionCalls()?.length || 0,
+                hasText: !!(response && typeof response.text === 'function' && response.text())
             });
 
             let iterations = 0;
@@ -169,6 +175,12 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
 
             // Handle function calling loop
             while (iterations < maxIterations) {
+                // Safety check for response object
+                if (!response) {
+                    log.error('❌ Response is undefined in function calling loop', { iteration: iterations });
+                    break;
+                }
+
                 const functionCalls = response.functionCalls();
 
                 log.info(`🔍 Iteration ${iterations + 1}/${maxIterations} - Checking for function calls`, {
@@ -270,20 +282,29 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
 
                 log.info('📥 Received next response from model', {
                     iteration: iterations,
-                    hasFunctionCalls: !!response.functionCalls()?.length,
-                    functionCallCount: response.functionCalls()?.length || 0,
-                    hasText: !!response.text()
+                    hasFunctionCalls: !!response?.functionCalls()?.length,
+                    functionCallCount: response?.functionCalls()?.length || 0,
+                    hasText: !!(response && typeof response.text === 'function' && response.text())
                 });
             }
 
             if (iterations >= maxIterations) {
                 log.warn('⚠️ Max iterations reached in agent loop', {
                     maxIterations,
-                    lastResponseHadCalls: !!response.functionCalls()?.length
+                    lastResponseHadCalls: !!response?.functionCalls()?.length
                 });
             }
 
-            // Get final text response
+            // Get final text response with null safety
+            if (!response || typeof response.text !== 'function') {
+                log.error('❌ Invalid response object - cannot extract text', {
+                    hasResponse: !!response,
+                    responseType: typeof response,
+                    responseKeys: response ? Object.keys(response) : []
+                });
+                throw new Error('Browser Action Agent received an invalid response from the model');
+            }
+
             const finalResponse = response.text();
             log.info('✅ Browser Action Agent completed', {
                 iterations,
