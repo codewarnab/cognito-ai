@@ -63,6 +63,7 @@ export class McpSSEClient {
     private initialized = false;
     private initializePromise: Promise<void> | null = null;
     private initializeResolve: (() => void) | null = null;
+    private initializeResult: any = null;
     private isDisconnecting = false;
 
     // Error handling and retry
@@ -399,7 +400,7 @@ export class McpSSEClient {
      * - Error response categorization
      * - Automatic cleanup on failures
      */
-    async sendRequest(method: string, params?: any, options?: { skipSessionId?: boolean }): Promise<any> {
+    async sendRequest(method: string, params?: any, _options?: { skipSessionId?: boolean }): Promise<any> {
         const id = ++this.messageId;
         const message: McpMessage = {
             jsonrpc: '2.0',
@@ -708,7 +709,6 @@ export class McpSSEClient {
 
         // Parse rate limit headers
         const retryAfter = response.headers.get('Retry-After');
-        const rateLimitReset = response.headers.get('X-RateLimit-Reset');
 
         switch (response.status) {
             case 401: {
@@ -923,7 +923,7 @@ export class McpSSEClient {
                             // Extract session ID if present
                             const match = data.match(/sessionId=([a-f0-9-]+)/);
                             if (match) {
-                                this.sseSessionId = match[1];
+                                this.sseSessionId = match[1] || null;
                             }
 
                             console.log(`[MCP:${this.serverId}] Message endpoint received:`, this.messageEndpoint);

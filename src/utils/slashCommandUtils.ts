@@ -46,7 +46,7 @@ export function parseWorkflowCommand(text: string): {
     if (!match) {
         // Check if it's just /workflowId without query
         const simpleMatch = text.match(/^\/(\w+)$/);
-        if (simpleMatch) {
+        if (simpleMatch && simpleMatch[1]) {
             return {
                 workflowId: simpleMatch[1],
                 query: '',
@@ -55,9 +55,13 @@ export function parseWorkflowCommand(text: string): {
         return null;
     }
 
+    if (!match[1] || !match[2]) {
+        return null;
+    }
+
     return {
-        workflowId: match[1], // e.g., 'research'
-        query: match[2].trim(), // e.g., 'about React hooks'
+        workflowId: match[1] || '', // e.g., 'research'
+        query: (match[2] || '').trim(), // e.g., 'about React hooks'
     };
 }
 
@@ -94,7 +98,7 @@ export function replaceSlashCommand(
     const parts = beforeCursor.split(/\s/);
     const lastPart = parts[parts.length - 1];
 
-    if (lastPart.startsWith('/')) {
+    if (lastPart && lastPart.startsWith('/')) {
         // Remove the slash command from before cursor
         const beforeCommand = parts.slice(0, -1).join(' ');
         const newBefore = beforeCommand ? beforeCommand + ' ' : '';

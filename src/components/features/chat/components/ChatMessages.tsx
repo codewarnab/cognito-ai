@@ -135,15 +135,15 @@ class MarkdownErrorBoundary extends React.Component<
         this.state = { hasError: false };
     }
 
-    static getDerivedStateFromError(error: any) {
+    static getDerivedStateFromError() {
         return { hasError: true };
     }
 
-    componentDidCatch(error: any, errorInfo: any) {
-        console.warn('Markdown rendering error (likely due to streaming):', error);
+    override componentDidCatch() {
+        console.warn('Markdown rendering error (likely due to streaming)');
     }
 
-    render() {
+    override render() {
         if (this.state.hasError) {
             return <div className="markdown-fallback">{this.props.fallback}</div>;
         }
@@ -170,7 +170,7 @@ const SafeMarkdown: React.FC<{ children: string }> = ({ children }) => {
 interface ChatMessagesProps {
     messages: Message[];
     isLoading: boolean;
-    messagesEndRef: React.RefObject<HTMLDivElement | null>;
+    messagesEndRef: React.RefObject<HTMLDivElement>;
     pendingMessageId?: string | null;
     isLocalMode?: boolean;
     onConfigureApiKey?: () => void;
@@ -264,7 +264,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
         if (isLoading || messages.length === 0) return false;
 
         const lastMessage = messages[messages.length - 1];
-        if (lastMessage.role !== 'assistant') return false;
+        if (!lastMessage || lastMessage.role !== 'assistant') return false;
 
         // Check if any part has continue-available status
         const hasContinueStatus = lastMessage.parts?.some((part: any) =>
