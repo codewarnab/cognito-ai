@@ -9,22 +9,22 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../ai/geminiLive';
-import { getGeminiLiveManager } from '../../ai/geminiLive/GeminiLiveManager';
+import { GeminiLiveClient, type GeminiLiveEventHandlers } from '../../../ai/geminiLive';
+import { getGeminiLiveManager } from '../../../ai/geminiLive/GeminiLiveManager';
 import { VoicePoweredOrb } from './VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
-import type { VoiceModeStatus } from '../../ai/geminiLive/types';
-import { runToolIntegrationReport } from '../../ai/geminiLive/toolIntegrationTest';
+import type { VoiceModeStatus } from '../../../ai/geminiLive/types';
+import { runToolIntegrationReport } from '../../../ai/geminiLive/toolIntegrationTest';
 import {
     GeminiLiveErrorHandler,
     MicrophonePermissionHandler,
     SidePanelLifecycleHandler,
     TabVisibilityHandler,
     ModeSwitchGuard
-} from '../../ai/geminiLive/errorHandler';
+} from '../../../ai/geminiLive/errorHandler';
 import { CircleHelp } from 'lucide-react';
-import { Popover, PopoverTrigger, PopoverContent } from '../ui/Popover';
-import { createLogger } from '../../logger';
+import { Popover, PopoverTrigger, PopoverContent } from '../../ui/Popover';
+import { createLogger } from '../../../logger';
 import './VoiceModeUI.css';
 
 const log = createLogger('VoiceModeUI');

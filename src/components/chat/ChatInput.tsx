@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { UploadIcon } from '../UploadIcon';
+import { UploadIcon } from '../shared/icons';
 import { VoiceInput, type VoiceInputHandle } from '../../audio/VoiceInput';
 import { ModeSelector } from './ModeSelector';
-import { SendIcon } from './icons/SendIcon';
-import { StopIcon } from './icons/StopIcon';
-import { PaperclipIcon } from './icons/PaperclipIcon';
+import { SendIcon } from '../shared/icons';
+import { StopIcon } from '../shared/icons';
+import { PaperclipIcon } from '../shared/icons';
 import { MentionInput } from '../MentionInput';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
 import { validateFile, createImagePreview, isImageFile } from '../../utils/fileProcessor';

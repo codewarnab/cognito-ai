@@ -1,5 +1,5 @@
 import React from 'react';
-import { MeshGradientSVG } from '../MeshGradientSVG';
+import { MeshGradientSVG } from '../../MeshGradientSVG';
 
 export const WelcomePage: React.FC = () => {
     return (
