@@ -18,8 +18,7 @@ import type { VoiceInputHandle } from "./audio/VoiceInput";
 // Styles
 import "./styles/copilot.css";
 import "./styles/features/mcp/index.css";
-import "./styles/memory.css";
-import "./styles/memory-sidebar.css";
+import "./styles/features/memory/index.css";
 import "./styles/mentions.css";
 import "./styles/thread-sidepanel.css";
 import "./styles/reminder.css";
