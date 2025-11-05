@@ -1,15 +1,15 @@
 /* Main sidepanel styles - imports all component styles */
 
-@import './styles/variables.css';
-@import './styles/base.css';
+@import './styles/core/variables.css';
+@import './styles/core/base.css';
 @import './styles/header.css';
 @import './styles/tabs.css';
 @import './styles/buttons.css';
 @import './styles/status.css';
 @import './styles/messages.css';
 @import './styles/input.css';
-@import './styles/animations.css';
-@import './styles/responsive.css';
+@import './styles/core/animations.css';
+@import './styles/core/responsive.css';
 @import './styles/tools.css';
 @import './styles/compact-tools.css';
 @import './styles/threads.css';
