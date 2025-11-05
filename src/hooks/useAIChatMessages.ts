@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { createLogger } from '../logger';
 import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '../db';
 import { generateThreadTitle } from '../utils/summarizer';
@@ -14,7 +14,7 @@ interface UseAIChatMessagesProps {
 /**
  * Hook to handle AI chat message persistence and title generation
  */
-export function useAIChatMessages({ currentThreadId, onContextWarning }: UseAIChatMessagesProps) {
+export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
 
     const handleFinish = useCallback(async (result: any) => {
         log.info('AI response finished', { messageId: result.message.id });

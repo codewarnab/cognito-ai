@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { WelcomePage } from './WelcomePage';
 import { FeaturesPage } from './FeaturesPage';
 import { CapabilitiesPage } from './CapabilitiesPage';
@@ -17,7 +17,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     showSkip = true,
     onSkip
 }) => {
-    const [isVisible, setIsVisible] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
     const [[page, direction], setPage] = useState([0, 0]);
 
@@ -25,13 +24,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
 
     useEffect(() => {
         console.log('OnboardingScreen mounted');
-        // Trigger animation on mount
-        const timer = setTimeout(() => {
-            setIsVisible(true);
-            console.log('OnboardingScreen animation triggered');
-        }, 100);
-
-        return () => clearTimeout(timer);
+        // Animation happens automatically on mount
+        return () => { };
     }, []);
 
     const handleSkip = () => {

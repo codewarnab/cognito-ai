@@ -85,7 +85,7 @@ export function isSlashCommand(text: string): boolean {
 export function replaceSlashCommand(
     text: string,
     cursorPosition: number,
-    workflowId: string
+    _workflowId: string
 ): { newText: string; newCursorPosition: number } {
     const beforeCursor = text.substring(0, cursorPosition);
     const afterCursor = text.substring(cursorPosition);

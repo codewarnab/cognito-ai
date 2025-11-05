@@ -31,12 +31,12 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     const [error, setError] = useState<string | null>(null);
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
     const [isModelSpeaking, setIsModelSpeaking] = useState(false);
-    const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+    const [_isUserSpeaking, setIsUserSpeaking] = useState(false); // Used via callback
     const [isExecutingTools, setIsExecutingTools] = useState(false);
     const [showSetupNotification, setShowSetupNotification] = useState(false);
     const [isMicrophoneError, setIsMicrophoneError] = useState(false);
     const [showMicHelpPopover, setShowMicHelpPopover] = useState(false);
-    const [showDebug, setShowDebug] = useState(false);
+    const [showDebug] = useState(false);
     const [debugReport, setDebugReport] = useState<string>('');
     const [isRecording, setIsRecording] = useState(false);
 

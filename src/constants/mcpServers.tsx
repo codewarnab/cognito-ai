@@ -1,21 +1,14 @@
 import React from "react"
 import { Globe, Workflow, Download, LucideSearch } from "lucide-react"
 import { Ahrefs } from "../../assets/Ahrefs"
-import { Asana } from "../../assets/Asana"
 import { Astro } from "../../assets/astro-docs"
-import { Atlassian } from "../../assets/Atlassian"
-import { Canva } from "../../assets/canva"
-import { Figma } from "../../assets/figma"
-import { GitHub } from "../../assets/github"
 import { HuggingFace } from "../../assets/huggingface"
 import { Linear } from "../../assets/linear"
 import { Netlify } from "../../assets/Netlify"
 import { Notion } from "../../assets/notion"
 import { PayPal } from "../../assets/paypal"
 import { Sentry } from "../../assets/sentry"
-import { Stripe } from "../../assets/stripe"
 import { Supabase } from "../../assets/supabase"
-import { Vercel } from "../../assets/vercel"
 import { Webflow } from "../../assets/webflow"
 import deepwikiImage from "../../assets/deepwiki.webp"
 import coingeckoImage from "../../assets/coingecko.webp"
@@ -31,7 +24,7 @@ export interface ServerConfig {
     description: string
     requiresAuthentication: boolean
     paid?: boolean
-    
+
     // OAuth configuration (optional - will use discovery if not provided)
     oauth?: {
         discoveryHints?: {
@@ -45,7 +38,7 @@ export interface ServerConfig {
 }
 
 export const MCP_SERVERS: ServerConfig[] = [
-   {   // working 
+    {   // working 
         id: "ahrefs",
         name: "Ahrefs",
         icon: <Ahrefs />,
@@ -55,16 +48,16 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Ahrefs is an SEO platform for website analysis and keyword research.",
         requiresAuthentication: true
     },
-   // { 
-        // apply to allowlist at http://developers.asana.com/docs/integrating-with-asanas-mcp-server#why-do-we-have-an-allowlist
-        // id: "asana",
-        // name: "Asana",
-        // icon: <Asana />,
-        // initialEnabled: false,
-        // initialAuthenticated: false,
-        // url: "https://mcp.asana.com/sse",
-        // description: "Asana is a project management tool for teams.",
-        // requiresAuthentication: true
+    // { 
+    // apply to allowlist at http://developers.asana.com/docs/integrating-with-asanas-mcp-server#why-do-we-have-an-allowlist
+    // id: "asana",
+    // name: "Asana",
+    // icon: <Asana />,
+    // initialEnabled: false,
+    // initialAuthenticated: false,
+    // url: "https://mcp.asana.com/sse",
+    // description: "Asana is a project management tool for teams.",
+    // requiresAuthentication: true
     //},
     {
         id: "astro-docs",
@@ -156,9 +149,9 @@ export const MCP_SERVERS: ServerConfig[] = [
         requiresAuthentication: true
     },
     {
-        id:"context7",
+        id: "context7",
         name: "Context7",
-        icon:<img src={context7Image} alt="Context7" style={{ width: 24, height: 24 }} />,
+        icon: <img src={context7Image} alt="Context7" style={{ width: 24, height: 24 }} />,
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.context7.com/mcp",
@@ -182,7 +175,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.sentry.dev/sse",
-        description: "Sentry is an error tracking platform for monitoring and logging errors.",        requiresAuthentication: true
+        description: "Sentry is an error tracking platform for monitoring and logging errors.", requiresAuthentication: true
     },
     // { // does not support dynamic client registartion 
     //     id: "stripe",
@@ -273,7 +266,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "An MCP service designed for deploying HTML content to EdgeOne Pages and obtaining an accessible public URL.",
         requiresAuthentication: false
     },
-     {
+    {
         id: "parallel-search-mcp",
         name: "Parallel Search MCP",
         description: "Highly accurate deep search and batch tasks",

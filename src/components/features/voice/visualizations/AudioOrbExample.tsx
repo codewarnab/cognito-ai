@@ -4,7 +4,7 @@
  * This file demonstrates how to use the AudioOrb3D component with audio nodes
  */
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AudioOrb3D } from './AudioOrb3D';
 
 export const AudioOrbExample: React.FC = () => {

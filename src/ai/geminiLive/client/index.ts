@@ -15,4 +15,4 @@ export type {
     ErrorRecoveryConfig
 } from './config';
 
-export { DEFAULT_CONFIG, HARDCODED_API_KEY } from './config';
+export { DEFAULT_CONFIG } from './config';

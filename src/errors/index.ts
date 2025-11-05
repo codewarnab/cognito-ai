@@ -41,7 +41,7 @@ export {
 /**
  * Utility function to parse common error scenarios and create appropriate error objects
  */
-import { APIError, MCPError, NetworkError, BrowserAPIError, ExternalServiceError, ErrorType } from './errorTypes';
+import { APIError, MCPError, NetworkError, BrowserAPIError, ExternalServiceError } from './errorTypes';
 
 export interface ParseErrorOptions {
     context?: string;

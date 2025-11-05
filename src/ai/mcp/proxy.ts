@@ -35,7 +35,7 @@ interface MCPToolDefinition {
 /**
  * Get all available MCP tools from background service worker's persistent connections
  */
-export async function getMCPToolsFromBackground(abortSignal?: AbortSignal): Promise<{
+export async function getMCPToolsFromBackground(): Promise<{
     tools: Record<string, any>;
     sessionIds: Map<string, string>;
     cleanup: () => Promise<void>;

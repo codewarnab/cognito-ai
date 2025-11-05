@@ -7,8 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type {
   RecognitionState,
   UseSpeechRecognitionReturn,
-  SpeechRecognitionOptions,
-  SpeechRecognitionError,
+  SpeechRecognitionOptions
 } from './types';
 import { createLogger } from '../logger';
 import { requestMicrophoneWithUI } from './micPermission';

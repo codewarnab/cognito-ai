@@ -52,7 +52,6 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
 }) => {
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
-    const isLocalMode = modelState.mode === 'local';
 
     // Use AI suggestions hook
     const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(modelState, messages.length);

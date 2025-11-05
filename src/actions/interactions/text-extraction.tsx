@@ -37,7 +37,7 @@ export function registerTextExtractionInteractions() {
                     log.info("TOOL CALL: extractText", { selector, all, max, includeStructure, detectSearchBar });
 
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
@@ -267,7 +267,7 @@ export function registerTextExtractionInteractions() {
                             }
 
                             const first = nodes[0];
-                            const t = (first.textContent || '').trim();
+                            const t = (first?.textContent || '').trim();
                             return { success: true, text: t.slice(0, maxLen), truncated: t.length > maxLen };
                         }
                     });
@@ -311,7 +311,7 @@ export function registerTextExtractionInteractions() {
                 try {
                     log.info("TOOL CALL: scrollIntoView", { selector, block });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
@@ -361,7 +361,7 @@ export function registerTextExtractionInteractions() {
                 try {
                     log.info("TOOL CALL: findSearchBar", { onlyVisible });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                    if (!tab.id) return { error: "No active tab" };
+                    if (!tab || !tab.id) return { error: "No active tab" };
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },

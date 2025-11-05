@@ -42,8 +42,6 @@ export function CopilotChatWindow({
     input,
     setInput,
     onSendMessage,
-    onKeyDown,
-    onClearChat,
     isLoading,
     messagesEndRef,
     onSettingsClick,

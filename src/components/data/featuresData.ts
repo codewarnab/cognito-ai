@@ -2,7 +2,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
     MousePointerClick,
     Search,
-    BarChart3,
     Youtube,
     Brain,
     Zap,

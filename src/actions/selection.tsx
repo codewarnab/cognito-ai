@@ -115,7 +115,7 @@ export function registerSelectionActions() {
         try {
           log.info("TOOL CALL: getSelectedText");
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (!tab.id) return { error: "No active tab" };
+          if (!tab || !tab.id) return { error: "No active tab" };
 
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -277,7 +277,7 @@ export function registerSelectionActions() {
         try {
           log.info("TOOL CALL: readPageContent", { limit });
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (!tab.id) return { error: "No active tab" };
+          if (!tab || !tab.id) return { error: "No active tab" };
 
           const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
@@ -422,10 +422,13 @@ export function registerSelectionActions() {
               const lastChunk = truncated.slice(-200);
               const lastSentenceMatch = lastChunk.match(/[.!?]\s/g);
 
-              if (lastSentenceMatch) {
-                const lastSentenceIndex = lastChunk.lastIndexOf(lastSentenceMatch[lastSentenceMatch.length - 1]);
-                if (lastSentenceIndex > 0) {
-                  truncated = truncated.slice(0, truncated.length - 200 + lastSentenceIndex + 2);
+              if (lastSentenceMatch && lastSentenceMatch.length > 0) {
+                const lastMatch = lastSentenceMatch[lastSentenceMatch.length - 1];
+                if (lastMatch) {
+                  const lastSentenceIndex = lastChunk.lastIndexOf(lastMatch);
+                  if (lastSentenceIndex > 0) {
+                    truncated = truncated.slice(0, truncated.length - 200 + lastSentenceIndex + 2);
+                  }
                 }
               }
 

@@ -7,7 +7,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '../../ui/primitives/dialog';
-import { ModelDropdown } from '../../features/chat/dropdowns/ModelDropdown';
 import { createLogger } from '../../../logger';
 import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../../../utils/geminiApiKey';
 import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';

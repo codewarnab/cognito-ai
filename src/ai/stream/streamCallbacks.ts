@@ -16,10 +16,7 @@ const log = createLogger('Stream-Callbacks');
 /**
  * Create onStepFinish callback for streamText
  */
-export function createOnStepFinishCallback(
-    writer: any,
-    effectiveMode: 'local' | 'remote'
-) {
+export function createOnStepFinishCallback(writer: any) {
     return ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }: any) => {
         // Check for malformed function calls or errors
         if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {

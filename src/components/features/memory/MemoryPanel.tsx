@@ -3,7 +3,7 @@
  * UI for viewing, filtering, and managing stored memories
  */
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { X, Brain, Pin, Trash2, Save, Check, X as XIcon, Lightbulb } from "lucide-react";
 import * as memoryStore from "../../../memory/store";
 import type { StoredMemory } from "../../../memory/types";
