@@ -12,7 +12,7 @@
 @import './styles/core/responsive.css';
 @import './styles/features/tools/index.css';
 @import './styles/features/threads/index.css';
-@import './styles/mentions.css';
+@import './styles/features/mentions/index.css';
 
 /* Mode Toggle Wrapper */
 .mode-toggle-wrapper {
