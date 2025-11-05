@@ -44,7 +44,26 @@ export async function setupRemoteMode(
         if (newInit.headers) {
             delete (newInit.headers as any).Referer;
         }
-        return fetch(url, newInit);
+
+        const response = await fetch(url, newInit);
+
+        // Handle error responses to provide better error messages
+        if (!response.ok && (response.status === 403 || response.status === 401)) {
+            // Clone the response to read the body without consuming it
+            const clonedResponse = response.clone();
+            try {
+                const errorText = await clonedResponse.text();
+                log.error('API authentication error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorText: errorText.substring(0, 500) // Log first 500 chars
+                });
+            } catch (e) {
+                log.error('Failed to read error response:', e);
+            }
+        }
+
+        return response;
     };
 
     // Initialize model

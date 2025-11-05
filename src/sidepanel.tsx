@@ -52,6 +52,9 @@ import { useAIChatMessages } from "./hooks/useAIChatMessages";
 import type { ChatMode, ContextWarningState } from "./types/sidepanel";
 import type { FileAttachmentData } from "./components/features/chat/components/FileAttachment";
 
+// Utils
+import { handleAPIError } from "./utils/apiErrorHandler";
+
 /**
  * Inner component that uses AI SDK v5
  * Uses custom ChromeExtensionTransport for service worker communication
@@ -124,19 +127,11 @@ function AIChatContent() {
         onError: (error) => {
             log.error('AI Chat error', error);
 
-            // Show error toast for API errors (403, 401, etc.)
+            // Handle API errors and show error toast if needed
             if (error instanceof Error) {
-                const errorMessage = error.message || 'An error occurred';
-                const isAuthError = errorMessage.toLowerCase().includes('auth') ||
-                    errorMessage.toLowerCase().includes('forbidden') ||
-                    errorMessage.toLowerCase().includes('api key');
-
-                // Show toast for auth/API errors to make them more visible
-                if (isAuthError) {
-                    setErrorToast({
-                        message: errorMessage,
-                        details: (error as any).technicalDetails || error.stack
-                    });
+                const errorToastState = handleAPIError(error);
+                if (errorToastState) {
+                    setErrorToast(errorToastState);
                 }
             }
         },

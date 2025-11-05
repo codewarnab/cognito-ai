@@ -63,3 +63,5 @@ http://shadcn-css.com/
 add warning for enabling multiple mcps 
 add troubleshooting / faq 
 persisiting enabled disabled tool settings 
+
+https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#javascript_15 local mcp support using google sdk 
