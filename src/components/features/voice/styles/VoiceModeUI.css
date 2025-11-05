@@ -424,22 +424,22 @@
     gap: 12px;
     margin: 0 20px 16px;
     padding: 14px 18px;
-    background: rgba(74, 144, 255, 0.15);
-    border: 1px solid rgba(74, 144, 255, 0.4);
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.4);
     border-radius: 12px;
-    color: rgb(147, 197, 253);
+    color: #fbbf24;
     font-size: 14px;
     font-weight: 500;
     animation: voice-mode-slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
-    box-shadow: 0 4px 12px rgba(74, 144, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
     position: relative;
     z-index: 10;
 }
 
 .voice-mode-setup-notification svg {
     flex-shrink: 0;
-    color: rgb(74, 144, 255);
+    color: #fbbf24;
 }
 
 .voice-mode-setup-notification span {

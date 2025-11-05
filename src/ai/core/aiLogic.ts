@@ -128,14 +128,9 @@ export async function streamAIResponse(params: {
 
           if (effectiveMode === 'local') {
             // ========== LOCAL MODE (Gemini Nano) ==========
+            // setupLocalMode now throws errors instead of returning null
+            // This ensures errors are properly caught and handled in the catch block below
             const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt, onError);
-
-            // If setup failed (e.g., storage error), exit early
-            // The error has already been written to the stream by setupLocalMode
-            if (!localSetup) {
-              log.warn('⚠️ Local mode setup failed - ending stream execution');
-              return;
-            }
 
             model = localSetup.model;
             tools = localSetup.tools;

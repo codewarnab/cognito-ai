@@ -42,7 +42,7 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         shouldShowToast = true;
 
         if (errorCode === 'BROWSER_AI_MODEL_STORAGE_ERROR') {
-            displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 2GB of disk space or switch to Remote Mode in Settings.";
+            displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 20GB of disk space or switch to Remote Mode in Settings.";
         } else {
             displayMessage = errorObj?.userMessage || errorMessage;
         }
@@ -151,7 +151,7 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         fullErrorText.includes('insufficient storage') ||
         fullErrorText.includes('gemini nano'))) {
         shouldShowToast = true;
-        displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 2GB of disk space or switch to Remote Mode in Settings.";
+        displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 20GB of disk space or switch to Remote Mode in Settings.";
     }
 
     // Priority 4: Check for auth-related errors in message/stack
@@ -186,19 +186,31 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         }
     }
 
-    // Priority 5: Show toast for any remaining errors (fallback)
+    // Priority 5: Check for stream processing errors (suppress these)
+    // These often occur after BrowserAPIErrors when AI SDK tries to process undefined responses
+    if (!displayMessage && !shouldShowToast) {
+        const isStreamProcessingError =
+            errorMessage.includes("Cannot read properties") ||
+            errorMessage.includes("Cannot access") ||
+            (errorMessage.includes("undefined") && errorObj?.name === 'TypeError');
+
+        if (isStreamProcessingError) {
+            log.info('Stream processing error detected - suppressing toast', {
+                errorMessage: errorMessage.substring(0, 100),
+                name: error.name
+            });
+            // Don't show toast for stream processing errors
+            // These are likely secondary errors following a primary error that was already shown
+            return null;
+        }
+    }
+
+    // Priority 6: Show toast for any remaining errors (fallback)
     if (!displayMessage && !shouldShowToast) {
         shouldShowToast = true;
 
-        // Better handling for TypeErrors that might be from local AI
-        if (errorMessage.includes("Cannot read properties") ||
-            errorMessage.includes("Cannot access") ||
-            errorObj?.name === 'TypeError') {
-            displayMessage = `⚠️ Local AI Error: ${errorMessage}. Please try switching to Remote Mode in Settings.`;
-        } else {
-            // Generic error message for uncategorized errors
-            displayMessage = `⚠️ ${errorMessage}`;
-        }
+        // Generic error message for uncategorized errors
+        displayMessage = `⚠️ ${errorMessage}`;
     }
 
     log.info('Error analysis:', {

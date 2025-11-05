@@ -435,7 +435,7 @@ export class BrowserAPIError extends BaseAppError {
         return new BrowserAPIError({
             message: `Insufficient storage for ${modelName}`,
             retryable: false,
-            userMessage: `Not enough disk space to download ${modelName}. Please free up at least 2GB of storage and try again, or switch to Remote Mode which doesn't require downloads.`,
+            userMessage: `Not enough disk space to download ${modelName}. Please free up at least 20GB of storage and try again, or switch to Remote Mode which doesn't require downloads.`,
             technicalDetails: details || `The device does not have enough space for downloading ${modelName}.`,
             errorCode: ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR,
         });
