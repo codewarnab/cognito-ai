@@ -9,7 +9,7 @@ import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../assets/cha
 import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../assets/chat/chevron-right';
 import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/chat/chevrown-down';
 import { getToolIcon } from './ToolIconMapper';
-import { formatToolAction } from './ToolActionFormatter';
+import { formatToolAction } from './ToolActionFormatter/index';
 import { createLogger } from '../../logger';
 import type { CustomInputOutputRenderers } from '../../ai/tools/components';
 
