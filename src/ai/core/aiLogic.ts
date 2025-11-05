@@ -4,7 +4,7 @@
  * Runs directly in the UI thread, no service worker needed
  */
 
-import {  createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
+import { createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
 import { createLogger } from '../../logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt } from '../prompts/templates/remote';
@@ -128,10 +128,12 @@ export async function streamAIResponse(params: {
 
           if (effectiveMode === 'local') {
             // ========== LOCAL MODE (Gemini Nano) ==========
-            const localSetup = await setupLocalMode(writer, workflowConfig, localSystemPrompt, onError);
+            const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt, onError);
 
             // If setup failed (e.g., storage error), exit early
+            // The error has already been written to the stream by setupLocalMode
             if (!localSetup) {
+              log.warn('⚠️ Local mode setup failed - ending stream execution');
               return;
             }
 
@@ -142,7 +144,7 @@ export async function streamAIResponse(params: {
           } else {
             // ========== REMOTE MODE (Gemini API) ==========
             const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
-            const remoteSetup = await setupRemoteMode(modelName, workflowConfig, remoteSystemPrompt, abortSignal);
+            const remoteSetup = await setupRemoteMode(modelName, workflowConfig || null, remoteSystemPrompt, abortSignal);
 
             model = remoteSetup.model;
             tools = remoteSetup.tools;

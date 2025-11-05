@@ -29,11 +29,32 @@ export function handleAPIError(error: Error): ErrorToastState | null {
     const errorStack = error.stack || '';
     const errorObj = error as any;
     const statusCode = errorObj?.statusCode;
+    const errorCode = errorObj?.errorCode;
     const fullErrorText = (errorObj?.technicalDetails || errorStack).toLowerCase();
 
     // Extract user-friendly message based on HTTP status code and error patterns
     let displayMessage: string | null = null;
     let shouldShowToast = false;
+
+    // Priority 0: Check for BrowserAPIError first (local mode issues)
+    if (errorCode && errorCode.includes('BROWSER_AI')) {
+        log.info('Browser AI error detected', { errorCode, message: errorMessage });
+        shouldShowToast = true;
+
+        if (errorCode === 'BROWSER_AI_MODEL_STORAGE_ERROR') {
+            displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 2GB of disk space or switch to Remote Mode in Settings.";
+        } else {
+            displayMessage = errorObj?.userMessage || errorMessage;
+        }
+
+        if (displayMessage) {
+            log.info('Showing browser AI error toast:', displayMessage.substring(0, 100));
+            return {
+                message: displayMessage,
+                details: errorObj?.technicalDetails || error.stack
+            };
+        }
+    }
 
     // Priority 1: Check specific HTTP status codes (most reliable)
     if (statusCode) {
@@ -123,9 +144,26 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         }
     }
 
-    // Priority 3: Check for auth-related errors in message/stack
+    // Priority 3: Check for browser AI errors (local mode failures)
+    if (!displayMessage && (errorObj?.errorCode?.includes('BROWSER_AI') ||
+        errorMessage.toLowerCase().includes('insufficient storage') ||
+        errorMessage.toLowerCase().includes('gemini nano') ||
+        fullErrorText.includes('insufficient storage') ||
+        fullErrorText.includes('gemini nano'))) {
+        shouldShowToast = true;
+        displayMessage = "💾 Local Mode Unavailable: Insufficient storage for Gemini Nano. Please free up at least 2GB of disk space or switch to Remote Mode in Settings.";
+    }
+
+    // Priority 4: Check for auth-related errors in message/stack
     if (!displayMessage) {
-        const isAuthError = errorMessage.toLowerCase().includes('auth') ||
+        // Don't treat "Cannot read properties" TypeErrors as auth errors
+        // These are usually local AI/browser errors, not API authentication issues
+        const isTypeError = errorMessage.includes("Cannot read properties") ||
+            errorMessage.includes("Cannot access") ||
+            errorMessage.includes("is not defined");
+
+        const isAuthError = !isTypeError && (
+            errorMessage.toLowerCase().includes('auth') ||
             errorMessage.toLowerCase().includes('forbidden') ||
             errorMessage.toLowerCase().includes('api key') ||
             errorMessage.toLowerCase().includes('leaked') ||
@@ -136,40 +174,31 @@ export function handleAPIError(error: Error): ErrorToastState | null {
             fullErrorText.includes('401') ||
             (errorObj?.errorCode && (
                 errorObj.errorCode.includes('API_AUTH') ||
-                errorObj.errorCode.includes('AUTH') ||
-                errorObj.errorCode === 'UNKNOWN_ERROR' && (
-                    errorMessage.toLowerCase().includes('cannot read') ||
-                    fullErrorText.includes('api key')
-                )
-            ));
+                errorObj.errorCode.includes('AUTH')
+            ))
+        );
 
         if (isAuthError) {
             shouldShowToast = true;
-
-            // If it's a TypeError wrapping the real error, try to extract from stack
-            if (errorMessage.includes("Cannot read properties")) {
-                if (fullErrorText.includes('leaked') || fullErrorText.includes('api key was reported')) {
-                    displayMessage = "🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio.";
-                } else if (fullErrorText.includes('403') || fullErrorText.includes('forbidden')) {
-                    displayMessage = "🔒 API Authentication Failed (403 Forbidden). Please check your API key in Google AI Studio.";
-                } else if (fullErrorText.includes('401') || fullErrorText.includes('unauthorized')) {
-                    displayMessage = "🔒 API Authentication Failed (401 Unauthorized). Please verify your API key.";
-                } else {
-                    displayMessage = "🔒 API Authentication Error. Please check your API key in the settings.";
-                }
-            } else {
-                displayMessage = errorMessage.includes('leaked')
-                    ? "🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio."
-                    : "🔒 API Authentication Error. Please check your API key in the settings.";
-            }
+            displayMessage = errorMessage.includes('leaked')
+                ? "🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio."
+                : "🔒 API Authentication Error. Please check your API key in the settings.";
         }
     }
 
-    // Priority 4: Show toast for any remaining errors (fallback)
+    // Priority 5: Show toast for any remaining errors (fallback)
     if (!displayMessage && !shouldShowToast) {
         shouldShowToast = true;
-        // Generic error message for uncategorized errors
-        displayMessage = `⚠️ ${errorMessage}`;
+
+        // Better handling for TypeErrors that might be from local AI
+        if (errorMessage.includes("Cannot read properties") ||
+            errorMessage.includes("Cannot access") ||
+            errorObj?.name === 'TypeError') {
+            displayMessage = `⚠️ Local AI Error: ${errorMessage}. Please try switching to Remote Mode in Settings.`;
+        } else {
+            // Generic error message for uncategorized errors
+            displayMessage = `⚠️ ${errorMessage}`;
+        }
     }
 
     log.info('Error analysis:', {
