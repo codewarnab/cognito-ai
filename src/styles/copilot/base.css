@@ -1,0 +1,133 @@
+/**
+ * Base Styles - Core layout and body styles
+ */
+
+/* Remove white border/padding from browser default styles */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0a0e1a;
+}
+
+#__plasmo {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: #0a0e1a;
+}
+
+.copilot-chat-window {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: #0a0e1a;
+    color: #e4e6eb;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .copilot-chat-window {
+        --bg-primary: #0a0e1a;
+        --bg-secondary: #0f1420;
+        --bg-tertiary: #141f30;
+        --text-primary: #ffffff;
+        --text-secondary: rgba(255, 255, 255, 0.6);
+        --text-tertiary: rgba(255, 255, 255, 0.4);
+        --border-color: rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* Configuration Prompt Styles */
+.configuration-prompt {
+    max-width: 600px;
+    margin: 60px auto;
+    padding: 32px;
+    text-align: center;
+    color: #e4e6eb;
+}
+
+.config-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+}
+
+.configuration-prompt h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #ffffff;
+}
+
+.configuration-prompt>p {
+    font-size: 16px;
+    color: rgba(228, 230, 235, 0.7);
+    margin-bottom: 32px;
+}
+
+.config-instructions {
+    background: #1e2635;
+    border: 1px solid rgba(198, 254, 30, 0.1);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: left;
+    margin-bottom: 24px;
+}
+
+.config-instructions h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #ffffff;
+}
+
+.config-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.config-instructions li {
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: rgba(228, 230, 235, 0.7);
+    line-height: 1.6;
+}
+
+.config-instructions code {
+    background: rgba(198, 254, 30, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #c6fe1e;
+}
+
+.config-note {
+    font-size: 14px;
+    color: rgba(228, 230, 235, 0.7);
+    padding: 16px;
+    background: #1e2635;
+    border-radius: 8px;
+    border: 1px solid rgba(198, 254, 30, 0.1);
+}
+
+.config-note code {
+    background: rgba(198, 254, 30, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #c6fe1e;
+}

@@ -1,0 +1,84 @@
+/**
+ * Animations & Keyframes
+ */
+
+@keyframes copilot-bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0);
+    }
+
+    40% {
+        transform: scale(1);
+    }
+}
+
+@keyframes pulseGlassDark {
+
+    0%,
+    100% {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@keyframes pulseGlowCopilot {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.3), 0 0 0 0 rgba(255, 68, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    50% {
+        box-shadow: 0 4px 16px rgba(255, 68, 68, 0.4), 0 0 0 8px rgba(255, 68, 68, 0), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+}
+
+@keyframes expandModeSelector {
+    from {
+        width: 0;
+        opacity: 0;
+    }
+
+    to {
+        width: auto;
+        opacity: 1;
+    }
+}
+
+@keyframes voice-status-slide-up {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes skeleton-loading {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}

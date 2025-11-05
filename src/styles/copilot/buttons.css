@@ -1,0 +1,395 @@
+/**
+ * Button Styles
+ */
+
+.copilot-header-button {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.copilot-header-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.copilot-header-button:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+.copilot-settings-button {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+}
+
+.copilot-settings-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.copilot-settings-button:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+.copilot-memory-button {
+    padding: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    font-size: 16px;
+}
+
+.copilot-memory-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.copilot-memory-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.2);
+    outline-offset: 2px;
+}
+
+.copilot-clear-button {
+    padding: 6px 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(239, 68, 68, 0.8);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    min-width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.copilot-clear-button:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgba(239, 68, 68, 1);
+    transform: translateY(-1px);
+}
+
+.copilot-clear-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.copilot-add-button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: 36px;
+    height: 36px;
+}
+
+.copilot-add-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.copilot-action-button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    flex-shrink: 0;
+}
+
+.copilot-action-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.copilot-action-button[aria-disabled="true"],
+.copilot-action-button.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.copilot-action-button[aria-disabled="true"]:hover,
+.copilot-action-button.disabled:hover {
+    background: transparent;
+    transform: none;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.copilot-action-button:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.copilot-action-button.recording {
+    background: rgba(255, 68, 68, 0.15);
+    color: #ff6666;
+}
+
+.copilot-attach-button {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    position: relative;
+}
+
+.copilot-attach-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.copilot-attach-button:active {
+    transform: scale(0.95);
+}
+
+.copilot-send-button-sm {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    border: none;
+    border-radius: 50%;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+}
+
+.copilot-send-button-sm:hover:not(:disabled) {
+    background: #4a6fa5;
+    color: #ffffff;
+    transform: scale(1.1);
+}
+
+.copilot-send-button-sm:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.copilot-send-button-sm:disabled {
+    opacity: 1;
+    pointer-events: none;
+    cursor: not-allowed;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.copilot-send-button-sm:not(:disabled) {
+    background: #4a6fa5;
+    color: #ffffff;
+}
+
+.copilot-send-button-sm[disabled] {
+    display: none;
+}
+
+.copilot-stop-button-sm {
+    background: #4a6fa5;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+}
+
+.copilot-stop-button-sm:hover {
+    background: #5a7fb5;
+    transform: scale(1.1);
+}
+
+.copilot-stop-button-sm:active {
+    transform: scale(0.95);
+}
+
+.copilot-send-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--button-send-bg);
+    color: #0f1419;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-send), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.copilot-send-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.copilot-send-button:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.copilot-send-button:hover:not(:disabled) {
+    background: var(--button-send-hover);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-send-hover), 0 0 0 4px rgba(198, 254, 30, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.copilot-send-button:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(198, 254, 30, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.copilot-send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.copilot-stop-button {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--button-stop-bg);
+    color: var(--white-stream);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow-stop), 0 0 0 0 rgba(255, 68, 68, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    animation: pulseGlowCopilot 2s ease-in-out infinite;
+}
+
+.copilot-stop-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.copilot-stop-button:hover::before {
+    left: 100%;
+}
+
+.copilot-stop-button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-stop-hover), 0 0 0 4px rgba(255, 68, 68, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: var(--button-stop-hover);
+}
+
+.copilot-stop-button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 320px) {
+    .copilot-header-button {
+        min-width: 28px;
+        height: 28px;
+        padding: 4px;
+    }
+
+    .copilot-clear-button {
+        padding: 4px 8px;
+        height: 28px;
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 240px) {
+    .copilot-header-button {
+        min-width: 26px;
+        height: 26px;
+        padding: 3px;
+    }
+
+    .copilot-clear-button {
+        padding: 3px 6px;
+        height: 26px;
+        font-size: 10px;
+    }
+}

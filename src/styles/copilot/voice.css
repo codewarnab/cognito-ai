@@ -1,0 +1,76 @@
+/**
+ * Voice Recording Styles
+ */
+
+.copilot-textarea.recording-blur {
+    filter: blur(2px) !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    opacity: 0.6 !important;
+    background-color: rgba(255, 0, 0, 0.05) !important;
+    border: 1px solid rgba(255, 0, 0, 0.2) !important;
+    transition: all 0.3s ease !important;
+}
+
+.copilot-input-container.recording-blur {
+    filter: blur(4px);
+    opacity: 0.6;
+}
+
+.copilot-composer.recording-blur {
+    filter: blur(1px) !important;
+    opacity: 0.7 !important;
+    pointer-events: none !important;
+    transition: all 0.3s ease !important;
+}
+
+.copilot-input-container.recording-blur * {
+    pointer-events: none;
+    user-select: none;
+}
+
+.copilot-composer.recording-blur {
+    filter: blur(2px);
+    pointer-events: none;
+}
+
+.recording-pulse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+    width: 16px;
+    height: 16px;
+}
+
+.recording-pulse svg {
+    width: 16px;
+    height: 16px;
+}
+
+.recording-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.recording-stop-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.2s;
+}
+
+.recording-stop-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.voice-recording-pill:hover .recording-stop-icon {
+    color: rgba(255, 255, 255, 0.8);
+}

@@ -1,0 +1,6 @@
+/**
+ * Tools Display Styles
+ * Orchestrator for all tool display styles
+ */
+@import './base.css';
+@import './compact.css';

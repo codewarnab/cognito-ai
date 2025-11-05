@@ -1,0 +1,23 @@
+/**
+ * Markdown Content Styles
+ */
+
+.markdown-content {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.markdown-content a {
+    color: #1264FF;
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.markdown-content a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.markdown-content a:visited {
+    color: #1264FF;
+}

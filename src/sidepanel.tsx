@@ -17,8 +17,7 @@ import type { VoiceInputHandle } from "./audio/VoiceInput";
 
 // Styles
 import "./styles/copilot.css";
-import "./styles/mcp.css";
-import "./styles/mcp-tools.css";
+import "./styles/features/mcp/index.css";
 import "./styles/memory.css";
 import "./styles/memory-sidebar.css";
 import "./styles/mentions.css";
@@ -26,7 +25,7 @@ import "./styles/thread-sidepanel.css";
 import "./styles/reminder.css";
 import "./styles/workflows.css";
 import "./styles/voice-recording-pill.css";
-import "./styles/onboarding.css";
+import "./styles/features/onboarding/index.css";
 import "./styles/local-banner.css";
 import "./styles/model-download-toast.css";
 import "./styles/continue-button.css";
