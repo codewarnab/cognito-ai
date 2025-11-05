@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
-import { CompactToolCard } from '../../components/ui/CompactToolCard';
+import { CompactToolCard } from '../../components/ui/tools/cards';
 import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger('Actions-History-UrlVisits');

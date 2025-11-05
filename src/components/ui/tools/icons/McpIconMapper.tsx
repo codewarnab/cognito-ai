@@ -4,28 +4,28 @@
  */
 
 import React from 'react';
-import { Ahrefs } from '../../../assets/Ahrefs';
-import { Asana } from '../../../assets/Asana';
-import { Astro } from '../../../assets/astro-docs';
-import { Atlassian } from '../../../assets/Atlassian';
-import { Canva } from '../../../assets/canva';
-import { Figma } from '../../../assets/figma';
-import { GitHub } from '../../../assets/github';
-import { HuggingFace } from '../../../assets/huggingface';
-import { Linear } from '../../../assets/linear';
-import { Netlify } from '../../../assets/Netlify';
-import { Notion } from '../../../assets/notion';
-import { PayPal } from '../../../assets/paypal';
-import { Sentry } from '../../../assets/sentry';
-import { Stripe } from '../../../assets/stripe';
-import { Supabase } from '../../../assets/supabase';
-import { Vercel } from '../../../assets/vercel';
-import { Webflow } from '../../../assets/webflow';
-import context7Image from '../../../assets/context7.png';
-import coingeckoImage from '../../../assets/coingecko.webp';
-import deepwikiImage from '../../../assets/deepwiki.webp';
-import wixImage from '../../../assets/wix.webp';
-import mcpGenericImage from '../../../assets/mcp.png';
+import { Ahrefs } from '../../../../../assets/Ahrefs';
+import { Asana } from '../../../../../assets/Asana';
+import { Astro } from '../../../../../assets/astro-docs';
+import { Atlassian } from '../../../../../assets/Atlassian';
+import { Canva } from '../../../../../assets/canva';
+import { Figma } from '../../../../../assets/figma';
+import { GitHub } from '../../../../../assets/github';
+import { HuggingFace } from '../../../../../assets/huggingface';
+import { Linear } from '../../../../../assets/linear';
+import { Netlify } from '../../../../../assets/Netlify';
+import { Notion } from '../../../../../assets/notion';
+import { PayPal } from '../../../../../assets/paypal';
+import { Sentry } from '../../../../../assets/sentry';
+import { Stripe } from '../../../../../assets/stripe';
+import { Supabase } from '../../../../../assets/supabase';
+import { Vercel } from '../../../../../assets/vercel';
+import { Webflow } from '../../../../../assets/webflow';
+import context7Image from '../../../../../assets/context7.png';
+import coingeckoImage from '../../../../../assets/coingecko.webp';
+import deepwikiImage from '../../../../../assets/deepwiki.webp';
+import wixImage from '../../../../../assets/wix.webp';
+import mcpGenericImage from '../../../../../assets/mcp.png';
 
 interface McpIconProps {
     size?: number;

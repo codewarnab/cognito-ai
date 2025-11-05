@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { useEffect } from 'react';
 import { createLogger } from "../../logger";
-import { ToolCard } from "../../components/ui/ToolCard";
+import { ToolCard } from "../../components/ui/tools/cards";
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
 import { getActiveReminders } from "./storage";

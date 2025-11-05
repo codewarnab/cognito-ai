@@ -1,8 +1,8 @@
 ﻿import React, { useState, useEffect, useRef } from "react"
 import { Info, Sliders } from "lucide-react"
-import { StatusBadge } from "../../ui/StatusBadge"
-import { Toggle } from "../../ui/Toggle"
-import { ConfirmDialog } from "../../ui/ConfirmDialog"
+import { StatusBadge } from "../../ui/feedback"
+import { Toggle } from "../../ui/primitives/toggle"
+import { ConfirmDialog } from "../../ui/primitives/dialog"
 import type { McpServerStatus, McpExtensionMessage, McpExtensionResponse } from "../../../mcp/types"
 
 interface McpServerCardProps {

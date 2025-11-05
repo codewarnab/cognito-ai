@@ -4,14 +4,14 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LoadingCheckIcon, type LoadingCheckIconHandle } from '../../../assets/chat/loading-check';
-import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../assets/chat/circle-check';
-import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../assets/chat/chevron-right';
-import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/chat/chevrown-down';
-import { getToolIcon } from './ToolIconMapper';
-import { formatToolAction } from './ToolActionFormatter/index';
-import { createLogger } from '../../logger';
-import type { CustomInputOutputRenderers } from '../../ai/tools/components';
+import { LoadingCheckIcon, type LoadingCheckIconHandle } from '../../../../../assets/chat/loading-check';
+import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../../../assets/chat/circle-check';
+import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../../../assets/chat/chevron-right';
+import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../../../assets/chat/chevrown-down';
+import { getToolIcon } from '../icons/ToolIconMapper';
+import { formatToolAction } from '../formatters';
+import { createLogger } from '../../../../logger';
+import type { CustomInputOutputRenderers } from '../../../../ai/tools/components';
 
 const log = createLogger('CompactToolCard');
 
