@@ -52,6 +52,13 @@ import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
 import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
 import { MCPError, NetworkError } from './errors/errorTypes';
 import { buildUserMessage } from './errors/errorMessages';
+import {
+    createAINotification,
+    parseNotificationId,
+    isAINotification,
+    clearNotification
+} from './utils/aiNotification';
+import type { AINotificationPayload } from './types/notifications';
 
 // ============================================================================
 // Dynamic OAuth Redirect URI Initialization
@@ -1603,6 +1610,35 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
         return true;
     }
 
+    // Handle AI notification creation
+    if (message?.type === 'ai/notification/create') {
+        (async () => {
+            try {
+                const payload = message.payload as AINotificationPayload;
+                console.log('[Background] Creating AI notification:', payload);
+
+                const notificationId = await createAINotification({
+                    threadId: payload.threadId,
+                    title: payload.title,
+                    message: payload.message,
+                });
+
+                if (notificationId) {
+                    sendResponse({ success: true, notificationId });
+                } else {
+                    sendResponse({ success: false, error: 'Failed to create notification' });
+                }
+            } catch (error) {
+                console.error('[Background] Error creating AI notification:', error);
+                sendResponse({
+                    success: false,
+                    error: error instanceof Error ? error.message : 'Unknown error'
+                });
+            }
+        })();
+        return true;
+    }
+
     // Return false for unhandled messages
     return false;
 });
@@ -1611,9 +1647,45 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
 // Runtime Listeners
 // ============================================================================
 
-// Global notification click handler for reminders
+// Global notification click handler for reminders and AI notifications
 chrome.notifications.onClicked.addListener(async (notificationId) => {
     try {
+        // Handle AI completion notifications
+        if (isAINotification(notificationId)) {
+            console.log('[Background] AI notification clicked:', notificationId);
+
+            const parsed = parseNotificationId(notificationId);
+            if (!parsed) {
+                console.warn('[Background] Invalid AI notification ID:', notificationId);
+                return;
+            }
+
+            // Open/focus sidepanel
+            try {
+                await chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+            } catch (error) {
+                console.error('[Background] Error opening sidepanel:', error);
+            }
+
+            // Send message to sidepanel to navigate to the thread
+            try {
+                await chrome.runtime.sendMessage({
+                    type: 'ai/notification/action',
+                    payload: {
+                        action: 'navigate',
+                        threadId: parsed.threadId,
+                    }
+                });
+            } catch (error) {
+                console.debug('[Background] No listeners for navigation message:', error);
+            }
+
+            // Clear the notification
+            await clearNotification(notificationId);
+            return;
+        }
+
+        // Handle reminder notifications
         if (!notificationId.startsWith('reminder:')) {
             return;
         }
@@ -1641,6 +1713,59 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
         chrome.notifications.clear(notificationId);
     } catch (error) {
         console.error('[Background] Error handling notification click:', error);
+    }
+});
+
+// Global notification button click handler for AI notifications
+chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIndex) => {
+    try {
+        // Only handle AI completion notifications
+        if (!isAINotification(notificationId)) {
+            return;
+        }
+
+        console.log('[Background] AI notification button clicked:', notificationId, buttonIndex);
+
+        const parsed = parseNotificationId(notificationId);
+        if (!parsed) {
+            console.warn('[Background] Invalid AI notification ID:', notificationId);
+            return;
+        }
+
+        // Button 0: Continue Iterating
+        // Button 1: Dismiss
+        if (buttonIndex === 0) {
+            // Continue Iterating clicked
+            console.log('[Background] Continue Iterating clicked for thread:', parsed.threadId);
+
+            // Open/focus sidepanel
+            try {
+                await chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
+            } catch (error) {
+                console.error('[Background] Error opening sidepanel:', error);
+            }
+
+            // Send message to sidepanel to continue iterating
+            try {
+                await chrome.runtime.sendMessage({
+                    type: 'ai/notification/action',
+                    payload: {
+                        action: 'continue',
+                        threadId: parsed.threadId,
+                    }
+                });
+            } catch (error) {
+                console.debug('[Background] No listeners for continue action:', error);
+            }
+        } else if (buttonIndex === 1) {
+            // Dismiss clicked - just clear the notification
+            console.log('[Background] Dismiss clicked for thread:', parsed.threadId);
+        }
+
+        // Clear the notification regardless of which button was clicked
+        await clearNotification(notificationId);
+    } catch (error) {
+        console.error('[Background] Error handling notification button click:', error);
     }
 });
 
