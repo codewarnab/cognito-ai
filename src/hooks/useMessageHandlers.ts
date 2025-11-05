@@ -106,13 +106,21 @@ export function useMessageHandlers({
                     })
                 );
 
-                const validFiles = processedFiles.filter(f => f !== null);
+                // Validate processed files are not null and have required properties
+                const validFiles = processedFiles.filter((f): f is NonNullable<typeof f> =>
+                    f !== null &&
+                    f !== undefined &&
+                    typeof f.mimeType === 'string' &&
+                    typeof f.content === 'string' &&
+                    typeof f.name === 'string' &&
+                    typeof f.size === 'number'
+                );
 
                 if (validFiles.length > 0) {
                     log.info("Files processed successfully", {
                         total: attachments.length,
                         successful: validFiles.length,
-                        images: validFiles.filter(f => f!.isImage).length
+                        images: validFiles.filter(f => f.isImage).length
                     });
 
                     const messageParts: any[] = [];
@@ -127,10 +135,10 @@ export function useMessageHandlers({
                     for (const file of validFiles) {
                         messageParts.push({
                             type: 'file',
-                            mediaType: file!.mimeType,
-                            url: `data:${file!.mimeType};base64,${file!.content}`,
-                            name: file!.name,
-                            size: file!.size
+                            mediaType: file.mimeType,
+                            url: `data:${file.mimeType};base64,${file.content}`,
+                            name: file.name,
+                            size: file.size
                         });
                     }
 

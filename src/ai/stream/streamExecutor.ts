@@ -3,7 +3,7 @@
  * Executes the AI streaming with proper configuration and error handling
  */
 
-import { streamText, generateId, smoothStream, stepCountIs } from 'ai';
+import { streamText, smoothStream, stepCountIs } from 'ai';
 import { createLogger } from '../../logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
@@ -51,7 +51,7 @@ export async function executeStreamText(params: {
             messages: modelMessages,
             tools,
             system: enhancedPrompt,
-            abortSignal,
+            ...(abortSignal && { abortSignal }),
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools
@@ -97,7 +97,9 @@ export async function executeStreamText(params: {
             });
 
             // Call onError callback to show toast
-            onError?.(quotaError);
+            if (onError) {
+                onError(quotaError);
+            }
 
             throw quotaError;
         }

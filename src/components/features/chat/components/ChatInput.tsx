@@ -51,8 +51,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     nextMessageId,
     modelState,
     onModeChange,
-    onModelChange,
-    onApiKeySaved,
     onError,
     usage, // Token usage tracking
 }) => {
@@ -74,7 +72,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // Handle file selection
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+        if (!e.target.files || e.target.files.length === 0) {
+            return;
+        }
+        const files = Array.from(e.target.files);
         await processFiles(files);
         // Reset input
         e.target.value = '';
@@ -113,7 +114,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Handle paste event for file pasting
     const handlePaste = async (e: ClipboardEvent) => {
         // Check if there are files in the clipboard
-        if (!e.clipboardData?.files.length) {
+        if (!e.clipboardData || !e.clipboardData.files || e.clipboardData.files.length === 0) {
             return;
         }
 
@@ -149,14 +150,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 if (msg.parts && msg.parts.length > 0) {
                     for (const part of msg.parts) {
                         if (part.type === 'text' && part.text) {
-                            totalWords += part.text.split(/\s+/).filter(word => word.length > 0).length;
+                            totalWords += part.text.split(/\s+/).filter((word: string) => word.length > 0).length;
                         }
                     }
                 }
             }
 
             // Count words in current input
-            totalWords += input.split(/\s+/).filter(word => word.length > 0).length;
+            totalWords += input.split(/\s+/).filter((word: string) => word.length > 0).length;
 
             const WORD_LIMIT = 500;
 
@@ -340,7 +341,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         <ModeSelector
                             modelState={modelState}
                             onModeChange={onModeChange}
-                            onModelChange={onModelChange}
                             showModeDropdown={showModeDropdown}
                             onToggleDropdown={setShowModeDropdown}
                             onError={onError}

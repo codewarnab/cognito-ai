@@ -44,11 +44,12 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
         }
 
         // Check if tab is accessible (not chrome:// or other restricted URLs)
+        const tabUrl = tab.url ?? null;
         const restrictedSchemes = ['chrome://', 'chrome-extension://', 'about://', 'file://', 'data://', 'blob://', 'filesystem://'];
-        if (restrictedSchemes.some(scheme => tab.url?.startsWith(scheme))) {
+        if (tabUrl && restrictedSchemes.some(scheme => tabUrl.startsWith(scheme))) {
             return {
-                url: tab.url || null,
-                title: tab.title || null,
+                url: tabUrl,
+                title: tab.title ?? null,
                 snapshot: null,
                 error: 'Cannot access system pages'
             };
@@ -77,19 +78,19 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
                 }
             });
 
-            if (results && results[0]?.result) {
+            if (results && results.length > 0 && results[0] && results[0].result) {
                 const data = results[0].result;
                 return {
-                    url: data.url,
-                    title: data.title,
-                    snapshot: data.html,
+                    url: data.url ?? null,
+                    title: data.title ?? null,
+                    snapshot: data.html ?? null,
                     error: null
                 };
             }
 
             return {
-                url: tab.url || null,
-                title: tab.title || null,
+                url: tab.url ?? null,
+                title: tab.title ?? null,
                 snapshot: null,
                 error: 'Failed to capture content'
             };
@@ -98,8 +99,8 @@ export async function captureTabSnapshot(tabId: number): Promise<TabSnapshotResu
                 ? scriptError.message
                 : 'Permission denied';
             return {
-                url: tab.url || null,
-                title: tab.title || null,
+                url: tab.url ?? null,
+                title: tab.title ?? null,
                 snapshot: null,
                 error: `Cannot access page: ${errorMessage}`
             };

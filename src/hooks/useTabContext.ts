@@ -14,8 +14,8 @@ export function useTabContext() {
         const updateTabContext = async () => {
             try {
                 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-                if (tab) {
-                    setCurrentTab({ url: tab.url, title: tab.title });
+                if (tab && (tab.url || tab.title)) {
+                    setCurrentTab({ url: tab.url ?? undefined, title: tab.title ?? undefined });
                 }
             } catch (error) {
                 log.error("Failed to get current tab", error);
@@ -31,7 +31,7 @@ export function useTabContext() {
         };
 
         // Listen for tab updates (URL or title changes)
-        const handleTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo, tab: chrome.tabs.Tab) => {
+        const handleTabUpdated = (tabId: number, changeInfo: chrome.tabs.TabChangeInfo) => {
             if (changeInfo.url || changeInfo.title) {
                 chrome.tabs.query({ active: true, currentWindow: true }, ([activeTab]) => {
                     if (activeTab && activeTab.id === tabId) {
