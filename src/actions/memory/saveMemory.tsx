@@ -5,13 +5,13 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '../../ai/toolRegistryUtils';
-import { useToolUI } from '../../ai/ToolUIContext';
+import { registerTool } from '../../ai/tools';
+import { useToolUI } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
-import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
+import { CompactToolRenderer } from '../../ai/tools/components';
 import * as memoryStore from '../../memory/store';
 import { createMemory, type MemoryCategory, type MemorySource } from '../../memory/types';
-import type { ToolUIState } from '../../ai/ToolUIContext';
+import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger('Tool-SaveMemory');
 
@@ -151,3 +151,4 @@ export function useSaveMemory() {
         };
     }, []);
 }
+

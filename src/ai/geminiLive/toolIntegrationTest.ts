@@ -8,7 +8,7 @@
  * - Tool validation
  */
 
-import { getAllTools, getTool } from '../toolRegistryUtils';
+import { getAllTools, getTool } from '../tools/registryUtils';
 import { convertAllTools, validateFunctionDeclaration } from './toolConverter';
 import { createLogger } from '../../logger';
 

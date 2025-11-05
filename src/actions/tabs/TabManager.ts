@@ -262,3 +262,4 @@ class TabManager {
 
 // Export singleton instance
 export const tabManager = new TabManager();
+

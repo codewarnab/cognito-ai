@@ -11,7 +11,7 @@ import {
     convertAllTools,
     validateFunctionDeclaration,
 } from './toolConverter';
-import type { ToolDefinition } from '../toolRegistryUtils';
+import type { ToolDefinition } from '../tools/registryUtils';
 
 // Test 1: Simple string parameter
 const simpleStringSchema = z.object({

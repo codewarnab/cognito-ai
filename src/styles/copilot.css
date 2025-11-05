@@ -49,24 +49,24 @@ body {
     max-width: 90%;
     width: auto;
     min-width: 300px;
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(10px);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .error-notification-error {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .error-notification-warning {
-    background: rgba(251, 191, 36, 0.15);
-    border: 1px solid rgba(251, 191, 36, 0.4);
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .error-notification-info {
-    background: rgba(59, 130, 246, 0.15);
-    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .error-notification-content {
@@ -84,15 +84,15 @@ body {
 }
 
 .error-notification-error .error-notification-icon {
-    color: #ef4444;
+    color: white;
 }
 
 .error-notification-warning .error-notification-icon {
-    color: #fbbf24;
+    color: white;
 }
 
 .error-notification-info .error-notification-icon {
-    color: #3b82f6;
+    color: white;
 }
 
 .error-notification-message {

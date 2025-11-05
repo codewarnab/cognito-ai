@@ -8,9 +8,9 @@ import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
 import { CompactToolCard } from "../../components/ui/CompactToolCard";
-import { registerTool } from "../../ai/toolRegistryUtils";
-import { useToolUI } from "../../ai/ToolUIContext";
-import type { ToolUIState } from "../../ai/ToolUIContext";
+import { registerTool } from "../../ai/tools";
+import { useToolUI } from "../../ai/tools/components";
+import type { ToolUIState } from "../../ai/tools/components";
 
 const log = createLogger("Actions-Interactions-ClickByText");
 
@@ -460,3 +460,4 @@ export function useClickByTextTool() {
         };
     }, [registerToolUI, unregisterToolUI]);
 }
+

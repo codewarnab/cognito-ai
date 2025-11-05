@@ -5,11 +5,11 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '../../ai/toolRegistryUtils';
-import { useToolUI } from '../../ai/ToolUIContext';
+import { registerTool } from '../../ai/tools';
+import { useToolUI } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
-import { CompactToolRenderer } from '../../ai/CompactToolRenderer';
-import type { ToolUIState } from '../../ai/ToolUIContext';
+import { CompactToolRenderer } from '../../ai/tools/components';
+import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger('Tool-ChromeSearch');
 
@@ -165,3 +165,4 @@ export function useChromeSearchTool() {
         };
     }, []); // Empty dependency array - only register once on mount
 }
+

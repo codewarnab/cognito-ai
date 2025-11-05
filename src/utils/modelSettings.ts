@@ -3,7 +3,7 @@
  * Manages AI model configuration and conversation mode restrictions
  */
 
-import type { AIMode, RemoteModelType } from '../ai/types';
+import type { AIMode, RemoteModelType } from '../ai/types/types';
 
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_model_config',
@@ -65,16 +65,16 @@ export async function clearConversationStartMode(): Promise<void> {
 export async function canSwitchMode(fromMode: AIMode, toMode: AIMode): Promise<boolean> {
   const config = await getModelConfig();
   const startMode = config.conversationStartMode;
-  
+
   // If no conversation started yet, allow any switch
   if (!startMode) return true;
-  
+
   // Local ΓåÆ Remote: Always allowed (upgrading capabilities)
   if (fromMode === 'local' && toMode === 'remote') return true;
-  
+
   // Remote ΓåÆ Local: NOT allowed (downgrading mid-conversation)
   if (fromMode === 'remote' && toMode === 'local') return false;
-  
+
   // Same mode: Always allowed
   return true;
 }

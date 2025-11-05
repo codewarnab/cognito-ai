@@ -4,11 +4,11 @@
  */
 
 import type { FunctionCall } from '../types';
-import { getTool } from '../../toolRegistryUtils';
+import { getTool } from '../../tools/registryUtils';
 import {
     browserActionAgentDeclaration,
     executeBrowserActionAgent,
-} from '../../agents/browserActionAgent';
+} from '../../agents/browser';
 import { createLogger } from '../../../logger';
 import { ToolExecutionHandler } from '../errorHandler';
 import { DEFAULT_CONFIG } from './config';

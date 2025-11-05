@@ -2,10 +2,10 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { createLogger } from "../../logger";
 import { ToolCard } from "../../components/ui/ToolCard";
-import { registerTool } from '../../ai/toolRegistryUtils';
-import { useToolUI } from '../../ai/ToolUIContext';
+import { registerTool } from '../../ai/tools';
+import { useToolUI } from '../../ai/tools/components';
 import { getActiveReminders } from "./storage";
-import type { ToolUIState } from '../../ai/ToolUIContext';
+import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger("Actions-Reminders-List");
 
@@ -56,3 +56,4 @@ export function useListRemindersAction() {
         };
     }, []); // Empty dependency array - only register once on mount
 }
+

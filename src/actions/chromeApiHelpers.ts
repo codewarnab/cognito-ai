@@ -217,3 +217,4 @@ export async function requestPermission(permission: string): Promise<boolean> {
         return false;
     }
 }
+

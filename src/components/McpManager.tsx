@@ -4,7 +4,7 @@ import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
 import { MCP_SERVERS } from "../constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/Popover"
-import { getCloudToolsCount } from "../ai/toolRegistry"
+import { getCloudToolsCount } from "../ai/tools";
 import { TOOLS_WARNING_THRESHOLD } from "../constants"
 
 interface McpManagerProps {

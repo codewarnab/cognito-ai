@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { SchemaType } from '@google/generative-ai';
 import type { FunctionDeclaration, FunctionDeclarationSchema, FunctionDeclarationSchemaProperty } from '@google/generative-ai';
-import type { ToolDefinition } from '../toolRegistryUtils';
+import type { ToolDefinition } from '../tools/registryUtils';
 import { createLogger } from '../../logger';
 
 const log = createLogger('ToolConverter');

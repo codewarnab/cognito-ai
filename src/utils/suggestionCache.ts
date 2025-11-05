@@ -4,7 +4,7 @@
  */
 
 import { createLogger } from '../logger';
-import type { Suggestion } from '../ai/suggestionGenerator';
+import type { Suggestion } from '../ai/suggestions';
 
 const log = createLogger('SuggestionCache');
 

@@ -426,3 +426,4 @@ export function getAvailableTemplateTypes(): Array<{ type: TemplateType; name: s
         description: template.description
     }));
 }
+
