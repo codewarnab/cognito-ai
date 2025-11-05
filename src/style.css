@@ -1,6 +1,6 @@
 /* Global Styles */
-@import './styles/variables.css';
-@import './styles/base.css';
+@import './styles/core/variables.css';
+@import './styles/core/base.css';
 @import './styles/copilot.css';
 @import './audio/voice.css';
 
