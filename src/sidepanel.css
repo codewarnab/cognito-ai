@@ -27,6 +27,7 @@
 .voice-mode-fab {
     position: fixed;
     bottom: 120px;
+    visibility: hidden;
     right: 16px;
     width: 44px;
     height: 44px;
@@ -35,7 +36,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
-    z-index: 999;
+    z-index: 998;
     display: flex;
     align-items: center;
     justify-content: center;
