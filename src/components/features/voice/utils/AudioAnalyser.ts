@@ -19,7 +19,7 @@ export class AudioAnalyser {
 
         // Create data arrays
         const bufferLength = this.analyser.frequencyBinCount;
-        this.dataArray = new Uint8Array(bufferLength) as Uint8Array<ArrayBuffer>;
+        this.dataArray = new Uint8Array(new ArrayBuffer(bufferLength));
         this.data = new Float32Array(4); // We'll use first 4 frequency bins
     }
 
@@ -32,7 +32,7 @@ export class AudioAnalyser {
 
         // Extract first 4 frequency bins for shader uniforms
         for (let i = 0; i < 4; i++) {
-            this.data[i] = this.dataArray[i];
+            this.data[i] = this.dataArray[i] ?? 0;
         }
     }
 
@@ -42,7 +42,7 @@ export class AudioAnalyser {
     getAverage(): number {
         let sum = 0;
         for (let i = 0; i < this.dataArray.length; i++) {
-            sum += this.dataArray[i];
+            sum += this.dataArray[i] ?? 0;
         }
         return sum / this.dataArray.length;
     }
@@ -53,8 +53,9 @@ export class AudioAnalyser {
     getPeak(): number {
         let peak = 0;
         for (let i = 0; i < this.dataArray.length; i++) {
-            if (this.dataArray[i] > peak) {
-                peak = this.dataArray[i];
+            const value = this.dataArray[i] ?? 0;
+            if (value > peak) {
+                peak = value;
             }
         }
         return peak;

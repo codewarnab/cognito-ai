@@ -78,9 +78,9 @@ export function renderTextWithMentions(text: string): React.ReactNode[] {
             index: match.index,
             length: match[0].length,
             type: 'tab',
-            display: match[1],
+            display: match[1] || '',
             faviconUrl: match[2] || undefined,
-            id: match[3]
+            id: match[3] || ''
         });
     }
 
@@ -90,8 +90,8 @@ export function renderTextWithMentions(text: string): React.ReactNode[] {
             index: match.index,
             length: match[0].length,
             type: 'tool',
-            display: match[1],
-            id: match[2]
+            display: match[1] || '',
+            id: match[2] || ''
         });
     }
 

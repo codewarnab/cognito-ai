@@ -241,7 +241,7 @@ export function useSuggestions(
 
             try {
                 const tab = await chrome.tabs.get(activeInfo.tabId);
-                if (tab?.url) {
+                if (tab.url) {
                     handleUrlChange(tab.url);
                 }
             } catch (error) {
