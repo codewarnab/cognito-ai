@@ -49,13 +49,11 @@ const SUGGESTION_SCHEMA = {
 async function isLocalAIAvailable(): Promise<boolean> {
     try {
         // Check if Chrome LanguageModel API exists
-        // @ts-ignore - Chrome LanguageModel API
         if (!window.LanguageModel) {
             log.warn('Chrome LanguageModel API not available');
             return false;
         }
 
-        // @ts-ignore
         const availability = await window.LanguageModel.availability();
         log.info('LanguageModel availability check:', availability);
 
@@ -81,8 +79,7 @@ async function createSuggestionSession() {
     try {
         log.info('Creating suggestion AI session...');
 
-        // @ts-ignore - Chrome LanguageModel API
-        const session = await window.LanguageModel.create({
+        const session = await window.LanguageModel?.create({
             temperature: 0.8, // More creative for suggestions
             topK: 40,
             systemInstruction: `You are a browser AI assistant that generates contextual suggestions.
@@ -212,7 +209,6 @@ export async function generateLocalContextualSuggestions(
 
             // Try with responseConstraint (structured output) first
             try {
-                // @ts-ignore - Chrome LanguageModel API with structured output
                 result = await session.prompt(prompt, {
                     responseConstraint: SUGGESTION_SCHEMA,
                 });
@@ -220,7 +216,6 @@ export async function generateLocalContextualSuggestions(
             } catch (constraintError) {
                 // Fallback: Use regular prompt without constraint
                 log.warn('responseConstraint not supported, using regular prompt:', constraintError);
-                // @ts-ignore
                 result = await session.prompt(prompt);
                 log.info('Used regular prompt (fallback)');
             }
@@ -234,7 +229,7 @@ export async function generateLocalContextualSuggestions(
                 // Try to extract JSON from markdown code blocks
                 log.warn('Failed to parse JSON directly, trying to extract from markdown:', parseError);
                 const jsonMatch = result.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-                if (jsonMatch) {
+                if (jsonMatch && jsonMatch[1]) {
                     parsed = JSON.parse(jsonMatch[1]);
                     log.info('Extracted JSON from markdown code block');
                 } else {

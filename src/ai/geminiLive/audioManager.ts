@@ -51,8 +51,8 @@ export class Analyser {
      * Update frequency data array
      */
     update(): void {
-        // @ts-ignore - TypeScript strict type checking issue with Web Audio API
-        this.analyserNode.getByteFrequencyData(this.data);
+        // Web Audio API type compatibility - Uint8Array buffer type mismatch
+        this.analyserNode.getByteFrequencyData(this.data as any);
     }
 
     /**
@@ -190,7 +190,7 @@ export class AudioCapture {
             // Convert Float32Array (-1 to 1) to Int16Array (-32768 to 32767)
             const int16Data = new Int16Array(inputData.length);
             for (let i = 0; i < inputData.length; i++) {
-                const s = Math.max(-1, Math.min(1, inputData[i]));
+                const s = Math.max(-1, Math.min(1, inputData[i] ?? 0));
                 int16Data[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
             }
 
@@ -365,14 +365,15 @@ export class AudioPlayback {
             // Convert Int16Array to Float32Array (-1 to 1)
             const float32Data = new Float32Array(int16Data.length);
             for (let i = 0; i < int16Data.length; i++) {
-                float32Data[i] = int16Data[i] / (int16Data[i] < 0 ? 0x8000 : 0x7FFF);
+                const value = int16Data[i] ?? 0;
+                float32Data[i] = value / (value < 0 ? 0x8000 : 0x7FFF);
             }
 
             // Create audio buffer
             const audioBuffer = this.audioContext.createBuffer(
                 1, // mono
                 float32Data.length,
-                this.audioContext.sampleRate
+                this.audioContext.sampleRate || 24000
             );
 
             // Copy data to buffer
@@ -433,7 +434,7 @@ export class AudioPlayback {
 
         // Reset next start time
         if (this.audioContext) {
-            this.nextStartTime = this.audioContext.currentTime;
+            this.nextStartTime = this.audioContext?.currentTime ?? 0;
         }
     }
 

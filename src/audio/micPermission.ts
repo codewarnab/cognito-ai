@@ -38,10 +38,13 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
     log.info('Microphone permission granted');
     return { granted: true };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     log.error('Microphone permission error', error);
 
-    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+    const errorName = error instanceof DOMException ? error.name : undefined;
+    const errorMessage = error instanceof Error ? error.message : 'Failed to access microphone';
+
+    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
       return {
         granted: false,
         error: 'Microphone access was denied. Please allow microphone access in your browser settings.',
@@ -49,7 +52,7 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
       };
     }
 
-    if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+    if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
       return {
         granted: false,
         error: 'No microphone found. Please connect a microphone and try again.',
@@ -59,7 +62,7 @@ export async function requestMicrophonePermission(): Promise<MicPermissionResult
 
     return {
       granted: false,
-      error: error.message || 'Failed to access microphone',
+      error: errorMessage,
       errorType: 'unknown',
     };
   }

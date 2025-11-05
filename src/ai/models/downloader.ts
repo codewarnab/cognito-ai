@@ -55,8 +55,7 @@ export async function downloadLanguageModel(
         throw new Error('Language Model API is not available in this browser');
     }
 
-    // @ts-ignore - Chrome built-in AI API
-    const availability = await self.LanguageModel.availability();
+    const availability = await self.LanguageModel?.availability();
     log.info('Language Model availability:', availability);
 
     if (availability === 'no') {
@@ -96,8 +95,7 @@ export async function downloadLanguageModel(
     // Check if model is already available (no download needed)
     if (availability === 'available' || availability === undefined) {
         // Model already downloaded, create session without monitoring
-        // @ts-ignore - Chrome built-in AI API
-        const session = await (self.LanguageModel.create as any)();
+        const session = await self.LanguageModel?.create();
         log.info('Language Model session created (already available)');
         return session;
     }
@@ -115,13 +113,11 @@ export async function downloadLanguageModel(
 
     try {
         // Create session with download progress monitoring
-        // Using any type to bypass TypeScript checks for Chrome's experimental monitor API
-        // @ts-ignore - Chrome built-in AI API (monitor not in types yet)
-        const session = await (self.LanguageModel.create as any)({
-            monitor(m: any) {
+        const session = await self.LanguageModel?.create({
+            monitor(m: DownloadMonitor) {
                 log.info('✅ Monitor callback registered for Language Model');
 
-                m.addEventListener('downloadprogress', (e: any) => {
+                m.addEventListener('downloadprogress', (e) => {
                     const progress = e.loaded || 0;
                     const percentage = Math.round(progress * 100);
                     log.info(`Language Model download progress: ${percentage}%`);
@@ -202,8 +198,7 @@ export async function downloadSummarizer(
         throw new Error('Summarizer API is not available in this browser');
     }
 
-    // @ts-ignore - Chrome built-in AI API
-    const availability = await self.Summarizer.availability();
+    const availability = await self.Summarizer?.availability();
     log.info('Summarizer availability:', availability);
 
     // Handle different availability states
@@ -225,16 +220,14 @@ export async function downloadSummarizer(
         });
 
         // Create summarizer with download progress monitoring
-        // Using any type to bypass TypeScript checks for Chrome's experimental monitor API
-        // @ts-ignore - Chrome built-in AI API
-        const summarizer = await (self.Summarizer.create as any)({
+        const summarizer = await self.Summarizer?.create({
             type: 'key-points',
             format: 'markdown',
             length: 'medium',
-            monitor(m: any) {
+            monitor(m: DownloadMonitor) {
                 log.info('✅ Monitor callback registered for Summarizer');
 
-                m.addEventListener('downloadprogress', (e: any) => {
+                m.addEventListener('downloadprogress', (e) => {
                     const progress = e.loaded || 0;
                     const percentage = Math.round(progress * 100);
                     log.info(`Summarizer download progress: ${percentage}%`);
@@ -271,8 +264,7 @@ export async function downloadSummarizer(
     }
 
     // Model already downloaded (available)
-    // @ts-ignore - Chrome built-in AI API
-    const summarizer = await (self.Summarizer.create as any)({
+    const summarizer = await self.Summarizer?.create({
         type: 'key-points',
         format: 'markdown',
         length: 'medium',
@@ -323,8 +315,7 @@ export async function areModelsReady(): Promise<{
 
     if (languageModelAvailable) {
         try {
-            // @ts-ignore
-            const availability = await self.LanguageModel.availability();
+            const availability = await self.LanguageModel?.availability();
             // Model is ready if it's available or undefined (already downloaded)
             languageModelReady = availability === 'available' || availability === undefined;
         } catch (error) {
@@ -334,8 +325,7 @@ export async function areModelsReady(): Promise<{
 
     if (summarizerAvailable) {
         try {
-            // @ts-ignore
-            const availability = await self.Summarizer.availability();
+            const availability = await self.Summarizer?.availability();
             // Model is ready if it's available or undefined (already downloaded)
             summarizerReady = availability === 'available' || availability === undefined;
         } catch (error) {

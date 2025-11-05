@@ -7,57 +7,55 @@
  */
 
 import Dexie, { type Table } from 'dexie';
-import type { AppUsage } from '../ai/types/usage';
+import type {
+    ChatThread,
+    ChatMessage,
+    SettingRecord,
+    SettingsTypeMap,
+    SettingKey,
+    DBStats
+} from '~/types/database';
+import type { AppUsage } from '~/types/ai/usage';
 
 // ============================================================================
-// Type Definitions
+// Type Definitions (Re-exported from ~/types/database)
 // ============================================================================
 
-export interface SettingRecord {
-    key: string;
-    value: any;
-}
+// Re-export types for backward compatibility
+export type {
+    ChatThread,
+    ChatMessage,
+    SettingRecord,
+    SettingsTypeMap,
+    SettingKey,
+    DBStats
+};
 
 /**
- * Application settings
+ * Application settings (derived from SettingsTypeMap)
  */
-export interface Settings {
-    paused?: boolean;
-}
-
-/**
- * Chat thread record
- */
-export interface ChatThread {
-    id: string;
-    title: string;
-    createdAt: number;
-    updatedAt: number;
-    initialPageContext?: string; // Page context snapshot at thread creation
-    lastUsage?: AppUsage; // Track latest usage for thread
-}
-
-/**
- * Chat message record for side panel chat UI
- * Stores the complete UIMessage structure from AI SDK to preserve:
- * - Tool call parts (tool-call, tool-result)
- * - Text parts
- * - Custom data parts
- * - All metadata and timestamps
- */
-export interface ChatMessage {
-    id: string;
-    threadId: string;
-    message: any; // Store complete UIMessage as JSON (typed as 'any' to avoid circular deps)
-    timestamp: number;
-    sequenceNumber?: number; // Added to preserve message order
-    usage?: AppUsage; // Store usage per message
-}
+export type Settings = Partial<SettingsTypeMap>;
 
 // ============================================================================
 // Dexie Database Class
 // ============================================================================
 
+/**
+ * Main database class extending Dexie
+ * 
+ * @remarks
+ * This database uses IndexedDB to store:
+ * - User settings (key-value pairs)
+ * - Chat messages (complete UIMessage structures)
+ * - Chat threads (conversation containers)
+ * 
+ * The schema has evolved through 5 versions:
+ * - v1: Initial settings and messages
+ * - v2: Added threads support
+ * - v3: Added sequenceNumber for message ordering
+ * - v4: Store complete UIMessage structure for tool calls
+ * - v5: Added usage tracking fields
+ */
 export class AppDB extends Dexie {
     settings!: Table<SettingRecord, string>;
     chatMessages!: Table<ChatMessage, string>;
@@ -132,17 +130,28 @@ export const db = new AppDB();
 // ============================================================================
 
 /**
- * Get a setting value by key
+ * Get a setting value by key (type-safe)
+ * @template K - The setting key from SettingsTypeMap
+ * @param key - The setting key
+ * @returns The typed setting value or undefined if not found
  */
-export async function getSetting<T = any>(key: string): Promise<T | undefined> {
+export async function getSetting<K extends SettingKey>(
+    key: K
+): Promise<SettingsTypeMap[K] | undefined> {
     const record = await db.settings.get(key);
-    return record?.value as T | undefined;
+    return record?.value as SettingsTypeMap[K] | undefined;
 }
 
 /**
- * Set a setting value
+ * Set a setting value (type-safe)
+ * @template K - The setting key from SettingsTypeMap
+ * @param key - The setting key
+ * @param value - The typed value for this setting
  */
-export async function setSetting(key: string, value: any): Promise<void> {
+export async function setSetting<K extends SettingKey>(
+    key: K,
+    value: SettingsTypeMap[K]
+): Promise<void> {
     await db.settings.put({ key, value });
 }
 
@@ -150,7 +159,7 @@ export async function setSetting(key: string, value: any): Promise<void> {
  * Get the last active thread ID
  */
 export async function getLastActiveThreadId(): Promise<string | null> {
-    return await getSetting<string>('lastActiveThreadId') || null;
+    return await getSetting('lastActiveThreadId') || null;
 }
 
 /**
@@ -164,7 +173,7 @@ export async function setLastActiveThreadId(threadId: string): Promise<void> {
  * Get the browser session ID (changes on restart)
  */
 export async function getBrowserSessionId(): Promise<string | null> {
-    return await getSetting<string>('browserSessionId') || null;
+    return await getSetting('browserSessionId') || null;
 }
 
 /**
@@ -202,8 +211,21 @@ export async function updateSettings(updates: Partial<Settings>): Promise<void> 
 
 /**
  * Create a new chat thread
+ * 
+ * @param firstMessage - Optional first message to use as thread title
+ * @param initialPageContext - Optional page context snapshot at thread creation
+ * @returns The created thread with generated ID and timestamps
+ * 
+ * @example
+ * ```typescript
+ * const thread = await createThread("Hello!", "Page: example.com");
+ * console.log(thread.id); // UUID
+ * ```
  */
-export async function createThread(firstMessage?: string, initialPageContext?: string): Promise<ChatThread> {
+export async function createThread(
+    firstMessage?: string,
+    initialPageContext?: string
+): Promise<ChatThread> {
     const thread: ChatThread = {
         id: crypto.randomUUID(),
         title: firstMessage
@@ -219,6 +241,9 @@ export async function createThread(firstMessage?: string, initialPageContext?: s
 
 /**
  * Update thread title
+ * 
+ * @param threadId - The thread ID to update
+ * @param title - New title for the thread
  */
 export async function updateThreadTitle(threadId: string, title: string): Promise<void> {
     await db.chatThreads.update(threadId, {
@@ -229,13 +254,18 @@ export async function updateThreadTitle(threadId: string, title: string): Promis
 
 /**
  * Get all threads ordered by most recent
+ * 
+ * @returns Array of threads sorted by updatedAt (newest first)
  */
 export async function getAllThreads(): Promise<ChatThread[]> {
     return await db.chatThreads.orderBy('updatedAt').reverse().toArray();
 }
 
 /**
- * Get a specific thread
+ * Get a specific thread by ID
+ * 
+ * @param threadId - The thread ID to retrieve
+ * @returns The thread or undefined if not found
  */
 export async function getThread(threadId: string): Promise<ChatThread | undefined> {
     return await db.chatThreads.get(threadId);
@@ -250,6 +280,9 @@ export async function updateThreadTimestamp(threadId: string): Promise<void> {
 
 /**
  * Delete a thread and all its messages
+ * 
+ * @param threadId - The thread ID to delete
+ * @remarks Uses a transaction to ensure atomic deletion of thread and messages
  */
 export async function deleteThread(threadId: string): Promise<void> {
     await db.transaction('rw', [db.chatThreads, db.chatMessages], async () => {
@@ -264,8 +297,29 @@ export async function deleteThread(threadId: string): Promise<void> {
 
 /**
  * Save a chat message with complete UIMessage structure
+ * 
+ * @param message - Message data without id and timestamp (will be auto-generated)
+ * @returns The complete saved message with id and timestamp
+ * 
+ * @remarks
+ * - Automatically generates UUID for message ID if not present in message.message.id
+ * - Sets timestamp to current time
+ * - Updates parent thread's updatedAt timestamp
+ * 
+ * @example
+ * ```typescript
+ * const msg = await saveChatMessage({
+ *   threadId: 'thread-123',
+ *   message: {
+ *     role: 'user',
+ *     parts: [{ type: 'text', text: 'Hello!' }]
+ *   }
+ * });
+ * ```
  */
-export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<ChatMessage> {
+export async function saveChatMessage(
+    message: Omit<ChatMessage, 'id' | 'timestamp'>
+): Promise<ChatMessage> {
     const fullMessage: ChatMessage = {
         ...message,
         id: message.message.id || crypto.randomUUID(),
@@ -281,7 +335,13 @@ export async function saveChatMessage(message: Omit<ChatMessage, 'id' | 'timesta
 
 /**
  * Load chat history for a specific thread
- * Returns messages with complete UIMessage structure including tool calls
+ * 
+ * @param threadId - The thread ID to load messages for
+ * @returns Array of messages sorted by sequence number or timestamp
+ * 
+ * @remarks
+ * Returns messages with complete UIMessage structure including tool calls.
+ * Messages are sorted by sequenceNumber if available, otherwise by timestamp.
  */
 export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
     const messages = await db.chatMessages
@@ -340,6 +400,11 @@ export function isValidUIMessage(msg: any): boolean {
 
 /**
  * Clear all data from the database
+ * 
+ * @remarks
+ * ⚠️ WARNING: This action is irreversible!
+ * Removes all settings, messages, and threads from the database.
+ * Uses a transaction to ensure atomic deletion.
  */
 export async function wipeAllData(): Promise<void> {
     await db.transaction('rw', [db.settings, db.chatMessages, db.chatThreads], async () => {
@@ -351,12 +416,16 @@ export async function wipeAllData(): Promise<void> {
 
 /**
  * Get database statistics
+ * 
+ * @returns Object containing counts of messages, settings, and threads
+ * 
+ * @example
+ * ```typescript
+ * const stats = await getDBStats();
+ * console.log(`Total messages: ${stats.chatMessageCount}`);
+ * ```
  */
-export async function getDBStats(): Promise<{
-    chatMessageCount: number;
-    settingsCount: number;
-    threadCount: number;
-}> {
+export async function getDBStats(): Promise<DBStats> {
     const [chatMessageCount, settingsCount, threadCount] = await Promise.all([
         db.chatMessages.count(),
         db.settings.count(),
@@ -376,7 +445,19 @@ export async function getDBStats(): Promise<{
 
 /**
  * Calculate cumulative usage for a thread
- * Sums up all usage from all messages in the thread
+ * 
+ * @param threadId - The thread ID to calculate usage for
+ * @returns Cumulative AppUsage summing all messages, or null if no messages
+ * 
+ * @remarks
+ * Sums up all usage metrics from all messages in the thread:
+ * - inputTokens
+ * - outputTokens
+ * - totalTokens
+ * - cachedInputTokens
+ * - reasoningTokens
+ * 
+ * Context limits and modelId are copied from the last message with usage.
  */
 export async function getThreadUsage(threadId: string): Promise<AppUsage | null> {
     const messages = await db.chatMessages
@@ -419,7 +500,13 @@ export async function getThreadUsage(threadId: string): Promise<AppUsage | null>
 }
 
 /**
- * Update thread's last usage
+ * Update thread's last usage statistics
+ * 
+ * @param threadId - The thread ID to update
+ * @param usage - Usage statistics to store
+ * 
+ * @remarks
+ * Also updates the thread's updatedAt timestamp
  */
 export async function updateThreadUsage(threadId: string, usage: AppUsage): Promise<void> {
     await db.chatThreads.update(threadId, {
@@ -430,6 +517,16 @@ export async function updateThreadUsage(threadId: string, usage: AppUsage): Prom
 
 /**
  * Save chat message with usage information
+ * 
+ * @param message - Message data without id and timestamp
+ * @param usage - Optional token usage statistics for this message
+ * @returns The complete saved message with id and timestamp
+ * 
+ * @remarks
+ * - Automatically generates UUID and timestamp
+ * - Updates thread timestamp
+ * - If usage is provided, also updates thread's lastUsage
+ * - Uses transaction to ensure atomic updates
  */
 export async function saveChatMessageWithUsage(
     message: Omit<ChatMessage, 'id' | 'timestamp'>,

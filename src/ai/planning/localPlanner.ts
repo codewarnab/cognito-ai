@@ -72,13 +72,11 @@ const PLAN_SCHEMA = {
  */
 async function isLocalAIAvailable(): Promise<boolean> {
     try {
-        // @ts-ignore - Chrome LanguageModel API
         if (!window.LanguageModel) {
             log.warn('Chrome LanguageModel API not available');
             return false;
         }
 
-        // @ts-ignore
         const availability = await window.LanguageModel.availability();
         const isAvailable = availability === 'available' || availability === 'downloaded' || availability === undefined;
 
@@ -96,8 +94,7 @@ async function createPlannerSession() {
     try {
         log.info('Creating planner AI session...');
 
-        // @ts-ignore - Chrome LanguageModel API
-        const session = await window.LanguageModel.create({
+        const session = await window.LanguageModel?.create({
             temperature: 0.3, // Low temperature for more deterministic planning
             topK: 20,
             systemInstruction: `You are an AI planner that generates step-by-step execution plans.
@@ -277,7 +274,6 @@ export async function generateExecutionPlan(
 
             // Try with responseConstraint (structured output) first
             try {
-                // @ts-ignore - Chrome LanguageModel API with structured output
                 result = await session.prompt(prompt, {
                     responseConstraint: PLAN_SCHEMA,
                 });
@@ -285,7 +281,6 @@ export async function generateExecutionPlan(
             } catch (constraintError) {
                 // Fallback: Use regular prompt without constraint
                 log.warn('responseConstraint not supported, using regular prompt:', constraintError);
-                // @ts-ignore
                 result = await session.prompt(prompt);
                 log.info('Used regular prompt (fallback)');
             }
@@ -299,7 +294,7 @@ export async function generateExecutionPlan(
                 // Try to extract JSON from markdown code blocks
                 log.warn('Failed to parse JSON directly, trying to extract from markdown:', parseError);
                 const jsonMatch = result.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-                if (jsonMatch) {
+                if (jsonMatch && jsonMatch[1]) {
                     parsed = JSON.parse(jsonMatch[1]);
                     log.info('Extracted JSON from markdown code block');
                 } else {
