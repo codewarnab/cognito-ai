@@ -13,6 +13,7 @@ import { AudioLinesIcon } from "./components/shared/icons";
 import { VoiceModeUI } from "./components/features/voice";
 import { VoiceRecordingPill } from "./components/shared/inputs";
 import { ContextWarning } from "./components/features/chat/context/ContextWarning";
+import { ErrorToast } from "./components/shared/notifications";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 
 // Styles
@@ -30,6 +31,7 @@ import "./styles/components/model-download-toast.css";
 import "./styles/components/continue-button.css";
 import "./styles/components/context-indicator.css";
 import "./styles/components/context-warning.css";
+import "./styles/components/error-toast.css";
 import "./sidepanel.css";
 
 // Core functionality
@@ -41,11 +43,9 @@ import { useAIChat } from "./ai/hooks";
 // Custom hooks
 import { useApiKey } from "./hooks/useApiKey";
 import { useOnboarding } from "./hooks/useOnboarding";
-import { useTabContext } from "./hooks/useTabContext";
 import { useVoiceRecording } from "./hooks/useVoiceRecording";
 import { useThreadManagement } from "./hooks/useThreadManagement";
 import { useMessageHandlers } from "./hooks/useMessageHandlers";
-import { useBehavioralPreferences } from "./hooks/useBehavioralPreferences";
 import { useAIChatMessages } from "./hooks/useAIChatMessages";
 
 // Types
@@ -73,6 +73,7 @@ function AIChatContent() {
     const [showFeatures, setShowFeatures] = useState(false);
     const [mode, setMode] = useState<ChatMode>('text');
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
+    const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -80,8 +81,6 @@ function AIChatContent() {
 
     // Custom hooks for separated concerns
     const apiKey = useApiKey();
-    const currentTab = useTabContext();
-    const behavioralPreferences = useBehavioralPreferences();
 
     const {
         showOnboarding,
@@ -108,7 +107,12 @@ function AIChatContent() {
         currentThreadId,
         onContextWarning: (percent) => {
             log.warn('Context limit warning triggered', { percent });
-            setContextWarning({ percent });
+            setContextWarning({
+                percent,
+                isNearLimit: percent >= 80,
+                tokensUsed: 0, // These will be updated by the AI chat hook
+                tokensLimit: 0
+            });
             const dismissTimeout = percent >= 95 ? 15000 : 10000;
             setTimeout(() => setContextWarning(null), dismissTimeout);
         },
@@ -119,10 +123,31 @@ function AIChatContent() {
         threadId: currentThreadId || 'default',
         onError: (error) => {
             log.error('AI Chat error', error);
+
+            // Show error toast for API errors (403, 401, etc.)
+            if (error instanceof Error) {
+                const errorMessage = error.message || 'An error occurred';
+                const isAuthError = errorMessage.toLowerCase().includes('auth') ||
+                    errorMessage.toLowerCase().includes('forbidden') ||
+                    errorMessage.toLowerCase().includes('api key');
+
+                // Show toast for auth/API errors to make them more visible
+                if (isAuthError) {
+                    setErrorToast({
+                        message: errorMessage,
+                        details: (error as any).technicalDetails || error.stack
+                    });
+                }
+            }
         },
         onContextWarning: (percent) => {
             log.warn('Context limit warning triggered', { percent });
-            setContextWarning({ percent });
+            setContextWarning({
+                percent,
+                isNearLimit: percent >= 80,
+                tokensUsed: 0, // These will be updated by the AI chat hook
+                tokensLimit: 0
+            });
             const dismissTimeout = percent >= 95 ? 15000 : 10000;
             setTimeout(() => setContextWarning(null), dismissTimeout);
         },
@@ -266,6 +291,15 @@ function AIChatContent() {
         <>
             {/* MCP and Tools commented out for now */}
             {/* <ToolRenderer /> */}
+
+            {/* Error Toast Notification */}
+            <ErrorToast
+                message={errorToast?.message || ''}
+                technicalDetails={errorToast?.details}
+                isVisible={!!errorToast}
+                onDismiss={() => setErrorToast(null)}
+                duration={10000}
+            />
 
             {/* Context Limit Warning */}
             {contextWarning && (

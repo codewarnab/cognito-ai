@@ -10,12 +10,13 @@ import {
     type ChatMessage
 } from '../db';
 import type { UIMessage } from 'ai';
+import type { ContextWarningState } from '../types/sidepanel';
 
 const log = createLogger('useThreadManagement');
 
 interface UseThreadManagementProps {
     setMessages?: (messages: UIMessage[]) => void;
-    setContextWarning: (warning: { percent: number } | null) => void;
+    setContextWarning: (warning: ContextWarningState | null) => void;
     resetUsage?: () => void;
 }
 

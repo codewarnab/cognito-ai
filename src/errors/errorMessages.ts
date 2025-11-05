@@ -47,9 +47,10 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         userMessage: 'Authentication failed. Please check your API key.',
         technicalTemplate: 'Authentication failed. Status: {statusCode}, Details: {details}',
         suggestions: [
-            'Go to Settings and verify your API key',
+            'Go to Settings (⚙️ icon) and verify your API key',
+            'If your API key was reported as leaked, generate a new one at https://aistudio.google.com/apikey',
             'Ensure your API key has the necessary permissions',
-            'Generate a new API key if the current one is expired',
+            'After updating your API key, try your request again',
         ],
     },
     [ErrorType.API_MALFORMED_FUNCTION_CALL]: {

@@ -71,13 +71,39 @@ export async function parseGeminiErrorAsync(error: any): Promise<APIError> {
       if (message.toLowerCase().includes('quota')) {
         return APIError.quotaExceeded(details);
       }
+
+      // Check if API key was leaked or reported
+      if (message.toLowerCase().includes('leaked') || message.toLowerCase().includes('reported')) {
+        return new APIError({
+          message: 'API Key Security Issue',
+          statusCode: 403,
+          retryable: false,
+          userMessage: '🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio.',
+          technicalDetails: details,
+          errorCode: ErrorType.API_AUTH_FAILED,
+        });
+      }
+
+      // Check if it's a permission issue
+      if (message.toLowerCase().includes('permission')) {
+        return new APIError({
+          message: 'Permission Denied',
+          statusCode: 403,
+          retryable: false,
+          userMessage: 'API key does not have the required permissions. Please check your API key settings.',
+          technicalDetails: details,
+          errorCode: ErrorType.API_AUTH_FAILED,
+        });
+      }
+
+      // Generic 403 error
       return new APIError({
         message: 'Forbidden',
         statusCode: 403,
         retryable: false,
-        userMessage: 'Access forbidden. Please check your API permissions.',
+        userMessage: 'Access forbidden. Your API key may be invalid or restricted.',
         technicalDetails: details,
-        errorCode: ErrorType.API_INVALID_REQUEST,
+        errorCode: ErrorType.API_AUTH_FAILED,
       });
     }
 
@@ -149,13 +175,39 @@ export function parseGeminiError(error: any): APIError {
       if (message.toLowerCase().includes('quota')) {
         return APIError.quotaExceeded(details);
       }
+
+      // Check if API key was leaked or reported
+      if (message.toLowerCase().includes('leaked') || message.toLowerCase().includes('reported')) {
+        return new APIError({
+          message: 'API Key Security Issue',
+          statusCode: 403,
+          retryable: false,
+          userMessage: '🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio.',
+          technicalDetails: details,
+          errorCode: ErrorType.API_AUTH_FAILED,
+        });
+      }
+
+      // Check if it's a permission issue
+      if (message.toLowerCase().includes('permission')) {
+        return new APIError({
+          message: 'Permission Denied',
+          statusCode: 403,
+          retryable: false,
+          userMessage: 'API key does not have the required permissions. Please check your API key settings.',
+          technicalDetails: details,
+          errorCode: ErrorType.API_AUTH_FAILED,
+        });
+      }
+
+      // Generic 403 error
       return new APIError({
         message: 'Forbidden',
         statusCode: 403,
         retryable: false,
-        userMessage: 'Access forbidden. Please check your API permissions.',
+        userMessage: 'Access forbidden. Your API key may be invalid or restricted.',
         technicalDetails: details,
-        errorCode: ErrorType.API_INVALID_REQUEST,
+        errorCode: ErrorType.API_AUTH_FAILED,
       });
     }
 
