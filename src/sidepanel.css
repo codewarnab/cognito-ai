@@ -12,7 +12,7 @@
 @import './styles/core/responsive.css';
 @import './styles/tools.css';
 @import './styles/compact-tools.css';
-@import './styles/threads.css';
+@import './styles/features/threads/index.css';
 @import './styles/mentions.css';
 
 /* Mode Toggle Wrapper */

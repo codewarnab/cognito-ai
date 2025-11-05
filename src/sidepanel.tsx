@@ -20,7 +20,7 @@ import "./styles/copilot.css";
 import "./styles/features/mcp/index.css";
 import "./styles/features/memory/index.css";
 import "./styles/mentions.css";
-import "./styles/thread-sidepanel.css";
+import "./styles/features/threads/index.css";
 import "./styles/reminder.css";
 import "./styles/workflows.css";
 import "./styles/voice-recording-pill.css";
