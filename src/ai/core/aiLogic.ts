@@ -64,8 +64,9 @@ export async function streamAIResponse(params: {
   onUsageUpdate?: (usage: AppUsage) => void;
   workflowId?: string; // Optional workflow ID to use workflow-specific prompt and tools
   threadId?: string; // Thread ID for workflow session management
+  onFinishCallback?: () => void; // Callback when AI completes response (for notifications, etc.)
 }) {
-  const { messages, abortSignal, initialPageContext, onError, onUsageUpdate, workflowId, threadId } = params;
+  const { messages, abortSignal, initialPageContext, onError, onUsageUpdate, workflowId, threadId, onFinishCallback } = params;
 
   log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
 
@@ -264,6 +265,12 @@ export async function streamAIResponse(params: {
                   data: { status: 'completed', timestamp: Date.now() },
                   transient: true,
                 });
+
+                // Call finish callback (for notification sound, etc.)
+                if (onFinishCallback) {
+                  log.info('🔔 Calling onFinishCallback for AI completion notification');
+                  onFinishCallback();
+                }
 
                 // MCP connections are persistent - no cleanup needed
                 log.info(' MCP tools remain available for next chat');

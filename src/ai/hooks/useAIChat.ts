@@ -14,6 +14,8 @@ import type { AppUsage } from '../types/usage';
 import { updateThreadUsage } from '../../db';
 import { debounce } from '../../utils/debounce';
 import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
+import { useWindowVisibility } from '../../contexts/WindowVisibilityContext';
+import { playNotificationSound } from '../../utils/soundNotification';
 
 const log = createLogger('useAIChat');
 
@@ -31,6 +33,9 @@ export interface UseAIChatOptions {
  */
 export function useAIChat(options: UseAIChatOptions) {
   const { threadId, onError, onFinish, onContextWarning } = options;
+
+  // Get window visibility state for notification sound
+  const { isUserAway } = useWindowVisibility();
 
   // Track current usage for this thread
   const [currentUsage, setCurrentUsage] = useState<AppUsage | null>(null);
@@ -90,7 +95,22 @@ export function useAIChat(options: UseAIChatOptions) {
       // Use debounced update
       debouncedUsageUpdate(usage);
     });
-  }, [transport, threadId, debouncedUsageUpdate]);
+
+    // Set up finish callback for notification sound
+    transport.setOnFinishCallback(() => {
+      log.info('🔔 AI response completed, checking if user is away', { isUserAway });
+
+      // Play sound ONLY if user is away (viewing another window)
+      if (isUserAway) {
+        log.info('🔊 User is away, playing notification sound');
+        playNotificationSound().catch(err => {
+          log.warn('Failed to play notification sound:', err);
+        });
+      } else {
+        log.info('👀 User is viewing extension, skipping notification sound');
+      }
+    });
+  }, [transport, threadId, debouncedUsageUpdate, isUserAway]);
 
   // Reset usage state when thread changes (for new threads)
   // Actual usage calculation happens from messages in the effect below
