@@ -472,3 +472,4 @@ export async function safeAnimate(animationFn: () => Promise<void>): Promise<voi
         console.debug('Animation skipped:', error);
     }
 }
+

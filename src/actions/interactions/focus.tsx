@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from "../../logger";
-import { CompactToolRenderer } from "../../ai/CompactToolRenderer";
-import { registerTool } from "../../ai/toolRegistryUtils";
-import { useToolUI } from "../../ai/ToolUIContext";
-import type { ToolUIState } from "../../ai/ToolUIContext";
+import { CompactToolRenderer } from "../../ai/tools/components";
+import { registerTool } from "../../ai/tools";
+import { useToolUI } from "../../ai/tools/components";
+import type { ToolUIState } from "../../ai/tools/components";
 
 const log = createLogger("Actions-Interactions-Focus");
 
@@ -94,3 +94,4 @@ export function useFocusElementTool() {
         };
     }, [registerToolUI, unregisterToolUI]);
 }
+

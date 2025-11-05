@@ -4,7 +4,7 @@ import { CopilotChatWindow } from "./components/CopilotChatWindow";
 import { McpManager } from "./components/McpManager";
 import { Troubleshooting } from "./components/Troubleshooting";
 import { Features } from "./components/Features";
-import { ToolUIProvider } from "./ai/ToolUIContext";
+import { ToolUIProvider } from "./ai/tools/components";
 import { ThreadListSidePanel } from "./components/ThreadListSidePanel";
 import { MemorySidebar } from "./components/MemorySidebar";
 import { ReminderPanel } from "./components/ReminderPanel";
@@ -49,7 +49,7 @@ import {
 } from "./db";
 import { generateThreadTitle } from "./utils/summarizer";
 import { getBehavioralPreferences } from "./memory/store";
-import { useAIChat } from "./ai/useAIChat";
+import { useAIChat } from "./ai/hooks";
 import type { UIMessage } from "ai";
 import { extractPageContext, formatPageContextForAI } from "./utils/pageContextExtractor";
 import { processFile, getFileIcon, formatFileSize } from "./utils/fileProcessor";

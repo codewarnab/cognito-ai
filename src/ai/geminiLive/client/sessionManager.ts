@@ -5,7 +5,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_LIVE_MODELS, Modality } from '../types';
-import { getGeminiLiveSystemInstruction } from '../../agents/prompts';
+import { getGeminiLiveSystemInstruction } from '../../agents/browser';
 import { createLogger } from '../../../logger';
 import { GeminiLiveToolHandler } from './toolHandler';
 

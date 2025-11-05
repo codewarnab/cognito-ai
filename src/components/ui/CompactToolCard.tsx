@@ -11,7 +11,7 @@ import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../assets/cha
 import { getToolIcon } from './ToolIconMapper';
 import { formatToolAction } from './ToolActionFormatter';
 import { createLogger } from '../../logger';
-import type { CustomInputOutputRenderers } from '../../ai/ToolUIContext';
+import type { CustomInputOutputRenderers } from '../../ai/tools/components';
 
 const log = createLogger('CompactToolCard');
 

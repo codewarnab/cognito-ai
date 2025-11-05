@@ -6,8 +6,8 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '../../ai/toolRegistryUtils';
-import { useToolUI } from '../../ai/ToolUIContext';
+import { registerTool } from '../../ai/tools';
+import { useToolUI } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
 import {
     type TemplateType,
@@ -131,3 +131,4 @@ Call this BEFORE starting research to get the proper structure for gathering inf
         };
     }, []);
 }
+

@@ -41,3 +41,4 @@ export function useActionHelpers() {
 
   return { normalizeUrl, urlsEqual, isRecentlyOpened, markOpened, focusTab };
 }
+
