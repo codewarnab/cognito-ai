@@ -3,7 +3,7 @@
  * Provides consistent, space-efficient UI for all tool executions
  */
 
-import { CompactToolCard } from '../../../components/ui/CompactToolCard';
+import { CompactToolCard } from '../../../components/ui/tools/cards';
 import type { ToolUIState } from './ToolUIContext';
 import { useToolUI } from './ToolUIContext';
 

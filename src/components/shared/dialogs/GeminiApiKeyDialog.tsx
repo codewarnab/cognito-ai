@@ -6,7 +6,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from '../../ui/dialog';
+} from '../../ui/primitives/dialog';
 import { ModelDropdown } from '../../features/chat/dropdowns/ModelDropdown';
 import { createLogger } from '../../../logger';
 import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../../../utils/geminiApiKey';

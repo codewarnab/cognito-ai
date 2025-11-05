@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../../ui/Accordion';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '../../ui/primitives/accordion';
 import { troubleshootingData } from '../../data';
 import './Troubleshooting.css';
 

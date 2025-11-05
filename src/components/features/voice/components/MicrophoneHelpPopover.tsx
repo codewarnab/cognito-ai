@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { CircleHelp } from 'lucide-react';
-import { Popover, PopoverTrigger, PopoverContent } from '../../../ui/Popover';
+import { Popover, PopoverTrigger, PopoverContent } from '../../../ui/primitives/popover';
 
 interface MicrophoneHelpPopoverProps {
     open: boolean;
