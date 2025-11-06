@@ -129,55 +129,85 @@ function AIChatContent() {
     const aiChat = useAIChat({
         threadId: currentThreadId || 'default',
         onError: (error) => {
-            log.error('AI Chat error', error);
+            // Add defensive null check
+            if (!error) {
+                log.error('AI Chat error - received null/undefined error!');
+                return;
+            }
+
+            // Log full error details including complete stack trace
+            log.error('AI Chat error', {
+                error,
+                name: error?.name,
+                message: error?.message,
+                stack: error?.stack,
+                errorCode: (error as any)?.errorCode,
+                statusCode: (error as any)?.statusCode,
+                fullError: error
+            });
 
             // Handle API errors and show error toast if needed
             if (error instanceof Error) {
                 const errorObj = error as any;
 
-                // If this is a BrowserAPIError, track it to avoid showing subsequent TypeErrors
-                if (errorObj?.errorCode?.includes('BROWSER_AI')) {
-                    log.info('BrowserAPIError detected - setting timestamp to ignore subsequent errors');
+                // First, check if this is a stream processing error that should be suppressed
+                const isStreamProcessingError =
+                    error.message?.includes('Cannot read properties') ||
+                    error.message?.includes('Cannot access') ||
+                    error.message?.includes('is not defined') ||
+                    error.message?.includes('is undefined');
+
+                // If we recently had a known API error (within 5 seconds), ignore stream processing errors
+                if (lastBrowserError && (Date.now() - lastBrowserError) < 5000 && isStreamProcessingError) {
+                    log.info('✅ SUPPRESSED: Stream processing error that occurred after known API error', {
+                        message: error.message,
+                        errorCode: errorObj?.errorCode,
+                        timeSinceBrowserError: Date.now() - lastBrowserError
+                    });
+                    return; // Suppress this error completely
+                }
+
+                // If this is a BrowserAPIError OR API auth error, track it to avoid showing subsequent TypeErrors
+                const isKnownAPIError = errorObj?.errorCode?.includes('BROWSER_AI') ||
+                    errorObj?.errorCode === 'API_AUTH_FAILED' ||
+                    errorObj?.errorCode === 'API_RATE_LIMIT' ||
+                    errorObj?.errorCode === 'API_QUOTA_EXCEEDED';
+
+                if (isKnownAPIError) {
+                    log.info('🔴 Known API error detected - setting timestamp and showing toast', {
+                        errorCode: errorObj?.errorCode,
+                        message: error.message
+                    });
                     setLastBrowserError(Date.now());
 
-                    // Show the browser error toast
+                    // Show the error toast
                     const errorToastState = handleAPIError(error);
                     if (errorToastState) {
+                        log.info('📢 Setting error toast state:', errorToastState.message.substring(0, 100));
                         setErrorToast(errorToastState);
+                    } else {
+                        log.warn('⚠️ handleAPIError returned null for known API error');
                     }
                     return;
                 }
 
-                // If we recently had a browser error (within 5 seconds), ignore TypeError from stream processing
-                // This catches errors like "Cannot read properties of undefined (reading 'text')"
-                // that occur when the AI SDK tries to process a failed response
-                if (lastBrowserError && (Date.now() - lastBrowserError) < 5000) {
-                    const isStreamProcessingError =
-                        error.message?.includes('Cannot read properties') ||
-                        error.message?.includes('Cannot access') ||
-                        error.message?.includes('is not defined') ||
-                        errorObj?.errorCode === 'UNKNOWN_ERROR';
-
-                    if (isStreamProcessingError) {
-                        log.info('Ignoring stream processing error that occurred after BrowserAPIError', {
-                            message: error.message,
-                            errorCode: errorObj?.errorCode,
-                            timeSinceBrowserError: Date.now() - lastBrowserError
-                        });
-                        return;
-                    }
-                }
-
-                // Clear the browser error timestamp after 5 seconds
+                // Clear the error timestamp after 5 seconds
                 if (lastBrowserError && (Date.now() - lastBrowserError) >= 5000) {
-                    log.info('Clearing browser error timestamp');
+                    log.info('Clearing API error timestamp');
                     setLastBrowserError(null);
                 }
 
                 // Handle other API errors normally
+                log.info('Handling other error type:', {
+                    errorCode: errorObj?.errorCode,
+                    message: error.message?.substring(0, 100)
+                });
                 const errorToastState = handleAPIError(error);
                 if (errorToastState) {
+                    log.info('📢 Setting error toast state for other error:', errorToastState.message.substring(0, 100));
                     setErrorToast(errorToastState);
+                } else {
+                    log.info('ℹ️ No toast to show for this error (might be suppressed)');
                 }
             }
         },

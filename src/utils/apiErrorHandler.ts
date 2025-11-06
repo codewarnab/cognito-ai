@@ -1,4 +1,5 @@
 import { createLogger } from "../logger";
+import { ErrorType } from "../errors/errorTypes";
 
 const log = createLogger("APIErrorHandler");
 
@@ -15,14 +16,17 @@ export interface ErrorToastState {
  * https://ai.google.dev/gemini-api/docs/troubleshooting
  */
 export function handleAPIError(error: Error): ErrorToastState | null {
-    // Log full error details for debugging
+    // Log full error details for debugging with complete stack trace
     log.error('API Error occurred', {
         name: error.name,
         message: error.message,
-        stack: error.stack?.substring(0, 200), // First 200 chars of stack
+        fullStack: error.stack, // Log complete stack, not truncated
         statusCode: (error as any).statusCode,
         errorCode: (error as any).errorCode,
-        technicalDetails: (error as any).technicalDetails
+        technicalDetails: (error as any).technicalDetails,
+        userMessage: (error as any).userMessage,
+        // Log the entire error object for maximum visibility
+        completeError: error
     });
 
     const errorMessage = error.message || 'An error occurred';
@@ -30,7 +34,16 @@ export function handleAPIError(error: Error): ErrorToastState | null {
     const errorObj = error as any;
     const statusCode = errorObj?.statusCode;
     const errorCode = errorObj?.errorCode;
+    const userMessage = errorObj?.userMessage;
     const fullErrorText = (errorObj?.technicalDetails || errorStack).toLowerCase();
+
+    log.info('Error analysis start', {
+        hasStatusCode: !!statusCode,
+        statusCodeValue: statusCode,
+        hasErrorCode: !!errorCode,
+        errorCodeValue: errorCode,
+        hasUserMessage: !!userMessage
+    });
 
     // Extract user-friendly message based on HTTP status code and error patterns
     let displayMessage: string | null = null;
@@ -49,6 +62,23 @@ export function handleAPIError(error: Error): ErrorToastState | null {
 
         if (displayMessage) {
             log.info('Showing browser AI error toast:', displayMessage.substring(0, 100));
+            return {
+                message: displayMessage,
+                details: errorObj?.technicalDetails || error.stack
+            };
+        }
+    }
+
+    // Priority 0.5: Check for errorCode API_AUTH_FAILED even without statusCode
+    // This handles cases where API key validation fails before making an API call
+    if (!statusCode && errorCode === ErrorType.API_AUTH_FAILED) {
+        log.info('API_AUTH_FAILED error code detected without statusCode');
+        shouldShowToast = true;
+        // Use the userMessage if available, otherwise construct a message
+        displayMessage = userMessage || errorMessage || "🔒 API Authentication Error. Please check your API key in the settings.";
+
+        if (displayMessage) {
+            log.info('Showing auth error toast:', displayMessage.substring(0, 100));
             return {
                 message: displayMessage,
                 details: errorObj?.technicalDetails || error.stack
@@ -167,11 +197,13 @@ export function handleAPIError(error: Error): ErrorToastState | null {
             errorMessage.toLowerCase().includes('forbidden') ||
             errorMessage.toLowerCase().includes('api key') ||
             errorMessage.toLowerCase().includes('leaked') ||
+            errorMessage.toLowerCase().includes('validation') ||  // Add this check
             fullErrorText.includes('api key') ||
             fullErrorText.includes('leaked') ||
             fullErrorText.includes('forbidden') ||
             fullErrorText.includes('403') ||
             fullErrorText.includes('401') ||
+            fullErrorText.includes('validation') ||  // Add this check
             (errorObj?.errorCode && (
                 errorObj.errorCode.includes('API_AUTH') ||
                 errorObj.errorCode.includes('AUTH')
@@ -182,7 +214,14 @@ export function handleAPIError(error: Error): ErrorToastState | null {
             shouldShowToast = true;
             displayMessage = errorMessage.includes('leaked')
                 ? "🔒 Your API key was reported as leaked. Please generate a new API key in Google AI Studio."
-                : "🔒 API Authentication Error. Please check your API key in the settings.";
+                : errorMessage.includes('validation')
+                    ? "🔒 API Key Validation Failed. Please check your API key in the settings."
+                    : "🔒 API Authentication Error. Please check your API key in the settings.";
+
+            log.info('Auth error detected and toast will be shown', {
+                displayMessage,
+                errorMessage: errorMessage.substring(0, 100)
+            });
         }
     }
 
@@ -213,16 +252,19 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         displayMessage = `⚠️ ${errorMessage}`;
     }
 
-    log.info('Error analysis:', {
+    log.info('Error analysis complete:', {
         shouldShowToast,
         statusCode,
         hasDisplayMessage: !!displayMessage,
+        displayMessagePreview: displayMessage?.substring(0, 100),
         errorMessagePreview: errorMessage.substring(0, 100),
-        errorCode: errorObj?.errorCode
+        errorCode: errorObj?.errorCode,
+        willShowToast: shouldShowToast && !!displayMessage
     });
 
     // Don't show toast if we didn't find a user-actionable error
     if (!shouldShowToast || !displayMessage) {
+        log.info('Not showing toast', { shouldShowToast, hasDisplayMessage: !!displayMessage });
         return null;
     }
 

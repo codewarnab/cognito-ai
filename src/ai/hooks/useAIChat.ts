@@ -166,6 +166,28 @@ export function useAIChat(options: UseAIChatOptions) {
 
   // Enhanced error handler that appends formatted error to messages
   const handleError = useCallback((error: Error) => {
+    // Add defensive check for undefined/null error
+    if (!error) {
+      log.error('AI Chat error - received null/undefined error!', {
+        errorValue: error,
+        errorType: typeof error
+      });
+
+      // Create a fallback error
+      const fallbackError = new APIError({
+        message: 'Unknown error occurred',
+        retryable: false,
+        userMessage: 'An unexpected error occurred. Please try again.',
+        technicalDetails: 'Error object was null or undefined',
+        errorCode: ErrorType.UNKNOWN_ERROR,
+      });
+
+      const errorMarkdown = formatErrorInline(fallbackError);
+      log.error('Formatted fallback error message:', errorMarkdown);
+      onError?.(fallbackError);
+      return;
+    }
+
     log.error('AI Chat error from here', error);
 
     // Format error for display

@@ -131,12 +131,14 @@ export class SimpleFrontendTransport {
           if (typeof lastUserMessage.content === 'string') {
             messageText = lastUserMessage.content;
           } else if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
-            // Get text from parts array
+            // Get text from parts array with proper null checks
             const textPart = lastUserMessage.parts.find((p: any) => p?.type === 'text');
-            if (textPart && 'content' in textPart && typeof textPart.content === 'string') {
-              messageText = textPart.content;
-            } else if (textPart && 'text' in textPart && typeof textPart.text === 'string') {
-              messageText = textPart.text;
+            if (textPart) {
+              if ('content' in textPart && typeof textPart.content === 'string') {
+                messageText = textPart.content;
+              } else if ('text' in textPart && typeof textPart.text === 'string') {
+                messageText = textPart.text;
+              }
             }
           } else if ('text' in lastUserMessage && typeof (lastUserMessage as any).text === 'string') {
             messageText = (lastUserMessage as any).text;
@@ -144,10 +146,12 @@ export class SimpleFrontendTransport {
         } catch (error) {
           log.error('Error extracting message text', {
             error: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined,
             messageStructure: {
               hasContent: 'content' in lastUserMessage,
               hasParts: 'parts' in lastUserMessage,
-              hasText: 'text' in lastUserMessage
+              hasText: 'text' in lastUserMessage,
+              partsLength: lastUserMessage.parts?.length
             }
           });
           messageText = '';
@@ -189,31 +193,41 @@ export class SimpleFrontendTransport {
                 const cleanedQuery = workflowCmd.query;
 
                 // Update the last message to contain only the query
-                if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
-                  lastUserMessage.parts = lastUserMessage.parts.map((part: any) => {
-                    if (part?.type === 'text') {
+                try {
+                  if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
+                    lastUserMessage.parts = lastUserMessage.parts.map((part: any) => {
+                      if (!part || !part.type || part.type !== 'text') {
+                        return part;
+                      }
+
                       if ('content' in part && typeof part.content === 'string') {
                         return { ...part, content: cleanedQuery };
                       } else if ('text' in part && typeof part.text === 'string') {
                         return { ...part, text: cleanedQuery };
                       }
-                    }
-                    return part;
+
+                      return part;
+                    });
+                  }
+
+                  // Also update content and text if they exist
+                  if (typeof lastUserMessage.content === 'string') {
+                    (lastUserMessage as any).content = cleanedQuery;
+                  }
+                  if ('text' in lastUserMessage && typeof (lastUserMessage as any).text === 'string') {
+                    (lastUserMessage as any).text = cleanedQuery;
+                  }
+
+                  log.info('📝 Cleaned message for workflow', {
+                    original: messageText,
+                    cleaned: cleanedQuery
+                  });
+                } catch (error) {
+                  log.error('Error updating message for workflow', {
+                    error: error instanceof Error ? error.message : String(error),
+                    errorStack: error instanceof Error ? error.stack : undefined
                   });
                 }
-
-                // Also update content and text if they exist
-                if (typeof lastUserMessage.content === 'string') {
-                  (lastUserMessage as any).content = cleanedQuery;
-                }
-                if ('text' in lastUserMessage && typeof (lastUserMessage as any).text === 'string') {
-                  (lastUserMessage as any).text = cleanedQuery;
-                }
-
-                log.info('📝 Cleaned message for workflow', {
-                  original: messageText,
-                  cleaned: cleanedQuery
-                });
               } else {
                 log.warn('Workflow not found', { workflowId: workflowCmd.workflowId });
               }

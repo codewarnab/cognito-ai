@@ -36,19 +36,23 @@ export function extractMentions(text: string): MentionParseResult {
 
     // Extract tab mentions with optional favicon
     while ((match = tabMentionRegex.exec(text)) !== null) {
-        tabMentions.push({
-            display: match[1],
-            faviconUrl: match[2] || undefined,
-            id: match[3]
-        });
+        if (match[1] && match[3]) {
+            tabMentions.push({
+                display: match[1],
+                faviconUrl: match[2] || undefined,
+                id: match[3]
+            });
+        }
     }
 
     // Extract tool mentions
     while ((match = toolMentionRegex.exec(text)) !== null) {
-        toolMentions.push({
-            display: match[1],
-            id: match[2]
-        });
+        if (match[1] && match[2]) {
+            toolMentions.push({
+                display: match[1],
+                id: match[2]
+            });
+        }
     }
 
     return { tabMentions, toolMentions };

@@ -128,24 +128,60 @@ export async function streamAIResponse(params: {
             return; // Exit early
           }
 
-          if (effectiveMode === 'local') {
-            // ========== LOCAL MODE (Gemini Nano) ==========
-            // setupLocalMode now throws errors instead of returning null
-            // This ensures errors are properly caught and handled in the catch block below
-            const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt, onError);
+          // Setup model with proper error handling
+          try {
+            if (effectiveMode === 'local') {
+              // ========== LOCAL MODE (Gemini Nano) ==========
+              // setupLocalMode now throws errors instead of returning null
+              // This ensures errors are properly caught and handled in the catch block below
+              const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt, onError);
 
-            model = localSetup.model;
-            tools = localSetup.tools;
-            systemPrompt = localSetup.systemPrompt;
+              model = localSetup.model;
+              tools = localSetup.tools;
+              systemPrompt = localSetup.systemPrompt;
 
-          } else {
-            // ========== REMOTE MODE (Gemini API) ==========
-            const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
-            const remoteSetup = await setupRemoteMode(modelName, workflowConfig || null, remoteSystemPrompt, abortSignal);
+            } else {
+              // ========== REMOTE MODE (Gemini API) ==========
+              const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+              const remoteSetup = await setupRemoteMode(modelName, workflowConfig || null, remoteSystemPrompt);
 
-            model = remoteSetup.model;
-            tools = remoteSetup.tools;
-            systemPrompt = remoteSetup.systemPrompt;
+              model = remoteSetup.model;
+              tools = remoteSetup.tools;
+              systemPrompt = remoteSetup.systemPrompt;
+            }
+          } catch (setupError) {
+            // Setup failed - write error to stream and exit
+            log.error('❌ Model setup failed:', {
+              error: setupError,
+              mode: effectiveMode,
+              message: setupError instanceof Error ? setupError.message : String(setupError)
+            });
+
+            // Parse and format error
+            const enhancedError = setupError instanceof APIError || setupError instanceof NetworkError
+              ? setupError
+              : parseGeminiError(setupError);
+
+            // Write detailed error to stream
+            writeErrorToStream(writer, enhancedError, 'Model setup');
+
+            // Send error status
+            writer.write({
+              type: 'data-status',
+              id: 'status-' + generateId(),
+              data: {
+                status: 'error',
+                errorCode: enhancedError instanceof APIError ? enhancedError.errorCode : 'UNKNOWN',
+                timestamp: Date.now()
+              },
+              transient: false,
+            });
+
+            // Call user's onError callback
+            onError?.(enhancedError);
+
+            // Exit early - don't try to continue with streaming
+            return;
           }
 
           // Build enhanced prompt with initial page context if available
@@ -240,24 +276,84 @@ export async function streamAIResponse(params: {
           }, 'AI stream');
 
           // Merge AI stream with status stream
-          log.info(' AI streamText result received, merging with UI stream...');
+          log.info('✅ AI streamText result received, merging with UI stream...');
+
+          // Safety check: Ensure result exists before processing
+          if (!result) {
+            log.error('❌ executeStreamText returned undefined result - stream failed');
+            throw new Error('Stream execution failed - no result returned');
+          }
 
           writer.merge(
             result.toUIMessageStream({
               onError: (error) => {
-                log.error('AI stream onError callback', error);
+                // Log the raw error first to help debug
+                log.error('🔴 AI stream onError callback - RAW ERROR:', {
+                  error,
+                  errorType: typeof error,
+                  errorKeys: error ? Object.keys(error) : [],
+                  errorConstructor: error?.constructor?.name,
+                  isErrorInstance: error instanceof Error,
+                  errorStringified: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+                });
 
-                // Parse error into our error types
-                const enhancedError = parseGeminiError(error);
+                // Safely extract error properties with defensive checks
+                const errorObj = error as any;
+                const errorName = errorObj?.name || 'UnknownError';
+                const errorMessage = errorObj?.message || (error ? String(error) : 'Unknown error occurred');
+                const errorStack = errorObj?.stack || 'No stack trace available';
 
-                // Write formatted error to stream
-                writeErrorToStream(writer, enhancedError, 'Stream processing');
+                log.error('AI stream onError callback - PARSED', {
+                  errorName,
+                  errorMessage,
+                  fullStack: errorStack,
+                  hasText: 'text' in errorObj,
+                  textValue: errorObj?.text,
+                  textType: typeof errorObj?.text
+                });
 
-                // Call user's onError callback
-                onError?.(error instanceof Error ? error : new Error(String(error)));
+                try {
+                  // Parse error into our error types
+                  const enhancedError = parseGeminiError(error);
 
-                // Return error message for AI SDK
-                return ` Error: ${enhancedError.userMessage}`;
+                  log.info('✅ Error parsed successfully', {
+                    enhancedErrorCode: enhancedError.errorCode,
+                    enhancedMessage: enhancedError.message,
+                    enhancedUserMessage: enhancedError.userMessage
+                  });
+
+                  // Write formatted error to stream
+                  writeErrorToStream(writer, enhancedError, 'Stream processing');
+
+                  // Call user's onError callback
+                  onError?.(error instanceof Error ? error : new Error(errorMessage));
+
+                  // Return error message for AI SDK
+                  return ` Error: ${enhancedError.userMessage}`;
+                } catch (parseError) {
+                  log.error('❌ CRITICAL: Failed to parse error in onError callback', {
+                    parseError,
+                    parseErrorMessage: parseError instanceof Error ? parseError.message : String(parseError),
+                    parseErrorStack: parseError instanceof Error ? parseError.stack : 'No stack',
+                    originalError: error
+                  });
+
+                  // Fallback: Create a minimal error message
+                  const fallbackMessage = `Error processing AI response: ${errorMessage}`;
+
+                  // Write a simple error message to stream
+                  writer.write({
+                    type: 'text-delta',
+                    id: 'error-msg-' + generateId(),
+                    delta: `⚠️ ${fallbackMessage}\n`,
+                  });
+
+                  // Call user's onError callback with a basic Error
+                  onError?.(new Error(fallbackMessage));
+
+                  // Return fallback message for AI SDK
+                  return ` ${fallbackMessage}`;
+                }
               },
               onFinish: async ({ messages: finalMessages }) => {
                 log.info('UI stream completed', {

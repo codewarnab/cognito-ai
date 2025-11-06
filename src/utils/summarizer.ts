@@ -38,19 +38,21 @@ export interface SummarizerOptions {
  */
 declare global {
     interface Window {
-        Summarizer: {
-            availability(): 'unavailable' | 'downloadable' | 'downloading' | 'available';
-            create(options?: {
-                type?: string;
-                format?: string;
-                length?: string;
-                sharedContext?: string;
-                monitor?: (monitor: any) => void;
-            }): Promise<{
-                summarize(text: string, options?: { context?: string }): Promise<string>;
-                summarizeStreaming(text: string, options?: { context?: string }): AsyncIterable<string>;
-                destroy(): void;
-            }>;
+        ai?: {
+            summarizer?: {
+                capabilities(): Promise<{ available: 'readily' | 'after-download' | 'no' }>;
+                create(options?: {
+                    type?: string;
+                    format?: string;
+                    length?: string;
+                    sharedContext?: string;
+                    monitor?: (monitor: any) => void;
+                }): Promise<{
+                    summarize(text: string, options?: { context?: string }): Promise<string>;
+                    summarizeStreaming(text: string, options?: { context?: string }): AsyncIterable<string>;
+                    destroy(): void;
+                }>;
+            };
         };
     }
 }
