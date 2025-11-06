@@ -67,3 +67,6 @@ persisiting enabled disabled tool settings
 https://ai.google.dev/gemini-api/docs/function-calling?example=meeting#javascript_15 local mcp support using google sdk 
 
 fix notification toast colors 
+
+
+https://v0.app/docs/api/platform/quickstart once V6 is added work on this and add code generation capabilities 
