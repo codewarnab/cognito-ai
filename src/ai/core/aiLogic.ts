@@ -9,6 +9,7 @@ import { createLogger } from '../../logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
+import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
 import { hasGeminiApiKey } from '../../utils/geminiApiKey';
 import { getModelConfig } from '../../utils/modelSettings';
@@ -195,6 +196,46 @@ export async function streamAIResponse(params: {
               workflowId,
               threadId,
               onError,
+              prepareStep: async ({ stepNumber }) => {
+                log.info(`📍 Step ${stepNumber}: Preparing website-aware tools and prompt`);
+
+                // Get current website configuration
+                // Returns null if only base config exists (no website-specific behavior)
+                const currentWebsite = await getCurrentWebsite();
+
+                if (!currentWebsite) {
+                  // No specific website detected - use all tools with base prompt
+                  // This is the expected behavior when only base config exists
+                  log.info(`No website-specific configuration, using all tools`);
+                  return {}; // Empty return = use default tools and prompt
+                }
+
+                log.info(`🌐 Detected website: ${currentWebsite.websiteName}`, {
+                  id: currentWebsite.websiteId,
+                  url: currentWebsite.currentUrl,
+                  toolCount: currentWebsite.allowedTools.length
+                });
+
+                // Filter tools based on website
+                const websiteTools = getWebsiteTools(tools, currentWebsite);
+
+                // Augment system prompt with website-specific docs
+                const augmentedPrompt = augmentSystemPrompt(
+                  enhancedPrompt,
+                  currentWebsite
+                );
+
+                log.info(`🔧 Step ${stepNumber}: Website-aware configuration applied`, {
+                  website: currentWebsite.websiteName,
+                  activeTools: currentWebsite.allowedTools,
+                  promptAugmented: !!currentWebsite.promptAddition
+                });
+
+                return {
+                  tools: websiteTools,
+                  system: augmentedPrompt,
+                };
+              },
             });
           }, 'AI stream');
 
