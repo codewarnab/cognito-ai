@@ -28,6 +28,7 @@ export async function executeStreamText(params: {
     workflowId?: string;
     threadId?: string;
     onError?: (error: Error) => void;
+    prepareStep?: (context: any) => Promise<any>;
 }) {
     const {
         model,
@@ -43,6 +44,7 @@ export async function executeStreamText(params: {
         workflowId,
         threadId,
         onError,
+        prepareStep,
     } = params;
 
     try {
@@ -52,6 +54,7 @@ export async function executeStreamText(params: {
             tools,
             system: enhancedPrompt,
             ...(abortSignal && { abortSignal }),
+            ...(prepareStep && { prepareStep }),
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools
@@ -62,7 +65,7 @@ export async function executeStreamText(params: {
                 chunking: 'word',
             }),
             // Log when a step completes (includes tool calls)
-            onStepFinish: createOnStepFinishCallback(writer, effectiveMode),
+            onStepFinish: createOnStepFinishCallback(writer),
             // Log when the entire stream finishes
             onFinish: createOnFinishCallback(
                 writer,
