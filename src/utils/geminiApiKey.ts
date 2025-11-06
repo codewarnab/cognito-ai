@@ -40,7 +40,7 @@ function validateApiKeyFormat(apiKey: string): { valid: boolean; error?: string 
     }
 
     // Check for suspicious characters (API keys should be alphanumeric with some symbols)
-    if (!/^[A-Za-z0-9_-]+$/.test(trimmedKey)) {
+    if (!/^[A-Za-z0-9_.\-]+$/.test(trimmedKey)) {
         return { valid: false, error: 'API key contains invalid characters' };
     }
 

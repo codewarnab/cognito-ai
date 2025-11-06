@@ -50,12 +50,51 @@ export function extractMalformedCallInfo(response: any): {
  */
 export async function parseGeminiErrorAsync(error: any): Promise<APIError> {
   try {
+    // Log detailed error structure for debugging
+    log.info('parseGeminiErrorAsync - Input error:', {
+      errorType: typeof error,
+      isError: error instanceof Error,
+      hasStatusCode: 'statusCode' in (error || {}),
+      hasStatus: 'status' in (error || {}),
+      hasMessage: 'message' in (error || {}),
+      hasText: 'text' in (error || {}),
+      errorKeys: error ? Object.keys(error) : []
+    });
+
     // Extract status code
     const statusCode = error?.statusCode || error?.status || error?.response?.status;
 
-    // Extract error message
-    const message = error?.message || error?.error?.message || String(error);
+    // Enhanced message extraction with .text fallback
+    let message = error?.message || error?.error?.message;
+
+    // Check if error has a .text property (common in fetch responses)
+    if (!message && error?.text) {
+      try {
+        // If .text is a function, call it (await since we're in async context)
+        if (typeof error.text === 'function') {
+          message = await error.text();
+        } else {
+          // If .text is a string, use it directly
+          message = String(error.text);
+        }
+      } catch (textError) {
+        log.warn('parseGeminiErrorAsync: Failed to extract .text property', textError);
+        message = undefined;
+      }
+    }
+
+    // Final fallback
+    if (!message) {
+      message = error ? String(error) : 'Unknown error';
+    }
+
     const details = error?.error?.details || error?.details || message;
+
+    log.info('parseGeminiErrorAsync - Extracted values:', {
+      statusCode,
+      message: message?.substring(0, 100),
+      detailsLength: details?.length || 0
+    });
 
     // Handle specific status codes
     if (statusCode === 429) {
@@ -142,12 +181,33 @@ export async function parseGeminiErrorAsync(error: any): Promise<APIError> {
       errorCode: ErrorType.UNKNOWN_ERROR,
     });
   } catch (parseError) {
-    log.error('Error parsing Gemini error:', parseError);
+    log.error('❌ CRITICAL: Error parsing Gemini error (async):', {
+      parseError,
+      parseErrorMessage: parseError instanceof Error ? parseError.message : String(parseError),
+      parseErrorStack: parseError instanceof Error ? parseError.stack : 'No stack',
+      originalError: error,
+      originalErrorType: typeof error,
+      originalErrorStringified: await (async () => {
+        try {
+          return JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+        } catch {
+          return 'Unable to stringify error';
+        }
+      })()
+    });
+
+    // Create a safe fallback error
     return new APIError({
-      message: String(error),
+      message: parseError instanceof Error ? parseError.message : 'Error parsing failed',
       retryable: false,
-      userMessage: 'An unexpected error occurred.',
-      technicalDetails: String(error),
+      userMessage: 'An unexpected error occurred. Please try again.',
+      technicalDetails: await (async () => {
+        try {
+          return `Parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}. Original error: ${error ? String(error) : 'undefined'}`;
+        } catch {
+          return 'Unable to extract error details';
+        }
+      })(),
       errorCode: ErrorType.UNKNOWN_ERROR,
     });
   }
@@ -160,9 +220,51 @@ export function parseGeminiError(error: any): APIError {
   // For synchronous contexts, we can't await the async operations
   // So we'll use a simplified version without API key cache updates
   try {
+    // Log detailed error structure for debugging
+    log.info('parseGeminiError - Input error:', {
+      errorType: typeof error,
+      isError: error instanceof Error,
+      hasStatusCode: 'statusCode' in (error || {}),
+      hasStatus: 'status' in (error || {}),
+      hasMessage: 'message' in (error || {}),
+      hasText: 'text' in (error || {}),
+      errorKeys: error ? Object.keys(error) : []
+    });
+
     const statusCode = error?.statusCode || error?.status || error?.response?.status;
-    const message = error?.message || error?.error?.message || String(error);
+
+    // Enhanced message extraction with .text fallback
+    let message = error?.message || error?.error?.message;
+
+    // Check if error has a .text property (common in fetch responses)
+    if (!message && error?.text) {
+      try {
+        // If .text is a function, call it
+        if (typeof error.text === 'function') {
+          log.warn('parseGeminiError: error.text is a function - cannot call in sync context');
+          message = 'Error response contains text (async)';
+        } else {
+          // If .text is a string, use it directly
+          message = String(error.text);
+        }
+      } catch (textError) {
+        log.warn('parseGeminiError: Failed to extract .text property', textError);
+        message = undefined;
+      }
+    }
+
+    // Final fallback
+    if (!message) {
+      message = error ? String(error) : 'Unknown error';
+    }
+
     const details = error?.error?.details || error?.details || message;
+
+    log.info('parseGeminiError - Extracted values:', {
+      statusCode,
+      message: message?.substring(0, 100),
+      detailsLength: details?.length || 0
+    });
 
     if (statusCode === 429) {
       const retryAfter = error?.headers?.['retry-after'] ||
@@ -246,12 +348,33 @@ export function parseGeminiError(error: any): APIError {
       errorCode: ErrorType.UNKNOWN_ERROR,
     });
   } catch (parseError) {
-    log.error('Error parsing Gemini error:', parseError);
+    log.error('❌ CRITICAL: Error parsing Gemini error:', {
+      parseError,
+      parseErrorMessage: parseError instanceof Error ? parseError.message : String(parseError),
+      parseErrorStack: parseError instanceof Error ? parseError.stack : 'No stack',
+      originalError: error,
+      originalErrorType: typeof error,
+      originalErrorStringified: (() => {
+        try {
+          return JSON.stringify(error, Object.getOwnPropertyNames(error), 2);
+        } catch {
+          return 'Unable to stringify error';
+        }
+      })()
+    });
+
+    // Create a safe fallback error
     return new APIError({
-      message: String(error),
+      message: parseError instanceof Error ? parseError.message : 'Error parsing failed',
       retryable: false,
-      userMessage: 'An unexpected error occurred.',
-      technicalDetails: String(error),
+      userMessage: 'An unexpected error occurred. Please try again.',
+      technicalDetails: (() => {
+        try {
+          return `Parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}. Original error: ${error ? String(error) : 'undefined'}`;
+        } catch {
+          return 'Unable to extract error details';
+        }
+      })(),
       errorCode: ErrorType.UNKNOWN_ERROR,
     });
   }

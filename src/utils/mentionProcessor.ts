@@ -51,7 +51,9 @@ class MessageProcessor {
             // Implement LRU eviction if cache is too large
             if (this.mentionCache.size >= this.CACHE_SIZE_LIMIT) {
                 const firstKey = this.mentionCache.keys().next().value;
-                this.mentionCache.delete(firstKey);
+                if (firstKey !== undefined) {
+                    this.mentionCache.delete(firstKey);
+                }
             }
 
             this.mentionCache.set(cacheKey, mentions);

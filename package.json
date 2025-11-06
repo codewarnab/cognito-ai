@@ -14,8 +14,8 @@
     "type:watch": "tsc --noEmit --watch"
   },
   "dependencies": {
-    "@ai-sdk/google": "^2.0.23",
-    "@ai-sdk/react": "^2.0.75",
+    "@ai-sdk/google": "^2.0.28",
+    "@ai-sdk/react": "^2.0.88",
     "@built-in-ai/core": "3.0.0-beta.0",
     "@google/genai": "^1.25.0",
     "@google/generative-ai": "^0.24.1",
@@ -25,7 +25,7 @@
     "@radix-ui/react-popover": "^1.1.15",
     "@types/jsdom": "^27.0.0",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "ai": "^5.0.75",
+    "ai": "^5.0.88",
     "chrono-node": "^2.9.0",
     "cmdk": "^1.1.1",
     "dexie": "^4.2.1",
@@ -80,8 +80,7 @@
       "cookies",
       "history",
       "search",
-      "bookmarks",
-      "audioCapture"
+      "bookmarks"
     ],
     "optional_permissions": [
       "tabCapture",

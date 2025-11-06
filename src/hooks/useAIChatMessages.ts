@@ -25,10 +25,20 @@ export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
 
                 const dbMessages: ChatMessage[] = result.messages
                     .map((msg: UIMessage, index: number) => {
-                        const messageWithoutTransient = {
-                            ...msg,
-                            parts: msg.parts?.filter((part: any) => !part.transient)
-                        };
+                        // Safely filter out transient parts
+                        let messageWithoutTransient;
+                        try {
+                            messageWithoutTransient = {
+                                ...msg,
+                                parts: msg.parts?.filter((part: any) => part && !part.transient)
+                            };
+                        } catch (error) {
+                            log.error('Error filtering transient parts', {
+                                error: error instanceof Error ? error.message : String(error),
+                                messageId: msg.id
+                            });
+                            messageWithoutTransient = msg;
+                        }
 
                         let timestamp: number;
                         if ((msg as any).createdAt) {
@@ -51,15 +61,13 @@ export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
 
                     const toolCallCount = dbMessages.filter(msg =>
                         msg.message.parts?.some((p: any) =>
-                            p.type === 'tool-call' ||
-                            p.type === 'tool-result'
+                            p && (p.type === 'tool-call' || p.type === 'tool-result')
                         )
                     ).length;
 
                     const totalToolParts = dbMessages.reduce((sum, msg) =>
                         sum + (msg.message.parts?.filter((p: any) =>
-                            p.type === 'tool-call' ||
-                            p.type === 'tool-result'
+                            p && (p.type === 'tool-call' || p.type === 'tool-result')
                         ).length || 0), 0
                     );
 
@@ -85,12 +93,28 @@ export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
                         const conversationContext = result.messages
                             .filter((msg: UIMessage) => msg.role === 'user' || msg.role === 'assistant')
                             .map((msg: UIMessage) => {
-                                const text = msg.parts
-                                    ?.filter((part: any) => part.type === 'text')
-                                    .map((part: any) => part.text)
-                                    .join('') || '';
-                                return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
+                                try {
+                                    const text = msg.parts
+                                        ?.filter((part: any) => part && part.type === 'text')
+                                        .map((part: any) => {
+                                            // Safely extract text with null checks
+                                            if (part && typeof part.text === 'string') {
+                                                return part.text;
+                                            }
+                                            return '';
+                                        })
+                                        .filter((t: string) => t.length > 0)
+                                        .join('') || '';
+                                    return `${msg.role === 'user' ? 'User' : 'Assistant'}: ${text}`;
+                                } catch (error) {
+                                    log.error('Error extracting text for title generation', {
+                                        error: error instanceof Error ? error.message : String(error),
+                                        messageId: msg.id
+                                    });
+                                    return '';
+                                }
                             })
+                            .filter((text: string) => text.length > 0)
                             .join('\n\n');
 
                         generateThreadTitle(conversationContext, {
