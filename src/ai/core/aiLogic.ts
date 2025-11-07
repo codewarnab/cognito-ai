@@ -91,7 +91,7 @@ export async function streamAIResponse(params: {
 
   // Initialize variables for streaming
   let model: any;
-  let tools: Record<string, any> = {};
+  let tools: Record<string, any>;
   let systemPrompt: string;
 
   try {
@@ -143,7 +143,12 @@ export async function streamAIResponse(params: {
             } else {
               // ========== REMOTE MODE (Gemini API) ==========
               const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
-              const remoteSetup = await setupRemoteMode(modelName, workflowConfig || null, remoteSystemPrompt);
+
+              const remoteSetup = await setupRemoteMode(
+                modelName,
+                workflowConfig || null,
+                remoteSystemPrompt
+              );
 
               model = remoteSetup.model;
               tools = remoteSetup.tools;
@@ -243,7 +248,7 @@ export async function streamAIResponse(params: {
                   // No specific website detected - use all tools with base prompt
                   // This is the expected behavior when only base config exists
                   log.info(`No website-specific configuration, using all tools`);
-                  return {}; // Empty return = use default tools and prompt
+                  return {};
                 }
 
                 log.info(`🌐 Detected website: ${currentWebsite.websiteName}`, {

@@ -38,6 +38,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             document.addEventListener("keydown", handleEscape)
             return () => document.removeEventListener("keydown", handleEscape)
         }
+
+        return undefined
     }, [isOpen, onCancel])
 
     if (!isOpen) return null

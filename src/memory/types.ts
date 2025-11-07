@@ -97,7 +97,7 @@ export function detectMemories(text: string): DetectedMemory[] {
 
   // Name detection
   const nameMatch = text.match(DETECTION_PATTERNS.name);
-  if (nameMatch) {
+  if (nameMatch && nameMatch[1]) {
     detected.push({
       key: "user.name",
       value: nameMatch[1].trim(),
@@ -130,7 +130,7 @@ export function detectMemories(text: string): DetectedMemory[] {
 
   // Profession detection
   const professionMatch = text.match(DETECTION_PATTERNS.profession);
-  if (professionMatch) {
+  if (professionMatch && professionMatch[1]) {
     detected.push({
       key: "user.profession",
       value: professionMatch[1].trim(),
@@ -141,7 +141,7 @@ export function detectMemories(text: string): DetectedMemory[] {
 
   // Location detection
   const locationMatch = text.match(DETECTION_PATTERNS.location);
-  if (locationMatch) {
+  if (locationMatch && locationMatch[1]) {
     detected.push({
       key: "user.location",
       value: locationMatch[1].trim(),
@@ -152,7 +152,7 @@ export function detectMemories(text: string): DetectedMemory[] {
 
   // Behavioral rules
   const behavioralMatch = text.match(DETECTION_PATTERNS.behavioral);
-  if (behavioralMatch) {
+  if (behavioralMatch && behavioralMatch[1]) {
     detected.push({
       key: `behavior.${canonicalizeKey(behavioralMatch[1].slice(0, 30))}`,
       value: behavioralMatch[0].trim(),

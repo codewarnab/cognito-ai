@@ -26,6 +26,11 @@ const WORKFLOW_ONLY_TOOLS = ['generateMarkdown', 'generatePDF', 'getReportTempla
 
 /**
  * Setup remote mode (Gemini API) with tools
+ * 
+ * @param modelName - Gemini model name (e.g., 'gemini-2.5-flash')
+ * @param workflowConfig - Optional workflow configuration
+ * @param remoteSystemPrompt - Base system prompt for remote mode
+ * @returns Remote mode setup with model, tools, and system prompt
  */
 export async function setupRemoteMode(
     modelName: string,
@@ -105,14 +110,13 @@ export async function setupRemoteMode(
     });
 
     // Get MCP tools from background service worker (not in workflow mode)
-    let mcpTools = {};
+    let mcpTools: Record<string, any> = {};
     if (!workflowConfig) {
         try {
             const mcpManager = await getMCPToolsFromBackground();
             mcpTools = mcpManager.tools;
             log.info('🔧 MCP tools loaded:', {
                 count: Object.keys(mcpTools).length,
-                names: Object.keys(mcpTools)
             });
         } catch (error) {
             log.warn('⚠️ MCP tools unavailable:', error);
@@ -129,8 +133,9 @@ export async function setupRemoteMode(
     });
 
     // Combine all tools
-    const tools = { ...extensionTools, ...agentTools, ...mcpTools };
-    log.info('🔧 Total tools available:', {
+    const tools = { ...extensionTools, ...mcpTools, ...agentTools };
+
+    log.info('🔧 All tools loaded:', {
         count: Object.keys(tools).length,
         extension: Object.keys(extensionTools).length,
         mcp: Object.keys(mcpTools).length,
@@ -138,8 +143,12 @@ export async function setupRemoteMode(
         workflowMode: !!workflowConfig
     });
 
-    // Use remote or workflow-specific prompt
+    // Use workflow system prompt if in workflow mode, otherwise use default remote prompt
     const systemPrompt = workflowConfig ? workflowConfig.systemPrompt : remoteSystemPrompt;
 
-    return { model, tools, systemPrompt };
+    return {
+        model,
+        tools,
+        systemPrompt,
+    };
 }

@@ -94,7 +94,7 @@ export function useGetSearchResultsTool() {
 
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
-                        args: [maxResults],
+                        args: [maxResults] as [number],
                         func: (limit: number) => {
                             const url = location.href;
 
@@ -124,7 +124,7 @@ export function useGetSearchResultsTool() {
                             if (url.includes("google.")) {
                                 // Primary web results typically have an h3 with a containing anchor
                                 const blocks = Array.from(document.querySelectorAll("#search h3"));
-                                for (const [i, h3] of blocks.entries()) {
+                                for (const [_i, h3] of blocks.entries()) {
                                     if (items.length >= limit) break;
                                     const a = h3.closest("a") as HTMLAnchorElement | null;
                                     if (!a || !a.href) continue;
@@ -169,7 +169,7 @@ export function useGetSearchResultsTool() {
                             // Bing SERP
                             if (url.includes("bing.")) {
                                 const blocks = Array.from(document.querySelectorAll("li.b_algo h2 a"));
-                                for (const [i, a] of blocks.entries()) {
+                                for (const [_i, a] of blocks.entries()) {
                                     if (items.length >= limit) break;
                                     const { href, hostname, path } = normalize((a as HTMLAnchorElement).href);
                                     if (hostname.includes("bing.")) continue;
