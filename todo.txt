@@ -70,3 +70,7 @@ fix notification toast colors
 
 
 https://v0.app/docs/api/platform/quickstart once V6 is added work on this and add code generation capabilities 
+
+https://x.com/pontusab/status/1986396382685733128 must add follow ups 
+https://batchhacks.devpost.com/
+ https://arm-ai-developer-challenge.devpost.com/

@@ -27,7 +27,7 @@ export function humanizeKey(key: string): string {
 export function ordinal(num: number): string {
     const suffix = ['th', 'st', 'nd', 'rd'];
     const v = num % 100;
-    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0] || 'th');
 }
 
 export function camelToTitle(text: string): string {

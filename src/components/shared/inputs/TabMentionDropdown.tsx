@@ -115,8 +115,9 @@ export function TabMentionDropdown({
                         let next = prev + 1;
                         // Skip disabled tabs
                         while (next < filteredTabs.length &&
-                            filteredTabs[next].id &&
-                            alreadyMentionedTabIds.has(String(filteredTabs[next].id))) {
+                            filteredTabs[next] &&
+                            filteredTabs[next]!.id &&
+                            alreadyMentionedTabIds.has(String(filteredTabs[next]!.id))) {
                             next++;
                         }
                         return next < filteredTabs.length ? next : prev;
@@ -128,8 +129,9 @@ export function TabMentionDropdown({
                         let next = prev - 1;
                         // Skip disabled tabs
                         while (next >= 0 &&
-                            filteredTabs[next].id &&
-                            alreadyMentionedTabIds.has(String(filteredTabs[next].id))) {
+                            filteredTabs[next] &&
+                            filteredTabs[next]!.id &&
+                            alreadyMentionedTabIds.has(String(filteredTabs[next]!.id))) {
                             next--;
                         }
                         return next >= 0 ? next : 0;
@@ -184,7 +186,7 @@ export function TabMentionDropdown({
                             className={`tab-mention-item ${index === selectedIndex ? 'selected' : ''} ${isAlreadyMentioned ? 'disabled' : ''}`}
                             onClick={() => !isAlreadyMentioned && onSelectTab(tab)}
                             onMouseEnter={() => !isAlreadyMentioned && setSelectedIndex(index)}
-                            disabled={isAlreadyMentioned}
+                            disabled={!!isAlreadyMentioned}
                             title={isAlreadyMentioned ? 'Already mentioned' : ''}
                         >
                             <div className="tab-mention-favicon">

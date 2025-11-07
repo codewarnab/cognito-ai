@@ -2,7 +2,7 @@
  * Generate PDF Report Action
  * Creates and downloads a PDF file with the provided content
  * Uses jsPDF library for reliable PDF generation
- */ 
+ */
 
 import { z } from 'zod';
 import { useEffect } from 'react';
@@ -99,6 +99,9 @@ function generatePDF(content: string): Blob {
             parts.forEach((part, i) => {
                 if (!part) return;
                 const isBold = i % 2 === 1;
+                if (!lines[currentLine]) {
+                    lines[currentLine] = [];
+                }
                 lines[currentLine].push({ text: part, isBold });
             });
 
@@ -215,7 +218,7 @@ function generatePDF(content: string): Blob {
             doc.setFontSize(11);
             const indent = margin + 5;
             const bulletMatch = originalLine.match(/^\s*([-*]|\d+\.)\s+/);
-            const bullet = bulletMatch ? bulletMatch[1] : '-';
+            const bullet = bulletMatch?.[1] ?? '-';
             const text = line.replace(/^\s*[-*]\s+/, '').replace(/^\s*\d+\.\s+/, '');
 
             // Draw bullet
@@ -262,7 +265,7 @@ function downloadPDF(blob: Blob, filename: string) {
 }
 
 export function useGeneratePDFTool() {
-    const { registerToolUI, unregisterToolUI } = useToolUI();
+    const { unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering generatePDF tool...');
@@ -277,15 +280,16 @@ export function useGeneratePDFTool() {
                     .optional()
                     .default('report'),
             }),
-            execute: async ({ content, filename = 'report' }) => {
+            execute: async ({ content, filename }) => {
                 try {
+                    const actualFilename = filename ?? 'report';
                     log.info('TOOL CALL: generatePDF', {
-                        filenameLength: filename.length,
+                        filenameLength: actualFilename.length,
                         contentLength: content.length
                     });
 
                     // Ensure filename doesn't have extension
-                    const cleanFilename = filename.replace(/\.pdf$/i, '');
+                    const cleanFilename = actualFilename.replace(/\.pdf$/i, '');
                     const fullFilename = `${cleanFilename}.pdf`;
 
                     // Generate PDF blob

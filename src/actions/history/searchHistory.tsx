@@ -8,14 +8,6 @@ import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger('Actions-History-Search');
 
-interface HistorySearchResult {
-    id: string;
-    title: string;
-    url: string;
-    lastVisitTime?: number;
-    visitCount: number;
-    typedCount: number;
-}
 
 export function useSearchHistory() {
     const { registerToolUI, unregisterToolUI } = useToolUI();

@@ -44,7 +44,7 @@ function formatTemplateAsMarkdown(template: ReportTemplate, topicName: string): 
 }
 
 export function useGetReportTemplateTool() {
-    const { registerToolUI, unregisterToolUI } = useToolUI();
+    const {  unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering getReportTemplate tool...');

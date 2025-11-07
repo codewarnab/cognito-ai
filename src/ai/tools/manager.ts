@@ -109,7 +109,7 @@ export async function setupRemoteTools(
   let mcpTools = {};
   if (!workflowConfig) {
     try {
-      const mcpManager = await getMCPToolsFromBackground(abortSignal);
+      const mcpManager = await getMCPToolsFromBackground();
       mcpTools = mcpManager.tools;
       log.info('🔧 MCP tools loaded:', {
         count: Object.keys(mcpTools).length,

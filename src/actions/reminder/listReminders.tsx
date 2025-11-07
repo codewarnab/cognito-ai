@@ -1,16 +1,14 @@
 import { z } from 'zod';
 import { useEffect } from 'react';
 import { createLogger } from "../../logger";
-import { ToolCard } from "../../components/ui/tools/cards";
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
 import { getActiveReminders } from "./storage";
-import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger("Actions-Reminders-List");
 
 export function useListRemindersAction() {
-    const { registerToolUI, unregisterToolUI } = useToolUI();
+    const {  unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering listReminders tool...');

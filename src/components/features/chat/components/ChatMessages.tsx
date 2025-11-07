@@ -170,7 +170,7 @@ const SafeMarkdown: React.FC<{ children: string }> = ({ children }) => {
 interface ChatMessagesProps {
     messages: Message[];
     isLoading: boolean;
-    messagesEndRef: React.RefObject<HTMLDivElement>;
+    messagesEndRef: React.RefObject<HTMLDivElement | null>;
     pendingMessageId?: string | null;
     isLocalMode?: boolean;
     onConfigureApiKey?: () => void;
@@ -411,7 +411,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             {/* Loading Indicator */}
             {isLoading && <LoadingIndicator />}
 
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef as React.RefObject<HTMLDivElement>} />
         </div>
     );
 };
