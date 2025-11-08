@@ -22,7 +22,7 @@ export function useVoiceRecording() {
         } else {
             audioLinesIconRef.current?.stopAnimation();
             setShowPill(false);
-            log.info("Voice recording stopped");
+            // log.info("Voice recording stopped");
         }
     }, []);
 

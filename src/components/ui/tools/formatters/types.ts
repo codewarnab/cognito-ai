@@ -12,6 +12,7 @@ export interface ActionFormatterContext {
 export interface FormattedAction {
     action: string;
     description?: string;
+    customIcon?: 'upload' | string; // Optional custom icon identifier
 }
 
 export type ActionFormatter = (ctx: ActionFormatterContext) => FormattedAction;

@@ -70,10 +70,6 @@ export async function createAINotification(
         title,
         message,
         iconUrl = NOTIFICATION_LOGO_BASE64, // Use base64 encoded logo to avoid download issues
-        buttons = [
-            { title: 'Continue Iterating' },
-            { title: 'Dismiss' }
-        ],
         priority = 2,
         requireInteraction = false,
     } = options;
@@ -94,7 +90,6 @@ export async function createAINotification(
             iconUrl,
             title,
             message,
-            buttons,
             priority,
             requireInteraction,
         });
@@ -159,7 +154,7 @@ export async function clearThreadNotifications(threadId: string): Promise<void> 
 /**
  * Truncates message to fit in notification (max 100 chars for readability)
  */
-export function truncateMessage(message: string, maxLength: number = 100): string {
+export function truncateMessage(message: string, maxLength: number = 30): string {
     if (message.length <= maxLength) {
         return message;
     }
