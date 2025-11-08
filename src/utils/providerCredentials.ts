@@ -6,6 +6,10 @@
 
 import { APIError, ErrorType } from '../errors/errorTypes';
 import type { AIProvider, ProviderConfig, VertexCredentials } from './providerTypes';
+import { createLogger } from '../logger';
+
+const credentialsLog = createLogger('Credentials', 'CREDENTIALS');
+const storageLog = createLogger('Credentials-Storage', 'STORAGE');
 
 const STORAGE_KEY = 'ai_provider_config';
 
@@ -50,9 +54,10 @@ function validateVertexCredentials(credentials: VertexCredentials): { valid: boo
 export async function getProviderConfig(): Promise<ProviderConfig | null> {
     try {
         const result = await chrome.storage.local.get(STORAGE_KEY);
+        storageLog.debug('Retrieved provider config from storage');
         return result[STORAGE_KEY] || null;
     } catch (error) {
-        console.error('Failed to get provider config', error);
+        credentialsLog.error('Failed to get provider config', error);
         return null;
     }
 }
@@ -80,8 +85,9 @@ export async function setProviderConfig(config: ProviderConfig): Promise<void> {
         }
 
         await chrome.storage.local.set({ [STORAGE_KEY]: config });
+        credentialsLog.info('Provider config saved', { provider: config.provider });
     } catch (error) {
-        console.error('Failed to set provider config', error);
+        credentialsLog.error('Failed to set provider config', error);
         throw error;
     }
 }
@@ -116,8 +122,9 @@ export async function setVertexCredentials(credentials: VertexCredentials): Prom
         config.vertexCredentials = credentials;
 
         await setProviderConfig(config);
+        credentialsLog.info('Vertex credentials configured');
     } catch (error) {
-        console.error('Failed to set Vertex credentials', error);
+        credentialsLog.error('Failed to set Vertex credentials', error);
         throw error;
     }
 }
@@ -152,8 +159,9 @@ export async function clearVertexCredentials(): Promise<void> {
                 await chrome.storage.local.set({ [STORAGE_KEY]: config });
             }
         }
+        credentialsLog.info('Vertex credentials cleared');
     } catch (error) {
-        console.error('Failed to clear Vertex credentials', error);
+        credentialsLog.error('Failed to clear Vertex credentials', error);
         throw error;
     }
 }
@@ -185,8 +193,9 @@ export async function setGoogleApiKey(apiKey: string): Promise<void> {
         config.googleApiKey = apiKey.trim();
 
         await setProviderConfig(config);
+        credentialsLog.info('Google API key configured');
     } catch (error) {
-        console.error('Failed to set Google API key', error);
+        credentialsLog.error('Failed to set Google API key', error);
         throw error;
     }
 }
@@ -218,8 +227,9 @@ export async function clearGoogleApiKey(): Promise<void> {
                 await chrome.storage.local.set({ [STORAGE_KEY]: config });
             }
         }
+        credentialsLog.info('Google API key cleared');
     } catch (error) {
-        console.error('Failed to clear Google API key', error);
+        credentialsLog.error('Failed to clear Google API key', error);
         throw error;
     }
 }
@@ -345,7 +355,7 @@ export async function setSelectedProvider(provider: AIProvider): Promise<void> {
  * @param reason Reason for marking invalid
  */
 export async function markVertexCredentialsInvalid(reason: string): Promise<void> {
-    console.warn('Vertex credentials marked as invalid:', reason);
+    credentialsLog.warn('Vertex credentials marked as invalid:', reason);
     // We could implement a cache invalidation mechanism here
     // For now, just log the reason
     // In the future, could add a validation cache similar to geminiApiKey.ts
@@ -357,7 +367,7 @@ export async function markVertexCredentialsInvalid(reason: string): Promise<void
  * @param reason Reason for marking invalid
  */
 export async function markGoogleApiKeyInvalid(reason: string): Promise<void> {
-    console.warn('Google API key marked as invalid:', reason);
+    credentialsLog.warn('Google API key marked as invalid:', reason);
     // We could implement a cache invalidation mechanism here
     // For now, just log the reason
 }

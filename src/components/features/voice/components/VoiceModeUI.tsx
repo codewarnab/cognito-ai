@@ -19,7 +19,7 @@ import { createLogger } from '../../../../logger';
 import type { VoiceModeUIProps } from '../types';
 import '../styles/VoiceModeUI.css';
 
-const log = createLogger('VoiceModeUI');
+const log = createLogger('VoiceModeUI', 'VOICE_UI');
 
 export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
     onBack,

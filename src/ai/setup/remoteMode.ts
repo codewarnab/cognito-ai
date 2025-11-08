@@ -13,7 +13,7 @@ import { initializeModel } from '../core/modelFactory';
 import type { WorkflowDefinition } from '../../workflows/types';
 import type { AIProvider } from '../../utils/providerTypes';
 
-const log = createLogger('AI-RemoteMode');
+const log = createLogger('RemoteMode', 'AI_CHAT');
 
 export interface RemoteModeSetup {
     model: any;

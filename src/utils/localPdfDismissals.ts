@@ -7,6 +7,10 @@
  * Phase 2: Dismissible State
  */
 
+import { createLogger } from '../logger';
+
+const storageLog = createLogger('PDFDismissals', 'STORAGE');
+
 const STORAGE_KEY = 'dismissed-pdf-suggestions';
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -38,7 +42,7 @@ function getDismissedPdfs(): DismissedPdf[] {
 
         return valid;
     } catch (error) {
-        console.error('Error reading dismissed PDF suggestions', error);
+        storageLog.error('Error reading dismissed PDF suggestions', error);
         return [];
     }
 }
@@ -70,7 +74,7 @@ export function dismissPdf(filePath: string): void {
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(dismissed));
     } catch (error) {
-        console.error('Error dismissing PDF suggestion', error);
+        storageLog.error('Error dismissing PDF suggestion', error);
     }
 }
 
@@ -81,7 +85,7 @@ export function clearAllDismissals(): void {
     try {
         localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
-        console.error('Error clearing PDF dismissals', error);
+        storageLog.error('Error clearing PDF dismissals', error);
     }
 }
 
@@ -94,6 +98,6 @@ export function undismissPdf(filePath: string): void {
         const filtered = dismissed.filter((item) => item.filePath !== filePath);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
     } catch (error) {
-        console.error('Error un-dismissing PDF', error);
+        storageLog.error('Error un-dismissing PDF', error);
     }
 }

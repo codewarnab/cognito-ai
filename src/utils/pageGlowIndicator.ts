@@ -3,6 +3,10 @@
  * Creates a diffused blue glow effect around the page to indicate AI is reading
  */
 
+import { createLogger } from '../logger';
+
+const log = createLogger('PageGlow', 'UTILS');
+
 const GLOW_ID = 'ai-reading-glow';
 const GLOW_STYLE_ID = 'ai-reading-glow-style';
 
@@ -47,7 +51,7 @@ export function startPageGlow(): void {
         // Apply glow class to body
         document.body.classList.add(GLOW_ID);
     } catch (error) {
-        console.warn('Failed to start page glow:', error);
+        log.warn('Failed to start page glow:', error);
     }
 }
 
@@ -65,7 +69,7 @@ export function stopPageGlow(): void {
             document.body.style.transition = '';
         }, 500);
     } catch (error) {
-        console.warn('Failed to stop page glow:', error);
+        log.warn('Failed to stop page glow:', error);
     }
 }
 

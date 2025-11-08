@@ -11,7 +11,7 @@ import { type AppUsage, getContextLimits } from '../types/usage';
 import { workflowSessionManager } from '../../workflows/sessionManager';
 import { markApiKeyValid } from '../../utils/geminiApiKey';
 
-const log = createLogger('Stream-Callbacks');
+const log = createLogger('StreamCallbacks', 'AI_CHAT');
 
 /**
  * Create onStepFinish callback for streamText

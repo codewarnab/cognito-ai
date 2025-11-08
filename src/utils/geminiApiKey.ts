@@ -7,6 +7,10 @@
  */
 
 import { APIError, ErrorType } from '../errors/errorTypes';
+import { createLogger } from '../logger';
+
+const credentialsLog = createLogger('Credentials-Legacy', 'CREDENTIALS');
+const storageLog = createLogger('Storage-Legacy', 'STORAGE');
 
 const STORAGE_KEY = 'gemini_api_key';
 const VALIDATION_CACHE_KEY = 'gemini_api_key_validation';
@@ -39,7 +43,7 @@ function validateApiKeyFormat(apiKey: string): { valid: boolean; error?: string 
 
     // Check for common patterns (Gemini keys usually start with "AIza")
     if (!trimmedKey.startsWith('AIza')) {
-        console.warn('API key format may be invalid - expected to start with "AIza"');
+        credentialsLog.warn('API key format may be invalid - expected to start with "AIza"');
     }
 
     // Check for suspicious characters (API keys should be alphanumeric with some symbols)
@@ -68,7 +72,7 @@ async function getCachedValidation(): Promise<ValidationCache | null> {
 
         return cached;
     } catch (error) {
-        console.error('Failed to get cached validation', error);
+        storageLog.error('Failed to get cached validation', error);
         return null;
     }
 }
@@ -85,7 +89,7 @@ async function setCachedValidation(isValid: boolean, errorCode?: string): Promis
         };
         await chrome.storage.local.set({ [VALIDATION_CACHE_KEY]: cache });
     } catch (error) {
-        console.error('Failed to set validation cache', error);
+        storageLog.error('Failed to set validation cache', error);
     }
 }
 
@@ -96,7 +100,7 @@ async function clearValidationCache(): Promise<void> {
     try {
         await chrome.storage.local.remove(VALIDATION_CACHE_KEY);
     } catch (error) {
-        console.error('Failed to clear validation cache', error);
+        storageLog.error('Failed to clear validation cache', error);
     }
 }
 
@@ -121,7 +125,7 @@ export async function getGeminiApiKey(): Promise<string | null> {
 
         return null;
     } catch (error) {
-        console.error('Failed to get Gemini API key', error);
+        credentialsLog.error('Failed to get Gemini API key', error);
         return null;
     }
 }
@@ -146,7 +150,7 @@ export async function setGeminiApiKey(apiKey: string): Promise<void> {
         // Clear validation cache when key changes
         await clearValidationCache();
     } catch (error) {
-        console.error('Failed to set Gemini API key', error);
+        credentialsLog.error('Failed to set Gemini API key', error);
         throw error;
     }
 }
@@ -159,7 +163,7 @@ export async function removeGeminiApiKey(): Promise<void> {
         await chrome.storage.local.remove(STORAGE_KEY);
         await clearValidationCache();
     } catch (error) {
-        console.error('Failed to remove Gemini API key', error);
+        credentialsLog.error('Failed to remove Gemini API key', error);
         throw error;
     }
 }

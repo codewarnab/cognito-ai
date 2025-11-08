@@ -4,6 +4,9 @@
  */
 
 import { AUDIO_PATHS, AUDIO_CONFIG } from '../constants/audio';
+import { createLogger } from '../logger';
+
+const soundLog = createLogger('Sound', 'NOTIFICATIONS');
 
 // Memoized audio instance
 let audioInstance: HTMLAudioElement | null = null;
@@ -35,25 +38,25 @@ export const initializeNotificationSound = async (): Promise<void> => {
             ? chrome.runtime.getURL(AUDIO_PATHS.NOTIFICATION)
             : AUDIO_PATHS.NOTIFICATION;
 
-        console.log('[Sound] Loading audio from path:', audioPath);
+        soundLog.debug('Loading audio from path:', audioPath);
         audioInstance.src = audioPath;
         audioInstance.volume = AUDIO_CONFIG.DEFAULT_VOLUME;
         audioInstance.preload = 'auto';
 
         // Wait for audio to be loadable (but don't block initialization)
         audioInstance.addEventListener('canplaythrough', () => {
-            console.log('[Sound] Audio loaded and ready to play');
+            soundLog.debug('Audio loaded and ready to play');
         }, { once: true });
 
         // Also handle load errors
         audioInstance.addEventListener('error', (e) => {
-            console.error('[Sound] Audio load error:', e, 'Attempted path:', audioPath);
+            soundLog.error('Audio load error:', e, 'Attempted path:', audioPath);
         }, { once: true });
 
         isInitialized = true;
-        console.log('[Sound] Notification sound initialized successfully');
+        soundLog.info('Notification sound initialized successfully');
     } catch (error) {
-        console.warn('[Sound] Failed to initialize notification sound:', error);
+        soundLog.warn('Failed to initialize notification sound:', error);
         // Don't throw - graceful degradation if sound can't be initialized
     }
 };
@@ -68,19 +71,19 @@ export const playNotificationSound = async (volume?: number): Promise<void> => {
         // Debouncing: Prevent multiple plays within short time
         const now = Date.now();
         if (now - lastPlayTime < AUDIO_CONFIG.DEBOUNCE_MS) {
-            console.log('[Sound] Debounced - too soon since last play');
+            soundLog.debug('Debounced - too soon since last play');
             return;
         }
         lastPlayTime = now;
 
         // Initialize if not already done (fallback)
         if (!isInitialized || !audioInstance) {
-            console.warn('[Sound] Audio not initialized, attempting to initialize now');
+            soundLog.warn('Audio not initialized, attempting to initialize now');
             await initializeNotificationSound();
 
             // If still not initialized, fail gracefully
             if (!audioInstance) {
-                console.warn('[Sound] Cannot play sound - initialization failed');
+                soundLog.warn('Cannot play sound - initialization failed');
                 return;
             }
         }
@@ -95,19 +98,19 @@ export const playNotificationSound = async (volume?: number): Promise<void> => {
 
         // Play the sound
         await audioInstance.play();
-        console.log('[Sound] Notification sound played');
+        soundLog.debug('Notification sound played');
     } catch (error) {
         // Handle autoplay blocked or other errors gracefully
         if (error instanceof Error) {
             if (error.name === 'NotAllowedError') {
-                console.warn('[Sound] Autoplay blocked by browser policy');
+                soundLog.warn('Autoplay blocked by browser policy');
             } else if (error.name === 'NotSupportedError') {
-                console.warn('[Sound] Audio format not supported');
+                soundLog.warn('Audio format not supported');
             } else {
-                console.warn('[Sound] Failed to play notification sound:', error.message);
+                soundLog.warn('Failed to play notification sound:', error.message);
             }
         } else {
-            console.warn('[Sound] Failed to play notification sound:', error);
+            soundLog.warn('Failed to play notification sound:', error);
         }
         // Don't throw - app should continue working even if sound fails
     }
@@ -119,13 +122,13 @@ export const playNotificationSound = async (volume?: number): Promise<void> => {
  */
 export const setNotificationVolume = (volume: number): void => {
     if (volume < 0 || volume > 1) {
-        console.warn('[Sound] Invalid volume level:', volume);
+        soundLog.warn('Invalid volume level:', volume);
         return;
     }
 
     if (audioInstance) {
         audioInstance.volume = volume;
-        console.log('[Sound] Volume set to:', volume);
+        soundLog.debug('Volume set to:', volume);
     }
 };
 
@@ -146,5 +149,5 @@ export const cleanupNotificationSound = (): void => {
         audioInstance = null;
     }
     isInitialized = false;
-    console.log('[Sound] Notification sound cleaned up');
+    soundLog.debug('Notification sound cleaned up');
 };

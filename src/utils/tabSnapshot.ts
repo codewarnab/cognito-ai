@@ -4,6 +4,9 @@
  */
 
 import type { TabMention } from './mentionUtils';
+import { createLogger } from '../logger';
+
+const log = createLogger('TabSnapshot', 'UTILS');
 
 export interface TabSnapshotResult {
     url: string | null;
@@ -21,7 +24,7 @@ export async function getAllTabs(): Promise<chrome.tabs.Tab[]> {
         const tabs = await chrome.tabs.query({});
         return tabs;
     } catch (error) {
-        console.error('Error fetching tabs:', error);
+        log.error('Error fetching tabs:', error);
         return [];
     }
 }

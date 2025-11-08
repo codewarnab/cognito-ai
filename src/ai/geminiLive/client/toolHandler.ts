@@ -17,7 +17,7 @@ import {
     isRetryableError
 } from '../../../errors';
 
-const log = createLogger('ToolHandler');
+const log = createLogger('GeminiLive-ToolHandler', 'AI_VOICE');
 
 export class GeminiLiveToolHandler {
     private agentToolExecutors: Map<string, (args: any) => Promise<any>> = new Map();

@@ -12,7 +12,7 @@ import type {
 import { createLogger } from '../logger';
 import { requestMicrophoneWithUI } from './micPermission';
 
-const log = createLogger('SpeechRecognition');
+const log = createLogger('SpeechRecognition', 'VOICE_RECORDING');
 
 const DEFAULT_OPTIONS: SpeechRecognitionOptions = {
   lang: 'en-US',
@@ -127,12 +127,12 @@ export function useSpeechRecognition(
 
   // Stop recording
   const stopRecording = useCallback(() => {
-    console.log('useSpeechRecognition: stopRecording called, isRecording:', isRecording);
+    log.debug('stopRecording called, isRecording:', isRecording);
     if (recognitionRef.current && isRecording) {
       try {
         recognitionRef.current.stop();
         clearSilenceTimers();
-        console.log('useSpeechRecognition: Setting isRecording to false');
+        log.debug('Setting isRecording to false');
         setIsRecording(false);
         setState('idle');
         log.info('Recording stopped');
@@ -257,7 +257,7 @@ export function useSpeechRecognition(
       // Handle start
       recognition.onstart = () => {
         log.info('Recording started');
-        console.log('useSpeechRecognition: Setting isRecording to true');
+        log.debug('Setting isRecording to true');
         setIsRecording(true);
         setState('recording');
         setError(null);

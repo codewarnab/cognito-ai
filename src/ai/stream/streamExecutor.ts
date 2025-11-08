@@ -9,7 +9,7 @@ import { APIError, ErrorType } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 import { createOnStepFinishCallback, createOnFinishCallback } from './streamCallbacks';
 
-const log = createLogger('Stream-Executor');
+const log = createLogger('StreamExecutor', 'AI_CHAT');
 
 /**
  * Execute streamText with proper configuration

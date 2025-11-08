@@ -61,6 +61,11 @@ import {
 } from './utils/aiNotification';
 import type { AINotificationPayload } from './types/notifications';
 import { readLocalFile, extractFilename } from './utils/localFileReader';
+import { createLogger } from './logger';
+
+const backgroundLog = createLogger('Background', 'BACKGROUND');
+const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
+const authLog = createLogger('Background-Auth', 'MCP_AUTH');
 
 // ============================================================================
 // Dynamic OAuth Redirect URI Initialization
@@ -74,7 +79,7 @@ function initializeOAuthRedirectURI(): void {
     if (!MCP_OAUTH_CONFIG.REDIRECT_URI) {
         // Get the correct redirect URI for this extension
         const redirectURL = chrome.identity.getRedirectURL();
-        console.log('[Background] Initializing OAuth redirect URI:', redirectURL);
+        authLog.info('Initializing OAuth redirect URI:', redirectURL);
 
         // Mutate the const object (this is safe at runtime)
         (MCP_OAUTH_CONFIG as any).REDIRECT_URI = redirectURL;
@@ -100,11 +105,11 @@ let keepAliveInterval: number | null = null;
  */
 function startMCPKeepAlive(): void {
     if (keepAliveInterval !== null) {
-        console.log('[Background] Keep-alive already running');
+        mcpLog.info('Keep-alive already running');
         return;
     }
 
-    console.log('[Background] Starting MCP keep-alive to prevent service worker termination');
+    mcpLog.info('Starting MCP keep-alive to prevent service worker termination');
 
     // Call chrome.runtime.getPlatformInfo every 20 seconds
     // This keeps service worker alive indefinitely (Chrome 110+ exploit)
@@ -114,7 +119,7 @@ function startMCPKeepAlive(): void {
         });
     }, 20000) as unknown as number;
 
-    console.log('[Background] Keep-alive started successfully');
+    mcpLog.info('Keep-alive started successfully');
 }
 
 /**
@@ -125,10 +130,10 @@ function stopMCPKeepAlive(): void {
         return;
     }
 
-    console.log('[Background] Stopping MCP keep-alive');
+    mcpLog.info('Stopping MCP keep-alive');
     clearInterval(keepAliveInterval);
     keepAliveInterval = null;
-    console.log('[Background] Keep-alive stopped');
+    mcpLog.info('Keep-alive stopped');
 }
 
 /**
@@ -221,7 +226,7 @@ async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): P
 
         // Only schedule if the refresh time is in the future
         if (refreshTime > now) {
-            console.log(`[Background:${serverId}] Creating alarm "${alarmName}" for token refresh`, {
+            authLog.info(`[${serverId}] Creating alarm "${alarmName}" for token refresh`, {
                 refreshTime,
                 refreshTimeISO: new Date(refreshTime).toISOString(),
                 now,
@@ -233,24 +238,24 @@ async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): P
                 when: refreshTime
             });
 
-            console.log(`[Background:${serverId}] Alarm "${alarmName}" created successfully`);
+            authLog.info(`[${serverId}] Alarm "${alarmName}" created successfully`);
 
             const expiresAt = new Date(tokens.expires_at).toISOString();
             const refreshAt = new Date(refreshTime).toISOString();
-            console.log(`[Background:${serverId}] Token refresh scheduled:`, {
+            authLog.info(`[${serverId}] Token refresh scheduled:`, {
                 alarmName,
                 expiresAt,
                 refreshAt,
                 delayMinutes: Math.ceil((refreshTime - now) / (1000 * 60))
             });
         } else {
-            console.warn(`[Background:${serverId}] Token expires too soon for automatic refresh:`, {
+            authLog.warn(`[${serverId}] Token expires too soon for automatic refresh:`, {
                 expiresAt: new Date(tokens.expires_at).toISOString(),
                 now: new Date(now).toISOString()
             });
         }
     } catch (error) {
-        console.error(`[Background:${serverId}] Error scheduling token refresh:`, error);
+        authLog.error(`[${serverId}] Error scheduling token refresh:`, error);
     }
 }
 
@@ -258,14 +263,14 @@ async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): P
  * Handle automatic token refresh alarm for a specific server
  */
 async function handleTokenRefreshAlarm(serverId: string): Promise<void> {
-    console.log(`[Background:${serverId}] Token refresh alarm fired`);
+    authLog.info(`[${serverId}] Token refresh alarm fired`);
 
     try {
         const state = getServerState(serverId);
 
         // Check if server is still enabled
         if (!state.isEnabled) {
-            console.log(`[Background:${serverId}] Server disabled, skipping token refresh`);
+            authLog.info(`[${serverId}] Server disabled, skipping token refresh`);
             return;
         }
 
@@ -275,9 +280,9 @@ async function handleTokenRefreshAlarm(serverId: string): Promise<void> {
         if (refreshed && state.tokens) {
             // Schedule the next refresh
             await scheduleTokenRefresh(serverId, state.tokens);
-            console.log(`[Background:${serverId}] Token refreshed successfully, next refresh scheduled`);
+            mcpLog.info(`[${serverId}] Token refreshed successfully, next refresh scheduled`);
         } else {
-            console.error(`[Background:${serverId}] Token refresh failed during alarm, may require re-authentication`);
+            mcpLog.error(`[${serverId}] Token refresh failed during alarm, may require re-authentication`);
             state.status = {
                 ...state.status,
                 state: 'needs-auth',
@@ -286,7 +291,7 @@ async function handleTokenRefreshAlarm(serverId: string): Promise<void> {
             broadcastStatusUpdate(serverId, state.status);
         }
     } catch (error) {
-        console.error(`[Background:${serverId}] Error in token refresh alarm:`, error);
+        mcpLog.error(`[${serverId}] Error in token refresh alarm:`, error);
     }
 }
 
@@ -299,11 +304,11 @@ async function ensureTokenValidity(serverId: string): Promise<boolean> {
         const tokens = await getStoredTokens(serverId);
 
         if (!tokens) {
-            console.log(`[Background:${serverId}] No stored tokens found`);
+            mcpLog.info(`[${serverId}] No stored tokens found`);
             return false;
         }
 
-        console.log(`[Background:${serverId}] Checking token validity:`, {
+        mcpLog.info(`[${serverId}] Checking token validity:`, {
             expiresAt: new Date(tokens.expires_at).toISOString(),
             now: new Date().toISOString(),
             isExpired: isTokenExpired(tokens)
@@ -311,7 +316,7 @@ async function ensureTokenValidity(serverId: string): Promise<boolean> {
 
         // Check if token is expired or about to expire
         if (isTokenExpired(tokens)) {
-            console.log(`[Background:${serverId}] Token expired or expiring soon, attempting refresh`);
+            mcpLog.info(`[${serverId}] Token expired or expiring soon, attempting refresh`);
 
             // Load tokens into memory
             state.tokens = tokens;
@@ -333,7 +338,7 @@ async function ensureTokenValidity(serverId: string): Promise<boolean> {
         await scheduleTokenRefresh(serverId, tokens);
         return true;
     } catch (error) {
-        console.error(`[Background:${serverId}] Error in ensureTokenValidity:`, error);
+        mcpLog.error(`[${serverId}] Error in ensureTokenValidity:`, error);
         return false;
     }
 }
@@ -360,7 +365,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
     }
 
     try {
-        console.log(`[Background:${serverId}] Starting OAuth flow with dynamic client registration`);
+        mcpLog.info(`[${serverId}] Starting OAuth flow with dynamic client registration`);
 
         // Step 1: Discover OAuth endpoints using proper RFC 9728 + RFC 8414 metadata discovery
         // Never use hardcoded hints - always follow the MCP specification discovery flow
@@ -372,7 +377,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         if (!endpoints) {
             // Perform spec-compliant OAuth discovery following RFC 9728 (Protected Resource Metadata)
             // and RFC 8414 (Authorization Server Metadata)
-            console.log(`[Background:${serverId}] Performing OAuth discovery per RFC 9728 + RFC 8414...`);
+            mcpLog.info(`[${serverId}] Performing OAuth discovery per RFC 9728 + RFC 8414...`);
             endpoints = await discoverOAuthEndpoints(serverConfig.url);
 
             if (!endpoints) {
@@ -385,7 +390,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             // Persist endpoints to storage so they survive service worker restarts
             await storeOAuthEndpoints(serverId, endpoints);
 
-            console.log(`[Background:${serverId}] Successfully discovered OAuth endpoints:`, {
+            mcpLog.info(`[${serverId}] Successfully discovered OAuth endpoints:`, {
                 authorization_endpoint: endpoints.authorization_endpoint,
                 token_endpoint: endpoints.token_endpoint,
                 registration_endpoint: endpoints.registration_endpoint,
@@ -398,7 +403,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         }
 
         // Step 2: Register a dynamic client
-        console.log(`[Background:${serverId}] Registering dynamic client...`);
+        mcpLog.info(`[${serverId}] Registering dynamic client...`);
         state.status = { ...state.status, state: 'registering' };
         broadcastStatusUpdate(serverId, state.status);
 
@@ -416,7 +421,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         // Store credentials in memory but NOT in storage yet - wait until user approves
         state.credentials = clientCredentials;
 
-        console.log(`[Background:${serverId}] Dynamic client registered:`, clientCredentials.client_id);
+        mcpLog.info(`[${serverId}] Dynamic client registered:`, clientCredentials.client_id);
 
         // Step 3: Generate state for CSRF protection
         const oauthStateValue = generateState();
@@ -439,8 +444,8 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             serverConfig.oauth?.resource || endpoints.resource
         );
 
-        console.log(`[Background:${serverId}] Launching OAuth...`);
-        console.log(`[Background:${serverId}] Authorization URL: ${authUrl}`);
+        mcpLog.info(`[${serverId}] Launching OAuth...`);
+        mcpLog.info(`[${serverId}] Authorization URL: ${authUrl}`);
 
         // Update status
         state.status = { ...state.status, state: 'authorizing' };
@@ -453,7 +458,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
                 interactive: true
             });
         } catch (error) {
-            console.error(`[Background:${serverId}] Could not load OAuth URL:`, error);
+            mcpLog.error(`[${serverId}] Could not load OAuth URL:`, error);
             throw new Error(`Could not load OAuth URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
 
@@ -461,7 +466,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             throw new Error('OAuth flow cancelled');
         }
 
-        console.log(`[Background:${serverId}] OAuth redirect URL received`);
+        mcpLog.info(`[${serverId}] OAuth redirect URL received`);
 
         // Step 6: Extract code and state from redirect URL
         const url = new URL(redirectUrl);
@@ -477,7 +482,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             throw new Error('State mismatch - possible CSRF attack');
         }
 
-        console.log(`[Background:${serverId}] Exchanging code for tokens`);
+        mcpLog.info(`[${serverId}] Exchanging code for tokens`);
 
         // Step 7: Exchange code for tokens
         // Get custom headers for this server (e.g., Notion-Version header)
@@ -497,7 +502,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 
         // User approved! Now we can store client credentials permanently
         await storeClientCredentials(serverId, clientCredentials);
-        console.log(`[Background:${serverId}] Client credentials stored after user approval`);
+        mcpLog.info(`[${serverId}] Client credentials stored after user approval`);
 
         // Update granted scopes
         if (tokens.scope) {
@@ -508,7 +513,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         state.tokens = tokens;
         await storeTokens(serverId, tokens);
 
-        console.log(`[Background:${serverId}] Tokens stored successfully`);
+        mcpLog.info(`[${serverId}] Tokens stored successfully`);
 
         // Schedule automatic token refresh before expiry
         await scheduleTokenRefresh(serverId, tokens);
@@ -517,14 +522,13 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
         state.status = { ...state.status, state: 'authenticated' };
         broadcastStatusUpdate(serverId, state.status);
 
-        console.log(`[Background:${serverId}] OAuth successful`);
+        mcpLog.info(`[${serverId}] OAuth successful`);
 
         return { success: true, data: { state: 'authenticated' } };
     } catch (error) {
-        console
-        console.error(`[Background:${serverId}] OAuth error:`, error);
+        authLog.error(`[${serverId}] OAuth error:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        console.log("full error :", error);
+        authLog.error("full error :", error);
 
         // Check if user cancelled or denied the flow
         const wasCancelled = errorMessage.toLowerCase().includes('cancelled') ||
@@ -534,7 +538,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             errorMessage.toLowerCase().includes('user denied');
 
         if (wasCancelled) {
-            console.log(`[Background:${serverId}] OAuth flow was cancelled/denied by user - cleaning up...`);
+            mcpLog.info(`[${serverId}] OAuth flow was cancelled/denied by user - cleaning up...`);
 
             // Clean up ALL partial data since auth was cancelled
             // Clear storage (in case anything was written)
@@ -551,10 +555,10 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             // Set state back to disconnected (clean slate) since cancellation is not an error
             state.status = { serverId, state: 'disconnected' };
 
-            console.log(`[Background:${serverId}] Cleanup complete after cancellation`);
+            mcpLog.info(`[${serverId}] Cleanup complete after cancellation`);
         } else {
             // Actual error occurred (not user cancellation)
-            console.error(`[Background:${serverId}] Actual authentication error (not cancellation):`, errorMessage);
+            mcpLog.error(`[${serverId}] Actual authentication error (not cancellation):`, errorMessage);
 
             // Still clean up partial data on error
             await clearClientCredentials(serverId);
@@ -593,7 +597,7 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     const serverConfig = getServerConfig(serverId);
 
     if (!state.tokens?.refresh_token) {
-        console.error(`[Background:${serverId}] No refresh token available`);
+        mcpLog.error(`[${serverId}] No refresh token available`);
         const error = MCPError.authFailed(
             serverId,
             'No refresh token available. Re-authentication required.'
@@ -606,11 +610,11 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     // Load client credentials if not in memory
     if (!state.credentials) {
         state.credentials = await getStoredClientCredentials(serverId);
-        console.log(`[Background:${serverId}] Loaded client credentials for token refresh`);
+        mcpLog.info(`[${serverId}] Loaded client credentials for token refresh`);
     }
 
     if (!state.credentials) {
-        console.error(`[Background:${serverId}] No client credentials available for token refresh`);
+        mcpLog.error(`[${serverId}] No client credentials available for token refresh`);
         const error = MCPError.authFailed(
             serverId,
             'No client credentials found. Re-authentication required.'
@@ -624,29 +628,29 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     if (!state.oauthEndpoints) {
         state.oauthEndpoints = await getStoredOAuthEndpoints(serverId);
         if (state.oauthEndpoints) {
-            console.log(`[Background:${serverId}] Loaded OAuth endpoints from storage for token refresh`);
+            mcpLog.info(`[${serverId}] Loaded OAuth endpoints from storage for token refresh`);
         }
     }
 
     // If still not available, try to re-discover them as a fallback
     if (!state.oauthEndpoints) {
-        console.log(`[Background:${serverId}] OAuth endpoints not found in memory or storage, attempting re-discovery...`);
+        mcpLog.info(`[${serverId}] OAuth endpoints not found in memory or storage, attempting re-discovery...`);
 
         if (serverConfig?.url) {
             try {
                 const discoveredEndpoints = await discoverOAuthEndpoints(serverConfig.url);
 
                 if (discoveredEndpoints) {
-                    console.log(`[Background:${serverId}] Successfully re-discovered OAuth endpoints`);
+                    mcpLog.info(`[${serverId}] Successfully re-discovered OAuth endpoints`);
                     state.oauthEndpoints = discoveredEndpoints;
 
                     // Persist the re-discovered endpoints for future use
                     await storeOAuthEndpoints(serverId, discoveredEndpoints);
                 } else {
-                    console.error(`[Background:${serverId}] OAuth endpoint re-discovery failed`);
+                    mcpLog.error(`[${serverId}] OAuth endpoint re-discovery failed`);
                 }
             } catch (discoveryError) {
-                console.error(`[Background:${serverId}] Error during OAuth endpoint re-discovery:`, discoveryError);
+                mcpLog.error(`[${serverId}] Error during OAuth endpoint re-discovery:`, discoveryError);
                 const error = MCPError.authFailed(
                     serverId,
                     `Failed to discover OAuth endpoints: ${discoveryError instanceof Error ? discoveryError.message : 'Unknown error'}`
@@ -660,7 +664,7 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
 
     // Final check: if still no endpoints, fail
     if (!state.oauthEndpoints) {
-        console.error(`[Background:${serverId}] No OAuth endpoints available after all attempts (memory, storage, and re-discovery)`);
+        mcpLog.error(`[${serverId}] No OAuth endpoints available after all attempts (memory, storage, and re-discovery)`);
         const error = MCPError.authFailed(
             serverId,
             'OAuth endpoints unavailable. Re-authentication required.'
@@ -671,7 +675,7 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
     }
 
     try {
-        console.log(`[Background:${serverId}] Refreshing token`);
+        mcpLog.info(`[${serverId}] Refreshing token`);
         state.status = { ...state.status, state: 'token-refresh' };
         broadcastStatusUpdate(serverId, state.status);
 
@@ -702,10 +706,10 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
         state.status = { ...state.status, state: 'authenticated' };
         broadcastStatusUpdate(serverId, state.status);
 
-        console.log(`[Background:${serverId}] Token refreshed successfully`);
+        mcpLog.info(`[${serverId}] Token refreshed successfully`);
         return true;
     } catch (error) {
-        console.error(`[Background:${serverId}] Token refresh failed:`, error);
+        mcpLog.error(`[${serverId}] Token refresh failed:`, error);
 
         // Categorize the error
         let mcpError: MCPError;
@@ -778,7 +782,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
 
     if (!serverConfig) {
         const error = new Error(`Server config not found for ${serverId}`);
-        console.error(`[Background:${serverId}]`, error.message);
+        mcpLog.error(`[${serverId}]`, error.message);
         return {
             success: false,
             error: error.message
@@ -787,7 +791,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
 
     if (!serverConfig.url) {
         const error = new Error(`No URL configured for ${serverId}`);
-        console.error(`[Background:${serverId}]`, error.message);
+        mcpLog.error(`[${serverId}]`, error.message);
         return {
             success: false,
             error: error.message
@@ -795,7 +799,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
     }
 
     try {
-        console.log(`[Background:${serverId}] Connecting to MCP server`);
+        mcpLog.info(`[${serverId}] Connecting to MCP server`);
 
         // Only require token for servers that need authentication
         let accessToken: string | null = null;
@@ -814,7 +818,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
         } else {
             // For servers that don't require authentication, use empty string
             accessToken = '';
-            console.log(`[Background:${serverId}] Server does not require authentication, proceeding without token`);
+            mcpLog.info(`[${serverId}] Server does not require authentication, proceeding without token`);
         }
 
         // Create SSE client with error handling callbacks
@@ -836,7 +840,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
                     }
                 },
                 onMessage: (message) => {
-                    console.log(`[Background:${serverId}] MCP message:`, message);
+                    mcpLog.info(`[${serverId}] MCP message:`, message);
                 }
             },
             {
@@ -872,11 +876,11 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
 
         await Promise.race([initPromise, initTimeoutPromise]);
 
-        console.log(`[Background:${serverId}] Successfully connected and initialized`);
+        mcpLog.info(`[${serverId}] Successfully connected and initialized`);
         return { success: true, data: state.client.getStatus() };
 
     } catch (error) {
-        console.error(`[Background:${serverId}] MCP connection error:`, error);
+        mcpLog.error(`[${serverId}] MCP connection error:`, error);
 
         // Categorize the error and provide user-friendly message
         let errorMessage: string;
@@ -927,7 +931,7 @@ function disconnectMcpServer(serverId: string): void {
  * Handle token expiry - attempt refresh and reconnect
  */
 async function handleTokenExpiry(serverId: string): Promise<void> {
-    console.log(`[Background:${serverId}] Handling token expiry`);
+    mcpLog.info(`[${serverId}] Handling token expiry`);
 
     const state = getServerState(serverId);
 
@@ -950,7 +954,7 @@ async function handleTokenExpiry(serverId: string): Promise<void> {
  * Handle invalid token format - clear tokens and require re-auth
  */
 async function handleInvalidToken(serverId: string): Promise<void> {
-    console.log(`[Background:${serverId}] Handling invalid token format`);
+    mcpLog.info(`[${serverId}] Handling invalid token format`);
 
     const state = getServerState(serverId);
 
@@ -996,20 +1000,20 @@ async function enableMcpServer(serverId: string): Promise<McpExtensionResponse> 
 
     // If already connected, just return success
     if (state.client && state.status.state === 'connected') {
-        console.log(`[Background:${serverId}] Already connected and initialized`);
+        mcpLog.info(`[${serverId}] Already connected and initialized`);
         return { success: true, data: state.status };
     }
 
     // Check if server requires authentication
     if (serverConfig && !serverConfig.requiresAuthentication) {
         // Server doesn't require authentication, connect directly
-        console.log(`[Background:${serverId}] Server does not require authentication, connecting directly`);
+        mcpLog.info(`[${serverId}] Server does not require authentication, connecting directly`);
         const connectResult = await connectMcpServer(serverId);
 
         if (connectResult.success) {
-            console.log(`[Background:${serverId}] Connection and initialization successful`);
+            mcpLog.info(`[${serverId}] Connection and initialization successful`);
         } else {
-            console.warn(`[Background:${serverId}] Connection failed:`, connectResult.error);
+            mcpLog.warn(`[${serverId}] Connection failed:`, connectResult.error);
         }
 
         return connectResult;
@@ -1021,9 +1025,9 @@ async function enableMcpServer(serverId: string): Promise<McpExtensionResponse> 
 
         // No need for separate health check - our client already initializes and fetches tools during connection
         if (connectResult.success) {
-            console.log(`[Background:${serverId}] Connection and initialization successful`);
+            mcpLog.info(`[${serverId}] Connection and initialization successful`);
         } else {
-            console.warn(`[Background:${serverId}] Connection failed:`, connectResult.error);
+            mcpLog.warn(`[${serverId}] Connection failed:`, connectResult.error);
         }
 
         return connectResult;
@@ -1056,7 +1060,7 @@ async function disableMcpServer(serverId: string): Promise<McpExtensionResponse>
  * Disconnect and clear authentication for a server
  */
 async function disconnectServerAuth(serverId: string): Promise<McpExtensionResponse> {
-    console.log(`[Background:${serverId}] Disconnecting and clearing all authentication data...`);
+    mcpLog.info(`[${serverId}] Disconnecting and clearing all authentication data...`);
     const state = getServerState(serverId);
 
     // Disconnect the MCP client if active
@@ -1082,7 +1086,7 @@ async function disconnectServerAuth(serverId: string): Promise<McpExtensionRespo
     // Stop keep-alive if no servers remain enabled
     updateKeepAliveState();
 
-    console.log(`[Background:${serverId}] All authentication data cleared successfully`);
+    mcpLog.info(`[${serverId}] All authentication data cleared successfully`);
     broadcastStatusUpdate(serverId, state.status);
 
     return { success: true };
@@ -1150,7 +1154,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
     }
 
     try {
-        console.log(`[Background:${serverId}] Performing MCP health check with custom client`);
+        mcpLog.info(`[${serverId}] Performing MCP health check with custom client`);
 
         // Get access token (only required if server needs authentication)
         let accessToken: string | null = null;
@@ -1165,7 +1169,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
         } else {
             // For servers that don't require authentication, use empty string
             accessToken = '';
-            console.log(`[Background:${serverId}] Server does not require authentication, performing health check without token`);
+            mcpLog.info(`[${serverId}] Server does not require authentication, performing health check without token`);
         }
 
         try {
@@ -1177,7 +1181,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
                 accessToken,
                 {
                     onStatusChange: (status) => {
-                        console.log(`[Background:${serverId}] Health check status:`, status.state);
+                        mcpLog.info(`[${serverId}] Health check status:`, status.state);
                     },
                     onMessage: (_message) => {
                         // Ignore messages during health check
@@ -1190,25 +1194,25 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
                 }
             );
 
-            console.log(`[Background:${serverId}] Connecting to MCP server (auto-detect transport)...`);
+            mcpLog.info(`[${serverId}] Connecting to MCP server (auto-detect transport)...`);
 
             // Connect (will auto-detect Streamable HTTP vs HTTP+SSE)
             await healthCheckClient.connect();
-            console.log(`[Background:${serverId}] Connected successfully`);
+            mcpLog.info(`[${serverId}] Connected successfully`);
 
             // Initialize MCP protocol
             await healthCheckClient.initialize();
-            console.log(`[Background:${serverId}] Initialized successfully`);
+            mcpLog.info(`[${serverId}] Initialized successfully`);
 
             // Get server status (includes tools)
             const status = healthCheckClient.getStatus();
-            console.log(`[Background:${serverId}] Server status:`, status);
+            mcpLog.info(`[${serverId}] Server status:`, status);
 
             // Disconnect the health check client
             healthCheckClient.disconnect();
 
             if (status.tools && status.tools.length > 0) {
-                console.log(`[Background:${serverId}] Health check passed. Tools available:`, status.tools.length);
+                mcpLog.info(`[${serverId}] Health check passed. Tools available:`, status.tools.length);
 
                 return {
                     success: true,
@@ -1225,14 +1229,14 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
                 };
             }
         } catch (transportError) {
-            console.error(`[Background:${serverId}] Health check failed:`, transportError);
+            mcpLog.error(`[${serverId}] Health check failed:`, transportError);
 
             // Clean up client if exists
             if (healthCheckClient) {
                 try {
                     (healthCheckClient as McpSSEClient).disconnect();
                 } catch (closeError) {
-                    console.error(`[Background:${serverId}] Error closing client:`, closeError);
+                    mcpLog.error(`[${serverId}] Error closing client:`, closeError);
                 }
             }
 
@@ -1242,14 +1246,14 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
             };
         }
     } catch (error) {
-        console.error(`[Background:${serverId}] Health check error:`, error);
+        mcpLog.error(`[${serverId}] Health check error:`, error);
 
         // Clean up client if exists
         if (healthCheckClient) {
             try {
                 (healthCheckClient as McpSSEClient).disconnect();
             } catch (closeError) {
-                console.error(`[Background:${serverId}] Error closing client:`, closeError);
+                mcpLog.error(`[${serverId}] Error closing client:`, closeError);
             }
         }
 
@@ -1282,19 +1286,19 @@ async function getAllMCPTools(): Promise<McpExtensionResponse> {
                         }));
 
                         allTools.push(...serverTools);
-                        console.log(`[Background:${serverId}] Added ${serverTools.length} tools`);
+                        mcpLog.info(`[${serverId}] Added ${serverTools.length} tools`);
                     }
                 } catch (error) {
-                    console.error(`[Background:${serverId}] Error listing tools:`, error);
+                    mcpLog.error(`[${serverId}] Error listing tools:`, error);
                     // Continue with other servers instead of failing completely
                 }
             }
         }
 
-        console.log(`[Background] Total MCP tools available: ${allTools.length}`);
+        backgroundLog.info(` Total MCP tools available: ${allTools.length}`);
         return { success: true, data: { tools: allTools } };
     } catch (error) {
-        console.error('[Background] Error getting all MCP tools:', error);
+        backgroundLog.error(' Error getting all MCP tools:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to get MCP tools'
@@ -1316,7 +1320,7 @@ async function callServerTool(serverId: string, name: string, args?: Record<stri
         const result = await state.client.callTool(name, args);
         return { success: true, data: result };
     } catch (error) {
-        console.error(`[Background:${serverId}] Tool call error:`, error);
+        mcpLog.error(`[${serverId}] Tool call error:`, error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Tool call failed'
@@ -1328,17 +1332,17 @@ async function callServerTool(serverId: string, name: string, args?: Record<stri
  * Get MCP server configurations for frontend
  */
 async function getMCPServerConfigs(): Promise<any[]> {
-    console.log('[Background] getMCPServerConfigs called');
+    backgroundLog.info(' getMCPServerConfigs called');
     const servers = [];
 
     try {
-        console.log(`[Background] Processing ${MCP_SERVERS.length} server configs`);
+        backgroundLog.info(` Processing ${MCP_SERVERS.length} server configs`);
 
         for (const serverConfig of MCP_SERVERS) {
             const serverId = serverConfig.id;
             const state = getServerState(serverId);
 
-            console.log(`[Background:${serverId}] Checking server configuration:`, {
+            mcpLog.info(`[${serverId}] Checking server configuration:`, {
                 name: serverConfig.name,
                 url: serverConfig.url,
                 hasTokens: !!state.tokens,
@@ -1348,7 +1352,7 @@ async function getMCPServerConfigs(): Promise<any[]> {
 
             // Get enabled status from storage
             const { [`mcp.${serverId}.enabled`]: isEnabled } = await chrome.storage.local.get(`mcp.${serverId}.enabled`);
-            console.log(`[Background:${serverId}] Enabled status from storage:`, isEnabled);
+            mcpLog.info(`[${serverId}] Enabled status from storage:`, isEnabled);
 
             const serverType = serverConfig.url?.endsWith('/sse') ? 'sse' : 'mcp';
 
@@ -1361,7 +1365,7 @@ async function getMCPServerConfigs(): Promise<any[]> {
             );
 
             if (shouldAddServer) {
-                console.log(`[Background:${serverId}] ✓ Adding server to frontend config`);
+                mcpLog.info(`[${serverId}] ✓ Adding server to frontend config`);
 
                 // Build headers based on authentication requirement
                 const headers = [
@@ -1383,9 +1387,9 @@ async function getMCPServerConfigs(): Promise<any[]> {
                     status: state.status
                 });
 
-                console.log(`[Background:${serverId}] ${serverConfig.name} configured for frontend (requiresAuth: ${serverConfig.requiresAuthentication})`);
+                mcpLog.info(`[${serverId}] ${serverConfig.name} configured for frontend (requiresAuth: ${serverConfig.requiresAuthentication})`);
             } else {
-                console.log(`[Background:${serverId}] ✗ Not adding to config - Conditions not met:`, {
+                mcpLog.info(`[${serverId}] ✗ Not adding to config - Conditions not met:`, {
                     isEnabled,
                     requiresAuthentication: serverConfig.requiresAuthentication,
                     hasAccessToken: !!state.tokens?.access_token,
@@ -1394,9 +1398,9 @@ async function getMCPServerConfigs(): Promise<any[]> {
             }
         }
 
-        console.log(`[Background] Returning ${servers.length} configured server(s)`);
+        backgroundLog.info(` Returning ${servers.length} configured server(s)`);
     } catch (error) {
-        console.error('[Background] Error getting MCP server configs:', error);
+        backgroundLog.error(' Error getting MCP server configs:', error);
     }
 
     return servers;
@@ -1417,24 +1421,24 @@ async function initializeServerStatus(serverId: string): Promise<void> {
         const storedEndpoints = await getStoredOAuthEndpoints(serverId);
         if (storedEndpoints) {
             state.oauthEndpoints = storedEndpoints;
-            console.log(`[Background:${serverId}] OAuth endpoints restored from storage`);
+            mcpLog.info(`[${serverId}] OAuth endpoints restored from storage`);
         }
 
         if (tokens) {
             // User has tokens, mark as authenticated
             state.status = { ...state.status, state: 'authenticated' };
-            console.log(`[Background:${serverId}] Status initialized: authenticated (tokens found)`);
+            mcpLog.info(`[${serverId}] Status initialized: authenticated (tokens found)`);
         } else if (serverConfig && !serverConfig.requiresAuthentication) {
             // Server doesn't require authentication, mark as ready to connect
             state.status = { ...state.status, state: 'disconnected' };
-            console.log(`[Background:${serverId}] Status initialized: disconnected (no auth required)`);
+            mcpLog.info(`[${serverId}] Status initialized: disconnected (no auth required)`);
         } else {
             // No tokens and server requires auth
             state.status = { ...state.status, state: 'needs-auth' };
-            console.log(`[Background:${serverId}] Status initialized: needs-auth (no tokens)`);
+            mcpLog.info(`[${serverId}] Status initialized: needs-auth (no tokens)`);
         }
     } catch (error) {
-        console.error(`[Background:${serverId}] Error initializing status:`, error);
+        mcpLog.error(`[${serverId}] Error initializing status:`, error);
         state.status = { ...state.status, state: 'disconnected' };
     }
 }
@@ -1444,18 +1448,18 @@ async function initializeServerStatus(serverId: string): Promise<void> {
 // ============================================================================
 
 chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
-    console.log('[Background] Received message:', message.type, message);
+    backgroundLog.info(' Received message:', message.type, message);
 
     // Handle model download progress broadcasts
     if (message.type === 'MODEL_DOWNLOAD_PROGRESS') {
-        console.log('[Background] Relaying model download progress to sidepanel:', message.data);
+        backgroundLog.info(' Relaying model download progress to sidepanel:', message.data);
 
         // Broadcast to all extension contexts (especially sidepanel)
         chrome.runtime.sendMessage({
             type: 'MODEL_DOWNLOAD_PROGRESS_UPDATE',
             data: message.data,
         }).catch((error) => {
-            console.debug('[Background] No listeners for download progress update:', error);
+            backgroundLog.debug(' No listeners for download progress update:', error);
         });
 
         sendResponse({ success: true });
@@ -1467,10 +1471,10 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
         (async () => {
             try {
                 const servers = await getMCPServerConfigs();
-                console.log('[Background] Sending MCP server configs:', servers);
+                backgroundLog.info(' Sending MCP server configs:', servers);
                 sendResponse({ success: true, data: servers });
             } catch (error) {
-                console.error('[Background] Error getting MCP server configs:', error);
+                backgroundLog.error(' Error getting MCP server configs:', error);
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to get server configs'
@@ -1485,10 +1489,10 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
         (async () => {
             try {
                 const result = await getAllMCPTools();
-                console.log('[Background] Sending MCP tools list:', result);
+                backgroundLog.info(' Sending MCP tools list:', result);
                 sendResponse(result);
             } catch (error) {
-                console.error('[Background] Error getting MCP tools:', error);
+                backgroundLog.error(' Error getting MCP tools:', error);
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to get MCP tools'
@@ -1513,7 +1517,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
 
             let response: McpExtensionResponse;
 
-            console.log(`[Background] Handling MCP message for ${serverId}:`, action);
+            backgroundLog.info(` Handling MCP message for ${serverId}:`, action);
 
             switch (action) {
                 case 'auth/start':
@@ -1574,7 +1578,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                     response = { success: false, error: `Unknown action: ${action}` };
             }
 
-            console.log(`[Background:${serverId}] Sending MCP response:`, response);
+            mcpLog.info(`[${serverId}] Sending MCP response:`, response);
             sendResponse(response);
         })();
 
@@ -1617,7 +1621,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
         (async () => {
             try {
                 const payload = message.payload as AINotificationPayload;
-                console.log('[Background] Creating AI notification:', payload);
+                backgroundLog.info(' Creating AI notification:', payload);
 
                 const notificationId = await createAINotification({
                     threadId: payload.threadId,
@@ -1631,7 +1635,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                     sendResponse({ success: false, error: 'Failed to create notification' });
                 }
             } catch (error) {
-                console.error('[Background] Error creating AI notification:', error);
+                backgroundLog.error(' Error creating AI notification:', error);
                 sendResponse({
                     success: false,
                     error: error instanceof Error ? error.message : 'Unknown error'
@@ -1655,7 +1659,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                     return;
                 }
 
-                console.log('[Background] Reading local PDF file:', filePath);
+                backgroundLog.info(' Reading local PDF file:', filePath);
 
                 // Read the file and convert to Blob
                 const blob = await readLocalFile(filePath);
@@ -1675,7 +1679,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                 }
                 const base64Data = btoa(binary);
 
-                console.log('[Background] Successfully read local PDF:', {
+                backgroundLog.info(' Successfully read local PDF:', {
                     filename,
                     size: blob.size,
                     type: blob.type,
@@ -1692,7 +1696,7 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                     }
                 });
             } catch (error) {
-                console.error('[Background] Error reading local PDF:', error);
+                backgroundLog.error(' Error reading local PDF:', error);
 
                 if (isFileAccessError(error)) {
                     sendResponse({
@@ -1725,11 +1729,11 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
     try {
         // Handle AI completion notifications
         if (isAINotification(notificationId)) {
-            console.log('[Background] AI notification clicked:', notificationId);
+            backgroundLog.info(' AI notification clicked:', notificationId);
 
             const parsed = parseNotificationId(notificationId);
             if (!parsed) {
-                console.warn('[Background] Invalid AI notification ID:', notificationId);
+                backgroundLog.warn(' Invalid AI notification ID:', notificationId);
                 return;
             }
 
@@ -1737,7 +1741,7 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
             try {
                 await chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
             } catch (error) {
-                console.error('[Background] Error opening sidepanel:', error);
+                backgroundLog.error(' Error opening sidepanel:', error);
             }
 
             // Send message to sidepanel to navigate to the thread
@@ -1750,7 +1754,7 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
                     }
                 });
             } catch (error) {
-                console.debug('[Background] No listeners for navigation message:', error);
+                backgroundLog.debug(' No listeners for navigation message:', error);
             }
 
             // Clear the notification
@@ -1765,7 +1769,7 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 
         const id = notificationId.split(':')[1];
         if (!id) {
-            console.warn('[Background] Invalid reminder notification ID:', notificationId);
+            backgroundLog.warn(' Invalid reminder notification ID:', notificationId);
             return;
         }
 
@@ -1785,7 +1789,7 @@ chrome.notifications.onClicked.addListener(async (notificationId) => {
 
         chrome.notifications.clear(notificationId);
     } catch (error) {
-        console.error('[Background] Error handling notification click:', error);
+        backgroundLog.error(' Error handling notification click:', error);
     }
 });
 
@@ -1797,11 +1801,11 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
             return;
         }
 
-        console.log('[Background] AI notification button clicked:', notificationId, buttonIndex);
+        backgroundLog.info(' AI notification button clicked:', notificationId, buttonIndex);
 
         const parsed = parseNotificationId(notificationId);
         if (!parsed) {
-            console.warn('[Background] Invalid AI notification ID:', notificationId);
+            backgroundLog.warn(' Invalid AI notification ID:', notificationId);
             return;
         }
 
@@ -1809,13 +1813,13 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
         // Button 1: Dismiss
         if (buttonIndex === 0) {
             // Continue Iterating clicked
-            console.log('[Background] Continue Iterating clicked for thread:', parsed.threadId);
+            backgroundLog.info(' Continue Iterating clicked for thread:', parsed.threadId);
 
             // Open/focus sidepanel
             try {
                 await chrome.sidePanel.open({ windowId: chrome.windows.WINDOW_ID_CURRENT });
             } catch (error) {
-                console.error('[Background] Error opening sidepanel:', error);
+                backgroundLog.error(' Error opening sidepanel:', error);
             }
 
             // Send message to sidepanel to continue iterating
@@ -1828,17 +1832,17 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
                     }
                 });
             } catch (error) {
-                console.debug('[Background] No listeners for continue action:', error);
+                backgroundLog.debug(' No listeners for continue action:', error);
             }
         } else if (buttonIndex === 1) {
             // Dismiss clicked - just clear the notification
-            console.log('[Background] Dismiss clicked for thread:', parsed.threadId);
+            backgroundLog.info(' Dismiss clicked for thread:', parsed.threadId);
         }
 
         // Clear the notification regardless of which button was clicked
         await clearNotification(notificationId);
     } catch (error) {
-        console.error('[Background] Error handling notification button click:', error);
+        backgroundLog.error(' Error handling notification button click:', error);
     }
 });
 
@@ -1846,7 +1850,7 @@ chrome.notifications.onButtonClicked.addListener(async (notificationId, buttonIn
  * Initialize all MCP servers from storage
  */
 async function initializeAllServers(): Promise<void> {
-    console.log('[Background] Initializing all MCP servers');
+    backgroundLog.info(' Initializing all MCP servers');
 
     for (const serverConfig of MCP_SERVERS) {
         const serverId = serverConfig.id;
@@ -1875,21 +1879,21 @@ async function initializeAllServers(): Promise<void> {
                     if (tokenValid) {
                         // Attempt to connect
                         await connectMcpServer(serverId);
-                        console.log(`[Background] ${serverConfig.name} restored and connected`);
+                        backgroundLog.info(` ${serverConfig.name} restored and connected`);
                     } else {
-                        console.log(`[Background] ${serverConfig.name} needs re-authentication`);
+                        backgroundLog.info(` ${serverConfig.name} needs re-authentication`);
                     }
                 } else {
-                    console.log(`[Background] ${serverConfig.name} enabled but no credentials found`);
+                    backgroundLog.info(` ${serverConfig.name} enabled but no credentials found`);
                 }
             }
         } catch (error) {
-            console.error(`[Background] Error initializing ${serverId}:`, error);
+            backgroundLog.error(` Error initializing ${serverId}:`, error);
         }
     }
 
     // Start keep-alive if any servers are enabled
-    console.log('[Background] Checking if keep-alive should start');
+    backgroundLog.info(' Checking if keep-alive should start');
     updateKeepAliveState();
 }
 
@@ -1897,23 +1901,25 @@ async function initializeAllServers(): Promise<void> {
  * Extension install/update handler
  */
 chrome.runtime.onInstalled.addListener(async (details) => {
-    console.log('[Background] onInstalled:', details.reason);
+    backgroundLog.info(' onInstalled:', details.reason);
 
     try {
         // Initialize all MCP servers from storage
         await initializeAllServers();
 
         // Keep-alive is initialized by initializeAllServers
-        console.log('[Background] Keep-alive initialized');
+        backgroundLog.info(' Keep-alive initialized');
 
         // Enable side panel on all existing tabs
         if (chrome.sidePanel) {
-            chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
+            chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => {
+                backgroundLog.error('Failed to set panel behavior:', error);
+            });
         }
 
-        console.log('[Background] Side panel configured');
+        backgroundLog.info(' Side panel configured');
     } catch (error) {
-        console.error('[Background] onInstalled error:', error);
+        backgroundLog.error(' onInstalled error:', error);
     }
 });
 
@@ -1921,13 +1927,13 @@ chrome.runtime.onInstalled.addListener(async (details) => {
  * Extension startup handler
  */
 chrome.runtime.onStartup.addListener(async () => {
-    console.log('[Background] onStartup - Extension ready');
+    backgroundLog.info(' onStartup - Extension ready');
 
     // Initialize all MCP servers from storage
     await initializeAllServers();
 
     // Keep-alive is initialized by initializeAllServers
-    console.log('[Background] Keep-alive initialized on startup');
+    backgroundLog.info(' Keep-alive initialized on startup');
 });
 
 /**
@@ -1939,7 +1945,7 @@ if (chrome.action) {
             try {
                 await chrome.sidePanel.open({ tabId: tab.id });
             } catch (error) {
-                console.error('[Background] Error opening side panel:', error);
+                backgroundLog.error(' Error opening side panel:', error);
             }
         }
     });
@@ -1983,11 +1989,11 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
     const id = alarm.name.split(':')[1];
     if (!id) {
-        console.warn('[Background] Invalid reminder alarm name:', alarm.name);
+        backgroundLog.warn(' Invalid reminder alarm name:', alarm.name);
         return;
     }
 
-    console.log('[Background] Reminder alarm fired:', id);
+    backgroundLog.info(' Reminder alarm fired:', id);
 
     try {
         // Get the reminder from storage
@@ -1996,7 +2002,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         const reminder: Reminder | undefined = remindersMap[id];
 
         if (!reminder) {
-            console.warn('[Background] Reminder not found:', id);
+            backgroundLog.warn(' Reminder not found:', id);
             return;
         }
 
@@ -2016,7 +2022,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
             requireInteraction: false
         });
 
-        console.log('[Background] Reminder notification created:', {
+        backgroundLog.info(' Reminder notification created:', {
             title: notificationTitle,
             message: notificationMessage
         });
@@ -2025,7 +2031,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         // notification click handler to avoid race conditions and ensure the
         // click handler has access to the stored reminder data.
     } catch (error) {
-        console.error('[Background] Error handling reminder alarm:', error);
+        backgroundLog.error(' Error handling reminder alarm:', error);
     }
 });
 
@@ -2036,7 +2042,7 @@ setInterval(async () => {
     try {
         await cleanupCache();
     } catch (error) {
-        console.error('[Background] PDF cache cleanup failed:', error);
+        backgroundLog.error(' PDF cache cleanup failed:', error);
     }
 }, 6 * 60 * 60 * 1000); // 6 hours
 
@@ -2045,7 +2051,7 @@ setInterval(async () => {
 // ============================================================================
 
 
-console.log('[Background] Browser actions event listeners initialized');
+backgroundLog.info(' Browser actions event listeners initialized');
 
 // ============================================================================
 // Offscreen Document: Summarizer Broker
@@ -2067,11 +2073,11 @@ async function ensureOffscreenDocument(): Promise<void> {
                 reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
                 justification: 'Run Chrome Summarizer API in an isolated offscreen document'
             });
-            console.log('[Background] Offscreen document created');
+            backgroundLog.info(' Offscreen document created');
         }
     } catch (error) {
         // Some Chrome versions throw if a document already exists
-        console.warn('[Background] ensureOffscreenDocument warning:', error);
+        backgroundLog.warn(' ensureOffscreenDocument warning:', error);
     }
 }
 
@@ -2089,5 +2095,8 @@ type SummarizeRequestMessage = {
         context?: string;
     };
 };
+
+
+
 
 

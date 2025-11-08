@@ -5,6 +5,9 @@
  */
 
 import type { NotificationOptions, ParsedNotificationId } from '../types/notifications';
+import { createLogger } from '../logger';
+
+const notificationLog = createLogger('Notifications', 'NOTIFICATIONS');
 
 /**
  * Base64 encoded logo for notifications
@@ -80,7 +83,7 @@ export async function createAINotification(
     try {
         // Check if notifications API is available
         if (!chrome.notifications) {
-            console.error('[AINotification] Chrome notifications API not available');
+            notificationLog.error('Chrome notifications API not available');
             return null;
         }
 
@@ -94,10 +97,10 @@ export async function createAINotification(
             requireInteraction,
         });
 
-        console.log('[AINotification] Created notification:', notificationId);
+        notificationLog.info('Created notification:', notificationId);
         return notificationId;
     } catch (error) {
-        console.error('[AINotification] Failed to create notification:', error);
+        notificationLog.error('Failed to create notification:', error);
         return null;
     }
 }
@@ -112,10 +115,10 @@ export async function clearNotification(notificationId: string): Promise<boolean
         }
 
         await chrome.notifications.clear(notificationId);
-        console.log('[AINotification] Cleared notification:', notificationId);
+        notificationLog.debug('Cleared notification:', notificationId);
         return true;
     } catch (error) {
-        console.error('[AINotification] Failed to clear notification:', error);
+        notificationLog.error('Failed to clear notification:', error);
         return false;
     }
 }
@@ -145,9 +148,9 @@ export async function clearThreadNotifications(threadId: string): Promise<void> 
             threadNotificationIds.map(id => clearNotification(id))
         );
 
-        console.log('[AINotification] Cleared thread notifications:', threadId, threadNotificationIds.length);
+        notificationLog.debug('Cleared thread notifications:', threadId, threadNotificationIds.length);
     } catch (error) {
-        console.error('[AINotification] Failed to clear thread notifications:', error);
+        notificationLog.error('Failed to clear thread notifications:', error);
     }
 }
 
