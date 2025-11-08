@@ -193,6 +193,12 @@
     animation: badgeSlideIn 0.2s ease-out;
     z-index: 100;
     overflow: hidden;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.local-pdf-suggestion:hover {
+    opacity: 1;
 }
 
 .local-pdf-suggestion-button {

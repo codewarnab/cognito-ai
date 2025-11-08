@@ -182,9 +182,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 return;
             }
 
-            // Successfully read the file - convert ArrayBuffer to Blob
-            const { arrayBuffer, filename, type } = response.data;
-            const blob = new Blob([arrayBuffer], { type: type || 'application/pdf' });
+            // Successfully read the file - convert base64 to Blob
+            // The background script sends base64 instead of ArrayBuffer because
+            // ArrayBuffers don't serialize properly through Chrome messaging
+            const { base64Data, filename, type } = response.data;
+
+            // Decode base64 to binary string
+            const binaryString = atob(base64Data);
+
+            // Convert binary string to Uint8Array
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            // Create Blob from bytes
+            const blob = new Blob([bytes], { type: type || 'application/pdf' });
 
             // Create File object from Blob
             const file = new File([blob], filename, {
@@ -331,7 +344,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     return (
         <div className="copilot-input-container">
-           
+
 
             {/* Suggested Actions */}
             <SuggestedActions
