@@ -5,6 +5,7 @@ import { CopilotChatWindow } from "./components/core/CopilotChatWindow";
 import { McpManager } from "./components/features/mcp";
 import { Troubleshooting } from "./components/features/help/Troubleshooting";
 import { Features } from "./components/features/help/Features";
+import { ProviderSetup } from "./components/features/help/ProviderSetup";
 import { ToolUIProvider } from "./ai/tools/components";
 import { ThreadListSidePanel } from "./components/features/threads";
 import { MemorySidebar } from "./components/features/memory";
@@ -77,6 +78,7 @@ function AIChatContent() {
     const [showReminders, setShowReminders] = useState(false);
     const [showTroubleshooting, setShowTroubleshooting] = useState(false);
     const [showFeatures, setShowFeatures] = useState(false);
+    const [showProviderSetup, setShowProviderSetup] = useState(false);
     const [mode, setMode] = useState<ChatMode>('text');
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
     const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
@@ -431,6 +433,11 @@ function AIChatContent() {
         }} />;
     }
 
+    // Render Provider Setup page
+    if (showProviderSetup) {
+        return <ProviderSetup onBack={() => setShowProviderSetup(false)} />;
+    }
+
     // Show onboarding screen if enabled
     if (showOnboarding) {
         log.info('Rendering onboarding screen', { showOnboarding });
@@ -511,6 +518,7 @@ function AIChatContent() {
                                 onRemindersClick={() => setShowReminders(true)}
                                 onTroubleshootingClick={() => setShowTroubleshooting(true)}
                                 onFeaturesClick={() => setShowFeatures(true)}
+                                onProviderSetupClick={() => setShowProviderSetup(true)}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}
