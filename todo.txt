@@ -74,3 +74,6 @@ https://v0.app/docs/api/platform/quickstart once V6 is added work on this and ad
 https://x.com/pontusab/status/1986396382685733128 must add follow ups 
 https://batchhacks.devpost.com/
  https://arm-ai-developer-challenge.devpost.com/
+
+
+ contribute to copilotkit and ai sdk team 
