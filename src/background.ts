@@ -1661,19 +1661,31 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                 const blob = await readLocalFile(filePath);
                 const filename = extractFilename(filePath);
 
-                // Convert Blob to ArrayBuffer for transfer
+                // Convert Blob to base64 for safe transfer through Chrome messaging
+                // ArrayBuffers don't serialize properly through sendResponse()
                 const arrayBuffer = await blob.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                // Convert to base64 string
+                let binary = '';
+                const chunkSize = 0x8000; // Process in chunks to avoid call stack issues
+                for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                    const chunk = uint8Array.subarray(i, i + chunkSize);
+                    binary += String.fromCharCode.apply(null, Array.from(chunk));
+                }
+                const base64Data = btoa(binary);
 
                 console.log('[Background] Successfully read local PDF:', {
                     filename,
                     size: blob.size,
-                    type: blob.type
+                    type: blob.type,
+                    base64Length: base64Data.length
                 });
 
                 sendResponse({
                     success: true,
                     data: {
-                        arrayBuffer,
+                        base64Data,
                         filename,
                         type: blob.type,
                         size: blob.size
