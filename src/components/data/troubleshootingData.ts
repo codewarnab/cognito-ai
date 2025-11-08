@@ -200,4 +200,18 @@ export const troubleshootingData: TroubleshootingItem[] = [
             'This will show download progress in the browser console',
         ],
     },
+    {
+        id: '13',
+        issue: 'Follow-up questions not working with YouTube or PDF agent',
+        causes: [
+            'Agent context not properly maintained between queries',
+            'Memory state corrupted after initial query',
+            'Tool state not reset between consecutive questions',
+        ],
+        solutions: [
+            'If asking a follow-up question to YouTube video or PDF agent does not work, the only fix is to create a new chat',
+            'Start a new chat thread to ask additional questions about the same content',
+            'We are actively working on fixing this issue to support follow-up questions within the same chat',
+        ],
+    },
 ];
