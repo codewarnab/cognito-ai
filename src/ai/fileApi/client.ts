@@ -1,0 +1,191 @@
+import { validateAndGetApiKey } from '../../utils/geminiApiKey';
+import type { FileMetadata, UploadedPDFContext } from './types';
+import { createLogger } from '../../logger';
+import { getCachedPdf, cachePdf } from './cache';
+
+const log = createLogger('FileAPIClient');
+const FILE_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+/**
+ * Upload PDF from URL using Google File API
+ * Checks cache first to avoid re-uploading the same URL
+ * 
+ * @param pdfUrl - URL of the PDF to upload
+ * @param displayName - Optional display name for the file
+ * @returns Uploaded PDF context with file URI
+ * 
+ * @example
+ * const context = await uploadPdfFromUrl('https://example.com/doc.pdf', 'My Document');
+ * // Use context.fileUri in AI requests
+ */
+export async function uploadPdfFromUrl(
+    pdfUrl: string,
+    displayName?: string
+): Promise<UploadedPDFContext> {
+    log.info('Uploading PDF from URL', { pdfUrl, displayName });
+
+    // Check cache first
+    const cachedPdf = await getCachedPdf(pdfUrl);
+    if (cachedPdf) {
+        log.info('Using cached PDF', { fileUri: cachedPdf.fileUri });
+        return cachedPdf;
+    }
+
+    const apiKey = await validateAndGetApiKey();
+
+    // Step 1: Fetch PDF content
+    log.debug('Fetching PDF content...');
+    const pdfResponse = await fetch(pdfUrl);
+    if (!pdfResponse.ok) {
+        throw new Error(`Failed to fetch PDF: ${pdfResponse.statusText}`);
+    }
+
+    const pdfBlob = await pdfResponse.blob();
+    const pdfSize = pdfBlob.size;
+
+    // Validate size (50MB limit)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (pdfSize > maxSize) {
+        throw new Error(
+            `PDF too large: ${(pdfSize / 1024 / 1024).toFixed(1)}MB (max 50MB)`
+        );
+    }
+
+    log.info('PDF fetched', { size: pdfSize, sizeMB: (pdfSize / 1024 / 1024).toFixed(2) });
+
+    // Step 2: Upload to File API
+    log.debug('Uploading to Google File API...');
+    const formData = new FormData();
+    formData.append('file', pdfBlob, displayName || 'document.pdf');
+
+    const uploadResponse = await fetch(`${FILE_API_BASE}/files?key=${apiKey}`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+        const error = await uploadResponse.text();
+        throw new Error(`File API upload failed: ${error}`);
+    }
+
+    const uploadData = await uploadResponse.json();
+
+    // The response is the file object directly, not wrapped in { file: ... }
+    const file = uploadData.file || uploadData;
+
+    log.info('PDF uploaded successfully', {
+        name: file.name,
+        uri: file.uri,
+        state: file.state,
+        rawResponse: uploadData
+    });
+
+    // Step 3: Wait for processing if needed
+    if (file.state === 'PROCESSING') {
+        log.debug('File is processing, waiting...');
+        await waitForProcessing(file.name, apiKey);
+    }
+
+    const context: UploadedPDFContext = {
+        url: pdfUrl,
+        fileUri: file.uri,
+        fileName: file.name,
+        uploadedAt: Date.now(),
+        expiresAt: new Date(file.expirationTime).getTime(),
+        metadata: {
+            name: file.name,
+            uri: file.uri,
+            mimeType: file.mimeType,
+            sizeBytes: parseInt(file.sizeBytes),
+            state: file.state,
+            expirationTime: file.expirationTime,
+        },
+    };
+
+    // Cache the uploaded PDF
+    await cachePdf(context);
+
+    return context;
+}
+
+/**
+ * Wait for file processing to complete
+ * 
+ * @param fileName - Name of the file (e.g., "files/abc123")
+ * @param apiKey - Gemini API key
+ * @param maxAttempts - Maximum number of polling attempts
+ */
+async function waitForProcessing(
+    fileName: string,
+    apiKey: string,
+    maxAttempts = 10
+): Promise<void> {
+    for (let i = 0; i < maxAttempts; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const metadata = await getFileMetadata(fileName, apiKey);
+
+        if (metadata.state === 'ACTIVE') {
+            log.info('File processing complete');
+            return;
+        }
+
+        if (metadata.state === 'FAILED') {
+            throw new Error('File processing failed');
+        }
+
+        log.debug(`Processing... (${i + 1}/${maxAttempts})`, { state: metadata.state });
+    }
+
+    throw new Error('File processing timeout');
+}
+
+/**
+ * Get metadata for an uploaded file
+ * 
+ * @param fileName - Name of the file (e.g., "files/abc123")
+ * @param apiKey - Optional API key (will fetch if not provided)
+ * @returns File metadata
+ */
+export async function getFileMetadata(
+    fileName: string,
+    apiKey?: string
+): Promise<FileMetadata> {
+    const key = apiKey || (await validateAndGetApiKey());
+
+    const response = await fetch(`${FILE_API_BASE}/${fileName}?key=${key}`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to get file metadata: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    return {
+        name: data.name,
+        uri: data.uri,
+        mimeType: data.mimeType,
+        sizeBytes: parseInt(data.sizeBytes),
+        state: data.state,
+        expirationTime: data.expirationTime,
+    };
+}
+
+/**
+ * Delete an uploaded file
+ * 
+ * @param fileName - Name of the file (e.g., "files/abc123")
+ */
+export async function deleteFile(fileName: string): Promise<void> {
+    const apiKey = await validateAndGetApiKey();
+
+    const response = await fetch(`${FILE_API_BASE}/${fileName}?key=${apiKey}`, {
+        method: 'DELETE',
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete file: ${response.statusText}`);
+    }
+
+    log.info('File deleted', { fileName });
+}
