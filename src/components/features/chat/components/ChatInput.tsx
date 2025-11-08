@@ -16,7 +16,9 @@ import { replaceSlashCommand } from '../../../../utils/slashCommandUtils';
 import { SuggestedActions } from './SuggestedActions';
 import { ContextIndicator } from '../context/ContextIndicator';
 import type { AppUsage } from '../../../../ai/types/usage';
-import { PdfBadge } from './PdfBadge';
+import { LocalPdfSuggestion } from './LocalPdfSuggestion';
+import { isPdfDismissed, dismissPdf } from '../../../../utils/localPdfDismissals';
+import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 
 interface ChatInputProps {
     messages: Message[];
@@ -36,6 +38,7 @@ interface ChatInputProps {
     onApiKeySaved?: () => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
     usage?: AppUsage | null; // Token usage tracking
+    localPdfInfo?: LocalPdfInfo | null; // Local PDF detection info
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -54,6 +57,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onModeChange,
     onError,
     usage, // Token usage tracking
+    localPdfInfo, // Local PDF detection info
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +71,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDefinition | null>(null);
     const [showSlashDropdown, setShowSlashDropdown] = useState(false);
     const [slashSearchQuery, setSlashSearchQuery] = useState('');
+
+    // Local PDF attachment state
+    const [isAttachingLocalPdf, setIsAttachingLocalPdf] = useState(false);
+    const [dismissedPdfPath, setDismissedPdfPath] = useState<string | null>(null);
 
     // Use external ref if provided, otherwise use local ref
     const voiceInputRef = externalVoiceInputRef || internalVoiceInputRef;
@@ -135,6 +143,90 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     // Remove attachment
     const handleRemoveAttachment = (id: string) => {
         setAttachments(prev => prev.filter(att => att.id !== id));
+    };
+
+    // Handle attaching local PDF (Phase 4 - Integration Complete)
+    const handleAttachLocalPdf = async () => {
+        if (!localPdfInfo) return;
+
+        setIsAttachingLocalPdf(true);
+
+        try {
+            console.log('[ChatInput] Attempting to attach local PDF:', localPdfInfo.filename);
+
+            // Send message to background script to read the file
+            const response = await chrome.runtime.sendMessage({
+                type: 'READ_LOCAL_PDF',
+                payload: {
+                    filePath: localPdfInfo.filePath
+                }
+            });
+
+            if (!response.success) {
+                // Handle specific error cases
+                if (response.needsPermission) {
+                    // Show permission guide
+                    const { FileAccessError } = await import('../../../../errors');
+                    const helpText = FileAccessError.getPermissionHelpText();
+                    onError?.(
+                        `${response.error}\n\n${helpText}`,
+                        'warning'
+                    );
+                } else {
+                    // Generic error with fallback suggestion
+                    onError?.(
+                        `${response.error}\n\nYou can try manually uploading the PDF using the attachment button.`,
+                        'error'
+                    );
+                }
+                return;
+            }
+
+            // Successfully read the file - convert ArrayBuffer to Blob
+            const { arrayBuffer, filename, type } = response.data;
+            const blob = new Blob([arrayBuffer], { type: type || 'application/pdf' });
+
+            // Create File object from Blob
+            const file = new File([blob], filename, {
+                type: type || 'application/pdf',
+                lastModified: Date.now()
+            });
+
+            console.log('[ChatInput] Successfully created File object:', {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            });
+
+            // Use existing processFiles function to handle the attachment
+            await processFiles([file]);
+
+            // Auto-dismiss suggestion after successful attachment
+            handleDismissLocalPdf();
+
+            // Show success message
+            onError?.(`Attached ${filename.length > 20 ? filename.substring(0, 20) + '...' : filename}`, 'info');
+
+        } catch (error) {
+            console.error('[ChatInput] Error attaching local PDF:', error);
+            onError?.(
+                'Failed to attach PDF. Please try manual upload using the attachment button.',
+                'error'
+            );
+        } finally {
+            setIsAttachingLocalPdf(false);
+        }
+    };
+
+    // Handle dismissing the local PDF suggestion
+    const handleDismissLocalPdf = () => {
+        if (!localPdfInfo) return;
+
+        // Mark as dismissed in localStorage
+        dismissPdf(localPdfInfo.filePath);
+
+        // Update local state to hide the badge immediately
+        setDismissedPdfPath(localPdfInfo.filePath);
     };
 
     // Handle send with attachments
@@ -230,10 +322,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     const isLocalMode = modelState.mode === 'local';
 
+    // Check if we should show the local PDF suggestion
+    const shouldShowLocalPdfSuggestion =
+        localPdfInfo &&
+        !isLocalMode && // Don't show in local mode (attachments not supported)
+        !isPdfDismissed(localPdfInfo.filePath) &&
+        dismissedPdfPath !== localPdfInfo.filePath;
+
     return (
         <div className="copilot-input-container">
-            {/* PDF Badge - shows when PDF is loaded */}
-            <PdfBadge />
+           
 
             {/* Suggested Actions */}
             <SuggestedActions
@@ -264,6 +362,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 />
 
                 <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
+                    {/* Local PDF Suggestion - shows when local PDF is detected */}
+                    {shouldShowLocalPdfSuggestion && (
+                        <LocalPdfSuggestion
+                            filename={localPdfInfo.filename}
+                            onAttach={handleAttachLocalPdf}
+                            onDismiss={handleDismissLocalPdf}
+                            isLoading={isAttachingLocalPdf}
+                        />
+                    )}
+
                     {/* Workflow Badge - shows when workflow is active */}
                     {activeWorkflow && (
                         <WorkflowBadge

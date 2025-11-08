@@ -17,6 +17,14 @@ export {
     type BaseErrorOptions,
 } from './errorTypes';
 
+// File access errors
+export {
+    FileAccessError,
+    isFileAccessError,
+    isPermissionError,
+    type FileAccessErrorCode,
+} from './FileAccessError';
+
 // Error messages
 export {
     buildUserMessage,

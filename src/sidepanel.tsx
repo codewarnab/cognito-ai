@@ -52,6 +52,8 @@ import { useVoiceRecording } from "./hooks/useVoiceRecording";
 import { useThreadManagement } from "./hooks/useThreadManagement";
 import { useMessageHandlers } from "./hooks/useMessageHandlers";
 import { useAIChatMessages } from "./hooks/useAIChatMessages";
+import { useActiveTabDetection } from "./hooks/useActiveTabDetection";
+import type { LocalPdfInfo } from "./hooks/useActiveTabDetection";
 
 // Types
 import type { ChatMode, ContextWarningState } from "./types/sidepanel";
@@ -85,6 +87,7 @@ function AIChatContent() {
     const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
     const [isSoundInitialized, setIsSoundInitialized] = useState(false);
+    const [localPdfInfo, setLocalPdfInfo] = useState<LocalPdfInfo | null>(null);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,6 +95,9 @@ function AIChatContent() {
 
     // Custom hooks for separated concerns
     const apiKey = useApiKey();
+
+    // Detect active tab for local PDF auto-attach feature
+    const activeTabDetection = useActiveTabDetection();
 
     const {
         showOnboarding,
@@ -261,6 +267,27 @@ function AIChatContent() {
             setCurrentThreadId(managedThreadId);
         }
     }, [managedThreadId]);
+
+    // Update local PDF info when active tab changes
+    useEffect(() => {
+        if (activeTabDetection.isLocalPdf && activeTabDetection.filename && activeTabDetection.filePath) {
+            log.info('Local PDF detected in active tab', {
+                filename: activeTabDetection.filename,
+                filePath: activeTabDetection.filePath,
+            });
+            setLocalPdfInfo({
+                url: activeTabDetection.url || '',
+                filename: activeTabDetection.filename,
+                filePath: activeTabDetection.filePath,
+            });
+        } else {
+            // Clear state when tab is not a local PDF
+            if (localPdfInfo) {
+                log.debug('Clearing local PDF info - tab is not a local PDF');
+                setLocalPdfInfo(null);
+            }
+        }
+    }, [activeTabDetection.isLocalPdf, activeTabDetection.filename, activeTabDetection.filePath, activeTabDetection.url]);
 
     // Message handlers
     const { handleSendMessage: handleSend } = useMessageHandlers({
@@ -529,6 +556,7 @@ function AIChatContent() {
                                 onRecordingChange={handleRecordingChange}
                                 voiceInputRef={voiceInputRef}
                                 usage={usage}
+                                localPdfInfo={localPdfInfo}
                             />
 
                             {/* Floating Recording Pill - Only in text mode */}
