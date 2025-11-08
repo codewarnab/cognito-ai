@@ -64,22 +64,32 @@ export function isAINotification(notificationId: string): boolean {
 /**
  * Creates a Chrome notification for AI completion
  * Returns the notification ID on success, or null on failure
+ * 
+ * TEMPORARILY DISABLED - No notifications will be sent
  */
 export async function createAINotification(
     options: NotificationOptions
 ): Promise<string | null> {
-    const {
-        threadId,
-        title,
-        message,
-        iconUrl = NOTIFICATION_LOGO_BASE64, // Use base64 encoded logo to avoid download issues
-        priority = 2,
-        requireInteraction = false,
-    } = options;
+    const { threadId } = options;
+
+    // Destructured options - used when notifications are enabled
+    // const {
+    //     threadId,
+    //     title,
+    //     message,
+    //     iconUrl = NOTIFICATION_LOGO_BASE64,
+    //     priority = 2,
+    //     requireInteraction = false,
+    // } = options;
 
     const timestamp = Date.now();
     const notificationId = createNotificationId(threadId, timestamp);
 
+    // TEMPORARILY DISABLED - Notifications are turned off
+    notificationLog.info('Notifications disabled - would have created:', notificationId);
+    return null;
+
+    /* COMMENTED OUT - Uncomment to re-enable notifications
     try {
         // Check if notifications API is available
         if (!chrome.notifications) {
@@ -103,6 +113,7 @@ export async function createAINotification(
         notificationLog.error('Failed to create notification:', error);
         return null;
     }
+    */
 }
 
 /**
