@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
-import { ProviderSetupDialog } from '../../../shared/dialogs';
 import { getActiveProvider, hasAnyProviderConfigured } from '../../../../utils/providerCredentials';
 import { getModelConfig } from '../../../../utils/modelSettings';
 import type { AIProvider } from '../../../../utils/providerTypes';
@@ -13,6 +12,7 @@ interface ChatHeaderProps {
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
+    onProviderSetupClick?: () => void;
     onApiKeySaved?: () => void;
 }
 
@@ -24,10 +24,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onRemindersClick,
     onTroubleshootingClick,
     onFeaturesClick,
+    onProviderSetupClick,
     onApiKeySaved,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-    const [showProviderDialog, setShowProviderDialog] = useState(false);
     const [activeProvider, setActiveProvider] = useState<AIProvider | 'local' | 'none'>('none');
     const [currentMode, setCurrentMode] = useState<'local' | 'remote'>('local');
     const menuRef = useRef<HTMLDivElement>(null);
@@ -225,7 +225,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     className="copilot-header-menu-item"
                                     onClick={() => {
                                         setShowHeaderMenu(false);
-                                        setShowProviderDialog(true);
+                                        onProviderSetupClick?.();
                                     }}
                                 >
                                     AI Provider Setup
@@ -235,16 +235,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     </div>
                 </div>
             </div>
-
-            {/* AI Provider Setup Dialog */}
-            <ProviderSetupDialog
-                isOpen={showProviderDialog}
-                onClose={() => setShowProviderDialog(false)}
-                onConfigSaved={() => {
-                    loadProviderInfo(); // Reload provider info when saved
-                    onApiKeySaved?.();
-                }}
-            />
         </div>
     );
 };

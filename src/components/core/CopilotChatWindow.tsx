@@ -3,7 +3,6 @@ import { ChatHeader } from '../features/chat/components/ChatHeader';
 import { ChatMessages } from '../features/chat/components/ChatMessages';
 import { ChatInput } from '../features/chat/components/ChatInput';
 import { ErrorNotification } from '../features/chat/components/ErrorNotification';
-import { ProviderSetupDialog } from '../shared/dialogs';
 import { ModelDownloadToastContainer } from '../shared/notifications';
 import type { VoiceInputHandle } from '../../audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
@@ -27,6 +26,7 @@ interface CopilotChatWindowProps {
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
+    onProviderSetupClick?: () => void;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
@@ -51,6 +51,7 @@ export function CopilotChatWindow({
     onRemindersClick,
     onTroubleshootingClick,
     onFeaturesClick,
+    onProviderSetupClick,
     onStop,
     pendingMessageId,
     nextMessageId,
@@ -74,7 +75,6 @@ export function CopilotChatWindow({
         message: string;
         type: 'error' | 'warning' | 'info';
     } | null>(null);
-    const [showProviderDialog, setShowProviderDialog] = useState(false);
 
     // Load initial state with error handling
     useEffect(() => {
@@ -174,7 +174,7 @@ export function CopilotChatWindow({
     };
 
     const handleOpenApiKeyDialog = () => {
-        setShowProviderDialog(true);
+        onProviderSetupClick?.();
     };
 
     return (
@@ -199,6 +199,7 @@ export function CopilotChatWindow({
                 onRemindersClick={onRemindersClick}
                 onTroubleshootingClick={onTroubleshootingClick}
                 onFeaturesClick={onFeaturesClick}
+                onProviderSetupClick={onProviderSetupClick}
                 onApiKeySaved={handleApiKeySaved}
             />
 
@@ -230,13 +231,6 @@ export function CopilotChatWindow({
                 onApiKeySaved={handleApiKeySaved}
                 onError={handleError}
                 usage={usage}
-            />
-
-            {/* AI Provider Setup Dialog */}
-            <ProviderSetupDialog
-                isOpen={showProviderDialog}
-                onClose={() => setShowProviderDialog(false)}
-                onConfigSaved={handleApiKeySaved}
             />
         </div>
     );

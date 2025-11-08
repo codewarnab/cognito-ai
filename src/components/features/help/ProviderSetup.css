@@ -1,0 +1,397 @@
+/* Provider Setup Container */
+.provider-setup-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: var(--bg-primary);
+    overflow: hidden;
+}
+
+/* Header */
+.provider-setup-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1rem;
+}
+
+.provider-setup-header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.provider-setup-back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.provider-setup-back-button:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-primary);
+}
+
+.provider-setup-header-text {
+    flex: 1;
+}
+
+.provider-setup-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.provider-setup-subtitle {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+    margin: 0.125rem 0 0 0;
+    line-height: 1.3;
+}
+
+/* Content */
+.provider-setup-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.25rem;
+}
+
+/* Notification */
+.provider-setup-notification {
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.provider-setup-notification-success {
+    background-color: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+    color: #4caf50;
+}
+
+.provider-setup-notification-error {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.provider-setup-notification-info {
+    background-color: rgba(74, 111, 165, 0.1);
+    border-color: rgba(74, 111, 165, 0.3);
+    color: #4a6fa5;
+}
+
+.provider-setup-notification-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Info Banner */
+.provider-setup-info-banner {
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    background-color: rgba(139, 92, 246, 0.1);
+    color: #8b5cf6;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.provider-setup-info-icon {
+    font-size: 1rem;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+}
+
+.provider-setup-info-content {
+    flex: 1;
+    line-height: 1.5;
+}
+
+.provider-setup-info-text {
+    font-size: 0.75rem;
+    opacity: 0.9;
+}
+
+/* Form */
+.provider-setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.provider-setup-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.provider-setup-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.provider-setup-label-optional {
+    color: var(--text-tertiary);
+    font-weight: 400;
+}
+
+/* Provider Options */
+.provider-setup-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.provider-setup-option {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+
+.provider-setup-option:hover {
+    background: var(--glass-bg-hover);
+}
+
+.provider-setup-option-selected {
+    border-color: #4a6fa5;
+    background: rgba(74, 111, 165, 0.05);
+}
+
+.provider-setup-option input[type="radio"] {
+    margin-top: 0.25rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.provider-setup-option-content {
+    flex: 1;
+}
+
+.provider-setup-option-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.provider-setup-option-description {
+    font-size: 0.8125rem;
+    color: var(--text-tertiary);
+}
+
+/* Input Wrapper */
+.provider-setup-input-wrapper {
+    position: relative;
+}
+
+/* Inputs */
+.provider-setup-input,
+.provider-setup-textarea,
+.provider-setup-select {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.provider-setup-input:focus,
+.provider-setup-textarea:focus,
+.provider-setup-select:focus {
+    outline: none;
+    border-color: var(--border-color-focus);
+    background: var(--bg-quaternary);
+}
+
+.provider-setup-input:disabled,
+.provider-setup-textarea:disabled,
+.provider-setup-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.provider-setup-input-wrapper .provider-setup-input,
+.provider-setup-input-wrapper .provider-setup-textarea {
+    padding-right: 4rem;
+}
+
+.provider-setup-textarea {
+    font-family: monospace;
+    font-size: 0.75rem;
+    resize: vertical;
+}
+
+.provider-setup-textarea-blurred {
+    filter: blur(4px);
+}
+
+.provider-setup-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.25rem;
+    padding-right: 2.5rem;
+}
+
+/* Toggle Button */
+.provider-setup-toggle-button {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.provider-setup-toggle-button:hover {
+    color: var(--text-primary);
+    background: var(--glass-bg-hover);
+}
+
+.provider-setup-toggle-button-top {
+    top: 0.5rem;
+    transform: none;
+}
+
+/* Help Section */
+.provider-setup-help {
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    border: 1px solid var(--border-color);
+    line-height: 1.5;
+}
+
+.provider-setup-help-title {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-secondary);
+}
+
+.provider-setup-help-list {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--text-tertiary);
+}
+
+.provider-setup-help-list li {
+    margin-bottom: 0.25rem;
+}
+
+.provider-setup-help-list a {
+    color: #1264FF;
+    text-decoration: underline;
+}
+
+.provider-setup-help-note {
+    margin: 0.5rem 0 0 0;
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+}
+
+/* Action Buttons */
+.provider-setup-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+}
+
+.provider-setup-button {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.provider-setup-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.provider-setup-button-primary {
+    background: #4a6fa5;
+    color: white;
+}
+
+.provider-setup-button-primary:hover:not(:disabled) {
+    background: #5a7fb5;
+    transform: translateY(-1px);
+}
+
+.provider-setup-button-remove {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: rgba(239, 68, 68, 0.8);
+}
+
+.provider-setup-button-remove:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.1);
+    color: rgba(239, 68, 68, 1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .provider-setup-header {
+        padding: 0.875rem 1rem;
+    }
+
+    .provider-setup-content {
+        padding: 1.25rem 1rem;
+    }
+
+    .provider-setup-title {
+        font-size: 1.125rem;
+    }
+
+    .provider-setup-actions {
+        flex-direction: column;
+    }
+
+    .provider-setup-button {
+        width: 100%;
+    }
+}
