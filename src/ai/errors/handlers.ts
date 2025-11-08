@@ -1,6 +1,7 @@
 /**
  * Error Handling Utilities for AI Logic
  * Handles error parsing, formatting, and API key validation updates
+ * Supports both Google Generative AI and Vertex AI providers
  */
 
 import { createLogger } from '../../logger';
@@ -10,6 +11,8 @@ import {
   NetworkError,
   ErrorType,
 } from '../../errors/errorTypes';
+import { parseVertexError, parseVertexErrorAsync } from './vertexErrorParser';
+import type { AIProvider } from '../../utils/providerTypes';
 
 const log = createLogger('AI-ErrorHandlers');
 
@@ -377,5 +380,49 @@ export function parseGeminiError(error: any): APIError {
       })(),
       errorCode: ErrorType.UNKNOWN_ERROR,
     });
+  }
+}
+
+/**
+ * Provider-aware error parsing (async version)
+ * Routes to appropriate parser based on provider
+ * 
+ * @param error - Error object to parse
+ * @param provider - AI provider that generated the error
+ * @returns Enhanced APIError with provider-specific handling
+ */
+export async function parseProviderErrorAsync(
+  error: any,
+  provider: AIProvider | 'local'
+): Promise<APIError> {
+  if (provider === 'vertex') {
+    return parseVertexErrorAsync(error);
+  } else if (provider === 'google') {
+    return parseGeminiErrorAsync(error);
+  } else {
+    // Local mode - use Gemini parser as fallback
+    return parseGeminiErrorAsync(error);
+  }
+}
+
+/**
+ * Provider-aware error parsing (sync version)
+ * Routes to appropriate parser based on provider
+ * 
+ * @param error - Error object to parse
+ * @param provider - AI provider that generated the error
+ * @returns Enhanced APIError with provider-specific handling
+ */
+export function parseProviderError(
+  error: any,
+  provider: AIProvider | 'local'
+): APIError {
+  if (provider === 'vertex') {
+    return parseVertexError(error);
+  } else if (provider === 'google') {
+    return parseGeminiError(error);
+  } else {
+    // Local mode - use Gemini parser as fallback
+    return parseGeminiError(error);
   }
 }

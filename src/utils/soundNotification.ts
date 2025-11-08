@@ -30,12 +30,25 @@ export const initializeNotificationSound = async (): Promise<void> => {
 
         // Preload the actual notification sound
         audioInstance = new Audio();
-        audioInstance.src = chrome.runtime ? chrome.runtime.getURL(AUDIO_PATHS.NOTIFICATION) : AUDIO_PATHS.NOTIFICATION;
+        // Use chrome.runtime.getURL to get the correct path for extension resources
+        const audioPath = chrome.runtime?.getURL
+            ? chrome.runtime.getURL(AUDIO_PATHS.NOTIFICATION)
+            : AUDIO_PATHS.NOTIFICATION;
+
+        console.log('[Sound] Loading audio from path:', audioPath);
+        audioInstance.src = audioPath;
         audioInstance.volume = AUDIO_CONFIG.DEFAULT_VOLUME;
         audioInstance.preload = 'auto';
 
-        // Load the audio
-        await audioInstance.load();
+        // Wait for audio to be loadable (but don't block initialization)
+        audioInstance.addEventListener('canplaythrough', () => {
+            console.log('[Sound] Audio loaded and ready to play');
+        }, { once: true });
+
+        // Also handle load errors
+        audioInstance.addEventListener('error', (e) => {
+            console.error('[Sound] Audio load error:', e, 'Attempted path:', audioPath);
+        }, { once: true });
 
         isInitialized = true;
         console.log('[Sound] Notification sound initialized successfully');

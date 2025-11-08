@@ -4,6 +4,7 @@
  */
 
 import type { AIMode, RemoteModelType } from '../ai/types/types';
+import type { AIProvider } from './providerTypes';
 
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_model_config',
@@ -14,6 +15,7 @@ export interface StoredModelConfig {
   mode: AIMode;
   remoteModel: RemoteModelType;
   conversationStartMode?: AIMode; // Track initial mode for switching restrictions
+  preferredProvider?: AIProvider; // Preferred AI provider (google or vertex)
 }
 
 /**
@@ -77,4 +79,32 @@ export async function canSwitchMode(fromMode: AIMode, toMode: AIMode): Promise<b
 
   // Same mode: Always allowed
   return true;
+}
+
+/**
+ * Get preferred AI provider from model config
+ * @returns Preferred provider or null if not set
+ */
+export async function getPreferredProvider(): Promise<AIProvider | null> {
+  const config = await getModelConfig();
+  return config.preferredProvider || null;
+}
+
+/**
+ * Set preferred AI provider
+ * @param provider Provider to prefer (google or vertex)
+ */
+export async function setPreferredProvider(provider: AIProvider): Promise<void> {
+  const config = await getModelConfig();
+  config.preferredProvider = provider;
+  await chrome.storage.local.set({ [STORAGE_KEYS.MODEL_CONFIG]: config });
+}
+
+/**
+ * Clear preferred provider preference
+ */
+export async function clearPreferredProvider(): Promise<void> {
+  const config = await getModelConfig();
+  delete config.preferredProvider;
+  await chrome.storage.local.set({ [STORAGE_KEYS.MODEL_CONFIG]: config });
 }

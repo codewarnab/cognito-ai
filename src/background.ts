@@ -13,6 +13,7 @@
  * - Per-server error isolation
  */
 
+import './polyfills/process';
 import { McpSSEClient } from './mcp/sseClient';
 import {
     registerDynamicClient,
