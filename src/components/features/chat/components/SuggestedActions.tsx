@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useSuggestions } from '../../../../hooks/useSuggestions';
+import { useDocument } from '../../../../contexts/documentContext';
 import { TextMorph } from '../../../ui/feedback';
 import type { Message, ModelState } from '../types';
 import type { FileAttachmentData } from './FileAttachment';
@@ -53,8 +54,15 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
 
-    // Use AI suggestions hook
-    const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(modelState, messages.length);
+    // Get PDF context
+    const { currentPdf } = useDocument();
+
+    // Use AI suggestions hook with PDF context
+    const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(
+        modelState,
+        messages.length,
+        currentPdf
+    );
 
     // Debug logging
     useEffect(() => {

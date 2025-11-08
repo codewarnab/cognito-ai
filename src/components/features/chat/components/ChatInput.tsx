@@ -16,6 +16,7 @@ import { replaceSlashCommand } from '../../../../utils/slashCommandUtils';
 import { SuggestedActions } from './SuggestedActions';
 import { ContextIndicator } from '../context/ContextIndicator';
 import type { AppUsage } from '../../../../ai/types/usage';
+import { PdfBadge } from './PdfBadge';
 
 interface ChatInputProps {
     messages: Message[];
@@ -231,6 +232,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     return (
         <div className="copilot-input-container">
+            {/* PDF Badge - shows when PDF is loaded */}
+            <PdfBadge />
+
             {/* Suggested Actions */}
             <SuggestedActions
                 messages={messages}

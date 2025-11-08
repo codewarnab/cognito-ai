@@ -190,7 +190,9 @@ export function TabMentionDropdown({
                             title={isAlreadyMentioned ? 'Already mentioned' : ''}
                         >
                             <div className="tab-mention-favicon">
-                                {tab.favIconUrl ? (
+                                {isPdfUrl(tab.url || '') ? (
+                                    <span>📕</span>
+                                ) : tab.favIconUrl ? (
                                     <img src={tab.favIconUrl} alt="" width="14" height="14" />
                                 ) : (
                                     <span>🌐</span>
@@ -211,6 +213,11 @@ export function TabMentionDropdown({
             </div>
         </div>
     );
+}
+
+// Helper to check if URL is a PDF
+function isPdfUrl(url: string): boolean {
+    return url.toLowerCase().endsWith('.pdf');
 }
 
 // Helper to format URL nicely

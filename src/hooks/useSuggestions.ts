@@ -11,6 +11,7 @@ import { suggestionCache } from '../utils/suggestionCache';
 import { generateContextualSuggestions, type Suggestion } from '../ai/suggestions';
 import { getGeminiApiKey } from '../utils/geminiApiKey';
 import type { ModelState } from '../components/features/chat/types';
+import type { UploadedPDFContext } from '../ai/fileApi/types';
 
 const log = createLogger('UseSuggestions');
 
@@ -27,10 +28,12 @@ interface UseSuggestionsResult {
  * Hook for managing AI-generated contextual suggestions
  * Active in both local and remote modes when no messages exist
  * Uses local AI (Gemini Nano) in local mode, Gemini API in remote mode
+ * Supports PDF-specific suggestions when PDF context is available
  */
 export function useSuggestions(
     modelState: ModelState,
-    messagesLength: number
+    messagesLength: number,
+    currentPdf?: UploadedPDFContext | null
 ): UseSuggestionsResult {
     const [currentUrl, setCurrentUrl] = useState<string>('');
     const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
@@ -55,6 +58,34 @@ export function useSuggestions(
      * Generate suggestions for a URL
      */
     const generateSuggestions = async (url: string) => {
+        // If PDF context is available, show PDF-specific suggestions
+        if (currentPdf?.fileUri) {
+            log.info('PDF context detected, showing PDF-specific suggestions');
+
+            const pdfSuggestions: Suggestion[] = [
+                {
+                    title: 'Summarize this document',
+                    action: 'Summarize this document'
+                },
+                {
+                    title: 'What are the main topics?',
+                    action: 'What are the main topics covered in this document?'
+                },
+                {
+                    title: 'Extract key information',
+                    action: 'Extract the key information from this PDF'
+                },
+                {
+                    title: 'List important dates',
+                    action: 'List all important dates mentioned in the document'
+                }
+            ];
+
+            setSuggestions(pdfSuggestions);
+            lastGeneratedUrlRef.current = url;
+            return;
+        }
+
         // Prevent duplicate generation
         if (isGeneratingRef.current) {
             log.debug('Generation already in progress, skipping');
@@ -189,6 +220,18 @@ export function useSuggestions(
             return;
         }
 
+        // If PDF context is available, generate PDF suggestions immediately
+        if (currentPdf?.fileUri) {
+            log.info('PDF context available, generating PDF-specific suggestions');
+            getCurrentTabUrl().then(url => {
+                if (url) {
+                    setCurrentUrl(url);
+                    generateSuggestions(url);
+                }
+            });
+            return;
+        }
+
         // If mode just switched or messages were cleared, generate immediately
         if (modeSwitched || messagesCleared) {
             log.info('Detected trigger for immediate suggestion generation', {
@@ -204,7 +247,7 @@ export function useSuggestions(
                 }
             });
         }
-    }, [shouldGenerate, modelState.mode, messagesLength]);
+    }, [shouldGenerate, modelState.mode, messagesLength, currentPdf]);
 
     /**
      * Initialize current URL on mount
