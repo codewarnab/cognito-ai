@@ -51,7 +51,7 @@ import type {
 } from './mcp/types';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
 import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
-import { MCPError, NetworkError } from './errors/errorTypes';
+import { MCPError, NetworkError, isFileAccessError } from './errors';
 import { buildUserMessage } from './errors/errorMessages';
 import {
     createAINotification,
@@ -60,6 +60,7 @@ import {
     clearNotification
 } from './utils/aiNotification';
 import type { AINotificationPayload } from './types/notifications';
+import { readLocalFile, extractFilename } from './utils/localFileReader';
 
 // ============================================================================
 // Dynamic OAuth Redirect URI Initialization
@@ -1635,6 +1636,65 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                     success: false,
                     error: error instanceof Error ? error.message : 'Unknown error'
                 });
+            }
+        })();
+        return true;
+    }
+
+    // Handle local PDF file reading
+    if (message?.type === 'READ_LOCAL_PDF') {
+        (async () => {
+            try {
+                const { filePath } = message.payload;
+
+                if (!filePath) {
+                    sendResponse({
+                        success: false,
+                        error: 'File path is required'
+                    });
+                    return;
+                }
+
+                console.log('[Background] Reading local PDF file:', filePath);
+
+                // Read the file and convert to Blob
+                const blob = await readLocalFile(filePath);
+                const filename = extractFilename(filePath);
+
+                // Convert Blob to ArrayBuffer for transfer
+                const arrayBuffer = await blob.arrayBuffer();
+
+                console.log('[Background] Successfully read local PDF:', {
+                    filename,
+                    size: blob.size,
+                    type: blob.type
+                });
+
+                sendResponse({
+                    success: true,
+                    data: {
+                        arrayBuffer,
+                        filename,
+                        type: blob.type,
+                        size: blob.size
+                    }
+                });
+            } catch (error) {
+                console.error('[Background] Error reading local PDF:', error);
+
+                if (isFileAccessError(error)) {
+                    sendResponse({
+                        success: false,
+                        error: error.userMessage,
+                        errorCode: error.code,
+                        needsPermission: error.code === 'PERMISSION_DENIED'
+                    });
+                } else {
+                    sendResponse({
+                        success: false,
+                        error: error instanceof Error ? error.message : 'Failed to read local PDF file'
+                    });
+                }
             }
         })();
         return true;

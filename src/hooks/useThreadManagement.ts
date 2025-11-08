@@ -12,6 +12,7 @@ import {
 import type { UIMessage } from 'ai';
 import type { ContextWarningState } from '../types/sidepanel';
 import type { AppUsage } from '../ai/types/usage';
+import { clearAllDismissals } from '../utils/localPdfDismissals';
 
 const log = createLogger('useThreadManagement');
 
@@ -111,6 +112,10 @@ export function useThreadManagement({
             setContextWarning(null);
             resetUsage?.();
             setUsage?.(null); // Reset usage for new thread
+
+            // Clear dismissed PDF suggestions for fresh start
+            clearAllDismissals();
+
             await setLastActiveThreadId(thread.id);
             log.info("✨ Created new thread with reset context", { threadId: thread.id });
         } catch (error) {
@@ -123,6 +128,10 @@ export function useThreadManagement({
         setCurrentThreadId(threadId);
         setContextWarning(null);
         setUsage?.(null); // Reset usage before new thread loads
+
+        // Clear dismissed PDF suggestions when switching threads
+        clearAllDismissals();
+
         await setLastActiveThreadId(threadId);
     }, [setContextWarning, setUsage]);
 

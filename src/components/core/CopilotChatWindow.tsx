@@ -9,6 +9,8 @@ import { getModelConfig, setModelConfig, clearConversationStartMode } from '../.
 import { hasGeminiApiKey } from '../../utils/geminiApiKey';
 import type { Message, AIMode, RemoteModelType, ModelState } from '../features/chat/types';
 import type { AppUsage } from '../../ai/types/usage';
+import type { LocalPdfInfo } from '../../hooks/useActiveTabDetection';
+import { clearAllDismissals } from '../../utils/localPdfDismissals';
 
 interface CopilotChatWindowProps {
     messages: Message[];
@@ -35,6 +37,7 @@ interface CopilotChatWindowProps {
     voiceInputRef?: React.RefObject<VoiceInputHandle>;
     onContinue?: () => void; // Callback for continue button
     usage?: AppUsage | null; // Token usage tracking
+    localPdfInfo?: LocalPdfInfo | null; // Local PDF detection info
 }
 
 export function CopilotChatWindow({
@@ -60,6 +63,7 @@ export function CopilotChatWindow({
     voiceInputRef,
     onContinue,
     usage, // Token usage tracking
+    localPdfInfo, // Local PDF detection info
 }: CopilotChatWindowProps) {
     // Lazy initialization: compute initial state synchronously
     const [modelState, setModelState] = useState<ModelState>(() => {
@@ -137,6 +141,11 @@ export function CopilotChatWindow({
             ...prev,
             conversationStartMode: undefined,
         }));
+
+        // Always clear PDF dismissals when user clicks new thread
+        // This ensures fresh suggestions even if already on a new/empty thread
+        clearAllDismissals();
+
         if (onNewThreadClick) {
             onNewThreadClick();
         }
@@ -200,7 +209,7 @@ export function CopilotChatWindow({
                 onTroubleshootingClick={onTroubleshootingClick}
                 onFeaturesClick={onFeaturesClick}
                 onProviderSetupClick={onProviderSetupClick}
-                onApiKeySaved={handleApiKeySaved}
+            // onApiKeySaved={handleApiKeySaved}
             />
 
             <ChatMessages
@@ -231,6 +240,7 @@ export function CopilotChatWindow({
                 onApiKeySaved={handleApiKeySaved}
                 onError={handleError}
                 usage={usage}
+                localPdfInfo={localPdfInfo}
             />
         </div>
     );

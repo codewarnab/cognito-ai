@@ -177,6 +177,93 @@
 }
 
 /* ========================================
+   Local PDF Suggestion Badge
+   ======================================== */
+
+.local-pdf-suggestion {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.4);
+    animation: badgeSlideIn 0.2s ease-out;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.local-pdf-suggestion-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: transparent;
+    border: none;
+    color: #d1fae5;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    transition: background 0.12s ease;
+    border-radius: 10px 0 0 10px;
+}
+
+.local-pdf-suggestion-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.local-pdf-suggestion-button:active:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.local-pdf-suggestion-button:disabled {
+    cursor: default;
+    opacity: 0.8;
+}
+
+.local-pdf-suggestion-icon {
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.local-pdf-suggestion-text {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.local-pdf-suggestion-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #d1fae5;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: background 0.12s ease;
+    padding: 0;
+    margin-right: 6px;
+    flex-shrink: 0;
+}
+
+.local-pdf-suggestion-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.local-pdf-suggestion-close:active {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* ========================================
    Research Progress Indicator
    ======================================== */
 
