@@ -12,7 +12,7 @@ import { getAllTools, getTool } from '../tools/registryUtils';
 import { convertAllTools, validateFunctionDeclaration } from './toolConverter';
 import { createLogger } from '../../logger';
 
-const log = createLogger('ToolIntegrationTest');
+const log = createLogger('ToolIntegrationTest', 'TOOLS_INTEGRATION');
 
 /**
  * Test tool integration for voice mode

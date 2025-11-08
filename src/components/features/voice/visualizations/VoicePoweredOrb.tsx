@@ -1,6 +1,9 @@
 import { useEffect, useRef, type FC } from "react";
 import { Renderer, Program, Mesh, Triangle, Vec3 } from "ogl";
+import { createLogger } from '../../../../logger';
 import '../styles/VoicePoweredOrb.css';
+
+const log = createLogger('VoicePoweredOrb', 'VOICE_AUDIO');
 
 interface VoicePoweredOrbProps {
     className?: string;
@@ -271,9 +274,9 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             }
 
             dataArrayRef.current = null;
-            console.log('Microphone stopped and cleaned up');
+            log.debug('Microphone stopped and cleaned up');
         } catch (error) {
-            console.warn('Error stopping microphone:', error);
+            log.warn('Error stopping microphone:', error);
         }
     };
 
@@ -315,10 +318,10 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             microphoneRef.current.connect(analyserRef.current);
             dataArrayRef.current = new Uint8Array(analyserRef.current.frequencyBinCount);
 
-            console.log('Microphone initialized successfully');
+            log.debug('Microphone initialized successfully');
             return true;
         } catch (error) {
-            console.warn("Microphone access denied or not available:", error);
+            log.warn("Microphone access denied or not available:", error);
             return false;
         }
     };
@@ -338,9 +341,9 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                 outputNode.connect(agentAnalyserRef.current);
                 agentDataArrayRef.current = new Uint8Array(agentAnalyserRef.current.frequencyBinCount);
 
-                console.log('Agent audio analyzer initialized');
+                log.debug('Agent audio analyzer initialized');
             } catch (error) {
-                console.warn('Failed to initialize agent audio analyzer:', error);
+                log.warn('Failed to initialize agent audio analyzer:', error);
             }
         }
 
@@ -541,7 +544,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                             container.removeChild(canvas);
                         }
                     } catch (error) {
-                        console.warn("Canvas cleanup error:", error);
+                        log.warn("Canvas cleanup error:", error);
                     }
                 }
 
@@ -554,7 +557,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             };
 
         } catch (error) {
-            console.error("Error initializing Voice Powered Orb:", error);
+            log.error("Error initializing Voice Powered Orb:", error);
             if (container && container.firstChild) {
                 container.removeChild(container.firstChild);
             }

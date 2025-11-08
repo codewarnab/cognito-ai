@@ -19,6 +19,10 @@ import type {
 import { MCPError, NetworkError, ErrorType } from '../errors/errorTypes';
 import { RetryManager } from '../errors/retryManager';
 import { buildUserMessage } from '../errors/errorMessages';
+import { createLogger } from '../logger';
+
+const log = createLogger('MCP-SSE', 'MCP_SSE');
+const authLog = createLogger('MCP-Auth', 'MCP_AUTH');
 
 /**
  * SSE Client configuration with retry and error handling options
@@ -106,7 +110,7 @@ export class McpSSEClient {
             maxDelay: this.config.reconnectMaxDelay,
             backoffMultiplier: this.config.reconnectMultiplier,
             onRetry: (attempt, delay, error) => {
-                console.log(`[MCP:${this.serverId}] Retry attempt ${attempt} after ${delay}ms`, error.message);
+                log.info(`[${this.serverId}] Retry attempt ${attempt} after ${delay}ms`, error.message);
                 this.updateStatus('connecting', `Reconnecting... (Attempt ${attempt}/${this.config.maxReconnectAttempts})`);
             },
         });
@@ -132,7 +136,7 @@ export class McpSSEClient {
             // Reset error tracking on successful connection
             this.consecutiveErrors = 0;
         } catch (error) {
-            console.error(`[MCP:${this.serverId}] Connection error:`, error);
+            log.error(`[${this.serverId}] Connection error:`, error);
 
             // Categorize and handle the error
             const appError = this.categorizeConnectionError(error);
@@ -145,7 +149,7 @@ export class McpSSEClient {
             if (this.consecutiveErrors < (this.config.maxReconnectAttempts || 5)) {
                 this.scheduleReconnect();
             } else {
-                console.error(`[MCP:${this.serverId}] Max reconnection attempts exceeded`);
+                log.error(`[${this.serverId}] Max reconnection attempts exceeded`);
                 this.updateStatus('error', 'Connection failed after multiple attempts. Please try again later.');
             }
         }
@@ -161,8 +165,8 @@ export class McpSSEClient {
      * - Categorizes errors for appropriate retry logic
      */
     private async connectWithFetch(): Promise<void> {
-        console.log(`[MCP:${this.serverId}] Connecting to SSE endpoint:`, this.sseUrl);
-        console.log(`[MCP:${this.serverId}] Using access token (first 20 chars):`, this.accessToken.substring(0, 20) + '...');
+        log.info(`[${this.serverId}] Connecting to SSE endpoint:`, this.sseUrl);
+        log.info(`[${this.serverId}] Using access token (first 20 chars):`, this.accessToken.substring(0, 20) + '...');
 
         // Try new Streamable HTTP transport first (POST with initialize request)
         // Fall back to old HTTP+SSE transport (GET to open SSE stream) if POST fails with 405
@@ -206,13 +210,13 @@ export class McpSSEClient {
                 resolve: (result) => {
                     this.initializeResult = result;
                     this.initialized = true;
-                    console.log(`[MCP:${this.serverId}] ✓ Initialization response received:`, result);
+                    log.info(`[${this.serverId}] ✓ Initialization response received:`, result);
                     if (this.initializeResolve) {
                         this.initializeResolve();
                     }
                 },
                 reject: (error) => {
-                    console.error(`[MCP:${this.serverId}] ✗ Initialization failed:`, error);
+                    log.error(`[${this.serverId}] ✗ Initialization failed:`, error);
                     if (this.initializeResolve) {
                         this.initializeResolve(); // Resolve anyway to prevent hanging
                     }
@@ -222,17 +226,17 @@ export class McpSSEClient {
             // Check if server accepted POST (Streamable HTTP transport)
             if (response.ok) {
                 this.transportType = 'streamable-http';
-                console.log(`[MCP:${this.serverId}] ✓ Using Streamable HTTP transport (POST)`);
+                log.info(`[${this.serverId}] ✓ Using Streamable HTTP transport (POST)`);
 
                 // Extract session ID from headers
                 const sessionIdHeader = response.headers.get('Mcp-Session-Id');
                 if (sessionIdHeader) {
                     this.sessionId = sessionIdHeader;
-                    console.log(`[MCP:${this.serverId}] Session ID:`, this.sessionId);
+                    log.info(`[${this.serverId}] Session ID:`, this.sessionId);
                 }
             } else if (response.status === 405) {
                 // Server doesn't support POST - try GET (old HTTP+SSE transport)
-                console.log(`[MCP:${this.serverId}] POST returned 405, falling back to HTTP+SSE transport (GET)`);
+                log.info(`[${this.serverId}] POST returned 405, falling back to HTTP+SSE transport (GET)`);
                 throw new Error('Method not allowed, try GET');
             } else {
                 // Handle error status codes with proper categorization
@@ -242,7 +246,7 @@ export class McpSSEClient {
         } catch (error) {
             // Only attempt fallback if it's a 405 error
             if (error instanceof Error && error.message.includes('Method not allowed')) {
-                console.log(`[MCP:${this.serverId}] Streamable HTTP not supported, trying HTTP+SSE:`, error);
+                log.info(`[${this.serverId}] Streamable HTTP not supported, trying HTTP+SSE:`, error);
 
                 // Attempt 2: Fall back to old HTTP+SSE transport (GET)
                 response = await fetch(this.sseUrl, {
@@ -256,15 +260,15 @@ export class McpSSEClient {
                 });
 
                 this.transportType = 'http-sse';
-                console.log(`[MCP:${this.serverId}] ✓ Using HTTP+SSE transport (GET)`);
+                log.info(`[${this.serverId}] ✓ Using HTTP+SSE transport (GET)`);
             } else {
                 // Re-throw if it's not a 405 fallback scenario
                 throw error;
             }
         }
 
-        console.log(`[MCP:${this.serverId}] Response status:`, response.status);
-        console.log(`[MCP:${this.serverId}] Response headers:`, Object.fromEntries(response.headers.entries()));
+        log.info(`[${this.serverId}] Response status:`, response.status);
+        log.info(`[${this.serverId}] Response headers:`, Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
             await this.handleErrorResponse(response);
@@ -285,7 +289,7 @@ export class McpSSEClient {
         // This ensures UI shows connected state right away, even if initialization takes time
         if (this.transportType === 'streamable-http') {
             this.updateStatus('connected');
-            console.log(`[MCP:${this.serverId}] ✓ Connection established (200 OK), processing stream...`);
+            log.info(`[${this.serverId}] ✓ Connection established (200 OK), processing stream...`);
         } else {
             // For HTTP+SSE: Update status now
             this.updateStatus('connected');
@@ -303,8 +307,8 @@ export class McpSSEClient {
      * Handle incoming SSE message
      */
     private handleMessage(message: McpMessage): void {
-        console.log(`[MCP:${this.serverId}] Handling message:`, JSON.stringify(message, null, 2));
-        console.log(`[MCP:${this.serverId}] Pending requests:`, Array.from(this.pendingRequests.keys()));
+        log.info(`[${this.serverId}] Handling message:`, JSON.stringify(message, null, 2));
+        log.info(`[${this.serverId}] Pending requests:`, Array.from(this.pendingRequests.keys()));
         this.onMessage(message);
 
         // Handle responses to our requests
@@ -315,11 +319,11 @@ export class McpSSEClient {
             if (message.error) {
                 pending.reject(new Error(message.error.message));
             } else {
-                console.log(`[MCP:${this.serverId}] Resolving request ${message.id} with result:`, message.result);
+                log.info(`[${this.serverId}] Resolving request ${message.id} with result:`, message.result);
                 pending.resolve(message.result);
             }
         } else {
-            console.log(`[MCP:${this.serverId}] No pending request found for message ID:`, message.id);
+            log.info(`[${this.serverId}] No pending request found for message ID:`, message.id);
         }
     }
 
@@ -373,7 +377,7 @@ export class McpSSEClient {
 
         // Per MCP spec: use the endpoint from SSE 'endpoint' event for POST requests
         const postUrl = this.getPostUrl();
-        console.log(`[MCP:${this.serverId}] Sending notification to:`, postUrl);
+        log.info(`[${this.serverId}] Sending notification to:`, postUrl);
 
         // Send notification - no response expected (should return 202 Accepted)
         const response = await fetch(postUrl, {
@@ -384,11 +388,11 @@ export class McpSSEClient {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[MCP:${this.serverId}] Notification failed:`, response.status, errorText);
+            log.error(`[${this.serverId}] Notification failed:`, response.status, errorText);
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
-        console.log(`[MCP:${this.serverId}] Notification sent:`, method);
+        log.info(`[${this.serverId}] Notification sent:`, method);
     }
 
     /**
@@ -441,7 +445,7 @@ export class McpSSEClient {
 
             // Per MCP spec: use the endpoint from SSE 'endpoint' event for POST requests
             const postUrl = this.getPostUrl();
-            console.log(`[MCP:${this.serverId}] Sending request to:`, postUrl, 'Method:', method);
+            log.info(`[${this.serverId}] Sending request to:`, postUrl, 'Method:', method);
 
             // Send via POST to the message endpoint (from SSE endpoint event)
             fetch(postUrl, {
@@ -468,7 +472,7 @@ export class McpSSEClient {
                         const sessionIdHeader = response.headers.get('Mcp-Session-Id');
                         if (sessionIdHeader) {
                             this.sessionId = sessionIdHeader;
-                            console.log(`[MCP:${this.serverId}] Session ID from init response:`, this.sessionId);
+                            log.info(`[${this.serverId}] Session ID from init response:`, this.sessionId);
                         }
                     }
 
@@ -541,7 +545,7 @@ export class McpSSEClient {
     async initialize(): Promise<void> {
         if (this.transportType === 'streamable-http') {
             // New Streamable HTTP transport: initialize was sent during connection
-            console.log(`[MCP:${this.serverId}] Waiting for initialization response...`);
+            log.info(`[${this.serverId}] Waiting for initialization response...`);
 
             // Wait for initialization promise with timeout
             await Promise.race([
@@ -555,12 +559,12 @@ export class McpSSEClient {
                 throw new Error('Initialization failed');
             }
 
-            console.log(`[MCP:${this.serverId}] ✓ Initialized via Streamable HTTP`);
+            log.info(`[${this.serverId}] ✓ Initialized via Streamable HTTP`);
         } else {
             // Old HTTP+SSE transport: Wait for endpoint event, then send initialize
-            console.log(`[MCP:${this.serverId}] Waiting for message endpoint from SSE...`);
+            log.info(`[${this.serverId}] Waiting for message endpoint from SSE...`);
             await this.waitForEndpoint();
-            console.log(`[MCP:${this.serverId}] Message endpoint ready, sending initialize request`);
+            log.info(`[${this.serverId}] Message endpoint ready, sending initialize request`);
 
             const params: McpInitializeRequest['params'] = {
                 protocolVersion: '2024-11-05',
@@ -579,14 +583,14 @@ export class McpSSEClient {
             const result = await this.sendRequest('initialize', params);
             this.initializeResult = result;
             this.initialized = true;
-            console.log(`[MCP:${this.serverId}] ✓ Initialized via HTTP+SSE:`, result);
+            log.info(`[${this.serverId}] ✓ Initialized via HTTP+SSE:`, result);
         }
 
         // Verify session ID was received (if server uses sessions)
         if (this.sessionId) {
-            console.log(`[MCP:${this.serverId}] Session established:`, this.sessionId);
+            log.info(`[${this.serverId}] Session established:`, this.sessionId);
         } else {
-            console.log(`[MCP:${this.serverId}] Server does not use session management`);
+            log.info(`[${this.serverId}] Server does not use session management`);
         }
 
         // After initialization, send initialized notification (no response expected)
@@ -604,9 +608,9 @@ export class McpSSEClient {
             const result: McpToolsListResponse = await this.sendRequest('tools/list');
             this.currentStatus.tools = result.tools;
             this.onStatusChange(this.currentStatus);
-            console.log(`[MCP:${this.serverId}] Tools:`, result.tools);
+            log.info(`[${this.serverId}] Tools:`, result.tools);
         } catch (error) {
-            console.error(`[MCP:${this.serverId}] Failed to fetch tools:`, error);
+            log.error(`[${this.serverId}] Failed to fetch tools:`, error);
         }
     }
 
@@ -705,7 +709,7 @@ export class McpSSEClient {
      */
     private async handleErrorResponse(response: Response): Promise<void> {
         const errorText = await response.text().catch(() => 'Unable to read error response');
-        console.error(`[MCP:${this.serverId}] Connection failed:`, response.status, errorText);
+        authLog.error(`[${this.serverId}] Connection failed:`, response.status, errorText);
 
         // Parse rate limit headers
         const retryAfter = response.headers.get('Retry-After');
@@ -864,7 +868,7 @@ export class McpSSEClient {
      * - Unexpected stream closures
      */
     private async processStream(body: ReadableStream<Uint8Array>): Promise<void> {
-        console.log(`[MCP:${this.serverId}] Starting stream processing...`);
+        log.info(`[${this.serverId}] Starting stream processing...`);
         const reader = body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -875,19 +879,19 @@ export class McpSSEClient {
                 const { done, value } = await reader.read();
 
                 if (done) {
-                    console.log(`[MCP:${this.serverId}] Stream ended, buffer size: ${buffer.length} bytes`);
+                    log.info(`[${this.serverId}] Stream ended, buffer size: ${buffer.length} bytes`);
 
                     // For Streamable HTTP: If buffer contains JSON but no SSE format, parse it directly
                     if (this.transportType === 'streamable-http' && buffer.trim().length > 0) {
                         const trimmed = buffer.trim();
                         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
                             try {
-                                console.log(`[MCP:${this.serverId}] Parsing final buffer as JSON:`, trimmed.substring(0, 100));
+                                log.info(`[${this.serverId}] Parsing final buffer as JSON:`, trimmed.substring(0, 100));
                                 const message: McpMessage = JSON.parse(trimmed);
-                                console.log(`[MCP:${this.serverId}] Parsed JSON message ID:`, message.id);
+                                log.info(`[${this.serverId}] Parsed JSON message ID:`, message.id);
                                 this.handleMessage(message);
                             } catch (err) {
-                                console.error(`[MCP:${this.serverId}] Failed to parse buffer as JSON:`, err);
+                                log.error(`[${this.serverId}] Failed to parse buffer as JSON:`, err);
                                 // Log but don't throw - stream is ending anyway
                             }
                         }
@@ -896,22 +900,22 @@ export class McpSSEClient {
                 }
 
                 buffer += decoder.decode(value, { stream: true });
-                console.log(`[MCP:${this.serverId}] Buffer size: ${buffer.length} bytes`);
+                log.info(`[${this.serverId}] Buffer size: ${buffer.length} bytes`);
                 const lines = buffer.split('\n');
                 buffer = lines.pop() || '';
 
-                console.log(`[MCP:${this.serverId}] Processing ${lines.length} lines from buffer`);
+                log.info(`[${this.serverId}] Processing ${lines.length} lines from buffer`);
                 for (const line of lines) {
                     if (line.startsWith('event: ')) {
                         // Handle SSE event types (e.g., "event: endpoint", "event: message")
                         currentEvent = line.slice(7).trim();
-                        console.log(`[MCP:${this.serverId}] SSE event type:`, currentEvent);
+                        log.info(`[${this.serverId}] SSE event type:`, currentEvent);
                         continue;
                     }
 
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6).trim();
-                        console.log(`[MCP:${this.serverId}] SSE data received (${data.length} chars):`, data.substring(0, 100));
+                        log.info(`[${this.serverId}] SSE data received (${data.length} chars):`, data.substring(0, 100));
                         if (data === '[DONE]') continue;
 
                         // Handle endpoint event - extract message endpoint for POST requests
@@ -926,25 +930,25 @@ export class McpSSEClient {
                                 this.sseSessionId = match[1] || null;
                             }
 
-                            console.log(`[MCP:${this.serverId}] Message endpoint received:`, this.messageEndpoint);
-                            console.log(`[MCP:${this.serverId}] SSE Session ID:`, this.sseSessionId);
+                            log.info(`[${this.serverId}] Message endpoint received:`, this.messageEndpoint);
+                            log.info(`[${this.serverId}] SSE Session ID:`, this.sseSessionId);
                             currentEvent = null;
                             continue;
                         }
 
                         // Skip empty data or non-JSON data
                         if (!data || (!data.startsWith('{') && !data.startsWith('['))) {
-                            console.log(`[MCP:${this.serverId}] Non-JSON SSE data:`, data);
+                            log.info(`[${this.serverId}] Non-JSON SSE data:`, data);
                             currentEvent = null;
                             continue;
                         }
 
                         try {
                             const message: McpMessage = JSON.parse(data);
-                            console.log(`[MCP:${this.serverId}] Parsed message ID:`, message.id, 'Method:', message.method);
+                            log.info(`[${this.serverId}] Parsed message ID:`, message.id, 'Method:', message.method);
                             this.handleMessage(message);
                         } catch (err) {
-                            console.error(`[MCP:${this.serverId}] Failed to parse message:`, err, 'Data:', data);
+                            log.error(`[${this.serverId}] Failed to parse message:`, err, 'Data:', data);
                             // Log parse errors but don't throw - continue processing stream
                         }
 
@@ -953,7 +957,7 @@ export class McpSSEClient {
                 }
             }
         } catch (error) {
-            console.error(`[MCP:${this.serverId}] Stream error:`, error);
+            log.error(`[${this.serverId}] Stream error:`, error);
 
             // Categorize stream error
             const streamError = this.categorizeConnectionError(error);
@@ -964,13 +968,13 @@ export class McpSSEClient {
             // For Streamable HTTP: streams close after each response, which is normal
             // For HTTP+SSE: stream should stay open, so reconnect if it closes unexpectedly
             if (this.transportType === 'http-sse' && !this.isDisconnecting && this.currentStatus.state !== 'disconnected') {
-                console.log(`[MCP:${this.serverId}] HTTP+SSE stream ended unexpectedly, scheduling reconnect`);
+                log.info(`[${this.serverId}] HTTP+SSE stream ended unexpectedly, scheduling reconnect`);
                 this.scheduleReconnect();
             } else if (this.transportType === 'streamable-http') {
-                console.log(`[MCP:${this.serverId}] Streamable HTTP stream closed (normal after response)`);
+                log.info(`[${this.serverId}] Streamable HTTP stream closed (normal after response)`);
                 // Don't reconnect - Streamable HTTP opens new streams per request
             } else {
-                console.log(`[MCP:${this.serverId}] Stream ended (intentional disconnect)`);
+                log.info(`[${this.serverId}] Stream ended (intentional disconnect)`);
             }
         }
     }

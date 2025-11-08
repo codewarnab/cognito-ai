@@ -15,7 +15,7 @@ import { customFetch } from '../utils/fetchHelpers';
 import type { AIMode } from '../types/types';
 import type { AIProvider } from '../../utils/providerTypes';
 
-const log = createLogger('AI-ModelFactory');
+const log = createLogger('ModelFactory', 'AI_CHAT');
 
 /**
  * Result of model initialization

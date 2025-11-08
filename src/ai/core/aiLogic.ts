@@ -23,7 +23,7 @@ import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
 
-const log = createLogger('AI-Logic');
+const log = createLogger('AI-Chat', 'AI_CHAT');
 
 /**
  * Stream AI response directly from the frontend

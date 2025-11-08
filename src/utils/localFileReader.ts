@@ -9,6 +9,9 @@
  */
 
 import { FileAccessError } from '../errors';
+import { createLogger } from '../logger';
+
+const log = createLogger('FileReader', 'UTILS');
 
 /**
  * Read a local file from the filesystem using file:/// URL
@@ -27,7 +30,7 @@ export async function readLocalFile(filePath: string): Promise<Blob> {
             // Handle paths that might start with a drive letter (Windows)
             // or an absolute path (Unix-like systems)
             normalizedPath = `file:///${filePath}`;
-            console.log('[LocalFileReader] Normalized path from', filePath, 'to', normalizedPath);
+            log.debug('Normalized path from', filePath, 'to', normalizedPath);
         }
 
         // Validate that this is a PDF file
@@ -38,7 +41,7 @@ export async function readLocalFile(filePath: string): Promise<Blob> {
             );
         }
 
-        console.log('[LocalFileReader] Attempting to read file:', normalizedPath);
+        log.debug('Attempting to read file:', normalizedPath);
 
         // Use fetch API to read the local file
         const response = await fetch(normalizedPath);
@@ -79,7 +82,7 @@ export async function readLocalFile(filePath: string): Promise<Blob> {
             );
         }
 
-        console.log('[LocalFileReader] Successfully read file:', {
+        log.info('Successfully read file:', {
             path: filePath,
             size: blob.size,
             type: blob.type
@@ -103,7 +106,7 @@ export async function readLocalFile(filePath: string): Promise<Blob> {
         }
 
         // Handle any other unexpected errors
-        console.error('[LocalFileReader] Unexpected error reading file:', error);
+        log.error('Unexpected error reading file:', error);
         throw new FileAccessError(
             'UNKNOWN_ERROR',
             error instanceof Error ? error.message : 'An unknown error occurred while reading the file.'
@@ -128,7 +131,7 @@ export function extractFilename(filePath: string): string {
 
         return filename || 'unknown.pdf';
     } catch (error) {
-        console.error('[LocalFileReader] Error extracting filename:', error);
+        log.error('Error extracting filename:', error);
         return 'unknown.pdf';
     }
 }
@@ -149,11 +152,11 @@ export async function checkFileAccessPermission(): Promise<boolean> {
 
         // If the API is not available, we can't reliably check
         // Return true and let the actual fetch attempt handle errors
-        console.warn('[LocalFileReader] Cannot check file access permission - API not available');
+        log.warn('Cannot check file access permission - API not available');
         return true;
 
     } catch (error) {
-        console.error('[LocalFileReader] Error checking file access permission:', error);
+        log.error('Error checking file access permission:', error);
         // Return true to allow the fetch attempt to proceed
         return true;
     }

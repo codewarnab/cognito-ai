@@ -12,7 +12,7 @@ import {
 import { createLogger } from '../../../../logger';
 import type { VoiceModeStatus } from '../../../../ai/geminiLive/types';
 
-const log = createLogger('useGeminiLiveClient');
+const log = createLogger('useGeminiLiveClient', 'VOICE_CLIENT');
 
 interface UseGeminiLiveClientOptions {
     apiKey: string;

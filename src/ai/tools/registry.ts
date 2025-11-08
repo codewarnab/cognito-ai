@@ -7,7 +7,7 @@ import { createLogger } from '../../logger';
 import { getAllTools } from './registryUtils';
 import type { AIMode, ToolCapabilities } from '../types';
 
-const log = createLogger('ToolRegistry');
+const log = createLogger('ToolRegistry', 'TOOLS_REGISTRY');
 
 // Tool categories
 export const LOCAL_TOOLS = [

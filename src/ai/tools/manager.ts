@@ -11,7 +11,7 @@ import { youtubeAgentAsTool } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
 import type { WorkflowDefinition } from '../../workflows/types';
 
-const log = createLogger('AI-ToolManager');
+const log = createLogger('ToolManager', 'TOOLS_EXECUTION');
 
 export interface ToolSetup {
   tools: Record<string, any>;

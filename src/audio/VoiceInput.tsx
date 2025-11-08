@@ -9,7 +9,7 @@ import { checkMicrophonePermission, openMicrophoneSettings } from './micPermissi
 import { createLogger } from '../logger';
 import './voice.css';
 
-const log = createLogger('VoiceInput');
+const log = createLogger('VoiceInput', 'VOICE_RECORDING');
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;
@@ -99,13 +99,13 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
   }, []);
 
   const handleToggleRecording = async () => {
-    console.log('VoiceInput: handleToggleRecording called, isRecording:', isRecording);
+    log.debug('handleToggleRecording called, isRecording:', isRecording);
 
     if (isRecording) {
-      console.log('VoiceInput: Stopping recording');
+      log.debug('Stopping recording');
       stopRecording();
     } else {
-      console.log('VoiceInput: Starting recording');
+      log.debug('Starting recording');
       // Update permission status before starting
       setPermissionStatus('checking');
       await startRecording();

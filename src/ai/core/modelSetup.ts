@@ -16,7 +16,7 @@ import {
 import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
 import { writeErrorToStream, writeDownloadProgressToStream } from '../stream/streamHelpers';
 
-const log = createLogger('AI-ModelSetup');
+const log = createLogger('ModelSetup', 'AI_CHAT');
 
 export interface LocalModelSetup {
   model: any;

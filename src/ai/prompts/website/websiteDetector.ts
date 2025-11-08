@@ -1,4 +1,5 @@
 import type { WebsiteConfig, WebsiteToolContext } from './types';
+import { createLogger } from '../../../logger';
 import {
     baseWebsiteConfig,
     // FUTURE: Import website-specific configs here
@@ -6,6 +7,8 @@ import {
     // googleDocsConfig,
     // googleSheetsConfig,
 } from './sites';
+
+const log = createLogger('WebsiteDetector', 'AI_WEBSITE_DETECTION');
 
 /**
  * Registry of all website configurations, sorted by priority (highest first)
@@ -93,7 +96,7 @@ export async function getCurrentWebsite(): Promise<WebsiteToolContext | null> {
         });
 
         if (!activeTab || !activeTab.url) {
-            console.warn('No active tab or URL found');
+            log.warn('No active tab or URL found');
             return null;
         }
 
@@ -103,14 +106,14 @@ export async function getCurrentWebsite(): Promise<WebsiteToolContext | null> {
         const config = matchUrlToWebsite(currentUrl);
 
         if (!config) {
-            console.warn('No matching website config found for URL:', currentUrl);
+            log.warn('No matching website config found for URL:', currentUrl);
             return null;
         }
 
         // If only base config exists (id === 'base'), return null
         // This signals to use all tools with no website-specific behavior
         if (config.id === 'base') {
-            console.log('Using base configuration (no website-specific tools)');
+            log.debug('Using base configuration (no website-specific tools)');
             return null;
         }
 
@@ -125,7 +128,7 @@ export async function getCurrentWebsite(): Promise<WebsiteToolContext | null> {
 
         return context;
     } catch (error) {
-        console.error('Error detecting current website:', error);
+        log.error('Error detecting current website:', error);
         return null;
     }
 }

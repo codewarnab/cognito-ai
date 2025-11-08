@@ -16,7 +16,8 @@ import { MCPError } from '../../errors/errorTypes';
 import { RetryManager, RetryPresets } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';
 
-const log = createLogger('MCP-Client');
+const log = createLogger('MCP-Client', 'MCP_CLIENT');
+const toolsLog = createLogger('MCP-Tools', 'MCP_TOOLS');
 
 export interface KeyValuePair {
   key: string;
