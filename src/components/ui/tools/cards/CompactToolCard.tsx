@@ -8,6 +8,7 @@ import { LoadingCheckIcon, type LoadingCheckIconHandle } from '../../../../../as
 import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../../../assets/chat/circle-check';
 import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../../../assets/chat/chevron-right';
 import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../../../assets/chat/chevrown-down';
+import { UploadIcon, type UploadIconHandle } from '../../../shared/icons/UploadIcon';
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';
 import { createLogger } from '../../../../logger';
@@ -50,7 +51,16 @@ export function CompactToolCard({
     const circleCheckRef = useRef<CircleCheckIconHandle>(null);
     const chevronRef = useRef<ChevronRightIconHandle | ChevronDownIconHandle>(null);
     const toolIconRef = useRef<any>(null); // Ref for the tool icon
+    const uploadIconRef = useRef<UploadIconHandle>(null); // Ref for upload icon
     const ToolIcon = getToolIcon(toolName);
+
+    // Format the tool action name based on state and context (needs to be before useEffect)
+    const formattedAction = formatToolAction({
+        toolName,
+        state,
+        input,
+        output
+    });
 
     // Trigger mount animation on component mount (like Sonner toast)
     useEffect(() => {
@@ -67,9 +77,14 @@ export function CompactToolCard({
     useEffect(() => {
         if (state === 'loading') {
             loadingCheckRef.current?.startAnimation();
+            // Also trigger upload icon animation if it's shown
+            if (formattedAction.customIcon === 'upload') {
+                uploadIconRef.current?.startAnimation();
+            }
         } else {
             // Always stop loading animation when not in loading state
             loadingCheckRef.current?.stopAnimation();
+            uploadIconRef.current?.stopAnimation();
 
             if (state === 'success') {
                 // Trigger check animation after a brief delay
@@ -78,21 +93,13 @@ export function CompactToolCard({
                 }, 50);
             }
         }
-    }, [state]);
+    }, [state, formattedAction.customIcon]);
 
     const formatContent = (data: any, maxLength = 200): string => {
         if (!data) return '';
         const str = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
         return str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
     };
-
-    // Format the tool action name based on state and context
-    const formattedAction = formatToolAction({
-        toolName,
-        state,
-        input,
-        output
-    });
 
     const handleToggle = () => {
         setIsExpanded(!isExpanded);
@@ -112,7 +119,12 @@ export function CompactToolCard({
                 {/* Left: Icon + Tool Name */}
                 <div className="compact-tool-main">
                     <div className={`compact-tool-icon ${isHovered ? 'hovered' : ''}`}>
-                        <ToolIcon ref={toolIconRef} size={16} />
+                        {/* Use UploadIcon when customIcon is 'upload', otherwise use default tool icon */}
+                        {formattedAction.customIcon === 'upload' ? (
+                            <UploadIcon ref={uploadIconRef} size={16} />
+                        ) : (
+                            <ToolIcon ref={toolIconRef} size={16} />
+                        )}
                     </div>
                     <div className="compact-tool-name">
                         <span className="compact-tool-action">{formattedAction.action}</span>

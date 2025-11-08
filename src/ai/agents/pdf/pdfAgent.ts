@@ -1,6 +1,7 @@
 /**
  * PDF Document Analysis Agent
- * Specialized agent that uses Gemini's native PDF understanding capabilities via URL context
+ * Specialized agent that uses Gemini's native PDF understanding capabilities
+ * Supports URL-based PDFs only. Local files must be uploaded via attachment icon.
  */
 
 import { generateText, tool } from 'ai';
@@ -12,6 +13,13 @@ import { isPdfUrl } from '../../../utils/pdfDetector';
 import { getGoogleApiKey } from '../../../utils/providerCredentials';
 
 const log = createLogger('PDF-Agent');
+
+/**
+ * Check if a path/URL is a local file
+ */
+function isLocalFile(path: string): boolean {
+    return path.startsWith('file://') || path.startsWith('blob:');
+}
 
 /**
  * Extract PDF metadata if possible
@@ -76,7 +84,18 @@ async function analyzePdfDocument(
     metadata?: { title?: string; pageCount?: number }
 ): Promise<string> {
     try {
-        log.info('📄 Analyzing PDF document', { pdfUrl, question });
+        log.info('📄 Analyzing PDF document', {
+            pdfUrl,
+            question
+        });
+
+        // Get API key and create configured Google provider
+        const apiKey = await getGoogleApiKey();
+        if (!apiKey) {
+            throw new Error('Google API key not configured. Please configure it in settings.');
+        }
+
+        const google = createGoogleGenerativeAI({ apiKey });
 
         // Validate PDF URL
         if (!isPdfUrl(pdfUrl)) {
@@ -97,14 +116,6 @@ Please answer the following question thoroughly and accurately. Cite specific se
 Question: ${question}`;
 
         log.info('📤 Sending request to Gemini with URL context for PDF');
-
-        // Get API key and create configured Google provider
-        const apiKey = await getGoogleApiKey();
-        if (!apiKey) {
-            throw new Error('Google API key not configured. Please configure it in settings.');
-        }
-
-        const google = createGoogleGenerativeAI({ apiKey });
 
         // Use AI SDK with URL context tool (supports PDFs)
         const { text } = await generateText({
@@ -148,13 +159,16 @@ export const pdfAgentAsTool = tool({
   to directly process and analyze PDF documents.
   
   IMPORTANT:
-  - Works with PDF URLs (https://example.com/document.pdf)
+  - Only supports publicly accessible URL-based PDFs (https://example.com/document.pdf)
+  - Does NOT support local files (file://, file:///C:/Users/..., etc.)
+  - If user provides a local file path, ask them to upload via the attachment icon instead
   - Can auto-detect PDF URL from active tab if user is viewing a PDF
   - Handles various PDF types: research papers, reports, documentation, forms, etc.
-  - Provides accurate answers based on actual document content`,
+  - Provides accurate answers based on actual document content
+  - Maximum PDF size: 34MB`,
 
     inputSchema: z.object({
-        pdfUrl: z.string().describe('The full PDF URL (e.g., https://example.com/document.pdf). If not provided, will attempt to extract from active tab.'),
+        pdfUrl: z.string().optional().describe('The full PDF URL (e.g., https://example.com/document.pdf). If not provided, will attempt to extract from active tab. Does NOT accept local file paths (file://).'),
         question: z.string().describe('The specific question the user wants answered about the PDF document'),
         pageCount: z.number().optional().describe('Optional page count of the PDF document (if known)'),
     }),
@@ -163,11 +177,37 @@ export const pdfAgentAsTool = tool({
         log.info('📄 PDF Agent called', { pdfUrl, question, pageCount });
 
         try {
-            let finalUrl = pdfUrl;
+            let finalUrl: string;
+            let metadata: { title?: string; pageCount?: number } | undefined;
 
-            // If URL is not provided or invalid, try to get from active tab
-            if (!finalUrl || !isPdfUrl(finalUrl)) {
-                log.info('PDF URL not provided or invalid, attempting to extract from active tab');
+            // Priority 1: Use pdfUrl if provided
+            if (pdfUrl) {
+                // Check if it's a local file path
+                if (isLocalFile(pdfUrl)) {
+                    log.warn('Local file path detected, rejecting', { pdfUrl });
+                    throw new Error(
+                        '❌ Local PDF files are not supported via file paths.\n\n' +
+                        '📎 Please use the attachment icon (📎) in the chat to upload your PDF file directly.\n\n' +
+                        'This allows me to analyze local PDFs securely without requiring file:// access.'
+                    );
+                }
+
+                // Validate URL format
+                if (!isPdfUrl(pdfUrl)) {
+                    throw new Error(
+                        'The provided URL does not appear to be a PDF document. Please provide a URL ending in .pdf'
+                    );
+                }
+
+                finalUrl = pdfUrl;
+                metadata = await getPdfMetadata(pdfUrl);
+                if (pageCount && metadata) {
+                    metadata.pageCount = pageCount;
+                }
+            }
+            // Priority 2: Try to get from active tab
+            else {
+                log.info('No PDF URL provided, attempting to extract from active tab');
                 const tabUrl = await getPdfUrlFromActiveTab();
 
                 if (!tabUrl) {
@@ -178,22 +218,16 @@ export const pdfAgentAsTool = tool({
 
                 finalUrl = tabUrl;
                 log.info('✅ Extracted PDF URL from active tab', { url: finalUrl });
+                metadata = await getPdfMetadata(tabUrl);
+                if (pageCount && metadata) {
+                    metadata.pageCount = pageCount;
+                }
             }
 
-            // Validate final URL
-            if (!isPdfUrl(finalUrl)) {
-                throw new Error(
-                    'The provided URL does not appear to be a PDF document'
-                );
-            }
-
-            // Get PDF metadata
-            const metadata = await getPdfMetadata(finalUrl);
-            if (pageCount && metadata) {
-                metadata.pageCount = pageCount;
-            }
-
-            log.info('PDF metadata extracted', { metadata });
+            log.info('PDF URL determined', {
+                url: finalUrl,
+                metadata
+            });
 
             // Analyze the PDF document
             const answer = await analyzePdfDocument(finalUrl, question, metadata);
