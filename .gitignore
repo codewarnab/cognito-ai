@@ -10,7 +10,7 @@ build/
 /coverage
 
 #cache
-.turbo
+.turboto
 
 # misc
 .DS_Store
@@ -39,9 +39,8 @@ keys.json
 .tsbuildinfo
 
 # project files
-todo.txt
 VIDEO_SCRIPT.md
 promotion.md
 FEATURES.md
 todo.txt
-todo.txt
+TODO.md
