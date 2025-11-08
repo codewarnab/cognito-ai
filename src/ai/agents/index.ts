@@ -8,3 +8,6 @@ export * from './browser';
 
 // YouTube agent
 export * from './youtube';
+
+// PDF agent
+export * from './pdf';

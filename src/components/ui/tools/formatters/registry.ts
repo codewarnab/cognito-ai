@@ -54,6 +54,9 @@ import {
     youtubeAgentFormatter
 } from './formatters/youtube';
 import {
+    pdfAgentFormatter
+} from './formatters/pdf';
+import {
     getReportTemplateFormatter,
     generatePDFFormatter,
     generateMarkdownFormatter
@@ -127,7 +130,12 @@ export const formatters: Record<string, ActionFormatter> = {
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
     youtubeTranscript: getYoutubeTranscriptFormatter,
+    analyzeYouTubeVideo: youtubeAgentFormatter,
     youtubeAgentAsTool: youtubeAgentFormatter,
+
+    // PDF
+    analyzePdfDocument: pdfAgentFormatter,
+    pdfAgentAsTool: pdfAgentFormatter,
 
     // Reports
     getReportTemplate: getReportTemplateFormatter,
