@@ -103,22 +103,17 @@ Add support for Google Vertex AI alongside existing Google Generative AI, allowi
    - `hasVertexCredentials()`: Check if Vertex is configured
    - `clearVertexCredentials()`: Remove Vertex credentials
    - `getActiveProvider()`: Determine which provider to use (Vertex if both configured)
+   - `getGoogleApiKey()`: Get Google API key
+   - `setGoogleApiKey()`: Set Google API key
+   - `hasGoogleApiKey()`: Check if Google API key is configured
+   - `clearGoogleApiKey()`: Remove Google API key
 
 2. **Storage schema**:
    ```typescript
    {
-     // Existing
-     gemini_api_key: string,
-     ai_model_config: {
-       mode: 'local' | 'remote',
-       remoteModel: 'gemini-2.5-flash' | 'gemini-2.5-pro',
-       conversationStartMode?: 'local' | 'remote'
-     },
-     
-     // New
      ai_provider_config: {
        provider: 'google' | 'vertex',
-       googleApiKey?: string,  // Migrate from gemini_api_key
+       googleApiKey?: string,
        vertexCredentials?: {
          projectId: string,
          location: string,
@@ -126,18 +121,24 @@ Add support for Google Vertex AI alongside existing Google Generative AI, allowi
          privateKey: string,
          privateKeyId?: string
        }
+     },
+     ai_model_config: {
+       mode: 'local' | 'remote',
+       remoteModel: 'gemini-2.5-flash' | 'gemini-2.5-pro',
+       conversationStartMode?: 'local' | 'remote',
+       preferredProvider?: 'google' | 'vertex'
      }
    }
    ```
 
-3. **Update `geminiApiKey.ts`**
-   - Keep existing functions for backward compatibility
-   - Add migration logic to move API key to new schema
-   - Mark functions as deprecated (but still functional)
+3. **Keep `geminiApiKey.ts` for backward compatibility**
+   - Mark as deprecated in documentation
+   - Functions remain available for existing code
+   - No migration needed - fresh install only
 
 #### Files to Create/Modify:
 - `src/utils/providerCredentials.ts` (new)
-- `src/utils/geminiApiKey.ts` (modify - add migration)
+- `src/utils/geminiApiKey.ts` (mark as deprecated)
 - `src/utils/modelSettings.ts` (modify - add provider preference)
 
 ---
@@ -377,51 +378,12 @@ Add support for Google Vertex AI alongside existing Google Generative AI, allowi
 
 ---
 
-## Migration Strategy
-
-### For Existing Users (If Needed)
-1. **Auto-migrate API keys**
-   - Check for `gemini_api_key` in storage
-   - If exists and new schema doesn't, migrate automatically
-   - Keep old key for compatibility
-
-2. **Migration function** (`src/utils/migration.ts`)
-   ```typescript
-   export async function migrateToNewProviderSchema() {
-     // Check if already migrated
-     const newConfig = await chrome.storage.local.get('ai_provider_config');
-     if (newConfig.ai_provider_config) {
-       return; // Already migrated
-     }
-     
-     // Get old API key
-     const oldKey = await chrome.storage.local.get('gemini_api_key');
-     
-     if (oldKey.gemini_api_key) {
-       // Migrate to new schema
-       await setProviderConfig({
-         provider: 'google',
-         googleApiKey: oldKey.gemini_api_key
-       });
-       
-       console.log('Migrated API key to new provider schema');
-     }
-   }
-   ```
-
-3. **Run migration on extension startup**
-   - Call migration function in background script
-   - Or on first settings dialog open
-
----
-
 ## Testing Checklist
 
 ### Unit Tests
 - [ ] Provider credential storage/retrieval
 - [ ] Model factory initialization
 - [ ] Provider selection logic
-- [ ] Migration script
 
 ### Integration Tests
 - [ ] Google provider with API key
@@ -442,7 +404,6 @@ Add support for Google Vertex AI alongside existing Google Generative AI, allowi
 - [ ] Complete flow with Vertex provider
 - [ ] Tool execution with both providers
 - [ ] Error messages display correctly
-- [ ] Migration from old to new schema
 
 ---
 
@@ -496,9 +457,8 @@ src/
 ├── utils/
 │   ├── providerTypes.ts (new)
 │   ├── providerCredentials.ts (new)
-│   ├── geminiApiKey.ts (modify)
-│   ├── modelSettings.ts (modify)
-│   └── migration.ts (new)
+│   ├── geminiApiKey.ts (deprecated)
+│   └── modelSettings.ts (modify)
 └── types/
     └── ... (type updates as needed)
 ```
@@ -515,7 +475,7 @@ src/
 2. ✅ **Phase 2**: Storage & Configuration (2-3 hours)
    - Create credential utilities
    - Extend storage schema
-   - Migration logic
+   - No migration needed (fresh install only)
 
 3. ✅ **Phase 3**: Model Initialization (3-4 hours)
    - Create model factory
@@ -535,7 +495,7 @@ src/
    - 5e: Update error messages in UI (30 min)
    - Update aiLogic.ts (1 hour)
 
-6. ✅ **Phase 6**: Provider Preference (1-2 hours)
+6. ✅ **Phase 6**: Provider Preference (1-2 hours) - **COMPLETED**
    - Implement default logic
    - Add UI indicators
    - Final testing
@@ -554,8 +514,8 @@ src/
 
 ### Risk 2: Breaking Existing Functionality
 **Mitigation**: 
-- Keep old API key functions working
-- Gradual migration
+- Keep old API key functions available for reference
+- New storage schema is separate
 - Extensive testing
 
 ### Risk 3: User Confusion
@@ -585,10 +545,11 @@ src/
 2. ✅ Users can configure Vertex AI (new)
 3. ✅ Provider selection is intuitive
 4. ✅ Vertex is preferred when both configured
-5. ✅ Same models available for both providers
-6. ✅ Error messages are provider-specific
-7. ✅ No breaking changes to existing users
-8. ✅ All existing features work with both providers
+4. ✅ Same models available for both providers
+5. ✅ Error messages are provider-specific
+6. ✅ No breaking changes to existing users
+7. ✅ All existing features work with both providers
+8. ✅ Clean installation without migration complexity
 
 ---
 

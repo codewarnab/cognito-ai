@@ -7,13 +7,21 @@
  * Error type categorization for different failure scenarios
  */
 export enum ErrorType {
-    // API Errors
+    // API Errors (Generic)
     API_RATE_LIMIT = 'API_RATE_LIMIT',
     API_QUOTA_EXCEEDED = 'API_QUOTA_EXCEEDED',
     API_AUTH_FAILED = 'API_AUTH_FAILED',
     API_MALFORMED_FUNCTION_CALL = 'API_MALFORMED_FUNCTION_CALL',
     API_INVALID_REQUEST = 'API_INVALID_REQUEST',
     API_SERVER_ERROR = 'API_SERVER_ERROR',
+
+    // Vertex AI Specific Errors
+    API_VERTEX_PERMISSION_DENIED = 'API_VERTEX_PERMISSION_DENIED',
+    API_VERTEX_MODEL_ACCESS_REQUIRED = 'API_VERTEX_MODEL_ACCESS_REQUIRED',
+    API_VERTEX_QUOTA_EXHAUSTED = 'API_VERTEX_QUOTA_EXHAUSTED',
+    API_VERTEX_DEADLINE_EXCEEDED = 'API_VERTEX_DEADLINE_EXCEEDED',
+    API_VERTEX_CANCELLED = 'API_VERTEX_CANCELLED',
+    API_VERTEX_RESOURCE_NOT_FOUND = 'API_VERTEX_RESOURCE_NOT_FOUND',
 
     // MCP Errors
     MCP_CONNECTION_FAILED = 'MCP_CONNECTION_FAILED',
@@ -194,6 +202,97 @@ export class APIError extends BaseAppError {
             userMessage: 'The API service is temporarily unavailable. Retrying...',
             technicalDetails: details || `Server returned ${statusCode} error.`,
             errorCode: ErrorType.API_SERVER_ERROR,
+        });
+    }
+
+    /**
+     * Vertex AI: Permission denied error (403)
+     * Service account lacks required IAM permissions
+     */
+    static vertexPermissionDenied(details?: string): APIError {
+        return new APIError({
+            message: 'Vertex AI permission denied',
+            statusCode: 403,
+            retryable: false,
+            userMessage: 'Service account lacks permissions. Check IAM roles in Google Cloud Console.',
+            technicalDetails: details || 'The service account does not have the required Vertex AI permissions.',
+            errorCode: ErrorType.API_VERTEX_PERMISSION_DENIED,
+        });
+    }
+
+    /**
+     * Vertex AI: Model access required (400)
+     * Model requires allowlisting or org policy blocks access
+     */
+    static vertexModelAccessRequired(details?: string): APIError {
+        return new APIError({
+            message: 'Vertex AI model access required',
+            statusCode: 400,
+            retryable: false,
+            userMessage: 'This model requires allowlisting. Please request access in Google Cloud Console.',
+            technicalDetails: details || 'The requested model is not available or requires allowlisting.',
+            errorCode: ErrorType.API_VERTEX_MODEL_ACCESS_REQUIRED,
+        });
+    }
+
+    /**
+     * Vertex AI: Quota exhausted (429)
+     * API quota limits exceeded
+     */
+    static vertexQuotaExhausted(details?: string, retryAfter?: number): APIError {
+        return new APIError({
+            message: 'Vertex AI quota exhausted',
+            statusCode: 429,
+            retryable: true,
+            retryAfter,
+            userMessage: 'Vertex AI quota exceeded. Please wait before retrying or increase quotas in GCP.',
+            technicalDetails: details || 'API quota limits have been exceeded.',
+            errorCode: ErrorType.API_VERTEX_QUOTA_EXHAUSTED,
+        });
+    }
+
+    /**
+     * Vertex AI: Deadline exceeded (504)
+     * Request took longer than client deadline
+     */
+    static vertexDeadlineExceeded(details?: string): APIError {
+        return new APIError({
+            message: 'Vertex AI request timeout',
+            statusCode: 504,
+            retryable: true,
+            userMessage: 'Request took too long. Try a simpler prompt or increase timeout settings.',
+            technicalDetails: details || 'Request exceeded the client deadline (default: 10 minutes).',
+            errorCode: ErrorType.API_VERTEX_DEADLINE_EXCEEDED,
+        });
+    }
+
+    /**
+     * Vertex AI: Request cancelled (499)
+     * User or client cancelled the request
+     */
+    static vertexCancelled(details?: string): APIError {
+        return new APIError({
+            message: 'Vertex AI request cancelled',
+            statusCode: 499,
+            retryable: false,
+            userMessage: 'Request was cancelled.',
+            technicalDetails: details || 'The request was cancelled by the client.',
+            errorCode: ErrorType.API_VERTEX_CANCELLED,
+        });
+    }
+
+    /**
+     * Vertex AI: Resource not found (404)
+     * Invalid model name, missing files, etc.
+     */
+    static vertexResourceNotFound(details?: string): APIError {
+        return new APIError({
+            message: 'Vertex AI resource not found',
+            statusCode: 404,
+            retryable: false,
+            userMessage: 'Resource not found. Check your model name and credentials.',
+            technicalDetails: details || 'The requested resource was not found.',
+            errorCode: ErrorType.API_VERTEX_RESOURCE_NOT_FOUND,
         });
     }
 }

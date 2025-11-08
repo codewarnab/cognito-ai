@@ -3,7 +3,7 @@
  */
 
 export const AUDIO_PATHS = {
-    NOTIFICATION: '/sweep1.mp3',
+    NOTIFICATION: 'sweep1.mp3', // Plasmo will handle the path from public folder
 } as const;
 
 export const AUDIO_CONFIG = {

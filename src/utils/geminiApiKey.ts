@@ -1,6 +1,9 @@
 /**
  * Utility functions for managing Gemini API key in chrome.storage.local
  * Includes validation and error handling
+ * 
+ * @deprecated Legacy storage - New code should use providerCredentials.ts
+ * This file is kept for backward compatibility with existing code references
  */
 
 import { APIError, ErrorType } from '../errors/errorTypes';
@@ -99,12 +102,24 @@ async function clearValidationCache(): Promise<void> {
 
 /**
  * Get the stored Gemini API key
+ * Checks both old storage (gemini_api_key) and new provider config
  * @returns The API key if set, null otherwise
  */
 export async function getGeminiApiKey(): Promise<string | null> {
     try {
-        const result = await chrome.storage.local.get(STORAGE_KEY);
-        return result[STORAGE_KEY] || null;
+        // First check old storage location (backward compatibility)
+        const oldResult = await chrome.storage.local.get(STORAGE_KEY);
+        if (oldResult[STORAGE_KEY]) {
+            return oldResult[STORAGE_KEY];
+        }
+
+        // Then check new provider config location
+        const newResult = await chrome.storage.local.get('ai_provider_config');
+        if (newResult.ai_provider_config?.googleApiKey) {
+            return newResult.ai_provider_config.googleApiKey;
+        }
+
+        return null;
     } catch (error) {
         console.error('Failed to get Gemini API key', error);
         return null;

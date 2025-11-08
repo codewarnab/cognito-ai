@@ -1,3 +1,4 @@
+import "./polyfills/process";
 import { useState, useRef, useEffect } from "react";
 import { motion } from 'framer-motion';
 import { CopilotChatWindow } from "./components/core/CopilotChatWindow";

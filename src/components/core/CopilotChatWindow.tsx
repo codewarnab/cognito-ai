@@ -3,7 +3,7 @@ import { ChatHeader } from '../features/chat/components/ChatHeader';
 import { ChatMessages } from '../features/chat/components/ChatMessages';
 import { ChatInput } from '../features/chat/components/ChatInput';
 import { ErrorNotification } from '../features/chat/components/ErrorNotification';
-import { GeminiApiKeyDialog } from '../shared/dialogs';
+import { ProviderSetupDialog } from '../shared/dialogs';
 import { ModelDownloadToastContainer } from '../shared/notifications';
 import type { VoiceInputHandle } from '../../audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
@@ -74,7 +74,7 @@ export function CopilotChatWindow({
         message: string;
         type: 'error' | 'warning' | 'info';
     } | null>(null);
-    const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
+    const [showProviderDialog, setShowProviderDialog] = useState(false);
 
     // Load initial state with error handling
     useEffect(() => {
@@ -102,16 +102,27 @@ export function CopilotChatWindow({
         loadModelState();
     }, []);
 
-    // Listen for API key changes in storage
+    // Listen for API key changes in storage (both old and new storage systems)
     useEffect(() => {
-        const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
-            if (areaName === 'local' && changes.gemini_api_key) {
-                // API key was added or removed
-                const hasKey = !!changes.gemini_api_key.newValue;
-                setModelState(prev => ({
-                    ...prev,
-                    hasApiKey: hasKey,
-                }));
+        const handleStorageChange = async (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+            if (areaName === 'local') {
+                // Check old storage key (legacy)
+                if (changes.gemini_api_key) {
+                    const hasKey = !!changes.gemini_api_key.newValue;
+                    setModelState(prev => ({
+                        ...prev,
+                        hasApiKey: hasKey,
+                    }));
+                }
+
+                // Check new provider config storage
+                if (changes.ai_provider_config) {
+                    const hasKey = await hasGeminiApiKey();
+                    setModelState(prev => ({
+                        ...prev,
+                        hasApiKey: hasKey,
+                    }));
+                }
             }
         };
 
@@ -163,7 +174,7 @@ export function CopilotChatWindow({
     };
 
     const handleOpenApiKeyDialog = () => {
-        setShowApiKeyDialog(true);
+        setShowProviderDialog(true);
     };
 
     return (
@@ -221,11 +232,11 @@ export function CopilotChatWindow({
                 usage={usage}
             />
 
-            {/* Gemini API Key Dialog */}
-            <GeminiApiKeyDialog
-                isOpen={showApiKeyDialog}
-                onClose={() => setShowApiKeyDialog(false)}
-                onApiKeySaved={handleApiKeySaved}
+            {/* AI Provider Setup Dialog */}
+            <ProviderSetupDialog
+                isOpen={showProviderDialog}
+                onClose={() => setShowProviderDialog(false)}
+                onConfigSaved={handleApiKeySaved}
             />
         </div>
     );

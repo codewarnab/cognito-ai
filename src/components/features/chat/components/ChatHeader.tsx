@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
-import { GeminiApiKeyDialog } from '../../../shared/dialogs';
+import { ProviderSetupDialog } from '../../../shared/dialogs';
+import { getActiveProvider, hasAnyProviderConfigured } from '../../../../utils/providerCredentials';
+import { getModelConfig } from '../../../../utils/modelSettings';
+import type { AIProvider } from '../../../../utils/providerTypes';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;
@@ -24,8 +27,51 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onApiKeySaved,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
-    const [showGeminiDialog, setShowGeminiDialog] = useState(false);
+    const [showProviderDialog, setShowProviderDialog] = useState(false);
+    const [activeProvider, setActiveProvider] = useState<AIProvider | 'local' | 'none'>('none');
+    const [currentMode, setCurrentMode] = useState<'local' | 'remote'>('local');
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Load active provider and mode on mount and when API key is saved
+    useEffect(() => {
+        loadProviderInfo();
+    }, [onApiKeySaved]);
+
+    const loadProviderInfo = async () => {
+        try {
+            const config = await getModelConfig();
+            setCurrentMode(config.mode);
+
+            if (config.mode === 'local') {
+                setActiveProvider('local');
+            } else {
+                const hasProvider = await hasAnyProviderConfigured();
+                if (hasProvider) {
+                    const provider = await getActiveProvider();
+                    setActiveProvider(provider);
+                } else {
+                    setActiveProvider('none');
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load provider info:', error);
+            setActiveProvider('none');
+        }
+    };
+
+    const getProviderLabel = () => {
+        if (currentMode === 'local') return 'Local (Gemini Nano)';
+        if (activeProvider === 'google') return 'Remote (Google AI)';
+        if (activeProvider === 'vertex') return 'Remote (Vertex AI)';
+        return 'No Provider';
+    };
+
+    const getProviderColor = () => {
+        if (currentMode === 'local') return '#10b981'; // green
+        if (activeProvider === 'google') return '#4a6fa5'; // blue
+        if (activeProvider === 'vertex') return '#8b5cf6'; // purple
+        return '#ef4444'; // red for no provider
+    };
 
     // Handle clicks outside menu to close it
     useEffect(() => {
@@ -63,6 +109,37 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                         >
                             <PanelRightOpen size={18} />
                         </button>
+                    )}
+
+                    {/* Provider Indicator Badge */}
+                    {activeProvider !== 'none' && (
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.375rem',
+                                padding: '0.25rem 0.625rem',
+                                borderRadius: '12px',
+                                fontSize: '0.6875rem',
+                                fontWeight: 500,
+                                backgroundColor: `${getProviderColor()}15`,
+                                color: getProviderColor(),
+                                border: `1px solid ${getProviderColor()}30`,
+                                marginLeft: '0.5rem',
+                                cursor: 'help',
+                            }}
+                            title={`Current AI provider: ${getProviderLabel()}`}
+                        >
+                            <span
+                                style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    borderRadius: '50%',
+                                    backgroundColor: getProviderColor(),
+                                }}
+                            />
+                            <span>{getProviderLabel()}</span>
+                        </div>
                     )}
                 </div>
 
@@ -148,10 +225,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     className="copilot-header-menu-item"
                                     onClick={() => {
                                         setShowHeaderMenu(false);
-                                        setShowGeminiDialog(true);
+                                        setShowProviderDialog(true);
                                     }}
                                 >
-                                    Gemini API Key Setup
+                                    AI Provider Setup
                                 </button>
                             </div>
                         )}
@@ -159,11 +236,14 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </div>
             </div>
 
-            {/* Gemini API Key Dialog */}
-            <GeminiApiKeyDialog
-                isOpen={showGeminiDialog}
-                onClose={() => setShowGeminiDialog(false)}
-                onApiKeySaved={onApiKeySaved}
+            {/* AI Provider Setup Dialog */}
+            <ProviderSetupDialog
+                isOpen={showProviderDialog}
+                onClose={() => setShowProviderDialog(false)}
+                onConfigSaved={() => {
+                    loadProviderInfo(); // Reload provider info when saved
+                    onApiKeySaved?.();
+                }}
             />
         </div>
     );

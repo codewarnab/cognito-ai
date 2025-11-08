@@ -1,3 +1,4 @@
+import "./polyfills/process";
 import { useState } from "react"
 
 function IndexOptions() {

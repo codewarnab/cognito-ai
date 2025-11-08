@@ -4,15 +4,16 @@
  */
 
 import type { UIMessage } from 'ai';
+import type { AIProvider } from '../../utils/providerTypes';
 
 // AI Mode types
 export type AIMode = 'local' | 'remote';
 
 // Remote model options
-export type RemoteModelType = 
+export type RemoteModelType =
   | 'gemini-2.5-flash'           // Default
-  | 'gemini-2.5-flash-lite'  
-  | 'gemini-2.5-pro'             
+  | 'gemini-2.5-flash-lite'
+  | 'gemini-2.5-pro'
   | 'gemini-2.5-flash-image';
 
 // Model configuration
@@ -39,8 +40,9 @@ export interface ToolCapabilities {
 }
 
 export interface ModelState {
-    mode: AIMode;
-    remoteModel: RemoteModelType;
-    hasApiKey: boolean;
-    conversationStartMode?: AIMode;
+  mode: AIMode;
+  remoteModel: RemoteModelType;
+  hasApiKey: boolean;
+  conversationStartMode?: AIMode;
+  provider?: AIProvider;
 }

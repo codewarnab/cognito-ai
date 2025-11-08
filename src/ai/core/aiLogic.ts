@@ -19,7 +19,7 @@ import {
 } from '../../errors/errorTypes';
 import { type AppUsage, getContextLimits } from '../types/usage';
 import { executeStreamText } from '../stream/streamExecutor';
-import { parseGeminiError } from '../errors/handlers';
+import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
 
@@ -93,6 +93,7 @@ export async function streamAIResponse(params: {
   let model: any;
   let tools: Record<string, any>;
   let systemPrompt: string;
+  let provider: 'local' | 'google' | 'vertex' = 'local'; // Track provider for error handling
 
   try {
     const stream = createUIMessageStream({
@@ -139,9 +140,10 @@ export async function streamAIResponse(params: {
               model = localSetup.model;
               tools = localSetup.tools;
               systemPrompt = localSetup.systemPrompt;
+              provider = 'local';
 
             } else {
-              // ========== REMOTE MODE (Gemini API) ==========
+              // ========== REMOTE MODE (Gemini API or Vertex AI) ==========
               const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
 
               const remoteSetup = await setupRemoteMode(
@@ -153,19 +155,21 @@ export async function streamAIResponse(params: {
               model = remoteSetup.model;
               tools = remoteSetup.tools;
               systemPrompt = remoteSetup.systemPrompt;
+              provider = remoteSetup.provider; // 'google' or 'vertex'
             }
           } catch (setupError) {
             // Setup failed - write error to stream and exit
             log.error('❌ Model setup failed:', {
               error: setupError,
               mode: effectiveMode,
+              provider,
               message: setupError instanceof Error ? setupError.message : String(setupError)
             });
 
-            // Parse and format error
+            // Parse and format error with provider context
             const enhancedError = setupError instanceof APIError || setupError instanceof NetworkError
               ? setupError
-              : parseGeminiError(setupError);
+              : parseProviderError(setupError, provider);
 
             // Write detailed error to stream
             writeErrorToStream(writer, enhancedError, 'Model setup');
@@ -318,10 +322,11 @@ export async function streamAIResponse(params: {
                 });
 
                 try {
-                  // Parse error into our error types
-                  const enhancedError = parseGeminiError(error);
+                  // Parse error into our error types with provider context
+                  const enhancedError = parseProviderError(error, provider);
 
                   log.info('✅ Error parsed successfully', {
+                    provider,
                     enhancedErrorCode: enhancedError.errorCode,
                     enhancedMessage: enhancedError.message,
                     enhancedUserMessage: enhancedError.userMessage
@@ -420,12 +425,12 @@ export async function streamAIResponse(params: {
             })
           );
         } catch (error) {
-          log.error('Stream execution error', error);
+          log.error('Stream execution error', { error, provider });
 
-          // Parse and format error
+          // Parse and format error with provider context
           const enhancedError = error instanceof APIError || error instanceof NetworkError
             ? error
-            : parseGeminiError(error);
+            : parseProviderError(error, provider);
 
           // Write detailed error to stream
           writeErrorToStream(writer, enhancedError, 'Stream execution');
@@ -453,12 +458,12 @@ export async function streamAIResponse(params: {
     log.info(' UI message stream created successfully, returning to caller');
     return stream;
   } catch (error) {
-    log.error(' Error creating stream', error);
+    log.error(' Error creating stream', { error, provider });
 
-    // Parse error
+    // Parse error with provider context
     const enhancedError = error instanceof APIError || error instanceof NetworkError
       ? error
-      : parseGeminiError(error);
+      : parseProviderError(error, provider);
 
     // Call onError callback if provided
     onError?.(enhancedError);

@@ -9,7 +9,8 @@ const buildDirs = [
 
 const filesToCopy = [
     'public/offscreen.html',
-    'public/offscreen.js'
+    'public/offscreen.js',
+    'public/sweep1.mp3'
 ];
 
 let copiedCount = 0;
@@ -19,7 +20,7 @@ buildDirs.forEach(buildDir => {
         filesToCopy.forEach(file => {
             const fileName = path.basename(file);
             const dest = path.join(buildDir, fileName);
-            
+
             if (fs.existsSync(file)) {
                 fs.copyFileSync(file, dest);
                 console.log(`✓ Copied ${fileName} to ${buildDir}`);

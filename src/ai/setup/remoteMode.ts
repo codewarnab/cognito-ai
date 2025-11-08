@@ -1,15 +1,16 @@
 /**
  * Remote Mode Setup
- * Handles Gemini API model initialization and tool configuration
+ * Handles remote AI model initialization and tool configuration
+ * Supports both Google Generative AI and Vertex AI providers
  */
 
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createLogger } from '../../logger';
 import { getAllTools } from '../tools/registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { youtubeAgentAsTool } from '../agents/youtube';
-import { validateAndGetApiKey } from '../../utils/geminiApiKey';
+import { initializeModel } from '../core/modelFactory';
 import type { WorkflowDefinition } from '../../workflows/types';
+import type { AIProvider } from '../../utils/providerTypes';
 
 const log = createLogger('AI-RemoteMode');
 
@@ -17,6 +18,7 @@ export interface RemoteModeSetup {
     model: any;
     tools: Record<string, any>;
     systemPrompt: string;
+    provider: AIProvider;
 }
 
 /**
@@ -25,54 +27,31 @@ export interface RemoteModeSetup {
 const WORKFLOW_ONLY_TOOLS = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
 
 /**
- * Setup remote mode (Gemini API) with tools
+ * Setup remote mode with tools
+ * Supports both Google Generative AI and Vertex AI providers
  * 
- * @param modelName - Gemini model name (e.g., 'gemini-2.5-flash')
+ * @param modelName - Model name (e.g., 'gemini-2.5-flash', 'gemini-2.5-pro')
  * @param workflowConfig - Optional workflow configuration
  * @param remoteSystemPrompt - Base system prompt for remote mode
- * @returns Remote mode setup with model, tools, and system prompt
+ * @returns Remote mode setup with model, tools, system prompt, and provider
  */
 export async function setupRemoteMode(
     modelName: string,
     workflowConfig: WorkflowDefinition | null,
     remoteSystemPrompt: string,
 ): Promise<RemoteModeSetup> {
-    log.info('🔧 Using REMOTE model:', modelName);
+    log.info('🔧 Setting up REMOTE mode with model:', modelName);
 
-    // Validate and get API key (throws APIError if invalid)
-    const apiKey = await validateAndGetApiKey();
+    // Initialize model using model factory (handles both Google and Vertex)
+    const modelInit = await initializeModel(modelName, 'remote');
+    const { model, provider } = modelInit;
 
-    // Custom fetch to remove referrer header (fixes 403 errors in Chrome extensions)
-    const customFetch = async (url: RequestInfo | URL, init?: RequestInit) => {
-        const newInit = { ...init };
-        if (newInit.headers) {
-            delete (newInit.headers as any).Referer;
-        }
+    // Type assertion: remote mode will never return 'local' provider
+    if (provider === 'local') {
+        throw new Error('Remote mode should not return local provider');
+    }
 
-        const response = await fetch(url, newInit);
-
-        // Handle error responses to provide better error messages
-        if (!response.ok && (response.status === 403 || response.status === 401)) {
-            // Clone the response to read the body without consuming it
-            const clonedResponse = response.clone();
-            try {
-                const errorText = await clonedResponse.text();
-                log.error('API authentication error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorText: errorText.substring(0, 500) // Log first 500 chars
-                });
-            } catch (e) {
-                log.error('Failed to read error response:', e);
-            }
-        }
-
-        return response;
-    };
-
-    // Initialize model
-    const google = createGoogleGenerativeAI({ apiKey, fetch: customFetch });
-    const model = google(modelName);
+    log.info('✅ Model initialized:', { provider, modelName });
 
     // Get all registered tools (Chrome extension tools)
     const allExtensionTools = getAllTools();
@@ -150,5 +129,6 @@ export async function setupRemoteMode(
         model,
         tools,
         systemPrompt,
+        provider,
     };
 }
