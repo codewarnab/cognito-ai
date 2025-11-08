@@ -8,6 +8,7 @@ import { getToolsForMode } from './registry';
 import { getAllTools } from './registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { youtubeAgentAsTool } from '../agents/youtube';
+import { pdfAgentAsTool } from '../agents/pdf';
 import type { WorkflowDefinition } from '../../workflows/types';
 
 const log = createLogger('AI-ToolManager');
@@ -123,6 +124,7 @@ export async function setupRemoteTools(
   // Add agent tools (not in workflow mode unless allowed)
   const agentTools = workflowConfig ? {} : {
     analyzeYouTubeVideo: youtubeAgentAsTool,
+    analyzePdfDocument: pdfAgentAsTool,
   };
   log.info('🔧 Agent tools loaded:', {
     count: Object.keys(agentTools).length,

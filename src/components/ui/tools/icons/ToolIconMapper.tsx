@@ -24,6 +24,7 @@ import { DeleteIcon } from '../../../../../assets/chat/delete-memory';
 import { WaypointsIcon } from '../../../../../assets/chat/suggest-memery';
 import { HistoryIcon } from '../../../../../assets/chat/history';
 import { YoutubeIcon } from '../../../../../assets/chat/youtube';
+import { PdfIcon } from '../../../../../assets/chat/pdf';
 import { CircleCheckIcon } from '../../../../../assets/chat/circle-check';
 import { PlusIcon } from '../../../../../assets/chat/new-tab';
 import { ClockIcon } from '../../../../../assets/chat/wait-for';
@@ -111,6 +112,10 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     getYoutubeTranscript: YoutubeIcon,
     youtubeAgentAsTool: YoutubeIcon,
     analyzeYouTubeVideo: YoutubeIcon,  // YouTube agent tool
+
+    // PDF tools
+    analyzePdfDocument: PdfIcon,
+    pdfAgentAsTool: PdfIcon,
 
     // Reminder tools
     createReminder: CircleCheckIcon,
