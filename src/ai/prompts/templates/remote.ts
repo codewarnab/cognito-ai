@@ -230,15 +230,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "    * Tasks with specific timing ('need to do X by Y')",
                 "    * Follow-ups ('check back in a week')",
                 "  - Use 'listReminders' to show active upcoming reminders",
-                "  - Use 'cancelReminder' to remove a reminder by title or ID",
+                "  - Use 'cancelReminder' to remove a reminder by ID",
                 "  - Example suggestions: 'Would you like me to set a reminder to apply for this job tomorrow at 9 AM?'",
-
-                "PDF DOCUMENT UNDERSTANDING:",
-                "  - When a PDF is attached, you can access full document content (text, images, tables, charts up to 1000 pages)",
-                "  - PDF is automatically included in messages via Google's File API",
-                "  - CAPABILITIES: Summarize documents, answer questions, extract data (dates, names, lists), analyze diagrams",
-                "  - BEST PRACTICES: Cite sections/pages, use requested format (JSON, table, list), explain visuals clearly",
-                "  - PDF context persists - you don't need to re-read it. User references like 'this PDF' or 'the document' mean the attached PDF",
 
                 "MEMORY SYSTEM - SAVE & RECALL:",
                 "  - I have a memory system to remember facts and behavioral preferences across sessions",

@@ -18,7 +18,7 @@ import { ContextWarning } from "./components/features/chat/context/ContextWarnin
 import { ErrorToast } from "./components/shared/notifications";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 import { WindowVisibilityProvider } from "./contexts/WindowVisibilityContext";
-import { DocumentProvider, useDocument } from "./contexts/documentContext";
+import { DocumentProvider } from "./contexts/documentContext";
 import { initializeNotificationSound } from "./utils/soundNotification";
 
 // Styles
@@ -109,9 +109,6 @@ function AIChatContent() {
         audioLinesIconRef,
         handleRecordingChange,
     } = useVoiceRecording();
-
-    // PDF document context
-    const { currentPdf } = useDocument();
 
     // Initialize state for thread management
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -271,7 +268,6 @@ function AIChatContent() {
         currentThreadId,
         isLoading,
         sendMessage,
-        currentPdf,
     });
 
     // Wrapper for handleSendMessage to work with input state

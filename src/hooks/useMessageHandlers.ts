@@ -14,7 +14,6 @@ interface UseMessageHandlersProps {
     currentThreadId: string | null;
     isLoading: boolean;
     sendMessage: (message: any) => void;
-    currentPdf?: { url: string; base64Data: string } | null;
 }
 
 /**
@@ -25,7 +24,6 @@ export function useMessageHandlers({
     currentThreadId,
     isLoading,
     sendMessage,
-    currentPdf,
 }: UseMessageHandlersProps) {
 
     const handleSendMessage = useCallback(async (
@@ -144,20 +142,6 @@ export function useMessageHandlers({
                         });
                     }
 
-                    // Add PDF context if available (as inline data, like file attachments)
-                    if (currentPdf?.base64Data) {
-                        log.info("Adding PDF context to message with attachments", {
-                            pdfUrl: currentPdf.url,
-                            pdfSizeMB: (currentPdf.base64Data.length * 0.75 / 1024 / 1024).toFixed(2)
-                        });
-
-                        messageParts.push({
-                            type: 'file',
-                            mediaType: 'application/pdf',
-                            url: `data:application/pdf;base64,${currentPdf.base64Data}`,
-                        });
-                    }
-
                     sendMessage({
                         role: 'user',
                         parts: messageParts
@@ -171,47 +155,8 @@ export function useMessageHandlers({
             }
         }
 
-        // Check if we need to include PDF context in a simple text message
-        if (currentPdf?.base64Data) {
-            log.info("🔴 ADDING PDF CONTEXT TO MESSAGE!", {
-                pdfUrl: currentPdf.url,
-                pdfSizeMB: (currentPdf.base64Data.length * 0.75 / 1024 / 1024).toFixed(2),
-                hasBase64: !!currentPdf.base64Data
-            });
-
-            const messageParts: any[] = [
-                {
-                    type: 'text',
-                    text: finalMessage
-                },
-                {
-                    type: 'file',
-                    mediaType: 'application/pdf',
-                    url: `data:application/pdf;base64,${currentPdf.base64Data}`,
-                }
-            ];
-
-            log.info("🔴 MESSAGE PARTS BEING SENT:", JSON.stringify(messageParts.map(p => ({
-                type: p.type,
-                mediaType: p.mediaType,
-                urlLength: p.url?.length
-            })), null, 2));
-
-            sendMessage({
-                role: 'user',
-                parts: messageParts
-            });
-
-            return;
-        }
-
-        log.info("⚠️ NO PDF CONTEXT - sending plain text message", {
-            hasCurrentPdf: !!currentPdf,
-            currentPdfValue: currentPdf
-        });
-
         sendMessage({ text: finalMessage });
-    }, [messages.length, currentThreadId, isLoading, sendMessage, currentPdf]);
+    }, [messages.length, currentThreadId, isLoading, sendMessage]);
 
     return { handleSendMessage };
 }
