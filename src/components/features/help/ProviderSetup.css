@@ -186,6 +186,16 @@
     background: rgba(74, 111, 165, 0.05);
 }
 
+.provider-setup-option-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.provider-setup-option-disabled:hover {
+    background: transparent;
+}
+
 .provider-setup-option input[type="radio"] {
     margin-top: 0.25rem;
     margin-right: 0.75rem;

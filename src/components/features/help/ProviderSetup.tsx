@@ -296,15 +296,18 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                             </label>
 
                             {/* Vertex AI Option */}
-                            <label className={`provider-setup-option ${provider === 'vertex' ? 'provider-setup-option-selected' : ''}`}>
+                            <label className={`provider-setup-option ${provider === 'vertex' ? 'provider-setup-option-selected' : ''} provider-setup-option-disabled`}>
                                 <input
                                     type="radio"
                                     value="vertex"
                                     checked={provider === 'vertex'}
                                     onChange={() => setProvider('vertex')}
+                                    disabled
                                 />
                                 <div className="provider-setup-option-content">
-                                    <div className="provider-setup-option-title">Google Vertex AI</div>
+                                    <div className="provider-setup-option-title">
+                                        Google Vertex AI <span style={{ color: '#888', fontWeight: 'normal', fontSize: '0.85em' }}>(Coming Soon)</span>
+                                    </div>
                                     <div className="provider-setup-option-description">
                                         Use service account credentials from Google Cloud
                                     </div>
