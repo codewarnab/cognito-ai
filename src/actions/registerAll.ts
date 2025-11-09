@@ -5,6 +5,7 @@ import { registerHistoryActions } from "./history";
 import { registerReminderActions } from "./reminder";
 import { registerMemoryActions } from "./memory";
 import { registerReportActions } from "./reports";
+import { useScreenshotTool } from "./screenshot";
 
 export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
@@ -16,4 +17,5 @@ export function useRegisterAllActions() {
   registerReminderActions();
   registerMemoryActions();
   registerReportActions(); // Always register, but will be filtered in aiLogic.ts
+  useScreenshotTool(); // Screenshot capture tool
 }

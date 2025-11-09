@@ -127,14 +127,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             return;
         }
 
-        // Prevent default paste behavior when pasting files
-        e.preventDefault();
-
-        // Check if in local mode and show toast
+        // Check if in local mode and show toast (before preventing default)
         if (modelState.mode === 'local') {
+            e.preventDefault();
             onError?.('File attachments are not supported in Local mode. Please switch to Cloud mode to attach files.', 'warning');
             return;
         }
+
+        // Prevent default paste behavior when pasting files in cloud mode
+        e.preventDefault();
 
         const files = Array.from(e.clipboardData.files);
         await processFiles(files);
@@ -326,7 +327,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         return () => {
             composerElement.removeEventListener('paste', handlePaste as any);
         };
-    }, []);
+    }, [modelState.mode, onError]);
 
     const handleSuggestionClick = (action: string) => {
         setInput(action);
