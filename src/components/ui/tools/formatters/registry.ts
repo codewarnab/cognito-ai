@@ -61,6 +61,7 @@ import {
     generatePDFFormatter,
     generateMarkdownFormatter
 } from './formatters/reports';
+import { takeScreenshotFormatter } from './formatters/screenshot';
 
 export const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -84,6 +85,10 @@ export const formatters: Record<string, ActionFormatter> = {
     extractText: extractTextFormatter,
     scrollIntoView: scrollIntoViewFormatter,
     findSearchBar: findSearchBarFormatter,
+
+    // Screenshot
+    takeScreenshot: takeScreenshotFormatter,
+    screenshot: takeScreenshotFormatter,
 
     // Interactions
     clickElement: clickElementFormatter,

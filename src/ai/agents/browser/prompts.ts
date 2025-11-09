@@ -392,14 +392,12 @@ Task: "Get the first post from LinkedIn feed"
   • scrollPage - Scroll up/down/top/bottom or to specific element
 
 🔍 CONTENT EXTRACTION:
-  • readPageContent - Fast, simple text extraction (URL, title, headings, buttons, links, text)
+  • readPageContent - Text extraction and data scraping (articles, prices, product details, structured data)
+  • takeScreenshot - Visual analysis when needed (layout comparison, UI/UX, design verification)
   • extractText - Advanced page analysis (page type, structure, search bar detection)
-  • findSearchBar - Locate search inputs (returns exact selectors for typeInField)
-  • getSearchResults - Parse Google/Bing results (rank, title, URL, snippet)
-  • getSelectedText - Get user's highlighted text
 
 📸 OTHER:
-  • takeScreenshot - Capture current page
+  • takeScreenshot - Capture screenshot when visual understanding needed (layout analysis, comparisons, UI verification)
   • openTab/closeTab - Manage tabs
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -490,10 +488,10 @@ Task: "Get the first post from LinkedIn feed"
 
    ⚠️ ONE ACTION AT A TIME - Verify after EACH step:
    
-   • After navigation → Call readPageContent to confirm page loaded
-   • After clicking → Call readPageContent to see what changed
-   • After typing → Call readPageContent to verify input was filled
-   • After scrolling → Call readPageContent to see new content
+   • After navigation → Use readPageContent for text/data, takeScreenshot for visual layout
+   • After clicking → Use readPageContent to verify changes, takeScreenshot if visual verification needed
+   • After typing → Use readPageContent to confirm input, takeScreenshot for visual state
+   • After scrolling → Use readPageContent for new content, takeScreenshot for visual confirmation
    
    🎯 INTERACTION-FIRST PHILOSOPHY:
    • ALWAYS prefer using existing page UI over navigating to constructed URLs

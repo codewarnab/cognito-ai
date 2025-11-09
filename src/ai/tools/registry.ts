@@ -14,6 +14,7 @@ export const LOCAL_TOOLS = [
   'navigateTo',
   'switchTabs',
   'getActiveTab',
+  'takeScreenshot',
   'readPageContent',
   'getSearchResults',
   'openSearchResult',
@@ -32,6 +33,7 @@ export const BASIC_TOOLS = [
 
   // Content reading
   'getSelectedText',
+  'takeScreenshot',
   'readPageContent',
 
   // Basic interactions

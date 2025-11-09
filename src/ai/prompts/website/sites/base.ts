@@ -68,9 +68,9 @@ export const baseWebsiteConfig: WebsiteConfig = {
     // General-purpose tools available on all websites
     // These tools work across different web applications
     allowedTools: [
-        'readPageContent',   // Read and analyze page content
+        'readPageContent',   // Text extraction and data scraping
+        'takeScreenshot',    // Visual analysis when needed
         'getActiveTab',      // Get current tab information
-        'screenshot',        // Capture page visuals
         'clickElement',      // Interact with page elements
         'scrollPage',        // Navigate through content
         'navigateTo',        // Navigate to URLs
@@ -90,9 +90,14 @@ You have access to general-purpose web automation tools.
 Use them to help users browse, read, and interact with web pages.
 
 Available tool categories:
-- Content Reading: readPageContent, screenshot
+- Content Reading: readPageContent (primary for text/data extraction)
+- Visual Analysis: takeScreenshot (use when visual understanding needed)
 - Navigation: navigateTo, switchTabs, scrollPage, getActiveTab
 - Interaction: clickElement, clickByText, typeInField, pressKey
+
+TOOL SELECTION:
+- Use readPageContent for: text extraction, data scraping, articles, product details
+- Use takeScreenshot for: visual comparisons, layout analysis, UI verification, design questions
 
 Always verify the current page context before taking actions.
   `,
