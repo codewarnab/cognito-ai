@@ -52,8 +52,10 @@ export const MicrophoneHelpPopover: React.FC<MicrophoneHelpPopoverProps> = ({
 
             <PopoverContent
                 align="end"
-                side="top"
+                side="bottom"
                 sideOffset={10}
+                avoidCollisions={true}
+                collisionPadding={20}
                 style={{
                     width: '380px',
                     background: 'rgba(15, 20, 35, 0.98)',
@@ -63,6 +65,9 @@ export const MicrophoneHelpPopover: React.FC<MicrophoneHelpPopoverProps> = ({
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(59, 130, 246, 0.2)',
                     backdropFilter: 'blur(20px)',
                     color: 'white',
+                    zIndex: 9999,
+                    maxHeight: 'calc(100vh - 100px)',
+                    overflowY: 'auto',
                 }}
             >
                 <div style={{
