@@ -251,10 +251,49 @@ export function useScreenshotTool() {
             },
         });
 
-        // Register UI renderer
-        registerToolUI('takeScreenshot', (state: ToolUIState) => {
-            return CompactToolRenderer({ state });
-        });
+        // Register UI renderer with custom renderers
+        registerToolUI(
+            'takeScreenshot',
+            (state: ToolUIState) => {
+                return CompactToolRenderer({ state });
+            },
+            {
+                renderInput: () => null, // Hide input section
+                renderOutput: (output: any) => {
+                    if (!output?.screenshot) {
+                        return null;
+                    }
+
+                    return (
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            width: '100%'
+                        }}>
+                            {output.reason && (
+                                <div style={{
+                                    fontSize: '11px',
+                                    color: '#888',
+                                    fontStyle: 'italic'
+                                }}>
+                                    {output.reason}
+                                </div>
+                            )}
+                            <img
+                                src={output.screenshot}
+                                alt={output.title || 'Screenshot'}
+                                style={{
+                                    maxWidth: '100%',
+                                    borderRadius: '6px',
+                                    border: '1px solid #e5e5e5'
+                                }}
+                            />
+                        </div>
+                    );
+                }
+            }
+        );
 
         log.info('✅ takeScreenshot tool registered');
 
