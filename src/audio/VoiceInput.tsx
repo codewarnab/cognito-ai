@@ -192,7 +192,7 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
               onClick={handleOpenSettings}
               title="Open microphone settings help"
             >
-              Settings Help
+               Help
             </button>
           )}
         </div>

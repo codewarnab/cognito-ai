@@ -98,16 +98,19 @@ export function openMicrophoneSettings() {
   // In Chrome extensions, we can't directly open settings
   // But we can provide instructions to the user
   const instructions = `
-To enable microphone access:
+To enable microphone access for this extension:
 
-1. Click the lock icon (🔒) or site settings icon in the address bar
-2. Find "Microphone" in the permissions list
-3. Change it to "Allow"
-4. Refresh the page or restart the extension
+1. Click on the extension icon in your browser toolbar
+2. Right-click on the extension icon
+3. Select "View web permissions" or "Manage extension"
+4. In the permissions page, find "Microphone" 
+5. Make sure it's set to "Allow"
 
 Alternatively:
-- Go to chrome://settings/content/microphone
-- Make sure microphone access is allowed for this extension
+- Go to chrome://extensions
+- Find this extension and click "Details"
+- Scroll to "Site permissions" and ensure microphone access is allowed
+- Or go to chrome://settings/content/microphone and check extension permissions
   `.trim();
 
   log.info('Microphone settings instructions:', instructions);
@@ -126,16 +129,12 @@ export async function requestMicrophoneWithUI(): Promise<MicPermissionResult> {
     return { granted: true };
   }
 
-  if (status === 'denied') {
-    log.warn('Microphone permission was previously denied');
-    return {
-      granted: false,
-      error: 'Microphone access was previously denied. Please enable it in browser settings.',
-      errorType: 'not-allowed',
-    };
-  }
+  // Even if status is 'denied', we should still try to request permission
+  // The actual getUserMedia call will show the browser's permission prompt
+  // or return the appropriate error if truly denied
+  log.info('Requesting microphone permission...', { currentStatus: status });
 
-  // Request permission
+  // Request permission - this will show the browser prompt
   return requestMicrophonePermission();
 }
 

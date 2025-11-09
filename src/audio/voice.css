@@ -416,12 +416,15 @@
   border-radius: 8px;
   animation: shake 0.5s ease-in-out;
   position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
+  bottom: 100%;
+  left: 0;
+  transform: translateX(-250);
+  margin-bottom: 8px;
   white-space: nowrap;
-  z-index: 1000;
+  z-index: 10000;
+  min-width: 350px;
+  max-width: 450px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .voice-error-icon {
@@ -433,6 +436,8 @@
   color: #fca5a5;
   font-weight: 500;
   flex: 1;
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 .voice-settings-button {
