@@ -1,7 +1,7 @@
 /**
  * Enhanced Smart Click Tool - Click Anything by Text
  * Searches entire page for text (including shadow DOM and iframes), fuzzy matching,
- * visual highlighting, and realistic mouse event simulation
+ * visual highlighting with ClickSpark animation, and realistic mouse event simulation
  */
 
 import { useEffect } from "react";
@@ -248,41 +248,140 @@ export function useClickByTextTool() {
                             }
 
                             /**
-                             * Highlight element with Zoom Focus (Option C)
+                             * Highlight element with ClickSpark Animation + Fallback
                              */
                             function highlightElement(element: Element): Promise<void> {
                                 return new Promise((resolve) => {
                                     try {
-                                        const css = `
-                                            @keyframes ai-zoom-focus {
-                                                0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
-                                                50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.7); }
-                                                100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
-                                            }
-                                            .ai-zoom-focus { animation: ai-zoom-focus 300ms ease-in-out !important; position: relative !important; z-index: 999998 !important; }
-                                            body.ai-page-dim::before {
-                                                content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                                                background: rgba(0, 0, 0, 0.5); z-index: 999997; pointer-events: none;
-                                                animation: ai-dim-fade 300ms ease-in-out;
-                                            }
-                                            @keyframes ai-dim-fade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
-                                        `;
-                                        const style = document.createElement('style');
-                                        style.id = 'ai-zoom-focus-style';
-                                        style.textContent = css;
-                                        document.head.appendChild(style);
+                                        const rect = element.getBoundingClientRect();
+                                        const x = rect.left + rect.width / 2;
+                                        const y = rect.top + rect.height / 2;
 
-                                        document.body.classList.add('ai-page-dim');
-                                        (element as HTMLElement).classList.add('ai-zoom-focus');
+                                        // Try ClickSpark animation
+                                        try {
+                                            let canvas = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement | null;
 
-                                        setTimeout(() => {
-                                            try {
-                                                document.body.classList.remove('ai-page-dim');
-                                                (element as HTMLElement).classList.remove('ai-zoom-focus');
-                                                document.getElementById('ai-zoom-focus-style')?.remove();
-                                            } catch (e) { }
-                                            resolve();
-                                        }, 300);
+                                            if (!canvas) {
+                                                canvas = document.createElement('canvas');
+                                                canvas.id = 'ai-click-spark-canvas';
+                                                canvas.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 2147483647;';
+                                                canvas.width = window.innerWidth;
+                                                canvas.height = window.innerHeight;
+                                                document.body.appendChild(canvas);
+
+                                                window.addEventListener('resize', () => {
+                                                    if (canvas) {
+                                                        canvas.width = window.innerWidth;
+                                                        canvas.height = window.innerHeight;
+                                                    }
+                                                });
+                                            }
+
+                                            const ctx = canvas.getContext('2d');
+                                            if (!ctx) throw new Error('No canvas context');
+
+                                            const config = {
+                                                sparkColor: '#FFD700',
+                                                sparkSize: 10,
+                                                sparkRadius: 15,
+                                                sparkCount: 8,
+                                                duration: 400
+                                            };
+
+                                            const ease = (t: number) => t * (2 - t); // ease-out
+
+                                            const now = performance.now();
+                                            const sparks = Array.from({ length: config.sparkCount }, (_, i) => ({
+                                                x: x,
+                                                y: y,
+                                                angle: (2 * Math.PI * i) / config.sparkCount,
+                                                startTime: now
+                                            }));
+
+                                            function animate(timestamp: number): void {
+                                                if (!ctx || !canvas) {
+                                                    resolve();
+                                                    return;
+                                                }
+
+                                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                                                let activeSparks = 0;
+
+                                                for (const spark of sparks) {
+                                                    const elapsed = timestamp - spark.startTime;
+                                                    if (elapsed >= config.duration) continue;
+
+                                                    activeSparks++;
+
+                                                    const progress = elapsed / config.duration;
+                                                    const eased = ease(progress);
+
+                                                    const distance = eased * config.sparkRadius;
+                                                    const lineLength = config.sparkSize * (1 - eased);
+
+                                                    const x1 = spark.x + distance * Math.cos(spark.angle);
+                                                    const y1 = spark.y + distance * Math.sin(spark.angle);
+                                                    const x2 = spark.x + (distance + lineLength) * Math.cos(spark.angle);
+                                                    const y2 = spark.y + (distance + lineLength) * Math.sin(spark.angle);
+
+                                                    const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                                                    gradient.addColorStop(0, config.sparkColor);
+                                                    gradient.addColorStop(1, config.sparkColor + '00');
+
+                                                    ctx.strokeStyle = gradient;
+                                                    ctx.lineWidth = 2;
+                                                    ctx.lineCap = 'round';
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(x1, y1);
+                                                    ctx.lineTo(x2, y2);
+                                                    ctx.stroke();
+                                                }
+
+                                                if (activeSparks > 0) {
+                                                    requestAnimationFrame(animate);
+                                                } else {
+                                                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                                    resolve();
+                                                }
+                                            }
+
+                                            requestAnimationFrame(animate);
+                                        } catch (error) {
+                                            console.warn('[ClickAnimation] ClickSpark failed, using zoom focus fallback:', error);
+
+                                            // Fallback: Zoom Focus animation
+                                            const css = `
+                                                @keyframes ai-zoom-focus {
+                                                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+                                                    50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.7); }
+                                                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+                                                }
+                                                .ai-zoom-focus { animation: ai-zoom-focus 300ms ease-in-out !important; position: relative !important; z-index: 999998 !important; }
+                                                body.ai-page-dim::before {
+                                                    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                                                    background: rgba(0, 0, 0, 0.5); z-index: 999997; pointer-events: none;
+                                                    animation: ai-dim-fade 300ms ease-in-out;
+                                                }
+                                                @keyframes ai-dim-fade { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+                                            `;
+                                            const style = document.createElement('style');
+                                            style.id = 'ai-zoom-focus-style';
+                                            style.textContent = css;
+                                            document.head.appendChild(style);
+
+                                            document.body.classList.add('ai-page-dim');
+                                            (element as HTMLElement).classList.add('ai-zoom-focus');
+
+                                            setTimeout(() => {
+                                                try {
+                                                    document.body.classList.remove('ai-page-dim');
+                                                    (element as HTMLElement).classList.remove('ai-zoom-focus');
+                                                    document.getElementById('ai-zoom-focus-style')?.remove();
+                                                } catch (e) { }
+                                                resolve();
+                                            }, 300);
+                                        }
                                     } catch (e) {
                                         resolve();
                                     }

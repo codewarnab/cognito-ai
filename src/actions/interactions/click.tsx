@@ -27,39 +27,133 @@ export function useClickElementTool() {
                         target: { tabId: tab.id },
                         args: [selector],
                         func: (sel: string) => {
-                            // Animation: Ripple Click (Option A)
-                            async function showRippleClick(x: number, y: number): Promise<void> {
+                            // Click Animation with ClickSpark + Ripple Fallback
+                            async function showClickAnimation(x: number, y: number): Promise<void> {
                                 try {
-                                    const css = `
-                                        @keyframes ai-ripple-click {
-                                            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-                                            100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
-                                        }
-                                        .ai-ripple-click {
-                                            position: fixed; width: 50px; height: 50px; border-radius: 50%;
-                                            background: rgba(255, 215, 0, 0.6); border: 2px solid #FFD700;
-                                            pointer-events: none; z-index: 999999;
-                                            animation: ai-ripple-click 300ms ease-out forwards;
-                                        }
-                                    `;
-                                    const style = document.createElement('style');
-                                    style.id = 'ai-ripple-click-style';
-                                    style.textContent = css;
-                                    document.head.appendChild(style);
+                                    // Try ClickSpark animation
+                                    let canvas = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement | null;
 
-                                    const ripple = document.createElement('div');
-                                    ripple.className = 'ai-ripple-click';
-                                    ripple.style.left = `${x}px`;
-                                    ripple.style.top = `${y}px`;
-                                    document.body.appendChild(ripple);
+                                    if (!canvas) {
+                                        canvas = document.createElement('canvas');
+                                        canvas.id = 'ai-click-spark-canvas';
+                                        canvas.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 2147483647;';
+                                        canvas.width = window.innerWidth;
+                                        canvas.height = window.innerHeight;
+                                        document.body.appendChild(canvas);
 
-                                    setTimeout(() => {
-                                        try {
-                                            ripple.remove();
-                                            document.getElementById('ai-ripple-click-style')?.remove();
-                                        } catch (e) { }
-                                    }, 300);
-                                } catch (e) { }
+                                        window.addEventListener('resize', () => {
+                                            if (canvas) {
+                                                canvas.width = window.innerWidth;
+                                                canvas.height = window.innerHeight;
+                                            }
+                                        });
+                                    }
+
+                                    const ctx = canvas.getContext('2d');
+                                    if (!ctx) throw new Error('No canvas context');
+
+                                    const config = {
+                                        sparkColor: '#FFD700',
+                                        sparkSize: 10,
+                                        sparkRadius: 15,
+                                        sparkCount: 8,
+                                        duration: 400
+                                    };
+
+                                    const ease = (t: number) => t * (2 - t); // ease-out
+
+                                    const now = performance.now();
+                                    const sparks = Array.from({ length: config.sparkCount }, (_, i) => ({
+                                        x: x,
+                                        y: y,
+                                        angle: (2 * Math.PI * i) / config.sparkCount,
+                                        startTime: now
+                                    }));
+
+                                    function animate(timestamp: number): void {
+                                        if (!ctx || !canvas) return;
+
+                                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                                        let activeSparks = 0;
+
+                                        for (const spark of sparks) {
+                                            const elapsed = timestamp - spark.startTime;
+                                            if (elapsed >= config.duration) continue;
+
+                                            activeSparks++;
+
+                                            const progress = elapsed / config.duration;
+                                            const eased = ease(progress);
+
+                                            const distance = eased * config.sparkRadius;
+                                            const lineLength = config.sparkSize * (1 - eased);
+
+                                            const x1 = spark.x + distance * Math.cos(spark.angle);
+                                            const y1 = spark.y + distance * Math.sin(spark.angle);
+                                            const x2 = spark.x + (distance + lineLength) * Math.cos(spark.angle);
+                                            const y2 = spark.y + (distance + lineLength) * Math.sin(spark.angle);
+
+                                            const gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                                            gradient.addColorStop(0, config.sparkColor);
+                                            gradient.addColorStop(1, config.sparkColor + '00');
+
+                                            ctx.strokeStyle = gradient;
+                                            ctx.lineWidth = 2;
+                                            ctx.lineCap = 'round';
+                                            ctx.beginPath();
+                                            ctx.moveTo(x1, y1);
+                                            ctx.lineTo(x2, y2);
+                                            ctx.stroke();
+                                        }
+
+                                        if (activeSparks > 0) {
+                                            requestAnimationFrame(animate);
+                                        } else {
+                                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                        }
+                                    }
+
+                                    requestAnimationFrame(animate);
+                                } catch (error) {
+                                    console.warn('[ClickAnimation] ClickSpark failed, using ripple fallback:', error);
+
+                                    // Fallback: Ripple animation
+                                    try {
+                                        const css = `
+                                            @keyframes ai-ripple-click {
+                                                0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+                                                100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+                                            }
+                                            .ai-ripple-click {
+                                                position: fixed; width: 50px; height: 50px; border-radius: 50%;
+                                                background: rgba(255, 215, 0, 0.6); border: 2px solid #FFD700;
+                                                pointer-events: none; z-index: 999999;
+                                                animation: ai-ripple-click 300ms ease-out forwards;
+                                            }
+                                        `;
+
+                                        let style = document.getElementById('ai-ripple-click-style') as HTMLStyleElement | null;
+                                        if (!style) {
+                                            style = document.createElement('style');
+                                            style.id = 'ai-ripple-click-style';
+                                            style.textContent = css;
+                                            document.head.appendChild(style);
+                                        }
+
+                                        const ripple = document.createElement('div');
+                                        ripple.className = 'ai-ripple-click';
+                                        ripple.style.left = x + 'px';
+                                        ripple.style.top = y + 'px';
+                                        document.body.appendChild(ripple);
+
+                                        setTimeout(() => {
+                                            try { ripple.remove(); } catch (e) { }
+                                        }, 300);
+                                    } catch (e) {
+                                        console.error('[ClickAnimation] Ripple fallback also failed:', e);
+                                    }
+                                }
                             }
 
                             let element = document.querySelector(sel);
@@ -75,11 +169,11 @@ export function useClickElementTool() {
                             }
                             const elementInfo = { tagName: element.tagName, text: element.textContent?.trim().slice(0, 100), id: (element as HTMLElement).id, className: (element as HTMLElement).className, href: (element as HTMLAnchorElement).href };
 
-                            // Show ripple animation at element center
+                            // Show animation at element center
                             const rect = element.getBoundingClientRect();
                             const x = rect.left + rect.width / 2;
                             const y = rect.top + rect.height / 2;
-                            showRippleClick(x, y);
+                            showClickAnimation(x, y);
 
                             (element as HTMLElement).click();
                             return { success: true, clicked: elementInfo, message: `Successfully clicked ${element.tagName}${(element as HTMLElement).id ? '#' + (element as HTMLElement).id : ''}` };
