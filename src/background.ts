@@ -20,8 +20,6 @@ import {
     generateState,
     buildAuthUrl,
     exchangeCodeForTokens,
-    refreshAccessToken,
-    isTokenExpired,
     storeTokens,
     getStoredTokens,
     clearTokens,
@@ -34,8 +32,7 @@ import {
     validateTokenAudience,
     storeOAuthState,
     validateAndConsumeState,
-    cleanupExpiredStates,
-    type DynamicClientCredentials
+    cleanupExpiredStates
 } from './mcp/oauth';
 import {
     discoverOAuthEndpoints
@@ -52,15 +49,27 @@ import {
     validateRedirectUri
 } from './mcp/consentManager';
 import type {
-    McpOAuthTokens,
-    OAuthState,
     McpServerStatus,
     McpExtensionResponse,
     OAuthEndpoints,
     McpTool
 } from './mcp/types';
+import { getServerState, getServerConfig, serverStates } from './mcp/state';
+import { broadcastStatusUpdate } from './mcp/events';
+import { getDisabledTools, setDisabledTools } from './mcp/toolsConfig';
+import {
+    scheduleTokenRefresh,
+    handleTokenRefreshAlarm,
+    ensureTokenValidity,
+    ensureValidToken,
+    refreshServerToken
+} from './mcp/authHelpers';
+import {
+    updateKeepAliveState
+} from './background/keepAlive';
+import { ensureOffscreenDocument } from './offscreen/ensure';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from './constants';
-import { MCP_SERVERS, type ServerConfig } from './constants/mcpServers';
+import { MCP_SERVERS } from './constants/mcpServers';
 import { MCPError, NetworkError, isFileAccessError } from './errors';
 import { buildUserMessage } from './errors/errorMessages';
 import {
@@ -99,259 +108,10 @@ function initializeOAuthRedirectURI(): void {
 // Initialize redirect URI immediately when service worker loads
 initializeOAuthRedirectURI();
 
-// ============================================================================
-// Service Worker Keep-Alive Management
-// ============================================================================
-
-/**
- * Chrome API keep-alive interval to prevent service worker termination
- * This exploit calls chrome.runtime.getPlatformInfo every 20 seconds
- * to keep the service worker running when MCP servers are enabled
- */
-let keepAliveInterval: number | null = null;
-
-/**
- * Start keep-alive when at least one MCP server is enabled
- */
-function startMCPKeepAlive(): void {
-    if (keepAliveInterval !== null) {
-        mcpLog.info('Keep-alive already running');
-        return;
-    }
-
-    mcpLog.info('Starting MCP keep-alive to prevent service worker termination');
-
-    // Call chrome.runtime.getPlatformInfo every 20 seconds
-    // This keeps service worker alive indefinitely (Chrome 110+ exploit)
-    keepAliveInterval = setInterval(() => {
-        chrome.runtime.getPlatformInfo(() => {
-            // No-op callback, just keeping worker alive
-        });
-    }, 20000) as unknown as number;
-
-    mcpLog.info('Keep-alive started successfully');
-}
-
-/**
- * Stop keep-alive when all MCP servers are disabled
- */
-function stopMCPKeepAlive(): void {
-    if (keepAliveInterval === null) {
-        return;
-    }
-
-    mcpLog.info('Stopping MCP keep-alive');
-    clearInterval(keepAliveInterval);
-    keepAliveInterval = null;
-    mcpLog.info('Keep-alive stopped');
-}
-
-/**
- * Check if any MCP server is currently enabled
- */
-function hasEnabledMCPServers(): boolean {
-    for (const [_serverId, state] of serverStates) {
-        if (state.isEnabled) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
- * Update keep-alive state based on enabled MCP servers
- */
-function updateKeepAliveState(): void {
-    const hasEnabled = hasEnabledMCPServers();
-
-    if (hasEnabled && keepAliveInterval === null) {
-        startMCPKeepAlive();
-    } else if (!hasEnabled && keepAliveInterval !== null) {
-        stopMCPKeepAlive();
-    }
-}
-
-// ============================================================================
-// Multi-Server MCP State
-// ============================================================================
-
-/**
- * State for each MCP server
- */
-interface ServerState {
-    client: McpSSEClient | null;
-    tokens: McpOAuthTokens | null;
-    credentials: DynamicClientCredentials | null;
-    status: McpServerStatus;
-    oauthEndpoints: OAuthEndpoints | null;
-    oauthState: OAuthState | null;
-    isEnabled: boolean;
-}
-
-/**
- * Map of server states by serverId
- */
-const serverStates = new Map<string, ServerState>();
-
-/**
- * Get or initialize server state
- */
-function getServerState(serverId: string): ServerState {
-    if (!serverStates.has(serverId)) {
-        serverStates.set(serverId, {
-            client: null,
-            tokens: null,
-            credentials: null,
-            status: { serverId, state: 'disconnected' },
-            oauthEndpoints: null,
-            oauthState: null,
-            isEnabled: false
-        });
-    }
-    return serverStates.get(serverId)!;
-}
-
-/**
- * Get server config by ID
- */
-function getServerConfig(serverId: string): ServerConfig | null {
-    return MCP_SERVERS.find(s => s.id === serverId) || null;
-}
 
 
-/**
- * Schedule automatic token refresh before expiration
- * Calculates when to refresh and sets a server-specific alarm
- */
-async function scheduleTokenRefresh(serverId: string, tokens: McpOAuthTokens): Promise<void> {
-    try {
-        const alarmName = `mcp-token-refresh-${serverId}`;
 
-        // Clear any existing refresh alarm for this server
-        await chrome.alarms.clear(alarmName);
-
-        // Calculate when to refresh (buffer time before expiration)
-        const refreshTime = tokens.expires_at - MCP_OAUTH_CONFIG.TOKEN_REFRESH_BUFFER;
-        const now = Date.now();
-
-        // Only schedule if the refresh time is in the future
-        if (refreshTime > now) {
-            authLog.info(`[${serverId}] Creating alarm "${alarmName}" for token refresh`, {
-                refreshTime,
-                refreshTimeISO: new Date(refreshTime).toISOString(),
-                now,
-                nowISO: new Date(now).toISOString(),
-                delayMs: refreshTime - now
-            });
-
-            await chrome.alarms.create(alarmName, {
-                when: refreshTime
-            });
-
-            authLog.info(`[${serverId}] Alarm "${alarmName}" created successfully`);
-
-            const expiresAt = new Date(tokens.expires_at).toISOString();
-            const refreshAt = new Date(refreshTime).toISOString();
-            authLog.info(`[${serverId}] Token refresh scheduled:`, {
-                alarmName,
-                expiresAt,
-                refreshAt,
-                delayMinutes: Math.ceil((refreshTime - now) / (1000 * 60))
-            });
-        } else {
-            authLog.warn(`[${serverId}] Token expires too soon for automatic refresh:`, {
-                expiresAt: new Date(tokens.expires_at).toISOString(),
-                now: new Date(now).toISOString()
-            });
-        }
-    } catch (error) {
-        authLog.error(`[${serverId}] Error scheduling token refresh:`, error);
-    }
-}
-
-/**
- * Handle automatic token refresh alarm for a specific server
- */
-async function handleTokenRefreshAlarm(serverId: string): Promise<void> {
-    authLog.info(`[${serverId}] Token refresh alarm fired`);
-
-    try {
-        const state = getServerState(serverId);
-
-        // Check if server is still enabled
-        if (!state.isEnabled) {
-            authLog.info(`[${serverId}] Server disabled, skipping token refresh`);
-            return;
-        }
-
-        // Attempt to refresh the token
-        const refreshed = await refreshServerToken(serverId);
-
-        if (refreshed && state.tokens) {
-            // Schedule the next refresh
-            await scheduleTokenRefresh(serverId, state.tokens);
-            mcpLog.info(`[${serverId}] Token refreshed successfully, next refresh scheduled`);
-        } else {
-            mcpLog.error(`[${serverId}] Token refresh failed during alarm, may require re-authentication`);
-            state.status = {
-                ...state.status,
-                state: 'needs-auth',
-                error: 'Automatic token refresh failed. Please re-authenticate.'
-            };
-            broadcastStatusUpdate(serverId, state.status);
-        }
-    } catch (error) {
-        mcpLog.error(`[${serverId}] Error in token refresh alarm:`, error);
-    }
-}
-
-/**
- * Ensure token is valid and schedule refresh if needed
- */
-async function ensureTokenValidity(serverId: string): Promise<boolean> {
-    try {
-        const state = getServerState(serverId);
-        const tokens = await getStoredTokens(serverId);
-
-        if (!tokens) {
-            mcpLog.info(`[${serverId}] No stored tokens found`);
-            return false;
-        }
-
-        mcpLog.info(`[${serverId}] Checking token validity:`, {
-            expiresAt: new Date(tokens.expires_at).toISOString(),
-            now: new Date().toISOString(),
-            isExpired: isTokenExpired(tokens)
-        });
-
-        // Check if token is expired or about to expire
-        if (isTokenExpired(tokens)) {
-            mcpLog.info(`[${serverId}] Token expired or expiring soon, attempting refresh`);
-
-            // Load tokens into memory
-            state.tokens = tokens;
-
-            // Try to refresh
-            const refreshed = await refreshServerToken(serverId);
-            if (refreshed && state.tokens) {
-                // Schedule next refresh
-                await scheduleTokenRefresh(serverId, state.tokens);
-                return true;
-            } else {
-                // Refresh failed, need re-auth
-                return false;
-            }
-        }
-
-        // Token is still valid, schedule next refresh
-        state.tokens = tokens;
-        await scheduleTokenRefresh(serverId, tokens);
-        return true;
-    } catch (error) {
-        mcpLog.error(`[${serverId}] Error in ensureTokenValidity:`, error);
-        return false;
-    }
-}
+// Token refresh helpers moved to src/mcp/authHelpers.ts
 
 /**
  * Start OAuth flow for any MCP server with dynamic client registration and discovery
@@ -690,210 +450,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
     }
 }
 
-/**
- * Refresh access token for any MCP server with enhanced error handling
- * 
- * Error handling:
- * - Validates prerequisites (refresh token, credentials, endpoints)
- * - Handles network errors during refresh
- * - Falls back to endpoint re-discovery if needed
- * - Updates scope information after refresh
- * - Schedules next automatic refresh
- */
-async function refreshServerToken(serverId: string): Promise<boolean> {
-    const state = getServerState(serverId);
-    const serverConfig = getServerConfig(serverId);
-
-    if (!state.tokens?.refresh_token) {
-        mcpLog.error(`[${serverId}] No refresh token available`);
-        const error = MCPError.authFailed(
-            serverId,
-            'No refresh token available. Re-authentication required.'
-        );
-        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-        broadcastStatusUpdate(serverId, state.status);
-        return false;
-    }
-
-    // Load client credentials if not in memory
-    if (!state.credentials) {
-        state.credentials = await getStoredClientCredentials(serverId);
-        mcpLog.info(`[${serverId}] Loaded client credentials for token refresh`);
-    }
-
-    if (!state.credentials) {
-        mcpLog.error(`[${serverId}] No client credentials available for token refresh`);
-        const error = MCPError.authFailed(
-            serverId,
-            'No client credentials found. Re-authentication required.'
-        );
-        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-        broadcastStatusUpdate(serverId, state.status);
-        return false;
-    }
-
-    // Load OAuth endpoints if not in memory
-    if (!state.oauthEndpoints) {
-        state.oauthEndpoints = await getStoredOAuthEndpoints(serverId);
-        if (state.oauthEndpoints) {
-            mcpLog.info(`[${serverId}] Loaded OAuth endpoints from storage for token refresh`);
-        }
-    }
-
-    // If still not available, try to re-discover them as a fallback
-    if (!state.oauthEndpoints) {
-        mcpLog.info(`[${serverId}] OAuth endpoints not found in memory or storage, attempting re-discovery...`);
-
-        if (serverConfig?.url) {
-            try {
-                const discoveredEndpoints = await discoverOAuthEndpoints(serverConfig.url);
-
-                if (discoveredEndpoints) {
-                    mcpLog.info(`[${serverId}] Successfully re-discovered OAuth endpoints`);
-                    state.oauthEndpoints = discoveredEndpoints;
-
-                    // Persist the re-discovered endpoints for future use
-                    await storeOAuthEndpoints(serverId, discoveredEndpoints);
-                } else {
-                    mcpLog.error(`[${serverId}] OAuth endpoint re-discovery failed`);
-                }
-            } catch (discoveryError) {
-                mcpLog.error(`[${serverId}] Error during OAuth endpoint re-discovery:`, discoveryError);
-                const error = MCPError.authFailed(
-                    serverId,
-                    `Failed to discover OAuth endpoints: ${discoveryError instanceof Error ? discoveryError.message : 'Unknown error'}`
-                );
-                state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-                broadcastStatusUpdate(serverId, state.status);
-                return false;
-            }
-        }
-    }
-
-    // Final check: if still no endpoints, fail
-    if (!state.oauthEndpoints) {
-        mcpLog.error(`[${serverId}] No OAuth endpoints available after all attempts (memory, storage, and re-discovery)`);
-        const error = MCPError.authFailed(
-            serverId,
-            'OAuth endpoints unavailable. Re-authentication required.'
-        );
-        state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-        broadcastStatusUpdate(serverId, state.status);
-        return false;
-    }
-
-    try {
-        mcpLog.info(`[${serverId}] Refreshing token`);
-        state.status = { ...state.status, state: 'token-refresh' };
-        broadcastStatusUpdate(serverId, state.status);
-
-        const specificConfig = SERVER_SPECIFIC_CONFIGS[serverId];
-        const customHeaders = specificConfig?.customHeaders;
-
-        const newTokens = await refreshAccessToken(
-            serverId,
-            state.oauthEndpoints.token_endpoint,
-            state.tokens.refresh_token,
-            state.credentials.client_id,
-            state.credentials.client_secret,
-            serverConfig?.oauth?.resource || state.oauthEndpoints.resource,
-            customHeaders
-        );
-
-        // Validate refreshed token audience (Phase 2 Security Enhancement)
-        const expectedAudience = serverConfig?.oauth?.audience
-            || serverConfig?.oauth?.resource
-            || state.oauthEndpoints.resource
-            || serverConfig?.url
-            || state.tokens.expected_audience; // Use stored expected_audience as fallback
-
-        if (expectedAudience && !validateTokenAudience(serverId, newTokens, expectedAudience)) {
-            // Clear invalid tokens
-            await clearTokens(serverId);
-            state.tokens = null;
-
-            const error = MCPError.authFailed(
-                serverId,
-                'Refreshed token audience validation failed - re-authentication required'
-            );
-            state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-            broadcastStatusUpdate(serverId, state.status);
-            return false;
-        }
-
-        // Store expected audience with refreshed tokens
-        newTokens.expected_audience = expectedAudience;
-
-        // Update granted scopes
-        if (newTokens.scope) {
-            await updateGrantedScopes(serverId, newTokens.scope);
-        }
-
-        state.tokens = newTokens;
-        await storeTokens(serverId, newTokens);
-
-        // Schedule next automatic token refresh
-        await scheduleTokenRefresh(serverId, newTokens);
-
-        state.status = { ...state.status, state: 'authenticated' };
-        broadcastStatusUpdate(serverId, state.status);
-
-        mcpLog.info(`[${serverId}] Token refreshed successfully`);
-        return true;
-    } catch (error) {
-        mcpLog.error(`[${serverId}] Token refresh failed:`, error);
-
-        // Categorize the error
-        let mcpError: MCPError;
-        if (error instanceof MCPError) {
-            mcpError = error;
-        } else {
-            mcpError = MCPError.authFailed(
-                serverId,
-                `Token refresh failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-            );
-        }
-
-        // Clear invalid tokens
-        await clearTokens(serverId);
-        state.tokens = null;
-
-        const errorMessage = buildUserMessage(mcpError);
-        state.status = {
-            ...state.status,
-            state: 'needs-auth',
-            error: errorMessage
-        };
-        broadcastStatusUpdate(serverId, state.status);
-        return false;
-    }
-}
-
-/**
- * Ensure we have a valid access token for a server
- */
-async function ensureValidToken(serverId: string): Promise<string | null> {
-    const state = getServerState(serverId);
-
-    if (!state.tokens) {
-        // Try to load from storage
-        state.tokens = await getStoredTokens(serverId);
-    }
-
-    if (!state.tokens) {
-        return null;
-    }
-
-    // Check if token is expired
-    if (isTokenExpired(state.tokens)) {
-        const refreshed = await refreshServerToken(serverId);
-        if (!refreshed) {
-            return null;
-        }
-    }
-
-    return state.tokens.access_token;
-}
+// Token validation and refresh functions moved to src/mcp/authHelpers.ts
 
 // ============================================================================
 // MCP Connection Functions
@@ -936,7 +493,7 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
         // Only require token for servers that need authentication
         let accessToken: string | null = null;
         if (serverConfig.requiresAuthentication) {
-            accessToken = await ensureValidToken(serverId);
+            accessToken = await ensureValidToken(serverId, refreshServerToken);
             if (!accessToken) {
                 const error = MCPError.authFailed(
                     serverId,
@@ -1233,34 +790,7 @@ function getServerStatus(serverId: string): McpServerStatus {
     return state.status;
 }
 
-/**
- * Broadcast status update to all listeners
- */
-function broadcastStatusUpdate(serverId: string, status: McpServerStatus): void {
-    chrome.runtime.sendMessage({
-        type: `mcp/${serverId}/status/update`,
-        payload: status
-    }).catch(() => {
-        // Ignore errors if no listeners
-    });
-}
-
-/**
- * Get disabled tools for a server from chrome.storage
- */
-async function getDisabledTools(serverId: string): Promise<string[]> {
-    const key = `mcp.${serverId}.tools.disabled`;
-    const result = await chrome.storage.local.get(key);
-    return result[key] || [];
-}
-
-/**
- * Set disabled tools for a server in chrome.storage
- */
-async function setDisabledTools(serverId: string, toolNames: string[]): Promise<void> {
-    const key = `mcp.${serverId}.tools.disabled`;
-    await chrome.storage.local.set({ [key]: toolNames });
-}
+// Broadcast and tools config functions moved to src/mcp/events.ts and src/mcp/toolsConfig.ts
 
 /**
  * Get available tools for a server
@@ -1292,7 +822,7 @@ async function performHealthCheck(serverId: string): Promise<McpExtensionRespons
         // Get access token (only required if server needs authentication)
         let accessToken: string | null = null;
         if (serverConfig.requiresAuthentication) {
-            accessToken = await ensureValidToken(serverId);
+            accessToken = await ensureValidToken(serverId, refreshServerToken);
             if (!accessToken) {
                 return {
                     success: false,
@@ -2007,7 +1537,7 @@ async function initializeAllServers(): Promise<void> {
                     state.credentials = credentials;
 
                     // Check token validity and schedule refresh if needed
-                    const tokenValid = await ensureTokenValidity(serverId);
+                    const tokenValid = await ensureTokenValidity(serverId, refreshServerToken);
 
                     if (tokenValid) {
                         // Attempt to connect
@@ -2116,7 +1646,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // Handle token refresh alarms (format: mcp-token-refresh-{serverId})
     if (alarm.name.startsWith('mcp-token-refresh-')) {
         const serverId = alarm.name.replace('mcp-token-refresh-', '');
-        await handleTokenRefreshAlarm(serverId);
+        await handleTokenRefreshAlarm(serverId, refreshServerToken);
         return;
     }
 
@@ -2200,30 +1730,7 @@ backgroundLog.info(' Browser actions event listeners initialized');
 // ============================================================================
 // Offscreen Document: Summarizer Broker
 // ============================================================================
-
-// Ensure a single offscreen document exists
-async function ensureOffscreenDocument(): Promise<void> {
-    try {
-        // Chrome 116+ has chrome.offscreen.hasDocument
-        // Fallback: try creating and ignore if already exists
-        const hasDoc: boolean = typeof chrome.offscreen?.hasDocument === 'function'
-            ? await chrome.offscreen.hasDocument()
-            : false;
-
-        if (!hasDoc) {
-            await chrome.offscreen.createDocument({
-                url: 'offscreen.html',
-                // Using IFRAME_SCRIPTING is appropriate for running DOM APIs & scripts
-                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
-                justification: 'Run Chrome Summarizer API in an isolated offscreen document'
-            });
-            backgroundLog.info(' Offscreen document created');
-        }
-    } catch (error) {
-        // Some Chrome versions throw if a document already exists
-        backgroundLog.warn(' ensureOffscreenDocument warning:', error);
-    }
-}
+// Offscreen document management moved to src/offscreen/ensure.ts
 
 type SummarizeRequestMessage = {
     type: 'summarize:request';
