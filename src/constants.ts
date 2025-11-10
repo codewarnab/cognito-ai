@@ -118,8 +118,8 @@ export const LOG_CONFIG = {
     PERFORMANCE: false,         // Performance metrics (verbose)
 
     // Special Categories
-    ERRORS_ONLY: true ,         // When true, ONLY show errors (overrides all above)
-    SHOW_ALL: false,            // When true, show ALL logs (overrides all above)
+    ERRORS_ONLY: false  ,         // When true, ONLY show errors (overrides all above)
+    SHOW_ALL: true ,            // When true, show ALL logs (overrides all above)
 } as const;
 
 export type LogCategory = keyof typeof LOG_CONFIG;

@@ -4,7 +4,7 @@
  * Supports multiple MCP servers with independent credentials
  */
 
-import type { McpOAuthTokens } from './types';
+import type { McpOAuthTokens, OAuthStateRecord } from './types';
 import { createLogger } from '../logger';
 
 const authLog = createLogger('MCP-OAuth', 'MCP_AUTH');
@@ -314,6 +314,67 @@ export async function refreshAccessToken(
 }
 
 /**
+ * Validate token audience matches expected MCP server
+ * Per MCP spec: Servers MUST NOT accept tokens not issued for them
+ * 
+ * @param serverId - MCP server ID for logging
+ * @param tokens - OAuth tokens to validate
+ * @param expectedAudience - Expected audience value (resource URL or audience claim)
+ * @returns true if valid, false if invalid
+ */
+export function validateTokenAudience(
+    serverId: string,
+    tokens: McpOAuthTokens,
+    expectedAudience: string
+): boolean {
+    // Decode JWT access token (if JWT format)
+    try {
+        const parts = tokens.access_token.split('.');
+        if (parts.length === 3 && parts[1]) {
+            // JWT format - decode payload
+            const payload = JSON.parse(atob(parts[1]));
+
+            // Check audience claim
+            if (payload.aud) {
+                const audiences = Array.isArray(payload.aud)
+                    ? payload.aud
+                    : [payload.aud];
+
+                if (!audiences.includes(expectedAudience)) {
+                    authLog.error(`[${serverId}] Token audience mismatch:`, {
+                        expected: expectedAudience,
+                        actual: payload.aud
+                    });
+                    return false;
+                }
+            }
+
+            // Check resource claim (RFC 8707)
+            if (payload.resource && payload.resource !== expectedAudience) {
+                authLog.error(`[${serverId}] Token resource mismatch:`, {
+                    expected: expectedAudience,
+                    actual: payload.resource
+                });
+                return false;
+            }
+
+            authLog.info(`[${serverId}] Token audience validated successfully`);
+        } else {
+            // Opaque token (not JWT) - cannot validate audience client-side
+            // Rely on server-side validation
+            authLog.warn(`[${serverId}] Cannot validate token audience: not a JWT (opaque token)`);
+        }
+
+        return true;
+    } catch (error) {
+        // Error decoding token - might be opaque or malformed
+        // Log warning but allow, relying on server-side validation
+        authLog.warn(`[${serverId}] Cannot validate token audience: ${error instanceof Error ? error.message : 'decode error'}`);
+        return true; // Allow but log warning
+    }
+}
+
+/**
  * Check if token is expired or about to expire (within buffer time)
  */
 export function isTokenExpired(tokens: McpOAuthTokens, bufferMinutes: number = 5): boolean {
@@ -429,3 +490,109 @@ export {
     createCodeVerifier,
     createCodeChallenge,
 };
+
+/**
+ * Phase 3: Enhanced CSRF Protection - Single-Use State Management
+ */
+
+/**
+ * Store OAuth state in chrome.storage.session with single-use enforcement
+ * State expires after 10 minutes
+ */
+export async function storeOAuthState(
+    state: string,
+    serverId: string,
+    clientId: string
+): Promise<void> {
+    const stateRecord: OAuthStateRecord = {
+        state,
+        serverId,
+        clientId,
+        created_at: Date.now(),
+        expires_at: Date.now() + (10 * 60 * 1000), // 10 minutes
+        used: false
+    };
+
+    await chrome.storage.session.set({
+        [`oauth.state.${state}`]: stateRecord
+    });
+
+    authLog.info(`[${serverId}] OAuth state stored (expires in 10 minutes)`);
+}
+
+/**
+ * Validate and consume OAuth state (single-use)
+ * Returns true if state is valid and unused, false otherwise
+ * Marks state as used if valid
+ */
+export async function validateAndConsumeState(
+    state: string,
+    expectedServerId: string
+): Promise<{ valid: boolean; error?: string }> {
+    const key = `oauth.state.${state}`;
+    const result = await chrome.storage.session.get(key);
+    const storedState = result[key] as OAuthStateRecord | undefined;
+
+    if (!storedState) {
+        authLog.error(`[${expectedServerId}] State validation failed: state not found`);
+        return { valid: false, error: 'Invalid state parameter' };
+    }
+
+    if (storedState.used) {
+        authLog.error(`[${expectedServerId}] State validation failed: state already used`);
+        return { valid: false, error: 'State parameter already used - possible replay attack' };
+    }
+
+    if (storedState.expires_at < Date.now()) {
+        authLog.error(`[${expectedServerId}] State validation failed: state expired`);
+        // Clean up expired state
+        await chrome.storage.session.remove(key);
+        return { valid: false, error: 'State parameter expired' };
+    }
+
+    if (storedState.serverId !== expectedServerId) {
+        authLog.error(`[${expectedServerId}] State validation failed: serverId mismatch`, {
+            expected: expectedServerId,
+            actual: storedState.serverId
+        });
+        return { valid: false, error: 'State parameter serverId mismatch' };
+    }
+
+    // Mark state as used
+    storedState.used = true;
+    await chrome.storage.session.set({ [key]: storedState });
+
+    authLog.info(`[${expectedServerId}] State validated and marked as used`);
+
+    // Schedule cleanup after 1 second
+    setTimeout(async () => {
+        await chrome.storage.session.remove(key);
+        authLog.info(`[${expectedServerId}] Used state cleaned up`);
+    }, 1000);
+
+    return { valid: true };
+}
+
+/**
+ * Clean up expired OAuth states
+ * Called periodically by alarm
+ */
+export async function cleanupExpiredStates(): Promise<void> {
+    const allItems = await chrome.storage.session.get();
+    const now = Date.now();
+    const toRemove: string[] = [];
+
+    for (const [key, value] of Object.entries(allItems)) {
+        if (key.startsWith('oauth.state.')) {
+            const state = value as OAuthStateRecord;
+            if (state.expires_at < now || state.used) {
+                toRemove.push(key);
+            }
+        }
+    }
+
+    if (toRemove.length > 0) {
+        await chrome.storage.session.remove(toRemove);
+        authLog.info(`Cleaned up ${toRemove.length} expired/used OAuth states`);
+    }
+}

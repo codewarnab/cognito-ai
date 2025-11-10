@@ -528,6 +528,21 @@ export class BrowserAPIError extends BaseAppError {
     }
 
     /**
+     * Create CSP (Content Security Policy) violation error
+     * This happens when a website blocks extension scripts for security
+     */
+    static cspViolation(pageUrl?: string, details?: string): BrowserAPIError {
+        const domain = pageUrl ? new URL(pageUrl).hostname : 'this page';
+        return new BrowserAPIError({
+            message: 'Content Security Policy violation',
+            retryable: false,
+            userMessage: `Cannot modify ${domain}. This website has strict security policies that prevent extensions from making changes. This is a security feature of the website and cannot be bypassed.`,
+            technicalDetails: details || 'The page has a Content Security Policy (CSP) that blocks script execution from extensions. Common on sites like OpenAI, TikTok, and other security-conscious platforms.',
+            errorCode: ErrorType.BROWSER_CONTENT_SCRIPT_FAILED,
+        });
+    }
+
+    /**
      * Create AI model storage error (insufficient disk space for downloading local models)
      */
     static aiModelStorageError(modelName: string, details?: string): BrowserAPIError {

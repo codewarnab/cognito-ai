@@ -34,6 +34,7 @@ export interface ServerConfig {
         }
         scopes?: string[]  // Default scopes to request
         resource?: string  // RFC 8707 resource parameter
+        audience?: string  // Expected token audience (if different from resource)
     }
 }
 

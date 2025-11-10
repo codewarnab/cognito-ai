@@ -31,6 +31,10 @@ import {
     storeOAuthEndpoints,
     getStoredOAuthEndpoints,
     clearOAuthEndpoints,
+    validateTokenAudience,
+    storeOAuthState,
+    validateAndConsumeState,
+    cleanupExpiredStates,
     type DynamicClientCredentials
 } from './mcp/oauth';
 import {
@@ -41,6 +45,12 @@ import {
     updateGrantedScopes,
     clearScopeData
 } from './mcp/scopeHandler';
+import {
+    hasConsent,
+    storeConsent,
+    revokeConsent,
+    validateRedirectUri
+} from './mcp/consentManager';
 import type {
     McpOAuthTokens,
     OAuthState,
@@ -423,17 +433,83 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 
         mcpLog.info(`[${serverId}] Dynamic client registered:`, clientCredentials.client_id);
 
-        // Step 3: Generate state for CSRF protection
+        // Step 3: Check for existing consent
+        const hasExistingConsent = await hasConsent(
+            serverId,
+            clientCredentials.client_id,
+            MCP_OAUTH_CONFIG.REDIRECT_URI
+        );
+
+        // Step 4: Request user consent if not previously granted
+        if (!hasExistingConsent) {
+            mcpLog.info(`[${serverId}] No existing consent, requesting user approval...`);
+
+            // Send consent request to sidepanel
+            const consentGranted = await new Promise<boolean>((resolve) => {
+                // Set up message listener for consent response
+                const listener = (message: any) => {
+                    if (message.type === `mcp/${serverId}/consent/response`) {
+                        chrome.runtime.onMessage.removeListener(listener);
+                        resolve(message.payload.approved);
+                    }
+                };
+                chrome.runtime.onMessage.addListener(listener);
+
+                // Broadcast consent request to sidepanel
+                chrome.runtime.sendMessage({
+                    type: `mcp/${serverId}/consent/request`,
+                    payload: {
+                        serverId,
+                        serverName: serverConfig.name,
+                        clientId: clientCredentials.client_id,
+                        redirectUri: MCP_OAUTH_CONFIG.REDIRECT_URI,
+                        scopes
+                    }
+                }).catch(() => {
+                    // If no listeners, user needs to open sidepanel
+                    mcpLog.warn(`[${serverId}] No sidepanel open to show consent dialog`);
+                    resolve(false);
+                });
+
+                // Timeout after 5 minutes
+                setTimeout(() => {
+                    chrome.runtime.onMessage.removeListener(listener);
+                    resolve(false);
+                }, 5 * 60 * 1000);
+            });
+
+            if (!consentGranted) {
+                mcpLog.info(`[${serverId}] User denied consent`);
+                throw new Error('User denied consent for OAuth authorization');
+            }
+
+            // Store consent decision
+            await storeConsent(
+                serverId,
+                clientCredentials.client_id,
+                MCP_OAUTH_CONFIG.REDIRECT_URI,
+                scopes
+            );
+
+            mcpLog.info(`[${serverId}] User consent granted and stored`);
+        } else {
+            mcpLog.info(`[${serverId}] Using existing consent`);
+        }
+
+        // Step 5: Generate state for CSRF protection (Phase 3: Enhanced with single-use enforcement)
         const oauthStateValue = generateState();
 
-        // Store state in memory for the callback
+        // Store state in chrome.storage.session with single-use enforcement
+        await storeOAuthState(oauthStateValue, serverId, clientCredentials.client_id);
+
+        // Keep in-memory state for backwards compatibility
         state.oauthState = {
             state: oauthStateValue,
             codeVerifier: '', // Not used in standard OAuth (only PKCE)
             created_at: Date.now()
         };
 
-        // Step 4: Build authorization URL
+        // Step 6: Build authorization URL
         const authUrl = buildAuthUrl(
             serverId,
             endpoints.authorization_endpoint,
@@ -468,7 +544,7 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
 
         mcpLog.info(`[${serverId}] OAuth redirect URL received`);
 
-        // Step 6: Extract code and state from redirect URL
+        // Step 7: Extract code and state from redirect URL
         const url = new URL(redirectUrl);
         const code = url.searchParams.get('code');
         const returnedState = url.searchParams.get('state');
@@ -477,14 +553,30 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             throw new Error('No authorization code received');
         }
 
-        // Verify state
+        if (!returnedState) {
+            throw new Error('No state parameter received');
+        }
+
+        // Phase 3: Enhanced state validation with single-use enforcement
+        const stateValidation = await validateAndConsumeState(returnedState, serverId);
+        if (!stateValidation.valid) {
+            throw new Error(stateValidation.error || 'State validation failed - possible CSRF attack');
+        }
+
+        // Legacy in-memory state validation (backwards compatibility check)
         if (!state.oauthState || returnedState !== state.oauthState.state) {
-            throw new Error('State mismatch - possible CSRF attack');
+            mcpLog.warn(`[${serverId}] In-memory state mismatch (storage-based validation passed)`);
+        }
+
+        // Verify redirect URI matches exactly (prevents redirect URI manipulation)
+        const actualRedirectUri = `${url.origin}${url.pathname}`;
+        if (!validateRedirectUri(MCP_OAUTH_CONFIG.REDIRECT_URI, actualRedirectUri)) {
+            throw new Error('Redirect URI mismatch - possible attack attempt');
         }
 
         mcpLog.info(`[${serverId}] Exchanging code for tokens`);
 
-        // Step 7: Exchange code for tokens
+        // Step 8: Exchange code for tokens
         // Get custom headers for this server (e.g., Notion-Version header)
         const specificConfig = SERVER_SPECIFIC_CONFIGS[serverId];
         const customHeaders = specificConfig?.customHeaders;
@@ -499,6 +591,22 @@ async function startOAuthFlow(serverId: string): Promise<McpExtensionResponse> {
             serverConfig.oauth?.resource || endpoints.resource,
             customHeaders
         );
+
+        // Step 8: Validate token audience (Phase 2 Security Enhancement)
+        const expectedAudience = serverConfig.oauth?.audience
+            || serverConfig.oauth?.resource
+            || endpoints.resource
+            || serverConfig.url;
+
+        if (expectedAudience && !validateTokenAudience(serverId, tokens, expectedAudience)) {
+            throw MCPError.authFailed(
+                serverId,
+                'Token audience validation failed - token not issued for this server'
+            );
+        }
+
+        // Store expected audience with tokens for future validation
+        tokens.expected_audience = expectedAudience;
 
         // User approved! Now we can store client credentials permanently
         await storeClientCredentials(serverId, clientCredentials);
@@ -691,6 +799,30 @@ async function refreshServerToken(serverId: string): Promise<boolean> {
             serverConfig?.oauth?.resource || state.oauthEndpoints.resource,
             customHeaders
         );
+
+        // Validate refreshed token audience (Phase 2 Security Enhancement)
+        const expectedAudience = serverConfig?.oauth?.audience
+            || serverConfig?.oauth?.resource
+            || state.oauthEndpoints.resource
+            || serverConfig?.url
+            || state.tokens.expected_audience; // Use stored expected_audience as fallback
+
+        if (expectedAudience && !validateTokenAudience(serverId, newTokens, expectedAudience)) {
+            // Clear invalid tokens
+            await clearTokens(serverId);
+            state.tokens = null;
+
+            const error = MCPError.authFailed(
+                serverId,
+                'Refreshed token audience validation failed - re-authentication required'
+            );
+            state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
+            broadcastStatusUpdate(serverId, state.status);
+            return false;
+        }
+
+        // Store expected audience with refreshed tokens
+        newTokens.expected_audience = expectedAudience;
 
         // Update granted scopes
         if (newTokens.scope) {
@@ -1071,6 +1203,7 @@ async function disconnectServerAuth(serverId: string): Promise<McpExtensionRespo
     await clearClientCredentials(serverId);
     await clearScopeData(serverId);
     await clearOAuthEndpoints(serverId);
+    await revokeConsent(serverId); // Revoke consent when disconnecting
 
     // Clear all in-memory state
     state.tokens = null;
@@ -1957,6 +2090,11 @@ chrome.alarms.create('cleanup-expired-sessions', {
     periodInMinutes: 60
 });
 
+// Phase 3: Create OAuth state cleanup alarm (runs every hour)
+chrome.alarms.create('oauth-state-cleanup', {
+    periodInMinutes: 60
+});
+
 // ============================================================================
 // Reminder Alarms Handler
 // ============================================================================
@@ -1979,6 +2117,12 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name.startsWith('mcp-token-refresh-')) {
         const serverId = alarm.name.replace('mcp-token-refresh-', '');
         await handleTokenRefreshAlarm(serverId);
+        return;
+    }
+
+    // Phase 3: Handle OAuth state cleanup alarm
+    if (alarm.name === 'oauth-state-cleanup') {
+        await cleanupExpiredStates();
         return;
     }
 

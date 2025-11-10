@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react"
 import { McpHeader } from "./McpHeader"
 import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
+import { McpConsentDialog } from "./McpConsentDialog"
 import { MCP_SERVERS } from "../../../constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "../../ui/primitives/popover"
 import { getCloudToolsCount } from "../../../ai/tools";
@@ -17,6 +18,14 @@ interface ServerStatus {
     isAuthenticated: boolean
 }
 
+interface ConsentRequest {
+    serverId: string
+    serverName: string
+    clientId: string
+    redirectUri: string
+    scopes: string[]
+}
+
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [searchQuery, setSearchQuery] = useState("")
     const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
@@ -24,6 +33,43 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null)
     const [mcpToolCount, setMcpToolCount] = useState(0)
     const [cloudToolCount, setCloudToolCount] = useState(0)
+    const [consentRequest, setConsentRequest] = useState<ConsentRequest | null>(null)
+
+    // Listen for consent requests from background
+    useEffect(() => {
+        const handleMessage = (message: any) => {
+            if (message.type && message.type.includes('/consent/request')) {
+                console.log('Consent request received:', message.payload)
+                setConsentRequest(message.payload)
+            }
+        }
+
+        chrome.runtime.onMessage.addListener(handleMessage)
+
+        return () => {
+            chrome.runtime.onMessage.removeListener(handleMessage)
+        }
+    }, [])
+
+    const handleConsentApprove = () => {
+        if (consentRequest) {
+            chrome.runtime.sendMessage({
+                type: `mcp/${consentRequest.serverId}/consent/response`,
+                payload: { approved: true }
+            })
+            setConsentRequest(null)
+        }
+    }
+
+    const handleConsentDeny = () => {
+        if (consentRequest) {
+            chrome.runtime.sendMessage({
+                type: `mcp/${consentRequest.serverId}/consent/response`,
+                payload: { approved: false }
+            })
+            setConsentRequest(null)
+        }
+    }
 
     // Fetch MCP tool count on mount and when server statuses change
     useEffect(() => {
@@ -407,6 +453,15 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     </div>
                 )}
             </div>
+
+            {/* Consent Dialog */}
+            {consentRequest && (
+                <McpConsentDialog
+                    request={consentRequest}
+                    onApprove={handleConsentApprove}
+                    onDeny={handleConsentDeny}
+                />
+            )}
         </div>
     )
 }
