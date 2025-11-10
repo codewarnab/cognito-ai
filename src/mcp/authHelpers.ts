@@ -15,7 +15,6 @@ import {
     storeTokens,
     refreshAccessToken,
     isTokenExpired,
-    validateTokenAudience,
     getStoredClientCredentials,
     clearTokens
 } from './oauth';
@@ -352,30 +351,6 @@ export async function refreshServerToken(serverId: string): Promise<boolean> {
             serverConfig?.oauth?.resource || state.oauthEndpoints.resource,
             customHeaders
         );
-
-        // Validate refreshed token audience (Phase 2 Security Enhancement)
-        const expectedAudience = serverConfig?.oauth?.audience
-            || serverConfig?.oauth?.resource
-            || state.oauthEndpoints.resource
-            || serverConfig?.url
-            || state.tokens.expected_audience; // Use stored expected_audience as fallback
-
-        if (expectedAudience && !validateTokenAudience(serverId, newTokens, expectedAudience)) {
-            // Clear invalid tokens
-            await clearTokens(serverId);
-            state.tokens = null;
-
-            const error = MCPError.authFailed(
-                serverId,
-                'Refreshed token audience validation failed - re-authentication required'
-            );
-            state.status = { ...state.status, state: 'needs-auth', error: buildUserMessage(error) };
-            broadcastStatusUpdate(serverId, state.status);
-            return false;
-        }
-
-        // Store expected audience with refreshed tokens
-        newTokens.expected_audience = expectedAudience;
 
         // Update granted scopes
         if (newTokens.scope) {

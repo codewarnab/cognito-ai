@@ -297,62 +297,59 @@ function createFallbackEndpoints(authorizationBaseUrl: string): OAuthEndpoints {
 /**
  * Complete OAuth discovery flow for an MCP server
  * Returns consolidated OAuth endpoints or falls back to default paths if metadata discovery fails
+ * Optimized with parallel requests for faster discovery
  */
 export async function discoverOAuthEndpoints(
     mcpUrl: string
 ): Promise<OAuthEndpoints | null> {
     console.log(`[Discovery] Starting full OAuth discovery for ${mcpUrl}`);
 
-    // Step 1: Discover Protected Resource Metadata
-    const resourceMetadata = await discoverProtectedResourceMetadata(mcpUrl);
+    const mcpOrigin = new URL(mcpUrl).origin;
 
-    if (!resourceMetadata || !resourceMetadata.authorization_servers ||
-        resourceMetadata.authorization_servers.length === 0) {
-        console.log(`[Discovery] No authorization servers found in Protected Resource Metadata`);
+    // OPTIMIZATION: Run both Protected Resource and Direct Auth Server discovery in parallel
+    console.log(`[Discovery] Running parallel discovery: Protected Resource Metadata + Direct Auth Server`);
+    const [resourceMetadata, directAuthMetadata] = await Promise.all([
+        discoverProtectedResourceMetadata(mcpUrl),
+        discoverAuthorizationServerMetadata(mcpOrigin)
+    ]);
 
-        // Try direct Authorization Server discovery from MCP URL origin
-        // This handles cases where servers only provide Authorization Server Metadata
-        // without Protected Resource Metadata (like Figma)
-        const mcpOrigin = new URL(mcpUrl).origin;
-        console.log(`[Discovery] Attempting direct Authorization Server discovery from ${mcpOrigin}`);
-        const directAuthMetadata = await discoverAuthorizationServerMetadata(mcpOrigin);
+    // If direct auth server discovery succeeded, use it immediately
+    // This is the fastest path for servers like Figma
+    if (directAuthMetadata) {
+        const endpoints: OAuthEndpoints = {
+            authorization_endpoint: directAuthMetadata.authorization_endpoint,
+            token_endpoint: directAuthMetadata.token_endpoint,
+            registration_endpoint: directAuthMetadata.registration_endpoint,
+            introspection_endpoint: directAuthMetadata.introspection_endpoint,
+            revocation_endpoint: directAuthMetadata.revocation_endpoint,
+            scopes_supported: directAuthMetadata.scopes_supported
+        };
 
-        if (directAuthMetadata) {
-            const endpoints: OAuthEndpoints = {
-                authorization_endpoint: directAuthMetadata.authorization_endpoint,
-                token_endpoint: directAuthMetadata.token_endpoint,
-                registration_endpoint: directAuthMetadata.registration_endpoint,
-                introspection_endpoint: directAuthMetadata.introspection_endpoint,
-                revocation_endpoint: directAuthMetadata.revocation_endpoint,
-                scopes_supported: directAuthMetadata.scopes_supported
-            };
-
-            console.log(`[Discovery] Successfully discovered OAuth endpoints via direct Authorization Server discovery`);
-            return endpoints;
-        }
-
-        // Fallback: Use MCP URL as authorization base
-        console.log(`[Discovery] Attempting fallback mechanism with MCP URL as authorization base`);
-        const fallbackEndpoints = createFallbackEndpoints(mcpUrl);
-
-        // Try to validate the fallback endpoints by checking if they exist
-        const isValid = await validateFallbackEndpoints(fallbackEndpoints);
-        if (isValid) {
-            console.log(`[Discovery] Fallback endpoints validated successfully`);
-            return fallbackEndpoints;
-        } else {
-            console.log(`[Discovery] Fallback endpoints validation failed`);
-            return null;
-        }
+        console.log(`[Discovery] Successfully discovered OAuth endpoints via direct Authorization Server discovery`);
+        return endpoints;
     }
 
-    // Step 2: Try each authorization server until one works
-    for (const authServerUrl of resourceMetadata.authorization_servers) {
-        console.log(`[Discovery] Attempting authorization server: ${authServerUrl}`);
-        const authMetadata = await discoverAuthorizationServerMetadata(authServerUrl);
+    // If Protected Resource Metadata found authorization servers, try them
+    if (resourceMetadata?.authorization_servers && resourceMetadata.authorization_servers.length > 0) {
+        console.log(`[Discovery] Found ${resourceMetadata.authorization_servers.length} authorization server(s) in Protected Resource Metadata`);
 
-        if (authMetadata) {
-            // Success! Consolidate into OAuthEndpoints
+        // OPTIMIZATION: Try all authorization servers in parallel instead of sequentially
+        console.log(`[Discovery] Attempting parallel authorization server discovery`);
+        const authMetadataPromises = resourceMetadata.authorization_servers.map(authServerUrl =>
+            discoverAuthorizationServerMetadata(authServerUrl)
+                .then(metadata => ({ url: authServerUrl, metadata }))
+                .catch(err => {
+                    console.log(`[Discovery] Error discovering ${authServerUrl}:`, err instanceof Error ? err.message : 'unknown');
+                    return { url: authServerUrl, metadata: null };
+                })
+        );
+
+        const authResults = await Promise.all(authMetadataPromises);
+
+        // Use the first successful result
+        const successfulResult = authResults.find(result => result.metadata !== null);
+        if (successfulResult?.metadata) {
+            const authMetadata = successfulResult.metadata;
             const endpoints: OAuthEndpoints = {
                 authorization_endpoint: authMetadata.authorization_endpoint,
                 token_endpoint: authMetadata.token_endpoint,
@@ -366,23 +363,35 @@ export async function discoverOAuthEndpoints(
             console.log(`[Discovery] Successfully discovered OAuth endpoints for ${mcpUrl}`);
             return endpoints;
         }
+
+        // If all authorization servers failed, try fallback
+        console.log(`[Discovery] All authorization servers failed, attempting fallback`);
+        const authServerUrl = resourceMetadata.authorization_servers[0];
+        if (authServerUrl) {
+            const fallbackEndpoints = createFallbackEndpoints(authServerUrl);
+
+            const isValid = await validateFallbackEndpoints(fallbackEndpoints);
+            if (isValid) {
+                console.log(`[Discovery] Fallback endpoints validated successfully`);
+                // Include resource metadata if available
+                if (resourceMetadata.resource) {
+                    fallbackEndpoints.resource = resourceMetadata.resource;
+                }
+                if (resourceMetadata.scopes_supported) {
+                    fallbackEndpoints.scopes_supported = resourceMetadata.scopes_supported;
+                }
+                return fallbackEndpoints;
+            }
+        }
     }
 
-    // Step 3: If all authorization servers failed, try fallback
-    console.log(`[Discovery] All authorization servers failed, attempting fallback`);
-    const authServerUrl = resourceMetadata.authorization_servers[0];
-    const fallbackEndpoints = createFallbackEndpoints(authServerUrl);
+    // Last resort: Fallback using MCP URL as authorization base
+    console.log(`[Discovery] No authorization servers found, attempting fallback with MCP URL`);
+    const fallbackEndpoints = createFallbackEndpoints(mcpUrl);
 
     const isValid = await validateFallbackEndpoints(fallbackEndpoints);
     if (isValid) {
         console.log(`[Discovery] Fallback endpoints validated successfully`);
-        // Include resource metadata if available
-        if (resourceMetadata.resource) {
-            fallbackEndpoints.resource = resourceMetadata.resource;
-        }
-        if (resourceMetadata.scopes_supported) {
-            fallbackEndpoints.scopes_supported = resourceMetadata.scopes_supported;
-        }
         return fallbackEndpoints;
     }
 

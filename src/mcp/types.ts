@@ -30,8 +30,6 @@ export interface McpOAuthTokens {
     created_at: number; // Unix timestamp
     // Server-specific metadata stored as JSON string
     metadata?: string;
-    // Expected token audience for validation (Phase 2 security enhancement)
-    expected_audience?: string;
 }
 
 /**
@@ -62,19 +60,6 @@ export interface OAuthState {
     state: string;
     codeVerifier: string;
     created_at: number;
-}
-
-/**
- * OAuth state record for enhanced CSRF protection (Phase 3)
- * Stored in chrome.storage.session with single-use enforcement
- */
-export interface OAuthStateRecord {
-    state: string;
-    serverId: string;
-    clientId: string;
-    created_at: number;
-    expires_at: number;
-    used: boolean; // Single-use flag
 }
 
 /**
