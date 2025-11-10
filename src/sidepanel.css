@@ -13,7 +13,6 @@
 @import './styles/features/tools/index.css';
 @import './styles/features/threads/index.css';
 @import './styles/features/mentions/index.css';
-@import './styles/features/mcp/consent.css';
 
 /* Mode Toggle Wrapper */
 .mode-toggle-wrapper {
