@@ -250,20 +250,6 @@ function generatePDF(content: string): Blob {
     return doc.output('blob');
 }
 
-/**
- * Download PDF file
- */
-function downloadPDF(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
 export function useGeneratePDFTool() {
     const { unregisterToolUI } = useToolUI();
 
@@ -272,7 +258,7 @@ export function useGeneratePDFTool() {
 
         registerTool({
             name: 'generatePDF',
-            description: 'Generate and download a PDF file with the provided content. Uses jsPDF library for reliable PDF generation. Use this when the user asks for a PDF report.',
+            description: 'Generate a PDF file and display it as an interactive attachment in chat with Open/Download buttons. Uses jsPDF library for reliable PDF generation.',
             parameters: z.object({
                 content: z.string().describe('The content to save in the PDF (markdown format supported: headers, bold text, paragraphs)'),
                 filename: z.string()
@@ -295,24 +281,22 @@ export function useGeneratePDFTool() {
                     // Generate PDF blob
                     const pdfBlob = generatePDF(content);
 
-                    // Download the PDF
-                    downloadPDF(pdfBlob, fullFilename);
-
-                    // Create a blob URL for chat display
+                    // Create a blob URL for chat display (no auto-download)
                     const chatUrl = URL.createObjectURL(pdfBlob);
 
-                    log.info('✅ PDF generated and downloaded successfully', {
+                    log.info('✅ PDF generated as attachment', {
                         filename: fullFilename,
                         size: pdfBlob.size
                     });
 
-                    // Return both success message AND file data for chat display
+                    // Return file data for chat display as interactive attachment
                     return {
                         success: true,
                         filename: fullFilename,
-                        message: `✅ PDF report "${fullFilename}" has been downloaded!`,
+                        message: `✅ PDF report "${fullFilename}" is ready!`,
                         size: pdfBlob.size,
                         // File data for chat display (will be rendered as attachment)
+                        // Note: Blob URL should NOT be revoked here; chat UI manages lifecycle
                         fileData: {
                             type: 'file',
                             name: fullFilename,

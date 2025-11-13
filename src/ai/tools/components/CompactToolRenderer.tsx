@@ -7,7 +7,7 @@ import { CompactToolCard } from '../../../components/ui/tools/cards';
 import type { ToolUIState } from './ToolUIContext';
 import { useToolUI } from './ToolUIContext';
 
-export function CompactToolRenderer({ state }: { state: ToolUIState }) {
+export function CompactToolRenderer({ state, messageId }: { state: ToolUIState; messageId?: string }) {
     const { toolName, state: toolState, input, output, errorText } = state;
     const { getCustomRenderers } = useToolUI();
 
@@ -37,6 +37,7 @@ export function CompactToolRenderer({ state }: { state: ToolUIState }) {
             output={output}
             errorText={displayErrorText}
             customRenderers={customRenderers}
+            messageId={messageId}
         />
     );
 }
