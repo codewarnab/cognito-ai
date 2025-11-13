@@ -289,19 +289,15 @@ QUALITY STANDARDS:
 
 POST-RESEARCH INTERACTION:
 
-1. **Show brief summary** (2-3 sentences only, no detailed findings in chat)
-2. **Announce PDF generation** → " Generating PDF report..."
-3. **Auto-generate PDF** (use generatePDF with full report content)
-4. **Confirm download** → "PDF report downloaded! You can find it in your Downloads folder."
-5. **Ask about Markdown** → "Would you also like a Markdown version?"
-6. **If user wants Markdown** → Generate with generateMarkdown
-7. **Mark complete** → Add [WORKFLOW_COMPLETE] only after user responds
+1. **Show brief summary** (2-3 sentences only)
+2. **Generate PDF** → Use generatePDF with full report content (displays as interactive attachment with Open/Download buttons)
+3. **Ask about Markdown** → "Would you also like a Markdown version?"
+4. **If user wants Markdown** → Generate with generateMarkdown
+5. **Mark complete** → Add [WORKFLOW_COMPLETE] only after user responds
 
 REPORT GENERATION:
-- Filename format: "research-[topic]" (NO DATE NEEDED - system adds date automatically)
-- ⚠️ CRITICAL: DO NOT compute dates, use datetime, or generate timestamps
-- ⚠️ The generatePDF and generateMarkdown tools automatically append current date
-- Simply provide: filename: "research-[topic]" 
+- Files are shown as interactive attachments in chat (user clicks Open or Download)
+- Filename format: "research-[topic]" (e.g., "research-react")
 - Include ALL sections: Summary, Key Findings, Sources, Ideas, Implementation Plan
 - Use well-formatted markdown for both PDF and Markdown generation
 

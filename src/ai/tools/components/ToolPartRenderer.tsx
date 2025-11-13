@@ -111,5 +111,5 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
   }
 
   // Default fallback renderer for tools without custom UI
-  return <CompactToolRenderer state={toolState} />;
+  return <CompactToolRenderer state={toolState} messageId={messageId} />;
 }

@@ -2,7 +2,7 @@
  * Configuration types and defaults for Gemini Live Client
  */
 
-import type { LiveAPIError, VoiceModeStatus } from '../types';
+import type { LiveAPIError, VoiceModeStatus, ProactivityConfig } from '../types';
 
 /**
  * Event handlers for Gemini Live Client
@@ -37,6 +37,7 @@ export interface GeminiLiveClientConfig {
     voiceName?: 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Orion';
     systemInstruction?: string;
     enableTools?: boolean;
+    proactivity?: ProactivityConfig;
     eventHandlers?: GeminiLiveEventHandlers;
     errorRecoveryConfig?: ErrorRecoveryConfig;
 }
@@ -49,4 +50,7 @@ export const DEFAULT_CONFIG = {
     enableTools: true,
     maxConnectionRetries: 3,
     maxContentLength: 50000, // ~50KB of text for tool responses
+    proactivity: {
+        proactiveAudio: true
+    }
 };

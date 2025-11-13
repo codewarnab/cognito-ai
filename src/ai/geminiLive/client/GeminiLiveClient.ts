@@ -224,7 +224,8 @@ export class GeminiLiveClient {
                             model: this.config.model!,
                             voiceName: this.config.voiceName!,
                             systemInstruction: this.config.systemInstruction,
-                            enableTools: this.config.enableTools!
+                            enableTools: this.config.enableTools!,
+                            proactivity: this.config.proactivity
                         },
                         {
                             onOpen: () => this.handleSessionOpen(),

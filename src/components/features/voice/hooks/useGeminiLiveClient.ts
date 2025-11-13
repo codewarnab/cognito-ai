@@ -189,6 +189,9 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                     errorRecoveryConfig: {
                         maxRetries: 3,
                         retryDelay: 1000
+                    },
+                    proactivity: {
+                        proactiveAudio: true
                     }
                 });
 
@@ -346,6 +349,9 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                 errorRecoveryConfig: {
                     maxRetries: 3,
                     retryDelay: 1000
+                },
+                proactivity: {
+                    proactiveAudio: true
                 }
             });
 

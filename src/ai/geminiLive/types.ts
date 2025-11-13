@@ -40,6 +40,14 @@ export interface ToolDeclaration {
 }
 
 /**
+ * Proactivity configuration
+ * Allows the model to respond proactively to input and ignore irrelevant input
+ */
+export interface ProactivityConfig {
+    proactiveAudio?: boolean;
+}
+
+/**
  * Configuration for Live API session
  */
 export interface LiveSessionConfig {
@@ -48,6 +56,7 @@ export interface LiveSessionConfig {
     speechConfig?: SpeechConfig;
     tools?: ToolDeclaration[];
     systemInstruction?: string;
+    proactivity?: ProactivityConfig;
 }
 
 /**

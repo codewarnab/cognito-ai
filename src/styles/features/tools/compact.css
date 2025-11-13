@@ -221,6 +221,13 @@
     flex-shrink: 0;
 }
 
+/* File Attachment in Tool Card */
+.compact-tool-file-attachment {
+    margin-top: 12px;
+    padding-left: 0;
+    animation: slideDown 0.3s ease;
+}
+
 /* Responsive adjustments */
 @media (max-width: 400px) {
     .compact-tool-card {

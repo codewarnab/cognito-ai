@@ -13,6 +13,7 @@ import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';
 import { createLogger } from '../../../../logger';
 import type { CustomInputOutputRenderers } from '../../../../ai/tools/components';
+import { ToolFileAttachment, type ToolFileAttachmentData } from '../../../features/chat/components/ToolFileAttachment';
 
 const log = createLogger('CompactToolCard');
 
@@ -23,6 +24,7 @@ interface CompactToolCardProps {
     output?: any;
     errorText?: string;
     customRenderers?: CustomInputOutputRenderers;
+    messageId?: string; // For Blob URL lifecycle management
 }
 
 export function CompactToolCard({
@@ -31,7 +33,8 @@ export function CompactToolCard({
     input,
     output,
     errorText,
-    customRenderers
+    customRenderers,
+    messageId
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
     useEffect(() => {
@@ -160,6 +163,16 @@ export function CompactToolCard({
                     )}
                 </div>
             </div>
+
+            {/* File Attachment - Always visible when available */}
+            {output?.fileData && state === 'success' && (
+                <div className="compact-tool-file-attachment">
+                    <ToolFileAttachment
+                        fileData={output.fileData as ToolFileAttachmentData}
+                        messageId={messageId}
+                    />
+                </div>
+            )}
 
             {/* Accordion Content */}
             {isExpanded && (

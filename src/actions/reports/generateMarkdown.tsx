@@ -11,30 +11,15 @@ import { createLogger } from '../../logger';
 
 const log = createLogger('Tool-GenerateMarkdown');
 
-/**
- * Download markdown content as a .md file
- */
-function downloadMarkdown(content: string, filename: string) {
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
 export function useGenerateMarkdownTool() {
-    const {  unregisterToolUI } = useToolUI();
+    const { unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering generateMarkdown tool...');
 
         registerTool({
             name: 'generateMarkdown',
-            description: 'Generate and download a markdown (.md) file with the provided content. Use this when the user asks for a markdown report or .md file.',
+            description: 'Generate a markdown (.md) file and display it as an interactive attachment in chat with Open/Download buttons.',
             parameters: z.object({
                 content: z.string().describe('The markdown content to save in the file'),
                 filename: z.string()
@@ -53,27 +38,26 @@ export function useGenerateMarkdownTool() {
                     const cleanFilename = filename.replace(/\.md$/i, '');
                     const fullFilename = `${cleanFilename}.md`;
 
-                    // Trigger download
-                    downloadMarkdown(content, fullFilename);
-
-                    // Create a blob URL for chat display
+                    // Create blob for file data (no auto-download)
                     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
                     const chatUrl = URL.createObjectURL(blob);
 
-                    log.info('✅ Markdown file downloaded successfully', { filename: fullFilename });
+                    log.info('✅ Markdown file generated as attachment', { filename: fullFilename });
 
-                    // Return both success message AND file data for chat display
+                    // Return file data for chat display as interactive attachment
                     return {
                         success: true,
                         filename: fullFilename,
-                        message: `✅ Markdown report "${fullFilename}" has been downloaded!`,
+                        message: `✅ Markdown report "${fullFilename}" is ready!`,
+                        size: blob.size,
                         // File data for chat display (will be rendered as attachment)
+                        // Note: Blob URL should NOT be revoked here; chat UI manages lifecycle
                         fileData: {
                             type: 'file',
                             name: fullFilename,
                             url: chatUrl,
                             mediaType: 'text/markdown',
-                            size: new Blob([content]).size
+                            size: blob.size
                         }
                     };
                 } catch (error) {

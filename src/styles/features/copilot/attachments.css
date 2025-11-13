@@ -183,3 +183,154 @@
     flex: 1;
     font-weight: 500;
 }
+
+/* Tool File Attachment Styles */
+.tool-file-attachment {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(35, 45, 65, 0.8);
+    border-radius: 12px;
+    border: 1.5px solid rgba(100, 120, 150, 0.4);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    margin: 8px 0;
+    transition: all 0.2s ease;
+}
+
+.tool-file-attachment:hover {
+    background: rgba(40, 50, 70, 0.9);
+    border-color: rgba(120, 140, 170, 0.6);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.tool-file-attachment-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tool-file-attachment-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.tool-file-attachment-icon .file-icon-emoji {
+    font-size: 28px;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+.tool-file-attachment-icon .file-icon-lucide {
+    color: rgba(59, 130, 246, 0.9);
+}
+
+.tool-file-attachment-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tool-file-attachment-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tool-file-attachment-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.tool-file-attachment-type {
+    text-transform: uppercase;
+    font-weight: 600;
+    color: rgba(59, 130, 246, 0.9);
+}
+
+.tool-file-attachment-separator {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.tool-file-attachment-size {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.tool-file-attachment-actions {
+    display: flex;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.tool-file-attachment-action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tool-file-attachment-action:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tool-file-attachment-action:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.tool-file-attachment-action:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tool-file-attachment-action-open {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+    color: rgba(59, 130, 246, 0.95);
+}
+
+.tool-file-attachment-action-open:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+    color: rgba(59, 130, 246, 1);
+}
+
+.tool-file-attachment-action-download {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.1);
+    color: rgba(34, 197, 94, 0.95);
+}
+
+.tool-file-attachment-action-download:hover:not(:disabled) {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: rgba(34, 197, 94, 1);
+}

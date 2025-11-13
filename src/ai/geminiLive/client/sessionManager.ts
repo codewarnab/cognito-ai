@@ -16,6 +16,7 @@ export interface SessionConfig {
     voiceName: string;
     systemInstruction?: string;
     enableTools: boolean;
+    proactivity?: import('../types').ProactivityConfig;
 }
 
 export interface SessionCallbacks {
@@ -62,6 +63,7 @@ export class GeminiLiveSessionManager {
                 responseModalities: sessionConfig.responseModalities,
                 speechConfig: sessionConfig.speechConfig,
                 tools: sessionConfig.tools,
+
                 systemInstruction: sessionConfig.systemInstruction
             },
             callbacks: {
@@ -194,6 +196,14 @@ export class GeminiLiveSessionManager {
             config.systemInstruction = this.config.systemInstruction;
         } else {
             config.systemInstruction = getGeminiLiveSystemInstruction();
+        }
+
+        // Add proactivity configuration if provided
+        if (this.config.proactivity) {
+            config.proactivity = this.config.proactivity;
+            log.info('Added proactivity config to session', {
+                proactiveAudio: this.config.proactivity.proactiveAudio
+            });
         }
 
         // Add tools if enabled
