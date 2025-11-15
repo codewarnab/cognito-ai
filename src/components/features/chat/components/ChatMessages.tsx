@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
@@ -11,6 +11,7 @@ import { getMessageContent, hasToolCalls } from '../utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ContinueButton } from './ContinueButton';
+import { CopyButton } from './CopyButton';
 import { getFileIcon } from '../../../../utils/fileIconMapper';
 
 // Custom inline code component with tooltip and copy functionality
@@ -251,6 +252,21 @@ function mergeToolParts(parts: any[]): any[] {
     return mergedParts;
 }
 
+/**
+ * Extract text content from a message for copying
+ */
+function extractMessageText(message: Message): string {
+    if (!message.parts || message.parts.length === 0) {
+        return '';
+    }
+
+    const textParts = message.parts
+        .filter((part: any) => part.type === 'text' && part.text)
+        .map((part: any) => part.text);
+
+    return textParts.join('\n\n');
+}
+
 export const ChatMessages: React.FC<ChatMessagesProps> = ({
     messages,
     isLoading,
@@ -260,6 +276,28 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     onConfigureApiKey,
     onContinue,
 }) => {
+    const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+
+    // Listen for custom events from screenshot tool
+    useEffect(() => {
+        const handleOpenImagePreview = (event: CustomEvent) => {
+            setPreviewImage(event.detail);
+        };
+
+        window.addEventListener('openImagePreview' as any, handleOpenImagePreview);
+        return () => {
+            window.removeEventListener('openImagePreview' as any, handleOpenImagePreview);
+        };
+    }, []);
+
+    // Notify when preview state changes (for hiding voice pill)
+    useEffect(() => {
+        const event = new CustomEvent('imagePreviewStateChange', {
+            detail: { isOpen: !!previewImage }
+        });
+        window.dispatchEvent(event);
+    }, [previewImage]);
+
     // Check if the last message has continue-available status
     const showContinueButton = useMemo(() => {
         if (isLoading || messages.length === 0) return false;
@@ -308,10 +346,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 animate={isPendingMessage ? { opacity: 1 } : undefined}
                                 className={`copilot-message copilot-message-${message.role}`}
                             >
-                                {message.role === 'assistant' && (
-                                    <div className="copilot-message-avatar">🤖</div>
-                                )}
-
                                 <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
                                     {/* Render parts in their actual order - text and tools interleaved */}
                                     {message.parts && message.parts.length > 0 && (() => {
@@ -347,7 +381,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         return (
                                                             <div key={`file-${partIndex}`} className="message-file-attachment">
                                                                 {isImage ? (
-                                                                    <div className="message-file-image">
+                                                                    <div
+                                                                        className="message-file-image"
+                                                                        onClick={() => setPreviewImage({ url: part.url, name: part.name || 'Image' })}
+                                                                    >
                                                                         <img src={part.url} alt={part.name || 'Attached image'} />
                                                                     </div>
                                                                 ) : (
@@ -389,14 +426,15 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                     // Unknown part type
                                                     return null;
                                                 })}
+
+                                                {/* Add copy button for assistant messages */}
+                                                {message.role === 'assistant' && extractMessageText(message) && (
+                                                    <CopyButton content={extractMessageText(message)} />
+                                                )}
                                             </div>
                                         );
                                     })()}
                                 </div>
-
-                                {message.role === 'user' && (
-                                    <div className="copilot-message-avatar">👤</div>
-                                )}
                             </motion.div>
                         );
                     })}
@@ -412,6 +450,30 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             {isLoading && <LoadingIndicator />}
 
             <div ref={messagesEndRef as React.RefObject<HTMLDivElement>} />
+
+            {/* Image Preview Modal */}
+            <AnimatePresence>
+                {previewImage && (
+                    <motion.div
+                        className="message-image-preview-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <motion.div
+                            className="message-image-preview-container"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <img src={previewImage.url} alt={previewImage.name} />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

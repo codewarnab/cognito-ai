@@ -157,3 +157,79 @@
 .message-parts .message-file-attachment:last-child {
     margin-bottom: 0;
 }
+
+/* Message Image Preview Modal */
+.message-image-preview-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    cursor: pointer;
+}
+
+.message-image-preview-container {
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+.message-image-preview-container img {
+    max-width: 100%;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    object-fit: contain;
+}
+
+.message-file-image {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.message-file-image:hover {
+    transform: scale(1.02);
+}
+
+.message-file-image:active {
+    transform: scale(0.98);
+}
+
+/* Copy Message Button */
+.copy-message-button-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 2px;
+    opacity: 1;
+}
+
+.copy-message-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copy-message-button:hover {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.copy-message-button:active {
+    transform: scale(0.95);
+}

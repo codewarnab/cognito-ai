@@ -6,6 +6,10 @@ import { createLogger } from '../../../logger';
 
 const log = createLogger('ThreadListSidePanel');
 
+function cleanTitle(title: string): string {
+    return title.replace(/^(User:|Assistant:)\s*/gi, '').trim();
+}
+
 interface ThreadListSidePanelProps {
     isOpen: boolean;
     onClose: () => void;
@@ -140,7 +144,7 @@ export function ThreadListSidePanel({
                                             onClick={() => handleThreadClick(thread.id)}
                                         >
                                             <div className="thread-sidepanel-item-content">
-                                                <div className="thread-sidepanel-item-title">{thread.title}</div>
+                                                <div className="thread-sidepanel-item-title">{cleanTitle(thread.title)}</div>
                                                 <div className="thread-sidepanel-item-date">{formatDate(thread.updatedAt)}</div>
                                             </div>
                                             <button

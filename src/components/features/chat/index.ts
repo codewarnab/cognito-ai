@@ -16,6 +16,7 @@ export { LocalBanner } from './components/LocalBanner';
 export { ResearchProgress } from './components/ResearchProgress';
 export { SuggestedActions } from './components/SuggestedActions';
 export { WorkflowBadge } from './components/WorkflowBadge';
+export { CopyButton } from './components/CopyButton';
 
 // Context components
 export { ContextIndicator } from './context/ContextIndicator';

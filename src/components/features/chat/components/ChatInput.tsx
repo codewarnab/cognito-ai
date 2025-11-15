@@ -5,6 +5,7 @@ import { ModeSelector } from '../dropdowns/ModeSelector';
 import { SendIcon } from '../../../shared/icons';
 import { StopIcon } from '../../../shared/icons';
 import { PaperclipIcon } from '../../../shared/icons';
+import { UploadIconMinimal } from '../../../shared/icons';
 import { MentionInput } from '../../../shared/inputs';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
 import { validateFile, createImagePreview, isImageFile } from '../../../../utils/fileProcessor';
@@ -67,6 +68,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const [showModeDropdown, setShowModeDropdown] = useState(false);
     const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
 
+    // Drag and drop state
+    const [isDragging, setIsDragging] = useState(false);
+
     // Workflow state
     const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDefinition | null>(null);
     const [showSlashDropdown, setShowSlashDropdown] = useState(false);
@@ -96,7 +100,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             const validation = validateFile(file);
 
             if (!validation.valid) {
-                onError?.(validation.error || 'Invalid file', 'error');
+                alert(validation.error);
                 continue;
             }
 
@@ -139,6 +143,48 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         const files = Array.from(e.clipboardData.files);
         await processFiles(files);
+    };
+
+    // Handle drag and drop
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Check if we're leaving the form element
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const x = e.clientX;
+        const y = e.clientY;
+
+        if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
+            setIsDragging(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        // Check if in local mode
+        if (modelState.mode === 'local') {
+            onError?.('File attachments are not supported in Local mode. Please switch to Cloud mode to attach files.', 'warning');
+            return;
+        }
+
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) {
+            await processFiles(files);
+        }
     };
 
     // Remove attachment
@@ -365,6 +411,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     handleSend();
                 }}
                 className="copilot-input-form"
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
             >
                 <input
                     ref={fileInputRef}
@@ -375,7 +425,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     onChange={handleFileChange}
                 />
 
-                <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''}`}>
+                <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''} ${isDragging ? 'dragging' : ''}`}>
+                    {/* Drag overlay */}
+                    {isDragging && (
+                        <div className="drag-overlay">
+                            <div className="drag-overlay-content">
+                                <UploadIconMinimal size={32} />
+                                <p>Drop files to attach</p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Local PDF Suggestion - shows when local PDF is detected */}
                     {shouldShowLocalPdfSuggestion && (
                         <LocalPdfSuggestion

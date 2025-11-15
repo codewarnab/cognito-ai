@@ -283,10 +283,29 @@ export function useScreenshotTool() {
                             <img
                                 src={output.screenshot}
                                 alt={output.title || 'Screenshot'}
+                                className="tool-screenshot-image"
                                 style={{
                                     maxWidth: '100%',
                                     borderRadius: '6px',
-                                    border: '1px solid #e5e5e5'
+                                    border: '1px solid #e5e5e5',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s ease'
+                                }}
+                                onClick={(e) => {
+                                    // Dispatch custom event to open image preview modal
+                                    const event = new CustomEvent('openImagePreview', {
+                                        detail: {
+                                            url: output.screenshot,
+                                            name: output.title || 'Screenshot'
+                                        }
+                                    });
+                                    window.dispatchEvent(event);
+                                }}
+                                onMouseEnter={(e) => {
+                                    (e.target as HTMLImageElement).style.transform = 'scale(1.02)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    (e.target as HTMLImageElement).style.transform = 'scale(1)';
                                 }}
                             />
                         </div>
