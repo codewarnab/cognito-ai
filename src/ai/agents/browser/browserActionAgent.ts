@@ -76,9 +76,16 @@ function trackExecution(taskHash: string, promise: Promise<string>): void {
 /**
  * Execute a browser action task using an intelligent agent
  * @param taskDescription - Natural language description of what to do
+ * @param abortSignal - Optional abort signal to cancel the operation
  * @returns Result of executing the task
  */
-async function executeBrowserTask(taskDescription: string): Promise<string> {
+async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSignal): Promise<string> {
+    // Check if aborted before starting
+    if (abortSignal?.aborted) {
+        log.info('🛑 Browser action agent aborted before execution');
+        throw new Error('Operation cancelled');
+    }
+
     const taskHash = getTaskHash(taskDescription);
 
     // Check if this exact task is already executing
@@ -93,6 +100,11 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
     // Create and track the execution promise
     const executionPromise = (async () => {
         try {
+            // Check abort signal periodically
+            if (abortSignal?.aborted) {
+                log.info('🛑 Browser action agent aborted during setup');
+                throw new Error('Operation cancelled');
+            }
             // Initialize Gen AI client with provider awareness (supports Google AI and Vertex AI)
             const client = await initializeGenAIClient();
 
@@ -166,6 +178,12 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
 
             // Handle function calling loop
             while (iterations < maxIterations) {
+                // Check abort signal at start of each iteration
+                if (abortSignal?.aborted) {
+                    log.info('🛑 Browser action agent aborted during iteration', { iteration: iterations });
+                    throw new Error('Operation cancelled');
+                }
+
                 // Safety check for response object
                 if (!response) {
                     log.error('❌ Response is undefined in function calling loop', { iteration: iterations });
@@ -349,11 +367,11 @@ export const browserActionAgentDeclaration: FunctionDeclaration = {
  * Browser Action Agent Executor
  * This function executes the agent with the given parameters
  */
-export async function executeBrowserActionAgent(args: { taskDescription: string }): Promise<any> {
+export async function executeBrowserActionAgent(args: { taskDescription: string }, abortSignal?: AbortSignal): Promise<any> {
     log.info('🎯 Browser Action Agent called', { taskDescription: args.taskDescription });
 
     try {
-        const result = await executeBrowserTask(args.taskDescription);
+        const result = await executeBrowserTask(args.taskDescription, abortSignal);
 
         return {
             success: true,

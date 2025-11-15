@@ -48,10 +48,29 @@ export async function executeStreamText(params: {
     } = params;
 
     try {
+        // Create tools with abort signal binding
+        const abortableTools = abortSignal ? (() => {
+            const boundTools: Record<string, any> = {};
+            Object.entries(tools).forEach(([name, tool]) => {
+                boundTools[name] = {
+                    ...tool,
+                    execute: async (args: any) => {
+                        // Check abort before execution
+                        if (abortSignal.aborted) {
+                            throw new Error('Operation cancelled');
+                        }
+                        // Call original execute with abort signal
+                        return tool.execute(args, abortSignal);
+                    }
+                };
+            });
+            return boundTools;
+        })() : tools;
+
         return await streamText({
             model,
             messages: modelMessages,
-            tools,
+            tools: abortableTools,
             system: enhancedPrompt,
             ...(abortSignal && { abortSignal }),
             ...(prepareStep && { prepareStep }),

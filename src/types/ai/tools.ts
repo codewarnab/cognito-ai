@@ -12,7 +12,7 @@ export interface ToolDefinition<
     name: TName;
     description: string;
     parameters: TParams;
-    execute: (args: z.infer<TParams>) => Promise<TResult> | TResult;
+    execute: (args: z.infer<TParams>, abortSignal?: AbortSignal) => Promise<TResult> | TResult;
     category?: ToolCategory;
     requiresPermission?: string[];
     experimental?: boolean;
