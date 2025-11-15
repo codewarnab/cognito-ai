@@ -273,7 +273,12 @@ export function registerSelectionActions() {
           return { valid: false, error: `Failed to validate context: ${(error as Error).message}` };
         }
       },
-      execute: async ({ limit }) => {
+      execute: async ({ limit }, abortSignal) => {
+        // Check if aborted before starting
+        if (abortSignal?.aborted) {
+          log.info('🛑 readPageContent aborted before execution');
+          throw new Error('Operation cancelled');
+        }
         try {
           log.info("TOOL CALL: readPageContent", { limit });
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -389,6 +394,12 @@ export function registerSelectionActions() {
               });
             }
           });
+
+          // Check if aborted after script execution
+          if (abortSignal?.aborted) {
+            log.info('🛑 readPageContent aborted after script execution');
+            throw new Error('Operation cancelled');
+          }
 
           const pageData = results[0]?.result as {
             title: string;
