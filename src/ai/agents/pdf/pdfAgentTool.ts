@@ -6,12 +6,11 @@
  */
 
 import { generateText } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { SchemaType, type FunctionDeclaration } from '@google/generative-ai';
+import { Type as SchemaType, type FunctionDeclaration } from '@google/genai';
 import { createLogger } from '../../../logger';
 import { NetworkError, parseError } from '../../../errors';
 import { isPdfUrl } from '../../../utils/pdfDetector';
-import { getGoogleApiKey } from '../../../utils/providerCredentials';
+import { initializeModel } from '../../core/modelFactory';
 
 const log = createLogger('PDF-Agent-Tool');
 
@@ -95,20 +94,17 @@ Question: ${question}`;
 
         log.info('📤 Sending request to Gemini with URL context for PDF');
 
-        // Get API key and create configured Google provider
-        const apiKey = await getGoogleApiKey();
-        if (!apiKey) {
-            throw new Error('Google API key not configured. Please configure it in settings.');
-        }
+        // Initialize model using provider-aware factory (respects Vertex AI or Google AI selection)
+        const { model, provider, providerInstance } = await initializeModel('gemini-2.5-flash', 'remote');
 
-        const google = createGoogleGenerativeAI({ apiKey });
+        log.info('✅ Model initialized with provider:', provider);
 
         // Use AI SDK with URL context tool (supports PDFs)
         const { text } = await generateText({
-            model: google('gemini-2.0-flash-exp'),
+            model: model,
             prompt: prompt,
             tools: {
-                url_context: google.tools.urlContext({}),
+                url_context: providerInstance.tools.urlContext({}),
             },
         });
 

@@ -4,10 +4,15 @@
  */
 
 import { z } from 'zod';
-import { SchemaType } from '@google/generative-ai';
-import type { FunctionDeclaration, FunctionDeclarationSchema, FunctionDeclarationSchemaProperty } from '@google/generative-ai';
+// Migrated to @google/genai for consistency with browser action agent
+import { Type as SchemaType } from '@google/genai';
+import type { FunctionDeclaration, Schema } from '@google/genai';
 import type { ToolDefinition } from '../tools/registryUtils';
 import { createLogger } from '../../logger';
+
+// Type aliases for backwards compatibility
+type FunctionDeclarationSchema = Schema;
+type FunctionDeclarationSchemaProperty = Schema;
 
 const log = createLogger('ToolConverter');
 

@@ -5,11 +5,11 @@
  */
 
 import { generateObject } from 'ai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod';
 import { createLogger } from '../../logger';
 import type { PageContext } from '../../utils/pageContextExtractor';
 import { generateLocalContextualSuggestions } from './local';
+import { initializeModel } from '../core/modelFactory';
 
 const log = createLogger('SuggestionGenerator');
 
@@ -31,27 +31,25 @@ export type Suggestion = {
 /**
  * Generate contextual suggestions using AI (remote or local)
  * @param pageContext - Current page context
- * @param apiKey - Optional API key for remote mode. If not provided, uses local AI
+ * @param mode - AI mode ('remote' or 'local'). If 'remote', uses active provider (Vertex or Google AI)
  */
 export async function generateContextualSuggestions(
     pageContext: PageContext | null,
-    apiKey?: string
+    mode: 'remote' | 'local' = 'remote'
 ): Promise<Suggestion[] | null> {
     try {
-        // If no API key provided, try local AI first
-        if (!apiKey) {
-            log.info('No API key provided, using local AI for suggestions');
+        // If local mode requested, use local AI
+        if (mode === 'local') {
+            log.info('Using local AI for suggestions');
             return await generateLocalContextualSuggestions(pageContext);
         }
 
-        // Remote mode: Use Gemini API
+        // Remote mode: Use active provider (respects user's provider selection)
         try {
-            // Create Google AI provider
-            const google = createGoogleGenerativeAI({
-                apiKey,
-            });
+            // Initialize model using modelFactory (automatically handles provider selection)
+            const { model, provider, modelName } = await initializeModel('gemini-2.5-flash-lite', 'remote');
 
-            const model = google('gemini-2.5-flash-lite');
+            log.info('Generating remote suggestions with provider:', provider, 'model:', modelName);
 
             // Build prompt with page context
             const prompt = buildSuggestionPrompt(pageContext);

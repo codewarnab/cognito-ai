@@ -24,6 +24,7 @@ export interface ModelInitResult {
     model: any;
     provider: AIProvider | 'local';
     modelName: string;
+    providerInstance?: any; // Google or Vertex provider instance for accessing tools
 }
 
 /**
@@ -152,6 +153,7 @@ async function initializeVertexModel(modelName: string): Promise<ModelInitResult
             model,
             provider: 'vertex',
             modelName,
+            providerInstance: vertex, // Return provider instance for tool access
         };
     } catch (error) {
         log.error('❌ Failed to initialize Vertex AI model:', error);
@@ -192,6 +194,7 @@ async function initializeGoogleModel(modelName: string): Promise<ModelInitResult
         model,
         provider: 'google',
         modelName,
+        providerInstance: google, // Return provider instance for tool access
     };
 }
 

@@ -1,12 +1,12 @@
 /**
  * TypeScript type definitions for Gemini Live API
- * Based on @google/generative-ai SDK
+ * Uses @google/genai SDK
  */
 
 import type {
     FunctionDeclaration,
     Part
-} from '@google/generative-ai';
+} from '@google/genai';
 
 /**
  * Audio modality for Live API responses

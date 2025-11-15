@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { SchemaType } from '@google/generative-ai';
+import { Type as SchemaType } from '@google/genai';
 import {
     zodToLiveAPISchema,
     convertToolToLiveAPIFormat,
@@ -101,7 +101,7 @@ export function runToolConverterTests() {
     console.log(JSON.stringify(declaration, null, 2));
     console.assert(declaration.name === 'navigateTo', 'Name should match');
     console.assert(declaration.description === 'Navigate to a URL', 'Description should match');
-    console.assert(declaration.parameters.type === SchemaType.OBJECT, 'Parameters should be OBJECT');
+    console.assert(declaration.parameters?.type === SchemaType.OBJECT, 'Parameters should be OBJECT');
 
     // Test 7: Validation
     console.log('\n✅ Test 7: Function declaration validation');
@@ -128,8 +128,8 @@ export function runToolConverterTests() {
     const declarations = convertAllTools(toolsObject);
     console.log(`Converted ${declarations.length} tools`);
     console.assert(declarations.length === 2, 'Should convert 2 tools');
-    console.assert(declarations[0].name === 'navigateTo', 'First tool should be navigateTo');
-    console.assert(declarations[1].name === 'scrollPage', 'Second tool should be scrollPage');
+    console.assert(declarations[0]?.name === 'navigateTo', 'First tool should be navigateTo');
+    console.assert(declarations[1]?.name === 'scrollPage', 'Second tool should be scrollPage');
 
     console.log('\n✅ All tests passed! 🎉\n');
 }
