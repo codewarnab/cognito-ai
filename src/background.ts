@@ -1561,7 +1561,7 @@ async function sendMessageToSidepanel(text: string, attempt: number = 1, maxAtte
         if (attempt < maxAttempts) {
             const delay = Math.min(100 * Math.pow(2, attempt - 1), 1000); // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1000ms
             backgroundLog.debug(` Sidepanel not ready yet (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`);
-            
+
             await new Promise(resolve => setTimeout(resolve, delay));
             return sendMessageToSidepanel(text, attempt + 1, maxAttempts);
         } else {
