@@ -217,9 +217,8 @@ export class GeminiLiveClient {
                     this.updateStatus('Connecting...');
                     log.info(`Starting Live API session on client #${this.instanceId}...`);
 
-                    // Create session manager
+                    // Create session manager (no API key needed - uses provider-aware initialization)
                     this.sessionManager = new GeminiLiveSessionManager(
-                        this.config.apiKey,
                         {
                             model: this.config.model!,
                             voiceName: this.config.voiceName!,

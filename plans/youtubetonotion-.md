@@ -10,6 +10,8 @@
 
 ## 🏗️ High-Level Architecture (Nested Agent Pattern)
 
+**SDK Architecture Note**: All agents use `@google/genai` SDK with provider-aware initialization. Provider selection (Google AI vs Vertex AI) is centralized via `genAIFactory.ts`, ensuring all nested agents respect user's provider choice.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                    MAIN WORKFLOW AGENT                               │
@@ -21,6 +23,7 @@
 │  • Receives compact success response with Notion URLs                │
 │  • Displays success message to user                                  │
 │  • Context: ~500 tokens (NO large transcripts)                       │
+│  • SDK: Uses @google/genai via genAIFactory (provider-aware)         │
 │                                                                       │
 │  Allowed Tools: ['getActiveTab', 'youtubeToNotionAgent']            │
 └────────────────────────┬────────────────────────────────────────────┘
@@ -34,7 +37,9 @@
 │                  youtubeToNotionAgent Tool                           │
 │                                                                       │
 │  Role: Heavy lifting - video analysis & note generation              │
-│  • Has its own Gemini instance with large context window             │
+│  • Has its own GoogleGenAI client with large context window          │
+│  • Uses @google/genai SDK with provider-aware initialization         │
+│  • Respects user's provider selection (Google AI or Vertex AI)       │
 │  • Calls analyzeYouTubeVideo → receives 50k char transcript          │
 │  • KEEPS transcript in its own context (NO passing to main)          │
 │  • Analyzes transcript internally:                                   │
@@ -45,6 +50,7 @@
 │  • Waits for Notion creation success                                 │
 │  • Returns compact response to main workflow                         │
 │                                                                       │
+│  SDK: @google/genai via initializeGenAIClient() from genAIFactory    │
 │  Internal Tools: ['analyzeYouTubeVideo', 'notionCreatorAgent']      │
 │                                                                       │
 │  Input:                                                               │
@@ -71,7 +77,9 @@
 │                  notionCreatorAgent Tool                             │
 │                                                                       │
 │  Role: Notion page creation orchestration                            │
-│  • Has its own Gemini instance for API orchestration                 │
+│  • Has its own GoogleGenAI client for API orchestration              │
+│  • Uses @google/genai SDK with provider-aware initialization         │
+│  • Respects user's provider selection (Google AI or Vertex AI)       │
 │  • Receives structured notes (NOT full transcript)                   │
 │  • Creates main Notion page via notion-create-pages                  │
 │  • Loops through nested pages array                                  │
@@ -79,6 +87,7 @@
 │  • Handles Notion API errors gracefully                              │
 │  • Returns success with all created page URLs                        │
 │                                                                       │
+│  SDK: @google/genai via initializeGenAIClient() from genAIFactory    │
 │  Internal Tools: ['notion-create-pages', 'notion-update-page']      │
 │                                                                       │
 │  Input:                                                               │
@@ -116,6 +125,47 @@
 ---
 
 ## 📐 Detailed Component Architecture
+
+### Provider Selection Architecture
+
+All nested agents automatically inherit the user's provider selection through centralized initialization:
+
+```typescript
+// genAIFactory.ts - Centralized provider-aware initialization
+import { GoogleGenAI } from '@google/genai';
+import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/providerCredentials';
+
+export async function initializeGenAIClient(): Promise<GoogleGenAI> {
+    const activeProvider = await getActiveProvider();
+    
+    if (activeProvider === 'vertex') {
+        const { projectId, location } = await getVertexCredentials();
+        return new GoogleGenAI({
+            vertexai: true,
+            project: projectId,
+            location: location,
+        });
+    } else {
+        const apiKey = await getGoogleApiKey();
+        return new GoogleGenAI({ apiKey });
+    }
+}
+
+// Usage in ALL agents (main workflow, YouTube-to-Notion, Notion Creator)
+const client = await initializeGenAIClient();
+const response = await client.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { /* ... */ }
+});
+```
+
+**Key Benefits:**
+- ✅ Single source of truth for provider selection
+- ✅ All nested agents use same provider automatically
+- ✅ No provider logic duplicated in each agent
+- ✅ Easy to test with both Google AI and Vertex AI
+- ✅ User preference respected throughout entire workflow
 
 ### Key Benefit: No Large Context Passing Between Agents
 
@@ -556,10 +606,54 @@ This is the leaf node of the agent tree. Building from bottom-up ensures we can 
 
 #### Files to Create:
 1. `src/ai/agents/notion/notionCreatorAgent.ts`
-   - Agent implementation with Gemini instance
+   - Agent implementation with GoogleGenAI client (@google/genai)
+   - Provider-aware initialization using genAIFactory
    - System prompt for Notion page creation
    - Handles Notion MCP tool calls
    - Error handling for API failures
+   - Works with both Google AI and Vertex AI
+
+**Provider-Aware Initialization Example:**
+```typescript
+import { GoogleGenAI } from '@google/genai';
+import { initializeGenAIClient } from '../../core/genAIFactory';
+import { createLogger } from '../../../logger';
+
+const log = createLogger('NotionCreatorAgent');
+
+export async function executeNotionCreatorAgent(
+  input: NotionCreatorInput
+): Promise<NotionCreatorOutput> {
+  try {
+    log.info('Initializing Notion Creator Agent with provider-aware client');
+    
+    // Initialize client that respects user's provider selection
+    const client = await initializeGenAIClient();
+    
+    // Get filtered Notion tools
+    const notionTools = await getNotionTools();
+    
+    // Generate content with Gen AI SDK
+    const response = await client.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'user', parts: [{ text: JSON.stringify(input) }] }
+      ],
+      config: {
+        tools: notionTools,
+        temperature: 0.7,
+      }
+    });
+    
+    // Process response and handle tool calls
+    return processNotionCreationResponse(response);
+  } catch (error) {
+    log.error('Notion Creator Agent failed', error);
+    throw error;
+  }
+}
+```
 
 2. `src/ai/agents/notion/notionCreatorAgentTool.ts`
    - Function declaration for parent agents
@@ -606,7 +700,10 @@ filtered from the full MCP tool set during agent initialization.
 
 #### System Prompt Structure:
 ```typescript
+// Note: Agent uses @google/genai SDK with provider-aware initialization
 const systemPrompt = `You are a Notion Page Creator Agent.
+
+**SDK**: Powered by @google/genai (supports both Google AI and Vertex AI)
 
 Your SOLE PURPOSE is to create hierarchical Notion pages using MCP tools.
 
@@ -702,7 +799,7 @@ async function getNotionTools(): Promise<Record<string, any>> {
 // When initializing the agent's Gemini model
 const notionTools = await getNotionTools();
 
-const model = google('gemini-2.0-flash-exp', {
+const model = google('gemini-2.5-flash', {
   tools: notionTools,
   // ... other config
 });
@@ -736,11 +833,88 @@ This agent orchestrates the entire video-to-notes pipeline. It depends on Phase 
 #### Files to Create:
 1. `src/ai/agents/youtubeToNotion/youtubeToNotionAgent.ts`
    - Main agent with large context window
+   - Uses @google/genai SDK with provider-aware initialization
    - Calls analyzeYouTubeVideo (gets 50k+ transcript)
    - Video type detection from transcript
    - Template selection logic
    - Structured notes generation
    - Calls notionCreatorAgent (Phase 1)
+   - Works with both Google AI and Vertex AI
+
+**Provider-Aware Implementation Example:**
+```typescript
+import { GoogleGenAI } from '@google/genai';
+import { initializeGenAIClient } from '../../core/genAIFactory';
+import { executeAnalyzeYouTubeVideo } from '../youtube/youtubeAgentTool';
+import { executeNotionCreatorAgent } from '../notion/notionCreatorAgentTool';
+import { createLogger } from '../../../logger';
+
+const log = createLogger('YouTubeToNotionAgent');
+
+export async function executeYouTubeToNotionAgent(
+  input: YouTubeToNotionInput
+): Promise<YouTubeToNotionOutput> {
+  try {
+    log.info('Initializing YouTube to Notion Agent', input);
+    
+    // Step 1: Get transcript from YouTube agent
+    const transcriptResult = await executeAnalyzeYouTubeVideo({
+      youtubeUrl: input.youtubeUrl,
+      question: 'Get the full transcript of this video'
+    });
+    
+    const transcript = transcriptResult.analysis;
+    log.info('Received transcript', { length: transcript.length });
+    
+    // Step 2: Initialize provider-aware client
+    const client = await initializeGenAIClient();
+    
+    // Step 3: Analyze transcript and generate structured notes
+    const response = await client.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        { role: 'user', parts: [{ text: YOUTUBE_TO_NOTION_SYSTEM_PROMPT }] },
+        { 
+          role: 'user', 
+          parts: [{ 
+            text: JSON.stringify({
+              transcript,
+              videoTitle: input.videoTitle,
+              videoUrl: input.youtubeUrl
+            }) 
+          }] 
+        }
+      ],
+      config: {
+        temperature: 0.7,
+        responseFormat: 'json'
+      }
+    });
+    
+    // Step 4: Parse structured notes
+    const notes = JSON.parse(response.text);
+    
+    // Step 5: Create Notion pages via child agent
+    const notionResult = await executeNotionCreatorAgent({
+      mainPageTitle: notes.mainPageTitle,
+      videoUrl: notes.videoUrl,
+      nestedPages: notes.nestedPages
+    });
+    
+    // Step 6: Return compact success response
+    return {
+      success: true,
+      mainPageUrl: notionResult.mainPageUrl,
+      pageCount: notionResult.pageCount,
+      videoType: notes.videoType,
+      message: `Created '${input.videoTitle}' with ${notionResult.pageCount} pages in Notion`
+    };
+  } catch (error) {
+    log.error('YouTube to Notion Agent failed', error);
+    throw error;
+  }
+}
+```
 
 2. `src/ai/agents/youtubeToNotion/youtubeToNotionAgentTool.ts`
    - Function declaration for main workflow
@@ -1380,6 +1554,130 @@ try {
 
 ---
 
+## 🔄 Provider Support & Testing
+
+### Provider Selection Propagation
+
+All agents in the nested agent hierarchy automatically respect the user's provider selection:
+
+```
+┌────────────────────────────────────────────────────────┐
+│          USER SELECTS PROVIDER IN SETTINGS             │
+│          (Google AI or Vertex AI)                      │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│          providerCredentials.ts                        │
+│          • getActiveProvider()                         │
+│          • Returns: 'google' or 'vertex'               │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌────────────────────────────────────────────────────────┐
+│          genAIFactory.ts                               │
+│          • initializeGenAIClient()                     │
+│          • Returns provider-specific GoogleGenAI       │
+└───────────────────────┬────────────────────────────────┘
+                        │
+        ┌───────────────┴───────────────┐
+        │                               │
+        ▼                               ▼
+┌──────────────────┐          ┌──────────────────┐
+│ Main Workflow    │          │ YouTube to       │
+│ Agent            │──────────│ Notion Agent     │
+│ (uses client)    │          │ (uses client)    │
+└──────────────────┘          └────────┬─────────┘
+                                       │
+                                       ▼
+                              ┌──────────────────┐
+                              │ Notion Creator   │
+                              │ Agent            │
+                              │ (uses client)    │
+                              └──────────────────┘
+```
+
+**Testing Both Providers:**
+
+```typescript
+// Test 1: Google AI Provider
+// 1. Set provider to 'google' in settings
+// 2. Configure Google AI API key
+// 3. Run workflow on YouTube video
+// 4. Verify all agents use Google AI
+// 5. Check Notion pages created successfully
+
+// Test 2: Vertex AI Provider
+// 1. Set provider to 'vertex' in settings
+// 2. Configure Vertex AI credentials (project, location)
+// 3. Run workflow on same YouTube video
+// 4. Verify all agents use Vertex AI
+// 5. Check Notion pages created successfully
+// 6. Compare output quality with Google AI
+
+// Test 3: Provider Switching
+// 1. Start with Google AI, run workflow
+// 2. Switch to Vertex AI in settings
+// 3. Run workflow again on different video
+// 4. Verify new workflow uses Vertex AI
+// 5. Check both sets of notes in Notion
+```
+
+### Model Name Considerations
+
+**Current Implementation:**
+- All agents use `gemini-2.5-flash` model
+- Model name is consistent across Google AI and Vertex AI
+- No model name switching needed
+
+**If Using Different Models:**
+```typescript
+// For agents that might use provider-specific models
+import { getActiveProvider } from '@/utils/providerCredentials';
+
+const activeProvider = await getActiveProvider();
+const model = activeProvider === 'vertex'
+  ? 'gemini-2.5-flash'  // Vertex AI model name
+  : 'gemini-2.5-flash'; // Google AI model name
+
+// Both providers support same model names for Gemini 2.0 Flash
+// Only Live API requires different model names:
+// - Google AI: 'gemini-live-2.5-flash-preview'
+// - Vertex AI: 'gemini-2.0-flash-live-preview-04-09'
+```
+
+### Troubleshooting Provider Issues
+
+**Issue: Agent using wrong provider**
+```typescript
+// Debug: Add logging in genAIFactory.ts
+log.info('Initializing Gen AI client', { 
+  provider: activeProvider,
+  hasApiKey: !!apiKey,
+  hasVertexCreds: !!(projectId && location)
+});
+
+// Verify in agent execution logs
+log.info('Agent initialized', {
+  agentName: 'YouTubeToNotionAgent',
+  provider: await getActiveProvider()
+});
+```
+
+**Issue: Vertex AI authentication fails**
+- Check service account JSON is valid
+- Verify project ID and location are correct
+- Ensure Vertex AI API is enabled in GCP
+- Check `google-auth-library` is installed
+
+**Issue: Different output quality between providers**
+- Both providers use same models (Gemini 2.5 Flash)
+- Output should be identical
+- If differences exist, may be due to:
+  - Regional model variations
+  - Quota/rate limiting differences
+  - Network latency affecting streaming
+
 ## 📊 System Prompt Examples
 
 ### Video Notes Agent System Prompt (Complete)
@@ -1538,24 +1836,30 @@ Remember: Your output will be directly used to create Notion pages. Make it exce
 - [ ] Agent generates 4-10 pages consistently
 - [ ] Output is valid JSON every time
 - [ ] Templates cover all video types
+- [ ] ✅ **Provider-aware**: Agents use `initializeGenAIClient()` from genAIFactory
+- [ ] ✅ **Both providers work**: Tested with Google AI and Vertex AI
 
 ### Phase 3-4 Success:
 - [ ] Workflow validates prerequisites correctly
 - [ ] Validation errors display as toasts
 - [ ] Workflow appears in UI dropdown
 - [ ] System prompt guides execution properly
+- [ ] ✅ **Provider selection respected**: Main workflow uses correct provider
 
 ### Phase 5-6 Success:
 - [ ] Tool registration works without errors
 - [ ] Notion pages create successfully
 - [ ] Nested pages have correct parent relationships
 - [ ] Video URL appears in Notion
+- [ ] ✅ **Provider switching works**: Can switch providers and re-run
 
 ### Phase 7-8 Success:
 - [ ] All test scenarios pass
 - [ ] Edge cases handled gracefully
 - [ ] Performance meets targets (<60s)
 - [ ] Documentation is complete
+- [ ] ✅ **Provider parity**: Output quality identical across providers
+- [ ] ✅ **Migration complete**: Uses @google/genai (not deprecated SDK)
 
 ---
 
@@ -1572,6 +1876,11 @@ Before releasing:
 - [ ] Notion MCP integration verified
 - [ ] YouTube agent integration verified
 - [ ] Workflow registered properly
+- [ ] ✅ **SDK Migration**: All agents use @google/genai (not @google/generative-ai)
+- [ ] ✅ **Provider Support**: Tested with both Google AI and Vertex AI
+- [ ] ✅ **genAIFactory**: All agents use initializeGenAIClient()
+- [ ] ✅ **No deprecated SDKs**: Removed @google/generative-ai dependency
+- [ ] ✅ **Provider switching**: Verified behavior when switching providers
 
 ---
 
@@ -1592,27 +1901,67 @@ Before releasing:
 ## 🔗 Dependencies
 
 ### Existing Components:
-- YouTube Agent Tool (`youtubeAgentTool.ts`)
+- YouTube Agent Tool (`youtubeAgentTool.ts`) - **Uses @google/genai after migration**
 - Notion MCP Integration (`src/mcp/`)
 - Workflow System (`src/workflows/`)
 - Tool Registry (`src/ai/tools/`)
+- **Gen AI Factory** (`src/ai/core/genAIFactory.ts`) - Provider-aware initialization
+- **Model Factory** (`src/ai/core/modelFactory.ts`) - For AI SDK agents (PDF, Suggestions)
+- Provider Credentials (`src/utils/providerCredentials.ts`)
+
+### SDK Requirements:
+- `@google/genai` v1.29.0+ - Modern Gen AI SDK (used by all agents)
+- `@ai-sdk/google` v2.0.28+ - AI SDK for Google AI (used by PDF agent)
+- `@ai-sdk/google-vertex` v3.0.59+ - AI SDK for Vertex AI (used by PDF agent)
+- ❌ `@google/generative-ai` - **DEPRECATED** - Do not use (removed after migration)
 
 ### New Components:
-- Video Notes Agent Tool
+- Video Notes Agent Tool (uses @google/genai)
 - Video Notes Templates
-- Workflow Definition
+- Workflow Definition (uses provider-aware agents)
 - UI Integration
+
+### Migration Status:
+- ✅ YouTube Agent: Migrated to @google/genai
+- ✅ Browser Agent: Migrated to @google/genai  
+- ✅ PDF Agent: Uses AI SDK with modelFactory
+- ✅ Suggestions: Uses AI SDK with modelFactory
+- ✅ Live API: Uses @google/genai with genAIFactory
 
 ---
 
 ## 📝 Notes
 
+### Architecture Notes:
 - Large transcripts (50k+ chars) will be handled efficiently by the agent tool architecture
-- Gemini 2.0 Flash model supports large context windows
+- Gemini 2.5 Flash model supports large context windows
 - Notion rate limits: 180 req/min, 30 search/min
 - Each nested page = separate API call to Notion
 - Error recovery: if page creation fails, workflow should save progress
 - User can always retry if something fails
+
+### SDK & Provider Notes:
+- **All agents use @google/genai** (modern Gen AI SDK, not deprecated)
+- **Provider selection is centralized** via `genAIFactory.ts`
+- **Nested agents inherit provider** automatically (no per-agent configuration)
+- **Both Google AI and Vertex AI supported** with identical functionality
+- **Model names consistent** across providers for Gemini 2.0 Flash
+- **No breaking changes** when switching providers (transparent to user)
+- **YouTube agent already migrated** from deprecated SDK
+- **PDF agent uses AI SDK** (`@ai-sdk/google` + `@ai-sdk/google-vertex` via modelFactory)
+
+### Testing Recommendations:
+- Test each agent individually with both providers before integration
+- Verify provider switching doesn't break mid-workflow
+- Compare output quality between Google AI and Vertex AI
+- Monitor API costs for both providers (may differ)
+- Test with Vertex AI regional quotas (some regions have limits)
+
+### Future SDK Considerations:
+- If using Live API in agents, use `getLiveModelName()` from genAIFactory
+- New Gen AI SDK features (streaming, caching) available to all agents
+- Vertex AI specific features (tuned models) can be enabled per-provider
+- Monitor SDK updates: @google/genai releases frequently
 
 ---
 

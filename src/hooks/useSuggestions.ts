@@ -9,7 +9,6 @@ import { createLogger } from '../logger';
 import { extractPageContext } from '../utils/pageContextExtractor';
 import { suggestionCache } from '../utils/suggestionCache';
 import { generateContextualSuggestions, type Suggestion } from '../ai/suggestions';
-import { getGeminiApiKey } from '../utils/geminiApiKey';
 import type { ModelState } from '../components/features/chat/types';
 
 const log = createLogger('UseSuggestions');
@@ -83,22 +82,13 @@ export function useSuggestions(
                 return;
             }
 
-            // Get API key (optional - if not available, will use local AI)
-            const apiKey = await getGeminiApiKey();
-
-            if (modelState.mode === 'remote' && !apiKey) {
-                log.warn('Remote mode but no API key available');
-                // Don't set error, just skip (or could fallback to local)
-                return;
-            }
-
             // Extract page context
             const pageContext = await extractPageContext();
 
-            // Generate suggestions (will use local AI if no apiKey)
+            // Generate suggestions using modelFactory (respects provider selection)
             const newSuggestions = await generateContextualSuggestions(
                 pageContext,
-                modelState.mode === 'remote' ? (apiKey ?? undefined) : undefined
+                modelState.mode as 'remote' | 'local'
             );
 
             if (newSuggestions) {

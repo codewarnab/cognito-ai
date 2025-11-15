@@ -5,10 +5,9 @@
 
 import { tool } from 'ai';
 import { z } from 'zod';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { initializeGenAIClient } from '../../core/genAIFactory';
 import { createLogger } from '../../../logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../errors';
-import { validateAndGetApiKey } from '../../../utils/geminiApiKey';
 import { TRANSCRIPT_API_URL } from '../../../constants';
 
 const log = createLogger('YouTube-Agent');
@@ -337,10 +336,8 @@ async function analyzeVideoChunk(
     chunkInfo?: string
 ): Promise<string> {
     try {
-        // Get API key from storage and initialize Google AI
-        const apiKey = await validateAndGetApiKey();
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        // Initialize Gen AI client with provider awareness
+        const client = await initializeGenAIClient();
 
         // If transcript is available, use text-based analysis
         if (transcript) {
@@ -368,8 +365,11 @@ Focus on directly answering the user's specific question about the video.`;
 
             const prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\nUser Question: ${question}`;
 
-            const result = await model.generateContent([{ text: prompt }]);
-            return result.response.text();
+            const response = await client.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            return response.text || 'No response generated';
         }
 
         // Fallback to video-based analysis if no transcript
@@ -420,8 +420,11 @@ Focus on directly answering the user's specific question about the video.`;
 
         parts.push(videoPart);
 
-        const result = await model.generateContent(parts);
-        return result.response.text();
+        const response = await client.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: [{ role: 'user', parts }]
+        });
+        return response.text || 'No response generated';
     } catch (error) {
         log.error('❌ Error in analyzeVideoChunk:', error);
 
@@ -506,10 +509,8 @@ async function analyzeYouTubeVideo(
         if (numChunks > 3) {
             log.info('Creating final consolidated summary from all chunks');
 
-            // Get API key from storage and initialize Google AI
-            const apiKey = await validateAndGetApiKey();
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            // Initialize Gen AI client with provider awareness
+            const client = await initializeGenAIClient();
 
             const consolidationPrompt = `You are synthesizing analysis from ${numChunks} parts of a ${formatDuration(videoDuration)} video.
 
@@ -527,8 +528,11 @@ Create a cohesive response that:
 
 Your consolidated response:`;
 
-            const finalResult = await model.generateContent([{ text: consolidationPrompt }]);
-            return `# Consolidated Summary\n\n${finalResult.response.text()}\n\n---\n\n<details>\n<summary>View Detailed Part-by-Part Analysis</summary>\n\n${combinedResult}\n</details>`;
+            const finalResponse = await client.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: [{ role: 'user', parts: [{ text: consolidationPrompt }] }]
+            });
+            return `# Consolidated Summary\n\n${finalResponse.text}\n\n---\n\n<details>\n<summary>View Detailed Part-by-Part Analysis</summary>\n\n${combinedResult}\n</details>`;
         }
 
         return combinedResult;
@@ -717,10 +721,8 @@ export const youtubeAgentAsTool = tool({
                     log.warn('⚠️ Video analysis failed, using description as fallback', videoAnalysisError);
                     usedDescription = true;
 
-                    // Get API key and analyze based on description
-                    const apiKey = await validateAndGetApiKey();
-                    const genAI = new GoogleGenerativeAI(apiKey);
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                    // Initialize Gen AI client and analyze based on description
+                    const client = await initializeGenAIClient();
 
                     const descriptionPrompt = `⚠️ Note: Unable to directly analyze the video content. The following answer is generated based on the video description only.
 
@@ -731,8 +733,11 @@ User Question: ${question}
 
 Please answer the question based on the video description above. Be clear that this is based on the description, not the actual video content.`;
 
-                    const result = await model.generateContent([{ text: descriptionPrompt }]);
-                    answer = `⚠️ **Note:** Unable to directly analyze the video. The following response is based on the video description.\n\n---\n\n${result.response.text()}`;
+                    const response = await client.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: [{ role: 'user', parts: [{ text: descriptionPrompt }] }]
+                    });
+                    answer = `⚠️ **Note:** Unable to directly analyze the video. The following response is based on the video description.\n\n---\n\n${response.text}`;
                 } else {
                     // No description available either - re-throw the error
                     throw videoAnalysisError;
@@ -747,7 +752,7 @@ Please answer the question based on the video description above. Be clear that t
             return {
                 answer,
                 videoUrl: youtubeUrl,
-                videoDuration: finalDuration,
+                videoDuration: finalDuration ?? undefined,
                 usedTranscript: !!transcript,
                 usedDescription,
                 wasChunked: finalDuration ? finalDuration > MAX_CHUNK_DURATION && !transcript : false,

@@ -8,6 +8,7 @@ import { GEMINI_LIVE_MODELS, Modality } from '../types';
 import { getGeminiLiveSystemInstruction } from '../../agents/browser';
 import { createLogger } from '../../../logger';
 import { GeminiLiveToolHandler } from './toolHandler';
+import { initializeGenAIClient, getLiveModelName } from '../../core/genAIFactory';
 
 const log = createLogger('SessionManager');
 
@@ -27,16 +28,15 @@ export interface SessionCallbacks {
 }
 
 export class GeminiLiveSessionManager {
-    private client: any | null = null;
+    private client: GoogleGenAI | null = null;
     private session: any | null = null;
     private toolHandler: GeminiLiveToolHandler;
 
     constructor(
-        apiKey: string,
         private config: SessionConfig,
         private callbacks: SessionCallbacks = {}
     ) {
-        this.client = new GoogleGenAI({ apiKey });
+        // Don't initialize client here - do it in connect() with provider awareness
         this.toolHandler = new GeminiLiveToolHandler();
     }
 
@@ -51,14 +51,25 @@ export class GeminiLiveSessionManager {
 
         log.info('Starting Live API session...');
 
+        // Initialize provider-aware client
+        if (!this.client) {
+            log.info('Initializing Gen AI client with provider awareness...');
+            this.client = await initializeGenAIClient();
+            log.info('Gen AI client initialized successfully');
+        }
+
+        // Get provider-specific model name
+        const liveModel = await getLiveModelName();
+        log.info('Using Live API model:', liveModel);
+
         // Prepare session configuration
         const sessionConfig = await this.prepareSessionConfig();
 
-        log.info('Connecting to Live API with config', sessionConfig);
+        log.info('Connecting to Live API with config', { ...sessionConfig, model: liveModel });
 
-        // Connect to Live API using callback-based API
+        // Connect to Live API using callback-based API with provider-specific model
         this.session = await this.client.live.connect({
-            model: sessionConfig.model,
+            model: liveModel,
             config: {
                 responseModalities: sessionConfig.responseModalities,
                 speechConfig: sessionConfig.speechConfig,
@@ -177,10 +188,10 @@ export class GeminiLiveSessionManager {
 
     /**
      * Prepare session configuration with tools and system instruction
+     * Note: Model name is now handled separately via getLiveModelName() for provider awareness
      */
     private async prepareSessionConfig(): Promise<any> {
         const config: any = {
-            model: this.config.model || GEMINI_LIVE_MODELS.NATIVE_AUDIO,
             responseModalities: [Modality.AUDIO] as Modality[],
             speechConfig: {
                 voiceConfig: {

@@ -141,31 +141,7 @@ export const ALLOWED_EXTENSIONS = [
     ".coffee",
 ];
 
-const ALLOWED_TYPES = {
-    // Images
-    'image/jpeg': ['.jpg', '.jpeg', '.jfif', '.pjpeg', '.pjp'],
-    'image/png': ['.png', '.apng'],
-    'image/gif': ['.gif'],
-    'image/webp': ['.webp'],
-    'image/svg+xml': ['.svg'],
-    'image/bmp': ['.bmp'],
-    'image/x-icon': ['.ico'],
-    'image/vnd.microsoft.icon': ['.ico'],
-    'image/tiff': ['.tif', '.tiff'],
-    'image/heic': ['.heic'],
-    'image/heif': ['.heif'],
-    'image/avif': ['.avif'],
 
-    // Documents
-    'application/pdf': ['.pdf'],
-    'text/plain': ['.txt'],
-    'text/markdown': ['.md'],
-    'application/msword': ['.doc'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-    'application/vnd.ms-excel': ['.xls'],
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-    'text/csv': ['.csv'],
-};
 
 export interface ProcessedFile {
     name: string;

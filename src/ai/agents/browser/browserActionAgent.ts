@@ -15,14 +15,16 @@
  * The Live model only needs to describe WHAT to do, this agent figures out HOW.
  */
 
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
-import type { FunctionDeclaration } from '@google/generative-ai';
+// Migrated to @google/genai with provider-aware initialization
+// Uses client.chats.create() for multi-turn conversation with function calling
+import { Type as SchemaType } from '@google/genai';
+import type { FunctionDeclaration } from '@google/genai';
 import { createLogger } from '../../../logger';
 import { getAllTools } from '../../tools/registryUtils';
 import { convertAllTools } from '../../geminiLive/toolConverter';
 import { analyzeYouTubeVideoDeclaration, executeYouTubeAnalysis } from '../youtube';
 import { BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION, BROWSER_ACTION_TOOL_DESCRIPTION } from './prompts';
-import { getGeminiApiKey } from '../../../utils/geminiApiKey';
+import { initializeGenAIClient } from '../../core/genAIFactory';
 
 const log = createLogger('Browser-Action-Agent');
 
@@ -91,15 +93,8 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
     // Create and track the execution promise
     const executionPromise = (async () => {
         try {
-            // Get the user's API key
-            const apiKey = await getGeminiApiKey();
-            if (!apiKey) {
-                log.error('❌ No Gemini API key configured');
-                return 'I cannot execute browser actions because no Gemini API key is configured. Please set up your API key in the settings.';
-            }
-
-            // Initialize Google AI with the user's API key
-            const genAI = new GoogleGenerativeAI(apiKey);
+            // Initialize Gen AI client with provider awareness (supports Google AI and Vertex AI)
+            const client = await initializeGenAIClient();
 
             // Get all available browser tools (excluding MCP tools and this agent itself)
             const allTools = getAllTools();
@@ -144,28 +139,24 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
             // This prompt tells the agent HOW to execute browser automation tasks
             const systemInstruction = BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION;
 
-            // Create the agent model with tool calling capabilities AND system instruction
-            const model = genAI.getGenerativeModel({
-                model: "gemini-2.0-flash",
-                tools: [{ functionDeclarations: geminiToolDeclarations }],
-                systemInstruction: systemInstruction,
-            });
-
-            // Start a chat session
-            const chat = model.startChat({
-                history: [],
+            // Create a chat session with tool calling capabilities AND system instruction
+            const chat = client.chats.create({
+                model: 'gemini-2.5-flash',
+                config: {
+                    systemInstruction: systemInstruction,
+                    tools: [{ functionDeclarations: geminiToolDeclarations }],
+                }
             });
 
             // Send the task
             log.info('📤 Sending task to agent model', { taskDescription });
-            const result = await chat.sendMessage(taskDescription);
-            let response = result.response;
+            let response = await chat.sendMessage({ message: taskDescription });
 
             // Log initial response
             log.info('📥 Received initial response from model', {
-                hasFunctionCalls: !!response?.functionCalls()?.length,
-                functionCallCount: response?.functionCalls()?.length || 0,
-                hasText: !!(response && typeof response.text === 'function' && response.text())
+                hasFunctionCalls: !!response?.functionCalls?.length,
+                functionCallCount: response?.functionCalls?.length || 0,
+                hasText: !!response?.text
             });
 
             let iterations = 0;
@@ -181,7 +172,7 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
                     break;
                 }
 
-                const functionCalls = response.functionCalls();
+                const functionCalls = response.functionCalls;
 
                 log.info(`🔍 Iteration ${iterations + 1}/${maxIterations} - Checking for function calls`, {
                     hasFunctionCalls: !!functionCalls,
@@ -203,7 +194,7 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
                 const functionResponses = [];
 
                 for (const fc of functionCalls) {
-                    const toolName = fc.name;
+                    const toolName = fc.name!; // Function call name is always defined
                     const toolArgs = fc.args;
 
                     log.info(`🔨 Executing tool: ${toolName}`, {
@@ -270,33 +261,33 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
                     }))
                 });
 
-                const nextResult = await chat.sendMessage(
-                    functionResponses.map(fr => ({
+                // Send function responses using the new SDK format
+                response = await chat.sendMessage({
+                    message: functionResponses.map(fr => ({
                         functionResponse: {
                             name: fr.name,
                             response: fr.response,
                         }
                     }))
-                );
-                response = nextResult.response;
+                });
 
                 log.info('📥 Received next response from model', {
                     iteration: iterations,
-                    hasFunctionCalls: !!response?.functionCalls()?.length,
-                    functionCallCount: response?.functionCalls()?.length || 0,
-                    hasText: !!(response && typeof response.text === 'function' && response.text())
+                    hasFunctionCalls: !!response?.functionCalls?.length,
+                    functionCallCount: response?.functionCalls?.length || 0,
+                    hasText: !!response?.text
                 });
             }
 
             if (iterations >= maxIterations) {
                 log.warn('⚠️ Max iterations reached in agent loop', {
                     maxIterations,
-                    lastResponseHadCalls: !!response?.functionCalls()?.length
+                    lastResponseHadCalls: !!response?.functionCalls?.length
                 });
             }
 
             // Get final text response with null safety
-            if (!response || typeof response.text !== 'function') {
+            if (!response || !response.text) {
                 log.error('❌ Invalid response object - cannot extract text', {
                     hasResponse: !!response,
                     responseType: typeof response,
@@ -305,7 +296,7 @@ async function executeBrowserTask(taskDescription: string): Promise<string> {
                 throw new Error('Browser Action Agent received an invalid response from the model');
             }
 
-            const finalResponse = response.text();
+            const finalResponse = response.text;
             log.info('✅ Browser Action Agent completed', {
                 iterations,
                 responseLength: finalResponse.length,
