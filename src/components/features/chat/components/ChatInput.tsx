@@ -96,7 +96,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             const validation = validateFile(file);
 
             if (!validation.valid) {
-                alert(validation.error);
+                onError?.(validation.error || 'Invalid file', 'error');
                 continue;
             }
 
