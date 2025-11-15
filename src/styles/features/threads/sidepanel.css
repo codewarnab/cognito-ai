@@ -38,8 +38,8 @@
 
 .thread-sidepanel-header-content {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .thread-sidepanel-header-content h2 {
@@ -47,12 +47,14 @@
     font-size: 20px;
     font-weight: 600;
     color: #FFFFFF;
+    line-height: 1.2;
 }
 
 .thread-sidepanel-header-content p {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     color: #888888;
+    line-height: 1.4;
 }
 
 .thread-sidepanel-close {
@@ -65,7 +67,7 @@
     color: #888888;
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s ease-out;
+    transition: all 0.2s ease;
 }
 
 .thread-sidepanel-close:hover {
@@ -87,7 +89,7 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease-out;
+    transition: all 0.2s ease;
 }
 
 .thread-sidepanel-new-button:hover {
@@ -146,7 +148,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease-out;
+    transition: all 0.2s ease;
 }
 
 .thread-sidepanel-item:hover {
@@ -196,7 +198,7 @@
     cursor: pointer;
     border-radius: 4px;
     opacity: 0;
-    transition: all 0.2s ease-out;
+    transition: all 0.2s ease;
 }
 
 .thread-sidepanel-item:hover .thread-sidepanel-item-delete {

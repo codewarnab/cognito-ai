@@ -1,9 +1,9 @@
 'use client';
 
 import type { Variants } from 'framer-motion';
-import { motion, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 
 export interface UploadIconHandle {
   startAnimation: () => void;
@@ -12,7 +12,6 @@ export interface UploadIconHandle {
 
 interface UploadIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
-  className?: string;
 }
 
 const arrowVariants: Variants = {
@@ -69,7 +68,6 @@ const UploadIcon = forwardRef<UploadIconHandle, UploadIconProps>(
         className={className}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        style={{ display: 'inline-flex', pointerEvents: 'none' }}
         {...props}
       >
         <svg

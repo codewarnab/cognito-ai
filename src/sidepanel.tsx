@@ -88,6 +88,7 @@ function AIChatContent() {
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
     const [isSoundInitialized, setIsSoundInitialized] = useState(false);
     const [localPdfInfo, setLocalPdfInfo] = useState<LocalPdfInfo | null>(null);
+    const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -354,6 +355,18 @@ function AIChatContent() {
         };
     }, [isSoundInitialized]);
 
+    // Listen for image preview state changes to hide voice pill
+    useEffect(() => {
+        const handleImagePreviewStateChange = (event: CustomEvent) => {
+            setIsImagePreviewOpen(event.detail.isOpen);
+        };
+
+        window.addEventListener('imagePreviewStateChange' as any, handleImagePreviewStateChange);
+        return () => {
+            window.removeEventListener('imagePreviewStateChange' as any, handleImagePreviewStateChange);
+        };
+    }, []);
+
     // Auto-scroll to bottom when messages change
     useEffect(() => {
         log.debug("Messages changed", { count: messages.length });
@@ -553,7 +566,7 @@ function AIChatContent() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="chat-interface-container">
+                    className="chat-interface-container"
                 >
                     {/* Conditional rendering based on mode */}
                     {mode === 'text' ? (
@@ -587,7 +600,7 @@ function AIChatContent() {
                             {/* Floating Recording Pill - Only in text mode */}
                             <VoiceRecordingPill
                                 ref={audioLinesIconRef}
-                                isVisible={showPill}
+                                isVisible={showPill && !isImagePreviewOpen}
                                 onStopRecording={() => {
                                     // Stop the voice recording
                                     voiceInputRef.current?.stopRecording();
@@ -595,23 +608,25 @@ function AIChatContent() {
                             />
 
                             {/* Voice Mode FAB - Only in text mode */}
-                            <motion.button
-                                className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
-                                onClick={() => handleModeChange('voice')}
-                                initial={{ scale: 0.93, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                transition={{
-                                    type: 'spring',
-                                    stiffness: 260,
-                                    damping: 20,
-                                    delay: 0.1
-                                }}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.97 }}
-                                title="Switch to Voice Mode"
-                            >
-                                <AudioLinesIcon size={20} />
-                            </motion.button>
+                            {!isImagePreviewOpen && (
+                                <motion.button
+                                    className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
+                                    onClick={() => handleModeChange('voice')}
+                                    initial={{ scale: 0.93, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{
+                                        type: 'spring',
+                                        stiffness: 260,
+                                        damping: 20,
+                                        delay: 0.1
+                                    }}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    title="Switch to Voice Mode"
+                                >
+                                    <AudioLinesIcon size={20} />
+                                </motion.button>
+                            )}
                         </>
                     ) : (
                         <VoiceModeUI

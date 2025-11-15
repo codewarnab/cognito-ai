@@ -59,6 +59,11 @@ export function ThreadList({ currentThreadId, onThreadSelect, onNewThread, onBac
         }
     };
 
+    const cleanTitle = (title: string) => {
+        // Remove "User:" and "Assistant:" prefixes
+        return title.replace(/^(User:|Assistant:)\s*/gi, '').trim();
+    };
+
     return (
         <div className="thread-list-container">
             <div className="thread-list-header">
@@ -96,7 +101,7 @@ export function ThreadList({ currentThreadId, onThreadSelect, onNewThread, onBac
                             }}
                         >
                             <div className="thread-content">
-                                <div className="thread-title">{thread.title}</div>
+                                <div className="thread-title">{cleanTitle(thread.title)}</div>
                                 <div className="thread-date">{formatDate(thread.updatedAt)}</div>
                             </div>
                             <button

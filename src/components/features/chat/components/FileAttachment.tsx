@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 
 export interface FileAttachmentData {
@@ -14,6 +14,8 @@ interface FileAttachmentProps {
 }
 
 export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRemove }) => {
+    const [showPreview, setShowPreview] = useState(false);
+
     const truncateName = (name: string, maxLength: number = 15) => {
         if (name.length <= maxLength) return name;
         const ext = name.split('.').pop();
@@ -23,37 +25,51 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
     };
 
     return (
-        <div className="file-attachment">
-            {attachment.type === 'image' && attachment.preview ? (
-                <div className="file-attachment-image">
-                    <img src={attachment.preview} alt={attachment.file.name} />
-                    <button
-                        type="button"
-                        className="file-attachment-remove"
-                        onClick={() => onRemove(attachment.id)}
-                        title="Remove attachment"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-            ) : (
-                <div className="file-attachment-document">
-                    <div className="file-attachment-icon">
-                        📄
+        <>
+            <div
+                className="file-attachment"
+                onMouseEnter={() => attachment.type === 'image' && setShowPreview(true)}
+                onMouseLeave={() => setShowPreview(false)}
+            >
+                {attachment.type === 'image' && attachment.preview ? (
+                    <div className="file-attachment-image">
+                        <img src={attachment.preview} alt={attachment.file.name} />
+                        <span className="file-attachment-name" title={attachment.file.name}>
+                            {truncateName(attachment.file.name, 20)}
+                        </span>
+                        <button
+                            type="button"
+                            className="file-attachment-remove"
+                            onClick={() => onRemove(attachment.id)}
+                            title="Remove attachment"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                    <span className="file-attachment-name" title={attachment.file.name}>
-                        {truncateName(attachment.file.name)}
-                    </span>
-                    <button
-                        type="button"
-                        className="file-attachment-remove"
-                        onClick={() => onRemove(attachment.id)}
-                        title="Remove attachment"
-                    >
-                        <X size={14} />
-                    </button>
+                ) : (
+                    <div className="file-attachment-document">
+                        <div className="file-attachment-icon">
+                            📄
+                        </div>
+                        <span className="file-attachment-name" title={attachment.file.name}>
+                            {truncateName(attachment.file.name)}
+                        </span>
+                        <button
+                            type="button"
+                            className="file-attachment-remove"
+                            onClick={() => onRemove(attachment.id)}
+                            title="Remove attachment"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+            {showPreview && attachment.type === 'image' && attachment.preview && (
+                <div className="file-attachment-preview">
+                    <img src={attachment.preview} alt={attachment.file.name} />
                 </div>
             )}
-        </div>
+        </>
     );
 };

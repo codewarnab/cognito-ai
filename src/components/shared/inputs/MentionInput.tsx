@@ -37,10 +37,10 @@ export function MentionInput({
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-    const inputRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Check for mention trigger on input change
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const newValue = e.target.value;
         onChange(newValue);
 
@@ -115,11 +115,19 @@ export function MentionInput({
     };
 
     // Handle keyboard events
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         // Don't handle Enter if any dropdown is showing
-        if (e.key === 'Enter' && !showDropdown && !isSlashDropdownOpen) {
-            e.preventDefault();
-            onSend();
+        if (e.key === 'Enter') {
+            // Shift+Enter: allow new line (do nothing, let browser handle it)
+            if (e.shiftKey) {
+                return;
+            }
+
+            // Enter alone: send message if no dropdown is showing
+            if (!showDropdown && !isSlashDropdownOpen) {
+                e.preventDefault();
+                onSend();
+            }
         }
     };
 
@@ -137,10 +145,9 @@ export function MentionInput({
 
     return (
         <div className="mention-input-wrapper">
-            {/* Simple input field without overlay - mentions shown as plain text */}
-            <input
+            {/* Textarea for multi-line support - mentions shown as plain text */}
+            <textarea
                 ref={inputRef}
-                type="text"
                 value={value}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
@@ -148,6 +155,14 @@ export function MentionInput({
                 className="copilot-input mention-input"
                 disabled={disabled}
                 autoFocus={autoFocus}
+                rows={1}
+                style={{ resize: 'none', overflow: 'hidden' }}
+                onInput={(e) => {
+                    // Auto-resize textarea to fit content
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = `${target.scrollHeight}px`;
+                }}
             />
 
             {showDropdown && (
