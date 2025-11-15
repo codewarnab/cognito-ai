@@ -25,6 +25,7 @@ const AskAIButton = () => {
     const [position, setPosition] = useState<Position | null>(null);
     const buttonRef = useRef<HTMLDivElement>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
+    const hasDragged = useRef(false);
 
     // Load saved position from storage
     useEffect(() => {
@@ -51,7 +52,10 @@ const AskAIButton = () => {
 
     // Handle button click - open sidebar
     const handleClick = () => {
-        if (isDragging) return; // Don't open if dragging
+        if (hasDragged.current) {
+            hasDragged.current = false;
+            return; // Don't open if just finished dragging
+        }
         console.log("[AskAI] Button clicked, sending OPEN_SIDEBAR message");
         chrome.runtime.sendMessage({ action: "OPEN_SIDEBAR" });
     };
@@ -68,12 +72,15 @@ const AskAIButton = () => {
             };
         }
 
+        hasDragged.current = false;
         setIsDragging(true);
         e.preventDefault();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
         if (!isDragging) return;
+
+        hasDragged.current = true; // Mark that dragging occurred
 
         const newX = e.clientX - dragOffset.current.x;
         const newY = e.clientY - dragOffset.current.y;
@@ -94,15 +101,10 @@ const AskAIButton = () => {
         if (isDragging) {
             setIsDragging(false);
 
-            // Save position to storage
-            if (position) {
+            // Save position to storage if dragged
+            if (hasDragged.current && position) {
                 chrome.storage.local.set({ askAiButtonPosition: position });
             }
-
-            // Small delay to prevent click event after drag
-            setTimeout(() => {
-                setIsDragging(false);
-            }, 100);
         }
     };
 
