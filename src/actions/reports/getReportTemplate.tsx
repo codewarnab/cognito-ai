@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
+import type { ToolUIState } from '../../ai/tools/components';
+import { CompactToolRenderer } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
 import {
     type TemplateType,
@@ -44,7 +46,7 @@ function formatTemplateAsMarkdown(template: ReportTemplate, topicName: string): 
 }
 
 export function useGetReportTemplateTool() {
-    const {  unregisterToolUI } = useToolUI();
+    const { registerToolUI, unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering getReportTemplate tool...');
@@ -123,12 +125,110 @@ Call this BEFORE starting research to get the proper structure for gathering inf
             },
         });
 
+        // Register UI with custom renderers
+        registerToolUI('getReportTemplate', (state: ToolUIState) => {
+            return <CompactToolRenderer state={state} />;
+        }, {
+            renderInput: (input: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {input.reportType && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Report Type:</span>
+                            <span style={{
+                                fontSize: '11px',
+                                padding: '3px 8px',
+                                background: 'var(--bg-tertiary)',
+                                borderRadius: '4px',
+                                border: '1px solid var(--border-color)',
+                                textTransform: 'capitalize',
+                                color: 'var(--text-primary)'
+                            }}>
+                                {input.reportType}
+                            </span>
+                        </div>
+                    )}
+                    {input.topicName && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '12px', opacity: 0.7 }}>Topic:</span>
+                            <span style={{
+                                fontSize: '12px',
+                                color: 'var(--text-primary)',
+                                fontWeight: 500
+                            }}>
+                                {input.topicName}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            ),
+            renderOutput: (output: any) => (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)'
+                }}>
+                    {output.success && (
+                        <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Template:</span>
+                                <span style={{
+                                    fontSize: '12px',
+                                    color: 'var(--text-primary)',
+                                    fontWeight: 500
+                                }}>
+                                    {output.templateName}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Sections:</span>
+                                <span style={{
+                                    fontSize: '11px',
+                                    padding: '2px 6px',
+                                    background: 'var(--bg-tertiary)',
+                                    borderRadius: '3px',
+                                    border: '1px solid var(--border-color)'
+                                }}>
+                                    {output.sectionCount} sections
+                                </span>
+                            </div>
+                            {output.sections && output.sections.length > 0 && (
+                                <div style={{
+                                    marginTop: '2px',
+                                    fontSize: '10px',
+                                    opacity: 0.6
+                                }}>
+                                    {output.sections.map((section: any) => section.title).join(' • ')}
+                                </div>
+                            )}
+                        </>
+                    )}
+                    {output.error && (
+                        <div style={{
+                            fontSize: '11px',
+                            color: 'var(--error-color)',
+                            opacity: 0.9
+                        }}>
+                            {output.error}
+                        </div>
+                    )}
+                </div>
+            )
+        });
+
         log.info('✅ getReportTemplate tool registration complete');
 
         return () => {
             log.info('🧹 Cleaning up getReportTemplate tool');
             unregisterToolUI('getReportTemplate');
         };
-    }, []);
+    }, [registerToolUI, unregisterToolUI]);
 }
 

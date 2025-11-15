@@ -377,13 +377,38 @@ function AIChatContent() {
         });
     };
 
-    // Phase 4: Listen for notification actions from background
+    // Phase 4: Listen for notification actions and omnibox messages from background
     useEffect(() => {
-        const handleNotificationAction = async (
+        const handleBackgroundMessage = async (
             message: any,
             _sender: chrome.runtime.MessageSender,
             sendResponse: (response?: any) => void
         ) => {
+            // Handle omnibox messages
+            if (message?.type === 'omnibox/send-message') {
+                const { text } = message.payload;
+
+                log.info('🔤 Received omnibox message', { text, hasThread: !!currentThreadId });
+
+                // If no thread exists, create a new one
+                if (!currentThreadId) {
+                    log.info('📝 Creating new thread for omnibox message');
+                    await handleNewThread();
+                    // Wait a bit for the thread to be created
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Send the message
+                if (text && text.trim()) {
+                    log.info('📤 Sending omnibox message to chat');
+                    await handleSendMessage(text.trim());
+                }
+
+                sendResponse({ success: true });
+                return true;
+            }
+
+            // Handle notification actions
             if (message?.type === 'ai/notification/action') {
                 const { action, threadId } = message.payload;
 
@@ -424,12 +449,12 @@ function AIChatContent() {
             return false;
         };
 
-        chrome.runtime.onMessage.addListener(handleNotificationAction);
+        chrome.runtime.onMessage.addListener(handleBackgroundMessage);
 
         return () => {
-            chrome.runtime.onMessage.removeListener(handleNotificationAction);
+            chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
         };
-    }, [currentThreadId, handleThreadSelect, handleContinue, sendMessage]);
+    }, [currentThreadId, handleThreadSelect, handleNewThread, handleContinue, handleSendMessage, sendMessage]);
 
     // Handle mode change with cleanup
     const handleModeChange = async (newMode: ChatMode) => {

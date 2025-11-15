@@ -370,7 +370,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     ref={fileInputRef}
                     type="file"
                     multiple
-                    accept="image/*,.pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.csv"
+                    accept="image/*,video/*,audio/*,.pdf,.txt,.md,.markdown,.doc,.docx,.xls,.xlsx,.csv,.json,.xml,.yaml,.yml,.log,.html,.htm,.css,.scss,.sass,.less,.js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.h,.cs,.php,.rb,.ruby,.sh,.bash,.go,.rs,.swift,.zip,.rar,.7z,.tar,.gz"
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                 />

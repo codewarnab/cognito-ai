@@ -46,8 +46,10 @@ export const generatePDFFormatter: ActionFormatter = ({ state, input, output }) 
     }
     if (state === 'success') {
         return {
-            action: 'PDF Downloaded',
-            description: filename ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''}` : undefined
+            action: 'PDF Generated',
+            description: filename
+                ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''} - Click to open and download. File may expire, please save if needed.`
+                : 'Click to open and download. File may expire, please save if needed.'
         };
     }
     return {

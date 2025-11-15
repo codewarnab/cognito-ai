@@ -9,6 +9,7 @@ import { Notion } from "../../assets/notion"
 import { PayPal } from "../../assets/paypal"
 import { Sentry } from "../../assets/sentry"
 import { Supabase } from "../../assets/supabase"
+import { Supermemory } from "../../assets/Supermemory"
 import { Webflow } from "../../assets/webflow"
 import deepwikiImage from "../../assets/deepwiki.webp"
 import coingeckoImage from "../../assets/coingecko.webp"
@@ -39,6 +40,20 @@ export interface ServerConfig {
 }
 
 export const MCP_SERVERS: ServerConfig[] = [
+    { // working - DCR supported
+        id: "supermemory",
+        name: "Supermemory",
+        icon: <Supermemory />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://api.supermemory.ai/mcp",
+        description: "Universal memory system that persists context across conversations. Automatically stores and retrieves important information with global tagging.",
+        requiresAuthentication: true,
+        oauth: {
+            // DCR supported - will use OAuth discovery
+            scopes: [] // Use default scopes from discovery
+        }
+    },
     {   // working 
         id: "ahrefs",
         name: "Ahrefs",
@@ -278,4 +293,5 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialAuthenticated: false,
         paid: true
     }
+    // https://github.com/Zomato/mcp-server-manifest reach out to them for access
 ]

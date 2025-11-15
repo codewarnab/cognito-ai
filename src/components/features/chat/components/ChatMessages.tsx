@@ -11,6 +11,7 @@ import { getMessageContent, hasToolCalls } from '../utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ContinueButton } from './ContinueButton';
+import { getFileIcon } from '../../../../utils/fileIconMapper';
 
 // Custom inline code component with tooltip and copy functionality
 function InlineCode({ children, ...props }: any) {
@@ -342,7 +343,6 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                     // Render file attachments
                                                     if (part.type === 'file') {
                                                         const isImage = part.mediaType?.startsWith('image/');
-                                                        const isPdf = part.mediaType === 'application/pdf';
 
                                                         return (
                                                             <div key={`file-${partIndex}`} className="message-file-attachment">
@@ -353,7 +353,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                 ) : (
                                                                     <div className="message-file-document">
                                                                         <div className="file-attachment-icon">
-                                                                            {isPdf ? '📕' : '📄'}
+                                                                            {getFileIcon(part.name || 'file', 24)}
                                                                         </div>
                                                                         <span className="file-attachment-name" title={part.name}>
                                                                             {part.name || 'Document'}

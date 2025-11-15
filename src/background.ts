@@ -78,6 +78,10 @@ const backgroundLog = createLogger('Background', 'BACKGROUND');
 const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
 const authLog = createLogger('Background-Auth', 'MCP_AUTH');
 
+// Track the last focused window ID for omnibox sidepanel opening
+// This avoids async operations that break the user gesture chain
+let lastFocusedWindowId: number | undefined;
+
 // ============================================================================
 // Dynamic OAuth Redirect URI Initialization
 // ============================================================================
@@ -1517,6 +1521,103 @@ if (chrome.action) {
                 backgroundLog.error(' Error opening side panel:', error);
             }
         }
+    });
+}
+
+/**
+ * Track the last focused window ID for omnibox sidepanel opening
+ * This avoids async operations that break the user gesture chain
+ */
+if (chrome.windows) {
+    // Track window focus changes
+    chrome.windows.onFocusChanged.addListener((windowId) => {
+        if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+            lastFocusedWindowId = windowId;
+        }
+    });
+
+    // Initialize on startup
+    chrome.windows.getLastFocused().then((window) => {
+        if (window?.id) {
+            lastFocusedWindowId = window.id;
+        }
+    }).catch(() => {
+        // Ignore errors during initialization
+    });
+}
+
+/**
+ * Helper function to send message to sidepanel with retry logic
+ * Retries up to 5 times with exponential backoff to handle sidepanel initialization
+ */
+async function sendMessageToSidepanel(text: string, attempt: number = 1, maxAttempts: number = 5): Promise<void> {
+    try {
+        await chrome.runtime.sendMessage({
+            type: 'omnibox/send-message',
+            payload: { text: text.trim() }
+        });
+        backgroundLog.info(` Message sent to sidepanel successfully (attempt ${attempt})`);
+    } catch (error) {
+        if (attempt < maxAttempts) {
+            const delay = Math.min(100 * Math.pow(2, attempt - 1), 1000); // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1000ms
+            backgroundLog.debug(` Sidepanel not ready yet (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`);
+            
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return sendMessageToSidepanel(text, attempt + 1, maxAttempts);
+        } else {
+            backgroundLog.error(` Failed to send message to sidepanel after ${maxAttempts} attempts:`, error);
+        }
+    }
+}
+
+/**
+ * Omnibox handler - open side panel when user types "ai" in address bar
+ * Users can type "ai" in the address bar, press Tab, then enter text to send to chat
+ * 
+ * Note: Must call sidePanel.open() immediately without any async operations before it
+ * to maintain the user gesture chain. See: https://stackoverflow.com/questions/77213045
+ */
+if (chrome.omnibox) {
+    // Handle when user presses Enter after typing the keyword
+    chrome.omnibox.onInputEntered.addListener((text, disposition) => {
+        // CRITICAL: Call sidePanel.open() immediately as the FIRST operation
+        // Any code before this creates an async gap that breaks the user gesture chain
+        // Use tracked window ID instead of WINDOW_ID_CURRENT (which doesn't work in service workers)
+        const windowId = lastFocusedWindowId;
+
+        if (windowId) {
+            chrome.sidePanel.open({ windowId })
+                .then(() => {
+                    backgroundLog.info(' Sidepanel opened via omnibox');
+
+                    // Send the text to the sidepanel with retry logic
+                    // This handles the case where sidepanel is still initializing
+                    if (text && text.trim()) {
+                        sendMessageToSidepanel(text.trim());
+                    }
+                })
+                .catch((error) => {
+                    backgroundLog.error(' Error opening sidepanel via omnibox:', error);
+                });
+        } else {
+            // No window ID tracked yet - log error but don't break user gesture chain
+            backgroundLog.error(' Cannot open sidepanel: no window ID tracked yet');
+        }
+
+        // Logging after the call (synchronous, doesn't affect gesture chain)
+        backgroundLog.info(' Omnibox input entered:', { text, disposition });
+    });
+
+    // Optional: Provide suggestions as user types (can be enhanced later)
+    chrome.omnibox.onInputChanged.addListener((_text, suggest) => {
+        // For now, just suggest opening the sidepanel
+        // You can enhance this later to provide more suggestions based on text input
+        suggest([
+            {
+                content: 'open',
+                description: 'Open AI Chat sidepanel'
+            }
+        ]);
     });
 }
 

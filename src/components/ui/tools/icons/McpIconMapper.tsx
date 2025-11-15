@@ -19,6 +19,7 @@ import { PayPal } from '../../../../../assets/paypal';
 import { Sentry } from '../../../../../assets/sentry';
 import { Stripe } from '../../../../../assets/stripe';
 import { Supabase } from '../../../../../assets/supabase';
+import { Supermemory } from '../../../../../assets/Supermemory';
 import { Vercel } from '../../../../../assets/vercel';
 import { Webflow } from '../../../../../assets/webflow';
 import context7Image from '../../../../../assets/context7.png';
@@ -52,6 +53,7 @@ const MCP_SERVER_ICONS: Record<string, React.ComponentType<any>> = {
     'sentry': Sentry,
     'stripe': Stripe,
     'supabase': Supabase,
+    'supermemory': Supermemory,
     'vercel': Vercel,
     'webflow': Webflow,
 };
