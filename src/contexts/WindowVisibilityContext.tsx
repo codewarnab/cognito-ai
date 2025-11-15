@@ -24,10 +24,26 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
 
         // Handler for Document Visibility API (backup detection)
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                setIsUserAway(true);
-            } else {
-                setIsUserAway(false);
+            const isHidden = document.visibilityState === 'hidden';
+            setIsUserAway(isHidden);
+
+            // Notify content scripts about sidepanel visibility state
+            if (isHidden) {
+                // Sidepanel is closed/hidden - notify content scripts
+                chrome.windows.getCurrent((window) => {
+                    if (window.id) {
+                        chrome.tabs.query({ windowId: window.id }, (tabs) => {
+                            tabs.forEach((tab) => {
+                                if (tab.id) {
+                                    chrome.tabs.sendMessage(tab.id, { action: 'SIDEBAR_CLOSED' })
+                                        .catch(() => {
+                                            // Ignore errors if content script not loaded
+                                        });
+                                }
+                            });
+                        });
+                    }
+                });
             }
         };
 

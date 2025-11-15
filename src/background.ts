@@ -58,6 +58,11 @@ import {
 import {
     updateKeepAliveState
 } from './background/keepAlive';
+import {
+    openSidePanel,
+    openSidePanelForTab,
+    sendMessageToSidepanel
+} from './background/sidepanelUtils';
 import { ensureOffscreenDocument } from './offscreen/ensure';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS, APP_ICON } from './constants';
 import { MCP_SERVERS } from './constants/mcpServers';
@@ -1036,6 +1041,42 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
         return true;
     }
 
+    // Handle Ask AI button - open sidepanel
+    if (message.action === 'OPEN_SIDEBAR') {
+        (async () => {
+            const windowId = lastFocusedWindowId;
+
+            if (windowId) {
+                const success = await openSidePanel(windowId);
+
+                if (success) {
+                    backgroundLog.info(' Sidepanel opened via Ask AI button');
+
+                    // Broadcast to content scripts that sidebar is now open
+                    chrome.tabs.query({ windowId }, (tabs) => {
+                        tabs.forEach((tab) => {
+                            if (tab.id) {
+                                chrome.tabs.sendMessage(tab.id, { action: 'SIDEBAR_OPENED' })
+                                    .catch(() => {
+                                        // Ignore errors if content script not loaded
+                                    });
+                            }
+                        });
+                    });
+
+                    sendResponse({ success: true });
+                } else {
+                    backgroundLog.error(' Failed to open sidepanel via Ask AI button');
+                    sendResponse({ success: false, error: 'Failed to open sidepanel' });
+                }
+            } else {
+                backgroundLog.error(' Cannot open sidepanel: no window ID tracked');
+                sendResponse({ success: false, error: 'No active window' });
+            }
+        })();
+        return true; // Will respond asynchronously
+    }
+
     // Handle general MCP messages
     if (message.type === 'mcp/servers/get') {
         (async () => {
@@ -1515,11 +1556,7 @@ chrome.runtime.onStartup.addListener(async () => {
 if (chrome.action) {
     chrome.action.onClicked.addListener(async (tab) => {
         if (chrome.sidePanel && tab.id) {
-            try {
-                await chrome.sidePanel.open({ tabId: tab.id });
-            } catch (error) {
-                backgroundLog.error(' Error opening side panel:', error);
-            }
+            await openSidePanelForTab(tab.id);
         }
     });
 }
@@ -1546,29 +1583,7 @@ if (chrome.windows) {
     });
 }
 
-/**
- * Helper function to send message to sidepanel with retry logic
- * Retries up to 5 times with exponential backoff to handle sidepanel initialization
- */
-async function sendMessageToSidepanel(text: string, attempt: number = 1, maxAttempts: number = 5): Promise<void> {
-    try {
-        await chrome.runtime.sendMessage({
-            type: 'omnibox/send-message',
-            payload: { text: text.trim() }
-        });
-        backgroundLog.info(` Message sent to sidepanel successfully (attempt ${attempt})`);
-    } catch (error) {
-        if (attempt < maxAttempts) {
-            const delay = Math.min(100 * Math.pow(2, attempt - 1), 1000); // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1000ms
-            backgroundLog.debug(` Sidepanel not ready yet (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`);
-
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return sendMessageToSidepanel(text, attempt + 1, maxAttempts);
-        } else {
-            backgroundLog.error(` Failed to send message to sidepanel after ${maxAttempts} attempts:`, error);
-        }
-    }
-}
+// sendMessageToSidepanel function moved to src/background/sidepanelUtils.ts
 
 /**
  * Omnibox handler - open side panel when user types "ai" in address bar
@@ -1580,20 +1595,22 @@ async function sendMessageToSidepanel(text: string, attempt: number = 1, maxAtte
 if (chrome.omnibox) {
     // Handle when user presses Enter after typing the keyword
     chrome.omnibox.onInputEntered.addListener((text, disposition) => {
-        // CRITICAL: Call sidePanel.open() immediately as the FIRST operation
+        // CRITICAL: Call openSidePanel immediately as the FIRST operation
         // Any code before this creates an async gap that breaks the user gesture chain
         // Use tracked window ID instead of WINDOW_ID_CURRENT (which doesn't work in service workers)
         const windowId = lastFocusedWindowId;
 
         if (windowId) {
-            chrome.sidePanel.open({ windowId })
-                .then(() => {
-                    backgroundLog.info(' Sidepanel opened via omnibox');
+            openSidePanel(windowId)
+                .then((success) => {
+                    if (success) {
+                        backgroundLog.info(' Sidepanel opened via omnibox');
 
-                    // Send the text to the sidepanel with retry logic
-                    // This handles the case where sidepanel is still initializing
-                    if (text && text.trim()) {
-                        sendMessageToSidepanel(text.trim());
+                        // Send the text to the sidepanel with retry logic
+                        // This handles the case where sidepanel is still initializing
+                        if (text && text.trim()) {
+                            sendMessageToSidepanel(text.trim());
+                        }
                     }
                 })
                 .catch((error) => {
