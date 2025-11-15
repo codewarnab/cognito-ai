@@ -177,34 +177,39 @@ export function CompactToolCard({
             {/* Accordion Content */}
             {isExpanded && (
                 <div className="compact-tool-content">
-                    {input && (
-                        <div className="compact-tool-section">
-                            <div className="compact-tool-label">Input:</div>
-                            {customRenderers?.renderInput ? (
-                                <div className="compact-tool-custom">
-                                    {customRenderers.renderInput(input)}
+                    {/* Hide INPUT/OUTPUT for successful PDF generation */}
+                    {!(toolName === 'generatePDF' && state === 'success') && (
+                        <>
+                            {input && (
+                                <div className="compact-tool-section">
+                                    <div className="compact-tool-label">Input:</div>
+                                    {customRenderers?.renderInput ? (
+                                        <div className="compact-tool-custom">
+                                            {customRenderers.renderInput(input)}
+                                        </div>
+                                    ) : (
+                                        <pre className="compact-tool-code">
+                                            {formatContent(input)}
+                                        </pre>
+                                    )}
                                 </div>
-                            ) : (
-                                <pre className="compact-tool-code">
-                                    {formatContent(input)}
-                                </pre>
                             )}
-                        </div>
-                    )}
 
-                    {output && state === 'success' && (
-                        <div className="compact-tool-section">
-                            <div className="compact-tool-label">Output:</div>
-                            {customRenderers?.renderOutput ? (
-                                <div className="compact-tool-custom">
-                                    {customRenderers.renderOutput(output)}
+                            {output && state === 'success' && (
+                                <div className="compact-tool-section">
+                                    <div className="compact-tool-label">Output:</div>
+                                    {customRenderers?.renderOutput ? (
+                                        <div className="compact-tool-custom">
+                                            {customRenderers.renderOutput(output)}
+                                        </div>
+                                    ) : (
+                                        <pre className="compact-tool-code">
+                                            {formatContent(output)}
+                                        </pre>
+                                    )}
                                 </div>
-                            ) : (
-                                <pre className="compact-tool-code">
-                                    {formatContent(output)}
-                                </pre>
                             )}
-                        </div>
+                        </>
                     )}
 
                     {errorText && state === 'error' && (

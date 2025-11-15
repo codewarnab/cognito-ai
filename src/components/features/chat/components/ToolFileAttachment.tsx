@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Download, ExternalLink, FileText, FileCode } from 'lucide-react';
+import { Download, ExternalLink } from 'lucide-react';
+import { getFileIcon } from '../../../../utils/fileIconMapper';
 
 export interface ToolFileAttachmentData {
     type: 'file';
@@ -29,28 +30,7 @@ function formatFileSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Get file icon based on media type
- */
-function getFileIcon(mediaType: string): React.ReactNode {
-    if (mediaType === 'application/pdf') {
-        return <span className="file-icon-emoji">📕</span>;
-    }
-    if (mediaType === 'text/markdown' || mediaType.includes('markdown')) {
-        return <FileCode size={24} className="file-icon-lucide" />;
-    }
-    return <FileText size={24} className="file-icon-lucide" />;
-}
 
-/**
- * Get short media type label
- */
-function getMediaTypeLabel(mediaType: string): string {
-    if (mediaType === 'application/pdf') return 'PDF';
-    if (mediaType === 'text/markdown') return 'Markdown';
-    if (mediaType.startsWith('text/')) return 'Text';
-    return mediaType.split('/')[0] || 'File';
-}
 
 export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData, messageId, onUrlRevoke }) => {
     const [isDownloading, setIsDownloading] = useState(false);
@@ -98,44 +78,34 @@ export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData
 
     return (
         <div className="tool-file-attachment">
-            <div className="tool-file-attachment-content">
-                <div className="tool-file-attachment-icon">
-                    {getFileIcon(fileData.mediaType)}
+            <div className="tool-file-attachment-icon">
+                {getFileIcon(fileData.name, 20)}
+            </div>
+            <div className="tool-file-attachment-info">
+                <div className="tool-file-attachment-name" title={fileData.name}>
+                    {fileData.name}
                 </div>
-                <div className="tool-file-attachment-info">
-                    <div className="tool-file-attachment-name" title={fileData.name}>
-                        {fileData.name}
-                    </div>
-                    <div className="tool-file-attachment-meta">
-                        <span className="tool-file-attachment-type">
-                            {getMediaTypeLabel(fileData.mediaType)}
-                        </span>
-                        <span className="tool-file-attachment-separator">•</span>
-                        <span className="tool-file-attachment-size">
-                            {formatFileSize(fileData.size)}
-                        </span>
-                    </div>
+                <div className="tool-file-attachment-meta">
+                    <span className="tool-file-attachment-size">{formatFileSize(fileData.size)}</span>
                 </div>
             </div>
             <div className="tool-file-attachment-actions">
                 <button
                     type="button"
-                    className="tool-file-attachment-action tool-file-attachment-action-open"
+                    className="tool-file-attachment-action"
                     onClick={handleOpen}
                     title="Open in new tab"
                 >
-                    <ExternalLink size={16} />
-                    <span>Open</span>
+                    <ExternalLink size={14} />
                 </button>
                 <button
                     type="button"
-                    className="tool-file-attachment-action tool-file-attachment-action-download"
+                    className="tool-file-attachment-action"
                     onClick={handleDownload}
                     disabled={isDownloading}
                     title="Download file"
                 >
-                    <Download size={16} />
-                    <span>{isDownloading ? 'Downloading...' : 'Download'}</span>
+                    <Download size={14} />
                 </button>
             </div>
         </div>

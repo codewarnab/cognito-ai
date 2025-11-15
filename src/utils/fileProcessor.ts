@@ -4,15 +4,158 @@
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
+// Comprehensive list of allowed file extensions
+export const ALLOWED_EXTENSIONS = [
+    // Images
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".webp",
+    ".svg",
+    ".bmp",
+    ".ico",
+    ".tif",
+    ".tiff",
+    ".heic",
+    ".heif",
+    ".avif",
+    ".jfif",
+    ".pjpeg",
+    ".pjp",
+    ".apng",
+
+    // Documents & Text
+    ".txt",
+    ".md",
+    ".markdown",
+    ".mdown",
+    ".html",
+    ".htm",
+    ".css",
+    ".scss",
+    ".less",
+    ".styl",
+    ".json",
+    ".json5",
+    ".xml",
+    ".yaml",
+    ".yml",
+    ".csv",
+    ".log",
+    ".ini",
+    ".cfg",
+    ".toml",
+    ".properties",
+    ".conf",
+    ".tex",
+    ".bib",
+    ".rst",
+    ".tsv",
+    ".mdx",
+    ".rmd",
+    ".mkdn",
+    ".mkd",
+    ".adoc",
+    ".asciidoc",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+
+    // Programming Languages
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".py",
+    ".rb",
+    ".php",
+    ".pl",
+    ".pm",
+    ".c",
+    ".h",
+    ".cpp",
+    ".hpp",
+    ".cc",
+    ".hh",
+    ".cxx",
+    ".hxx",
+    ".cs",
+    ".java",
+    ".kt",
+    ".kts",
+    ".swift",
+    ".go",
+    ".rs",
+    ".hs",
+    ".scala",
+    ".lisp",
+    ".lsp",
+    ".cl",
+    ".scm",
+    ".ex",
+    ".exs",
+    ".erl",
+    ".hrl",
+    ".dart",
+    ".lua",
+    ".r",
+    ".sql",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".bat",
+    ".cmd",
+    ".ps1",
+    ".m",     // Objective-C
+    ".mm",    // Objective-C++
+    ".vb",
+    ".fs",
+    ".fsi",
+    ".fsx",
+    ".jl",    // Julia
+    ".f",
+    ".for",
+    ".f90",
+    ".f95",
+    ".cob",
+    ".cbl",
+    ".adb",
+    ".ads",
+    ".vhd",
+    ".vhdl",
+    ".v",     // Verilog
+    ".asm",
+
+    // Web Templates
+    ".vue",
+    ".svelte",
+    ".sass",
+    ".ejs",
+    ".jade",
+    ".pug",
+    ".handlebars",
+    ".hbs",
+    ".coffee",
+];
+
 const ALLOWED_TYPES = {
     // Images
-    'image/jpeg': ['.jpg', '.jpeg'],
-    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg', '.jfif', '.pjpeg', '.pjp'],
+    'image/png': ['.png', '.apng'],
     'image/gif': ['.gif'],
     'image/webp': ['.webp'],
     'image/svg+xml': ['.svg'],
     'image/bmp': ['.bmp'],
-    
+    'image/x-icon': ['.ico'],
+    'image/vnd.microsoft.icon': ['.ico'],
+    'image/tiff': ['.tif', '.tiff'],
+    'image/heic': ['.heic'],
+    'image/heif': ['.heif'],
+    'image/avif': ['.avif'],
+
     // Documents
     'application/pdf': ['.pdf'],
     'text/plain': ['.txt'],
@@ -28,7 +171,7 @@ export interface ProcessedFile {
     name: string;
     size: number;
     type: string;
-    content: string; 
+    content: string;
     mimeType: string;
     isImage: boolean;
 }
@@ -45,11 +188,11 @@ export function validateFile(file: File): { valid: boolean; error?: string } {
         };
     }
 
-    // Check file type
-    const isAllowed = Object.keys(ALLOWED_TYPES).includes(file.type) ||
-        Object.values(ALLOWED_TYPES).flat().some(ext => file.name.toLowerCase().endsWith(ext));
+    // Check file extension against allowed list
+    const fileName = file.name.toLowerCase();
+    const isAllowedExtension = ALLOWED_EXTENSIONS.some(ext => fileName.endsWith(ext));
 
-    if (!isAllowed) {
+    if (!isAllowedExtension) {
         return {
             valid: false,
             error: `File type not supported: ${file.type || 'unknown'}`,
@@ -145,15 +288,3 @@ export function formatFileSize(bytes: number): string {
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
 }
 
-/**
- * Get file icon emoji based on type
- */
-export function getFileIcon(mimeType: string, fileName: string): string {
-    if (mimeType.startsWith('image/')) return '🖼️';
-    if (mimeType === 'application/pdf') return '📕';
-    if (mimeType.includes('word') || fileName.endsWith('.doc') || fileName.endsWith('.docx')) return '📘';
-    if (mimeType.includes('excel') || fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) return '📊';
-    if (mimeType === 'text/csv') return '📊';
-    if (mimeType === 'text/markdown') return '📝';
-    return '📄';
-}

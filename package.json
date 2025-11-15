@@ -94,7 +94,8 @@
       "cookies",
       "history",
       "search",
-      "bookmarks"
+      "bookmarks",
+      "omnibox"
     ],
     "optional_permissions": [
       "tabCapture",
@@ -125,6 +126,9 @@
     ],
     "side_panel": {
       "default_path": "sidepanel.html"
+    },
+    "omnibox": {
+      "keyword": "ai"
     }
   }
 }
