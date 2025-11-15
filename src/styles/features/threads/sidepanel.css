@@ -65,7 +65,7 @@
     color: #888888;
     cursor: pointer;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
 }
 
 .thread-sidepanel-close:hover {
@@ -87,7 +87,7 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
 }
 
 .thread-sidepanel-new-button:hover {
@@ -146,7 +146,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
 }
 
 .thread-sidepanel-item:hover {
@@ -196,7 +196,7 @@
     cursor: pointer;
     border-radius: 4px;
     opacity: 0;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
 }
 
 .thread-sidepanel-item:hover .thread-sidepanel-item-delete {

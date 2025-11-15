@@ -14,7 +14,7 @@
     --y: translateY(0);
     opacity: 0;
     transform: var(--y) scale(0.95);
-    transition: transform 400ms ease, opacity 400ms ease, max-width 0.2s ease;
+    transition: transform 400ms ease-out, opacity 400ms ease-out, max-width 0.2s ease-out;
 }
 
 /* When expanded, take full width */
@@ -54,7 +54,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease-out;
     color: var(--text-secondary);
 }
 
@@ -198,7 +198,7 @@
 }
 
 .compact-tool-custom a {
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease-out;
 }
 
 .compact-tool-custom a:hover {
@@ -209,7 +209,7 @@
 /* Chevron icon styling */
 .compact-tool-status svg {
     opacity: 0.7;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease-out;
 }
 
 .compact-tool-status svg:hover {

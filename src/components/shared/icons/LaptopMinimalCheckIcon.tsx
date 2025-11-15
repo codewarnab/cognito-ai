@@ -20,15 +20,16 @@ const checkVariants: Variants = {
     pathLength: 1,
     opacity: 1,
     transition: {
-      duration: 0.3,
+      duration: 0.2,
+      ease: 'easeOut',
     },
   },
   animate: {
     pathLength: [0, 1],
     opacity: [0, 1],
     transition: {
-      pathLength: { duration: 0.4, ease: 'easeInOut' },
-      opacity: { duration: 0.4, ease: 'easeInOut' },
+      pathLength: { duration: 0.25, ease: 'easeOut' },
+      opacity: { duration: 0.25, ease: 'easeOut' },
     },
   },
 };
