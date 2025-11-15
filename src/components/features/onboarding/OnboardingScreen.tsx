@@ -76,7 +76,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                     onClick={handleSkip}
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.3 }}
+                    transition={{ delay: 0.5, duration: 0.2 }}
                 >
                     Skip
                 </motion.button>
@@ -125,7 +125,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
                             <motion.div
                                 className="onboarding-progress-fill"
                                 animate={{ width: `${progressPercentage}%` }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
                             ></motion.div>
                         </div>
                         <div className="onboarding-progress-dots">

@@ -73,7 +73,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ duration = 10 }) =
                     className="loading-text"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.6 }}
+                    transition={{ delay: 0.5, duration: 0.25 }}
                 >
                     <h2 className="loading-title">Preparing Your AI Assistant</h2>
                     <p className="loading-subtitle">Setting up your autonomous browser agent...</p>
@@ -84,7 +84,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ duration = 10 }) =
                     className="loading-countdown"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 1, duration: 0.4 }}
+                    transition={{ delay: 1, duration: 0.2 }}
                 >
                     <div className="countdown-circle">
                         <span className="countdown-number">{countdown}</span>

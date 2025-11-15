@@ -41,7 +41,7 @@
     cursor: pointer;
     padding: 8px 12px;
     border-radius: 6px;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
     z-index: 1001;
 }
 
@@ -114,7 +114,7 @@
     height: 100%;
     background: #ffffff;
     border-radius: 2px;
-    transition: width 0.3s ease;
+    transition: width 0.3s ease-out;
 }
 
 .onboarding-progress-dots {

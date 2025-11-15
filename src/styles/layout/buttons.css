@@ -11,7 +11,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
     backdrop-filter: blur(10px);
 }
 
@@ -21,7 +21,7 @@
 }
 
 .icon-button:active {
-    transform: scale(0.95);
+    transform: scale(0.97);
 }
 
 .action-button {
@@ -33,7 +33,7 @@
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
@@ -46,7 +46,7 @@
 }
 
 .action-button:active {
-    transform: translateY(0);
+    transform: translateY(0) scale(0.97);
 }
 
 .send-button {
@@ -58,7 +58,7 @@
     color: #1a1a1a;
     font-size: 20px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease-out, filter 0.2s ease-out;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -81,7 +81,7 @@
             transparent,
             rgba(255, 255, 255, 0.4),
             transparent);
-    transition: left 0.5s ease;
+    transition: left 0.5s ease-out;
 }
 
 .send-button:hover:not(:disabled)::before {
@@ -95,6 +95,7 @@
         0 0 0 4px rgba(200, 255, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
     background: linear-gradient(135deg, #d4ff1a 0%, #a0e000 100%);
+    filter: blur(0px);
 }
 
 .send-button:active:not(:disabled) {
@@ -102,6 +103,7 @@
     box-shadow:
         0 2px 8px rgba(200, 255, 0, 0.3),
         inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    filter: blur(0.5px);
 }
 
 .send-button:disabled {
@@ -119,7 +121,7 @@
     color: white;
     font-size: 18px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease-out, filter 0.2s ease-out;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -144,7 +146,7 @@
             transparent,
             rgba(255, 255, 255, 0.3),
             transparent);
-    transition: left 0.5s ease;
+    transition: left 0.5s ease-out;
 }
 
 .stop-button:hover::before {
@@ -158,6 +160,7 @@
         0 0 0 4px rgba(255, 68, 68, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.3);
     background: linear-gradient(135deg, #ff5555 0%, #dd0000 100%);
+    filter: blur(0px);
 }
 
 .stop-button:active {
@@ -165,6 +168,7 @@
     box-shadow:
         0 2px 8px rgba(255, 68, 68, 0.3),
         inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    filter: blur(0.5px);
 }
 
 @keyframes pulseGlow {

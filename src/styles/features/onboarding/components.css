@@ -13,7 +13,7 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
     color: #ffffff;
     font-size: 14px;
     font-weight: 500;
@@ -93,7 +93,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-out;
     border: none;
     cursor: pointer;
     font-size: 14px;
@@ -125,7 +125,7 @@
 }
 
 .onboarding-button-icon {
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease-out;
     display: flex;
     align-items: center;
 }
@@ -238,7 +238,7 @@
     border-radius: 12px;
     padding: 20px;
     text-align: center;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease-out;
 }
 
 .onboarding-feature-card:hover {

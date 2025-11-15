@@ -3,7 +3,7 @@
  * Speech-to-text with silence detection
  */
 
-import React, { useState, useImperativeHandle, forwardRef } from 'react';
+import React, { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
 import { useSpeechRecognition } from './useSpeechRecognition';
 import { checkMicrophonePermission, openMicrophoneSettings } from './micPermission';
 import { createLogger } from '../logger';
@@ -65,6 +65,22 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
   });
 
   const isRecording = internalIsRecording;
+
+  const errorRef = useRef<HTMLDivElement | null>(null);
+
+  // Dismiss error when clicking outside the error box
+  useEffect(() => {
+    if (!error) return;
+
+    const onDocClick = (e: MouseEvent) => {
+      if (errorRef.current && !errorRef.current.contains(e.target as Node)) {
+        resetTranscript();
+      }
+    };
+
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [error, resetTranscript]);
 
   // Expose imperative handle for parent to control recording
   useImperativeHandle(ref, () => ({
@@ -183,16 +199,24 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
       {/* Recording pill is now rendered at the top level in sidepanel.tsx */}
 
       {error && (
-        <div className="voice-error">
+        <div className="voice-error" ref={errorRef} role="status" aria-live="polite">
           <span className="voice-error-icon">⚠️</span>
           <span className="voice-error-text">{error}</span>
+          <button
+            className="voice-error-close"
+            onClick={() => resetTranscript()}
+            aria-label="Dismiss error"
+            title="Dismiss"
+          >
+            ×
+          </button>
           {error.includes('denied') && (
             <button
               className="voice-settings-button"
               onClick={handleOpenSettings}
               title="Open microphone settings help"
             >
-               Help
+              Help
             </button>
           )}
         </div>

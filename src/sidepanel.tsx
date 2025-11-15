@@ -552,8 +552,8 @@ function AIChatContent() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className="chat-interface-container"
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="chat-interface-container">
                 >
                     {/* Conditional rendering based on mode */}
                     {mode === 'text' ? (
@@ -598,7 +598,7 @@ function AIChatContent() {
                             <motion.button
                                 className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
                                 onClick={() => handleModeChange('voice')}
-                                initial={{ scale: 0, opacity: 0 }}
+                                initial={{ scale: 0.93, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{
                                     type: 'spring',
@@ -607,7 +607,7 @@ function AIChatContent() {
                                     delay: 0.1
                                 }}
                                 whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                whileTap={{ scale: 0.97 }}
                                 title="Switch to Voice Mode"
                             >
                                 <AudioLinesIcon size={20} />
