@@ -26,9 +26,6 @@ importers:
       '@google/genai':
         specifier: ^1.25.0
         version: 1.25.0(@modelcontextprotocol/sdk@1.20.0)
-      '@google/generative-ai':
-        specifier: ^0.24.1
-        version: 0.24.1
       '@modelcontextprotocol/sdk':
         specifier: ^1.20.0
         version: 1.20.0
@@ -500,10 +497,6 @@ packages:
     peerDependenciesMeta:
       '@modelcontextprotocol/sdk':
         optional: true
-
-  '@google/generative-ai@0.24.1':
-    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
-    engines: {node: '>=18.0.0'}
 
   '@ianvs/prettier-plugin-sort-imports@4.1.1':
     resolution: {integrity: sha512-kJhXq63ngpTQ2dxgf5GasbPJWsJA3LgoOdd7WGhpUSzLgLgI4IsIzYkbJf9kmpOHe7Vdm/o3PcRA3jmizXUuAQ==}
@@ -5083,8 +5076,6 @@ snapshots:
       - encoding
       - supports-color
       - utf-8-validate
-
-  '@google/generative-ai@0.24.1': {}
 
   '@ianvs/prettier-plugin-sort-imports@4.1.1(@vue/compiler-sfc@3.3.4)(prettier@3.2.4)':
     dependencies:
