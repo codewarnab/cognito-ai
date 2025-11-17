@@ -13,58 +13,9 @@ import { LoadingIndicator } from './LoadingIndicator';
 import { ContinueButton } from './ContinueButton';
 import { CopyButton } from './CopyButton';
 import { getFileIcon } from '../../../../utils/fileIconMapper';
+import { InlineCode } from './InlineCode';
 
-// Custom inline code component with tooltip and copy functionality
-function InlineCode({ children, ...props }: any) {
-    const [copied, setCopied] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
 
-    // Check if the content is a URL
-    const content = String(children).replace(/\n$/, '');
-    const isUrl = /^https?:\/\//i.test(content);
-
-    const handleClick = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (isUrl) {
-            // Open URL in new tab
-            window.open(content, '_blank', 'noopener,noreferrer');
-        } else {
-            // Copy non-URL content
-            try {
-                await navigator.clipboard.writeText(content);
-                setCopied(true);
-                setTimeout(() => {
-                    setCopied(false);
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy code:', err);
-            }
-        }
-    };
-
-    return (
-        <span
-            className="inline-code-wrapper"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
-        >
-            <code
-                className={`inline-code-clickable ${isUrl ? 'inline-code-link' : ''}`}
-                onClick={handleClick}
-                {...props}
-            >
-                {children}
-            </code>
-            {(showTooltip || copied) && (
-                <span className={`inline-code-tooltip ${copied ? 'inline-code-tooltip-success' : ''}`}>
-                    {copied ? '✓ Copied!' : isUrl ? 'Click to open' : 'Click to copy'}
-                </span>
-            )}
-        </span>
-    );
-}
 
 // Custom code block component with copy button
 function CodeBlock({ node, inline, className, children, ...props }: any) {

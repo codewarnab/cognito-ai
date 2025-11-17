@@ -8,7 +8,7 @@ import {
     DialogTitle,
 } from '../../ui/primitives/dialog';
 import { createLogger } from '../../../logger';
-import { getGeminiApiKey, setGeminiApiKey, removeGeminiApiKey } from '../../../utils/geminiApiKey';
+import { getGoogleApiKey, setGoogleApiKey, clearGoogleApiKey } from '../../../utils/providerCredentials';
 import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';
 import type { RemoteModelType } from '../../features/chat/types';
 
@@ -44,7 +44,7 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
     const loadApiKey = async () => {
         try {
             setIsLoading(true);
-            const key = await getGeminiApiKey();
+            const key = await getGoogleApiKey();
             if (key) {
                 setApiKey(key);
                 log.info('Loaded existing API key');
@@ -74,7 +74,7 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
         try {
             setIsSaving(true);
             setNotification(null);
-            await setGeminiApiKey(apiKey.trim());
+            await setGoogleApiKey(apiKey.trim());
             await setModelConfig({ remoteModel: selectedModel });
             log.info('Gemini API key and model saved successfully');
             setNotification({ type: 'success', message: 'API key and model saved successfully!' });
@@ -100,7 +100,7 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
         try {
             setIsSaving(true);
             setNotification(null);
-            await removeGeminiApiKey();
+            await clearGoogleApiKey();
             setApiKey('');
             log.info('Gemini API key removed');
             setNotification({ type: 'success', message: 'API key removed successfully' });

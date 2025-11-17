@@ -371,3 +371,12 @@ export async function markGoogleApiKeyInvalid(reason: string): Promise<void> {
     // We could implement a cache invalidation mechanism here
     // For now, just log the reason
 }
+
+/**
+ * Mark Google API key as valid (after successful API call)
+ * Used for compatibility with older code
+ */
+export async function markGoogleApiKeyValid(): Promise<void> {
+    credentialsLog.info('Google API key marked as valid');
+    // No-op for now - validation cache not yet implemented
+}

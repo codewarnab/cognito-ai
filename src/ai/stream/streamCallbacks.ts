@@ -9,7 +9,10 @@ import { APIError } from '../../errors/errorTypes';
 import { extractMalformedCallInfo } from '../errors/handlers';
 import { type AppUsage, getContextLimits } from '../types/usage';
 import { workflowSessionManager } from '../../workflows/sessionManager';
-import { markApiKeyValid } from '../../utils/geminiApiKey';
+import { markGoogleApiKeyValid } from '../../utils/providerCredentials';
+
+// Helper function for compatibility
+const markApiKeyValid = markGoogleApiKeyValid;
 
 const log = createLogger('StreamCallbacks', 'AI_CHAT');
 

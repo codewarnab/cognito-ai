@@ -9,7 +9,24 @@ import { createVertex } from '@ai-sdk/google-vertex';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '../../logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
-import { validateAndGetApiKey } from '../../utils/geminiApiKey';
+import { getGoogleApiKey } from '../../utils/providerCredentials';
+import { APIError, ErrorType } from '../../errors/errorTypes';
+
+// Helper function for compatibility
+async function validateAndGetApiKey(): Promise<string> {
+    const apiKey = await getGoogleApiKey();
+    if (!apiKey) {
+        throw new APIError({
+            message: 'No API key configured',
+            statusCode: 401,
+            retryable: false,
+            userMessage: 'Please configure your Google AI API key in settings.',
+            technicalDetails: 'No API key found in storage',
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+    }
+    return apiKey;
+}
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
 import { customFetch } from '../utils/fetchHelpers';
 import type { AIMode } from '../types/types';

@@ -6,7 +6,7 @@ import { ErrorNotification } from '../features/chat/components/ErrorNotification
 import { ModelDownloadToastContainer } from '../shared/notifications';
 import type { VoiceInputHandle } from '../../audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
-import { hasGeminiApiKey } from '../../utils/geminiApiKey';
+import { hasGoogleApiKey } from '../../utils/providerCredentials';
 import type { Message, AIMode, RemoteModelType, ModelState } from '../features/chat/types';
 import type { AppUsage } from '../../ai/types/usage';
 import type { LocalPdfInfo } from '../../hooks/useActiveTabDetection';
@@ -85,7 +85,7 @@ export function CopilotChatWindow({
         async function loadModelState() {
             try {
                 const config = await getModelConfig();
-                const hasKey = await hasGeminiApiKey();
+                const hasKey = await hasGoogleApiKey();
 
                 setModelState({
                     mode: config.mode,
@@ -121,7 +121,7 @@ export function CopilotChatWindow({
 
                 // Check new provider config storage
                 if (changes.ai_provider_config) {
-                    const hasKey = await hasGeminiApiKey();
+                    const hasKey = await hasGoogleApiKey();
                     setModelState(prev => ({
                         ...prev,
                         hasApiKey: hasKey,
