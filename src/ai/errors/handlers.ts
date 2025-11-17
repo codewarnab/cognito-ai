@@ -5,7 +5,10 @@
  */
 
 import { createLogger } from '../../logger';
-import { markApiKeyInvalid } from '../../utils/geminiApiKey';
+import { markGoogleApiKeyInvalid } from '../../utils/providerCredentials';
+
+// Helper function for compatibility
+const markApiKeyInvalid = (errorCode?: string) => markGoogleApiKeyInvalid(errorCode || 'AUTH_FAILED');
 import {
   APIError,
   NetworkError,

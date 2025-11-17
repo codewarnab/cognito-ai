@@ -11,7 +11,7 @@ import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
-import { hasGeminiApiKey } from '../../utils/geminiApiKey';
+import { hasGoogleApiKey as hasGeminiApiKey } from '../../utils/providerCredentials';
 import { getModelConfig } from '../../utils/modelSettings';
 import {
   APIError,
