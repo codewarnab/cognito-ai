@@ -78,6 +78,60 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         ],
     },
 
+    // Vertex AI Specific Errors
+    [ErrorType.API_VERTEX_PERMISSION_DENIED]: {
+        userMessage: 'Service account lacks permissions. Check IAM roles in Google Cloud Console.',
+        technicalTemplate: 'Vertex AI permission denied. Details: {details}',
+        suggestions: [
+            'Check your service account IAM permissions',
+            'Ensure Vertex AI API is enabled',
+            'Verify you have the required roles',
+        ],
+    },
+    [ErrorType.API_VERTEX_MODEL_ACCESS_REQUIRED]: {
+        userMessage: 'This model requires allowlisting. Request access in Google Cloud Console.',
+        technicalTemplate: 'Vertex AI model access required. Model: {model}, Details: {details}',
+        suggestions: [
+            'Request model access in Google Cloud Console',
+            'Check if your organization policies allow this model',
+            'Try a different model that doesn\'t require allowlisting',
+        ],
+    },
+    [ErrorType.API_VERTEX_QUOTA_EXHAUSTED]: {
+        userMessage: 'Vertex AI quota exceeded. Wait or increase quotas in GCP.',
+        technicalTemplate: 'Vertex AI quota exhausted. Details: {details}',
+        suggestions: [
+            'Wait for quota to reset',
+            'Increase quotas in Google Cloud Console',
+            'Check your quota usage dashboard',
+        ],
+    },
+    [ErrorType.API_VERTEX_DEADLINE_EXCEEDED]: {
+        userMessage: 'Request took too long. Try a simpler prompt.',
+        technicalTemplate: 'Vertex AI deadline exceeded. Details: {details}',
+        suggestions: [
+            'Try a simpler or shorter prompt',
+            'Increase timeout settings if available',
+            'Break down complex requests',
+        ],
+    },
+    [ErrorType.API_VERTEX_CANCELLED]: {
+        userMessage: 'Request was cancelled.',
+        technicalTemplate: 'Vertex AI request cancelled. Details: {details}',
+        suggestions: [
+            'Try the request again if needed',
+        ],
+    },
+    [ErrorType.API_VERTEX_RESOURCE_NOT_FOUND]: {
+        userMessage: 'Resource not found. Check your model name and credentials.',
+        technicalTemplate: 'Vertex AI resource not found. Resource: {resource}, Details: {details}',
+        suggestions: [
+            'Verify your model name',
+            'Check if the resource exists in your project',
+            'Ensure you have access to the resource',
+        ],
+    },
+
     // MCP Errors
     [ErrorType.MCP_CONNECTION_FAILED]: {
         userMessage: 'Unable to connect to {serverName}. Retrying...',
@@ -113,6 +167,16 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
             'The system will automatically retry',
             'The server may be under maintenance',
             'Try again in a few moments',
+        ],
+    },
+    [ErrorType.MCP_CLOUDFLARE_WORKER_ERROR]: {
+        userMessage: '{serverName} service is experiencing technical difficulties. This is temporary.',
+        technicalTemplate: 'Cloudflare Worker error (Error 1101). Server: {serverName}, Details: {details}',
+        suggestions: [
+            'This is a server-side issue with {serverName}, not your setup',
+            'The system will automatically retry in 30 seconds',
+            'You can also try again later when the service has recovered',
+            'This commonly happens when the service is being updated or experiencing high load',
         ],
     },
     [ErrorType.MCP_TRANSPORT_ERROR]: {

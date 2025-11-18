@@ -255,10 +255,23 @@ export async function initializeMCPClients(
 
             // Set up event handlers for better error tracking and debugging
             httpTransport.onerror = (error: Error) => {
-              const mcpError = MCPError.connectionFailed(
-                mcpServer.id,
-                `Transport error: ${error.message}`
-              );
+              // Detect Cloudflare Worker errors (Error 1101)
+              const errorMessage = error.message?.toLowerCase() || '';
+              const isCloudflareWorkerError =
+                errorMessage.includes('worker threw exception') ||
+                errorMessage.includes('error 1101') ||
+                errorMessage.includes('cloudflare');
+
+              const mcpError = isCloudflareWorkerError
+                ? MCPError.cloudflareWorkerError(
+                  mcpServer.id,
+                  `Cloudflare Worker error: ${error.message}`
+                )
+                : MCPError.connectionFailed(
+                  mcpServer.id,
+                  `Transport error: ${error.message}`
+                );
+
               const userMessage = buildUserMessage(mcpError, { serverName: mcpServer.name });
               log.error(`❌ Transport error for ${mcpServer.name}: ${userMessage}`, error);
               // Error is logged but connection continues via retry logic
@@ -296,10 +309,23 @@ export async function initializeMCPClients(
             }
           } catch (transportError) {
             // Categorize transport creation errors
-            const error = MCPError.connectionFailed(
-              mcpServer.id,
-              `StreamableHTTP transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
-            );
+            const errorMessage = (transportError instanceof Error ? transportError.message : 'Unknown error').toLowerCase();
+            const isCloudflareError =
+              errorMessage.includes('worker threw exception') ||
+              errorMessage.includes('error 1101') ||
+              errorMessage.includes('cloudflare') ||
+              (transportError instanceof Error && transportError.message?.includes('<title>'));
+
+            const error = isCloudflareError
+              ? MCPError.cloudflareWorkerError(
+                mcpServer.id,
+                `Cloudflare Worker error: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
+              )
+              : MCPError.connectionFailed(
+                mcpServer.id,
+                `StreamableHTTP transport creation failed: ${transportError instanceof Error ? transportError.message : 'Unknown error'}`
+              );
+
             errors.push({ serverId: mcpServer.id, serverName: mcpServer.name, error });
             const userMessage = buildUserMessage(error, { serverName: mcpServer.name });
             log.error(`❌ StreamableHTTP transport error for ${mcpServer.name}: ${userMessage}`, error);

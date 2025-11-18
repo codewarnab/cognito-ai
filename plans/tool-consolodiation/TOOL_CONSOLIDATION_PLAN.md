@@ -93,6 +93,13 @@
 
 Instead of having many specialized tools, create category-based tools with an `action` parameter that determines behavior.
 
+### Tool Documentation & Prompt Strategy
+
+- **Detailed tool descriptions replace the remote playbook:** Each consolidated tool must embed exhaustive, action-level usage notes, edge cases, and input/output examples so we can safely remove the verbose tool playbook block from `#sym:remoteSystemPrompt`.
+- **Parameter validation with corrective messaging:** Schemas should aggressively validate inputs and respond with specific guidance (e.g., "selector is required when action=click"), giving the model immediate feedback when it supplies the wrong parameters.
+- **Remote system prompt versioning:** Draft a new remote system prompt that references the consolidated catalog while keeping the existing prompt untouched for easy rollback and A/B testing.
+- **Legacy workflow preservation:** Do not delete single-purpose tools or workflows that depend on them until the consolidated versions pass pilot testing; run both in parallel where needed.
+
 ### Benefits
 
 ✅ **Reduced AI Context Window Usage**
@@ -812,12 +819,13 @@ Date: 2024-XX-XX
 
 **Tasks:**
 1. ✅ Update `registerAll.ts` to use new tools
-2. ✅ Remove old tool files (keep in git history)
-3. ✅ Update UI formatters
-4. ✅ Update documentation
-5. ✅ Run full test suite (all 55 prompts)
-6. ✅ A/B testing (100 runs each)
-7. ✅ Performance comparison report
+2. ✅ Create a new remote system prompt (v2) that references the consolidated catalog while keeping the existing prompt untouched for rollback , in this systekm you will just mention tools  and  very concise one line description  no need ot detailed playbook as the consolidated toools have detailed descriptions 
+3. ✅ Wire the consolidated tools + new prompt to the main agent via the tool registration layer; defer other agents until pilot success
+4. ✅ Preserve old tool implementations for workflows still invoking them, documenting a deprecation timeline instead of immediate removal
+5. ✅ Update UI formatters + docs so they lean on the richer tool descriptions (since the remote prompt no longer carries the playbook)
+6. ✅ Run full test suite (all 55 prompts) plus prompt-delta regression cases
+7. ✅ A/B testing (100 runs each)
+8. ✅ Performance + prompt comparison report including instruction-token deltas and error-message insights
 
 **Deliverables:**
 - Working consolidated tools
@@ -826,9 +834,19 @@ Date: 2024-XX-XX
 
 ---
 
-### Phase 5: Tier 2 (Optional, Week 4)
+### Phase 5: Pilot Rollout (Week 4)
 
-**Only if Tier 1 shows positive results:**
+**Goal:** Validate the new remote system prompt + consolidated tools with the main agent before expanding to all agents.
+
+**Tasks:**
+- Monitor telemetry (tool errors, corrective validation messages, retries) for the main agent
+- Iteratively refine tool descriptions or validation messages when the AI misuses parameters
+- Decide when to switch additional agents to the consolidated stack; document rollout + rollback levers
+- Once approved, schedule removal of redundant remote playbook content and plan retirement steps for unused single-purpose tools
+
+### Phase 6: Tier 2 (Optional, Week 5)
+
+**Only if Tier 1 + Pilot show positive results:**
 - Implement `pageNavigation` tool
 - Additional edge case testing
 - Further optimizations
@@ -1041,16 +1059,18 @@ Date: 2024-XX-XX
 ## Next Steps
 
 1. **Review this plan** with team
-2. **Approve/modify** merger proposals
+2. **Approve/modify** merger proposals + the detailed tool-description + prompt strategy
 3. **Set up testing infrastructure**
-4. **Run baseline tests** (55 prompts)
-5. **Begin Tier 1 implementation**
-6. **Monitor and iterate**
+4. **Draft the new remote system prompt (v2) while keeping v1 untouched**
+5. **Run baseline tests** (55 prompts)
+6. **Begin Tier 1 implementation with strict validation + descriptive error messaging**
+7. **Update tool registration so only the main agent consumes the consolidated catalog during pilot**
+8. **Monitor telemetry, iterate, and plan the broader rollout**
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** 2024-11-09  
+**Document Version:** 1.1  
+**Last Updated:** 2025-11-18  
 **Author:** AI Analysis Team  
 **Status:** DRAFT - Awaiting Approval
     

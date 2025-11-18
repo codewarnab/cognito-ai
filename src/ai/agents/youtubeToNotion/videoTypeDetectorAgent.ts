@@ -11,6 +11,7 @@ import { createLogger } from '../../../logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoType, VideoTypeDetectionResult } from './types';
 import { VIDEO_TEMPLATES } from './templates';
+import { progressStore } from './progressStore';
 
 const log = createLogger('VideoTypeDetectorAgent');
 
@@ -105,6 +106,13 @@ export async function detectVideoType(params: {
         transcriptLength: transcript.length,
         durationSeconds,
         hasUrl: !!videoUrl
+    });
+
+    // Progress: Start video type detection
+    const detectionStepId = progressStore.add({
+        title: 'Analyzing video type...',
+        status: 'active',
+        type: 'analysis'
     });
 
     // Initialize Gen AI client
@@ -212,11 +220,31 @@ export async function detectVideoType(params: {
             alternatives: result.alternatives?.map((a: { type: string; confidence: number }) => `${a.type}:${a.confidence.toFixed(2)}`).join(', ')
         });
 
+        // Progress: Detection complete
+        progressStore.update(detectionStepId, {
+            title: `Video type: ${result.videoType}`,
+            status: 'complete',
+            data: {
+                videoType: result.videoType,
+                confidence: result.confidence
+            }
+        });
+
         return result;
     } catch (error) {
         log.error('❌ Failed to parse detection response', {
             error,
             responseText: text.substring(0, 500)
+        });
+
+        // Progress: Detection failed, fallback to generic
+        progressStore.update(detectionStepId, {
+            title: 'Video type: generic (detection failed)',
+            status: 'complete',
+            data: {
+                videoType: 'generic',
+                confidence: 0.5
+            }
         });
 
         // Fallback to generic

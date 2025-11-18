@@ -11,8 +11,9 @@ import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
 import { createLogger } from '../../logger';
-import { CompactToolRenderer } from '../../ai/tools/components';
+import { ChainOfThoughtToolRenderer } from '../../components/ui/tools/ChainOfThoughtToolRenderer';
 import { executeYouTubeToNotion } from '../../ai/agents/youtubeToNotion/youtubeToNotionAgentTool';
+import { progressStore } from '../../ai/agents/youtubeToNotion/progressStore';
 import type { ToolUIState } from '../../ai/tools/components';
 
 const log = createLogger('Tool-YouTubeToNotion');
@@ -84,6 +85,11 @@ IMPORTANT:
                         hasParentPageId: !!parentPageId
                     });
 
+                    // Initialize progress store for this workflow
+                    // Generate unique workflow ID that UI can access
+                    const workflowId = `youtube-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    progressStore.startWorkflow(workflowId);
+
                     // Execute the YouTube to Notion agent
                     const result = await executeYouTubeToNotion({
                         youtubeUrl,
@@ -129,9 +135,10 @@ IMPORTANT:
             },
         });
 
-        // Register the UI renderer for this tool - uses CompactToolRenderer
+        // Register the UI renderer for this tool - uses Chain of Thought renderer
         registerToolUI('youtubeToNotionAgent', (state: ToolUIState) => {
-            return <CompactToolRenderer state={state} />;
+            // UI doesn't need workflowId parameter - renderer subscribes to all updates
+            return <ChainOfThoughtToolRenderer state={state} />;
         });
 
         log.info('✅ youtubeToNotionAgent tool registration complete');

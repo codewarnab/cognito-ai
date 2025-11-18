@@ -28,6 +28,7 @@ export enum ErrorType {
     MCP_AUTH_FAILED = 'MCP_AUTH_FAILED',
     MCP_TOOL_EXECUTION_FAILED = 'MCP_TOOL_EXECUTION_FAILED',
     MCP_SERVER_UNAVAILABLE = 'MCP_SERVER_UNAVAILABLE',
+    MCP_CLOUDFLARE_WORKER_ERROR = 'MCP_CLOUDFLARE_WORKER_ERROR',
     MCP_TRANSPORT_ERROR = 'MCP_TRANSPORT_ERROR',
     MCP_INVALID_RESPONSE = 'MCP_INVALID_RESPONSE',
 
@@ -373,6 +374,23 @@ export class MCPError extends BaseAppError {
             userMessage: `${serverName} is temporarily unavailable. Retrying...`,
             technicalDetails: details || `MCP server ${serverName} is not responding.`,
             errorCode: ErrorType.MCP_SERVER_UNAVAILABLE,
+            serverName,
+        });
+    }
+
+    /**
+     * Create Cloudflare Worker error (Error 1101)
+     * This occurs when Cloudflare Workers crash or throw unhandled exceptions
+     */
+    static cloudflareWorkerError(serverName: string, details?: string): MCPError {
+        return new MCPError({
+            message: `Cloudflare Worker error for ${serverName}`,
+            statusCode: 1101,
+            retryable: true,
+            retryAfter: 30000, // Wait 30 seconds before retry
+            userMessage: `${serverName} service is experiencing technical difficulties. This is a temporary issue on their end. The extension will retry automatically in 30 seconds. You can also try again later.`,
+            technicalDetails: details || `Cloudflare Worker threw an exception (Error 1101). The server's serverless function encountered an unhandled error. This is not an issue with your setup or authentication.`,
+            errorCode: ErrorType.MCP_CLOUDFLARE_WORKER_ERROR,
             serverName,
         });
     }

@@ -242,7 +242,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         try {
             const response = await sendMessage({ type: `mcp/${id}/health/check` })
             if (response.success) {
-                const toolCount = response.data?.toolCount || 0
+                const toolCount = (response.data as { toolCount?: number })?.toolCount || 0
                 setHealthCheckStatus(`✓ Healthy (${toolCount} tools available)`)
                 console.log(`[McpServerCard:${id}] Health check success:`, response.data)
             } else {
@@ -389,9 +389,36 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                         />
                     )}
                     {status.error && (
-                        <span className="mcp-card__error" style={{ fontSize: '12px', color: '#ef4444' }}>
-                            {status.error}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
+                            <span
+                                className="mcp-card__error"
+                                style={{
+                                    fontSize: '12px',
+                                    color: status.state === 'cloudflare-error' ? '#f59e0b' : '#ef4444',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontWeight: 500
+                                }}
+                            >
+                                {status.state === 'cloudflare-error' && (
+                                    <span style={{ fontSize: '14px' }}>⚠️</span>
+                                )}
+                                {status.error}
+                            </span>
+                            {status.state === 'cloudflare-error' && (
+                                <span
+                                    style={{
+                                        fontSize: '11px',
+                                        color: '#6b7280',
+                                        fontStyle: 'italic',
+                                        lineHeight: '1.4'
+                                    }}
+                                >
+                                    This is a server-side issue with {name}. Not related to your setup or authentication. The extension will retry automatically.
+                                </span>
+                            )}
+                        </div>
                     )}
                     {healthCheckStatus && (
                         <span className="mcp-card__health-status" style={{

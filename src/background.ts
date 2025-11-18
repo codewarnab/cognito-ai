@@ -482,24 +482,36 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
 
         // Categorize the error and provide user-friendly message
         let errorMessage: string;
+        let errorState: 'error' | 'cloudflare-error' = 'error';
 
         if (error instanceof MCPError || error instanceof NetworkError) {
-            errorMessage = buildUserMessage(error);
+            errorMessage = error.userMessage;
+            // Check if it's specifically a Cloudflare error
+            if (error instanceof MCPError && error.message.toLowerCase().includes('cloudflare')) {
+                errorState = 'cloudflare-error';
+            }
         } else if (error instanceof Error) {
-            // Wrap generic errors in MCPError
-            const mcpError = MCPError.connectionFailed(
-                serverId,
-                error.message
-            );
-            errorMessage = buildUserMessage(mcpError);
+            // Check for Cloudflare Worker errors in the error message
+            const msg = error.message.toLowerCase();
+            if (msg.includes('worker threw exception') ||
+                msg.includes('error 1101') ||
+                msg.includes('cloudflare') ||
+                error.message.includes('<title>')) {
+                errorMessage = `${serverConfig?.name || serverId} service is experiencing technical difficulties. This is a temporary issue on their end. Please try again in a few minutes.`;
+                errorState = 'cloudflare-error';
+            } else if (msg.includes('timeout') || msg.includes('timed out')) {
+                errorMessage = 'Connection timed out. Please check your internet connection.';
+            } else {
+                errorMessage = error.message;
+            }
         } else {
-            errorMessage = 'Connection failed due to an unknown error';
+            errorMessage = 'An unknown error occurred';
         }
 
         // Update server state with error
         state.status = {
             ...state.status,
-            state: 'error',
+            state: errorState,
             error: errorMessage
         };
         broadcastStatusUpdate(serverId, state.status);

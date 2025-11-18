@@ -3,4 +3,7 @@
  * Orchestrator for all tool display styles
  */
 @import './base.css';
+/* Tool Components Styles - Aggregated imports */
+
 @import './compact.css';
+@import './chain-of-thought.css';
