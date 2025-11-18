@@ -219,15 +219,21 @@ export async function showProgressiveHighlight(): Promise<void> {
         // Fallback to body children
         const children = Array.from(document.body.children).slice(0, 5);
         for (let i = 0; i < children.length; i++) {
-            setTimeout(() => {
-                animateElement(children[i], 'ai-progressive-highlight', 400);
-            }, i * 100);
+            const child = children[i];
+            if (child) {
+                setTimeout(() => {
+                    animateElement(child, 'ai-progressive-highlight', 400);
+                }, i * 100);
+            }
         }
     } else {
         for (let i = 0; i < targetBlocks.length; i++) {
-            setTimeout(() => {
-                animateElement(targetBlocks[i], 'ai-progressive-highlight', 400);
-            }, i * 100);
+            const block = targetBlocks[i];
+            if (block) {
+                setTimeout(() => {
+                    animateElement(block, 'ai-progressive-highlight', 400);
+                }, i * 100);
+            }
         }
     }
 
@@ -453,9 +459,12 @@ export async function showSearchDetection(elements: Element[]): Promise<void> {
     await injectCSS(css, 'ai-search-detection-style');
 
     for (let i = 0; i < elements.length; i++) {
-        setTimeout(() => {
-            animateElement(elements[i], 'ai-search-detected', 300);
-        }, i * 100);
+        const el = elements[i];
+        if (el) {
+            setTimeout(() => {
+                animateElement(el, 'ai-search-detected', 300);
+            }, i * 100);
+        }
     }
 
     setTimeout(() => removeCSS('ai-search-detection-style'), 300 + elements.length * 100);
