@@ -31,7 +31,7 @@ export class StreamProcessor {
     constructor(
         private deps: StreamProcessorDeps,
         private callbacks: StreamProcessorCallbacks
-    ) { }
+    ) {}
 
     /**
      * Enhanced process stream with error handling
@@ -104,7 +104,7 @@ export class StreamProcessor {
 
                             log.info(`[${this.deps.serverId}] Message endpoint received:`, messageEndpoint);
                             log.info(`[${this.deps.serverId}] SSE Session ID:`, sseSessionId);
-
+                            
                             this.callbacks.onEndpointReceived(messageEndpoint, sseSessionId);
                             currentEvent = null;
                             continue;
@@ -136,7 +136,7 @@ export class StreamProcessor {
             // Categorize stream error
             const streamError = this.deps.errorHandler.categorizeConnectionError(error);
             const errorMessage = buildUserMessage(streamError);
-
+            
             // We can't call updateStatus directly, so we'll throw and let the caller handle it
             throw { error: streamError, message: errorMessage };
         } finally {
@@ -153,8 +153,8 @@ export class StreamProcessor {
     shouldReconnect(): boolean {
         // For Streamable HTTP: streams close after each response, which is normal
         // For HTTP+SSE: stream should stay open, so reconnect if it closes unexpectedly
-        if (this.deps.transportType === 'http-sse' &&
-            !this.deps.isDisconnecting() &&
+        if (this.deps.transportType === 'http-sse' && 
+            !this.deps.isDisconnecting() && 
             this.deps.getCurrentState() !== 'disconnected') {
             log.info(`[${this.deps.serverId}] HTTP+SSE stream ended unexpectedly, should reconnect`);
             return true;

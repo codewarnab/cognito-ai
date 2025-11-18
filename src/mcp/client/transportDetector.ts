@@ -29,7 +29,7 @@ export class TransportDetector {
     private messageEndpoint: string | null = null;
     private sseSessionId: string | null = null;
 
-    constructor(private deps: TransportDetectorDeps) { }
+    constructor(private deps: TransportDetectorDeps) {}
 
     /**
      * Detect transport type and establish initial connection
