@@ -6,6 +6,7 @@
 declare global {
     interface Window {
         // Add custom global properties here if needed
+        chrome: typeof chrome;
     }
 }
 
