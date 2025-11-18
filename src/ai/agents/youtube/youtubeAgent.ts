@@ -15,7 +15,65 @@ const log = createLogger('YouTube-Agent');
 // Maximum chunk duration in seconds (30 minutes)
 const MAX_CHUNK_DURATION = 30 * 60; // 1800 seconds
 
+// Retry configuration
+const MAX_RETRIES = 10;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
 // Transcript API endpoint is centralized in constants.ts
+
+/**
+ * Retry wrapper with exponential backoff
+ * @param fn - The async function to retry
+ * @param maxRetries - Maximum number of retry attempts
+ * @param initialDelay - Initial delay in milliseconds
+ * @param operationName - Name of the operation for logging
+ * @returns The result of the function
+ */
+async function withRetry<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = MAX_RETRIES,
+    initialDelay: number = INITIAL_RETRY_DELAY,
+    operationName: string = 'operation'
+): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            if (attempt > 0) {
+                log.info(`🔄 Retry attempt ${attempt}/${maxRetries} for ${operationName}`);
+            }
+            return await fn();
+        } catch (error) {
+            lastError = error;
+
+            // Don't retry certain types of errors
+            if (error instanceof ExternalServiceError) {
+                const status = (error as any).status;
+                // Don't retry 4xx errors except 429 (rate limit)
+                if (status && status >= 400 && status < 500 && status !== 429) {
+                    log.warn(`❌ Non-retryable error for ${operationName} (status ${status})`);
+                    throw error;
+                }
+            }
+
+            // If we've exhausted retries, throw the error
+            if (attempt >= maxRetries) {
+                log.error(`❌ All retry attempts exhausted for ${operationName}`);
+                throw error;
+            }
+
+            // Calculate exponential backoff delay
+            const delay = initialDelay * Math.pow(2, attempt);
+            log.warn(`⚠️ ${operationName} failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`, error);
+
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+    // This should never be reached, but TypeScript needs it
+    throw lastError;
+}
 
 /**
  * Fetch transcript from the deployed API
@@ -26,13 +84,20 @@ async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; dur
     try {
         log.info('📝 Fetching transcript from API', { youtubeUrl });
 
-        const response = await fetch(TRANSCRIPT_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        const response = await withRetry(
+            async () => {
+                return await fetch(TRANSCRIPT_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: youtubeUrl }),
+                });
             },
-            body: JSON.stringify({ url: youtubeUrl }),
-        });
+            MAX_RETRIES,
+            INITIAL_RETRY_DELAY,
+            'fetch transcript'
+        );
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -365,10 +430,17 @@ Focus on directly answering the user's specific question about the video.`;
 
             const prompt = `${systemPrompt}\n\nTranscript:\n${transcript}\n\nUser Question: ${question}`;
 
-            const response = await client.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: prompt }] }]
-            });
+            const response = await withRetry(
+                async () => {
+                    return await client.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+                    });
+                },
+                MAX_RETRIES,
+                INITIAL_RETRY_DELAY,
+                'transcript analysis'
+            );
             return response.text || 'No response generated';
         }
 
@@ -420,10 +492,17 @@ Focus on directly answering the user's specific question about the video.`;
 
         parts.push(videoPart);
 
-        const response = await client.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: [{ role: 'user', parts }]
-        });
+        const response = await withRetry(
+            async () => {
+                return await client.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: [{ role: 'user', parts }]
+                });
+            },
+            MAX_RETRIES,
+            INITIAL_RETRY_DELAY,
+            'video analysis'
+        );
         return response.text || 'No response generated';
     } catch (error) {
         log.error('❌ Error in analyzeVideoChunk:', error);
@@ -528,11 +607,18 @@ Create a cohesive response that:
 
 Your consolidated response:`;
 
-            const finalResponse = await client.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: [{ role: 'user', parts: [{ text: consolidationPrompt }] }]
-            });
-            return `# Consolidated Summary\n\n${finalResponse.text}\n\n---\n\n<details>\n<summary>View Detailed Part-by-Part Analysis</summary>\n\n${combinedResult}\n</details>`;
+            const finalResponse = await withRetry(
+                async () => {
+                    return await client.models.generateContent({
+                        model: 'gemini-2.5-flash',
+                        contents: [{ role: 'user', parts: [{ text: consolidationPrompt }] }]
+                    });
+                },
+                MAX_RETRIES,
+                INITIAL_RETRY_DELAY,
+                'consolidation summary'
+            );
+            return `# Consolidated Summary\n\n${finalResponse.text}\n\n---\n\n<details>\n<summary>View Detailed Part-by-Part Analysis</summary>\n\n${combinedResult}</details>`;
         }
 
         return combinedResult;
@@ -733,10 +819,17 @@ User Question: ${question}
 
 Please answer the question based on the video description above. Be clear that this is based on the description, not the actual video content.`;
 
-                    const response = await client.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: [{ role: 'user', parts: [{ text: descriptionPrompt }] }]
-                    });
+                    const response = await withRetry(
+                        async () => {
+                            return await client.models.generateContent({
+                                model: 'gemini-2.5-flash',
+                                contents: [{ role: 'user', parts: [{ text: descriptionPrompt }] }]
+                            });
+                        },
+                        MAX_RETRIES,
+                        INITIAL_RETRY_DELAY,
+                        'description-based analysis'
+                    );
                     answer = `⚠️ **Note:** Unable to directly analyze the video. The following response is based on the video description.\n\n---\n\n${response.text}`;
                 } else {
                     // No description available either - re-throw the error

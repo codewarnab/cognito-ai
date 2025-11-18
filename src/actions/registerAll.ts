@@ -6,6 +6,7 @@ import { registerReminderActions } from "./reminder";
 import { registerMemoryActions } from "./memory";
 import { registerReportActions } from "./reports";
 import { useScreenshotTool } from "./screenshot";
+import { registerYouTubeToNotionActions } from "./youtubeToNotion";
 
 export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
@@ -18,4 +19,5 @@ export function useRegisterAllActions() {
   registerMemoryActions();
   registerReportActions(); // Always register, but will be filtered in aiLogic.ts
   useScreenshotTool(); // Screenshot capture tool
+  registerYouTubeToNotionActions(); // YouTube to Notion agent tool
 }

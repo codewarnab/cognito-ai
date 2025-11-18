@@ -5,6 +5,7 @@
 
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { SearchIcon } from '../../../../../assets/chat/search';
+import { YoutubeIcon } from '../../../../../assets/chat/youtube';
 
 interface WorkflowBadgeProps {
     workflow: WorkflowDefinition;
@@ -15,6 +16,9 @@ interface WorkflowBadgeProps {
 function renderWorkflowIcon(icon: string) {
     if (icon === 'search') {
         return <SearchIcon size={16} />;
+    }
+    if (icon === 'youtube') {
+        return <YoutubeIcon size={16} />;
     }
     // Default: treat as emoji
     return <span>{icon}</span>;

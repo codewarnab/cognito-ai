@@ -6,6 +6,7 @@
 import { useEffect } from 'react';
 import { registerWorkflow } from './registry';
 import { researchWorkflow } from './definitions/researchWorkflow';
+import { youtubeToNotionWorkflow } from './definitions/youtubeToNotionWorkflow';
 import { createLogger } from '../logger';
 
 const log = createLogger('Workflow-Registration');
@@ -20,14 +21,17 @@ export function useRegisterAllWorkflows() {
         // Register research workflow
         registerWorkflow(researchWorkflow);
 
+        // Register YouTube to Notion workflow
+        registerWorkflow(youtubeToNotionWorkflow);
+
         // Future workflows can be added here:
         // registerWorkflow(debugWorkflow);
         // registerWorkflow(summarizeWorkflow);
         // etc.
 
         log.info('✅ All workflows registered', {
-            count: 1, // Update as more workflows are added
-            workflows: ['research']
+            count: 2, // Update as more workflows are added
+            workflows: ['research', 'youtube-to-notion']
         });
     }, []);
 }

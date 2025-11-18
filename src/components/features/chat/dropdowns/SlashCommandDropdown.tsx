@@ -7,12 +7,16 @@ import React, { useEffect, useState } from 'react';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { getAllWorkflows } from '../../../../workflows/registry';
 import { SearchIcon } from '../../../../../assets/chat/search';
+import { YoutubeIcon } from '../../../../../assets/chat/youtube';
 import type { AIMode } from '../types';
 
 // Helper to render icon (either emoji or component)
 function renderWorkflowIcon(icon: string) {
     if (icon === 'search') {
         return <SearchIcon size={24} />;
+    }
+    if (icon === 'youtube') {
+        return <YoutubeIcon size={24} />;
     }
     // Default: treat as emoji
     return <span>{icon}</span>;
