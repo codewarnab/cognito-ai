@@ -60,6 +60,9 @@ export interface YouTubeToNotionOutput {
 
     /** Error details if operation failed */
     error?: string;
+
+    /** Optional: URLs of child pages created (Phase 1+) */
+    childPageUrls?: string[];
 }
 
 /**
