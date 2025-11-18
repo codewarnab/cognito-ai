@@ -1,0 +1,87 @@
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    width: fit-content;
+    white-space: nowrap;
+    flex-shrink: 0;
+    gap: 0.25rem;
+    transition: color, box-shadow;
+    overflow: hidden;
+}
+
+.badge:focus-visible {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px rgba(var(--ring-rgb), 0.5);
+}
+
+.badge[aria-invalid="true"] {
+    box-shadow: 0 0 0 3px rgba(var(--destructive-rgb), 0.2);
+    border-color: var(--destructive);
+}
+
+.dark .badge[aria-invalid="true"] {
+    box-shadow: 0 0 0 3px rgba(var(--destructive-rgb), 0.4);
+}
+
+.badge>svg {
+    width: 0.75rem;
+    height: 0.75rem;
+    pointer-events: none;
+}
+
+.badge-default {
+    border-color: transparent;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+
+a.badge-default:hover {
+    background-color: color-mix(in srgb, var(--primary) 90%, black);
+}
+
+.badge-secondary {
+    border-color: transparent;
+    background-color: var(--secondary);
+    color: var(--secondary-foreground);
+}
+
+a.badge-secondary:hover {
+    background-color: color-mix(in srgb, var(--secondary) 90%, black);
+}
+
+.badge-destructive {
+    border-color: transparent;
+    background-color: var(--destructive);
+    color: white;
+}
+
+a.badge-destructive:hover {
+    background-color: color-mix(in srgb, var(--destructive) 90%, black);
+}
+
+.badge-destructive:focus-visible {
+    box-shadow: 0 0 0 3px rgba(var(--destructive-rgb), 0.2);
+}
+
+.dark .badge-destructive:focus-visible {
+    box-shadow: 0 0 0 3px rgba(var(--destructive-rgb), 0.4);
+}
+
+.dark .badge-destructive {
+    background-color: color-mix(in srgb, var(--destructive) 60%, black);
+}
+
+.badge-outline {
+    color: var(--foreground);
+}
+
+a.badge-outline:hover {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+}
