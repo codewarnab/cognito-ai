@@ -19,7 +19,6 @@ import { ErrorToast } from "./components/shared/notifications";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 import { WindowVisibilityProvider } from "./contexts/WindowVisibilityContext";
 import { DocumentProvider } from "./contexts/documentContext";
-import { initializeNotificationSound } from "./utils/soundNotification";
 
 // Styles
 import "./styles/features/copilot/index.css";
@@ -55,8 +54,17 @@ import { useAIChatMessages } from "./hooks/useAIChatMessages";
 import { useActiveTabDetection } from "./hooks/useActiveTabDetection";
 import type { LocalPdfInfo } from "./hooks/useActiveTabDetection";
 
+// Sidepanel-specific hooks
+import {
+    useSidepanelUiState,
+    useNotificationSound,
+    useBackgroundMessageListener,
+    useImagePreviewListener,
+    useOnboardingTestHandles,
+} from "./hooks/sidepanel";
+
 // Types
-import type { ChatMode, ContextWarningState } from "./types/sidepanel";
+import type { ContextWarningState } from "./types/sidepanel";
 import type { FileAttachmentData } from "./components/features/chat/components/FileAttachment";
 
 // Utils
@@ -73,22 +81,11 @@ function AIChatContent() {
     useRegisterAllActions();
     useRegisterAllWorkflows();
 
-    // UI State
-    const [input, setInput] = useState('');
-    const [showMcp, setShowMcp] = useState(false);
-    const [showThreads, setShowThreads] = useState(false);
-    const [showMemory, setShowMemory] = useState(false);
-    const [showReminders, setShowReminders] = useState(false);
-    const [showTroubleshooting, setShowTroubleshooting] = useState(false);
-    const [showFeatures, setShowFeatures] = useState(false);
-    const [showProviderSetup, setShowProviderSetup] = useState(false);
-    const [mode, setMode] = useState<ChatMode>('text');
+    // UI State - other states not managed by the hook
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
     const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
-    const [isSoundInitialized, setIsSoundInitialized] = useState(false);
     const [localPdfInfo, setLocalPdfInfo] = useState<LocalPdfInfo | null>(null);
-    const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
     // Refs
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -116,6 +113,12 @@ function AIChatContent() {
         audioLinesIconRef,
         handleRecordingChange,
     } = useVoiceRecording();
+
+    // Initialize notification sound
+    useNotificationSound();
+
+    // Listen for image preview state changes
+    const { isImagePreviewOpen } = useImagePreviewListener();
 
     // Initialize state for thread management
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
@@ -302,73 +305,54 @@ function AIChatContent() {
     });
 
     // Wrapper for handleSendMessage to work with input state
+    // Note: This needs to be defined before uiState hook since the hook needs it
+    const handleSendMessageWithInput = async (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string, inputValue?: string) => {
+        await handleSend(messageText !== undefined ? messageText : (inputValue || ''), attachments, workflowId);
+    };
+
+    // UI State hook
+    const {
+        input,
+        setInput,
+        showMcp,
+        setShowMcp,
+        showThreads,
+        setShowThreads,
+        showMemory,
+        setShowMemory,
+        showReminders,
+        setShowReminders,
+        showTroubleshooting,
+        setShowTroubleshooting,
+        showFeatures,
+        setShowFeatures,
+        showProviderSetup,
+        setShowProviderSetup,
+        mode,
+        setMode,
+        handleModeChange,
+        handleKeyPress,
+        handleContinue,
+    } = useSidepanelUiState({
+        isRecording,
+        onSendMessage: () => handleSendMessageWithInput(undefined, undefined, undefined, input),
+        sendMessage,
+    });
+
+    // Wrapper for handleSendMessage to work with input state
     const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => {
-        await handleSend(messageText !== undefined ? messageText : input, attachments, workflowId);
+        await handleSendMessageWithInput(messageText, attachments, workflowId, input);
         if (messageText === undefined) {
             setInput(''); // Only clear if using input state
         }
     };
 
     // Expose test functions globally
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            (window as any).resetOnboarding = resetOnboarding;
-            (window as any).showOnboarding = () => {
-                setShowOnboarding(true);
-                setShowChatInterface(false);
-            };
-            (window as any).hideOnboarding = () => {
-                setShowOnboarding(false);
-                setShowChatInterface(true);
-            };
-        }
-    }, [resetOnboarding, setShowOnboarding, setShowChatInterface]);
-
-    // Initialize notification sound on first user interaction
-    useEffect(() => {
-        if (isSoundInitialized) return;
-
-        const initSound = async () => {
-            try {
-                await initializeNotificationSound();
-                setIsSoundInitialized(true);
-                log.info('Notification sound initialized');
-            } catch (error) {
-                log.warn('Failed to initialize notification sound:', error);
-            }
-        };
-
-        // Initialize on any user interaction (click, keypress, focus)
-        const handleUserInteraction = () => {
-            initSound();
-            // Remove listeners after first interaction
-            document.removeEventListener('click', handleUserInteraction);
-            document.removeEventListener('keypress', handleUserInteraction);
-            window.removeEventListener('focus', handleUserInteraction);
-        };
-
-        document.addEventListener('click', handleUserInteraction);
-        document.addEventListener('keypress', handleUserInteraction);
-        window.addEventListener('focus', handleUserInteraction);
-
-        return () => {
-            document.removeEventListener('click', handleUserInteraction);
-            document.removeEventListener('keypress', handleUserInteraction);
-            window.removeEventListener('focus', handleUserInteraction);
-        };
-    }, [isSoundInitialized]);
-
-    // Listen for image preview state changes to hide voice pill
-    useEffect(() => {
-        const handleImagePreviewStateChange = (event: CustomEvent) => {
-            setIsImagePreviewOpen(event.detail.isOpen);
-        };
-
-        window.addEventListener('imagePreviewStateChange' as any, handleImagePreviewStateChange);
-        return () => {
-            window.removeEventListener('imagePreviewStateChange' as any, handleImagePreviewStateChange);
-        };
-    }, []);
+    useOnboardingTestHandles({
+        resetOnboarding,
+        setShowOnboarding,
+        setShowChatInterface,
+    });
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -376,114 +360,15 @@ function AIChatContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (input.trim().length > 0) {
-                handleSendMessage();
-            }
-        }
-    };
-
-    // Handle continue button click
-    const handleContinue = () => {
-        log.info("Continue button clicked - sending continue message");
-        sendMessage({
-            text: "Please continue from where you left off. Complete any remaining tasks or tool calls that were interrupted by the step limit."
-        });
-    };
-
-    // Phase 4: Listen for notification actions and omnibox messages from background
-    useEffect(() => {
-        const handleBackgroundMessage = async (
-            message: any,
-            _sender: chrome.runtime.MessageSender,
-            sendResponse: (response?: any) => void
-        ) => {
-            // Handle omnibox messages
-            if (message?.type === 'omnibox/send-message') {
-                const { text } = message.payload;
-
-                log.info('🔤 Received omnibox message', { text, hasThread: !!currentThreadId });
-
-                // If no thread exists, create a new one
-                if (!currentThreadId) {
-                    log.info('📝 Creating new thread for omnibox message');
-                    await handleNewThread();
-                    // Wait a bit for the thread to be created
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-
-                // Send the message
-                if (text && text.trim()) {
-                    log.info('📤 Sending omnibox message to chat');
-                    await handleSendMessage(text.trim());
-                }
-
-                sendResponse({ success: true });
-                return true;
-            }
-
-            // Handle notification actions
-            if (message?.type === 'ai/notification/action') {
-                const { action, threadId } = message.payload;
-
-                log.info('📬 Received notification action from background', { action, threadId });
-
-                if (action === 'continue') {
-                    // Load the correct thread if not already active
-                    if (threadId && threadId !== currentThreadId) {
-                        log.info('🔄 Switching to thread from notification', {
-                            from: currentThreadId,
-                            to: threadId
-                        });
-                        await handleThreadSelect(threadId);
-
-                        // Wait a bit for the thread to load
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-
-                    // Trigger the continue action
-                    log.info('▶️ Triggering continue action from notification');
-                    handleContinue();
-
-                    // Scroll to latest message (will happen automatically via messagesEndRef)
-                    // Focus happens when user starts typing
-
-                    sendResponse({ success: true });
-                    return true; // Keep message channel open for async response
-                } else if (action === 'navigate' || action === 'open') {
-                    // Just open to the thread (notification body click)
-                    if (threadId && threadId !== currentThreadId) {
-                        log.info('📂 Opening thread from notification', { threadId });
-                        await handleThreadSelect(threadId);
-                    }
-                    sendResponse({ success: true });
-                    return true; // Keep message channel open for async response
-                }
-            }
-            return false;
-        };
-
-        chrome.runtime.onMessage.addListener(handleBackgroundMessage);
-
-        return () => {
-            chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
-        };
-    }, [currentThreadId, handleThreadSelect, handleNewThread, handleContinue, handleSendMessage, sendMessage]);
-
-    // Handle mode change with cleanup
-    const handleModeChange = async (newMode: ChatMode) => {
-        if (mode === newMode) return;
-
-        if (isRecording) {
-            log.warn('Cannot switch mode while recording');
-            return;
-        }
-
-        log.info('Switching mode', { from: mode, to: newMode });
-        setMode(newMode);
-    };
+    // Listen for background messages (omnibox and notifications)
+    useBackgroundMessageListener({
+        currentThreadId,
+        handleNewThread,
+        handleThreadSelect,
+        handleSendMessage,
+        handleContinue,
+        sendMessage,
+    });
 
     // Render MCP Manager or Chat Window
     if (showMcp) {
@@ -661,10 +546,3 @@ function SidePanel() {
 }
 
 export default SidePanel;
-
-// TypeScript declarations
-declare global {
-    interface Window {
-        chrome: typeof chrome;
-    }
-}
