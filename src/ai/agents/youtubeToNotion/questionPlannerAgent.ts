@@ -7,7 +7,6 @@
  * - Generates 6-10 unique, template-aware section questions from video transcript
  * - Enforces minimum 4 questions requirement
  * - De-duplicates questions (case-insensitive title matching)
- * - Validates template compliance (Q&A format for lectures, Step-by-Step for tutorials, etc.)
  * - Uses aggressive retry policy (20 retries) for AI model overload handling
  */
 
@@ -156,7 +155,7 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
             model: 'gemini-2.5-flash',
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
-                temperature: 0.5, // Lower temperature for more consistent planning
+                temperature: 0.7, // Higher temperature for more creative, varied questions
                 maxOutputTokens: 2048,
                 responseMimeType: 'application/json',
                 responseSchema: questionSchema
@@ -200,9 +199,6 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
             })
             .slice(0, targetMax); // Ensure we don't exceed maximum
 
-        // Validate template compliance
-        validateTemplateCompliance(items, template);
-
         // Check minimum requirement
         if (items.length < targetMin) {
             log.error('❌ Insufficient questions planned', {
@@ -233,6 +229,30 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
 }
 
 /**
+ * Sample transcript intelligently to get representative content
+ * Takes from beginning, middle, and end for better coverage
+ */
+function smartSampleTranscript(transcript: string, maxChars: number): string {
+    if (transcript.length <= maxChars) {
+        return transcript;
+    }
+
+    // Allocate: 50% beginning, 25% middle, 25% end
+    const beginChars = Math.floor(maxChars * 0.5);
+    const midChars = Math.floor(maxChars * 0.25);
+    const endChars = maxChars - beginChars - midChars;
+
+    const beginning = transcript.slice(0, beginChars);
+    
+    const midStart = Math.floor(transcript.length / 2 - midChars / 2);
+    const middle = transcript.slice(midStart, midStart + midChars);
+    
+    const end = transcript.slice(-endChars);
+
+    return `${beginning}\n\n[... middle section ...]\n\n${middle}\n\n[... later section ...]\n\n${end}`;
+}
+
+/**
  * Build the planning prompt
  */
 function buildPlanningPrompt(params: {
@@ -245,10 +265,8 @@ function buildPlanningPrompt(params: {
 }): string {
     const { transcript, videoTitle, videoUrl, template, targetMin, targetMax } = params;
 
-    // Truncate transcript for planning (first 8000 chars should be sufficient for topic identification)
-    const transcriptForPlanning = transcript.length > 8000
-        ? transcript.slice(0, 8000) + '\n\n[Transcript truncated for planning...]'
-        : transcript;
+    // Smarter transcript sampling: take from beginning, middle, and end
+    const transcriptForPlanning = smartSampleTranscript(transcript, 10000);
 
     return `You are planning sections for Notion notes based on a YouTube video transcript.
 
@@ -257,7 +275,31 @@ Video URL: ${videoUrl}
 Template Type: ${template.name} (${template.format})
 
 # YOUR TASK
-Generate ${targetMin}-${targetMax} UNIQUE sections based on the transcript content.
+Generate ${targetMin}-${targetMax} UNIQUE, HIGH-QUALITY sections based on the transcript content.
+
+# QUALITY CRITERIA (CRITICAL)
+Each section MUST meet ALL these standards:
+
+1. **SPECIFICITY**: Titles must be specific, not generic
+   ✅ Good: "What is the CAP Theorem and why does it matter?"
+   ❌ Bad: "What is this concept?"
+   ❌ Bad: "Overview" or "Introduction"
+
+2. **UNIQUENESS**: Each section covers a DISTINCT topic
+   - No overlap between sections
+   - Each explores a different aspect of the content
+
+3. **ANSWERABILITY**: Questions must be directly answerable from the transcript
+   - Don't ask about content not discussed in the video
+   - Base questions on actual quotes/examples from transcript
+
+4. **DEPTH**: Prefer deeper, more insightful questions over surface-level ones
+   ✅ Good: "How does eventual consistency solve the availability problem?"
+   ❌ Bad: "What is consistency?"
+
+5. **COVERAGE**: Questions should span the ENTIRE video
+   - Include early, middle, and late content
+   - Don't cluster all questions in one section
 
 # CRITICAL RULES FOR "${template.format}" FORMAT
 
@@ -268,20 +310,26 @@ Based on the "${template.name}" template, consider these section types:
 ${template.sectionGuidelines.sectionTypes.map(t => `• ${t}`).join('\n')}
 
 # EXAMPLE TITLES FOR THIS TEMPLATE
-${template.exampleTitles.slice(0, 3).map(t => `• "${t}"`).join('\n')}
+${template.exampleTitles.map(t => `• "${t}"`).join('\n')}
+
+# ANTI-PATTERNS TO AVOID
+❌ Generic titles: "Introduction", "Overview", "Conclusion" (unless very specific)
+❌ Duplicate concepts: Don't ask the same thing in different words
+❌ Vague questions: "What about X?" should be "What specific aspect of X?"
+❌ Clustering: Don't make all questions about the first 5 minutes
 
 # REQUIREMENTS
 1. Generate ${targetMin}-${targetMax} sections
-2. Each section MUST be UNIQUE (no duplicates)
-3. Each section MUST cover a DISTINCT topic from the transcript
-4. Base sections ONLY on content actually present in the transcript
+2. Each section MUST meet ALL quality criteria above
+3. Questions should reference SPECIFIC concepts from the transcript
+4. Distribute questions across the ENTIRE video timeline
 5. Titles MUST follow the "${template.format}" format rules above
 6. Each question should guide content generation for that section
 
 # TRANSCRIPT
 ${transcriptForPlanning}
 
-Generate the sections array with unique, template-compliant titles and guiding questions.`;
+Generate the sections array with unique, high-quality, template-compliant titles and guiding questions.`;
 }
 
 /**
@@ -290,91 +338,54 @@ Generate the sections array with unique, template-compliant titles and guiding q
 function getFormatSpecificRules(template: VideoNotesTemplate): string {
     switch (template.format) {
         case 'Q&A':
-            return `• Titles MUST be questions in question form
+            return `• Titles MUST be questions in question form with SPECIFIC subject matter
 • Use question words: "What", "How", "Why", "When", "Where", "Which"
-• Examples: "What is...?", "How does...?", "Why...?", "X vs Y - What's the difference?"
-• NOT allowed: Statements, commands, or declarative titles`;
+• Include key concepts in the question itself
+• Examples: 
+  ✅ "What is the CAP Theorem and how does it apply to distributed systems?"
+  ✅ "How does React's reconciliation algorithm improve performance?"
+  ❌ "What is this?" (too vague)
+  ❌ "Understanding the basics" (not a question)
+• Each question should be self-contained and specific`;
 
         case 'Step-by-Step':
-            return `• Titles MUST follow "Step N: [action/topic]" format
+            return `• Titles MUST follow "Step N: [specific action/topic]" format
 • N must be sequential (Step 1, Step 2, Step 3, etc.)
-• Action should be clear and specific
-• Examples: "Step 1: Initialize Project", "Step 2: Configure Database"
-• NOT allowed: Questions, statements without step numbers`;
+• Action should be SPECIFIC and ACTIONABLE
+• Examples:
+  ✅ "Step 1: Initialize Next.js Project with TypeScript"
+  ✅ "Step 2: Configure Tailwind CSS with Custom Theme"
+  ❌ "Step 1: Setup" (too vague - setup what?)
+  ❌ "Configure things" (not numbered, not specific)
+• Each step should build on previous steps logically`;
 
         case 'Insights':
-            return `• Titles should identify key topics or themes
-• Format: "Key Topic N: [topic name]" or "[Topic Name] - Key Insights"
-• Focus on main discussion points and takeaways
-• Examples: "Key Topic 1: Future of AI", "Guest Background and Expertise"
-• Can also use: "Main Takeaway: [insight]"`;
+            return `• Titles should identify SPECIFIC key topics, themes, or takeaways
+• Format options:
+  - "Key Topic: [specific topic name and context]"
+  - "[Person Name]'s Perspective on [specific subject]"
+  - "Main Takeaway: [specific insight]"
+• Examples:
+  ✅ "Key Topic: AI's Impact on Healthcare Diagnostics"
+  ✅ "Guest's Perspective on Remote Work Culture Post-2020"
+  ✅ "Main Takeaway: Why Async Communication Beats Meetings"
+  ❌ "Key Topic: AI" (too broad)
+  ❌ "Discussion points" (too generic)
+• Focus on ACTIONABLE or MEMORABLE insights`;
 
         case 'Mixed':
         default:
-            return `• Titles should be clear, descriptive, and focused
-• Can use various formats depending on content type
-• Questions for concepts: "What is...?"
-• Topics for themes: "Main Topic: [name]"
-• Steps for processes: "Step N: [action]"
-• Adapt format to best represent the content`;
+            return `• Titles should be SPECIFIC, DESCRIPTIVE, and FOCUSED
+• Choose format based on content type:
+  - Questions for concepts: "What is [specific concept] and how does it work?"
+  - Topics for themes: "Main Topic: [specific name and context]"
+  - Steps for processes: "Step N: [specific action]"
+• Examples:
+  ✅ "How Modern Browsers Optimize JavaScript Execution"
+  ✅ "The Evolution of CSS: From Floats to Flexbox to Grid"
+  ✅ "Comparing REST vs GraphQL for API Design"
+  ❌ "Overview" or "Introduction" (unless very specific)
+  ❌ "Some concepts" (vague)
+• Always include key terms and context in the title`;
     }
-}
-
-/**
- * Validate template compliance
- * Ensures question titles follow the template's format requirements
- */
-function validateTemplateCompliance(items: QuestionItem[], template: VideoNotesTemplate): void {
-    const format = template.format;
-
-    for (const item of items) {
-        const title = item.title.trim();
-
-        switch (format) {
-            case 'Q&A':
-                // Must be a question (ends with ? or contains question words)
-                const hasQuestionMark = title.endsWith('?');
-                const hasQuestionWord = /^(what|how|why|when|where|which|who|whose|whom)\b/i.test(title);
-
-                if (!hasQuestionMark && !hasQuestionWord) {
-                    log.warn('⚠️ Q&A format violation - title is not a question', {
-                        title,
-                        templateFormat: format
-                    });
-                }
-                break;
-
-            case 'Step-by-Step':
-                // Must follow "Step N:" format
-                const stepPattern = /^step\s+\d+:/i;
-                if (!stepPattern.test(title)) {
-                    log.warn('⚠️ Step-by-Step format violation - title does not follow "Step N:" format', {
-                        title,
-                        templateFormat: format
-                    });
-                }
-                break;
-
-            case 'Insights':
-                // Should mention "key", "topic", "insight", "takeaway", or "guest"
-                const insightPattern = /\b(key|topic|insight|takeaway|guest|main|background)\b/i;
-                if (!insightPattern.test(title)) {
-                    log.warn('⚠️ Insights format suggestion - consider using insight-related keywords', {
-                        title,
-                        templateFormat: format
-                    });
-                }
-                break;
-
-            case 'Mixed':
-            default:
-                // No specific validation for mixed format
-                break;
-        }
-    }
-
-    log.info('✅ Template compliance validation completed', {
-        format,
-        itemCount: items.length
-    });
 }

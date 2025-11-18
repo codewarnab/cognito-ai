@@ -26,10 +26,12 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'What is the CAP Theorem?',
-            'Consistency vs Availability - Trade-offs',
-            'Real-world Examples of CAP Theorem',
-            'Practice Problems and Solutions'
+            'What is the CAP Theorem and why does it matter in distributed systems?',
+            'Consistency vs Availability - What are the key trade-offs?',
+            'How do NoSQL databases handle partition tolerance?',
+            'When should you choose consistency over availability?',
+            'What are real-world examples of CAP Theorem in action?',
+            'How does eventual consistency work in practice?'
         ]
     },
 
@@ -51,11 +53,13 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Prerequisites and Setup',
-            'Step 1: Initialize Project',
-            'Step 2: Configure Authentication',
-            'Common Errors and Solutions',
-            'Best Practices and Optimization'
+            'Prerequisites: Required Tools and Knowledge',
+            'Step 1: Initialize Next.js Project with TypeScript',
+            'Step 2: Configure Authentication with NextAuth',
+            'Step 3: Set Up Database Connection with Prisma',
+            'Step 4: Create Protected API Routes',
+            'Common Errors: Authentication Edge Cases',
+            'Best Practices: Security and Performance Optimization'
         ]
     },
 
@@ -77,11 +81,12 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Guest: John Doe - Background and Expertise',
-            'Key Topic 1: Future of AI in Healthcare',
-            'Key Topic 2: Challenges in Data Privacy',
-            'Resources and Tools Mentioned',
-            'Main Takeaways and Action Items'
+            'Guest Background: John Doe - AI Research and Healthcare Innovation',
+            'Key Topic: AI\'s Impact on Early Disease Detection',
+            'Key Topic: Balancing Innovation with Patient Data Privacy',
+            'Main Takeaway: Why Explainable AI Matters for Medical Adoption',
+            'Resources Mentioned: Tools and Research Papers',
+            'Action Items: How to Get Started in Healthcare AI'
         ]
     },
 
@@ -103,11 +108,13 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Introduction: The Origins of the Internet',
-            'The ARPANET Era - 1960s-1970s',
-            'Key Innovations: TCP/IP and DNS',
-            'The World Wide Web Revolution',
-            'Modern Internet and Its Impact'
+            'Introduction: The Origins of the Internet and ARPANET Vision',
+            'The ARPANET Era: Cold War Innovation (1960s-1970s)',
+            'Key Innovations: How TCP/IP Revolutionized Networking',
+            'The Birth of DNS: Making the Internet User-Friendly',
+            'Tim Berners-Lee and the World Wide Web Revolution',
+            'Modern Internet: Social Impact and Digital Divide',
+            'Future Implications: Internet Governance and Privacy'
         ]
     },
 
@@ -129,11 +136,13 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Presentation Overview and Agenda',
-            'The Problem: Scaling Microservices',
-            'Our Approach: Event-Driven Architecture',
-            'Results: 10x Performance Improvement',
-            'Key Takeaways for Your Team'
+            'Presentation Overview: Scaling Microservices at 100k Requests/Second',
+            'The Problem: Bottlenecks in Synchronous Service Communication',
+            'Our Approach: Transitioning to Event-Driven Architecture',
+            'Implementation Details: Using Kafka for Message Streaming',
+            'Results: 10x Performance Improvement with 50% Cost Reduction',
+            'Key Takeaways: When to Choose Event-Driven vs Request-Response',
+            'Q&A Highlights: Handling Eventual Consistency'
         ]
     },
 
@@ -155,12 +164,14 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Training Objectives and Learning Outcomes',
-            'Core Concept: Understanding Kubernetes',
-            'Demo: Deploying Your First Pod',
-            'Best Practices for Production',
-            'Common Mistakes to Avoid',
-            'Next Steps and Resources'
+            'Training Objectives: Mastering Kubernetes for Production Deployments',
+            'Core Concept: Understanding Pods, Services, and Deployments',
+            'Core Concept: How Kubernetes Orchestrates Container Lifecycles',
+            'Demo: Deploying Your First Stateless Application',
+            'Demo: Setting Up Persistent Storage with PVCs',
+            'Best Practices: Resource Limits and Health Checks',
+            'Common Mistakes: Avoiding Configuration Pitfalls',
+            'Next Steps: Advanced Topics and Certification Paths'
         ]
     },
 
@@ -182,12 +193,14 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Lesson Overview: Introduction to React Hooks',
-            'Key Concept: useState Hook',
-            'Example: Building a Counter Component',
-            'Practice Exercise: Todo List',
-            'Additional Resources and Reading',
-            'Lesson Summary and Next Steps'
+            'Lesson Overview: Introduction to React Hooks and State Management',
+            'Key Concept: useState Hook - Managing Component State',
+            'Key Concept: useEffect Hook - Handling Side Effects',
+            'Example: Building a Counter Component with useState',
+            'Example: Fetching Data with useEffect',
+            'Practice Exercise: Build a Todo List with Local Storage',
+            'Additional Resources: Official Docs and Community Tutorials',
+            'Lesson Summary: When to Use Each Hook'
         ]
     },
 
@@ -209,12 +222,13 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Product Overview: iPhone 15 Pro',
-            'Key Features and Specifications',
-            'What We Loved: Top 5 Pros',
-            'Drawbacks and Limitations',
-            'iPhone 15 Pro vs Samsung S24 Ultra',
-            'Final Verdict: Should You Buy It?'
+            'Product Overview: iPhone 15 Pro - Specs and Target Audience',
+            'Key Features: A17 Pro Chip and Titanium Design',
+            'Key Features: Advanced Camera System with 5x Optical Zoom',
+            'What We Loved: Performance and Battery Life',
+            'Drawbacks: Price Point and USB-C Limitations',
+            'iPhone 15 Pro vs Samsung S24 Ultra - Direct Comparison',
+            'Final Verdict: Who Should Buy the iPhone 15 Pro?'
         ]
     },
 
@@ -235,11 +249,12 @@ export const VIDEO_TEMPLATES: Record<VideoType, VideoNotesTemplate> = {
             ]
         },
         exampleTitles: [
-            'Introduction and Overview',
-            'Main Topic 1',
-            'Main Topic 2',
-            'Key Examples and Insights',
-            'Summary and Conclusion'
+            'Introduction: Context and Background of the Topic',
+            'Main Topic: Core Concept or Theme 1',
+            'Main Topic: Core Concept or Theme 2',
+            'Key Examples: Real-World Applications',
+            'Key Insights: Important Takeaways',
+            'Summary: Conclusion and Final Thoughts'
         ]
     }
 };
