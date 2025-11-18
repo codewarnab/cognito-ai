@@ -20,6 +20,7 @@ import type { AppUsage } from '../../../../ai/types/usage';
 import { LocalPdfSuggestion } from './LocalPdfSuggestion';
 import { isPdfDismissed, dismissPdf } from '../../../../utils/localPdfDismissals';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
+import { validateYouTubeToNotionPrerequisites } from '../../../../workflows/definitions/youtubeToNotionWorkflow';
 
 interface ChatInputProps {
     messages: Message[];
@@ -338,7 +339,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     // Handle workflow selection from slash command dropdown
-    const handleSelectWorkflow = (workflow: WorkflowDefinition) => {
+    const handleSelectWorkflow = async (workflow: WorkflowDefinition) => {
+        // Validate prerequisites for YouTube to Notion workflow
+        if (workflow.id === 'youtube-to-notion') {
+            const validation = await validateYouTubeToNotionPrerequisites();
+            if (!validation.valid) {
+                // Show error toast with validation message
+                onError?.(validation.error || 'Prerequisites not met', 'error');
+                setShowSlashDropdown(false);
+                return;
+            }
+        }
+
         setActiveWorkflow(workflow);
         setShowSlashDropdown(false);
 
