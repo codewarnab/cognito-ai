@@ -5,6 +5,7 @@
 
 import type { AIMode, RemoteModelType } from '../ai/types/types';
 import type { AIProvider } from './providerTypes';
+import { HIDE_LOCAL_MODE } from '../constants';
 
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_model_config',
@@ -23,10 +24,17 @@ export interface StoredModelConfig {
  */
 export async function getModelConfig(): Promise<StoredModelConfig> {
   const result = await chrome.storage.local.get(STORAGE_KEYS.MODEL_CONFIG);
-  return result[STORAGE_KEYS.MODEL_CONFIG] || {
+  const config = result[STORAGE_KEYS.MODEL_CONFIG] || {
     mode: 'local', // Default to local
     remoteModel: 'gemini-2.5-flash',
   };
+
+  // Force remote mode if HIDE_LOCAL_MODE is enabled
+  if (HIDE_LOCAL_MODE) {
+    config.mode = 'remote';
+  }
+
+  return config;
 }
 
 /**

@@ -4,6 +4,8 @@ import { db } from '../db';
 import { extractPageContext, formatPageContextForAI } from '../utils/pageContextExtractor';
 import { processFile } from '../utils/fileProcessor';
 import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
+import { HIDE_LOCAL_MODE } from '../constants';
+import { hasGeminiApiKey } from '../utils/geminiApiKey';
 import type { FileAttachmentData } from '../components/features/chat/components/FileAttachment';
 import type { UIMessage } from 'ai';
 
@@ -14,6 +16,7 @@ interface UseMessageHandlersProps {
     currentThreadId: string | null;
     isLoading: boolean;
     sendMessage: (message: any) => void;
+    onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
 }
 
 /**
@@ -24,6 +27,7 @@ export function useMessageHandlers({
     currentThreadId,
     isLoading,
     sendMessage,
+    onError,
 }: UseMessageHandlersProps) {
 
     const handleSendMessage = useCallback(async (
@@ -38,6 +42,15 @@ export function useMessageHandlers({
         }
 
         if (isLoading) {
+            return;
+        }
+
+        // Validate API key if HIDE_LOCAL_MODE is enabled
+        if (HIDE_LOCAL_MODE && !hasGeminiApiKey()) {
+            onError?.(
+                'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
+                'error'
+            );
             return;
         }
 

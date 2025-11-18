@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { VoiceInput, type VoiceInputHandle } from '../../../../audio/VoiceInput';
 import { ModeSelector } from '../dropdowns/ModeSelector';
@@ -8,19 +8,19 @@ import { PaperclipIcon } from '../../../shared/icons';
 import { UploadIconMinimal } from '../../../shared/icons';
 import { MentionInput } from '../../../shared/inputs';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
-import { validateFile, createImagePreview, isImageFile } from '../../../../utils/fileProcessor';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../types';
 import { SlashCommandDropdown } from '../dropdowns/SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
-import type { WorkflowDefinition } from '../../../../workflows/types';
-import { replaceSlashCommand } from '../../../../utils/slashCommandUtils';
 import { SuggestedActions } from './SuggestedActions';
 import { ContextIndicator } from '../context/ContextIndicator';
 import type { AppUsage } from '../../../../ai/types/usage';
 import { LocalPdfSuggestion } from './LocalPdfSuggestion';
-import { isPdfDismissed, dismissPdf } from '../../../../utils/localPdfDismissals';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
-import { validateYouTubeToNotionPrerequisites } from '../../../../workflows/definitions/youtubeToNotionWorkflow';
+import { HIDE_LOCAL_MODE } from '../../../../constants';
+import { useFileAttachments } from '../../../../hooks/useFileAttachments';
+import { useLocalPdfAttachment } from '../../../../hooks/useLocalPdfAttachment';
+import { useWorkflowMode } from '../../../../hooks/useWorkflowMode';
+import { useChatInputValidation } from '../../../../hooks/useChatInputValidation';
 
 interface ChatInputProps {
     messages: Message[];
@@ -62,321 +62,76 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     localPdfInfo, // Local PDF detection info
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const paperclipIconRef = useRef<any>(null);
     const composerRef = useRef<HTMLDivElement>(null);
     const internalVoiceInputRef = useRef<VoiceInputHandle>(null);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
-    const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
-
-    // Drag and drop state
-    const [isDragging, setIsDragging] = useState(false);
-
-    // Workflow state
-    const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDefinition | null>(null);
-    const [showSlashDropdown, setShowSlashDropdown] = useState(false);
-    const [slashSearchQuery, setSlashSearchQuery] = useState('');
-
-    // Local PDF attachment state
-    const [isAttachingLocalPdf, setIsAttachingLocalPdf] = useState(false);
-    const [dismissedPdfPath, setDismissedPdfPath] = useState<string | null>(null);
 
     // Use external ref if provided, otherwise use local ref
     const voiceInputRef = externalVoiceInputRef || internalVoiceInputRef;
 
-    // Handle file selection
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) {
-            return;
-        }
-        const files = Array.from(e.target.files);
-        await processFiles(files);
-        // Reset input
-        e.target.value = '';
-    };
+    // Custom hooks for separated concerns
+    const {
+        attachments,
+        isDragging,
+        fileInputRef,
+        processFiles,
+        handleFileChange,
+        handlePaste,
+        handleRemoveAttachment,
+        clearAttachments,
+        openFilePicker,
+        dragHandlers,
+    } = useFileAttachments({ mode: modelState.mode, onError });
 
-    // Process files (shared between file input and paste)
-    const processFiles = async (files: File[]) => {
-        for (const file of files) {
-            const validation = validateFile(file);
+    const {
+        isAttachingLocalPdf,
+        shouldShowLocalPdfSuggestion,
+        handleAttachLocalPdf,
+        handleDismissLocalPdf,
+    } = useLocalPdfAttachment({
+        localPdfInfo,
+        mode: modelState.mode,
+        onError,
+        processFiles,
+    });
 
-            if (!validation.valid) {
-                alert(validation.error);
-                continue;
-            }
+    const {
+        activeWorkflow,
+        showSlashDropdown,
+        slashSearchQuery,
+        handleSelectWorkflow,
+        handleClearWorkflow,
+        handleSlashCommandDetection,
+    } = useWorkflowMode({ input, setInput, onError });
 
-            const id = `${Date.now()}-${Math.random()}`;
-            const type = isImageFile(file) ? 'image' : 'document';
+    const { validateBeforeSend } = useChatInputValidation({
+        mode: modelState.mode,
+        messages,
+        onError,
+    });
 
-            // Create preview for images
-            let preview: string | undefined;
-            if (type === 'image') {
-                try {
-                    preview = await createImagePreview(file);
-                } catch (error) {
-                    console.error('Failed to create image preview', error);
-                }
-            }
-
-            setAttachments(prev => [
-                ...prev,
-                { id, file, preview, type }
-            ]);
-        }
-    };
-
-    // Handle paste event for file pasting
-    const handlePaste = async (e: ClipboardEvent) => {
-        // Check if there are files in the clipboard
-        if (!e.clipboardData || !e.clipboardData.files || e.clipboardData.files.length === 0) {
-            return;
-        }
-
-        // Check if in local mode and show toast (before preventing default)
-        if (modelState.mode === 'local') {
-            e.preventDefault();
-            onError?.('File attachments are not supported in Local mode. Please switch to Cloud mode to attach files.', 'warning');
-            return;
-        }
-
-        // Prevent default paste behavior when pasting files in cloud mode
-        e.preventDefault();
-
-        const files = Array.from(e.clipboardData.files);
-        await processFiles(files);
-    };
-
-    // Handle drag and drop
-    const handleDragEnter = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Check if we're leaving the form element
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const x = e.clientX;
-        const y = e.clientY;
-
-        if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
-            setIsDragging(false);
-        }
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-    };
-
-    const handleDrop = async (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-
-        // Check if in local mode
-        if (modelState.mode === 'local') {
-            onError?.('File attachments are not supported in Local mode. Please switch to Cloud mode to attach files.', 'warning');
-            return;
-        }
-
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) {
-            await processFiles(files);
-        }
-    };
-
-    // Remove attachment
-    const handleRemoveAttachment = (id: string) => {
-        setAttachments(prev => prev.filter(att => att.id !== id));
-    };
-
-    // Handle attaching local PDF (Phase 4 - Integration Complete)
-    const handleAttachLocalPdf = async () => {
-        if (!localPdfInfo) return;
-
-        setIsAttachingLocalPdf(true);
-
-        try {
-            console.log('[ChatInput] Attempting to attach local PDF:', localPdfInfo.filename);
-
-            // Send message to background script to read the file
-            const response = await chrome.runtime.sendMessage({
-                type: 'READ_LOCAL_PDF',
-                payload: {
-                    filePath: localPdfInfo.filePath
-                }
-            });
-
-            if (!response.success) {
-                // Handle specific error cases
-                if (response.needsPermission) {
-                    // Show permission guide
-                    const { FileAccessError } = await import('../../../../errors');
-                    const helpText = FileAccessError.getPermissionHelpText();
-                    onError?.(
-                        `${response.error}\n\n${helpText}`,
-                        'warning'
-                    );
-                } else {
-                    // Generic error with fallback suggestion
-                    onError?.(
-                        `${response.error}\n\nYou can try manually uploading the PDF using the attachment button.`,
-                        'error'
-                    );
-                }
-                return;
-            }
-
-            // Successfully read the file - convert base64 to Blob
-            // The background script sends base64 instead of ArrayBuffer because
-            // ArrayBuffers don't serialize properly through Chrome messaging
-            const { base64Data, filename, type } = response.data;
-
-            // Decode base64 to binary string
-            const binaryString = atob(base64Data);
-
-            // Convert binary string to Uint8Array
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-
-            // Create Blob from bytes
-            const blob = new Blob([bytes], { type: type || 'application/pdf' });
-
-            // Create File object from Blob
-            const file = new File([blob], filename, {
-                type: type || 'application/pdf',
-                lastModified: Date.now()
-            });
-
-            console.log('[ChatInput] Successfully created File object:', {
-                name: file.name,
-                size: file.size,
-                type: file.type
-            });
-
-            // Use existing processFiles function to handle the attachment
-            await processFiles([file]);
-
-            // Auto-dismiss suggestion after successful attachment
-            handleDismissLocalPdf();
-
-            // Show success message
-            onError?.(`Attached ${filename.length > 20 ? filename.substring(0, 20) + '...' : filename}`, 'info');
-
-        } catch (error) {
-            console.error('[ChatInput] Error attaching local PDF:', error);
-            onError?.(
-                'Failed to attach PDF. Please try manual upload using the attachment button.',
-                'error'
-            );
-        } finally {
-            setIsAttachingLocalPdf(false);
-        }
-    };
-
-    // Handle dismissing the local PDF suggestion
-    const handleDismissLocalPdf = () => {
-        if (!localPdfInfo) return;
-
-        // Mark as dismissed in localStorage
-        dismissPdf(localPdfInfo.filePath);
-
-        // Update local state to hide the badge immediately
-        setDismissedPdfPath(localPdfInfo.filePath);
-    };
-
-    // Handle send with attachments
+    // Handle send with attachments and workflow
     const handleSend = () => {
-        if (!input.trim() && attachments.length === 0) return;
-
-        // Check word count limit for local mode
-        if (modelState.mode === 'local') {
-            // Count total words in all messages + current input
-            let totalWords = 0;
-
-            // Count words in existing messages
-            for (const msg of messages) {
-                if (msg.parts && msg.parts.length > 0) {
-                    for (const part of msg.parts) {
-                        if (part.type === 'text' && part.text) {
-                            totalWords += part.text.split(/\s+/).filter((word: string) => word.length > 0).length;
-                        }
-                    }
-                }
-            }
-
-            // Count words in current input
-            totalWords += input.split(/\s+/).filter((word: string) => word.length > 0).length;
-
-            const WORD_LIMIT = 500;
-
-            if (totalWords > WORD_LIMIT) {
-                // Show toast notification
-                onError?.(
-                    `⚠️ Input too large for Local Mode. Your conversation has ${totalWords} words (limit: ${WORD_LIMIT} words). Please start a new conversation or switch to Remote Mode for unlimited context.`,
-                    'warning'
-                );
-                return; // Don't send the message
-            }
+        // Validate input before sending
+        if (!validateBeforeSend(input, attachments)) {
+            return;
         }
 
         // If workflow is active, add workflow metadata to message
         if (activeWorkflow) {
             onSendMessage(input, attachments, activeWorkflow.id);
-            // Clear workflow mode after sending
-            setActiveWorkflow(null);
+            handleClearWorkflow();
         } else {
             onSendMessage(input, attachments);
         }
 
         setInput('');
-        setAttachments([]);
-    };
-
-    // Handle workflow selection from slash command dropdown
-    const handleSelectWorkflow = async (workflow: WorkflowDefinition) => {
-        // Validate prerequisites for YouTube to Notion workflow
-        if (workflow.id === 'youtube-to-notion') {
-            const validation = await validateYouTubeToNotionPrerequisites();
-            if (!validation.valid) {
-                // Show error toast with validation message
-                onError?.(validation.error || 'Prerequisites not met', 'error');
-                setShowSlashDropdown(false);
-                return;
-            }
-        }
-
-        setActiveWorkflow(workflow);
-        setShowSlashDropdown(false);
-
-        // Clear the slash command from input
-        const cursorPos = input.length;
-        const result = replaceSlashCommand(input, cursorPos, workflow.id);
-        setInput(result.newText);
-    };
-
-    // Handle clearing workflow mode
-    const handleClearWorkflow = () => {
-        setActiveWorkflow(null);
-    };
-
-    // Handle slash command detection from MentionInput
-    const handleSlashCommandDetection = (isSlash: boolean, searchQuery: string) => {
-        if (isSlash) {
-            setSlashSearchQuery(searchQuery);
-            setShowSlashDropdown(true);
-        } else {
-            setShowSlashDropdown(false);
-        }
+        clearAttachments();
     };
 
     // Add paste event listener for file pasting
-    React.useEffect(() => {
+    useEffect(() => {
         const composerElement = composerRef.current;
         if (!composerElement) return;
 
@@ -385,7 +140,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         return () => {
             composerElement.removeEventListener('paste', handlePaste as any);
         };
-    }, [modelState.mode, onError]);
+    }, [handlePaste]);
 
     const handleSuggestionClick = (action: string) => {
         setInput(action);
@@ -393,13 +148,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     const isLocalMode = modelState.mode === 'local';
-
-    // Check if we should show the local PDF suggestion
-    const shouldShowLocalPdfSuggestion =
-        localPdfInfo &&
-        !isLocalMode && // Don't show in local mode (attachments not supported)
-        !isPdfDismissed(localPdfInfo.filePath) &&
-        dismissedPdfPath !== localPdfInfo.filePath;
 
     return (
         <div className="copilot-input-container">
@@ -423,10 +171,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     handleSend();
                 }}
                 className="copilot-input-form"
-                onDragEnter={handleDragEnter}
-                onDragLeave={handleDragLeave}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
+                {...dragHandlers}
             >
                 <input
                     ref={fileInputRef}
@@ -449,7 +194,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     )}
 
                     {/* Local PDF Suggestion - shows when local PDF is detected */}
-                    {shouldShowLocalPdfSuggestion && (
+                    {shouldShowLocalPdfSuggestion && localPdfInfo && (
                         <LocalPdfSuggestion
                             filename={localPdfInfo.filename}
                             onAttach={handleAttachLocalPdf}
@@ -471,7 +216,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                         <SlashCommandDropdown
                             searchQuery={slashSearchQuery}
                             onSelectWorkflow={handleSelectWorkflow}
-                            onClose={() => setShowSlashDropdown(false)}
+                            onClose={() => handleSlashCommandDetection(false, '')}
                             mode={modelState.mode}
                         />
                     )}
@@ -536,13 +281,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     {/* Bottom section with options (left) and buttons (right) */}
                     <div className="copilot-composer-bottom">
                         {/* Mode Selector - Bottom Left */}
-                        <ModeSelector
-                            modelState={modelState}
-                            onModeChange={onModeChange}
-                            showModeDropdown={showModeDropdown}
-                            onToggleDropdown={setShowModeDropdown}
-                            onError={onError}
-                        />
+                        <div className="copilot-composer-left">
+                            {!HIDE_LOCAL_MODE && (
+                                <ModeSelector
+                                    modelState={modelState}
+                                    onModeChange={onModeChange}
+                                    showModeDropdown={showModeDropdown}
+                                    onToggleDropdown={setShowModeDropdown}
+                                    onError={onError}
+                                />
+                            )}
+                        </div>
 
                         {/* Action Buttons - Bottom Right */}
                         <div className="copilot-composer-actions">
@@ -576,7 +325,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                         // Do not open file picker in local mode
                                         return;
                                     }
-                                    fileInputRef.current?.click();
+                                    openFilePicker();
                                 }}
                                 onMouseEnter={() => {
                                     if (!isLocalMode) paperclipIconRef.current?.startAnimation();
