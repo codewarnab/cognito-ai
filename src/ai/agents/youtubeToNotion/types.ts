@@ -126,3 +126,23 @@ export interface VideoNotesTemplate {
     /** Example titles for this template */
     exampleTitles: string[];
 }
+
+/**
+ * Video type detection result with metadata
+ */
+export interface VideoTypeDetectionResult {
+    /** Detected video type */
+    videoType: VideoType;
+
+    /** Confidence score (0.0 - 1.0) */
+    confidence: number;
+
+    /** Reasoning for detection */
+    reasoning: string;
+
+    /** Alternative types considered */
+    alternatives?: Array<{
+        type: VideoType;
+        confidence: number;
+    }>;
+}

@@ -14,11 +14,12 @@
 import { createLogger } from '../../../logger';
 import { withTranscriptCache } from './transcriptCache';
 import { fetchTranscriptDirect } from './transcript';
-import { detectVideoType, getTemplate } from './templates';
+import { detectVideoType } from './videoTypeDetectorAgent';
+import { getTemplate } from './templates';
 import { planQuestions } from './questionPlannerAgent';
 import { writeAnswer } from './answerWriterAgent';
 import { createMainPage, createChildPage } from '../notion/notionPageWriterAgent';
-import type { YouTubeToNotionInput, YouTubeToNotionOutput } from './types';
+import type { YouTubeToNotionInput, YouTubeToNotionOutput, VideoType } from './types';
 
 const log = createLogger('YouTubeToNotionAgent');
 
@@ -74,13 +75,51 @@ export async function executeYouTubeToNotionAgent(
 
                 // PHASE 2: Detect video type and template
                 log.info('🎯 Phase 2: Detecting video type');
-                const videoType = detectVideoType(transcript, videoTitle);
+
+                let videoType: VideoType;
+                let detectionConfidence = 0;
+                let detectionReasoning = '';
+
+                try {
+                    // Use agent-based semantic detection
+                    const detectionResult = await detectVideoType({
+                        videoTitle,
+                        transcript,
+                        videoUrl: input.youtubeUrl,
+                        durationSeconds: entry.durationSeconds
+                    });
+
+                    videoType = detectionResult.videoType;
+                    detectionConfidence = detectionResult.confidence;
+                    detectionReasoning = detectionResult.reasoning;
+
+                    log.info('✅ Agent-based detection completed', {
+                        videoType,
+                        confidence: detectionResult.confidence.toFixed(2),
+                        reasoning: detectionResult.reasoning,
+                        alternatives: detectionResult.alternatives?.map(a =>
+                            `${a.type}:${a.confidence.toFixed(2)}`
+                        ).join(', ') || 'none'
+                    });
+                } catch (error) {
+                    // Fallback to generic type on detection failure
+                    log.warn('⚠️ Agent detection failed, using generic type', {
+                        error: error instanceof Error ? error.message : String(error)
+                    });
+
+                    videoType = 'generic';
+                    detectionConfidence = 0.5;
+                    detectionReasoning = 'Agent detection failed, using generic fallback';
+                }
+
                 const template = getTemplate(videoType);
 
                 log.info('✅ Template selected', {
                     videoType,
                     templateName: template.name,
-                    format: template.format
+                    format: template.format,
+                    confidence: detectionConfidence.toFixed(2),
+                    reasoning: detectionReasoning
                 });
 
                 // PHASE 3: Plan questions
