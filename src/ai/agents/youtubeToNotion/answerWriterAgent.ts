@@ -10,6 +10,7 @@ import { createRetryManager } from '../../../errors/retryManager';
 import { createLogger } from '../../../logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoNotesTemplate } from './types';
+import { progressStore } from './progressStore';
 
 const log = createLogger('AnswerWriterAgent');
 
@@ -81,6 +82,13 @@ export async function writeAnswer(params: {
         templateFormat: template.format
     });
 
+    // Progress: Start writing answer
+    const answerStepId = progressStore.add({
+        title: `Writing: "${title}"`,
+        status: 'active',
+        type: 'info'
+    });
+
     // Build comprehensive prompt
     const prompt = buildPrompt({
         title,
@@ -107,7 +115,7 @@ export async function writeAnswer(params: {
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
                 temperature: 0.6, // Balance between creativity and groundedness
-                maxOutputTokens: 4096, // Allow for detailed answers
+                maxOutputTokens: 16384, // Allow for extremely detailed answers
                 responseMimeType: 'application/json',
                 responseSchema: answerSchema
             }
@@ -139,6 +147,12 @@ export async function writeAnswer(params: {
             title,
             contentLength: answer.content.length,
             wordCount: Math.floor(answer.content.split(/\s+/).length)
+        });
+
+        // Progress: Answer writing complete
+        progressStore.update(answerStepId, {
+            title: `Completed: "${title}"`,
+            status: 'complete'
         });
 
         return answer;

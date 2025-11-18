@@ -17,7 +17,7 @@ import type { RemoteModelType } from '../../features/chat/types';
 import './ProviderSetup.css';
 
 const log = createLogger('ProviderSetup');
-
+// TODO(@ui): when we add more than a couple of providers, update ProviderSetup to use a searchable combo-box instead of simple radio buttons so the selection stays manageable.
 interface ProviderSetupProps {
     onBack: () => void;
     onConfigSaved?: () => void;
@@ -296,17 +296,16 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                             </label>
 
                             {/* Vertex AI Option */}
-                            <label className={`provider-setup-option ${provider === 'vertex' ? 'provider-setup-option-selected' : ''} provider-setup-option-disabled`}>
+                            <label className={`provider-setup-option ${provider === 'vertex' ? 'provider-setup-option-selected' : ''}`}>
                                 <input
                                     type="radio"
                                     value="vertex"
                                     checked={provider === 'vertex'}
                                     onChange={() => setProvider('vertex')}
-                                    disabled
                                 />
                                 <div className="provider-setup-option-content">
                                     <div className="provider-setup-option-title">
-                                        Google Vertex AI <span style={{ color: '#888', fontWeight: 'normal', fontSize: '0.85em' }}>(Coming Soon)</span>
+                                        Google Vertex AI
                                     </div>
                                     <div className="provider-setup-option-description">
                                         Use service account credentials from Google Cloud

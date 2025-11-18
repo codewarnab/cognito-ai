@@ -182,9 +182,45 @@ export const ErrorHelpers = {
     /** Create an MCP connection error */
     mcpConnection: (serverName: string) => MCPError.connectionFailed(serverName),
 
+    /** Create a Cloudflare Worker error */
+    cloudflareWorkerError: (serverName: string) => MCPError.cloudflareWorkerError(serverName),
+
     /** Create a permission denied error */
     permissionDenied: (permission: string) => BrowserAPIError.permissionDenied(permission),
 
     /** Create a YouTube error */
     youtubeError: (statusCode: number) => ExternalServiceError.youtubeError(statusCode),
 };
+
+/**
+ * Detect if a response is an HTML error page (like Cloudflare error pages)
+ * Useful for catching Cloudflare Worker errors that return HTML instead of JSON
+ */
+export function isHTMLErrorResponse(text: string): boolean {
+    const trimmed = text.trim().toLowerCase();
+    return (
+        trimmed.startsWith('<!doctype html') ||
+        trimmed.startsWith('<html') ||
+        (trimmed.includes('<title>') && (
+            trimmed.includes('error') ||
+            trimmed.includes('cloudflare') ||
+            trimmed.includes('worker threw exception')
+        ))
+    );
+}
+
+/**
+ * Detect Cloudflare Worker Error 1101 from response text
+ */
+export function isCloudflareWorkerError(text: string): boolean {
+    if (!isHTMLErrorResponse(text)) {
+        return false;
+    }
+
+    const lower = text.toLowerCase();
+    return (
+        lower.includes('worker threw exception') ||
+        lower.includes('error 1101') ||
+        (lower.includes('cloudflare') && lower.includes('error'))
+    );
+}

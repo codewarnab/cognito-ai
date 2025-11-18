@@ -14,6 +14,7 @@ import { createRetryManager } from '../../../errors/retryManager';
 import { createLogger } from '../../../logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoNotesTemplate } from './types';
+import { progressStore } from './progressStore';
 
 const log = createLogger('QuestionPlannerAgent');
 
@@ -96,6 +97,13 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
         targetRange: `${min}-${max} questions`
     });
 
+    // Progress: Start planning
+    const planningStepId = progressStore.add({
+        title: 'Planning note structure...',
+        status: 'active',
+        type: 'planning'
+    });
+
     // Initialize Gen AI client
     const client = await initializeGenAIClient();
 
@@ -156,7 +164,7 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
             config: {
                 temperature: 0.7, // Higher temperature for more creative, varied questions
-                maxOutputTokens: 2048,
+                maxOutputTokens: 16384,
                 responseMimeType: 'application/json',
                 responseSchema: questionSchema
             }
@@ -206,6 +214,14 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
                 required: targetMin,
                 questions: items.map(q => q.title)
             });
+
+            // Progress: Planning failed
+            progressStore.update(planningStepId, {
+                title: 'Planning failed',
+                status: 'error',
+                data: { error: `Only ${items.length} questions planned (minimum ${targetMin} required)` }
+            });
+
             throw new Error(
                 `Question planning produced only ${items.length} questions (minimum ${targetMin} required)`
             );
@@ -216,6 +232,13 @@ export async function planQuestions(params: PlanQuestionsInput): Promise<Questio
             min: targetMin,
             max: targetMax,
             titles: items.map(q => q.title)
+        });
+
+        // Progress: Planning complete
+        progressStore.update(planningStepId, {
+            title: `Planned ${items.length} sections`,
+            status: 'complete',
+            data: { count: items.length }
         });
 
         return items;
@@ -243,10 +266,10 @@ function smartSampleTranscript(transcript: string, maxChars: number): string {
     const endChars = maxChars - beginChars - midChars;
 
     const beginning = transcript.slice(0, beginChars);
-    
+
     const midStart = Math.floor(transcript.length / 2 - midChars / 2);
     const middle = transcript.slice(midStart, midStart + midChars);
-    
+
     const end = transcript.slice(-endChars);
 
     return `${beginning}\n\n[... middle section ...]\n\n${middle}\n\n[... later section ...]\n\n${end}`;

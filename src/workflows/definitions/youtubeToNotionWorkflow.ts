@@ -55,7 +55,7 @@ export async function validateYouTubeToNotionPrerequisites(): Promise<{
             log.warn('❌ Not on YouTube video page', { url: tab.url });
             return {
                 valid: false,
-                error: '❌ Please open a YouTube video page first.\n\nNavigate to youtube.com and select a video to convert to Notion notes.'
+                error: ' Please open a YouTube video page first.\n\nNavigate to youtube.com and select a video to convert to Notion notes.'
             };
         }
 
@@ -70,7 +70,7 @@ export async function validateYouTubeToNotionPrerequisites(): Promise<{
             log.warn('❌ Notion MCP is not enabled');
             return {
                 valid: false,
-                error: '❌ Notion MCP is not enabled.\n\n' +
+                error: ' Notion MCP is not enabled.\n\n' +
                     'To fix:\n' +
                     '1. Open Settings → MCP Servers\n' +
                     '2. Find Notion and enable the toggle'

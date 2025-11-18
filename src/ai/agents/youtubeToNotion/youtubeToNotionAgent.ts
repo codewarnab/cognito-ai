@@ -20,6 +20,7 @@ import { planQuestions } from './questionPlannerAgent';
 import { writeAnswer } from './answerWriterAgent';
 import { createMainPage, createChildPage } from '../notion/notionPageWriterAgent';
 import type { YouTubeToNotionInput, YouTubeToNotionOutput, VideoType } from './types';
+import { progressStore } from './progressStore';
 
 const log = createLogger('YouTubeToNotionAgent');
 
@@ -52,6 +53,13 @@ export async function executeYouTubeToNotionAgent(
         // Fetcher function - always refetch at start of workflow
         async () => {
             log.info('📝 Phase 1: Fetching transcript from API');
+
+            // Progress: Start transcript fetching
+            const transcriptStepId = progressStore.add({
+                title: 'Fetching video transcript...',
+                status: 'active',
+                type: 'info'
+            });
             const entry = await fetchTranscriptDirect(input.youtubeUrl);
 
             if (!entry.transcript || entry.transcript.trim().length === 0) {
@@ -63,6 +71,12 @@ export async function executeYouTubeToNotionAgent(
                 length: entry.transcript.length,
                 title: entry.title,
                 durationSeconds: entry.durationSeconds
+            });
+
+            // Progress: Transcript obtained
+            progressStore.update(transcriptStepId, {
+                title: 'Transcript obtained',
+                status: 'complete'
             });
 
             return entry;

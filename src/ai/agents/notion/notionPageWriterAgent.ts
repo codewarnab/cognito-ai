@@ -13,6 +13,7 @@ import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import { convertAllTools } from '../../geminiLive/toolConverter';
 import { createLogger } from '../../../logger';
+import { progressStore } from '../youtubeToNotion/progressStore';
 
 const log = createLogger('NotionPageWriterAgent');
 
@@ -139,12 +140,39 @@ export async function createMainPage(params: {
         hasParent: !!params.parentPageId
     });
 
-    return await createSinglePage({
+    // Progress: Start main page creation
+    const mainPageStepId = progressStore.add({
+        title: 'Creating main Notion page...',
+        status: 'active',
+        type: 'page-created'
+    });
+
+    const result = await createSinglePage({
         title: params.title,
         content,
         parentPageId: params.parentPageId,
         videoUrl: params.videoUrl
     });
+
+    // Progress: Main page creation result
+    if (result.success) {
+        progressStore.update(mainPageStepId, {
+            title: 'Main Notion page created',
+            status: 'complete',
+            data: {
+                url: result.pageUrl,
+                title: params.title
+            }
+        });
+    } else {
+        progressStore.update(mainPageStepId, {
+            title: 'Failed to create main page',
+            status: 'error',
+            data: { error: result.message }
+        });
+    }
+
+    return result;
 }
 
 /**
@@ -161,11 +189,35 @@ export async function createChildPage(params: {
         contentLength: params.content.length
     });
 
-    return await createSinglePage({
+    // Progress: Start child page creation
+    const childPageStepId = progressStore.add({
+        title: `Creating: "${params.title}"`,
+        status: 'active',
+        type: 'page-created'
+    });
+
+    const result = await createSinglePage({
         title: params.title,
         content: params.content,
         parentPageId: params.parentPageId
     });
+
+    // Progress: Child page creation result
+    if (result.success) {
+        progressStore.update(childPageStepId, {
+            title: `Created: "${params.title}"`,
+            status: 'complete',
+            data: { url: result.pageUrl }
+        });
+    } else {
+        progressStore.update(childPageStepId, {
+            title: `Failed: "${params.title}"`,
+            status: 'error',
+            data: { error: result.message }
+        });
+    }
+
+    return result;
 }
 
 /**

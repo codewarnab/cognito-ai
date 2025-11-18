@@ -14,6 +14,7 @@ export type McpConnectionState =
     | 'connecting'        // Attempting SSE connection
     | 'connected'         // Fully connected and operational
     | 'error'             // Connection error
+    | 'cloudflare-error'  // Cloudflare Worker error (Error 1101)
     | 'token-refresh'     // Refreshing expired token
     | 'invalid-token';    // Token format is invalid, needs re-auth
 

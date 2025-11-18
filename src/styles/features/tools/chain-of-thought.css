@@ -1,0 +1,259 @@
+/* Chain of Thought Component Styles - Matches existing chrome-ai design system */
+
+/* Main container */
+.chain-of-thought {
+    margin: 2px 0;
+}
+
+/* Header (trigger button) */
+.chain-of-thought-header {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s ease-out;
+    user-select: none;
+}
+
+.chain-of-thought-header:hover {
+    color: var(--text-primary);
+}
+
+.chain-of-thought-header-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chain-of-thought-header-content {
+    flex: 1;
+    text-align: left;
+    font-weight: 400;
+}
+
+.chain-of-thought-chevron {
+    flex-shrink: 0;
+    transition: transform 0.2s ease-out;
+    color: var(--text-tertiary);
+}
+
+.chain-of-thought-chevron.open {
+    transform: rotate(180deg);
+}
+
+/* Content area (collapsible) */
+.chain-of-thought-content {
+    margin-top: 4px;
+    padding-left: 0;
+}
+
+/* Radix Collapsible animations */
+.chain-of-thought-content[data-state="open"] {
+    animation: slideDown 0.2s ease-out;
+}
+
+.chain-of-thought-content[data-state="closed"] {
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        height: 0;
+    }
+
+    to {
+        opacity: 1;
+        height: var(--radix-collapsible-content-height);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        height: var(--radix-collapsible-content-height);
+    }
+
+    to {
+        opacity: 0;
+        height: 0;
+    }
+}
+
+/* Step container */
+.chain-of-thought-step {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+    margin: 8px 0;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Icon wrapper with connector line */
+.step-icon-wrapper {
+    position: relative;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.step-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Spinning animation for active state */
+.step-icon.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Connector line between steps */
+.step-connector {
+    position: absolute;
+    top: 24px;
+    left: 8px;
+    bottom: -16px;
+    width: 1px;
+    background: var(--border-color);
+    transform: translateX(-50%);
+}
+
+/* Hide connector on last step */
+.chain-of-thought-step:last-child .step-connector {
+    display: none;
+}
+
+/* Content wrapper */
+.step-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    padding-top: 1px;
+}
+
+/* Step label */
+.step-label {
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--text-primary);
+}
+
+/* Step description */
+.step-description {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+/* Status-specific colors */
+.chain-of-thought-step.status-complete .step-icon {
+    color: var(--color-success);
+}
+
+.chain-of-thought-step.status-active .step-icon {
+    color: var(--blue-stride);
+}
+
+.chain-of-thought-step.status-pending {
+    opacity: 0.5;
+}
+
+.chain-of-thought-step.status-pending .step-icon {
+    color: var(--text-quaternary);
+}
+
+.chain-of-thought-step.status-error .step-icon {
+    color: var(--color-error);
+}
+
+/* Links in step children */
+.step-content-wrapper a {
+    color: var(--blue-stride);
+    text-decoration: none;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    transition: opacity 0.2s ease-out;
+}
+
+.step-content-wrapper a:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* Badge component */
+.chain-of-thought-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.chain-of-thought-badge.badge-default {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.chain-of-thought-badge.badge-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.chain-of-thought-badge.badge-success {
+    background: rgba(76, 175, 80, 0.15);
+    color: var(--color-success);
+    border: 1px solid var(--color-success);
+}
+
+.chain-of-thought-badge.badge-error {
+    background: rgba(244, 67, 54, 0.15);
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+.chain-of-thought-badge.badge-info {
+    background: rgba(18, 100, 255, 0.15);
+    color: var(--blue-stride);
+    border: 1px solid var(--blue-stride);
+}

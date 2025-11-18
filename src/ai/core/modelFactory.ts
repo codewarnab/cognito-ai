@@ -9,8 +9,12 @@ import { createVertex } from '@ai-sdk/google-vertex';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '../../logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
-import { getGoogleApiKey } from '../../utils/providerCredentials';
-import { APIError, ErrorType } from '../../errors/errorTypes';
+import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
+import { customFetch } from '../utils/fetchHelpers';
+import type { AIMode } from '../types/types';
+import type { AIProvider } from '../../utils/providerTypes';
+
+// TODO(@ui): when we add more than a couple of providers, update ProviderSetup to use a searchable combo-box instead of simple radio buttons so the selection stays manageable.
 
 // Helper function for compatibility
 async function validateAndGetApiKey(): Promise<string> {
@@ -27,10 +31,6 @@ async function validateAndGetApiKey(): Promise<string> {
     }
     return apiKey;
 }
-import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
-import { customFetch } from '../utils/fetchHelpers';
-import type { AIMode } from '../types/types';
-import type { AIProvider } from '../../utils/providerTypes';
 
 const log = createLogger('ModelFactory', 'AI_CHAT');
 
