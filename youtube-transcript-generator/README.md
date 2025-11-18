@@ -11,6 +11,7 @@ This is an Express-based service that fetches YouTube video information and tran
 - Returns the start time, end time, and text of each subtitle.
 - Provides simplified and smart options to avoid duplicate processing.
 - Supports saving transcripts and summaries to Firebase Firestore for caching and reuse.
+- **NEW**: Optional Upstash Redis caching for `/simple-transcript` endpoint (permanent cache with no expiry).
 
 ## Prerequisites
 
@@ -42,6 +43,9 @@ This is an Express-based service that fetches YouTube video information and tran
    ```env
    PORT=3004
    CHATGPT_VERCEL_URL=https://xxxxxxxxxx.vercel.app/api/openai-chat
+   # Optional: Upstash Redis for transcript caching (no expiry)
+   UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
+   UPSTASH_REDIS_REST_TOKEN=your-redis-token
    ```
 
 5. Create a Firebase service account key file as `firebaseServiceAccount.json` (not committed to Git). Make sure you’ve set up Firestore.
@@ -105,6 +109,17 @@ Returns only the video title and concatenated transcript in the first available 
 - **404** - No captions available for this video
 - **503** - YouTube blocked the request (temporary API changes)
 - **500** - Other errors
+
+**🚀 Redis Caching (Optional):**
+
+If you provide `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` in your `.env` file, this endpoint will automatically cache transcripts using Upstash Redis with the following behavior:
+
+- **Cache Key Format**: `yt:transcript:<videoId>`
+- **Cache TTL**: Unlimited (no expiry) - transcripts are permanent
+- **Cache Hit**: Returns cached data immediately without fetching from YouTube
+- **Cache Miss**: Fetches from YouTube, caches the result, then returns it
+
+This significantly improves response times for repeated requests and reduces load on YouTube's API. The service works perfectly fine without Redis - caching is completely optional.
 
 **⚠️ Important Note:**
 

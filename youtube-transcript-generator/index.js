@@ -6,12 +6,29 @@ const cors = require('cors');
 const ytdl = require('@distube/ytdl-core');
 const TranscriptAPI = require('youtube-transcript-api');
 const he = require('he');
+const { Redis } = require('@upstash/redis');
 
 const app = express();
 app.use(cors());
 
 // Increase the limit for JSON body parsing
 app.use(express.json({ limit: '50mb' }));
+
+// Initialize Upstash Redis client (optional - only if env vars are present)
+let redis = null;
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  try {
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    console.log('[Redis] Upstash Redis client initialized successfully');
+  } catch (error) {
+    console.error('[Redis] Failed to initialize Upstash Redis:', error.message);
+  }
+} else {
+  console.log('[Redis] Upstash Redis not configured (missing environment variables)');
+}
 
 app.use((req, res, next) => {
   console.log('Request size:', req.headers['content-length']);
@@ -150,6 +167,22 @@ app.post('/simple-transcript', async (req, res) => {
     const videoID = ytdl.getURLVideoID(url);
     console.log('[Transcript] Video ID:', videoID);
 
+    // Check cache first if Redis is available
+    const cacheKey = `yt:transcript:${videoID}`;
+    if (redis) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) {
+          console.log('[Transcript] Cache hit for videoID:', videoID);
+          return res.json(cached);
+        }
+        console.log('[Transcript] Cache miss for videoID:', videoID);
+      } catch (cacheError) {
+        console.warn('[Transcript] Cache read error:', cacheError.message);
+        // Continue to fetch even if cache fails
+      }
+    }
+
     // Try to get transcript using TranscriptAPI first (more reliable)
     try {
       console.log('[Transcript] Attempting to fetch with TranscriptAPI...');
@@ -180,6 +213,17 @@ app.post('/simple-transcript', async (req, res) => {
           title: title,
           transcript: transcriptText
         };
+
+        // Cache the response if Redis is available
+        if (redis) {
+          try {
+            await redis.set(cacheKey, JSON.stringify(response));
+            console.log('[Transcript] Cached transcript for videoID:', videoID);
+          } catch (cacheError) {
+            console.warn('[Transcript] Cache write error:', cacheError.message);
+            // Continue even if caching fails
+          }
+        }
 
         return res.json(response);
       }
@@ -219,6 +263,17 @@ app.post('/simple-transcript', async (req, res) => {
       title: videoInfo.videoDetails.title,
       transcript: transcriptText
     };
+
+    // Cache the response if Redis is available
+    if (redis) {
+      try {
+        await redis.set(cacheKey, JSON.stringify(response));
+        console.log('[Transcript] Cached transcript for videoID:', videoID);
+      } catch (cacheError) {
+        console.warn('[Transcript] Cache write error:', cacheError.message);
+        // Continue even if caching fails
+      }
+    }
 
     console.log('[Transcript] Successfully fetched transcript');
     res.json(response);

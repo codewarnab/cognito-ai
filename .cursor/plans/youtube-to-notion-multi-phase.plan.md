@@ -1,5 +1,14 @@
 ## YouTube → Notion Multi‑Phase Refactor Plan
 
+**🎉 PHASE 5 IMPLEMENTATION COMPLETE (November 18, 2025)**
+
+All phases have been successfully implemented:
+- ✅ Phase 1: Transcript fetching with cache and degradation fallback
+- ✅ Phase 2: Question planning with structured output
+- ✅ Phase 3: Answer generation (ALWAYS uses full transcript - no retrieval by default)
+- ✅ Phase 4: Incremental Notion page creation (main + children)
+- ✅ Phase 5: Orchestration with cleanup and error handling
+
 ### Goals
 
 - Always refetch the transcript from our transcript API at the start of each workflow run (no reliance on LLM to "return" the transcript).
@@ -93,14 +102,14 @@
 - Input (per question): - `question: string` - `title: string` - `transcript: string` (from cache) - `template: VideoNotesTemplate` - Optional: `videoTitle`, `videoUrl` - Optional: `useRetrieval?: boolean` (default: auto-detect based on transcript length)
 - Output: - `{ title: string; content: string }` matching `NestedPage` contract.
 
-### Simple Retrieval (for long transcripts)
+### Simple Retrieval (BACKUP ONLY - Not Used by Default)
 
 - Utility: `src/ai/agents/youtubeToNotion/simpleRetrieval.ts`
-- **Trigger:** Automatically enable when `transcript.length > 6000` characters.
-- **Method:** Split transcript into overlapping windows (e.g., 4000 chars with 500 char overlap).
+- **Current Policy:** ALWAYS use FULL transcript (Gemini 2.5 Flash supports 2M tokens ~8M characters)
+- **Trigger:** DISABLED by default. Only used if transcript exceeds 100k characters (extremely rare)
+- **Method (if needed):** Split transcript into overlapping windows (e.g., 4000 chars with 500 char overlap).
 - Keyword score using question terms to pick top 2-3 windows.
-- Provide the top window(s) to the LLM to keep tokens bounded and avoid context limits.
-- Note: Transcript API always returns the same full transcript; retrieval is purely for token management in answer generation.
+- Note: This is implemented as a fallback only. Answer generation always receives the complete transcript for maximum context.
 
 ### Structured Output & Validation
 
