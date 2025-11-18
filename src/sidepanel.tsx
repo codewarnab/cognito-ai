@@ -296,6 +296,9 @@ function AIChatContent() {
         currentThreadId,
         isLoading,
         sendMessage,
+        onError: (message: string) => {
+            setErrorToast({ message });
+        },
     });
 
     // Wrapper for handleSendMessage to work with input state

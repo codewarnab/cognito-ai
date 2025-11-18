@@ -133,6 +133,12 @@
     gap: 12px;
 }
 
+.copilot-composer-left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
 .copilot-composer-options {
     position: relative;
 }

@@ -18,3 +18,7 @@ export { useBehavioralPreferences } from './useBehavioralPreferences';
 export { useAIChatMessages } from './useAIChatMessages';
 export { useActiveTabDetection } from './useActiveTabDetection';
 export type { LocalPdfInfo, ActiveTabDetection } from './useActiveTabDetection';
+export { useFileAttachments } from './useFileAttachments';
+export { useLocalPdfAttachment } from './useLocalPdfAttachment';
+export { useWorkflowMode } from './useWorkflowMode';
+export { useChatInputValidation } from './useChatInputValidation';
