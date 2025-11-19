@@ -5,7 +5,7 @@
 
 import  { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('ToolUIContext');
 

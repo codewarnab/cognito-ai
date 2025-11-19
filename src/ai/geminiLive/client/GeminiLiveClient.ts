@@ -15,7 +15,7 @@ import {
     GeminiLiveErrorHandler,
     AudioContextHandler
 } from '../errorHandler';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { GeminiLiveSessionManager } from './sessionManager';
 import { GeminiLiveAudioHandler } from './audioHandler';
 import { GeminiLiveMessageHandler } from './messageHandler';

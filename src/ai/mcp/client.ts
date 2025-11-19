@@ -11,7 +11,7 @@
 
 import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { MCPError } from '../../errors/errorTypes';
 import { RetryManager, RetryPresets } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';

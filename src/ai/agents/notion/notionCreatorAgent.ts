@@ -12,7 +12,7 @@
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import { convertAllTools } from '../../geminiLive/toolConverter';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import type { NotionCreatorInput, NotionCreatorOutput } from './types';
 
 const log = createLogger('NotionCreatorAgent');

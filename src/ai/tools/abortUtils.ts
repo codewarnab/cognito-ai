@@ -3,7 +3,7 @@
  * Helper functions to check and handle abort signals in tools
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('AbortUtils');
 

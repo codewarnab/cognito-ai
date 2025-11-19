@@ -11,7 +11,7 @@
  */
 
 import { createRetryManager } from '../../../errors/retryManager';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoNotesTemplate } from './types';
 import { progressStore } from './progressStore';

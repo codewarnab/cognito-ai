@@ -11,7 +11,7 @@ import { ChevronDownIcon, type ChevronDownIconHandle } from '@assets/icons/chat/
 import { UploadIcon, type UploadIconHandle } from '../../../shared/icons/UploadIcon';
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';
-import { createLogger } from '../../../../logger';
+import { createLogger } from '@logger';
 import type { CustomInputOutputRenderers } from '../../../../ai/tools/components';
 import { ToolFileAttachment, type ToolFileAttachmentData } from '../../../features/chat/components/ToolFileAttachment';
 

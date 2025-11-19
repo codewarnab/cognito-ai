@@ -5,7 +5,7 @@
  * so it can be used by other agents (like YouTube to Notion workflow agent).
  */
 
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { executeNotionCreatorAgent } from './notionCreatorAgent';
 import type { NotionCreatorInput, NotionCreatorOutput } from './types';
 import type { FunctionDeclaration } from '@google/genai';

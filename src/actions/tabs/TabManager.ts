@@ -5,7 +5,7 @@
  * Automatically syncs with Chrome's tab state using event listeners.
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('TabManager');
 

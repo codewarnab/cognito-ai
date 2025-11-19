@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('ThreadListSidePanel');
 

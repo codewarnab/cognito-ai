@@ -77,7 +77,7 @@ import {
 import type { AINotificationPayload } from './types/notifications';
 import { readLocalFile, extractFilename } from './utils/localFileReader';
 import { cleanupCache } from './ai/fileApi/cache';
-import { createLogger } from './logger';
+import { createLogger } from '@logger';
 
 const backgroundLog = createLogger('Background', 'BACKGROUND');
 const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');

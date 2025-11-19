@@ -1,5 +1,5 @@
 import type { WebsiteConfig, WebsiteToolContext } from './types';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import {
     baseWebsiteConfig,
     // FUTURE: Import website-specific configs here

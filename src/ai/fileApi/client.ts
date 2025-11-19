@@ -17,7 +17,7 @@ async function validateAndGetApiKey(): Promise<string> {
     return apiKey;
 }
 import type { FileMetadata, UploadedPDFContext } from './types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { getCachedPdf, cachePdf } from './cache';
 
 const log = createLogger('FileAPIClient');

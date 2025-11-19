@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { CompactToolRenderer } from '../../ai/tools/components';
 import * as memoryStore from '../../memory/store';
 import { canonicalizeKey } from '../../memory/types';

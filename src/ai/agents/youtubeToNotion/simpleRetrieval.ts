@@ -8,7 +8,7 @@
  * This retrieval is only used if explicitly requested or if transcript exceeds extreme length (>100k chars).
  */
 
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('SimpleRetrieval');
 

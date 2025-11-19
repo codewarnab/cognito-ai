@@ -6,7 +6,7 @@
 
 import { useEffect } from "react";
 import { z } from "zod";
-import { createLogger } from "../../logger";
+import { createLogger } from '@logger';
 import { CompactToolCard } from "../../components/ui/tools/cards";
 import { registerTool } from "../../ai/tools";
 import { useToolUI } from "../../ai/tools/components";

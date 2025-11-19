@@ -5,7 +5,7 @@
  * Ensures tokens remain valid by proactively refreshing before expiration.
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from '../constants';
 import { getServerState, getServerConfig } from './state';
 import { broadcastStatusUpdate } from './events';

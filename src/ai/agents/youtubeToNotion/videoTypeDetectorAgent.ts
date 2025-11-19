@@ -7,7 +7,7 @@
  */
 
 import { createRetryManager } from '../../../errors/retryManager';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoType, VideoTypeDetectionResult } from './types';
 import { VIDEO_TEMPLATES } from './templates';

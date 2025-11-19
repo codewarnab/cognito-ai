@@ -1,5 +1,5 @@
 import { initializeGenAIClient } from '../../../core/genAIFactory';
-import { createLogger } from '../../../../logger';
+import { createLogger } from '@logger';
 import { parseError } from '../../../../errors';
 import { withRetry, MAX_RETRIES, INITIAL_RETRY_DELAY } from './retry';
 import { formatDuration } from './formatting';

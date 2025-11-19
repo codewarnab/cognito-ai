@@ -1,4 +1,4 @@
-import { createLogger } from '../../../../logger';
+import { createLogger } from '@logger';
 import { ExternalServiceError } from '../../../../errors';
 
 const log = createLogger('YouTube-Retry');

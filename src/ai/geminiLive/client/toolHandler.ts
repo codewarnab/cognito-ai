@@ -9,7 +9,7 @@ import {
     browserActionAgentDeclaration,
     executeBrowserActionAgent,
 } from '../../agents/browser';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { ToolExecutionHandler } from '../errorHandler';
 import { DEFAULT_CONFIG } from './config';
 import {

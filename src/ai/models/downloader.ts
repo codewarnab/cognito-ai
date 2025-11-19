@@ -4,7 +4,7 @@
  * with progress tracking and toast notifications
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { broadcastDownloadProgress } from '../../utils/modelDownloadBroadcast';
 import { BrowserAPIError } from '../../errors/errorTypes';
 

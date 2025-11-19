@@ -6,7 +6,7 @@
  * allowing the UI layer to determine which MCP server icon to display.
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('ToolMetadataStore');
 

@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '../../ui/primitives/dialog';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import {
     getProviderConfig,
     setGoogleApiKey,

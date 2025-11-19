@@ -6,7 +6,7 @@
 import { builtInAI } from '@built-in-ai/core';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { generateId } from 'ai';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { getGoogleApiKey } from '../../utils/providerCredentials';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 

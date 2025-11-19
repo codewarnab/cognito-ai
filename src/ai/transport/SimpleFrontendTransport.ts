@@ -6,7 +6,7 @@
 
 import type { UIMessage } from 'ai';
 import { streamAIResponse } from '../core/aiLogic';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { loadThreadMessages, getThread } from '../../db';
 import { processMessagesWithMentions } from '../../utils/mentionProcessor';
 import { parseWorkflowCommand, isSlashCommand } from '../../utils/slashCommandUtils';

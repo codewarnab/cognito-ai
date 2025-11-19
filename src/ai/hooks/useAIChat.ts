@@ -7,7 +7,7 @@ import { useChat } from '@ai-sdk/react';
 import { SimpleFrontendTransport } from '../transport/SimpleFrontendTransport';
 import type { UIMessage } from 'ai';
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { formatErrorInline } from '../../errors/errorMessages';
 import { APIError, NetworkError, ErrorType } from '../../errors';
 import type { AppUsage } from '../types/usage';

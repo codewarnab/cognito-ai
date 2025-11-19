@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 import { db } from '../db';
 import { extractPageContext, formatPageContextForAI } from '../utils/pageContextExtractor';
 import { processFile } from '../utils/fileProcessor';

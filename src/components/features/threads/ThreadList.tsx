@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 const log = createLogger('ThreadList');
 
 interface ThreadListProps {

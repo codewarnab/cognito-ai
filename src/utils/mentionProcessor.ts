@@ -8,7 +8,7 @@ import type { UIMessage } from 'ai';
 import { generateId } from 'ai';
 import { extractMentions, type TabMention } from './mentionUtils';
 import { captureTabSnapshot, type TabSnapshotResult } from './tabSnapshot';
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('MentionProcessor');
 

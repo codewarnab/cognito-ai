@@ -1,4 +1,4 @@
-import { createLogger } from '../../../../logger';
+import { createLogger } from '@logger';
 import { BrowserAPIError, parseError } from '../../../../errors';
 import { formatDuration } from './formatting';
 

@@ -7,7 +7,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
 import type { AIProvider } from '../../utils/providerTypes';

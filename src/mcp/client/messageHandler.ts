@@ -3,7 +3,7 @@
  */
 
 import type { McpMessage } from '../types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('MCP-SSE', 'MCP_SSE');
 

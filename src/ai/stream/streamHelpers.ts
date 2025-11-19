@@ -4,7 +4,7 @@
  */
 
 import { generateId } from 'ai';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { formatErrorInline } from '../../errors/errorMessages';
 import { isRetryableError, APIError, NetworkError } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';

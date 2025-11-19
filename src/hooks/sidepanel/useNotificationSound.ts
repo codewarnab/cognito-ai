@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { initializeNotificationSound } from '../../utils/soundNotification';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('useNotificationSound');
 

@@ -16,7 +16,7 @@ import type {
     McpServerStatus,
     McpConnectionState
 } from '../types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { mergeConfig, type SSEClientConfig } from './config';
 import { ErrorHandler } from './errorHandler';
 import { MessageHandler } from './messageHandler';
