@@ -4,6 +4,9 @@
  * This is the single entry point for all styles
  */
 
+/* Fonts */
+@import './fonts.css';
+
 /* Core foundation */
 @import './core/variables.css';
 @import './core/base.css';

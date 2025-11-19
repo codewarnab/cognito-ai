@@ -119,7 +119,10 @@
     "web_accessible_resources": [
       {
         "resources": [
-          "sweep1.mp3"
+          "sweep1.mp3",
+          "assets/fonts/Inter-Regular.ttf",
+          "assets/fonts/Inter-Medium.ttf",
+          "assets/fonts/Inter-SemiBold.ttf"
         ],
         "matches": [
           "<all_urls>"

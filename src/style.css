@@ -1,4 +1,5 @@
 /* Global Styles */
+@import './styles/fonts.css';
 @import './styles/core/variables.css';
 @import './styles/core/base.css';
 @import './styles/features/copilot/index.css';
@@ -11,9 +12,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #0a0e1a;

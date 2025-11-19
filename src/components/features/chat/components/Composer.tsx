@@ -13,10 +13,10 @@ import { WorkflowBadge } from './WorkflowBadge';
 import { LocalPdfSuggestion } from './LocalPdfSuggestion';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 import { HIDE_LOCAL_MODE } from '../../../../constants';
-import type { Workflow } from '../../../../workflows/types';
+import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('Composer', 'COMPOSER');
+const log = createLogger('Composer', 'AI_CHAT');
 
 interface ComposerProps {
     input: string;
@@ -31,33 +31,33 @@ interface ComposerProps {
     modelState: ModelState;
     onModeChange: (mode: AIMode) => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
-    
+
     // File attachments
     attachments: FileAttachmentData[];
     isDragging: boolean;
     openFilePicker: () => void;
     handleRemoveAttachment: (id: string) => void;
     processFiles: (files: File[]) => Promise<void>;
-    
+
     // Workflow
-    activeWorkflow: Workflow | null;
+    activeWorkflow: WorkflowDefinition | null;
     showSlashDropdown: boolean;
     slashSearchQuery: string;
-    handleSelectWorkflow: (workflow: Workflow) => void;
+    handleSelectWorkflow: (workflow: WorkflowDefinition) => void;
     handleClearWorkflow: () => void;
     handleSlashCommandDetection: (show: boolean, query: string) => void;
-    
+
     // Local PDF
     localPdfInfo?: LocalPdfInfo | null;
     shouldShowLocalPdfSuggestion: boolean;
     isAttachingLocalPdf: boolean;
     handleAttachLocalPdf: () => void;
     handleDismissLocalPdf: () => void;
-    
+
     // Mode dropdown
     showModeDropdown: boolean;
     onToggleModeDropdown: (show: boolean) => void;
-    
+
     // Refs
     composerRef: React.RefObject<HTMLDivElement>;
     textareaRef: React.RefObject<HTMLTextAreaElement>;
@@ -116,11 +116,11 @@ export const Composer: React.FC<ComposerProps> = ({
     const handleScreenshotClick = async () => {
         try {
             log.info('Taking screenshot...');
-            
+
             // Get active tab
             const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
             const tab = tabs[0];
-            
+
             if (!tab || !tab.id || !tab.windowId) {
                 log.error('No active tab found');
                 return;
@@ -128,15 +128,15 @@ export const Composer: React.FC<ComposerProps> = ({
 
             // Capture screenshot
             const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-            
+
             // Convert data URL to File
             const response = await fetch(dataUrl);
             const blob = await response.blob();
             const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
-            
+
             // Process the file using the existing file attachment logic
             await processFiles([file]);
-            
+
             log.info('Screenshot captured and attached');
         } catch (error) {
             log.error('Failed to capture screenshot:', error);
