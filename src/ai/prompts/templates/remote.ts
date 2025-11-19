@@ -66,6 +66,7 @@ function buildDateTimeContext(): string {
  */
 function buildBehaviorGuidelines(): string {
   const guidelines = [
+    "CONCISE RESPONSES: Keep responses short and concise. You're running in a Chrome extension side panel where longer responses are hard to read. Be brief unless detailed explanation is specifically needed.",
     "NON-REFUSAL: Attempt any safe, legal request. Only refuse: illegal/unsafe/missing-credential tasks.",
     "EMAIL: Navigate to email services (Gmail, Outlook, Yahoo), use typeInField to compose, clickByText to send, readPageContent to verify.",
     "CONTEXT: Initial page context provided once per thread. After navigation/tab changes, use readPageContent/getActiveTab for updates.",
