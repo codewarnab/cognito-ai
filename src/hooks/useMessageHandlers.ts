@@ -3,10 +3,12 @@ import { createLogger } from '~logger';
 import { db } from '../db';
 import { extractPageContext, formatPageContextForAI } from '../utils/pageContextExtractor';
 import { processFile } from '../utils/fileProcessor';
+import { processTabsForMessage, type ProcessedTab } from '../utils/tabProcessor';
 import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
 import { HIDE_LOCAL_MODE } from '../constants';
 import { hasGeminiApiKey } from '../utils/geminiApiKey';
 import type { FileAttachmentData } from '../components/features/chat/components/FileAttachment';
+import type { TabAttachmentData } from '../components/features/chat/components/TabAttachment';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('useMessageHandlers');
@@ -33,11 +35,12 @@ export function useMessageHandlers({
     const handleSendMessage = useCallback(async (
         messageText?: string,
         attachments?: FileAttachmentData[],
+        tabAttachments?: TabAttachmentData[],
         workflowId?: string
     ) => {
         const trimmedInput = messageText?.trim() || '';
 
-        if (!trimmedInput && (!attachments || attachments.length === 0)) {
+        if (!trimmedInput && (!attachments || attachments.length === 0) && (!tabAttachments || tabAttachments.length === 0)) {
             return;
         }
 
@@ -58,6 +61,8 @@ export function useMessageHandlers({
             length: trimmedInput.length,
             hasAttachments: attachments && attachments.length > 0,
             attachmentCount: attachments?.length || 0,
+            hasTabAttachments: tabAttachments && tabAttachments.length > 0,
+            tabAttachmentCount: tabAttachments?.length || 0,
             workflowId: workflowId || 'none'
         });
 
@@ -104,6 +109,8 @@ export function useMessageHandlers({
         }
 
         // Process attachments if present
+        let messageParts: any[] | null = null;
+
         if (attachments && attachments.length > 0) {
             try {
                 log.info("Processing file attachments", { count: attachments.length });
@@ -136,7 +143,7 @@ export function useMessageHandlers({
                         images: validFiles.filter(f => f.isImage).length
                     });
 
-                    const messageParts: any[] = [];
+                    messageParts = [];
 
                     if (finalMessage) {
                         messageParts.push({
@@ -154,22 +161,75 @@ export function useMessageHandlers({
                             size: file.size
                         });
                     }
-
-                    sendMessage({
-                        role: 'user',
-                        parts: messageParts
-                    });
-
-                    return;
                 }
             } catch (error) {
                 log.error("Failed to process attachments", error);
-                alert("Failed to process some attachments. Please try again.");
+                onError?.("Failed to process some attachments. Please try again.", 'error');
             }
         }
 
+        // Process tab attachments if present
+        if (tabAttachments && tabAttachments.length > 0) {
+            try {
+                log.info("Processing tab attachments", { count: tabAttachments.length });
+
+                const processedTabs = await processTabsForMessage(tabAttachments);
+
+                // If we already have message parts from files, add tabs to them
+                // Otherwise create new parts array
+                const tabMessageParts: any[] = messageParts?.length ? messageParts : [];
+
+                // Add text if not already added
+                if (finalMessage && !tabMessageParts.some(p => p.type === 'text')) {
+                    tabMessageParts.push({
+                        type: 'text',
+                        text: finalMessage
+                    });
+                }
+
+                // Add each tab as a tab-context part
+                for (const tab of processedTabs) {
+                    tabMessageParts.push({
+                        type: 'tab-context',
+                        url: tab.url,
+                        title: tab.title,
+                        content: tab.content,
+                        favicon: tab.favicon,
+                        error: tab.error
+                    });
+                }
+
+                log.info("Tabs processed successfully", {
+                    total: tabAttachments.length,
+                    withContent: processedTabs.filter(t => t.content).length,
+                    withErrors: processedTabs.filter(t => t.error).length
+                });
+
+                sendMessage({
+                    role: 'user',
+                    parts: tabMessageParts
+                });
+
+                return;
+            } catch (error) {
+                log.error("Failed to process tab attachments", error);
+                onError?.("Failed to process some tabs. They may have been closed or inaccessible.", 'warning');
+                // Continue with regular message sending
+            }
+        }
+
+        // If we have file parts but no tab parts, send the file message
+        if (messageParts && messageParts.length > 0) {
+            sendMessage({
+                role: 'user',
+                parts: messageParts
+            });
+            return;
+        }
+
+        // Regular message (no attachments)
         sendMessage({ text: finalMessage });
-    }, [messages.length, currentThreadId, isLoading, sendMessage]);
+    }, [messages.length, currentThreadId, isLoading, sendMessage, onError]);
 
     return { handleSendMessage };
 }

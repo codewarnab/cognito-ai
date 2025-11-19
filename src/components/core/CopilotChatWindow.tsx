@@ -16,7 +16,7 @@ interface CopilotChatWindowProps {
     messages: Message[];
     input: string;
     setInput: (value: string) => void;
-    onSendMessage: (messageText?: string, attachments?: any[], workflowId?: string) => void;
+    onSendMessage: (messageText?: string, attachments?: any[], tabAttachments?: any[], workflowId?: string) => void;
     onKeyDown: (e: React.KeyboardEvent) => void;
     onClearChat: () => void;
     isLoading: boolean;

@@ -66,6 +66,7 @@ import {
 // Types
 import type { ContextWarningState } from "./types/sidepanel";
 import type { FileAttachmentData } from "./components/features/chat/components/FileAttachment";
+import type { TabAttachmentData } from "./components/features/chat/components/TabAttachment";
 
 // Utils
 import { handleAPIError } from "./utils/apiErrorHandler";
@@ -306,8 +307,8 @@ function AIChatContent() {
 
     // Wrapper for handleSendMessage to work with input state
     // Note: This needs to be defined before uiState hook since the hook needs it
-    const handleSendMessageWithInput = async (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string, inputValue?: string) => {
-        await handleSend(messageText !== undefined ? messageText : (inputValue || ''), attachments, workflowId);
+    const handleSendMessageWithInput = async (messageText?: string, attachments?: FileAttachmentData[], tabAttachments?: TabAttachmentData[], workflowId?: string, inputValue?: string) => {
+        await handleSend(messageText !== undefined ? messageText : (inputValue || ''), attachments, tabAttachments, workflowId);
     };
 
     // UI State hook
@@ -335,13 +336,13 @@ function AIChatContent() {
         handleContinue,
     } = useSidepanelUiState({
         isRecording,
-        onSendMessage: () => handleSendMessageWithInput(undefined, undefined, undefined, input),
+        onSendMessage: () => handleSendMessageWithInput(undefined, undefined, undefined, undefined, input),
         sendMessage,
     });
 
     // Wrapper for handleSendMessage to work with input state
-    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => {
-        await handleSendMessageWithInput(messageText, attachments, workflowId, input);
+    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[], tabAttachments?: TabAttachmentData[], workflowId?: string) => {
+        await handleSendMessageWithInput(messageText, attachments, tabAttachments, workflowId, input);
         if (messageText === undefined) {
             setInput(''); // Only clear if using input state
         }

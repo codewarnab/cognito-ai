@@ -353,6 +353,38 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         );
                                                     }
 
+                                                    // Render tab attachments
+                                                    if (part.type === 'tab-context') {
+                                                        return (
+                                                            <div key={`tab-${partIndex}`} className="message-tab-attachment">
+                                                                <div className="tab-attachment-icon">
+                                                                    {part.favicon ? (
+                                                                        <img 
+                                                                            src={part.favicon} 
+                                                                            alt="" 
+                                                                            className="tab-favicon"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="tab-favicon-placeholder">🌐</div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="tab-attachment-info">
+                                                                    <div className="tab-attachment-title" title={part.title}>
+                                                                        {part.title}
+                                                                    </div>
+                                                                    <div className="tab-attachment-url" title={part.url}>
+                                                                        {part.url}
+                                                                    </div>
+                                                                    {part.error && (
+                                                                        <div className="tab-attachment-error">
+                                                                            ⚠️ {part.error}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    }
+
                                                     // Render tool parts
                                                     if (
                                                         part.type === 'tool-call' ||
