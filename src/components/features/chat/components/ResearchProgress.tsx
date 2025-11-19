@@ -3,7 +3,7 @@
  * Shows when the research workflow is actively gathering information
  */
 
-import { SearchIcon } from '../../../../../assets/chat/search';
+import { SearchIcon } from '@assets/icons/chat/search';
 
 interface ResearchProgressProps {
     message?: string;

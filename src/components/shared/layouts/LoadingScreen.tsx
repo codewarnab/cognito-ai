@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import logoImage from '../../assets/logo.png';
+import logoImage from '@assets/images/logo.png';
 
 interface LoadingScreenProps {
     duration?: number; // Duration in seconds

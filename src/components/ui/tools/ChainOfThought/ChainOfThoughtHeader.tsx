@@ -8,7 +8,7 @@ import { memo, type ComponentProps } from 'react';
 import { useChainOfThought } from './ChainOfThought';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ChevronDown } from 'lucide-react';
-import { YouTubeNotionIcon } from 'assets/youtubeplusnotion';
+import { YouTubeNotionIcon } from '@assets/icons/ui/youtubeplusnotion';
 
 export type ChainOfThoughtHeaderProps = ComponentProps<typeof Collapsible.Trigger>;
 

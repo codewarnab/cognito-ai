@@ -1,5 +1,5 @@
 import React from 'react';
-import logoImage from '../../../../../assets/logo.png';
+import logoImage from '@assets/images/logo.png';
 
 interface EmptyStateProps {
     isLocalMode?: boolean;

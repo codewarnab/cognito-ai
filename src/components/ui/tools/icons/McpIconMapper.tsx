@@ -4,29 +4,29 @@
  */
 
 import React from 'react';
-import { Ahrefs } from '../../../../../assets/Ahrefs';
-import { Asana } from '../../../../../assets/Asana';
-import { Astro } from '../../../../../assets/astro-docs';
-import { Atlassian } from '../../../../../assets/Atlassian';
-import { Canva } from '../../../../../assets/canva';
-import { Figma } from '../../../../../assets/figma';
-import { GitHub } from '../../../../../assets/github';
-import { HuggingFace } from '../../../../../assets/huggingface';
-import { Linear } from '../../../../../assets/linear';
-import { Netlify } from '../../../../../assets/Netlify';
-import { Notion } from '../../../../../assets/notion';
-import { PayPal } from '../../../../../assets/paypal';
-import { Sentry } from '../../../../../assets/sentry';
-import { Stripe } from '../../../../../assets/stripe';
-import { Supabase } from '../../../../../assets/supabase';
-import { Supermemory } from '../../../../../assets/Supermemory';
-import { Vercel } from '../../../../../assets/vercel';
-import { Webflow } from '../../../../../assets/webflow';
-import context7Image from '../../../../../assets/context7.png';
-import coingeckoImage from '../../../../../assets/coingecko.webp';
-import deepwikiImage from '../../../../../assets/deepwiki.webp';
-import wixImage from '../../../../../assets/wix.webp';
-import mcpGenericImage from '../../../../../assets/mcp.png';
+import { Ahrefs } from '@assets/brands/integrations/Ahrefs';
+import { Asana } from '@assets/brands/integrations/Asana';
+import { Astro } from '@assets/brands/integrations/Astro';
+import { Atlassian } from '@assets/brands/integrations/Atlassian';
+import { Canva } from '@assets/brands/integrations/Canva';
+import { Figma } from '@assets/brands/integrations/Figma';
+import { GitHub } from '@assets/brands/integrations/GitHub';
+import { HuggingFace } from '@assets/brands/integrations/HuggingFace';
+import { Linear } from '@assets/brands/integrations/Linear';
+import { Netlify } from '@assets/brands/integrations/Netlify';
+import { Notion } from '@assets/brands/integrations/Notion';
+import { PayPal } from '@assets/brands/integrations/PayPal';
+import { Sentry } from '@assets/brands/integrations/Sentry';
+import { Stripe } from '@assets/brands/integrations/Stripe';
+import { Supabase } from '@assets/brands/integrations/Supabase';
+import { Supermemory } from '@assets/brands/integrations/Supermemory';
+import { Vercel } from '@assets/brands/integrations/Vercel';
+import { Webflow } from '@assets/brands/integrations/Webflow';
+import context7Image from '@assets/brands/integrations/context7.png';
+import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
+import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
+import wixImage from '@assets/brands/integrations/wix.webp';
+import mcpGenericImage from '@assets/images/mcp.png';
 
 interface McpIconProps {
     size?: number;

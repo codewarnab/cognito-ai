@@ -27,7 +27,7 @@ import {
     CSIcon,
     CSVIcon,
     LogIcon,
-} from "../../assets/fileIcons";
+} from "@assets/icons/files";
 
 /**
  * Extract file extension from filename

@@ -14,7 +14,7 @@ import { ContinueButton } from './ContinueButton';
 import { CopyButton } from './CopyButton';
 import { getFileIcon } from '../../../../utils/fileIconMapper';
 import { InlineCode } from './InlineCode';
-import { XIcon } from '../../../../../assets/chat/x';
+import { XIcon } from '@assets/icons/chat/x';
 
 
 
