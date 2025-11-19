@@ -1594,6 +1594,37 @@ if (chrome.action) {
 }
 
 /**
+ * Commands handler - handle keyboard shortcuts
+ * Responds to the _execute_side_panel command (Ctrl+Shift+H / Cmd+Shift+H)
+ */
+if (chrome.commands) {
+    chrome.commands.onCommand.addListener(async (command) => {
+        backgroundLog.info(' Command received:', command);
+
+        if (command === '_execute_side_panel') {
+            try {
+                // Get the current window
+                const currentWindow = await chrome.windows.getCurrent();
+
+                if (currentWindow?.id) {
+                    const success = await openSidePanel(currentWindow.id);
+
+                    if (success) {
+                        backgroundLog.info(' Sidepanel opened via keyboard shortcut');
+                    } else {
+                        backgroundLog.error(' Failed to open sidepanel via keyboard shortcut');
+                    }
+                } else {
+                    backgroundLog.error(' Cannot open sidepanel: no current window');
+                }
+            } catch (error) {
+                backgroundLog.error(' Error opening sidepanel via keyboard shortcut:', error);
+            }
+        }
+    });
+}
+
+/**
  * Track the last focused window ID for omnibox sidepanel opening
  * This avoids async operations that break the user gesture chain
  */
