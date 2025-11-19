@@ -137,12 +137,7 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
   };
 
   if (!isSupported) {
-    return (
-      <div className={`voice-input-error ${className}`}>
-        <span className="voice-error-icon">⚠️</span>
-        <span className="voice-error-text">Speech recognition not supported</span>
-      </div>
-    );
+    return null; // Don't render anything if speech recognition is not supported
   }
 
   return (
