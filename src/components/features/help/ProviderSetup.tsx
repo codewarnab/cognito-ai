@@ -100,6 +100,25 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
         }
     };
 
+    const handleModelChange = async (newModel: RemoteModelType) => {
+        setSelectedModel(newModel);
+        try {
+            await setModelConfig({ remoteModel: newModel });
+            log.info('Model configuration saved automatically', { model: newModel });
+            setNotification({
+                type: 'success',
+                message: `Model changed to ${newModel}`
+            });
+            setTimeout(() => setNotification(null), 3000);
+        } catch (error) {
+            log.error('Failed to save model config', error);
+            setNotification({
+                type: 'error',
+                message: 'Failed to save model selection'
+            });
+        }
+    };
+
     const validateFields = (): { valid: boolean; error?: string } => {
         if (provider === 'google') {
             if (!googleApiKey.trim()) {
@@ -440,12 +459,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                         <select
                             id="model-selector"
                             value={selectedModel}
-                            onChange={(e) => setSelectedModel(e.target.value as RemoteModelType)}
+                            onChange={(e) => handleModelChange(e.target.value as RemoteModelType)}
                             className="provider-setup-select"
                         >
                             <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                             <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+                            <option value="gemini-2.5-flash-lite">gemini-3-pro-preview</option>
                         </select>
                     </div>
 

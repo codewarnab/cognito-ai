@@ -205,7 +205,11 @@ export const Composer: React.FC<ComposerProps> = ({
                         onSlashCommand={handleSlashCommandDetection}
                         isSlashDropdownOpen={showSlashDropdown}
                         onSend={() => {
-                            // This will be handled by the parent form submit
+                            // Trigger form submit by clicking the submit button
+                            const form = composerRef.current?.closest('form');
+                            if (form) {
+                                form.requestSubmit();
+                            }
                         }}
                         disabled={isLoading}
                         placeholder={
