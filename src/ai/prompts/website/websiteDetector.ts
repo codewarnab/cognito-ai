@@ -1,5 +1,5 @@
 import type { WebsiteConfig, WebsiteToolContext } from './types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import {
     baseWebsiteConfig,
     // FUTURE: Import website-specific configs here
@@ -179,3 +179,4 @@ export function registerWebsiteConfig(config: WebsiteConfig): void {
     // Re-sort by priority
     websiteConfigs.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 }
+

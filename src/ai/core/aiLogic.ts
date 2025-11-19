@@ -5,7 +5,7 @@
  */
 
 import { createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
@@ -472,3 +472,4 @@ export async function streamAIResponse(params: {
     throw enhancedError;
   }
 }
+

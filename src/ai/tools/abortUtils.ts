@@ -3,7 +3,7 @@
  * Helper functions to check and handle abort signals in tools
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('AbortUtils');
 
@@ -81,3 +81,4 @@ export async function withAbortCheck<T>(
 export function isAborted(abortSignal?: AbortSignal): boolean {
     return abortSignal?.aborted ?? false;
 }
+

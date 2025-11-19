@@ -9,7 +9,7 @@ import {
     GeminiLiveErrorHandler,
     MicrophonePermissionHandler,
 } from '../../../../ai/geminiLive/errorHandler';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { VoiceModeStatus } from '../../../../ai/geminiLive/types';
 
 const log = createLogger('useGeminiLiveClient', 'VOICE_CLIENT');
@@ -381,3 +381,4 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
         resetSession
     };
 };
+

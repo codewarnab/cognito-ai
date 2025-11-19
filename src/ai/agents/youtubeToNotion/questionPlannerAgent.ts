@@ -11,7 +11,7 @@
  */
 
 import { createRetryManager } from '../../../errors/retryManager';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import type { VideoNotesTemplate } from './types';
 import { progressStore } from './progressStore';
@@ -412,3 +412,4 @@ function getFormatSpecificRules(template: VideoNotesTemplate): string {
 • Always include key terms and context in the title`;
     }
 }
+

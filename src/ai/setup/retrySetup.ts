@@ -4,7 +4,7 @@
  */
 
 import { generateId } from 'ai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { createRetryManager, RetryPresets } from '../../errors/retryManager';
 import { formatRetryCountdown } from '../../errors/errorMessages';
 
@@ -56,3 +56,4 @@ export function createStreamRetryManager(writer: any, abortSignal?: AbortSignal)
         },
     });
 }
+

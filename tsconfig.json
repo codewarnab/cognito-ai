@@ -25,7 +25,7 @@
       "@assets/*": [
         "./assets/*"
       ],
-      "@logger": [
+      "~logger": [
         "./src/logger"
       ]
     },

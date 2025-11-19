@@ -4,7 +4,7 @@
  */
 
 import type { McpMessage } from '../types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { NetworkError, MCPError } from '../../errors/errorTypes';
 import type { SSEClientConfig } from './config';
 import type { MessageHandler } from './messageHandler';
@@ -200,3 +200,4 @@ export class RequestManager {
         });
     }
 }
+

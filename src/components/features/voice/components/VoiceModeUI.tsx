@@ -15,7 +15,7 @@ import { ErrorNotification, WarningNotification, SetupNotification } from './Voi
 import { VoiceModeDebugPanel } from './VoiceModeDebugPanel';
 import { useGeminiLiveClient } from '../hooks/useGeminiLiveClient';
 import { runToolIntegrationReport } from '../../../../ai/geminiLive/toolIntegrationTest';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { VoiceModeUIProps } from '../types';
 import '../styles/VoiceModeUI.css';
 
@@ -224,3 +224,4 @@ export const VoiceModeUI: React.FC<VoiceModeUIProps> = ({
 };
 
 export default VoiceModeUI;
+

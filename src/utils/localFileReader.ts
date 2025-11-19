@@ -9,7 +9,7 @@
  */
 
 import { FileAccessError } from '../errors';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('FileReader', 'UTILS');
 
@@ -161,3 +161,4 @@ export async function checkFileAccessPermission(): Promise<boolean> {
         return true;
     }
 }
+

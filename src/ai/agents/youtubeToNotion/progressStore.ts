@@ -5,7 +5,7 @@
  * Uses singleton pattern for global access. Supports multiple concurrent workflows.
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { ProgressUpdate, ProgressListener } from './progressTypes';
 
 const log = createLogger('ProgressStore');
@@ -159,3 +159,4 @@ class ProgressStore {
 
 // Singleton instance
 export const progressStore = new ProgressStore();
+

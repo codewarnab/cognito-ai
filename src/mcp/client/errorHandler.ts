@@ -4,7 +4,7 @@
 
 import { MCPError, NetworkError, ErrorType } from '../../errors/errorTypes';
 import { buildUserMessage } from '../../errors/errorMessages';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { McpConnectionState } from '../types';
 
 const authLog = createLogger('MCP-Auth', 'MCP_AUTH');
@@ -181,3 +181,4 @@ export class ErrorHandler {
         );
     }
 }
+

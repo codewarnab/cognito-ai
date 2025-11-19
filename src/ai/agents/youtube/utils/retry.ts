@@ -1,4 +1,4 @@
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { ExternalServiceError } from '../../../../errors';
 
 const log = createLogger('YouTube-Retry');
@@ -59,4 +59,5 @@ export async function withRetry<T>(
     // This should never be reached, but TypeScript needs it
     throw lastError;
 }
+
 

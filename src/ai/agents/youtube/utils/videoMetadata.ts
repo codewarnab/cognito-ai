@@ -1,4 +1,4 @@
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { BrowserAPIError, parseError } from '../../../../errors';
 import { formatDuration } from './formatting';
 
@@ -241,4 +241,5 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
         return undefined;
     }
 }
+
 

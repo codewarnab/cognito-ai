@@ -14,7 +14,7 @@
  * 8. Rapid mode switching
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import {
     APIError,
     NetworkError,
@@ -720,3 +720,4 @@ export class GeminiLiveErrorHandler {
 }
 
 export default GeminiLiveErrorHandler;
+

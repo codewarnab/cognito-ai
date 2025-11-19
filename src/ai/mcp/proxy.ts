@@ -11,7 +11,7 @@
  * - Single source of truth for MCP state
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { z } from 'zod';
 import { registerToolServer } from '../../utils/toolMetadataStore';
 
@@ -214,3 +214,4 @@ function convertMCPSchemaToZod(inputSchema?: any): z.ZodType<any> {
 
     return z.object(zodShape);
 }
+

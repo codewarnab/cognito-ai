@@ -4,7 +4,7 @@
  */
 
 import type { McpMessage } from '../types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { MessageHandler } from './messageHandler';
 import type { ErrorHandler } from './errorHandler';
 import { buildUserMessage } from '../../errors/errorMessages';
@@ -167,3 +167,4 @@ export class StreamProcessor {
         }
     }
 }
+

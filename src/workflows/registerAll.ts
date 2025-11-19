@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { registerWorkflow } from './registry';
 import { researchWorkflow } from './definitions/researchWorkflow';
 import { youtubeToNotionWorkflow } from './definitions/youtubeToNotionWorkflow';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('Workflow-Registration');
 
@@ -35,3 +35,4 @@ export function useRegisterAllWorkflows() {
         });
     }, []);
 }
+

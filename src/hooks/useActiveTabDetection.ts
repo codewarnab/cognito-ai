@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('useActiveTabDetection');
 
@@ -196,3 +196,4 @@ export function useActiveTabDetection(): ActiveTabDetection {
 
     return tabInfo;
 }
+

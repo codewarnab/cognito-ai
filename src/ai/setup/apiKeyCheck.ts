@@ -4,7 +4,7 @@
  */
 
 import { generateId } from 'ai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('AI-APIKeyCheck');
 
@@ -32,3 +32,4 @@ export function writeMissingApiKeyError(writer: any): void {
         transient: true,
     });
 }
+

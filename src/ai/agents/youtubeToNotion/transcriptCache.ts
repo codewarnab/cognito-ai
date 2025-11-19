@@ -14,7 +14,7 @@
  *   last to finish cleans up (graceful handling, no errors)
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger("TranscriptCache");
 
@@ -184,3 +184,4 @@ export async function withTranscriptCache<T>(
         clearCachedTranscript(videoUrl);
     }
 }
+

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { AudioLinesIconHandle } from '../components/shared/icons';
 
 const log = createLogger('useVoiceRecording');
@@ -33,3 +33,4 @@ export function useVoiceRecording() {
         handleRecordingChange,
     };
 }
+

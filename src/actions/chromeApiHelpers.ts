@@ -4,7 +4,7 @@
  */
 
 import { BrowserAPIError, parseError } from '../errors';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('ChromeAPIHelpers');
 
@@ -318,4 +318,5 @@ export async function requestPermission(permission: string): Promise<boolean> {
         return false;
     }
 }
+
 

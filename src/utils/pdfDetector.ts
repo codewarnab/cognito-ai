@@ -1,4 +1,4 @@
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('PDFDetector');
 
@@ -154,3 +154,4 @@ class PdfProcessingDebouncer {
 
 // Singleton instance
 export const pdfDebouncer = new PdfProcessingDebouncer(1000);
+

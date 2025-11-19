@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { extractPageContext } from '../utils/pageContextExtractor';
 import { suggestionCache } from '../utils/suggestionCache';
 import { generateContextualSuggestions, type Suggestion } from '../ai/suggestions';
@@ -261,3 +261,4 @@ export function useSuggestions(
         error,
     };
 }
+

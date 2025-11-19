@@ -5,7 +5,7 @@
 
 import { generateId } from 'ai';
 import { builtInAI } from '@built-in-ai/core';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { getToolsForMode } from '../tools/registry';
 import { downloadLanguageModel, downloadSummarizer, type DownloadProgressEvent } from '../models/downloader';
 import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
@@ -136,3 +136,4 @@ export async function setupLocalMode(
 
     return { model, tools, systemPrompt };
 }
+

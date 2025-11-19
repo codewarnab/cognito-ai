@@ -7,7 +7,7 @@
  * Phase 2: Dismissible State
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const storageLog = createLogger('PDFDismissals', 'STORAGE');
 
@@ -101,3 +101,4 @@ export function undismissPdf(filePath: string): void {
         storageLog.error('Error un-dismissing PDF', error);
     }
 }
+

@@ -2,7 +2,7 @@
  * Connection management with automatic reconnection and exponential backoff
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { RetryManager } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';
 import type { McpConnectionState } from '../types';
@@ -193,3 +193,4 @@ export class ConnectionManager {
         this.consecutiveErrors = 0;
     }
 }
+

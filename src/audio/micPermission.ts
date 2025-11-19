@@ -3,7 +3,7 @@
  * Handles requesting and checking microphone access
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('MicPermission', 'VOICE_RECORDING');
 
@@ -197,3 +197,4 @@ export async function diagnoseMicrophoneAccess(): Promise<{
 
   return diagnostics;
 }
+

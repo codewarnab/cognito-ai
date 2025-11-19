@@ -17,7 +17,7 @@
  */
 
 import { GeminiLiveClient, type GeminiLiveClientConfig } from './client';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('GeminiLiveManager');
 
@@ -251,3 +251,4 @@ export class GeminiLiveManager {
 export function getGeminiLiveManager(): GeminiLiveManager {
     return GeminiLiveManager.getInstance();
 }
+

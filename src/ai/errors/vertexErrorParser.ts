@@ -5,7 +5,7 @@
  * Based on: https://cloud.google.com/vertex-ai/generative-ai/docs/model-reference/api-errors
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { APIError, NetworkError, ErrorType } from '../../errors/errorTypes';
 import { markVertexCredentialsInvalid } from '../../utils/providerCredentials';
 
@@ -389,3 +389,4 @@ export function parseVertexError(error: any): APIError {
         });
     }
 }
+

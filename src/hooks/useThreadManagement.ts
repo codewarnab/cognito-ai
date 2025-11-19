@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import {
     createThread,
     loadThreadMessages,
@@ -158,3 +158,4 @@ export function useThreadManagement({
         handleClearChat,
     };
 }
+

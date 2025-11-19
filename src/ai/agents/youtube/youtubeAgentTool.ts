@@ -6,7 +6,7 @@
  */
 
 import { initializeGenAIClient } from '../../core/genAIFactory';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../errors';
 import type { FunctionDeclaration } from '@google/genai';
 import { fetchTranscript } from './utils/transcript';
@@ -217,3 +217,4 @@ Please answer the question based on the video description above. Be clear that t
         };
     }
 }
+

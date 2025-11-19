@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { getBehavioralPreferences } from '../memory/store';
 
 const log = createLogger('useBehavioralPreferences');
@@ -29,3 +29,4 @@ export function useBehavioralPreferences() {
 
     return behavioralPreferences;
 }
+
