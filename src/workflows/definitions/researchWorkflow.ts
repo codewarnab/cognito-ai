@@ -11,7 +11,7 @@
 import type { WorkflowDefinition } from '../types';
 
 // Configuration - Adjust these values to customize the workflow
-const MINIMUM_SOURCES = 3; // Minimum number of sources to visit before completing research
+const MINIMUM_SOURCES = 5; // Minimum number of sources to visit before completing research
 const STEP_COUNT = 20; // Maximum number of steps allowed for research
 
 // Generate dynamic examples based on MINIMUM_SOURCES
