@@ -3,7 +3,6 @@
  */
 
 .copilot-input-container {
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
     padding: 8px 16px;
     background: rgba(10, 14, 26, 0.85);
     backdrop-filter: blur(20px);
@@ -118,11 +117,11 @@
 
 .copilot-composer-primary {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
     flex: 1;
     overflow: hidden;
-    min-height: 24px;
+    min-height: 44px;
     position: relative;
 }
 
