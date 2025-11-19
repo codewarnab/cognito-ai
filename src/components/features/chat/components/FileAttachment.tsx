@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { getFileIcon } from '~utils/fileIconMapper';
 
 export interface FileAttachmentData {
     id: string;
@@ -72,7 +73,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                 ) : (
                     <div className="file-attachment-document">
                         <div className="file-attachment-icon">
-                            📄
+                            {getFileIcon(attachment.file.name, 20)}
                         </div>
                         <span className="file-attachment-name" title={attachment.file.name}>
                             {truncateName(attachment.file.name)}
