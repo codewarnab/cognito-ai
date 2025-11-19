@@ -259,3 +259,35 @@
 .copy-message-button:active {
     transform: scale(0.95);
 }
+
+.copy-message-button.generating-audio {
+    cursor: wait;
+}
+
+/* Audio Generating Tooltip */
+.audio-generating-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: rgba(255, 255, 255, 0.95);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.audio-generating-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
