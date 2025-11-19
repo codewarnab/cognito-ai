@@ -85,7 +85,7 @@ const CameraIcon = forwardRef<CameraIconHandle, CameraIconProps>(
                 style={{
                     cursor: 'pointer',
                     userSelect: 'none',
-                    padding: '0.5rem',
+                    // padding: '0.5rem',
                     borderRadius: '0.375rem',
                     transition: 'background-color 200ms, color 200ms',
                     display: 'flex',
