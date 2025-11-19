@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { ChainOfThoughtToolRenderer } from '../../components/ui/tools/ChainOfThoughtToolRenderer';
 import { executeYouTubeToNotion } from '../../ai/agents/youtubeToNotion/youtubeToNotionAgentTool';
 import { progressStore } from '../../ai/agents/youtubeToNotion/progressStore';
@@ -150,3 +150,4 @@ IMPORTANT:
         };
     }, []); // Empty dependency array - only register once on mount
 }
+

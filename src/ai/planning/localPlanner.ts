@@ -4,7 +4,7 @@
  * Generates execution plans with step-by-step tool calls for the main AI to execute
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('LocalPlanner');
 
@@ -377,3 +377,4 @@ declare global {
         }
     }
 }
+

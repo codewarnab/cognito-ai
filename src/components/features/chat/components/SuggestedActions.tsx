@@ -5,7 +5,7 @@ import { TextMorph } from '../../../ui/feedback';
 import type { Message, ModelState } from '../types';
 import type { FileAttachmentData } from './FileAttachment';
 import type { WorkflowDefinition } from '../../../../workflows/types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('SuggestedActions');
 
@@ -163,3 +163,4 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         </AnimatePresence>
     );
 };
+

@@ -4,7 +4,7 @@
  * Used by both Google Generative AI and Vertex AI
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('AI-FetchHelpers');
 
@@ -44,3 +44,4 @@ export async function customFetch(url: RequestInfo | URL, init?: RequestInit): P
 
     return response;
 }
+

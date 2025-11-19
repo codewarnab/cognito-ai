@@ -19,7 +19,7 @@
 // Uses client.chats.create() for multi-turn conversation with function calling
 import { Type as SchemaType } from '@google/genai';
 import type { FunctionDeclaration } from '@google/genai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { getAllTools } from '../../tools/registryUtils';
 import { convertAllTools } from '../../geminiLive/toolConverter';
 import { analyzeYouTubeVideoDeclaration, executeYouTubeAnalysis } from '../youtube';
@@ -388,3 +388,4 @@ export async function executeBrowserActionAgent(args: { taskDescription: string 
         };
     }
 }
+

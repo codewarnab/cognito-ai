@@ -3,7 +3,7 @@
  * Handles both Streamable HTTP (POST) and HTTP+SSE (GET) transports
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { MCPError } from '../../errors/errorTypes';
 import type { TransportType } from './streamProcessor';
 import type { MessageHandler, PendingRequest } from './messageHandler';
@@ -225,3 +225,4 @@ export class TransportDetector {
         return this.sseSessionId;
     }
 }
+

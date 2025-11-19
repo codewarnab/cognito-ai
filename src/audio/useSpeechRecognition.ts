@@ -9,7 +9,7 @@ import type {
   UseSpeechRecognitionReturn,
   SpeechRecognitionOptions
 } from './types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { requestMicrophoneWithUI } from './micPermission';
 
 const log = createLogger('SpeechRecognition', 'VOICE_RECORDING');
@@ -327,3 +327,4 @@ export function useSpeechRecognition(
     resetTranscript,
   };
 }
+

@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '../../ui/primitives/dialog';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { getGoogleApiKey, setGoogleApiKey, clearGoogleApiKey } from '../../../utils/providerCredentials';
 import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';
 import type { RemoteModelType } from '../../features/chat/types';
@@ -411,3 +411,4 @@ export const GeminiApiKeyDialog: React.FC<GeminiApiKeyDialogProps> = ({
         </Dialog>
     );
 };
+

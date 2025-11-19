@@ -4,7 +4,7 @@
  */
 
 import { generateId } from 'ai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { APIError } from '../../errors/errorTypes';
 import { extractMalformedCallInfo } from '../errors/handlers';
 import { type AppUsage, getContextLimits } from '../types/usage';
@@ -200,3 +200,4 @@ export function createOnFinishCallback(
         }
     };
 }
+

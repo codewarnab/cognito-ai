@@ -4,7 +4,7 @@
  * Supports both Google Generative AI and Vertex AI providers
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { markGoogleApiKeyInvalid } from '../../utils/providerCredentials';
 
 // Helper function for compatibility
@@ -429,3 +429,4 @@ export function parseProviderError(
     return parseGeminiError(error);
   }
 }
+

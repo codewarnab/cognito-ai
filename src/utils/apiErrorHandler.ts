@@ -1,4 +1,4 @@
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { ErrorType } from "../errors/errorTypes";
 
 const log = createLogger("APIErrorHandler");
@@ -275,3 +275,4 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         details: errorObj?.technicalDetails || error.stack
     };
 }
+

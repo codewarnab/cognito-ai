@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatedCircularProgressBar } from "../components/AnimatedCircularProgressBar";
 import type { AppUsage } from "../../../../ai/types/usage";
 import { cn } from "../../../../utils/cn";
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('ContextIndicator');
 
@@ -157,3 +157,4 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
         </div>
     );
 }
+

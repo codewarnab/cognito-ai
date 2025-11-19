@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('Tool-GeneratePDF');
 
@@ -323,4 +323,5 @@ export function useGeneratePDFTool() {
         };
     }, []);
 }
+
 

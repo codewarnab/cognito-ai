@@ -13,7 +13,7 @@
 import { useMemo } from 'react';
 import { useToolUI } from './ToolUIContext';
 import type { ToolUIState } from './ToolUIContext';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { CompactToolRenderer } from './CompactToolRenderer';
 
 const log = createLogger('ToolPartRenderer');
@@ -113,3 +113,4 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
   // Default fallback renderer for tools without custom UI
   return <CompactToolRenderer state={toolState} messageId={messageId} />;
 }
+

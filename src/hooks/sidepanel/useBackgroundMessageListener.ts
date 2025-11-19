@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('useBackgroundMessageListener');
 
@@ -98,3 +98,4 @@ export function useBackgroundMessageListener({
         };
     }, [currentThreadId, handleThreadSelect, handleNewThread, handleContinue, handleSendMessage, sendMessage]);
 }
+

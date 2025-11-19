@@ -4,7 +4,7 @@
  */
 
 import { AUDIO_PATHS, AUDIO_CONFIG } from '../constants/audio';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const soundLog = createLogger('Sound', 'NOTIFICATIONS');
 
@@ -151,3 +151,4 @@ export const cleanupNotificationSound = (): void => {
     isInitialized = false;
     soundLog.debug('Notification sound cleaned up');
 };
+

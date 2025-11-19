@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('useOnboarding');
 
@@ -83,3 +83,4 @@ export function useOnboarding() {
         resetOnboarding,
     };
 }
+

@@ -10,7 +10,7 @@ import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
 import type { ToolUIState } from '../../ai/tools/components';
 import { CompactToolRenderer } from '../../ai/tools/components';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import {
     type TemplateType,
     type ReportTemplate,
@@ -231,4 +231,5 @@ Call this BEFORE starting research to get the proper structure for gathering inf
         };
     }, [registerToolUI, unregisterToolUI]);
 }
+
 

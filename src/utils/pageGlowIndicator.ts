@@ -3,7 +3,7 @@
  * Creates a diffused blue glow effect around the page to indicate AI is reading
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('PageGlow', 'UTILS');
 
@@ -79,3 +79,4 @@ export function stopPageGlow(): void {
 export function isPageGlowActive(): boolean {
     return document.body.classList.contains(GLOW_ID);
 }
+

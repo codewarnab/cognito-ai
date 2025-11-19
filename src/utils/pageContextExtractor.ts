@@ -4,7 +4,7 @@
  * Provides AI with full understanding of page structure
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('PageContextExtractor');
 
@@ -360,3 +360,4 @@ export function formatPageContextForAI(context: PageContext): string {
 
     return parts.join('\n');
 }
+

@@ -4,7 +4,7 @@
  */
 
 import type { TabMention } from './mentionUtils';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('TabSnapshot', 'UTILS');
 
@@ -286,3 +286,4 @@ export async function processMentionedTabs(tabMentions: TabMention[]): Promise<s
 
     return result;
 }
+

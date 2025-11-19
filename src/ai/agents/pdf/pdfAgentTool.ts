@@ -7,7 +7,7 @@
 
 import { generateText } from 'ai';
 import { Type as SchemaType, type FunctionDeclaration } from '@google/genai';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { NetworkError, parseError } from '../../../errors';
 import { isPdfUrl } from '../../../utils/pdfDetector';
 import { initializeModel } from '../../core/modelFactory';
@@ -289,3 +289,4 @@ export async function executePdfAnalysis(args: { question: string; pdfUrl?: stri
         };
     }
 }
+

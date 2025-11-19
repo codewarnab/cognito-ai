@@ -12,7 +12,7 @@
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 import { convertAllTools } from '../../geminiLive/toolConverter';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { progressStore } from '../youtubeToNotion/progressStore';
 
 const log = createLogger('NotionPageWriterAgent');
@@ -390,3 +390,4 @@ Return JSON with pageId, pageUrl, success, and message.`;
         };
     }
 }
+

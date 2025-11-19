@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('ToolRegistry');
 
@@ -123,3 +123,4 @@ export function getToolCount(): number {
 export function getToolNames(): string[] {
   return Array.from(tools.keys());
 }
+

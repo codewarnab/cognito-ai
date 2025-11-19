@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { CompactToolRenderer } from '../../ai/tools/components';
 import type { ToolUIState } from '../../ai/tools/components';
 
@@ -76,4 +76,5 @@ export function useGetActiveTab() {
         };
     }, []); // Empty dependency array - only register once on mount
 }
+
 

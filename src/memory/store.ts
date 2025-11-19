@@ -5,7 +5,7 @@
 
 import { Storage } from "@plasmohq/storage";
 import type { StoredMemory, MemoryCategory } from "./types";
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const memoryLog = createLogger("MemoryStore", "MEMORY_OPERATIONS");
 
@@ -199,4 +199,5 @@ export async function getBehavioralPreferences(): Promise<Record<string, unknown
 
   return preferences;
 }
+
 

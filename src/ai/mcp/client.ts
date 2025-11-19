@@ -11,7 +11,7 @@
 
 import { experimental_createMCPClient as createMCPClient } from '@ai-sdk/mcp';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { MCPError } from '../../errors/errorTypes';
 import { RetryManager, RetryPresets } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';
@@ -602,3 +602,4 @@ export async function refreshMCPConnections(): Promise<void> {
   // The actual refresh will happen on the next AI request
   log.info('✅ MCP connection refresh requested');
 }
+

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { z } from "zod";
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { CompactToolRenderer } from "../../ai/tools/components";
 import { registerTool } from "../../ai/tools";
 import { useToolUI } from "../../ai/tools/components";
@@ -94,4 +94,5 @@ export function useFocusElementTool() {
         };
     }, [registerToolUI, unregisterToolUI]);
 }
+
 

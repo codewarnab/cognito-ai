@@ -6,7 +6,7 @@
 
 import { APIError, ErrorType } from '../errors/errorTypes';
 import type { AIProvider, ProviderConfig, VertexCredentials } from './providerTypes';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const credentialsLog = createLogger('Credentials', 'CREDENTIALS');
 const storageLog = createLogger('Credentials-Storage', 'STORAGE');
@@ -380,3 +380,4 @@ export async function markGoogleApiKeyValid(): Promise<void> {
     credentialsLog.info('Google API key marked as valid');
     // No-op for now - validation cache not yet implemented
 }
+

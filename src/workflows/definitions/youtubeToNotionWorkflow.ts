@@ -10,7 +10,7 @@
  */
 
 import type { WorkflowDefinition } from '../types';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('YouTubeToNotionWorkflow');
 
@@ -234,3 +234,4 @@ Add [WORKFLOW_COMPLETE] marker ONLY after displaying the final success message w
 
 Remember: You are a lightweight orchestrator. The youtubeToNotionAgent does all the heavy lifting. Your job is to validate inputs, call the agent, and present results clearly to the user.`
 };
+

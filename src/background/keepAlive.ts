@@ -9,7 +9,7 @@
  * service worker termination (Chrome 110+ exploit).
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { serverStates } from '../mcp/state';
 
 const log = createLogger('Background-KeepAlive', 'BACKGROUND');
@@ -104,3 +104,4 @@ export function updateKeepAliveState(): void {
         stopMCPKeepAlive();
     }
 }
+

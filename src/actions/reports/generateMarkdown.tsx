@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
 import { useToolUI } from '../../ai/tools/components';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('Tool-GenerateMarkdown');
 
@@ -78,4 +78,5 @@ export function useGenerateMarkdownTool() {
         };
     }, []);
 }
+
 

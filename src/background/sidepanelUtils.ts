@@ -3,7 +3,7 @@
  * Used by omnibox, Ask AI button, and other features
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger('SidepanelUtils');
 
@@ -79,3 +79,4 @@ export async function sendMessageToSidepanel(
         }
     }
 }
+

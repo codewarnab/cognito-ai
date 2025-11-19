@@ -6,7 +6,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { GEMINI_LIVE_MODELS, Modality } from '../types';
 import { getGeminiLiveSystemInstruction } from '../../agents/browser';
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { GeminiLiveToolHandler } from './toolHandler';
 import { initializeGenAIClient, getLiveModelName } from '../../core/genAIFactory';
 
@@ -232,3 +232,4 @@ export class GeminiLiveSessionManager {
         return config;
     }
 }
+

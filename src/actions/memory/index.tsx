@@ -3,7 +3,7 @@
  * CopilotKit frontend tools for memory management
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import { useSaveMemory } from "./saveMemory";
 import { useGetMemory } from "./getMemory";
 import { useListMemories } from "./listMemories";
@@ -30,4 +30,5 @@ export {
     useDeleteMemory,
     useSuggestSaveMemory,
 };
+
 

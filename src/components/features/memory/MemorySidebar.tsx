@@ -8,7 +8,7 @@ import { X, Brain, Pin, Trash2, Lightbulb } from "lucide-react";
 import { FoldersIcon } from "../../shared/icons";
 import * as memoryStore from "../../../memory/store";
 import type { StoredMemory } from "../../../memory/types";
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 
 const log = createLogger("MemorySidebar");
 
@@ -213,3 +213,4 @@ export function MemorySidebar({ isOpen, onClose }: MemorySidebarProps) {
     </>
   );
 }
+

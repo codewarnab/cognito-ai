@@ -4,7 +4,7 @@
  * Separate AI instance from the main chat to avoid interference
  */
 
-import { createLogger } from '@logger';
+import { createLogger } from '~logger';
 import type { PageContext } from '../../utils/pageContextExtractor';
 
 const log = createLogger('LocalSuggestionGenerator');
@@ -313,3 +313,4 @@ declare global {
         }
     }
 }
+
