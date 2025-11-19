@@ -2,7 +2,7 @@
 
 import { motion, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
+import { forwardRef, useCallback, useImperativeHandle, useRef, useEffect } from 'react';
 import './loading-check.css';
 
 export interface LoadingCheckIconHandle {
@@ -12,10 +12,11 @@ export interface LoadingCheckIconHandle {
 
 interface LoadingCheckIconProps extends HTMLAttributes<HTMLDivElement> {
   size?: number;
+  active?: boolean;
 }
 
 const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProps>(
-  ({ onMouseEnter, onMouseLeave, className, size = 28, ...props }, ref) => {
+  ({ onMouseEnter, onMouseLeave, className, size = 28, active, ...props }, ref) => {
     const wormControls = useAnimation();
     const checkControls = useAnimation();
     const popStartControls = useAnimation();
@@ -29,6 +30,14 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
     const dotGroup7Controls = useAnimation();
     const dotGroup8Controls = useAnimation();
     const isControlledRef = useRef(false);
+
+    useEffect(() => {
+      if (active) {
+        wormControls.start('animate');
+      } else {
+        wormControls.start('initial');
+      }
+    }, [active, wormControls]);
 
     useImperativeHandle(ref, () => {
       isControlledRef.current = true;

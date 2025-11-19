@@ -29,7 +29,7 @@ export class TransportDetector {
     private messageEndpoint: string | null = null;
     private sseSessionId: string | null = null;
 
-    constructor(private deps: TransportDetectorDeps) {}
+    constructor(private deps: TransportDetectorDeps) { }
 
     /**
      * Detect transport type and establish initial connection
@@ -73,7 +73,11 @@ export class TransportDetector {
 
             // Set up promise to track initialization response BEFORE checking response
             // This ensures the promise exists when the stream starts processing
-            const initPromise = new Promise<void>((resolve) => {
+            let initializeResolve: (() => void) | null = null;
+            let initializeReject: ((error: any) => void) | null = null;
+            const initPromise = new Promise<void>((resolve, reject) => {
+                initializeResolve = resolve;
+                initializeReject = reject;
                 this.deps.setInitializeResolve(resolve);
             });
             this.deps.setInitializePromise(initPromise);
@@ -83,9 +87,17 @@ export class TransportDetector {
                     this.deps.setInitializeResult(result);
                     this.deps.setInitialized(true);
                     log.info(`[${this.deps.serverId}] ✓ Initialization response received:`, result);
+                    // Resolve the initialization promise to unblock initialize()
+                    if (initializeResolve) {
+                        initializeResolve();
+                    }
                 },
                 reject: (error) => {
                     log.error(`[${this.deps.serverId}] ✗ Initialization failed:`, error);
+                    // Reject the initialization promise
+                    if (initializeReject) {
+                        initializeReject(error);
+                    }
                 }
             };
             this.deps.messageHandler.addPendingRequest(messageId, pendingRequest);

@@ -36,6 +36,8 @@ import { isMcpTool } from '../../../../utils/toolMetadataStore';
 import { createLogger } from '../../../../logger';
 import { Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle } from 'react';
+import { YouTubeNotionIcon } from 'assets/youtubeplusnotion';
+import { CameraIcon } from 'assets/chat/camera';
 
 const log = createLogger('ToolIconMapper');
 
@@ -95,6 +97,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
 
     // Memory tools
     saveMemory: HardDriveDownloadIcon,
+    takeScreenshot:CameraIcon,
     getMemory: HardDriveUploadIcon,
     deleteMemory: DeleteIcon,
     listMemories: FoldersIcon,
@@ -108,6 +111,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     // YouTube tools
     youtube: YoutubeIcon,
     youtubeSearch: YoutubeIcon,
+    youtubeToNotionAgent: YouTubeNotionIcon,
     youtubeTranscript: YoutubeIcon,
     getYoutubeTranscript: YoutubeIcon,
     youtubeAgentAsTool: YoutubeIcon,
