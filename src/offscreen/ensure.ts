@@ -5,7 +5,7 @@
  * that require a document context (like the Chrome Summarizer API).
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('Background-Offscreen', 'BACKGROUND');
 

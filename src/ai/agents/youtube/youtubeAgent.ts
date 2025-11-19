@@ -6,7 +6,7 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { initializeGenAIClient } from '../../core/genAIFactory';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { parseError } from '../../../errors';
 import { fetchTranscript } from './utils/transcript';
 import { getVideoDuration, getVideoDescription, MAX_CHUNK_DURATION } from './utils/videoMetadata';

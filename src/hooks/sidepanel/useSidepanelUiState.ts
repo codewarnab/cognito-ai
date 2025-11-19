@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ChatMode } from '../../types/sidepanel';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('useSidepanelUiState');
 

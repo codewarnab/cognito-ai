@@ -33,7 +33,7 @@ import { ExpandIcon } from '@assets/icons/chat/expand';
 import { ScanTextIcon } from '@assets/icons/chat/reading-page-content';
 import { BookTextIcon } from '@assets/icons/ui/report';
 import { isMcpTool } from '../../../../utils/toolMetadataStore';
-import { createLogger } from '../../../../logger';
+import { createLogger } from '@logger';
 import { Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle } from 'react';
 import { YouTubeNotionIcon } from '@assets/icons/ui/youtubeplusnotion';

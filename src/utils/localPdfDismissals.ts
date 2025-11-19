@@ -7,7 +7,7 @@
  * Phase 2: Dismissible State
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const storageLog = createLogger('PDFDismissals', 'STORAGE');
 

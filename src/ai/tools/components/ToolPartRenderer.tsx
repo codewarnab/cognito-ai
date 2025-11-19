@@ -13,7 +13,7 @@
 import { useMemo } from 'react';
 import { useToolUI } from './ToolUIContext';
 import type { ToolUIState } from './ToolUIContext';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { CompactToolRenderer } from './CompactToolRenderer';
 
 const log = createLogger('ToolPartRenderer');

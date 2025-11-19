@@ -1,11 +1,11 @@
-﻿/**
+/**
  * Frontend AI Logic
  * Direct AI backend integration using AI SDK v5
  * Runs directly in the UI thread, no service worker needed
  */
 
 import { createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
@@ -81,13 +81,13 @@ export async function streamAIResponse(params: {
   if (effectiveMode === 'remote') {
     const hasKey = await hasGeminiApiKey();
     if (!hasKey) {
-      log.warn('⚠️ Remote mode requested but no API key found');
+      log.warn('?? Remote mode requested but no API key found');
       missingApiKey = true;
       // We'll handle this error in the stream execution
     }
   }
 
-  log.info('🤖 AI Mode:', effectiveMode, effectiveMode === 'remote' ? modelConfig.remoteModel : 'gemini-nano');
+  log.info('?? AI Mode:', effectiveMode, effectiveMode === 'remote' ? modelConfig.remoteModel : 'gemini-nano');
 
   // Initialize variables for streaming
   let model: any;
@@ -159,7 +159,7 @@ export async function streamAIResponse(params: {
             }
           } catch (setupError) {
             // Setup failed - write error to stream and exit
-            log.error('❌ Model setup failed:', {
+            log.error('? Model setup failed:', {
               error: setupError,
               mode: effectiveMode,
               provider,
@@ -242,7 +242,7 @@ export async function streamAIResponse(params: {
               threadId,
               onError,
               prepareStep: async ({ stepNumber }) => {
-                log.info(`📍 Step ${stepNumber}: Preparing website-aware tools and prompt`);
+                log.info(`?? Step ${stepNumber}: Preparing website-aware tools and prompt`);
 
                 // Get current website configuration
                 // Returns null if only base config exists (no website-specific behavior)
@@ -255,7 +255,7 @@ export async function streamAIResponse(params: {
                   return {};
                 }
 
-                log.info(`🌐 Detected website: ${currentWebsite.websiteName}`, {
+                log.info(`?? Detected website: ${currentWebsite.websiteName}`, {
                   id: currentWebsite.websiteId,
                   url: currentWebsite.currentUrl,
                   toolCount: currentWebsite.allowedTools.length
@@ -270,7 +270,7 @@ export async function streamAIResponse(params: {
                   currentWebsite
                 );
 
-                log.info(`🔧 Step ${stepNumber}: Website-aware configuration applied`, {
+                log.info(`?? Step ${stepNumber}: Website-aware configuration applied`, {
                   website: currentWebsite.websiteName,
                   activeTools: currentWebsite.allowedTools,
                   promptAugmented: !!currentWebsite.promptAddition
@@ -285,11 +285,11 @@ export async function streamAIResponse(params: {
           }, 'AI stream');
 
           // Merge AI stream with status stream
-          log.info('✅ AI streamText result received, merging with UI stream...');
+          log.info('? AI streamText result received, merging with UI stream...');
 
           // Safety check: Ensure result exists before processing
           if (!result) {
-            log.error('❌ executeStreamText returned undefined result - stream failed');
+            log.error('? executeStreamText returned undefined result - stream failed');
             throw new Error('Stream execution failed - no result returned');
           }
 
@@ -297,7 +297,7 @@ export async function streamAIResponse(params: {
             result.toUIMessageStream({
               onError: (error) => {
                 // Log the raw error first to help debug
-                log.error('🔴 AI stream onError callback - RAW ERROR:', {
+                log.error('?? AI stream onError callback - RAW ERROR:', {
                   error,
                   errorType: typeof error,
                   errorKeys: error ? Object.keys(error) : [],
@@ -325,7 +325,7 @@ export async function streamAIResponse(params: {
                   // Parse error into our error types with provider context
                   const enhancedError = parseProviderError(error, provider);
 
-                  log.info('✅ Error parsed successfully', {
+                  log.info('? Error parsed successfully', {
                     provider,
                     enhancedErrorCode: enhancedError.errorCode,
                     enhancedMessage: enhancedError.message,
@@ -341,7 +341,7 @@ export async function streamAIResponse(params: {
                   // Return error message for AI SDK
                   return ` Error: ${enhancedError.userMessage}`;
                 } catch (parseError) {
-                  log.error('❌ CRITICAL: Failed to parse error in onError callback', {
+                  log.error('? CRITICAL: Failed to parse error in onError callback', {
                     parseError,
                     parseErrorMessage: parseError instanceof Error ? parseError.message : String(parseError),
                     parseErrorStack: parseError instanceof Error ? parseError.stack : 'No stack',
@@ -355,7 +355,7 @@ export async function streamAIResponse(params: {
                   writer.write({
                     type: 'text-delta',
                     id: 'error-msg-' + generateId(),
-                    delta: `⚠️ ${fallbackMessage}\n`,
+                    delta: `?? ${fallbackMessage}\n`,
                   });
 
                   // Call user's onError callback with a basic Error
@@ -397,7 +397,7 @@ export async function streamAIResponse(params: {
                       // Attach usage to the message for persistence and recalculation
                       (lastAssistantMsg as any).usage = appUsage;
 
-                      log.info('✅ Attached final usage to message', {
+                      log.info('? Attached final usage to message', {
                         messageId: lastAssistantMsg.id,
                         usage: appUsage
                       });
@@ -415,7 +415,7 @@ export async function streamAIResponse(params: {
 
                 // Call finish callback (for notification sound, etc.)
                 if (onFinishCallback) {
-                  log.info('🔔 Calling onFinishCallback for AI completion notification');
+                  log.info('?? Calling onFinishCallback for AI completion notification');
                   onFinishCallback();
                 }
 

@@ -11,7 +11,7 @@
  * 6. Cleanup cache and return results
  */
 
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { withTranscriptCache } from './transcriptCache';
 import { fetchTranscriptDirect } from './transcript';
 import { detectVideoType } from './videoTypeDetectorAgent';

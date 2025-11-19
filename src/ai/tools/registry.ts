@@ -3,7 +3,7 @@
  * Manages tool availability based on AI mode (local vs remote)
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { getAllTools } from './registryUtils';
 import type { AIMode, ToolCapabilities } from '../types';
 

@@ -7,7 +7,7 @@
  */
 
 import { APIError, ErrorType } from '../errors/errorTypes';
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const credentialsLog = createLogger('Credentials-Legacy', 'CREDENTIALS');
 const storageLog = createLogger('Storage-Legacy', 'STORAGE');

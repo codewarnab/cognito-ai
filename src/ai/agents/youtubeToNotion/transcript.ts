@@ -17,7 +17,7 @@
  */
 
 import { TRANSCRIPT_API_URL } from "../../../constants";
-import { createLogger } from "../../../logger";
+import { createLogger } from '@logger';
 import { executeYouTubeAnalysis } from "../youtube/youtubeAgentTool";
 import type { TranscriptEntry } from "./transcriptCache";
 

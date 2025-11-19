@@ -6,7 +6,7 @@
 
 import { generateText, tool } from 'ai';
 import { z } from 'zod';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../errors';
 import { isPdfUrl } from '../../../utils/pdfDetector';
 import { initializeModel } from '../../core/modelFactory';

@@ -10,7 +10,7 @@
  * - This manager stores active workflow state by threadId
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 import type { WorkflowDefinition } from './types';
 
 const log = createLogger('Workflow-Session');

@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '../../ai/tools';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger("Actions-Interactions-TypeInField");
 

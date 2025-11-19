@@ -6,7 +6,7 @@
 import React, { useState, useImperativeHandle, forwardRef, useRef, useEffect } from 'react';
 import { useSpeechRecognition } from './useSpeechRecognition';
 import { checkMicrophonePermission, openMicrophoneSettings } from './micPermission';
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 import './voice.css';
 
 const log = createLogger('VoiceInput', 'VOICE_RECORDING');

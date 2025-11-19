@@ -8,7 +8,7 @@
  * - Provides AnalyserNodes for visualization
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { requestMicrophoneWithUI, diagnoseMicrophoneAccess } from '../../audio/micPermission';
 
 const log = createLogger('AudioManager');

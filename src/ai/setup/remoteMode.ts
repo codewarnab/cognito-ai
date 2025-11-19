@@ -4,7 +4,7 @@
  * Supports both Google Generative AI and Vertex AI providers
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { getAllTools } from '../tools/registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { youtubeAgentAsTool } from '../agents/youtube';

@@ -3,7 +3,7 @@
  * Handles tool configuration, filtering, and workflow-specific logic
  */
 
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { getToolsForMode } from './registry';
 import { getAllTools } from './registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';

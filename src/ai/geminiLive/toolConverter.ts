@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { Type as SchemaType } from '@google/genai';
 import type { FunctionDeclaration, Schema } from '@google/genai';
 import type { ToolDefinition } from '../tools/registryUtils';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 // Type aliases for backwards compatibility
 type FunctionDeclarationSchema = Schema;

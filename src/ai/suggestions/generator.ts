@@ -6,7 +6,7 @@
 
 import { generateObject } from 'ai';
 import { z } from 'zod';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import type { PageContext } from '../../utils/pageContextExtractor';
 import { generateLocalContextualSuggestions } from './local';
 import { initializeModel } from '../core/modelFactory';

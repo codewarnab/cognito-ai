@@ -7,7 +7,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { builtInAI } from '@built-in-ai/core';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
 import { customFetch } from '../utils/fetchHelpers';

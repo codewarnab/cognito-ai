@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
 import type { AppUsage } from '../types/usage';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('calculateUsageFromMessages');
 

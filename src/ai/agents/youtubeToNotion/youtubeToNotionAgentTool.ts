@@ -5,7 +5,7 @@
  * so it can be used by the main workflow agent.
  */
 
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import { executeYouTubeToNotionAgent } from './youtubeToNotionAgent';
 import type { YouTubeToNotionInput, YouTubeToNotionOutput } from './types';
 import type { FunctionDeclaration } from '@google/genai';

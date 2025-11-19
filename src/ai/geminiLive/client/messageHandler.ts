@@ -6,7 +6,7 @@
 import type { LiveServerMessage, ServerContent } from '../types';
 import { LiveAPIError, LiveAPIErrorType } from '../types';
 import { AudioManager } from '../audioManager';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('MessageHandler');
 

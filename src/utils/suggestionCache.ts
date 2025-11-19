@@ -3,7 +3,7 @@
  * Manages in-memory caching of suggestions per URL with 5-minute expiration
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 import type { Suggestion } from '../ai/suggestions';
 
 const log = createLogger('SuggestionCache');

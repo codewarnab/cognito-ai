@@ -5,7 +5,7 @@
  * Falls back gracefully when the API is not available.
  */
 
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('Summarizer');
 

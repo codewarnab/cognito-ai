@@ -5,7 +5,7 @@
  */
 
 import type { McpOAuthTokens } from './types';
-import { createLogger } from '../logger';
+import { createLogger } from '@logger';
 
 const authLog = createLogger('MCP-OAuth', 'MCP_AUTH');
 

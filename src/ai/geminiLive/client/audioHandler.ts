@@ -5,7 +5,7 @@
 
 import { AudioManager } from '../audioManager';
 import { AUDIO_CONFIG } from '../types';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('AudioHandler');
 

@@ -39,7 +39,7 @@ import "./styles/components/error-toast.css";
 import "./sidepanel.css";
 
 // Core functionality
-import { createLogger } from "./logger";
+import { createLogger } from '@logger';
 import { useRegisterAllActions } from "./actions/registerAll";
 import { useRegisterAllWorkflows } from "./workflows/registerAll";
 import { useAIChat } from "./ai/hooks";

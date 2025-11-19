@@ -10,7 +10,7 @@
 
 import { getAllTools, getTool } from '../tools/registryUtils';
 import { convertAllTools, validateFunctionDeclaration } from './toolConverter';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('ToolIntegrationTest', 'TOOLS_INTEGRATION');
 

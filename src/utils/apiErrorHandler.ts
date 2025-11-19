@@ -1,4 +1,4 @@
-import { createLogger } from "../logger";
+import { createLogger } from '@logger';
 import { ErrorType } from "../errors/errorTypes";
 
 const log = createLogger("APIErrorHandler");

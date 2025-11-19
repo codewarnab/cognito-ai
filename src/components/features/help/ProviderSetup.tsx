@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { createLogger } from '../../../logger';
+import { createLogger } from '@logger';
 import {
     getProviderConfig,
     setGoogleApiKey,

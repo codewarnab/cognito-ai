@@ -5,7 +5,7 @@
  */
 
 import type { UploadedPDFContext } from './types';
-import { createLogger } from '../../logger';
+import { createLogger } from '@logger';
 
 const log = createLogger('PDFCache');
 const PDF_CACHE_KEY = 'pdf_upload_cache';
