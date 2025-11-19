@@ -29,7 +29,7 @@ export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output 
         return {
             action: 'Screenshot captured',
             description: title
-                ? truncateText(`${title}${viewportInfo}`, 45)
+                ? truncateText(`${title}${viewportInfo}`, 40)
                 : (url ? truncateText(url, 40) : 'Page captured successfully')
         };
     }

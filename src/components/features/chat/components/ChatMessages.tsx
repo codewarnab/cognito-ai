@@ -14,6 +14,7 @@ import { ContinueButton } from './ContinueButton';
 import { CopyButton } from './CopyButton';
 import { getFileIcon } from '../../../../utils/fileIconMapper';
 import { InlineCode } from './InlineCode';
+import { XIcon } from '../../../../../assets/chat/x';
 
 
 
@@ -412,6 +413,13 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                         exit={{ opacity: 0 }}
                         onClick={() => setPreviewImage(null)}
                     >
+                        <button
+                            className="message-image-preview-close"
+                            onClick={() => setPreviewImage(null)}
+                            aria-label="Close preview"
+                        >
+                            <XIcon size={20} />
+                        </button>
                         <motion.div
                             className="message-image-preview-container"
                             initial={{ scale: 0.8, opacity: 0 }}
