@@ -156,13 +156,7 @@ export function MentionInput({
                 disabled={disabled}
                 autoFocus={autoFocus}
                 rows={1}
-                style={{ resize: 'none', overflow: 'hidden' }}
-                onInput={(e) => {
-                    // Auto-resize textarea to fit content
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = `${target.scrollHeight}px`;
-                }}
+                style={{ resize: 'none', overflow: 'auto', height: '44px', minHeight: '44px', maxHeight: '44px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             />
 
             {showDropdown && (

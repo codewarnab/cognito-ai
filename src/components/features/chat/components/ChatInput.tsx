@@ -142,6 +142,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         };
     }, [handlePaste]);
 
+    // Hide voice-mode-fab when there's text in input
+    useEffect(() => {
+        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        if (voiceFab) {
+            voiceFab.style.visibility = input.trim() ? 'hidden' : '';
+        }
+    }, [input]);
+
     const handleSuggestionClick = (action: string) => {
         setInput(action);
         textareaRef.current?.focus();
@@ -253,7 +261,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                                         ? `${activeWorkflow.name} mode: Describe what to ${activeWorkflow.id}...`
                                         : attachments.length > 0
                                             ? "Add a message (optional)..."
-                                            : "Ask me to do something (type @ to mention tabs, / for workflows)"
+                                            : "Ask anything (type @ to mention tabs, / for workflows)"
                                 }
                                 autoFocus={true}
                             />                            {/* Animated Preview Overlay - iMessage style */}
@@ -338,9 +346,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                             </button>
 
                             {/* Context Indicator - Shows token usage (Cloud mode only) */}
-                            {!isLocalMode && usage && (
+                            {/* {!isLocalMode && usage && (
                                 <ContextIndicator usage={usage} className="context-indicator-input" />
-                            )}
+                            )} */}
 
                             {(input.trim() || attachments.length > 0) && !isLoading && (
                                 <button

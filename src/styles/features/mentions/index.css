@@ -25,12 +25,16 @@
     caret-color: #1976d2;
     border: none;
     outline: none;
-    padding: 10px 14px;
+    padding: 0 0 0 12px;
     font-size: 14px;
     line-height: 1.5;
     font-family: inherit;
     resize: none;
     min-height: 32px;
+}
+
+.mention-input::-webkit-scrollbar {
+    display: none;
 }
 
 .mention-input:focus {
