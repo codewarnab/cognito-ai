@@ -10,6 +10,24 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
     const [isUserAway, setIsUserAway] = useState(false);
 
     useEffect(() => {
+        // Helper to notify content scripts about sidebar state
+        const notifyContentScripts = (action: 'SIDEBAR_OPENED' | 'SIDEBAR_CLOSED') => {
+            chrome.windows.getCurrent((window) => {
+                if (window.id) {
+                    chrome.tabs.query({ windowId: window.id }, (tabs) => {
+                        tabs.forEach((tab) => {
+                            if (tab.id) {
+                                chrome.tabs.sendMessage(tab.id, { action })
+                                    .catch(() => {
+                                        // Ignore errors if content script not loaded
+                                    });
+                            }
+                        });
+                    });
+                }
+            });
+        };
+
         // Combine Chrome Windows API with Document Visibility API for comprehensive tracking
 
         // Handler for Chrome Windows API focus changes
@@ -28,23 +46,7 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
             setIsUserAway(isHidden);
 
             // Notify content scripts about sidepanel visibility state
-            if (isHidden) {
-                // Sidepanel is closed/hidden - notify content scripts
-                chrome.windows.getCurrent((window) => {
-                    if (window.id) {
-                        chrome.tabs.query({ windowId: window.id }, (tabs) => {
-                            tabs.forEach((tab) => {
-                                if (tab.id) {
-                                    chrome.tabs.sendMessage(tab.id, { action: 'SIDEBAR_CLOSED' })
-                                        .catch(() => {
-                                            // Ignore errors if content script not loaded
-                                        });
-                                }
-                            });
-                        });
-                    }
-                });
-            }
+            notifyContentScripts(isHidden ? 'SIDEBAR_CLOSED' : 'SIDEBAR_OPENED');
         };
 
         // Check if Chrome Windows API is available (it should be in extensions)
@@ -60,6 +62,11 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
                 if (window.focused === false) {
                     setIsUserAway(true);
                 }
+                
+                // Always notify opened on mount if visible
+                if (document.visibilityState === 'visible') {
+                    notifyContentScripts('SIDEBAR_OPENED');
+                }
             });
         } else {
             // Fallback to only document visibility if Chrome Windows API unavailable
@@ -69,8 +76,28 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
             // Set initial state
             if (document.visibilityState === 'hidden') {
                 setIsUserAway(true);
+            } else {
+                notifyContentScripts('SIDEBAR_OPENED');
             }
         }
+
+        // Listen for status checks from content scripts
+        const handleStatusCheck = (message: any, sender: any, sendResponse: any) => {
+            if (message.action === 'CHECK_SIDEBAR_STATUS') {
+                // If we are receiving this message, the sidepanel is open and running
+                sendResponse({ isOpen: true });
+                
+                // Also explicitly notify the sender tab if it's in the same window
+                if (sender.tab?.id && sender.tab.windowId) {
+                    chrome.windows.getCurrent((window) => {
+                        if (window.id === sender.tab.windowId) {
+                            chrome.tabs.sendMessage(sender.tab.id, { action: 'SIDEBAR_OPENED' });
+                        }
+                    });
+                }
+            }
+        };
+        chrome.runtime.onMessage.addListener(handleStatusCheck);
 
         // Cleanup listeners on unmount
         return () => {
@@ -78,6 +105,10 @@ export const WindowVisibilityProvider: React.FC<{ children: React.ReactNode }> =
                 chrome.windows.onFocusChanged.removeListener(handleWindowFocusChanged);
             }
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            chrome.runtime.onMessage.removeListener(handleStatusCheck);
+            
+            // Notify closed on unmount
+            notifyContentScripts('SIDEBAR_CLOSED');
         };
     }, []);
 

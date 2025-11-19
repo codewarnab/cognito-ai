@@ -34,6 +34,16 @@ const AskAIButton = () => {
                 setPosition(result.askAiButtonPosition);
             }
         });
+
+        // Check if sidebar is already open
+        chrome.runtime.sendMessage({ action: "CHECK_SIDEBAR_STATUS" }, (response) => {
+            // Ignore errors (e.g. if no listener responds)
+            if (chrome.runtime.lastError) return;
+            
+            if (response && response.isOpen) {
+                setIsVisible(false);
+            }
+        });
     }, []);
 
     // Listen for sidebar state changes
