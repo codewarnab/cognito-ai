@@ -24,20 +24,12 @@ interface SuggestedActionsProps {
 // Fallback suggestions (static) - only shown when generation fails
 const FALLBACK_SUGGESTIONS = [
     {
-        title: 'Search for React tutorials',
-        action: 'Search for React tutorials and organize my tabs',
-    },
-    {
         title: 'Find my recent GitHub visits',
         action: 'Find my recent GitHub visits from this morning',
     },
     {
         title: 'Set a reminder for',
         action: 'Set a reminder for my meeting tomorrow at 2pm',
-    },
-    {
-        title: 'Analyze this YouTube video',
-        action: 'Analyze this YouTube video and summarize the key points',
     },
 ];
 
@@ -124,7 +116,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                         <div className="suggested-actions-loading-state">
                             <div className="loading-shimmer">Generating  suggestions...</div>
                             <div className="suggested-actions-grid">
-                                {[1, 2, 3, 4].map((i) => (
+                                {[1, 2].map((i) => (
                                     <div key={`skeleton-${i}`} className="suggested-action-skeleton">
                                         <div className="skeleton-shimmer"></div>
                                     </div>
