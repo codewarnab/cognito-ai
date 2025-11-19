@@ -8,6 +8,7 @@ import { memo, type ComponentProps } from 'react';
 import { useChainOfThought } from './ChainOfThought';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ChevronDown } from 'lucide-react';
+import { YouTubeNotionIcon } from 'assets/youtubeplusnotion';
 
 export type ChainOfThoughtHeaderProps = ComponentProps<typeof Collapsible.Trigger>;
 
@@ -24,7 +25,7 @@ export const ChainOfThoughtHeader = memo(({
                 className={`chain-of-thought-header ${className}`}
                 {...props}
             >
-                <span className="chain-of-thought-header-icon">🎬</span>
+                <span className="chain-of-thought-header-icon"><YouTubeNotionIcon style={{ width: '24px', height: '24px' }} /></span>
                 <span className="chain-of-thought-header-content">
                     {children ?? 'Chain of Thought'}
                 </span>

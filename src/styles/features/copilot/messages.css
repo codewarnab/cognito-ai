@@ -147,7 +147,7 @@
 .message-parts {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 3px;
 }
 
 .message-parts .message-file-attachment:first-child {

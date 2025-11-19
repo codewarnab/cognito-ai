@@ -480,6 +480,16 @@ async function connectMcpServer(serverId: string): Promise<McpExtensionResponse>
     } catch (error) {
         mcpLog.error(`[${serverId}] MCP connection error:`, error);
 
+        // Clean up the client on error
+        if (state.client) {
+            try {
+                state.client.disconnect();
+            } catch (disconnectError) {
+                mcpLog.error(`[${serverId}] Error disconnecting client:`, disconnectError);
+            }
+            state.client = null;
+        }
+
         // Categorize the error and provide user-friendly message
         let errorMessage: string;
         let errorState: 'error' | 'cloudflare-error' = 'error';

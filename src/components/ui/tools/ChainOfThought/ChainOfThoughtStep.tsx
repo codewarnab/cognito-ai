@@ -4,11 +4,11 @@
  * Individual progress step with status indicator
  */
 
-import { memo, type ComponentProps, type ReactNode } from 'react';
-import { CheckCircle2, Loader2, Circle, XCircle, type LucideIcon } from 'lucide-react';
+import { memo, type ComponentProps, type ReactNode, type ElementType } from 'react';
+import { CheckCircle2, Circle, XCircle, Loader2 } from 'lucide-react';
 
 export type ChainOfThoughtStepProps = ComponentProps<'div'> & {
-    icon?: LucideIcon;
+    icon?: ElementType;
     label: ReactNode;
     description?: ReactNode;
     status?: 'complete' | 'active' | 'pending' | 'error';
@@ -37,7 +37,10 @@ export const ChainOfThoughtStep = memo(({
             {...props}
         >
             <div className="step-icon-wrapper">
-                <StatusIcon className={`step-icon ${status === 'active' ? 'spinning' : ''}`} size={16} />
+                <StatusIcon
+                    className={`step-icon ${status === 'active' ? 'spinning' : ''}`}
+                    size={10}
+                />
                 <div className="step-connector" />
             </div>
             <div className="step-content-wrapper">

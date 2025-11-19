@@ -6,7 +6,12 @@
  */
 
 import { useState, useEffect, memo } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Info, AlertCircle } from 'lucide-react';
+import { Notion } from '../../../../assets/notion';
+import { YoutubeIcon } from '../../../../assets/chat/youtube';
+import { YouTubeTranscriptIcon } from '../../../../assets/chat/youtube-transcipt';
+import { VideoScanIcon, VideoSearchIcon, VideoTagIcon } from '../../../../assets/chat/videotype-detection';
+import { QuestionPlanner, AnswerWriter, NotionPageWriter } from '../../../../assets/chat/youtube-notion-agent-icons';
 import { progressStore } from '../../../ai/agents/youtubeToNotion/progressStore';
 import type { ProgressUpdate } from '../../../ai/agents/youtubeToNotion/progressTypes';
 import type { ToolUIState } from '../../../ai/tools/components';
@@ -22,9 +27,50 @@ interface ChainOfThoughtToolRendererProps {
     state: ToolUIState;
 }
 
+// Array of video detection icons to cycle through
+const VIDEO_DETECTION_ICONS = [VideoScanIcon, VideoSearchIcon, VideoTagIcon] as const;
+
+// Helper to determine icon based on step type/status
+const getStepIcon = (step: ProgressUpdate, cycleIndex: number) => {
+    const title = step.title.toLowerCase();
+
+    // Use icon based on type
+    switch (step.type) {
+        case 'page-created':
+            return Notion;
+        case 'analysis':
+            // Cycle through icons if active, otherwise use first icon
+            return step.status === 'active'
+                ? VIDEO_DETECTION_ICONS[cycleIndex]
+                : VideoScanIcon;
+        case 'planning':
+            return QuestionPlanner;
+        case 'info':
+            return Info;
+        case 'error':
+            return AlertCircle;
+        default:
+            // Fallback based on title keywords if type is missing
+            if (title.includes('transcript') || title.includes('fetching')) return YouTubeTranscriptIcon;
+            if (title.includes('video type') || title.includes('analyzing')) {
+                // Cycle through icons if active, otherwise use first icon
+                return step.status === 'active'
+                    ? VIDEO_DETECTION_ICONS[cycleIndex]
+                    : VideoScanIcon;
+            }
+            if (title.includes('question') || title.includes('planning')) return QuestionPlanner;
+            if (title.includes('answer') || title.includes('generating')) return AnswerWriter;
+            if (title.includes('page') || title.includes('creating')) return NotionPageWriter;
+            if (title.includes('notion')) return Notion;
+            if (title.includes('youtube')) return YoutubeIcon;
+            return undefined; // Let ChainOfThoughtStep use default
+    }
+};
+
 export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRendererProps) => {
     const [steps, setSteps] = useState<ProgressUpdate[]>([]);
     const [isOpen, setIsOpen] = useState(true);
+    const [videoIconIndex, setVideoIconIndex] = useState(0);
 
     useEffect(() => {
         console.log('[ChainOfThought] Mounting, setting up subscription');
@@ -66,10 +112,37 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
         }
     }, [state.state]);
 
+    // Cycle through video detection icons when analysis is active
+    useEffect(() => {
+        const hasActiveAnalysis = steps.some(
+            step => step.status === 'active' &&
+                (step.type === 'analysis' || step.title.toLowerCase().includes('analyzing'))
+        );
+
+        if (hasActiveAnalysis) {
+            const interval = setInterval(() => {
+                setVideoIconIndex(prev => (prev + 1) % 3);
+            }, 200); // Cycle every 800ms
+
+            return () => clearInterval(interval);
+        }
+
+        return undefined;
+    }, [steps]);
+
+    // Get user-friendly workflow name
+    const getWorkflowDisplayName = (toolName: string) => {
+        const nameMap: Record<string, string> = {
+            'youtubeToNotionAgent': 'Generating notes...',
+        };
+
+        return nameMap[toolName] || toolName;
+    };
+
     return (
         <ChainOfThought open={isOpen} onOpenChange={setIsOpen}>
             <ChainOfThoughtHeader>
-                {state.toolName}
+                {getWorkflowDisplayName(state.toolName)}
             </ChainOfThoughtHeader>
 
             <ChainOfThoughtContent>
@@ -85,6 +158,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
                         key={step.id}
                         status={step.status}
                         label={step.title}
+                        icon={getStepIcon(step, videoIconIndex)}
                         description={step.data?.videoType ? `Type: ${step.data.videoType}` : undefined}
                     >
                         {/* Show Notion page link */}
@@ -122,7 +196,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
                 {state.state === 'output-available' && state.output?.success && (
                     <ChainOfThoughtStep
                         status="complete"
-                        label="✨ Workflow completed successfully!"
+                        label=" Workflow completed successfully!"
                     >
                         {state.output.mainPageUrl && (
                             <a href={state.output.mainPageUrl} target="_blank" rel="noopener noreferrer">
