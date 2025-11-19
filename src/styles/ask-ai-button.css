@@ -14,13 +14,11 @@
     padding: 12px 20px;
     border-radius: 24px;
 
-    /* Glassmorphism effect */
-    background: rgba(139, 92, 246, 0.9);
+    /* Simple flat design */
+    background: rgba(30, 30, 30, 0.95);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow:
-        0 4px 16px rgba(139, 92, 246, 0.3),
-        0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
 
     color: white;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -52,10 +50,8 @@
 
 /* Hover effect */
 .ask-ai-button:hover:not(.dragging) {
-    background: rgba(139, 92, 246, 1);
-    box-shadow:
-        0 6px 20px rgba(139, 92, 246, 0.4),
-        0 12px 40px rgba(0, 0, 0, 0.25);
+    background: rgba(50, 50, 50, 0.95);
+    box-shadow: none;
     transform: translateY(-2px);
 }
 
@@ -68,11 +64,22 @@
 .ask-ai-button.dragging {
     cursor: grabbing !important;
     cursor: -webkit-grabbing !important;
-    box-shadow:
-        0 8px 24px rgba(139, 92, 246, 0.5),
-        0 16px 48px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     transform: scale(1.05);
-    transition: box-shadow 0.2s ease, transform 0.1s ease;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+/* Dragging near trash zone */
+.ask-ai-button.dragging.near-trash {
+    opacity: 0.8;
+    box-shadow: 0 4px 30px rgba(220, 38, 38, 0.4);
+}
+
+/* Dragging over trash zone */
+.ask-ai-button.dragging.over-trash {
+    opacity: 0.6;
+    transform: scale(0.95);
+    box-shadow: 0 4px 40px rgba(220, 38, 38, 0.6);
 }
 
 /* Icon */
@@ -80,30 +87,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
     line-height: 1;
-    animation: sparkle 2s ease-in-out infinite;
 }
 
 /* Text */
 .ask-ai-text {
     line-height: 1;
     white-space: nowrap;
-}
-
-/* Sparkle animation for icon */
-@keyframes sparkle {
-
-    0%,
-    100% {
-        transform: scale(1) rotate(0deg);
-        opacity: 1;
-    }
-
-    50% {
-        transform: scale(1.1) rotate(5deg);
-        opacity: 0.8;
-    }
 }
 
 /* Fade in animation */
@@ -141,8 +131,7 @@
 /* Reduce motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
 
-    .ask-ai-button,
-    .ask-ai-icon {
+    .ask-ai-button {
         animation: none !important;
         transition: opacity 0.2s ease, transform 0.2s ease;
     }
@@ -155,9 +144,5 @@
         right: 16px;
         padding: 10px 16px;
         font-size: 13px;
-    }
-
-    .ask-ai-icon {
-        font-size: 16px;
     }
 }
