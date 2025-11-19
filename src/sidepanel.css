@@ -1,5 +1,6 @@
 /* Main sidepanel styles - imports all component styles */
 
+@import './styles/fonts.css';
 @import './styles/core/variables.css';
 @import './styles/core/base.css';
 @import './styles/layout/header.css';

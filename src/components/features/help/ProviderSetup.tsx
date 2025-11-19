@@ -10,9 +10,9 @@ import {
     hasGoogleApiKey,
     hasVertexCredentials,
     setSelectedProvider,
-} from '../../../utils/providerCredentials';
-import type { AIProvider, VertexCredentials } from '../../../utils/providerTypes';
-import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';
+} from '~utils/providerCredentials';
+import type { AIProvider, VertexCredentials } from '~utils/providerTypes';
+import { getModelConfig, setModelConfig } from '~utils/modelSettings';
 import type { RemoteModelType } from '../../features/chat/types';
 import './ProviderSetup.css';
 
@@ -260,7 +260,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     <div className="provider-setup-header-text">
                         <h1 className="provider-setup-title">AI Provider Setup</h1>
                         <p className="provider-setup-subtitle">
-                            Configure your AI provider to enable remote AI features
+                            Configure your api keys
                         </p>
                     </div>
                 </div>
