@@ -10,6 +10,7 @@ export type MessagePartType =
     | 'text'
     | 'image'
     | 'file'
+    | 'tab-context'
     | 'tool-call'
     | 'tool-result';
 
@@ -31,6 +32,15 @@ export interface FilePart {
     filename?: string;
 }
 
+export interface TabContextPart {
+    type: 'tab-context';
+    url: string;
+    title: string;
+    content: string | null;
+    favicon?: string;
+    error?: string;
+}
+
 export interface ToolCallPart {
     type: 'tool-call';
     toolCallId: string;
@@ -50,6 +60,7 @@ export type MessagePart =
     | TextPart
     | ImagePart
     | FilePart
+    | TabContextPart
     | ToolCallPart
     | ToolResultPart;
 

@@ -14,10 +14,10 @@ interface TabAttachmentProps {
     onRemoveAll: () => void;
 }
 
-export const TabAttachment: React.FC<TabAttachmentProps> = ({ tabs, onRemove, onRemoveAll }) => {
+export const TabAttachment: React.FC<TabAttachmentProps> = ({ tabs, onRemoveAll }) => {
     if (tabs.length === 0) return null;
 
-    const firstTab = tabs[0];
+    const firstTab = tabs[0]!;
     const remainingCount = tabs.length - 1;
 
     const truncateText = (text: string, maxLength: number = 30) => {
@@ -59,7 +59,7 @@ export const TabAttachment: React.FC<TabAttachmentProps> = ({ tabs, onRemove, on
                     </span>
                     <span className="tab-attachment-url" title={getAllDomains()}>
                         {extractDomain(firstTab.url)}
-                        {remainingCount > 0 && `, ${extractDomain(tabs[1].url)}`}
+                        {remainingCount > 0 && tabs[1] && `, ${extractDomain(tabs[1].url)}`}
                         {remainingCount > 1 && '...'}
                     </span>
                 </div>

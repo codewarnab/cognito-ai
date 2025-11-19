@@ -3,6 +3,7 @@ import { type VoiceInputHandle } from '../../../../audio/VoiceInput';
 import { SuggestedActions } from './SuggestedActions';
 import { Composer } from './Composer';
 import type { FileAttachmentData } from './FileAttachment';
+import type { TabAttachmentData } from './TabAttachment';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../types';
 import type { AppUsage } from '../../../../ai/types/usage';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
@@ -15,7 +16,12 @@ interface ChatInputProps {
     messages: Message[];
     input: string;
     setInput: (value: string) => void;
-    onSendMessage: (messageText?: string, attachments?: FileAttachmentData[], workflowId?: string) => void;
+    onSendMessage: (
+        messageText?: string, 
+        attachments?: FileAttachmentData[], 
+        tabAttachments?: TabAttachmentData[],
+        workflowId?: string
+    ) => void;
     isLoading: boolean;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
@@ -108,15 +114,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             return;
         }
 
-        // TODO: Include tabAttachments in the message context
-        // For now, tabs are stored but need to be integrated with message sending
-
         // If workflow is active, add workflow metadata to message
         if (activeWorkflow) {
-            onSendMessage(input, attachments, activeWorkflow.id);
+            onSendMessage(input, attachments, tabAttachments, activeWorkflow.id);
             handleClearWorkflow();
         } else {
-            onSendMessage(input, attachments);
+            onSendMessage(input, attachments, tabAttachments);
         }
 
         setInput('');
