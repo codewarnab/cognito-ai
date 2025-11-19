@@ -1,7 +1,7 @@
 # Assets Folder Migration Plan
 
 ## Executive Summary
-This plan reorganizes the `/assets` folder into a logical folder-based structure and updates the TypeScript path aliases to use `~assets/*` for cleaner imports across the project.
+This plan reorganizes the `/assets` folder into a logical folder-based structure and updates the TypeScript path aliases to use `@assets/*` for cleaner imports across the project.
 
 ---
 
@@ -20,7 +20,7 @@ assets/
 
 ### Current Import Patterns
 - **Relative imports**: `../../assets/`, `../../../../../assets/`
-- **Partial alias usage**: Some files use `~assets/` (3 instances)
+- **Partial alias usage**: Some files use `@assets/` (3 instances)
 - **Inconsistent patterns**: Mix of relative and alias paths
 - **84 files** import from assets folder
 
@@ -29,7 +29,7 @@ assets/
 {
   "baseUrl": ".",
   "paths": {
-    "~*": ["./src/*"]
+    "@/*": ["./src/*"]
   }
 }
 ```
@@ -156,8 +156,8 @@ assets/
 {
   "baseUrl": ".",
   "paths": {
-    "~*": ["./src/*"],
-    "~assets/*": ["./assets/*"]
+    "@/*": ["./src/*"],
+    "@assets/*": ["./assets/*"]
   }
 }
 ```
@@ -180,10 +180,10 @@ assets/
 ---
 
 ### Phase 2: TypeScript Configuration Update 🔧
-**Goal**: Enable new path alias `~assets/*`
+**Goal**: Enable new path alias `@assets/*`
 
 #### Tasks:
-1. Update `tsconfig.json` to add `~assets/*` path mapping
+1. Update `tsconfig.json` to add `@assets/*` path mapping
 2. Verify TypeScript compilation with `pnpm type:check`
 
 #### Files Modified:
@@ -278,37 +278,37 @@ assets/
 **Old Path** → **New Path**
 
 ##### Brand Integration Icons:
-- `../../assets/Ahrefs` → `~assets/brands/integrations/Ahrefs`
-- `../../assets/astro-docs` → `~assets/brands/integrations/Astro`
-- `../../assets/huggingface` → `~assets/brands/integrations/HuggingFace`
-- `../../assets/linear` → `~assets/brands/integrations/Linear`
-- `../../assets/Netlify` → `~assets/brands/integrations/Netlify`
-- `../../assets/notion` → `~assets/brands/integrations/Notion`
-- `../../assets/paypal` → `~assets/brands/integrations/PayPal`
-- `../../assets/sentry` → `~assets/brands/integrations/Sentry`
-- `../../assets/supabase` → `~assets/brands/integrations/Supabase`
-- `../../assets/Supermemory` → `~assets/brands/integrations/Supermemory`
-- `../../assets/webflow` → `~assets/brands/integrations/Webflow`
+- `../../assets/Ahrefs` → `@assets/brands/integrations/Ahrefs`
+- `../../assets/astro-docs` → `@assets/brands/integrations/Astro`
+- `../../assets/huggingface` → `@assets/brands/integrations/HuggingFace`
+- `../../assets/linear` → `@assets/brands/integrations/Linear`
+- `../../assets/Netlify` → `@assets/brands/integrations/Netlify`
+- `../../assets/notion` → `@assets/brands/integrations/Notion`
+- `../../assets/paypal` → `@assets/brands/integrations/PayPal`
+- `../../assets/sentry` → `@assets/brands/integrations/Sentry`
+- `../../assets/supabase` → `@assets/brands/integrations/Supabase`
+- `../../assets/Supermemory` → `@assets/brands/integrations/Supermemory`
+- `../../assets/webflow` → `@assets/brands/integrations/Webflow`
 - Similar patterns for other brand icons
 
 ##### Image Assets:
-- `../../assets/logo.png` → `~assets/images/logo.png`
-- `~assets/intregations.png` → `~assets/images/intregations.png`
-- `~assets/agent.png` → `~assets/images/agent.png`
-- `~assets/research.png` → `~assets/images/research.png`
+- `../../assets/logo.png` → `@assets/images/logo.png`
+- `@assets/intregations.png` → `@assets/images/intregations.png`
+- `@assets/agent.png` → `@assets/images/agent.png`
+- `@assets/research.png` → `@assets/images/research.png`
 - Similar patterns for other images
 
 ##### Chat Icons:
-- `../../../../../assets/chat/click` → `~assets/icons/chat/click`
-- `../../../../../assets/chat/navigate-to` → `~assets/icons/chat/navigate-to`
-- `assets/youtubeplusnotion` → `~assets/icons/ui/youtubeplusnotion`
+- `../../../../../assets/chat/click` → `@assets/icons/chat/click`
+- `../../../../../assets/chat/navigate-to` → `@assets/icons/chat/navigate-to`
+- `assets/youtubeplusnotion` → `@assets/icons/ui/youtubeplusnotion`
 - Similar patterns for other chat icons
 
 ##### File Icons:
-- `../../assets/fileIcons` → `~assets/icons/files`
+- `../../assets/fileIcons` → `@assets/icons/files`
 
 ##### UI Icons:
-- `../../assets/report` → `~assets/icons/ui/report`
+- `../../assets/report` → `@assets/icons/ui/report`
 
 #### Files to Update (84 total):
 
@@ -516,7 +516,7 @@ git commit -m "refactor: Reorganize assets folder with logical structure
 - Moved file type icons to assets/icons/files/
 - Moved chat icons to assets/icons/chat/
 - Moved images to assets/images/
-- Updated tsconfig.json with ~assets/* path alias
+- Updated tsconfig.json with @assets/* path alias
 - Updated all 84 import statements to use new structure
 - Standardized component naming (PascalCase)"
 ```
@@ -534,7 +534,7 @@ git commit -m "refactor: Reorganize assets folder with logical structure
    - Consistent naming conventions
 
 3. **Cleaner Imports**:
-   - `~assets/*` prefix for all asset imports
+   - `@assets/*` prefix for all asset imports
    - No more deep relative paths (`../../../../../`)
 
 4. **Scalability**:
@@ -557,16 +557,16 @@ import logoImage from '../../assets/logo.png'
 import { SearchIcon } from '../../../../../assets/chat/search'
 
 // After:
-import { Notion } from "~assets/brands/integrations/Notion"
-import logoImage from '~assets/images/logo.png'
-import { SearchIcon } from '~assets/icons/chat/search'
+import { Notion } from "@assets/brands/integrations/Notion"
+import logoImage from '@assets/images/logo.png'
+import { SearchIcon } from '@assets/icons/chat/search'
 ```
 
 ### Maintenance Guidelines:
 1. **New brand integrations**: Place in `assets/brands/integrations/`
 2. **New UI icons**: Place in `assets/icons/ui/`
 3. **New images**: Place in `assets/images/`
-4. **Always use**: `~assets/*` prefix for imports
+4. **Always use**: `@assets/*` prefix for imports
 5. **Naming convention**: PascalCase for React components
 
 ---
