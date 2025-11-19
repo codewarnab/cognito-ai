@@ -1,10 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { PaperclipIcon } from '../../../shared/icons';
 import { CameraIcon } from '../../../../../assets/icons/chat/camera';
+import { TabsIcon } from '../../../../../assets/icons/chat/tabs';
 
 interface AttachmentDropdownProps {
     onFileClick: () => void;
     onScreenshotClick: () => void;
+    onAddTabsClick: () => void;
     onClose: () => void;
     isLocalMode: boolean;
 }
@@ -12,6 +14,7 @@ interface AttachmentDropdownProps {
 export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
     onFileClick,
     onScreenshotClick,
+    onAddTabsClick,
     onClose,
     isLocalMode,
 }) => {
@@ -116,6 +119,42 @@ export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
             >
                 <CameraIcon size={18} />
                 <span>Screenshot</span>
+            </button>
+
+            <button
+                type="button"
+                className="attachment-dropdown-item"
+                onClick={() => {
+                    onAddTabsClick();
+                    onClose();
+                }}
+                disabled={isLocalMode}
+                style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '10px 12px',
+                    border: 'none',
+                    background: 'transparent',
+                    borderRadius: '6px',
+                    cursor: isLocalMode ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    color: isLocalMode ? 'var(--text-disabled, #64748b)' : 'var(--text-primary, #e2e8f0)',
+                    transition: 'background-color 0.15s ease',
+                    opacity: isLocalMode ? 0.5 : 1,
+                }}
+                onMouseEnter={(e) => {
+                    if (!isLocalMode) {
+                        e.currentTarget.style.backgroundColor = 'var(--dropdown-hover, #334155)';
+                    }
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+            >
+                <TabsIcon size={18} />
+                <span>Add tabs</span>
             </button>
         </div>
     );

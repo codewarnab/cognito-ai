@@ -6,7 +6,9 @@ import { SendIcon, StopIcon, UploadIconMinimal } from '../../../shared/icons';
 import { PlusIcon, type PlusIconHandle } from '../../../../../assets/icons/ui/plus';
 import { MentionInput } from '../../../shared/inputs';
 import { FileAttachment, type FileAttachmentData } from './FileAttachment';
+import { TabAttachment, type TabAttachmentData } from './TabAttachment';
 import { AttachmentDropdown } from './AttachmentDropdown';
+import { AddTabsModal } from './AddTabsModal';
 import type { AIMode, ModelState } from '../types';
 import { SlashCommandDropdown } from '../dropdowns/SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
@@ -38,6 +40,11 @@ interface ComposerProps {
     openFilePicker: () => void;
     handleRemoveAttachment: (id: string) => void;
     processFiles: (files: File[]) => Promise<void>;
+
+    // Tab attachments
+    tabAttachments: TabAttachmentData[];
+    handleRemoveTabAttachment: (id: string) => void;
+    handleAddTabAttachments: (tabs: TabAttachmentData[]) => void;
 
     // Workflow
     activeWorkflow: WorkflowDefinition | null;
@@ -81,6 +88,9 @@ export const Composer: React.FC<ComposerProps> = ({
     openFilePicker,
     handleRemoveAttachment,
     processFiles,
+    tabAttachments,
+    handleRemoveTabAttachment,
+    handleAddTabAttachments,
     activeWorkflow,
     showSlashDropdown,
     slashSearchQuery,
@@ -99,6 +109,7 @@ export const Composer: React.FC<ComposerProps> = ({
 }) => {
     const plusIconRef = useRef<PlusIconHandle>(null);
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
+    const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const isLocalMode = modelState.mode === 'local';
 
     // Hide voice-mode-fab when attachment dropdown is open or when there are attachments
@@ -143,6 +154,12 @@ export const Composer: React.FC<ComposerProps> = ({
         }
     };
 
+    const handleAddTabs = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
+        log.info('Adding tabs:', tabs);
+        handleAddTabAttachments(tabs);
+        setShowAttachmentDropdown(false);
+    };
+
     return (
         <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''} ${isDragging ? 'dragging' : ''}`}>
             {/* Drag overlay */}
@@ -181,6 +198,19 @@ export const Composer: React.FC<ComposerProps> = ({
                     onClose={() => handleSlashCommandDetection(false, '')}
                     mode={modelState.mode}
                 />
+            )}
+
+            {/* Tab Attachments Preview */}
+            {tabAttachments.length > 0 && (
+                <div className="tab-attachments-container">
+                    <TabAttachment
+                        tabs={tabAttachments}
+                        onRemove={handleRemoveTabAttachment}
+                        onRemoveAll={() => {
+                            tabAttachments.forEach(tab => handleRemoveTabAttachment(tab.id));
+                        }}
+                    />
+                </div>
             )}
 
             {/* File Attachments Preview */}
@@ -289,10 +319,18 @@ export const Composer: React.FC<ComposerProps> = ({
                         <AttachmentDropdown
                             onFileClick={openFilePicker}
                             onScreenshotClick={handleScreenshotClick}
+                            onAddTabsClick={() => setShowAddTabsModal(true)}
                             onClose={() => setShowAttachmentDropdown(false)}
                             isLocalMode={isLocalMode}
                         />
                     )}
+
+                    {/* Add Tabs Modal */}
+                    <AddTabsModal
+                        isOpen={showAddTabsModal}
+                        onClose={() => setShowAddTabsModal(false)}
+                        onAddTabs={handleAddTabs}
+                    />
 
                     {/* Voice Input OR Send Button OR Stop Button - only one shows at a time */}
                     {isLoading && onStop ? (

@@ -55,6 +55,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const composerRef = useRef<HTMLDivElement>(null);
     const internalVoiceInputRef = useRef<VoiceInputHandle>(null);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
+    const [tabAttachments, setTabAttachments] = useState<Array<{ id: string; title: string; url: string; favIconUrl?: string }>>([]);
 
     // Use external ref if provided, otherwise use local ref
     const voiceInputRef = externalVoiceInputRef || internalVoiceInputRef;
@@ -107,6 +108,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             return;
         }
 
+        // TODO: Include tabAttachments in the message context
+        // For now, tabs are stored but need to be integrated with message sending
+
         // If workflow is active, add workflow metadata to message
         if (activeWorkflow) {
             onSendMessage(input, attachments, activeWorkflow.id);
@@ -117,6 +121,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         setInput('');
         clearAttachments();
+        setTabAttachments([]);
+    };
+
+    const handleAddTabAttachments = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
+        setTabAttachments(prev => [...prev, ...tabs]);
+    };
+
+    const handleRemoveTabAttachment = (id: string) => {
+        setTabAttachments(prev => prev.filter(tab => tab.id !== id));
     };
 
     // Add paste event listener for file pasting
@@ -158,6 +171,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 isRecording={isRecording}
                 modelState={modelState}
                 onSuggestionClick={handleSuggestionClick}
+                tabAttachments={tabAttachments}
             />
 
             <form
@@ -195,6 +209,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     openFilePicker={openFilePicker}
                     handleRemoveAttachment={handleRemoveAttachment}
                     processFiles={processFiles}
+                    tabAttachments={tabAttachments}
+                    handleRemoveTabAttachment={handleRemoveTabAttachment}
+                    handleAddTabAttachments={handleAddTabAttachments}
                     activeWorkflow={activeWorkflow}
                     showSlashDropdown={showSlashDropdown}
                     slashSearchQuery={slashSearchQuery}

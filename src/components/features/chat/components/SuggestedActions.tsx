@@ -18,6 +18,7 @@ interface SuggestedActionsProps {
     isRecording?: boolean;
     modelState: ModelState;
     onSuggestionClick: (action: string) => void;
+    tabAttachments?: Array<{ id: string; title: string; url: string; favIconUrl?: string }>;
 }
 
 // Fallback suggestions (static) - only shown when generation fails
@@ -49,6 +50,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     isRecording,
     modelState,
     onSuggestionClick,
+    tabAttachments = [],
 }) => {
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
@@ -64,12 +66,18 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         log.info('SuggestedActions state:', {
             mode: modelState.mode,
             messagesLength: messages.length,
+            inputLength: input.length,
             aiSuggestions: aiSuggestions?.length || 0,
             isGenerating,
             suggestionError: suggestionError?.message,
-            showSuggestedActions: messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0
+            attachmentsCount: attachments.length,
+            tabAttachmentsCount: tabAttachments.length,
+            userDismissed,
+            isLoading,
+            activeWorkflow: !!activeWorkflow,
+            isRecording
         });
-    }, [aiSuggestions, isGenerating, suggestionError, messages.length, modelState.mode]);
+    }, [aiSuggestions, isGenerating, suggestionError, messages.length, modelState.mode, input, attachments.length, tabAttachments.length, userDismissed, isLoading, activeWorkflow, isRecording]);
 
     // Determine which suggestions to show:
     // - If generating: show skeleton/loading (no suggestions yet)
@@ -80,14 +88,20 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // Calculate if suggestions should be shown based on conditions
     // Reset userDismissed when input is cleared and no messages exist
     const shouldShowSuggestions = messages.length === 0 && !input.trim();
-    const showSuggestions = shouldShowSuggestions ? true : userDismissed;
 
     // Reset dismissal state when conditions allow showing suggestions again
     if (shouldShowSuggestions && userDismissed) {
         setUserDismissed(false);
     }
 
-    const showSuggestedActions = messages.length === 0 && !input.trim() && !isLoading && !activeWorkflow && showSuggestions && attachments.length === 0;
+    const showSuggestedActions = 
+        messages.length === 0 && 
+        !input.trim() && 
+        !isLoading && 
+        !activeWorkflow && 
+        !userDismissed && 
+        attachments.length === 0 && 
+        tabAttachments.length === 0;
 
     const handleSuggestionClick = (action: string) => {
         onSuggestionClick(action);
