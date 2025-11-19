@@ -1,0 +1,84 @@
+/* Trash Zone - Drag-to-Delete Target */
+
+.trash-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Visual styling */
+    background: rgba(220, 38, 38, 0.1);
+    border: 2px dashed rgba(220, 38, 38, 0.3);
+    border-radius: 50%;
+
+    /* Animation */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Prevent interaction with drag events */
+    pointer-events: none;
+    user-select: none;
+}
+
+.trash-zone-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* Trash icon styling */
+.trash-icon {
+    color: rgba(220, 38, 38, 0.6);
+    transition: color 0.3s ease;
+}
+
+/* Button Near State - proximity feedback */
+.trash-zone.button-near {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.5);
+    transform: translateX(-50%) scale(1.1);
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.4);
+}
+
+.trash-zone.button-near .trash-icon {
+    color: rgba(220, 38, 38, 0.8);
+}
+
+/* Button Over State - hovering over trash zone */
+.trash-zone.button-over {
+    background: rgba(220, 38, 38, 0.3);
+    border-color: rgba(220, 38, 38, 0.8);
+    transform: translateX(-50%) scale(1.2);
+    box-shadow: 0 0 50px rgba(220, 38, 38, 0.6);
+    animation: trash-zone-pulse 0.8s ease-in-out infinite;
+}
+
+.trash-zone.button-over .trash-icon {
+    color: rgba(220, 38, 38, 1);
+}
+
+/* Pulsing animation when button is over */
+@keyframes trash-zone-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 50px rgba(220, 38, 38, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 70px rgba(220, 38, 38, 0.8);
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .trash-zone {
+        animation: none !important;
+        transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .trash-zone.button-near,
+    .trash-zone.button-over {
+        transform: translateX(-50%) scale(1) !important;
+    }
+}

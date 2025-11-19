@@ -1565,6 +1565,16 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
     backgroundLog.info(' onStartup - Extension ready');
 
+    // Clear session-based Ask AI button hide flag on browser startup
+    try {
+        await chrome.storage.session.set({
+            'askAiButton.hiddenForSession': false
+        });
+        backgroundLog.info(' Ask AI button session hide cleared on startup');
+    } catch (error) {
+        backgroundLog.error(' Error clearing Ask AI button session hide:', error);
+    }
+
     // Initialize all MCP servers from storage
     await initializeAllServers();
 
