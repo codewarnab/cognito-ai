@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export interface FileAttachmentData {
@@ -24,12 +24,32 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
         return `${truncated}...${ext}`;
     };
 
+    const handleTogglePreview = () => {
+        if (attachment.type === 'image') {
+            setShowPreview(!showPreview);
+        }
+    };
+
+    // Handle ESC key to close preview
+    useEffect(() => {
+        if (!showPreview) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setShowPreview(false);
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [showPreview]);
+
     return (
         <>
             <div
                 className="file-attachment"
-                onMouseEnter={() => attachment.type === 'image' && setShowPreview(true)}
-                onMouseLeave={() => setShowPreview(false)}
+                onClick={handleTogglePreview}
+                style={{ cursor: attachment.type === 'image' ? 'pointer' : 'default' }}
             >
                 {attachment.type === 'image' && attachment.preview ? (
                     <div className="file-attachment-image">
@@ -40,7 +60,10 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                         <button
                             type="button"
                             className="file-attachment-remove"
-                            onClick={() => onRemove(attachment.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove(attachment.id);
+                            }}
                             title="Remove attachment"
                         >
                             <X size={14} />
@@ -57,7 +80,10 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                         <button
                             type="button"
                             className="file-attachment-remove"
-                            onClick={() => onRemove(attachment.id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove(attachment.id);
+                            }}
                             title="Remove attachment"
                         >
                             <X size={14} />
@@ -66,8 +92,21 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                 )}
             </div>
             {showPreview && attachment.type === 'image' && attachment.preview && (
-                <div className="file-attachment-preview">
+                <div 
+                    className="file-attachment-preview"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <img src={attachment.preview} alt={attachment.file.name} />
+                    <button
+                        className="message-image-preview-close"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowPreview(false);
+                        }}
+                        aria-label="Close preview"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
             )}
         </>
