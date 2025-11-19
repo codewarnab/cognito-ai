@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { LoadingCheckIcon, type LoadingCheckIconHandle } from '../../../../../assets/chat/loading-check';
-import { CircleCheckIcon, type CircleCheckIconHandle } from '../../../../../assets/chat/circle-check';
-import { ChevronRightIcon, type ChevronRightIconHandle } from '../../../../../assets/chat/chevron-right';
-import { ChevronDownIcon, type ChevronDownIconHandle } from '../../../../../assets/chat/chevrown-down';
+import { LoadingCheckIcon, type LoadingCheckIconHandle } from '@assets/icons/chat/loading-check';
+import { CircleCheckIcon, type CircleCheckIconHandle } from '@assets/icons/chat/circle-check';
+import { ChevronRightIcon, type ChevronRightIconHandle } from '@assets/icons/chat/chevron-right';
+import { ChevronDownIcon, type ChevronDownIconHandle } from '@assets/icons/chat/chevrown-down';
 import { UploadIcon, type UploadIconHandle } from '../../../shared/icons/UploadIcon';
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';

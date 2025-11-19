@@ -4,8 +4,8 @@
  */
 
 import type { WorkflowDefinition } from '../../../../workflows/types';
-import { SearchIcon } from '../../../../../assets/chat/search';
-import { YoutubeIcon } from '../../../../../assets/chat/youtube';
+import { SearchIcon } from '@assets/icons/chat/search';
+import { YoutubeIcon } from '@assets/icons/chat/youtube';
 
 interface WorkflowBadgeProps {
     workflow: WorkflowDefinition;

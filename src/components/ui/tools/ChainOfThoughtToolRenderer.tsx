@@ -7,11 +7,11 @@
 
 import { useState, useEffect, memo } from 'react';
 import { ExternalLink, Info, AlertCircle } from 'lucide-react';
-import { Notion } from '../../../../assets/notion';
-import { YoutubeIcon } from '../../../../assets/chat/youtube';
-import { YouTubeTranscriptIcon } from '../../../../assets/chat/youtube-transcipt';
-import { VideoScanIcon, VideoSearchIcon, VideoTagIcon } from '../../../../assets/chat/videotype-detection';
-import { QuestionPlanner, AnswerWriter, NotionPageWriter } from '../../../../assets/chat/youtube-notion-agent-icons';
+import { Notion } from '@assets/brands/integrations/Notion';
+import { YoutubeIcon } from '@assets/icons/chat/youtube';
+import { YouTubeTranscriptIcon } from '@assets/icons/chat/youtube-transcipt';
+import { VideoScanIcon, VideoSearchIcon, VideoTagIcon } from '@assets/icons/chat/videotype-detection';
+import { QuestionPlanner, AnswerWriter, NotionPageWriter } from '@assets/icons/chat/youtube-notion-agent-icons';
 import { progressStore } from '../../../ai/agents/youtubeToNotion/progressStore';
 import type { ProgressUpdate } from '../../../ai/agents/youtubeToNotion/progressTypes';
 import type { ToolUIState } from '../../../ai/tools/components';

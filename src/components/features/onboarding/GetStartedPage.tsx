@@ -1,5 +1,5 @@
 import React from 'react';
-import integrationsImage from '~assets/intregations.png';
+import integrationsImage from '@assets/images/intregations.png';
 
 export const GetStartedPage: React.FC = () => {
     return (
