@@ -86,7 +86,7 @@ export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData
                 background: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
                 borderRadius: '8px',
-                maxWidth: '420px',
+                maxWidth: '300px',
                 transition: 'all 0.15s ease',
                 cursor: 'default',
             }}
