@@ -17,10 +17,10 @@ const log = createLogger('SuggestionGenerator');
 const suggestionSchema = z.object({
     suggestions: z.array(
         z.object({
-            title: z.string().describe('Short action title (3-7 words)'),
+            title: z.string().describe('Short action title (3-5 words)'),
             action: z.string().describe('Full action text for user to send'),
         })
-    ).length(4).describe('Exactly 4 contextual action suggestions'),
+    ).length(2).describe('Exactly 2 contextual action suggestions'),
 });
 
 export type Suggestion = {

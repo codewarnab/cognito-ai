@@ -17,7 +17,6 @@
 .suggested-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
     gap: 8px;
     width: 100%;
     max-width: 100%;
@@ -152,7 +151,6 @@
 @media (max-width: 360px) {
     .suggested-actions-grid {
         grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: repeat(2, 1fr);
         gap: 6px;
     }
 
