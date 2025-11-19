@@ -80,7 +80,7 @@ export async function executeStreamText(params: {
             maxRetries: 20, // Internal AI SDK retries for streaming issues
             temperature: 0.7,
             experimental_transform: smoothStream({
-                delayInMs: 20,
+                delayInMs: 10,
                 chunking: 'word',
             }),
             // Log when a step completes (includes tool calls)

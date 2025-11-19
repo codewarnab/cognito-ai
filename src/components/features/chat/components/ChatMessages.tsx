@@ -379,8 +379,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                     return null;
                                                 })}
 
-                                                {/* Add copy button for assistant messages */}
-                                                {message.role === 'assistant' && extractMessageText(message) && (
+                                                {/* Add copy button for assistant messages - only show after streaming is finished */}
+                                                {message.role === 'assistant' && extractMessageText(message) && !(isLoading && index === messages.length - 1) && (
                                                     <CopyButton content={extractMessageText(message)} />
                                                 )}
                                             </div>
