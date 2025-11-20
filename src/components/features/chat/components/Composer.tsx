@@ -13,7 +13,9 @@ import type { AIMode, ModelState } from '../types';
 import { SlashCommandDropdown } from '../dropdowns/SlashCommandDropdown';
 import { WorkflowBadge } from './WorkflowBadge';
 import { LocalPdfSuggestion } from './LocalPdfSuggestion';
+import { YouTubeVideoSuggestion } from './YouTubeVideoSuggestion';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
+import type { YouTubeVideoInfo } from '../../../../hooks/useYouTubeVideoDetection';
 import { HIDE_LOCAL_MODE } from '../../../../constants';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
@@ -61,6 +63,13 @@ interface ComposerProps {
     handleAttachLocalPdf: () => void;
     handleDismissLocalPdf: () => void;
 
+    // YouTube Video
+    youtubeVideoInfo?: YouTubeVideoInfo | null;
+    shouldShowYouTubeVideoSuggestion: boolean;
+    isAttachingVideo: boolean;
+    handleAttachYouTubeVideo: () => void;
+    handleDismissYouTubeVideo: () => void;
+
     // Mode dropdown
     showModeDropdown: boolean;
     onToggleModeDropdown: (show: boolean) => void;
@@ -102,6 +111,11 @@ export const Composer: React.FC<ComposerProps> = ({
     isAttachingLocalPdf,
     handleAttachLocalPdf,
     handleDismissLocalPdf,
+    youtubeVideoInfo,
+    shouldShowYouTubeVideoSuggestion,
+    isAttachingVideo,
+    handleAttachYouTubeVideo,
+    handleDismissYouTubeVideo,
     showModeDropdown,
     onToggleModeDropdown,
     composerRef,
@@ -116,7 +130,13 @@ export const Composer: React.FC<ComposerProps> = ({
     useEffect(() => {
         const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
         if (voiceFab) {
-            if (showAttachmentDropdown || attachments.length > 0 || tabAttachments.length > 0) {
+            // Hide FAB when:
+            // - Attachment dropdown is open
+            // - Any file attachments exist (including YouTube transcripts)
+            // - Any tab attachments exist
+            const shouldHide = showAttachmentDropdown || attachments.length > 0 || tabAttachments.length > 0;
+            
+            if (shouldHide) {
                 voiceFab.style.visibility = 'hidden';
             } else {
                 voiceFab.style.visibility = '';
@@ -179,6 +199,17 @@ export const Composer: React.FC<ComposerProps> = ({
                     onAttach={handleAttachLocalPdf}
                     onDismiss={handleDismissLocalPdf}
                     isLoading={isAttachingLocalPdf}
+                />
+            )}
+
+            {/* YouTube Video Suggestion - shows when YouTube video is detected */}
+            {shouldShowYouTubeVideoSuggestion && youtubeVideoInfo && (
+                <YouTubeVideoSuggestion
+                    key={youtubeVideoInfo.videoId}
+                    videoTitle={youtubeVideoInfo.title}
+                    onAttach={handleAttachYouTubeVideo}
+                    onDismiss={handleDismissYouTubeVideo}
+                    isLoading={isAttachingVideo}
                 />
             )}
 

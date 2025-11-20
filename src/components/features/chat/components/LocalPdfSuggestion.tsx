@@ -7,7 +7,7 @@
  * Phase 2: Suggestion Badge UI Component
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PaperclipIcon } from '../../../shared/icons';
 
 interface LocalPdfSuggestionProps {
@@ -27,6 +27,19 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
     onDismiss,
     isLoading = false,
 }) => {
+    // Hide voice-mode-fab when showing PDF suggestion
+    useEffect(() => {
+        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        if (voiceFab) {
+            voiceFab.style.visibility = 'hidden';
+        }
+        return () => {
+            if (voiceFab) {
+                voiceFab.style.visibility = '';
+            }
+        };
+    }, []);
+
     // Truncate long filenames
     const displayName = filename.length > 30
         ? `${filename.substring(0, 27)}...`
