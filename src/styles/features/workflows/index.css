@@ -269,6 +269,9 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 400px;
 }
 
 .local-pdf-suggestion-close {

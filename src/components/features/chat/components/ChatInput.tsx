@@ -9,6 +9,8 @@ import type { AppUsage } from '../../../../ai/types/usage';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 import { useFileAttachments } from '../../../../hooks/useFileAttachments';
 import { useLocalPdfAttachment } from '../../../../hooks/useLocalPdfAttachment';
+import { useYouTubeVideoDetection } from '../../../../hooks/useYouTubeVideoDetection';
+import { useYouTubeVideoAttachment } from '../../../../hooks/useYouTubeVideoAttachment';
 import { useWorkflowMode } from '../../../../hooks/useWorkflowMode';
 import { useChatInputValidation } from '../../../../hooks/useChatInputValidation';
 
@@ -87,6 +89,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         handleDismissLocalPdf,
     } = useLocalPdfAttachment({
         localPdfInfo,
+        mode: modelState.mode,
+        onError,
+        processFiles,
+    });
+
+    // YouTube video detection and attachment
+    const youtubeVideoInfo = useYouTubeVideoDetection();
+    const {
+        isAttachingVideo,
+        shouldShowYouTubeVideoSuggestion,
+        handleAttachYouTubeVideo,
+        handleDismissYouTubeVideo,
+    } = useYouTubeVideoAttachment({
+        youtubeVideoInfo: youtubeVideoInfo.isYouTubeVideo ? {
+            url: youtubeVideoInfo.url!,
+            videoId: youtubeVideoInfo.videoId!,
+            title: youtubeVideoInfo.title!,
+        } : null,
         mode: modelState.mode,
         onError,
         processFiles,
@@ -226,6 +246,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     isAttachingLocalPdf={isAttachingLocalPdf}
                     handleAttachLocalPdf={handleAttachLocalPdf}
                     handleDismissLocalPdf={handleDismissLocalPdf}
+                    youtubeVideoInfo={youtubeVideoInfo.isYouTubeVideo ? {
+                        url: youtubeVideoInfo.url!,
+                        videoId: youtubeVideoInfo.videoId!,
+                        title: youtubeVideoInfo.title!,
+                    } : null}
+                    shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
+                    isAttachingVideo={isAttachingVideo}
+                    handleAttachYouTubeVideo={handleAttachYouTubeVideo}
+                    handleDismissYouTubeVideo={handleDismissYouTubeVideo}
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={setShowModeDropdown}
                     composerRef={composerRef}

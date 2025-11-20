@@ -1,19 +1,17 @@
 /**
- * LocalPdfSuggestion Component
+ * YouTubeVideoSuggestion Component
  * 
- * Displays a suggestion badge when a local PDF file is detected in the active tab.
- * Allows users to quickly attach the PDF with one click.
- * 
- * Phase 2: Suggestion Badge UI Component
+ * Displays a suggestion badge when a YouTube video page is detected in the active tab.
+ * Allows users to quickly attach the video transcript with one click.
  */
 
 import React, { useEffect } from 'react';
-import { PaperclipIcon } from '../../../shared/icons';
+import { YoutubeIcon } from '../../../../../assets/icons/chat/youtube';
 
-interface LocalPdfSuggestionProps {
-    /** Name of the PDF file */
-    filename: string;
-    /** Handler called when user clicks to attach the PDF */
+interface YouTubeVideoSuggestionProps {
+    /** Title of the YouTube video */
+    videoTitle: string;
+    /** Handler called when user clicks to attach the video transcript */
     onAttach: () => void;
     /** Handler called when user dismisses the suggestion */
     onDismiss: () => void;
@@ -21,13 +19,13 @@ interface LocalPdfSuggestionProps {
     isLoading?: boolean;
 }
 
-export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
-    filename,
+export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
+    videoTitle,
     onAttach,
     onDismiss,
     isLoading = false,
 }) => {
-    // Hide voice-mode-fab when showing PDF suggestion
+    // Hide voice-mode-fab when showing YouTube suggestion
     useEffect(() => {
         const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
         if (voiceFab) {
@@ -40,10 +38,10 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
         };
     }, []);
 
-    // Truncate long filenames
-    const displayName = filename.length > 30
-        ? `${filename.substring(0, 27)}...`
-        : filename;
+    // Truncate long video titles for compact display
+    const displayTitle = videoTitle.length > 24
+        ? `${videoTitle.substring(0, 21)}...`
+        : videoTitle;
 
     return (
         <div className="local-pdf-suggestion">
@@ -51,13 +49,13 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
                 className="local-pdf-suggestion-button"
                 onClick={onAttach}
                 disabled={isLoading}
-                title={`Attach ${filename}`}
+                title={`Attach transcript for: ${videoTitle}`}
             >
                 <span className="local-pdf-suggestion-icon">
-                    <PaperclipIcon size={14} />
+                    <YoutubeIcon size={16} />
                 </span>
                 <span className="local-pdf-suggestion-text">
-                    {isLoading ? 'Attaching...' : `Attach ${displayName}?`}
+                    {isLoading ? 'Fetching...' : displayTitle}
                 </span>
             </button>
 
@@ -66,7 +64,7 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
                     className="local-pdf-suggestion-close"
                     onClick={onDismiss}
                     title="Dismiss suggestion"
-                    aria-label="Dismiss PDF attachment suggestion"
+                    aria-label="Dismiss YouTube video attachment suggestion"
                 >
                     ×
                 </button>
