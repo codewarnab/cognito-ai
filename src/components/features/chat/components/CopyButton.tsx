@@ -5,6 +5,7 @@ import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
 import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
 import { generateSpeech, playAudioBuffer } from '../../../../utils/geminiTTS';
 import { getGeminiApiKey } from '../../../../utils/geminiApiKey';
+import { DownloadButton } from './DownloadButton';
 
 interface CopyButtonProps {
     content: string;
@@ -15,6 +16,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
     const [isReading, setIsReading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [audioBuffer, setAudioBuffer] = useState<ArrayBuffer | null>(null);
     const iconRef = useRef<CopyIconHandle>(null);
     const audioIconRef = useRef<AudioLinesIconHandle>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,6 +60,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                 audioRef.current = null;
             }
             setIsReading(false);
+            setAudioBuffer(null);
             audioIconRef.current?.stopAnimation();
         } else {
             // Start reading with Gemini TTS
@@ -83,10 +86,11 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                 }
 
                 // Generate speech using Gemini TTS
-                const audioBuffer = await generateSpeech(content, apiKey);
+                const buffer = await generateSpeech(content, apiKey);
+                setAudioBuffer(buffer);
                 
                 // Play the audio
-                const audio = playAudioBuffer(audioBuffer);
+                const audio = playAudioBuffer(buffer);
                 audioRef.current = audio;
 
                 audio.onplay = () => {
@@ -98,6 +102,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                 audio.onended = () => {
                     setIsReading(false);
                     audioRef.current = null;
+                    setAudioBuffer(null);
                     audioIconRef.current?.stopAnimation();
                 };
 
@@ -105,6 +110,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                     setIsReading(false);
                     setIsGenerating(false);
                     audioRef.current = null;
+                    setAudioBuffer(null);
                     audioIconRef.current?.stopAnimation();
                     console.error('Audio playback error');
                 };
@@ -231,6 +237,11 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                     )}
                 </AnimatePresence>
             </div>
+            <DownloadButton 
+                audioBuffer={audioBuffer} 
+                isPlaying={isReading}
+                fileName={`message-audio-${Date.now()}.mp3`}
+            />
         </div>
     );
 };

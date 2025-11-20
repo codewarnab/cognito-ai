@@ -17,6 +17,7 @@ export { ResearchProgress } from './components/ResearchProgress';
 export { SuggestedActions } from './components/SuggestedActions';
 export { WorkflowBadge } from './components/WorkflowBadge';
 export { CopyButton } from './components/CopyButton';
+export { DownloadButton } from './components/DownloadButton';
 
 // Context components
 export { ContextIndicator } from './context/ContextIndicator';
