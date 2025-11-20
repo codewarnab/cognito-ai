@@ -148,6 +148,7 @@ async function fetchTranscript(videoID, language) {
  * 
  * Request Body:
  *   url (string): The URL of the YouTube video.
+ *   disableCache (boolean, optional): Set to true to bypass cache read/write for debugging.
  * 
  * Response:
  *   200: JSON object containing `duration`, `title`, and `transcript`.
@@ -156,24 +157,28 @@ async function fetchTranscript(videoID, language) {
  */
 app.post('/simple-transcript', async (req, res) => {
   try {
-    const { url } = req.body;
+    const { url, disableCache } = req.body;
 
     if (!url) {
       return res.status(400).json({ message: 'URL is required in the request body.' });
     }
 
     console.log('[Transcript] Processing URL:', url);
+    console.log('[Transcript] Cache disabled:', disableCache === true);
 
     const videoID = ytdl.getURLVideoID(url);
     console.log('[Transcript] Video ID:', videoID);
 
-    // Check cache first if Redis is available
+    // Check cache first if Redis is available and cache is not disabled
     const cacheKey = `yt:transcript:${videoID}`;
-    if (redis) {
+    const useCacheRead = redis && disableCache !== true;
+    
+    if (useCacheRead) {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) {
           console.log('[Transcript] Cache hit for videoID:', videoID);
+          console.log('[Transcript] Cached data:', JSON.stringify(cached, null, 2));
           return res.json(cached);
         }
         console.log('[Transcript] Cache miss for videoID:', videoID);
@@ -181,6 +186,8 @@ app.post('/simple-transcript', async (req, res) => {
         console.warn('[Transcript] Cache read error:', cacheError.message);
         // Continue to fetch even if cache fails
       }
+    } else if (disableCache === true) {
+      console.log('[Transcript] Skipping cache read (disableCache=true)');
     }
 
     // Try to get transcript using TranscriptAPI first (more reliable)
@@ -196,14 +203,23 @@ app.post('/simple-transcript', async (req, res) => {
         let duration = 0;
 
         try {
+          console.log('[Transcript] Fetching video info for title and duration...');
           const videoInfo = await ytdl.getBasicInfo(url);
+          console.log('[Transcript] Video info fetched successfully');
+          console.log('[Transcript] videoDetails object:', JSON.stringify(videoInfo.videoDetails, null, 2));
+          
           title = videoInfo.videoDetails.title;
           duration = Math.floor(videoInfo.videoDetails.lengthSeconds / 60);
+          
+          console.log('[Transcript] Extracted title:', title);
+          console.log('[Transcript] Extracted duration:', duration, 'minutes');
         } catch (infoError) {
           console.warn('[Transcript] Could not fetch video info, using defaults:', infoError.message);
+          console.error('[Transcript] Full error:', infoError);
           // Calculate approximate duration from transcript
           const lastItem = transcript[transcript.length - 1];
           duration = Math.floor((lastItem.start + lastItem.duration) / 60);
+          console.log('[Transcript] Calculated duration from transcript:', duration, 'minutes');
         }
 
         const transcriptText = transcript.map(item => item.text).join(' ');
@@ -214,8 +230,15 @@ app.post('/simple-transcript', async (req, res) => {
           transcript: transcriptText
         };
 
-        // Cache the response if Redis is available
-        if (redis) {
+        console.log('[Transcript] Final response object:', JSON.stringify({
+          duration: response.duration,
+          title: response.title,
+          transcriptLength: response.transcript.length
+        }));
+
+        // Cache the response if Redis is available and cache is not disabled
+        const useCacheWrite = redis && disableCache !== true;
+        if (useCacheWrite) {
           try {
             await redis.set(cacheKey, JSON.stringify(response));
             console.log('[Transcript] Cached transcript for videoID:', videoID);
@@ -223,8 +246,11 @@ app.post('/simple-transcript', async (req, res) => {
             console.warn('[Transcript] Cache write error:', cacheError.message);
             // Continue even if caching fails
           }
+        } else if (disableCache === true) {
+          console.log('[Transcript] Skipping cache write (disableCache=true)');
         }
 
+        console.log('[Transcript] Sending response to client');
         return res.json(response);
       }
     } catch (apiError) {
@@ -235,7 +261,14 @@ app.post('/simple-transcript', async (req, res) => {
     // Fallback: Try ytdl-core method
     console.log('[Transcript] Attempting fallback with ytdl-core...');
     const videoInfo = await ytdl.getBasicInfo(url);
+    console.log('[Transcript] Fallback - Video info fetched');
+    console.log('[Transcript] Fallback - videoDetails:', JSON.stringify(videoInfo.videoDetails, null, 2));
+    
     const duration = Math.floor(videoInfo.videoDetails.lengthSeconds / 60);
+    const title = videoInfo.videoDetails.title;
+    
+    console.log('[Transcript] Fallback - Extracted title:', title);
+    console.log('[Transcript] Fallback - Extracted duration:', duration, 'minutes');
 
     const captionTracks = videoInfo.player_response?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
 
@@ -260,12 +293,19 @@ app.post('/simple-transcript', async (req, res) => {
 
     const response = {
       duration: duration,
-      title: videoInfo.videoDetails.title,
+      title: title,
       transcript: transcriptText
     };
 
-    // Cache the response if Redis is available
-    if (redis) {
+    console.log('[Transcript] Fallback - Final response object:', JSON.stringify({
+      duration: response.duration,
+      title: response.title,
+      transcriptLength: response.transcript.length
+    }));
+
+    // Cache the response if Redis is available and cache is not disabled
+    const useCacheWrite = redis && disableCache !== true;
+    if (useCacheWrite) {
       try {
         await redis.set(cacheKey, JSON.stringify(response));
         console.log('[Transcript] Cached transcript for videoID:', videoID);
@@ -273,9 +313,11 @@ app.post('/simple-transcript', async (req, res) => {
         console.warn('[Transcript] Cache write error:', cacheError.message);
         // Continue even if caching fails
       }
+    } else if (disableCache === true) {
+      console.log('[Transcript] Skipping cache write (disableCache=true)');
     }
 
-    console.log('[Transcript] Successfully fetched transcript');
+    console.log('[Transcript] Successfully fetched transcript, sending response');
     res.json(response);
   } catch (error) {
     console.error('[Transcript] Error:', error);
