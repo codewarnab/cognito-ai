@@ -1,0 +1,85 @@
+/* Streaming Warning Dialog Styles */
+
+.streaming-warning-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.streaming-warning-dialog {
+    background: var(--vscode-sideBar-background, #1e1e1e);
+    border: 1px solid var(--vscode-contrastBorder, #454545);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.streaming-warning-content {
+    padding: 28px 28px 24px 28px;
+}
+
+.streaming-warning-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--vscode-foreground, #cccccc);
+    margin: 0 0 12px 0;
+}
+
+.streaming-warning-message {
+    font-size: 14px;
+    color: var(--vscode-descriptionForeground, #999999);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.streaming-warning-actions {
+    display: flex;
+    gap: 12px;
+    padding: 0 24px 24px 24px;
+    justify-content: flex-end;
+}
+
+.streaming-warning-button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    outline: none;
+    min-width: 100px;
+}
+
+.streaming-warning-button-secondary {
+    background-color: var(--vscode-button-secondaryBackground, #3a3d41);
+    color: var(--vscode-button-secondaryForeground, #cccccc);
+    border: 1px solid var(--vscode-contrastBorder, #454545);
+}
+
+.streaming-warning-button-secondary:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground, #45494e);
+}
+
+.streaming-warning-button-primary {
+    background-color: var(--vscode-button-background, #0e639c);
+    color: var(--vscode-button-foreground, #ffffff);
+}
+
+.streaming-warning-button-primary:hover {
+    background-color: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.streaming-warning-button:active {
+    transform: scale(0.97);
+}

@@ -209,6 +209,7 @@ export function CopilotChatWindow({
                 onTroubleshootingClick={onTroubleshootingClick}
                 onFeaturesClick={onFeaturesClick}
                 onProviderSetupClick={onProviderSetupClick}
+                isLoading={isLoading}
             // onApiKeySaved={handleApiKeySaved}
             />
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
+import { StreamingWarningDialog } from '../context/StreamingWarningDialog';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;
@@ -10,6 +11,7 @@ interface ChatHeaderProps {
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
     onProviderSetupClick?: () => void;
+    isLoading?: boolean;
     // onApiKeySaved?: () => void;
 }
 
@@ -22,8 +24,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onTroubleshootingClick,
     onFeaturesClick,
     onProviderSetupClick,
+    isLoading,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
+    const [showStreamingWarning, setShowStreamingWarning] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Handle clicks outside menu to close it
@@ -71,7 +75,14 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     {onNewThreadClick && (
                         <button
                             className="copilot-header-button"
-                            onClick={onNewThreadClick}
+                            onClick={() => {
+                                // Show warning if message is being streamed
+                                if (isLoading) {
+                                    setShowStreamingWarning(true);
+                                    return;
+                                }
+                                onNewThreadClick();
+                            }}
                             title="New Chat"
                             aria-label="Start new chat"
                         >
@@ -157,6 +168,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     </div>
                 </div>
             </div>
+
+            {/* Streaming Warning Dialog */}
+            <StreamingWarningDialog
+                isOpen={showStreamingWarning}
+                onClose={() => setShowStreamingWarning(false)}
+                onContinue={() => {
+                    setShowStreamingWarning(false);
+                    onNewThreadClick?.();
+                }}
+            />
         </div>
     );
 };

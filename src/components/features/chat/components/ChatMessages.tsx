@@ -307,8 +307,15 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                         return (
                                             <div className="message-parts">
                                                 {mergedParts.map((part: any, partIndex: number) => {
-                                                    // Render text parts
+                                                    // Render text parts (but skip tab attachment text parts)
                                                     if (part.type === 'text' && part.text) {
+                                                        // Skip text parts that are tab attachment content (for AI only)
+                                                        // These start with [TAB ATTACHMENT: and end with [/TAB ATTACHMENT]
+                                                        const isTabAttachmentText = /^\s*\[TAB ATTACHMENT:/i.test(part.text);
+                                                        if (isTabAttachmentText) {
+                                                            return null; // Don't render this text part
+                                                        }
+
                                                         return (
                                                             <div key={`text-${partIndex}`} className="copilot-message-content">
                                                                 {message.role === 'assistant' ? (
@@ -326,61 +333,96 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         );
                                                     }
 
-                                                    // Render file attachments
+                                                    // Render file attachments - group them together
                                                     if (part.type === 'file') {
-                                                        const isImage = part.mediaType?.startsWith('image/');
+                                                        // Check if this is the first file in a sequence
+                                                        const fileParts = mergedParts.filter((p: any) => p.type === 'file');
+                                                        const isFirstFile = fileParts[0] === part;
+                                                        
+                                                        // Only render the container for the first file
+                                                        if (!isFirstFile) return null;
+                                                        
+                                                        const totalFiles = fileParts.length;
+                                                        const firstFile = fileParts[0];
+                                                        const remainingCount = totalFiles - 1;
+                                                        const isImage = firstFile.mediaType?.startsWith('image/');
 
                                                         return (
-                                                            <div key={`file-${partIndex}`} className="message-file-attachment">
-                                                                {isImage ? (
-                                                                    <div
-                                                                        className="message-file-image"
-                                                                        onClick={() => setPreviewImage({ url: part.url, name: part.name || 'Image' })}
-                                                                    >
-                                                                        <img src={part.url} alt={part.name || 'Attached image'} />
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="message-file-document">
-                                                                        <div className="file-attachment-icon">
-                                                                            {getFileIcon(part.name || 'file', 24)}
+                                                            <div key={`file-group-${partIndex}`} className="message-file-attachments-group">
+                                                                <div className="message-file-attachment">
+                                                                    {isImage ? (
+                                                                        <div
+                                                                            className="message-file-image"
+                                                                            onClick={() => setPreviewImage({ url: firstFile.url, name: firstFile.name || 'Image' })}
+                                                                        >
+                                                                            <img src={firstFile.url} alt={firstFile.name || 'Attached image'} />
                                                                         </div>
-                                                                        <span className="file-attachment-name" title={part.name}>
-                                                                            {part.name || 'Document'}
-                                                                        </span>
+                                                                    ) : (
+                                                                        <div className="message-file-document">
+                                                                            <div className="file-attachment-icon">
+                                                                                {getFileIcon(firstFile.name || 'file', 24)}
+                                                                            </div>
+                                                                            <span className="file-attachment-name" title={firstFile.name}>
+                                                                                {firstFile.name || 'Document'}
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {remainingCount > 0 && (
+                                                                    <div className="message-file-attachment-overlay">
+                                                                        +{remainingCount}
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         );
                                                     }
 
-                                                    // Render tab attachments
+                                                    // Render tab attachments - group them together
                                                     if (part.type === 'tab-context') {
+                                                        // Check if this is the first tab in a sequence
+                                                        const tabParts = mergedParts.filter((p: any) => p.type === 'tab-context');
+                                                        const isFirstTab = tabParts[0] === part;
+                                                        
+                                                        // Only render the container for the first tab
+                                                        if (!isFirstTab) return null;
+                                                        
+                                                        const totalTabs = tabParts.length;
+                                                        const firstTab = tabParts[0];
+                                                        const remainingCount = totalTabs - 1;
+
                                                         return (
-                                                            <div key={`tab-${partIndex}`} className="message-tab-attachment">
-                                                                <div className="tab-attachment-icon">
-                                                                    {part.favicon ? (
-                                                                        <img 
-                                                                            src={part.favicon} 
-                                                                            alt="" 
-                                                                            className="tab-favicon"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="tab-favicon-placeholder">🌐</div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="tab-attachment-info">
-                                                                    <div className="tab-attachment-title" title={part.title}>
-                                                                        {part.title}
+                                                            <div key={`tab-group-${partIndex}`} className="message-tab-attachments-group">
+                                                                <div className="message-tab-attachment">
+                                                                    <div className="tab-attachment-icon">
+                                                                        {firstTab.favicon ? (
+                                                                            <img 
+                                                                                src={firstTab.favicon} 
+                                                                                alt="" 
+                                                                                className="tab-favicon"
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="tab-favicon-placeholder">🌐</div>
+                                                                        )}
                                                                     </div>
-                                                                    <div className="tab-attachment-url" title={part.url}>
-                                                                        {part.url}
-                                                                    </div>
-                                                                    {part.error && (
-                                                                        <div className="tab-attachment-error">
-                                                                            ⚠️ {part.error}
+                                                                    <div className="tab-attachment-info">
+                                                                        <div className="tab-attachment-title" title={firstTab.title}>
+                                                                            {firstTab.title}
                                                                         </div>
-                                                                    )}
+                                                                        <div className="tab-attachment-url" title={firstTab.url}>
+                                                                            {firstTab.url}
+                                                                        </div>
+                                                                        {firstTab.error && (
+                                                                            <div className="tab-attachment-error">
+                                                                                ⚠️ {firstTab.error}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
+                                                                {remainingCount > 0 && (
+                                                                    <div className="message-tab-attachment-overlay">
+                                                                        +{remainingCount}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     }

@@ -187,8 +187,10 @@ export function useMessageHandlers({
                     });
                 }
 
-                // Add each tab as a tab-context part
+                // Add tab-context parts for UI rendering
+                // AND add formatted text for AI consumption
                 for (const tab of processedTabs) {
+                    // Add tab-context part for UI display (visual card)
                     tabMessageParts.push({
                         type: 'tab-context',
                         url: tab.url,
@@ -196,6 +198,24 @@ export function useMessageHandlers({
                         content: tab.content,
                         favicon: tab.favicon,
                         error: tab.error
+                    });
+
+                    // Add formatted text part for AI to understand the tab content
+                    let tabContextText = `\n\n[TAB ATTACHMENT: ${tab.title}]\nURL: ${tab.url}\n`;
+                    
+                    if (tab.error) {
+                        tabContextText += `Error: ${tab.error}\n`;
+                    } else if (tab.content) {
+                        tabContextText += `Content:\n${tab.content}\n`;
+                    } else {
+                        tabContextText += `Content: (No content available)\n`;
+                    }
+                    
+                    tabContextText += `[/TAB ATTACHMENT]\n`;
+
+                    tabMessageParts.push({
+                        type: 'text',
+                        text: tabContextText
                     });
                 }
 

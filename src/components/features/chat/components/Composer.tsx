@@ -116,13 +116,13 @@ export const Composer: React.FC<ComposerProps> = ({
     useEffect(() => {
         const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
         if (voiceFab) {
-            if (showAttachmentDropdown || attachments.length > 0) {
+            if (showAttachmentDropdown || attachments.length > 0 || tabAttachments.length > 0) {
                 voiceFab.style.visibility = 'hidden';
             } else {
                 voiceFab.style.visibility = '';
             }
         }
-    }, [showAttachmentDropdown, attachments.length]);
+    }, [showAttachmentDropdown, attachments.length, tabAttachments.length]);
 
     const handleScreenshotClick = async () => {
         try {
