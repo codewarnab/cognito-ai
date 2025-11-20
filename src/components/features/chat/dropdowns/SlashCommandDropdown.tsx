@@ -151,8 +151,8 @@ export function SlashCommandDropdown({
                         key={workflow.id}
                         ref={index === selectedIndex ? selectedItemRef : null}
                         className={`slash-command-item ${index === selectedIndex ? 'selected' : ''
-                            }`}
-                        onClick={() => onSelectWorkflow(workflow)}
+                            } ${workflow.comingSoon ? 'coming-soon' : ''}`}
+                        onClick={() => !workflow.comingSoon && onSelectWorkflow(workflow)}
                         onMouseEnter={() => setSelectedIndex(index)}
                         style={
                             workflow.color && index === selectedIndex
@@ -164,6 +164,9 @@ export function SlashCommandDropdown({
                         <div className="slash-command-info">
                             <div className="slash-command-name">
                                 /{workflow.id} - {workflow.name}
+                                {workflow.comingSoon && (
+                                    <span className="coming-soon-badge">Coming Soon</span>
+                                )}
                             </div>
                             <div className="slash-command-description">
                                 {workflow.description}

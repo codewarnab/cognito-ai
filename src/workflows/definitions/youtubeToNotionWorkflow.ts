@@ -96,6 +96,7 @@ export const youtubeToNotionWorkflow: WorkflowDefinition = {
     icon: 'youtube', // YouTube icon identifier
     color: '#FF0000', // YouTube red
     stepCount: 10, // Reduced from typical 15-20 (simpler workflow with agent delegation)
+    comingSoon: true, // Mark as coming soon
 
     // Minimal tool set - most work delegated to agents
     allowedTools: [
