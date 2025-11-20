@@ -372,6 +372,25 @@ function AIChatContent() {
         sendMessage,
     });
 
+    // Keyboard shortcut: Ctrl+N for new chat
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Check for Ctrl+N (or Cmd+N on Mac)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault(); // Prevent browser's default new window behavior
+                
+                // Only trigger if not currently loading
+                if (!isLoading) {
+                    log.info('Ctrl+N pressed - creating new thread');
+                    handleNewThread();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isLoading, handleNewThread]);
+
     // Render MCP Manager or Chat Window
     if (showMcp) {
         return <McpManager onBack={() => setShowMcp(false)} />;

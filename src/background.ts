@@ -61,7 +61,8 @@ import {
 import {
     openSidePanel,
     openSidePanelForTab,
-    sendMessageToSidepanel
+    sendMessageToSidepanel,
+    sendMessageToSidepanelWithAttachments
 } from './background/sidepanelUtils';
 import { ensureOffscreenDocument } from './offscreen/ensure';
 import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS, APP_ICON } from './constants';
@@ -1085,6 +1086,51 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                             }
                         });
                     });
+
+                    sendResponse({ success: true });
+                } else {
+                    backgroundLog.error(' Failed to open sidepanel via Ask AI button');
+                    sendResponse({ success: false, error: 'Failed to open sidepanel' });
+                }
+            } else {
+                backgroundLog.error(' Cannot open sidepanel: no window ID tracked');
+                sendResponse({ success: false, error: 'No active window' });
+            }
+        })();
+        return true; // Will respond asynchronously
+    }
+
+    // Handle Ask AI button with message and attachments - open sidepanel and send message
+    if (message.action === 'OPEN_SIDEBAR_WITH_MESSAGE') {
+        (async () => {
+            const windowId = lastFocusedWindowId;
+
+            if (windowId) {
+                const success = await openSidePanel(windowId);
+
+                if (success) {
+                    backgroundLog.info(' Sidepanel opened via Ask AI button with message');
+
+                    // Broadcast to content scripts that sidebar is now open
+                    chrome.tabs.query({ windowId }, (tabs) => {
+                        tabs.forEach((tab) => {
+                            if (tab.id) {
+                                chrome.tabs.sendMessage(tab.id, { action: 'SIDEBAR_OPENED' })
+                                    .catch(() => {
+                                        // Ignore errors if content script not loaded
+                                    });
+                            }
+                        });
+                    });
+
+                    // Send message to sidepanel with retry logic (same as omnibox)
+                    // This ensures the message gets through even if sidepanel is still initializing
+                    if (message.payload?.message) {
+                        await sendMessageToSidepanelWithAttachments(
+                            message.payload.message,
+                            message.payload.tabAttachments
+                        );
+                    }
 
                     sendResponse({ success: true });
                 } else {

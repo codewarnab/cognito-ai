@@ -7,7 +7,7 @@ export interface UseBackgroundMessageListenerProps {
     currentThreadId: string | null;
     handleNewThread: () => Promise<void>;
     handleThreadSelect: (threadId: string) => Promise<void>;
-    handleSendMessage: (text: string) => Promise<void>;
+    handleSendMessage: (text: string, fileAttachments?: any[], tabAttachments?: any[]) => Promise<void>;
     handleContinue: () => void;
     sendMessage: (params: { text: string }) => void;
 }
@@ -47,6 +47,30 @@ export function useBackgroundMessageListener({
                 if (text && text.trim()) {
                     log.info('📤 Sending omnibox message to chat');
                     await handleSendMessage(text.trim());
+                }
+
+                sendResponse({ success: true });
+                return true;
+            }
+
+            // Handle Ask AI button messages with attachments
+            if (message?.type === 'ask-ai/send-message') {
+                const { message: text, tabAttachments } = message.payload;
+
+                log.info('🤖 Received Ask AI message', { text, tabAttachments });
+
+                // If no thread exists, create a new one
+                if (!currentThreadId) {
+                    log.info('📝 Creating new thread for Ask AI message');
+                    await handleNewThread();
+                    // Wait a bit for the thread to be created
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Send the message with tab attachments
+                if (text && text.trim()) {
+                    log.info('📤 Sending Ask AI message to chat with attachments');
+                    await handleSendMessage(text.trim(), undefined, tabAttachments);
                 }
 
                 sendResponse({ success: true });

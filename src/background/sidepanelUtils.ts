@@ -80,3 +80,35 @@ export async function sendMessageToSidepanel(
     }
 }
 
+/**
+ * Helper function to send message with attachments to sidepanel with retry logic
+ * Retries up to 5 times with exponential backoff to handle sidepanel initialization
+ */
+export async function sendMessageToSidepanelWithAttachments(
+    text: string,
+    tabAttachments?: any[],
+    attempt: number = 1,
+    maxAttempts: number = 5
+): Promise<void> {
+    try {
+        await chrome.runtime.sendMessage({
+            type: 'ask-ai/send-message',
+            payload: { 
+                message: text.trim(),
+                tabAttachments 
+            }
+        });
+        log.info(`Message with attachments sent to sidepanel successfully (attempt ${attempt})`);
+    } catch (error) {
+        if (attempt < maxAttempts) {
+            const delay = Math.min(100 * Math.pow(2, attempt - 1), 1000);
+            log.debug(`Sidepanel not ready yet (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`);
+
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return sendMessageToSidepanelWithAttachments(text, tabAttachments, attempt + 1, maxAttempts);
+        } else {
+            log.error(`Failed to send message with attachments to sidepanel after ${maxAttempts} attempts:`, error);
+        }
+    }
+}
+

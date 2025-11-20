@@ -83,7 +83,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 }
                                 onNewThreadClick();
                             }}
-                            title="New Chat"
+                            title="New Chat (Ctrl+N)"
                             aria-label="Start new chat"
                         >
                             <Plus size={16} />

@@ -87,6 +87,8 @@ const AskAIButton = () => {
         return () => chrome.runtime.onMessage.removeListener(handleMessage);
     }, []);
 
+
+
     // Handle button click - open sidebar
     const handleClick = () => {
         if (hasDragged.current) {
@@ -96,6 +98,8 @@ const AskAIButton = () => {
         console.log("[AskAI] Button clicked, sending OPEN_SIDEBAR message");
         chrome.runtime.sendMessage({ action: "OPEN_SIDEBAR" });
     };
+
+
 
     // Handle menu option selection
     const handleMenuSelect = async (action: 'page' | 'session' | 'forever') => {
@@ -329,6 +333,8 @@ const AskAIButton = () => {
                     <span className="ask-ai-text">Ask AI</span>
                 </div>
             )}
+
+
 
             {/* Trash Zone - only show when dragging and menu is not shown */}
             {showTrashZone && !showMenu && (
