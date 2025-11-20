@@ -35,6 +35,7 @@ import "./styles/components/model-download-toast.css";
 import "./styles/components/continue-button.css";
 import "./styles/components/context-indicator.css";
 import "./styles/components/context-warning.css";
+import "./styles/components/streaming-warning.css";
 import "./styles/components/error-toast.css";
 import "./sidepanel.css";
 
