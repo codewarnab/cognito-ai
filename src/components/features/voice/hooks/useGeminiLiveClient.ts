@@ -10,6 +10,7 @@ import {
     MicrophonePermissionHandler,
 } from '../../../../ai/geminiLive/errorHandler';
 import { createLogger } from '~logger';
+import { getVoiceName } from '../../../../utils/settingsStorage';
 import type { VoiceModeStatus } from '../../../../ai/geminiLive/types';
 
 const log = createLogger('useGeminiLiveClient', 'VOICE_CLIENT');
@@ -182,9 +183,12 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                     onToolExecutionChange
                 };
 
+                const selectedVoice = await getVoiceName();
+
                 const client = await manager.getClient({
                     apiKey,
                     systemInstruction,
+                    voiceName: selectedVoice,
                     eventHandlers,
                     errorRecoveryConfig: {
                         maxRetries: 3,
@@ -342,9 +346,12 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                 onToolExecutionChange
             };
 
+            const selectedVoice = await getVoiceName();
+
             const newClient = await manager.getClient({
                 apiKey,
                 systemInstruction,
+                voiceName: selectedVoice,
                 eventHandlers,
                 errorRecoveryConfig: {
                     maxRetries: 3,

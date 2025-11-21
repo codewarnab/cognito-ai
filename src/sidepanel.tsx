@@ -10,6 +10,7 @@ import { ToolUIProvider } from "./ai/tools/components";
 import { ThreadListSidePanel } from "./components/features/threads";
 import { MemorySidebar } from "./components/features/memory";
 import { ReminderPanel } from "./components/features/reminders";
+import { SettingsPage } from "./components/features/settings/SettingsPage";
 import { OnboardingScreen } from "./components/features/onboarding";
 import { AudioLinesIcon } from "./components/shared/icons";
 import { VoiceModeUI } from "./components/features/voice";
@@ -318,6 +319,8 @@ function AIChatContent() {
         setInput,
         showMcp,
         setShowMcp,
+        showSettings,
+        setShowSettings,
         showThreads,
         setShowThreads,
         showMemory,
@@ -413,6 +416,11 @@ function AIChatContent() {
         return <ProviderSetup onBack={() => setShowProviderSetup(false)} />;
     }
 
+    // Render Settings page
+    if (showSettings) {
+        return <SettingsPage onBack={() => setShowSettings(false)} />;
+    }
+
     // Show onboarding screen if enabled
     if (showOnboarding) {
         log.info('Rendering onboarding screen', { showOnboarding });
@@ -488,6 +496,7 @@ function AIChatContent() {
                                 onKeyDown={handleKeyPress}
                                 onClearChat={handleClearChat}
                                 onSettingsClick={() => setShowMcp(true)}
+                                onGeneralSettingsClick={() => setShowSettings(true)}
                                 onThreadsClick={() => setShowThreads(true)}
                                 onMemoryClick={() => setShowMemory(true)}
                                 onRemindersClick={() => setShowReminders(true)}
