@@ -13,6 +13,7 @@ const TIPS = [
     "You can drag and drop files into the chat input",
     "Ask me to organize your tabs for you",
     "I can analyze YouTube videos for you",
+    "you can send message to cognito by typing 'ai' in address bar"
 ];
 
 const getTimeBasedGreeting = (): string => {

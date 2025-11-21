@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { CloudCogIcon, LaptopMinimalCheckIcon } from '../../../shared/icons';
-import { canSwitchMode } from '../../../../utils/modelSettings';
+import { canSwitchMode } from '~utils/modelSettings';
 import type { AIMode, ModelState } from '../types';
 
 interface ModeSelectorProps {
@@ -28,6 +28,17 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     const laptopIconDropdownInactiveRef = useRef<any>(null);
 
     const handleModeSwitch = async (newMode: AIMode) => {
+        // Check if remote mode has API key first
+        if (newMode === 'remote' && !hasApiKey) {
+            if (onError) {
+                onError(
+                    'API Key Required. Please add your Gemini API key in Settings to use Remote mode.',
+                    'warning'
+                );
+            }
+            return;
+        }
+
         // Check if switch is allowed
         const allowed = await canSwitchMode(mode, newMode);
 
@@ -35,17 +46,6 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             if (onError) {
                 onError(
                     'Cannot switch to Local mode. This conversation started with Remote mode and uses advanced features. Please start a new conversation to use Local mode.',
-                    'warning'
-                );
-            }
-            return;
-        }
-
-        // Check if remote mode has API key
-        if (newMode === 'remote' && !hasApiKey) {
-            if (onError) {
-                onError(
-                    'API Key Required. Please add your Gemini API key in Settings to use Remote mode.',
                     'warning'
                 );
             }

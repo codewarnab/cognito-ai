@@ -1,6 +1,8 @@
 import { useCallback } from 'react';
 import type { AIMode, Message } from '../components/features/chat/types';
 import type { FileAttachmentData } from '../components/features/chat/components/FileAttachment';
+import { hasGeminiApiKey } from '../utils/geminiApiKey';
+import { HIDE_LOCAL_MODE } from '../constants';
 
 interface UseChatInputValidationOptions {
     mode: AIMode;
@@ -13,9 +15,18 @@ const WORD_LIMIT = 500;
 export const useChatInputValidation = ({ mode, messages, onError }: UseChatInputValidationOptions) => {
 
     // Validate input before sending
-    const validateBeforeSend = useCallback((input: string, attachments: FileAttachmentData[]): boolean => {
+    const validateBeforeSend = useCallback(async (input: string, attachments: FileAttachmentData[]): Promise<boolean> => {
         // Check if there's any content to send
         if (!input.trim() && attachments.length === 0) {
+            return false;
+        }
+
+        // Validate API key if in remote mode or HIDE_LOCAL_MODE is enabled
+        if ((HIDE_LOCAL_MODE || mode === 'remote') && !(await hasGeminiApiKey())) {
+            onError?.(
+                'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
+                'error'
+            );
             return false;
         }
 
