@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 
 const log = createLogger('useBackgroundMessageListener');
@@ -23,12 +23,36 @@ export function useBackgroundMessageListener({
     handleContinue,
     sendMessage,
 }: UseBackgroundMessageListenerProps) {
+    // Track recently processed messages to prevent duplicates
+    const processedMessagesRef = useRef<Set<string>>(new Set());
+    const cleanupTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
         const handleBackgroundMessage = async (
             message: any,
             _sender: chrome.runtime.MessageSender,
             sendResponse: (response?: any) => void
         ) => {
+            // Create a unique key for this message to detect duplicates
+            const dedupeKey = `${message?.type}-${JSON.stringify(message?.payload)}`;
+            
+            // Check if we've already processed this exact message recently (within 1 second)
+            if (processedMessagesRef.current.has(dedupeKey)) {
+                log.warn('⚠️ Duplicate message detected and ignored', { type: message?.type });
+                sendResponse({ success: true, duplicate: true });
+                return true;
+            }
+            
+            // Mark this message as processed
+            processedMessagesRef.current.add(dedupeKey);
+            
+            // Clean up old entries after 1 second
+            if (cleanupTimeoutRef.current) {
+                clearTimeout(cleanupTimeoutRef.current);
+            }
+            cleanupTimeoutRef.current = setTimeout(() => {
+                processedMessagesRef.current.delete(dedupeKey);
+            }, 1000);
             // Handle omnibox messages
             if (message?.type === 'omnibox/send-message') {
                 const { text } = message.payload;
@@ -119,6 +143,9 @@ export function useBackgroundMessageListener({
 
         return () => {
             chrome.runtime.onMessage.removeListener(handleBackgroundMessage);
+            if (cleanupTimeoutRef.current) {
+                clearTimeout(cleanupTimeoutRef.current);
+            }
         };
     }, [currentThreadId, handleThreadSelect, handleNewThread, handleContinue, handleSendMessage, sendMessage]);
 }

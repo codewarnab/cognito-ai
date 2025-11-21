@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '../../../shared/inputs';
 import { ToolPartRenderer } from '../../../../ai/tools/components';
 import type { Message } from '../types';
-import { getMessageContent, hasToolCalls } from '../utils';
+import { getMessageContent, hasToolCalls, hasAttachments } from '../utils';
 import { EmptyState } from './EmptyState';
 import { LoadingIndicator } from './LoadingIndicator';
 import { ContinueButton } from './ContinueButton';
@@ -280,9 +280,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                         const content = getMessageContent(message);
                         const hasText = typeof content === 'string' && content.trim().length > 0;
                         const hasTools = hasToolCalls(message);
+                        const hasFiles = hasAttachments(message);
 
-                        // Show message if it has text OR tool calls
-                        return hasText || hasTools;
+                        // Show message if it has text OR tool calls OR attachments
+                        return hasText || hasTools || hasFiles;
                     })
                     .map((message, index) => {
                         // Check if this is the pending message (currently animating)

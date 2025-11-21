@@ -59,7 +59,7 @@ export async function generateContextualSuggestions(
             // Generate suggestions with retry logic
             const result = await generateWithRetry(model, prompt);
 
-            if (!result?.suggestions || result.suggestions.length !== 4) {
+            if (!result?.suggestions || result.suggestions.length !== 2) {
                 log.warn('Invalid suggestions result:', result);
                 // Fallback to local if remote fails
                 log.info('Falling back to local AI');
@@ -96,7 +96,7 @@ function buildSuggestionPrompt(pageContext: PageContext | null): string {
         'analyze YouTube videos and provide insights',
     ];
 
-    let prompt = `You are a browser AI assistant. Generate 4 contextual action suggestions based on the current page.
+    let prompt = `You are a browser AI assistant. Generate 2 contextual action suggestions based on the current page.
 
 Your capabilities include:
 ${capabilities.map(c => `- ${c}`).join('\n')}
@@ -143,7 +143,7 @@ ${capabilities.map(c => `- ${c}`).join('\n')}
         prompt += `Current Page: No specific page context available (may be on a restricted page)\n`;
     }
 
-    prompt += `\nGenerate 4 diverse, actionable suggestions that are relevant to this page and context.
+    prompt += `\nGenerate 2 diverse, actionable suggestions that are relevant to this page and context.
 Each suggestion should:
 - Be specific and actionable
 - Relate to the current page or browser context

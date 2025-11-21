@@ -45,3 +45,22 @@ export const hasToolCalls = (message: Message): boolean => {
         return false;
     }
 };
+
+// Helper to check if message has file or tab attachments
+export const hasAttachments = (message: Message): boolean => {
+    try {
+        if (!message || !message.parts || message.parts.length === 0) {
+            return false;
+        }
+
+        const attachmentParts = message.parts.filter((part: any) => {
+            if (!part || !part.type) return false;
+            return part.type === 'file' || part.type === 'tab-context';
+        });
+
+        return attachmentParts.length > 0;
+    } catch (error) {
+        console.error('[hasAttachments] Error checking for attachments:', error);
+        return false;
+    }
+};

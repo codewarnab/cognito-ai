@@ -128,9 +128,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     });
 
     // Handle send with attachments and workflow
-    const handleSend = () => {
+    const handleSend = async () => {
         // Validate input before sending
-        if (!validateBeforeSend(input, attachments)) {
+        if (!(await validateBeforeSend(input, attachments))) {
             return;
         }
 
