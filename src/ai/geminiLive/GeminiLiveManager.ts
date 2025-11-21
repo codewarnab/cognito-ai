@@ -16,7 +16,7 @@
  * - Cleaner state management
  */
 
-import { GeminiLiveClient, type GeminiLiveClientConfig } from './client';
+import { GeminiLiveClient, type GeminiLiveClientConfig, DEFAULT_CONFIG } from './client';
 import { createLogger } from '~logger';
 
 const log = createLogger('GeminiLiveManager');
@@ -72,9 +72,19 @@ export class GeminiLiveManager {
         // If there's an active client that's not cleaned up, return it instead of creating a new one
         if (this.activeClient && this.state === 'active') {
             const diagnostics = this.activeClient.getDiagnostics();
-            if (!diagnostics.isCleanedUp) {
+            const currentConfig = this.activeClient.getConfig();
+
+            // Check if voice has changed
+            const currentVoice = currentConfig.voiceName || DEFAULT_CONFIG.voiceName;
+            const requestedVoice = config.voiceName || DEFAULT_CONFIG.voiceName;
+
+            if (!diagnostics.isCleanedUp && currentVoice === requestedVoice) {
                 log.info('✅ Reusing existing active client', { instanceId: diagnostics.instanceId });
                 return this.activeClient;
+            }
+
+            if (currentVoice !== requestedVoice) {
+                log.info(`🔄 Voice changed from ${currentVoice} to ${requestedVoice}, creating new instance`);
             }
         }
 
