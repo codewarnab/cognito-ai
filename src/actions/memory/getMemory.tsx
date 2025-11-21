@@ -23,9 +23,32 @@ export function useGetMemory() {
 
         registerTool({
             name: 'getMemory',
-            description: 'Retrieve a specific memory by its key. Use this when you need to recall a particular fact (e.g., user\'s name, email, preferences).',
+            description: `Retrieve a specific memory by its key. Use to recall previously saved information about the user.
+
+WHEN TO USE:
+- Need to recall user's name, email, preferences, or other saved facts
+- User asks "what do you remember about me?" or "what's my X?"
+- Personalizing responses based on saved preferences
+- Checking if information was previously saved before asking again
+
+PRECONDITIONS:
+- Memory must have been previously saved with saveMemory
+- Key must match the saved key (auto-canonicalized for flexibility)
+
+WORKFLOW:
+1. Provide memory key to retrieve
+2. Key is canonicalized (normalized) for matching
+3. Returns memory value, category, and creation date if found
+4. Returns not found if memory doesn't exist
+
+LIMITATIONS:
+- Can only retrieve one memory at a time (use listMemories for multiple)
+- Key must be exact match after canonicalization
+- Cannot search by value (only by key)
+
+EXAMPLE: getMemory(key="user.name") -> {found: true, value: "John Smith", category: "fact"}`,
             parameters: z.object({
-                key: z.string().describe('The memory key to retrieve (will be auto-canonicalized)'),
+                key: z.string().describe('Memory key to retrieve. Will be auto-canonicalized (normalized). Examples: "user.name", "user.email", "user.favorite_language", "behavior.no_emails". Use dot notation for hierarchy.'),
             }),
             execute: async ({ key }) => {
                 try {

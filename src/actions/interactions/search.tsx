@@ -25,21 +25,21 @@ export function useChromeSearchTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'chromeSearch',
-            description: 'Search across Chrome bookmarks, browsing history, and open tabs using Chrome\'s built-in search API. Returns structured results with titles, URLs, and types.',
+            description: `Search Chrome bookmarks, history (30 days), and open tabs by title/URL. USE WHEN: User asks "find page about X", "do I have tab for Y?", "search bookmarks for Z". WORKFLOW: Searches tabs→bookmarks→history, deduplicates by URL, returns combined results with type. LIMITS: Max 100 results, no page content search, only titles/URLs. EXAMPLE: chromeSearch(query="react hooks", maxResults=20)`,
             parameters: z.object({
-                query: z.string().describe('The search query to find in bookmarks, history, or tabs'),
+                query: z.string().describe('Search query to find in tabs, bookmarks, and history. Searches titles and URLs. Examples: "react hooks", "github", "documentation". Case-insensitive.'),
                 maxResults: z.number()
                     .max(100)
-                    .describe('Maximum number of results to return (default: 20)')
+                    .describe('Maximum number of results to return. Default: 20, Max: 100. Use 10-20 for quick results, 50-100 for comprehensive search.')
                     .default(20),
                 includeTabs: z.boolean()
-                    .describe('Include open tabs in search results')
+                    .describe('If true (default), includes currently open tabs in search results. Use false to exclude tabs.')
                     .default(true),
                 includeBookmarks: z.boolean()
-                    .describe('Include bookmarks in search results')
+                    .describe('If true (default), includes bookmarks in search results. Use false to exclude bookmarks.')
                     .default(true),
                 includeHistory: z.boolean()
-                    .describe('Include browsing history in search results')
+                    .describe('If true (default), includes browsing history (last 30 days) in search results. Use false to exclude history.')
                     .default(true),
             }),
             execute: async ({ query, maxResults = 20, includeTabs = true, includeBookmarks = true, includeHistory = true }) => {

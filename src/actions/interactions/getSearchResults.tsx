@@ -43,11 +43,11 @@ export function useGetSearchResultsTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'getSearchResults',
-            description: 'Parse current Google/Bing search results page and return a structured ranked list with metadata (title, href, hostname, snippet). Use this after navigating to a search engine to intelligently select which result to open. Do not use this on other websites.',
+            description: `Parse Google/Bing SERP and return structured list with rank, title, URL, hostname, snippet. USE: After navigating to search page, researching topics, before openSearchResult. REQUIRES: Must be on google.com/search or bing.com/search. WORKFLOW: 1) Verify search page 2) Call getSearchResults 3) Analyze results 4) Use openSearchResult with rank numbers 5) Use readPageContent on opened tabs. LIMITS: Google/Bing only, max 50 results (default 10), doesn't open results. Example: getSearchResults(maxResults=10) -> [{rank:1, title:"React Docs", href:"https://react.dev", hostname:"react.dev", snippet:"..."}]`,
             parameters: z.object({
                 maxResults: z.number()
                     .max(50)
-                    .describe('Maximum number of results to return (default: 10)')
+                    .describe('Maximum number of search results to return. Default: 10, Max: 50. Use 10 for quick scans, 20-30 for thorough research. Higher numbers may be slower to parse.')
                     .default(10),
             }),
             validateContext: async () => {

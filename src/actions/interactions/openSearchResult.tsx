@@ -44,14 +44,19 @@ export function useOpenSearchResultTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'openSearchResult',
-            description: 'CRITICAL: This tool ONLY works on Google/Bing search results pages. Before calling, verify you are on a search page (google.com/search or bing.com/search). Open specific search result(s) by rank (1-based index). Can open single result or multiple results in new tabs. Must be called after getSearchResults. Example: rank: 2 opens result #2, ranks: [1, 3, 5] opens results #1, #3, and #5 in separate tabs.',
+            description: `Open search result(s) from Google/Bing by rank. Opens in background tabs, returns tabIds for switching.
+USE: After getSearchResults to open relevant results (e.g., "open first result", "open top 3"). For multi-tab research workflows.
+REQUIRES: Must be on google.com/search or bing.com/search. Call getSearchResults first. Ranks are 1-based.
+WORKFLOW: getSearchResults → analyze → openSearchResult(ranks) → switchTabs → readPageContent/takeScreenshot
+LIMITS: Google/Bing only. 1-based ranks. Background tabs. Can't exceed available results.
+EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
             parameters: z.object({
                 rank: z.number()
                     .min(1)
-                    .describe('1-based rank of a single result to open (use this OR ranks, not both)')
+                    .describe('1-based rank of a single result to open. Example: rank=1 opens the first result, rank=5 opens the fifth result. Use this when opening just one result. Cannot use with ranks parameter.')
                     .optional(),
                 ranks: z.array(z.number().min(1))
-                    .describe('Array of 1-based ranks to open in new tabs (e.g., [1, 2, 3] opens top 3 results). Use this to open multiple sources at once.')
+                    .describe('Array of 1-based ranks to open multiple results in separate tabs. Example: [1, 2, 3] opens top 3 results, [1, 5, 10] opens results #1, #5, and #10. Use this for research workflows. Cannot use with rank parameter.')
                     .optional(),
             }).refine(
                 (data) => (data.rank !== undefined) !== (data.ranks !== undefined),

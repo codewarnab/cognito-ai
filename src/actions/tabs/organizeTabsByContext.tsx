@@ -29,10 +29,15 @@ export function useOrganizeTabsByContextTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'organizeTabsByContext',
-            description: 'Intelligently organize tabs by analyzing their content and context. Groups related tabs together even if they are from different websites. For example, all tabs about "React hooks" will be grouped together regardless of whether they are from GitHub, StackOverflow, or documentation sites.',
+            description: `Organize tabs by analyzing content/context. Groups related tabs even from different sites.
+USE: Many tabs needing organization by topic/project, research sessions, "organize/group/clean up tabs" requests, grouping search results.
+REQUIRES: 3+ tabs, valid URLs (no chrome://), Chrome 89+.
+FLOW: Collects tabs → returns for AI analysis → AI calls applyTabGroups with groupings → tabs grouped with colors.
+LIMITS: Two-step process (this + applyTabGroups), no chrome:// pages, title/URL-based heuristics, maxGroups cap.
+EXAMPLE: organizeTabsByContext(maxGroups=5) → tabs for AI grouping`,
             parameters: z.object({
                 maxGroups: z.number()
-                    .describe('Maximum number of groups to create (default: 5)')
+                    .describe('Maximum number of groups to create. Default: 5. Use 3-5 for focused grouping, 7-10 for detailed categorization. More groups = more granular organization but may be overwhelming.')
                     .default(5),
             }),
             execute: async ({ maxGroups = 5 }) => {

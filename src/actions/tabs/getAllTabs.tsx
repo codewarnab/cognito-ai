@@ -27,7 +27,11 @@ export function useGetAllTabs() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'getAllTabs',
-            description: 'Get information about all open browser tabs across all windows. Returns a list of tabs with their titles, URLs, and IDs.',
+            description: `Get all open tabs across browser windows with titles, URLs, IDs, and active status.
+USE WHEN: User asks "what tabs open?", "show/list tabs", analyzing tabs before organizing/closing, finding specific tab, before organizeTabsByContext.
+RETURNS: List with id, title, url, active, windowId, index. Use IDs with switchTabs/other tools.
+LIMITS: Returns all tabs (may be large), no filtering (use chromeSearch), includes all windows.
+EXAMPLE: getAllTabs() -> {count: 15, tabs: [{id: 123, title: "GitHub", url: "...", active: true}, ...]}`,
             parameters: z.object({}),
             execute: async () => {
                 try {

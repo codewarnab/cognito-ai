@@ -28,15 +28,20 @@ export function useApplyTabGroups() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'applyTabGroups',
-            description: 'Apply AI-suggested tab groups. This is called after organizeTabsByContext with the AI\'s grouping suggestions. Groups tabs together by context.',
+            description: `Apply AI-suggested tab groups after organizeTabsByContext. Creates named, colored tab groups (collapsed by default).
+USE: After organizeTabsByContext provides tab analysis and groupings.
+REQUIRES: Chrome 89+, valid tab IDs from organizeTabsByContext.
+PROCESS: Creates groups via chrome.tabs.group, assigns names/colors (9 colors cycle), returns metadata.
+LIMITS: Tab IDs must still be open, can't group chrome:// pages.
+EXAMPLE: groups=[{name:"React Docs",tabIds:[1,2,3]},{name:"GitHub Issues",tabIds:[4,5]}]`,
             parameters: z.object({
                 groups: z.array(
                     z.object({
-                        name: z.string().describe('Name of the group'),
-                        description: z.string().optional().describe('Description of the group'),
-                        tabIds: z.array(z.number()).describe('Array of tab IDs to group together'),
+                        name: z.string().describe('Group name (displayed as label). Be descriptive. Ex: "React Documentation", "GitHub Issues"'),
+                        description: z.string().optional().describe('Optional description (for logging only, not shown in UI)'),
+                        tabIds: z.array(z.number()).describe('Tab IDs from organizeTabsByContext. Must still be open. Ex: [123,456,789]'),
                     })
-                ).describe('Array of group objects with name, description, and tabIds'),
+                ).describe('Array of groups (name + tabIds). Colors cycle: blue,red,yellow,green,pink,purple,cyan,orange,grey.'),
             }),
             execute: async ({ groups }) => {
                 try {

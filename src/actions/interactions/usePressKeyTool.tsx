@@ -21,9 +21,33 @@ export function usePressKeyTool() {
 
         registerTool({
             name: "pressKey",
-            description: "Press a special key on the currently focused element (e.g., Enter, Escape, Tab, ArrowDown, Space). Use this for navigation keys, not for typing text.",
+            description: `Press a special keyboard key on the currently focused element. Use for navigation and control keys, not for typing text.
+
+WHEN TO USE:
+- Need to press Enter to submit a form or search
+- Navigate with arrow keys (ArrowUp, ArrowDown, ArrowLeft, ArrowRight)
+- Close modals or cancel actions with Escape
+- Navigate between fields with Tab
+- Trigger keyboard shortcuts (Space, Backspace, etc.)
+
+PRECONDITIONS:
+- An element must be currently focused (use typeInField or clickByText first)
+- Key must be a valid keyboard key name
+
+WORKFLOW:
+1. Get currently focused element
+2. Dispatch keydown, keypress, keyup events in sequence
+3. Simulates real keyboard interaction
+
+LIMITATIONS:
+- Only works on currently focused element (cannot target specific element)
+- Cannot press key combinations (Ctrl+C, Alt+Tab, etc.)
+- Does not type text - use typeInField for that
+- May not work on custom keyboard handlers
+
+EXAMPLE: pressKey(key="Enter") after typeInField to submit search`,
             parameters: z.object({
-                key: z.string().describe('Key to press (e.g., "Enter", "Escape", "Tab", "ArrowDown", "ArrowUp", "Space", "Backspace")'),
+                key: z.string().describe('Key name to press. Common keys: "Enter" (submit/confirm), "Escape" (cancel/close), "Tab" (next field), "ArrowDown"/"ArrowUp" (navigate lists), "Space" (activate), "Backspace" (delete). Must be valid KeyboardEvent.key value.'),
             }),
             execute: async ({ key }) => {
                 try {

@@ -30,13 +30,18 @@ export function useSwitchTabsTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'switchTabs',
-            description: 'Switch focus to an ALREADY OPEN tab. CRITICAL: Use this ONLY for tabs that are already open in the browser. Can find tabs by URL (exact or partial match) or by tab ID. Brings the tab into focus and makes its window active. IMPORTANT: Always provide either a URL or tabId - do not call without parameters. If you have a tab ID from openSearchResult, use that for accurate switching.',
+            description: `Switch focus to an already-open tab by URL or tab ID.
+USE: User asks to "switch to"/"go back to" a tab, return to previous search result, switch between open resources, or analyze tabs opened by openSearchResult.
+REQUIRES: Either url OR tabId (prefer tabId from openSearchResult for accuracy). Tab must be open.
+BEHAVIOR: Searches by URL (partial/exact) or tabId, brings tab to foreground, activates window. Returns tab info (id, url, title).
+LIMITS: Only current window tabs. URL matching is fuzzy—may match wrong tab if similar URLs exist. Use navigateTo for new tabs.
+EXAMPLE: switchTabs(tabId=123) or switchTabs(url="github.com/facebook/react")`,
             parameters: z.object({
                 url: z.string()
-                    .describe('The URL to search for and switch to. Can be partial or full URL. Example: "github.com" or "https://github.com/user/repo"')
+                    .describe('URL to search for (partial or full match). Examples: "github.com", "react documentation", "stackoverflow.com/questions/12345". Searches all open tabs for matching URL. Use when you know the website but not the tab ID.')
                     .optional(),
                 tabId: z.number()
-                    .describe('The specific tab ID to switch to. Use this if you have the tab ID from openSearchResult or other tools.')
+                    .describe('Specific tab ID to switch to (from openSearchResult, getAllTabs, or other tools). Preferred over URL for accuracy. Use when you have the exact tab ID from a previous tool call.')
                     .optional(),
             }).refine(
                 (data) => data.url || data.tabId,

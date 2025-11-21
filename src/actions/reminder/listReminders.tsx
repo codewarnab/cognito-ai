@@ -15,7 +15,28 @@ export function useListRemindersAction() {
 
         registerTool({
             name: "listReminders",
-            description: "List all active reminders that are scheduled",
+            description: `List all active (scheduled) reminders. Shows upcoming reminders that haven't fired yet.
+
+WHEN TO USE:
+- User asks "what reminders do I have?", "show my reminders", "list upcoming reminders"
+- Checking if a reminder already exists before creating duplicate
+- Managing or reviewing scheduled reminders
+
+PRECONDITIONS:
+- None (returns empty list if no reminders)
+
+WORKFLOW:
+1. Query storage for active reminders
+2. Filter out past/fired reminders
+3. Return list with id, title, scheduled time, and URL
+4. Sorted by scheduled time (soonest first)
+
+LIMITATIONS:
+- Only shows active reminders (not past/fired ones)
+- Cannot filter by time range or title
+- Returns all active reminders (no pagination)
+
+EXAMPLE: listReminders() -> {count: 3, reminders: [{id: "...", title: "workout", when: "tomorrow at 6am", url: "..."}]}`,
             parameters: z.object({}),
             execute: async () => {
                 try {

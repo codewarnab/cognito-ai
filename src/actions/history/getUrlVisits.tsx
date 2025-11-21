@@ -16,9 +16,13 @@ export function useGetUrlVisits() {
 
         registerTool({
             name: 'getUrlVisits',
-            description: 'Get detailed visit information for a specific URL including all visit timestamps and how the user navigated to the page.',
+            description: `Get visit history for a URL with timestamps and navigation transitions.
+USE: User asks "when/how many times did I visit X?", analyzing visit patterns, understanding navigation (link/typed/bookmark/reload).
+REQUIRES: Valid absolute URL (http:// or https://), exact match only (no partial/fuzzy).
+RETURNS: All-time visits with timestamps, referringVisitId, transition types. Empty if never visited.
+EXAMPLE: getUrlVisits(url="https://github.com/facebook/react") -> {visitCount: 15, visits: [{visitTime: 1234567890000, transition: "link"}, ...]}`,
             parameters: z.object({
-                url: z.string().describe('The URL to get visit details for'),
+                url: z.string().describe('The exact URL to get visit details for. Must be valid absolute URL (http:// or https://). Examples: "https://github.com/facebook/react", "https://react.dev/learn". Cannot be partial URL or domain only.'),
             }),
             execute: async ({ url }) => {
                 try {

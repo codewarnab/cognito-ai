@@ -17,12 +17,17 @@ export function useSearchHistory() {
 
         registerTool({
             name: 'searchHistory',
-            description: "Search browser history by text query within a specific time range. Searches through page titles and URLs. IMPORTANT: When user asks about specific time periods (like 'this morning', 'yesterday', 'last week'), use startTime/endTime parameters to filter results to that time period only. Do NOT include lifetime visit counts when user asks about specific time periods.",
+            description: `Search browser history by text query with optional time range filtering. Searches titles/URLs (not page content).
+USE FOR: Finding previously visited pages by topic/keyword, analyzing browsing patterns for specific periods ("this morning", "yesterday", "last week").
+IMPORTANT: When user mentions time periods, MUST use startTime/endTime parameters.
+RETURNS: Results with title, URL, lastVisitTime, visitCount (lifetime), sorted by relevance/recency. Empty array if no matches.
+LIMITS: Searches titles/URLs only, max results default 20.
+EXAMPLE: searchHistory(query="react", maxResults=20, startTime=Date.now()-86400000, endTime=Date.now())`,
             parameters: z.object({
-                query: z.string().describe('Text to search for in page titles and URLs'),
-                maxResults: z.number().describe('Maximum number of results to return (default: 20)').default(20),
-                startTime: z.number().optional().describe('Search from this timestamp in milliseconds since epoch.'),
-                endTime: z.number().optional().describe('Search until this timestamp in milliseconds since epoch.'),
+                query: z.string().describe('Text to search for in page titles and URLs. Examples: "react hooks", "github", "documentation". Case-insensitive. Searches both title and URL fields.'),
+                maxResults: z.number().describe('Maximum number of results to return. Default: 20. Use 10-20 for quick results, 50+ for comprehensive search.').default(20),
+                startTime: z.number().optional().describe('Search from this timestamp (milliseconds since epoch). Use to filter by time period. Example: Date.now() - 24*60*60*1000 for last 24 hours. Required when user asks about specific time periods like "this morning" or "yesterday".'),
+                endTime: z.number().optional().describe('Search until this timestamp (milliseconds since epoch). Use with startTime to define time range. Example: Date.now() for current time. Required when user asks about specific time periods.'),
             }),
             execute: async ({ query, maxResults = 20, startTime, endTime }) => {
                 try {
