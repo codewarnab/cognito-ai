@@ -388,6 +388,13 @@ export class GeminiLiveClient {
         return this.sessionManager?.isConnected() ?? false;
     }
 
+    /**
+     * Get current configuration
+     */
+    getConfig(): GeminiLiveClientConfig {
+        return { ...this.config };
+    }
+
     // ========================================================================
     // Private Event Handlers
     // ========================================================================

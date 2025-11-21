@@ -25,12 +25,13 @@ const CACHE_MAX_SIZE = 50; // Maximum number of cached audio entries
 const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
- * Generate a simple hash for text to use as cache key
+ * Generate a simple hash for text and voice to use as cache key
  */
-function hashText(text: string): string {
+function hashText(text: string, voiceName: string = 'Aoede'): string {
+    const content = `${text}:${voiceName}`;
     let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-        const char = text.charCodeAt(i);
+    for (let i = 0; i < content.length; i++) {
+        const char = content.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
         hash = hash & hash; // Convert to 32-bit integer
     }
@@ -51,7 +52,7 @@ function cleanupCache(): void {
     }
 
     entriesToDelete.forEach(key => audioCache.delete(key));
-    
+
     if (entriesToDelete.length > 0) {
         ttsLog.debug(`Cleaned up ${entriesToDelete.length} expired cache entries`);
     }
@@ -77,14 +78,14 @@ function enforceCacheLimit(): void {
 /**
  * Get cached audio if available
  */
-function getCachedAudio(text: string): ArrayBuffer | null {
+function getCachedAudio(text: string, voiceName: string = 'Aoede'): ArrayBuffer | null {
     cleanupCache();
-    
-    const hash = hashText(text);
+
+    const hash = hashText(text, voiceName);
     const entry = audioCache.get(hash);
 
     if (entry && Date.now() - entry.timestamp < CACHE_EXPIRY_MS) {
-        ttsLog.debug('Cache hit for audio');
+        ttsLog.debug(`Cache hit for audio (${voiceName})`);
         return entry.audioBuffer;
     }
 
@@ -94,9 +95,9 @@ function getCachedAudio(text: string): ArrayBuffer | null {
 /**
  * Store audio in cache
  */
-function cacheAudio(text: string, audioBuffer: ArrayBuffer): void {
-    const hash = hashText(text);
-    
+function cacheAudio(text: string, voiceName: string, audioBuffer: ArrayBuffer): void {
+    const hash = hashText(text, voiceName);
+
     audioCache.set(hash, {
         audioBuffer,
         timestamp: Date.now(),
@@ -104,7 +105,7 @@ function cacheAudio(text: string, audioBuffer: ArrayBuffer): void {
     });
 
     enforceCacheLimit();
-    ttsLog.debug(`Cached audio (cache size: ${audioCache.size})`);
+    ttsLog.debug(`Cached audio for ${voiceName} (cache size: ${audioCache.size})`);
 }
 
 /**
@@ -133,7 +134,8 @@ export async function generateSpeech(
     }
 
     // Check cache first
-    const cachedAudio = getCachedAudio(text);
+    const voiceName = config.voiceName ?? 'Aoede';
+    const cachedAudio = getCachedAudio(text, voiceName);
     if (cachedAudio) {
         return cachedAudio;
     }
@@ -147,7 +149,7 @@ export async function generateSpeech(
             speechConfig: {
                 voiceConfig: {
                     prebuiltVoiceConfig: {
-                        voiceName: config.voiceName ?? 'Aoede',
+                        voiceName: voiceName,
                     },
                 },
             },
@@ -209,10 +211,10 @@ export async function generateSpeech(
         }
 
         ttsLog.debug('Speech generation complete');
-        
+
         // Cache the generated audio
-        cacheAudio(text, combined.buffer);
-        
+        cacheAudio(text, voiceName, combined.buffer);
+
         return combined.buffer;
     } catch (error) {
         ttsLog.error('Failed to generate speech:', error);
@@ -230,11 +232,11 @@ function convertToWav(rawData: string, mimeType: string): Uint8Array {
     const options = parseMimeType(mimeType);
     const dataBuffer = Buffer.from(rawData, 'base64');
     const headerBuffer = createWavHeader(dataBuffer.length, options);
-    
+
     // Combine header and data into Uint8Array
     const totalLength = headerBuffer.length + dataBuffer.length;
     const uint8Array = new Uint8Array(totalLength);
-    
+
     // Copy header
     for (let i = 0; i < headerBuffer.length; i++) {
         const byte = headerBuffer[i];
@@ -242,7 +244,7 @@ function convertToWav(rawData: string, mimeType: string): Uint8Array {
             uint8Array[i] = byte;
         }
     }
-    
+
     // Copy data
     for (let i = 0; i < dataBuffer.length; i++) {
         const byte = dataBuffer[i];
@@ -250,7 +252,7 @@ function convertToWav(rawData: string, mimeType: string): Uint8Array {
             uint8Array[headerBuffer.length + i] = byte;
         }
     }
-    
+
     return uint8Array;
 }
 
@@ -258,7 +260,7 @@ function parseMimeType(mimeType: string): WavConversionOptions {
     const [fileType, ...params] = mimeType.split(';').map((s) => s.trim());
     const parts = (fileType || '').split('/');
     const format = parts.length > 1 ? parts[1] : undefined;
-    
+
     const options: WavConversionOptions = {
         numChannels: 1,
         sampleRate: 24000, // Default sample rate
