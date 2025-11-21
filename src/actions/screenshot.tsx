@@ -16,11 +16,39 @@ export function useScreenshotTool() {
 
         registerTool({
             name: "takeScreenshot",
-            description: "Capture a screenshot of the current visible viewport to visually analyze the page. Returns a full-resolution PNG image that the AI can analyze for layout, design, visual elements, content, forms, buttons, and any visible information. Use this as the primary method to understand what's on a page.",
+            description: `Capture a visual screenshot of the current viewport. Use this as the PRIMARY method to understand what's visible on a page - it's faster and more reliable than text extraction for initial page analysis.
+
+WHEN TO USE:
+- First step when analyzing any new page (before readPageContent or extractText)
+- User asks "what's on this page?", "show me the page", "what do you see?"
+- Verifying page loaded correctly after navigateTo
+- Checking visual layout, design, UI elements, forms, buttons
+- Identifying clickable elements before using clickByText
+- Debugging why interactions failed (see what's actually visible)
+
+PRECONDITIONS:
+- Must have activeTab permission
+- Tab must be on a regular website (http:// or https://)
+- Cannot capture chrome://, chrome-extension://, about:// pages (browser security)
+- Tab must be visible (not minimized)
+
+WORKFLOW:
+1. Verify tab is accessible and visible
+2. Capture current viewport as PNG image
+3. Return base64-encoded image for AI analysis
+4. Use visual info to decide next actions (click, type, read, etc.)
+
+LIMITATIONS:
+- Only captures visible viewport (not full page scroll)
+- Cannot capture restricted browser pages (chrome://, etc.)
+- Requires tab to be in foreground and window visible
+- Image is base64-encoded (large data size)
+
+EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
             parameters: z.object({
                 reason: z.string()
                     .optional()
-                    .describe("Optional: Brief reason for taking the screenshot (e.g., 'analyze page layout', 'check form fields')")
+                    .describe("Optional brief reason for screenshot (for logging/debugging). Examples: 'analyze page layout', 'verify form fields', 'check search results'. Not required but helpful for context.")
             }),
             execute: async ({ reason }) => {
                 try {

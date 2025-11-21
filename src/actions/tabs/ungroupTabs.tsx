@@ -29,15 +29,20 @@ export function useUngroupTabs() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'ungroupTabs',
-            description: 'Ungroup tabs by removing them from their tab groups. Can ungroup all tabs, specific groups by name/ID, or tabs from multiple groups at once. Tabs remain open but are no longer grouped.',
+            description: `Remove tabs from their groups while keeping tabs open. Can ungroup all groups or specific groups by name/ID.
+WHEN TO USE: User wants to "ungroup all tabs", "remove tab groups", "ungroup X group"; cleaning up tab organization; removing groups after completing a project.
+PRECONDITIONS: Must have tab groups created (from applyTabGroups or manual grouping); Chrome 89+ required.
+WORKFLOW: 1) Identify which groups to ungroup (all or specific) 2) For each group, get tabs 3) Remove tabs from group (tabs stay open, just ungrouped) 4) Return count of ungrouped groups and tabs.
+LIMITATIONS: Cannot undo ungrouping (must recreate groups); tabs remain open (not closed); cannot ungroup chrome:// or extension pages.
+EXAMPLE: ungroupTabs(ungroupAll=true) or ungroupTabs(groupIds=["React Docs", 123])`,
             parameters: z.object({
                 groupIds: z.array(z.union([z.number(), z.string()]))
                     .optional()
-                    .describe('Optional array of group IDs to ungroup. Can be group IDs (numbers) or group names (strings). If not provided, ungroups ALL tab groups.'),
+                    .describe('Array of group IDs (numbers) or group names (strings) to ungroup. Examples: [123, 456] or ["React Docs", "GitHub Issues"]. If omitted and ungroupAll=true, ungroups all groups.'),
                 ungroupAll: z.boolean()
                     .optional()
                     .default(true)
-                    .describe('If true, ungroups all tab groups at once. Default is true if no groupIds specified.'),
+                    .describe('If true (default), ungroups all tab groups. If false, only ungroups groups specified in groupIds. Use true for complete cleanup, false for selective ungrouping.'),
             }),
             execute: async ({ groupIds, ungroupAll = true }) => {
                 try {

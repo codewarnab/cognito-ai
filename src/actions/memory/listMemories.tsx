@@ -23,12 +23,34 @@ export function useListMemories() {
 
         registerTool({
             name: 'listMemories',
-            description: 'List all stored memories, optionally filtered by category (\'fact\' or \'behavior\'). Use this when user asks to see their saved information or you need to review multiple memories.',
+            description: `List all stored memories with optional filtering by category. Use to show user what you remember or review saved information.
+
+WHEN TO USE:
+- User asks "what do you remember about me?", "show my memories", "list saved info"
+- Need to review all saved facts or behaviors
+- Checking what information is already saved before asking user
+- Auditing or managing stored memories
+
+PRECONDITIONS:
+- At least one memory must be saved (returns empty list otherwise)
+
+WORKFLOW:
+1. Query memory store with optional category filter
+2. Apply limit (default 20, configurable)
+3. Return list of memories with key, value, category, source, creation date
+4. Memories sorted by creation date (newest first)
+
+LIMITATIONS:
+- Default limit of 20 (configurable up to any number)
+- Returns all memories if no filter (may be large list)
+- Cannot search by value (only filter by category)
+
+EXAMPLE: listMemories(category="fact", limit=10) -> {count: 5, memories: [{key: "user.name", value: "John", ...}]}`,
             parameters: z.object({
                 category: z.enum(['fact', 'behavior']).optional()
-                    .describe('Optional filter: \'fact\' or \'behavior\'. Leave empty for all memories.'),
+                    .describe('Optional filter by category. "fact": personal information and preferences. "behavior": rules and AI behavior preferences. Omit to return all memories regardless of category.'),
                 limit: z.number().int().positive().optional()
-                    .describe('Maximum number of memories to return. Defaults to 20.'),
+                    .describe('Maximum number of memories to return. Default: 20. Use 5-10 for quick overview, 20-50 for comprehensive list. Higher numbers may be overwhelming.'),
             }),
             execute: async ({ category, limit }) => {
                 try {

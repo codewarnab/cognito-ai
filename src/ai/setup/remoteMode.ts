@@ -6,6 +6,7 @@
 
 import { createLogger } from '~logger';
 import { getAllTools } from '../tools/registryUtils';
+import { enabledTools } from '../tools/enabledTools';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { youtubeAgentAsTool } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
@@ -57,30 +58,33 @@ export async function setupRemoteMode(
     // Get all registered tools (Chrome extension tools)
     const allExtensionTools = getAllTools();
 
-    // Filter extension tools based on workflow
+    // Filter extension tools based on enabledTools and workflow
     let extensionTools: Record<string, any>;
     if (workflowConfig) {
-        // Workflow mode: Only allowed tools
+        // Workflow mode: Only allowed tools that are also enabled
         extensionTools = Object.fromEntries(
             Object.entries(allExtensionTools).filter(([name]) =>
-                workflowConfig.allowedTools.includes(name)
+                workflowConfig.allowedTools.includes(name) && enabledTools.includes(name)
             )
         );
         log.info('🔧 Filtered tools for workflow:', {
             workflow: workflowConfig.name,
             allowed: workflowConfig.allowedTools,
-            filtered: Object.keys(extensionTools)
+            filtered: Object.keys(extensionTools),
+            enabledCount: enabledTools.length
         });
     } else {
-        // Normal mode: All tools except workflow-only
+        // Normal mode: All enabled tools except workflow-only
         extensionTools = Object.fromEntries(
             Object.entries(allExtensionTools).filter(([name]) =>
-                !WORKFLOW_ONLY_TOOLS.includes(name)
+                !WORKFLOW_ONLY_TOOLS.includes(name) && enabledTools.includes(name)
             )
         );
-        log.info('🔧 Normal mode - excluding workflow-only tools:', {
+        log.info('🔧 Normal mode - applying enabledTools filter:', {
             excluded: WORKFLOW_ONLY_TOOLS,
-            available: Object.keys(extensionTools)
+            available: Object.keys(extensionTools),
+            totalEnabled: enabledTools.length,
+            filtered: Object.keys(allExtensionTools).length - Object.keys(extensionTools).length
         });
     }
 
@@ -103,14 +107,20 @@ export async function setupRemoteMode(
         }
     }
 
-    // Add agent tools (not in workflow mode unless allowed)
-    const agentTools = workflowConfig ? {} : {
-        analyzeYouTubeVideo: youtubeAgentAsTool,
-        analyzePdfDocument: pdfAgentAsTool,
-    };
+    // Add agent tools (not in workflow mode unless allowed, and only if enabled)
+    let agentTools: Record<string, any> = {};
+    if (!workflowConfig) {
+        if (enabledTools.includes('analyzeYouTubeVideo')) {
+            agentTools.analyzeYouTubeVideo = youtubeAgentAsTool;
+        }
+        if (enabledTools.includes('analyzePdfDocument')) {
+            agentTools.analyzePdfDocument = pdfAgentAsTool;
+        }
+    }
     log.info('🔧 Agent tools loaded:', {
         count: Object.keys(agentTools).length,
-        names: Object.keys(agentTools)
+        names: Object.keys(agentTools),
+        filtered: 2 - Object.keys(agentTools).length
     });
 
     // Combine all tools

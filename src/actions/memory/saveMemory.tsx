@@ -23,16 +23,26 @@ export function useSaveMemory() {
 
         registerTool({
             name: 'saveMemory',
-            description: 'Save information to memory after user consent. MUST ask user "Do you want me to remember this?" before calling. Only save after user confirms. Categories: "fact" (personal info like name, email, preferences) or "behavior" (rules like "never ask about X", "always do Y").',
+            description: `Save info to persistent memory. CRITICAL: Ask user consent first ("Want me to remember this?").
+
+USE FOR: Personal info (name, email, preferences), user rules ("never/always do X"), work context, projects.
+
+WORKFLOW: 1) User shares info 2) Ask consent 3) If yes, call tool 4) Confirm saved.
+
+CATEGORIES: "fact"=personal info/preferences/context, "behavior"=AI behavior rules.
+
+LIMITS: Requires consent, keys auto-normalized, strings only, persists across sessions.
+
+EXAMPLE: "My name is John" → ask consent → saveMemory(category="fact", key="user.name", value="John")`,
             parameters: z.object({
                 category: z.enum(['fact', 'behavior'])
-                    .describe('Memory category: "fact" or "behavior"'),
+                    .describe('Memory category. "fact": personal information, preferences, context (name, email, location, projects, tools). "behavior": rules for AI behavior (never/always do X, preferences for how to interact).'),
                 key: z.string()
-                    .describe('Memory key (e.g., "user.name", "user.email", "behavior.no-emails"). Will be auto-canonicalized.'),
+                    .describe('Memory key for retrieval. Use dot notation for hierarchy. Examples: "user.name", "user.email", "user.favorite_language", "behavior.no_emails", "project.current". Will be auto-canonicalized (normalized).'),
                 value: z.string()
-                    .describe('The value to store'),
+                    .describe('The value to store. Can be any string. Examples: "John Smith", "john@example.com", "React", "never send emails without asking". Keep concise but complete.'),
                 source: z.enum(['user', 'task', 'system']).optional()
-                    .describe('Source of memory: "user", "task", or "system". Defaults to "user".'),
+                    .describe('Source of memory. "user" (default): directly from user. "task": learned during task execution. "system": system-generated. Use "user" for most cases.'),
             }),
             execute: async ({ category, key, value, source }) => {
                 try {

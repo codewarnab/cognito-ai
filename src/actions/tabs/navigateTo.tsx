@@ -32,11 +32,11 @@ export function useNavigateToTool() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'navigateTo',
-            description: 'Open a URL in a new tab or current tab. Use newTab parameter to control where the URL opens. This tool does NOT switch focus to existing tabs; use switchTabs for that instead.',
+            description: `Navigate to URL by opening in new/current tab. Use when user asks to "go to", "open", "visit" a website or load search results, docs, articles. Auto-adds https:// if missing. Opens in background (no focus steal). Returns tabId & URL. Does NOT switch to existing tabs (use switchTabs), wait for load (use takeScreenshot/readPageContent after), or open multiple URLs at once. Cannot access chrome:// pages. Example: navigateTo(url="github.com/facebook/react", newTab=true)`,
             parameters: z.object({
-                url: z.string().describe('The URL to open'),
+                url: z.string().describe('The URL to navigate to. Must include protocol (http:// or https://). Can be full URL or domain (will auto-add https://). Examples: "github.com", "https://example.com/page"'),
                 newTab: z.boolean()
-                    .describe('If true, opens URL in a new tab. If false, opens in the current tab. Defaults to true.')
+                    .describe('If true, opens URL in a new background tab (default). If false, replaces current tab content. Use false only when user explicitly wants to replace current page.')
                     .default(true),
             }),
             execute: async ({ url, newTab = true }) => {

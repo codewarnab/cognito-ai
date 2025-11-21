@@ -22,12 +22,22 @@ export function useClickByTextTool() {
 
         registerTool({
             name: "clickByText",
-            description: "Click any element on the page by searching for visible text. Can find text in buttons, links, headings, paragraphs, labels - anywhere on the page. Supports fuzzy matching for typos, handles shadow DOM and iframes, scrolls element into view, and highlights it before clicking. Works like a real user clicking with a mouse.",
+            description: `Click elements by visible text. Searches entire page including shadow DOM and iframes with fuzzy matching support.
+
+USE FOR: Clicking buttons, links, forms, navigation, menus, cookie banners, or any clickable UI element.
+
+REQUIREMENTS: Text must be visible in DOM (not images/canvas). Element must be clickable or have clickable parent.
+
+PROCESS: Searches page → finds clickable element → scrolls into view → highlights → simulates realistic mouse events → returns element info.
+
+LIMITATIONS: Cannot click hidden elements. May match wrong element if multiple similar texts exist (use index param). Won't work with some custom click handlers that validate event origin.
+
+EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
             parameters: z.object({
-                text: z.string().describe('Text to search for and click (e.g., "Sign In", "Submit", "Learn More", "Accept Cookies")'),
-                fuzzy: z.boolean().optional().describe('If true, allow partial matches and typos (default: true)').default(true),
-                elementType: z.enum(['button', 'link', 'any']).optional().describe('Filter by element type: "button", "link", or "any" (default: "any")').default('any'),
-                index: z.number().optional().describe('Which occurrence to click if multiple matches (1-based, default: 1)').default(1),
+                text: z.string().describe('Visible text to search for (case-insensitive). Examples: "Sign In", "Submit", "Accept Cookies". Searches buttons, links, labels, headings across entire page.'),
+                fuzzy: z.boolean().optional().describe('Allow partial matches and typos (default: true). "Sign" matches "Sign In". Set false for exact match only.').default(true),
+                elementType: z.enum(['button', 'link', 'any']).optional().describe('Filter by type: "button" (buttons only), "link" (<a> tags only), "any" (default: all clickable). Use to disambiguate duplicate text.').default('any'),
+                index: z.number().optional().describe('Which match to click if multiple found (1-based, default: 1). Example: index=2 clicks second "Submit" button.').default(1),
             }),
             execute: async ({ text, fuzzy = true, elementType = 'any', index = 1 }) => {
                 try {

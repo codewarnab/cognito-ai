@@ -16,11 +16,35 @@ export function useScrollPageTool() {
 
         registerTool({
             name: "scrollPage",
-            description: "Scroll page up/down/top/bottom or to a specific element.",
+            description: `Scroll the page in various directions or to a specific element. Use to reveal content that's not in the current viewport.
+
+WHEN TO USE:
+- Content is below/above the current viewport
+- User asks to "scroll down", "go to top", "scroll to bottom"
+- Need to load more content (infinite scroll pages)
+- Bringing an element into view before interacting with it
+
+PRECONDITIONS:
+- Page must be scrollable (have content beyond viewport)
+- For 'to-element', selector must match an existing element
+
+WORKFLOW:
+1. Determine scroll action (up/down/top/bottom/to-element)
+2. Perform smooth scroll animation
+3. Show visual indicator of scroll direction
+4. Return scroll distance and position
+
+LIMITATIONS:
+- Only scrolls main page (not iframes or scrollable divs)
+- Smooth animation may take time to complete
+- Cannot scroll to hidden elements
+- Amount is in pixels (not viewport heights)
+
+EXAMPLE: scrollPage(direction="down", amount=500) or scrollPage(direction="to-element", selector="#comments")`,
             parameters: z.object({
-                direction: z.enum(['up', 'down', 'top', 'bottom', 'to-element']).describe("Scroll direction"),
-                amount: z.number().optional().default(500).describe("Pixels to scroll (for up/down). Default 500"),
-                selector: z.string().optional().describe("CSS selector for 'to-element'"),
+                direction: z.enum(['up', 'down', 'top', 'bottom', 'to-element']).describe("Scroll direction. 'up': scroll up by amount. 'down': scroll down by amount. 'top': scroll to page top. 'bottom': scroll to page bottom. 'to-element': scroll to specific element (requires selector)."),
+                amount: z.number().optional().default(500).describe("Pixels to scroll for 'up' or 'down' directions. Default: 500px (about half a viewport). Use 300-500 for gentle scroll, 1000+ for large jumps. Ignored for 'top', 'bottom', 'to-element'."),
+                selector: z.string().optional().describe("CSS selector for 'to-element' direction. Examples: '#comments', '.footer', 'h2'. Element will be scrolled to center of viewport. Required when direction='to-element'."),
             }),
             execute: async ({ direction, amount, selector }) => {
                 try {

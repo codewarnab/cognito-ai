@@ -109,7 +109,7 @@ export function registerSelectionActions() {
     // Register getSelectedText tool
     registerTool({
       name: "getSelectedText",
-      description: "Get the currently selected text from the active browser tab",
+      description: `Gets currently selected/highlighted text from active tab. Use when user asks to analyze/summarize/translate selected text or extract quotes. Requires text selection on page (not chrome:// pages). Returns plain text only, no HTML/formatting. Returns empty if nothing selected. Example: {success: true, selectedText: "React is a JavaScript library", length: 28}`,
       parameters: z.object({}),
       execute: async () => {
         try {
@@ -240,9 +240,9 @@ export function registerSelectionActions() {
     // Register readPageContent tool
     registerTool({
       name: "readPageContent",
-      description: "Read text content from active tab; extracts main text content. For large pages (like social media feeds), specify a limit to avoid overwhelming responses. Recommended limit: 10000-30000 characters for summaries.",
+      description: `Extracts main text from active tab, removing ads/nav/scripts. Use after takeScreenshot or when user asks to read/summarize page content. Waits for page load, cleans content, returns title/URL/text. Default 5000 char limit (smart truncation at sentence boundary). Set limit param for more (10000-30000 for articles, 100000+ for full content). Cannot read chrome://, chrome-extension://, about://, or Web Store pages. Text only, no images/videos/forms. Example: {title: "React Docs", content: "...", contentLength: 10000, truncated: true}`,
       parameters: z.object({
-        limit: z.number().optional().describe("Maximum characters to extract. Recommended: 10000-30000 for large pages. If not specified, intelligently cleans and limits content to ~50k chars."),
+        limit: z.number().optional().describe("Maximum characters to extract. Default: 5000 (smart truncation). Use 10000-30000 for large pages/articles. Higher values may overwhelm context. Set to very high number (100000+) to get full content."),
       }),
       validateContext: async () => {
         try {

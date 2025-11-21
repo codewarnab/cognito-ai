@@ -16,9 +16,32 @@ export function useFocusElementTool() {
 
         registerTool({
             name: "focusElement",
-            description: "Focus an element by selector.",
+            description: `Focus a specific element on the page by CSS selector. Brings element into focus and highlights it with spotlight animation.
+
+WHEN TO USE:
+- Need to focus an input field before typing (alternative to typeInField with target)
+- Bringing keyboard focus to a specific element
+- Highlighting an element for user attention
+
+PRECONDITIONS:
+- Element must exist and match the selector
+- Element must be focusable (input, button, link, or has tabindex)
+
+WORKFLOW:
+1. Find element by CSS selector
+2. Show spotlight animation (dims page, highlights element)
+3. Call element.focus() to set keyboard focus
+4. Returns success or error
+
+LIMITATIONS:
+- Only works with CSS selectors (not text-based search)
+- Element must be focusable (not all elements can receive focus)
+- Cannot focus hidden or disabled elements
+- Prefer typeInField or clickByText for most interactions
+
+EXAMPLE: focusElement(selector="#search-input") or focusElement(selector="input[name='email']")`,
             parameters: z.object({
-                selector: z.string().describe("Element selector"),
+                selector: z.string().describe("CSS selector for the element to focus. Examples: '#search-input', 'input[name=\"email\"]', '.login-button', 'textarea'. Must match exactly one element. Use specific selectors to avoid ambiguity."),
             }),
             execute: async ({ selector }) => {
                 try {

@@ -5,6 +5,7 @@
 
 import { createLogger } from '~logger';
 import { getAllTools } from './registryUtils';
+import { enabledTools } from './enabledTools';
 import type { AIMode, ToolCapabilities } from '../types';
 
 const log = createLogger('ToolRegistry', 'TOOLS_REGISTRY');
@@ -83,41 +84,44 @@ export const AGENT_TOOLS = [
 
 /**
  * Get tools based on mode
+ * Filters tools against enabledTools list
  */
 export function getToolsForMode(mode: AIMode): Record<string, any> {
   const allTools = getAllTools();
 
   if (mode === 'local') {
-    // Local mode: Only local tools
+    // Local mode: Only local tools that are also enabled
     const localTools: Record<string, any> = {};
 
     LOCAL_TOOLS.forEach(toolName => {
-      if (allTools[toolName]) {
+      if (allTools[toolName] && enabledTools.includes(toolName)) {
         localTools[toolName] = allTools[toolName];
       }
     });
 
-    log.info('Local mode: Returning local tools only', {
+    log.info('Local mode: Returning enabled local tools', {
       count: Object.keys(localTools).length,
-      names: Object.keys(localTools)
+      names: Object.keys(localTools),
+      filtered: LOCAL_TOOLS.length - Object.keys(localTools).length
     });
 
     return localTools;
   }
 
-  // Remote mode: All basic tools
+  // Remote mode: All basic tools that are also enabled
   // MCP tools are added separately in remoteAI.ts
   const extensionTools: Record<string, any> = {};
 
   BASIC_TOOLS.forEach(toolName => {
-    if (allTools[toolName]) {
+    if (allTools[toolName] && enabledTools.includes(toolName)) {
       extensionTools[toolName] = allTools[toolName];
     }
   });
 
-  log.info(' Remote mode: Returning all basic tools', {
+  log.info(' Remote mode: Returning enabled basic tools', {
     count: Object.keys(extensionTools).length,
-    names: Object.keys(extensionTools)
+    names: Object.keys(extensionTools),
+    filtered: BASIC_TOOLS.length - Object.keys(extensionTools).length
   });
 
   return extensionTools;

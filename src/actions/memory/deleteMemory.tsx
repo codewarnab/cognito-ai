@@ -23,9 +23,32 @@ export function useDeleteMemory() {
 
         registerTool({
             name: 'deleteMemory',
-            description: 'Delete a memory by its key. Use when user asks to forget something or remove a saved memory.',
+            description: `Delete a specific memory by its key. Use when user wants to remove saved information.
+
+WHEN TO USE:
+- User asks to "forget X", "delete my Y", "remove that memory"
+- User wants to update information (delete old, save new)
+- Removing outdated or incorrect information
+- User requests privacy/data deletion
+
+PRECONDITIONS:
+- Memory must exist with the given key
+- Key will be auto-canonicalized for matching
+
+WORKFLOW:
+1. Provide memory key to delete
+2. Key is canonicalized (normalized) for matching
+3. Memory is permanently deleted from storage
+4. Returns success confirmation or not found error
+
+LIMITATIONS:
+- Cannot undo deletion (permanent)
+- Can only delete one memory at a time
+- Must know exact key (use listMemories to find keys)
+
+EXAMPLE: deleteMemory(key="user.email") -> {success: true, key: "user.email", message: "Memory deleted"}`,
             parameters: z.object({
-                key: z.string().describe('The memory key to delete (will be auto-canonicalized)'),
+                key: z.string().describe('Memory key to delete. Will be auto-canonicalized (normalized). Examples: "user.name", "user.email", "behavior.no_emails". Use listMemories first if unsure of exact key.'),
             }),
             execute: async ({ key }) => {
                 try {

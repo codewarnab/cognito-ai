@@ -7,6 +7,7 @@ import { generateId } from 'ai';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { getToolsForMode } from '../tools/registry';
+import { enabledTools } from '../tools/enabledTools';
 import { downloadLanguageModel, downloadSummarizer, type DownloadProgressEvent } from '../models/downloader';
 import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
 import { writeErrorToStream } from '../stream/streamHelpers';
@@ -107,9 +108,10 @@ export async function setupLocalMode(
     const model = builtInAI();
 
     // Get limited tool set (basic tools only) from tool registry
+    // getToolsForMode already filters against enabledTools
     const localTools = getToolsForMode('local');
 
-    // In workflow mode, filter to only allowed tools
+    // In workflow mode, filter to only allowed tools (already filtered by enabledTools in registry)
     let tools: Record<string, any>;
     if (workflowConfig) {
         tools = Object.fromEntries(
@@ -120,7 +122,8 @@ export async function setupLocalMode(
         log.info('🔧 Filtered local tools for workflow:', {
             workflow: workflowConfig.name,
             allowed: workflowConfig.allowedTools,
-            filtered: Object.keys(tools)
+            filtered: Object.keys(tools),
+            enabledCount: enabledTools.length
         });
     } else {
         tools = localTools;

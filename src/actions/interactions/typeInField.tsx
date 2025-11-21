@@ -19,12 +19,22 @@ export function useTypeInFieldTool() {
 
         registerTool({
             name: "typeInField",
-            description: "Type text into any input field on the page. Can find inputs by placeholder text, label, aria-label, nearby text, or position (e.g., 'search box', 'email field', 'first input'). Works with regular inputs, textareas, contentEditable elements, shadow DOM, and iframes. Types instantly.",
+            description: `Type text into input fields using natural language descriptions. Handles shadow DOM, iframes, and all input types.
+
+USE FOR: Forms, search boxes, text areas, any text input (email, password, comments, etc.)
+
+PRECONDITIONS: Page has input/textarea/contentEditable elements. If target specified, field must be findable. If omitted, an input must be focused.
+
+PROCESS: Finds input by description (placeholder/label/aria-label/nearby text/position) → scrolls into view → highlights → focuses → clears if requested → types instantly → presses Enter if requested → triggers input/change events (React/Vue compatible)
+
+LIMITATIONS: Cannot type into disabled/readonly fields. May fail on custom widgets (fallback: clickByText + pressKey). Types instantly (may trigger anti-bot). Cannot type special key combinations (use pressKey).
+
+EXAMPLE: typeInField(text="React hooks tutorial", target="search box", pressEnter=true)`,
             parameters: z.object({
-                text: z.string().describe('Text to type into the input field'),
-                target: z.string().optional().describe('Description of the input to find (e.g., "search box", "email field", "comment box", "first input"). If omitted, uses the currently focused element.'),
-                clearFirst: z.boolean().optional().describe('If true, clear the field before typing (default: false)').default(false),
-                pressEnter: z.boolean().optional().describe('If true, press Enter after typing (default: false)').default(false),
+                text: z.string().describe('Text to type into the field. Can be any string (letters, numbers, symbols). Will be inserted instantly. Examples: "john@example.com", "React hooks tutorial", "Hello world!"'),
+                target: z.string().optional().describe('Natural language description of the input field to find. Examples: "search box", "email field", "password input", "comment box", "first input", "username field". Searches by placeholder, label, aria-label, nearby text, name, id. If omitted, types into currently focused element.'),
+                clearFirst: z.boolean().optional().describe('If true, clears existing field content before typing. Default: false. Use true when replacing content, false when appending.').default(false),
+                pressEnter: z.boolean().optional().describe('If true, presses Enter key after typing to submit form or trigger search. Default: false. Use true for search boxes and single-field forms.').default(false),
             }),
             execute: async ({ text, target, clearFirst = false, pressEnter = false }) => {
                 try {

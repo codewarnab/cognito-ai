@@ -17,9 +17,31 @@ export function useCancelReminderAction() {
 
         registerTool({
             name: "cancelReminder",
-            description: "Cancel an existing reminder by its title or ID",
+            description: `Cancel an existing reminder by title or ID. Removes the reminder and clears the scheduled alarm.
+
+WHEN TO USE:
+- User asks to "cancel X reminder", "remove reminder for Y", "delete that reminder"
+- User changes plans and no longer needs the reminder
+- Correcting a mistake (cancel wrong reminder, will create new one)
+
+PRECONDITIONS:
+- Reminder must exist and be active
+- Must provide either title or ID to identify reminder
+
+WORKFLOW:
+1. Search for reminder by title or ID
+2. Clear the scheduled browser alarm
+3. Delete reminder from storage
+4. Return confirmation with reminder title
+
+LIMITATIONS:
+- Cannot undo cancellation (must recreate reminder)
+- Identifier must match title or ID exactly
+- Cannot cancel multiple reminders at once
+
+EXAMPLE: cancelReminder(identifier="workout") -> {success: true, title: "workout", message: "Reminder cancelled"}`,
             parameters: z.object({
-                identifier: z.string().describe("Reminder title or ID to cancel"),
+                identifier: z.string().describe("Reminder title or ID to cancel. Can be the internal title (e.g., 'workout', 'call mom') or the UUID. Use listReminders first if unsure of exact identifier."),
             }),
             execute: async ({ identifier }) => {
                 try {

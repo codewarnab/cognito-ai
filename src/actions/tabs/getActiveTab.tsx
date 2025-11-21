@@ -27,7 +27,11 @@ export function useGetActiveTab() {
         // Register the tool with AI SDK v5
         registerTool({
             name: 'getActiveTab',
-            description: 'Get information about the currently active browser tab in the current window',
+            description: `Gets active tab info (id, url, title). Use before page-specific tools or to verify navigation.
+USE: Before getSearchResults/readPageContent/typeInField/clickByText, after navigateTo, when user asks current page.
+RETURNS: {id, url, title} for focused tab only.
+LIMITS: No page content (use readPageContent/takeScreenshot), no other windows.
+EXAMPLE: getActiveTab() -> {id: 123, url: "https://github.com", title: "GitHub"}`,
             parameters: z.object({}),
             execute: async () => {
                 try {

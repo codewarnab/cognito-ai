@@ -23,13 +23,40 @@ export function registerTextExtractionInteractions() {
         // Register extractText tool with enhanced structure detection
         registerTool({
             name: "extractText",
-            description: "Extract text content with semantic structure from the page or specific elements. Returns text with headings hierarchy, page type detection, element counts, and search bar detection.",
+            description: `Extract text content from the page with semantic structure analysis. Returns text, headings hierarchy, page type, interactive elements, and search bar detection.
+
+WHEN TO USE:
+- Need to read page content as text (after takeScreenshot for visual context)
+- Analyzing article content, documentation, or text-heavy pages
+- Finding specific information in page text
+- Understanding page structure (headings, sections, landmarks)
+- Detecting search bars or form fields
+
+PRECONDITIONS:
+- Page must be loaded and have text content
+- For selector-based extraction, element must exist
+
+WORKFLOW:
+1. Extract text from entire page or specific selector
+2. Analyze semantic structure (h1, h2, h3 hierarchy)
+3. Detect page type (article, search, form, dashboard, product)
+4. Count interactive elements (forms, buttons, links)
+5. Find search bars if detectSearchBar=true
+6. Return structured data with text and metadata
+
+LIMITATIONS:
+- Only extracts visible text (not hidden elements)
+- Limited to 5000 characters by default (configurable)
+- Does not extract text from images, videos, or canvas
+- Structure analysis is heuristic-based (may misclassify page type)
+
+EXAMPLE: extractText(limit=5000, includeStructure=true, detectSearchBar=true)`,
             parameters: z.object({
-                selector: z.string().optional().describe('Optional CSS selector; if omitted analyzes entire page'),
-                all: z.boolean().optional().describe('If true and selector is provided, return all matches (default: false)').default(false),
-                limit: z.number().optional().describe('Max characters to extract (default: 5000)').default(5000),
-                includeStructure: z.boolean().optional().describe('Include semantic structure analysis (default: true)').default(true),
-                detectSearchBar: z.boolean().optional().describe('Detect and extract search bar details (default: true)').default(true),
+                selector: z.string().optional().describe('Optional CSS selector to extract text from specific element(s). Examples: "article", ".content", "#main". If omitted, extracts from entire page body. Use for targeted extraction.'),
+                all: z.boolean().optional().describe('If true and selector provided, extracts text from all matching elements (joined with newlines). If false (default), only first match. Use true for lists or repeated content.').default(false),
+                limit: z.number().optional().describe('Maximum characters to extract. Default: 5000. Use 1000-2000 for summaries, 5000-10000 for full content. Prevents overwhelming context with huge pages.').default(5000),
+                includeStructure: z.boolean().optional().describe('If true (default), includes semantic structure analysis: headings hierarchy (h1/h2/h3), page type detection, landmarks (header/nav/main/footer), interactive element counts. Use false for plain text only.').default(true),
+                detectSearchBar: z.boolean().optional().describe('If true (default), detects and returns search bar details (selector, placeholder, position). Use false to skip search bar detection for performance.').default(true),
             }),
             execute: async ({ selector, all = false, limit = 5000, includeStructure = true, detectSearchBar = true }) => {
                 try {
@@ -302,10 +329,34 @@ export function registerTextExtractionInteractions() {
 
         registerTool({
             name: "scrollIntoView",
-            description: "Scroll an element into view on the page with smooth behavior.",
+            description: `Scroll a specific element into the visible viewport with smooth animation. Brings element to specified vertical position.
+
+WHEN TO USE:
+- Element is outside current viewport and needs to be visible
+- Before interacting with an element (click, type, focus)
+- User asks to "scroll to X section", "show me Y element"
+- Bringing specific content into view
+
+PRECONDITIONS:
+- Element must exist and match the selector
+- Page must be scrollable
+
+WORKFLOW:
+1. Find element by CSS selector
+2. Scroll element into view with smooth animation
+3. Position element according to block parameter
+4. Returns success or error
+
+LIMITATIONS:
+- Only works with CSS selectors (not text-based search)
+- Cannot scroll to hidden elements
+- Scrolls main page (not iframes or scrollable divs)
+- Prefer scrollPage for general page scrolling
+
+EXAMPLE: scrollIntoView(selector="#comments", block="start") or scrollIntoView(selector=".footer", block="center")`,
             parameters: z.object({
-                selector: z.string().describe('CSS selector of the element to scroll to'),
-                block: z.enum(['start', 'center', 'end', 'nearest']).optional().describe('Vertical alignment (default: nearest)').default('nearest'),
+                selector: z.string().describe('CSS selector of element to scroll to. Examples: "#comments", ".footer", "h2", "article". Must match an existing element.'),
+                block: z.enum(['start', 'center', 'end', 'nearest']).optional().describe('Vertical alignment in viewport. "start": top of viewport, "center": middle of viewport, "end": bottom of viewport, "nearest" (default): minimal scroll. Use "center" for best visibility.').default('nearest'),
             }),
             execute: async ({ selector, block = 'nearest' }) => {
                 try {
@@ -353,9 +404,35 @@ export function registerTextExtractionInteractions() {
 
         registerTool({
             name: "findSearchBar",
-            description: "Locate and return details about search bars/inputs on the page. Returns selectors, placeholders, and visibility info to help interact with search functionality.",
+            description: `Locate all search bars and search inputs on the page. Returns detailed information including selectors, placeholders, and positions to enable search interactions.
+
+WHEN TO USE:
+- Need to find where to type a search query on a page
+- User wants to search within a website (not Google/Bing)
+- Before using typeInField to search, verify search bar exists
+- Analyzing page capabilities (does it have search?)
+
+PRECONDITIONS:
+- Page must have search input fields (type="search" or search-related attributes)
+- Search bars must be in the DOM (not dynamically loaded after this call)
+
+WORKFLOW:
+1. Search for input fields with type="search"
+2. Search for inputs with search-related attributes (placeholder, aria-label, name, id, class)
+3. Search within [role="search"] containers
+4. Deduplicate and rank by visibility and position
+5. Return sorted list with selectors and metadata
+6. Highlight detected search bars with visual animation
+
+LIMITATIONS:
+- Only finds search inputs in current DOM (not lazy-loaded)
+- May miss custom search widgets (non-standard implementations)
+- Selector generation may not be unique for all cases
+- Does not interact with search bars (use typeInField for that)
+
+EXAMPLE: findSearchBar(onlyVisible=true) -> [{selector: "#search-input", placeholder: "Search...", isVisible: true, position: {...}}]`,
             parameters: z.object({
-                onlyVisible: z.boolean().optional().describe('Only return visible search bars (default: true)').default(true),
+                onlyVisible: z.boolean().optional().describe('If true (default), only returns visible search bars (display:block, not hidden, has dimensions). If false, returns all search bars including hidden ones. Use true for interaction, false for analysis.').default(true),
             }),
             execute: async ({ onlyVisible = true }) => {
                 try {
