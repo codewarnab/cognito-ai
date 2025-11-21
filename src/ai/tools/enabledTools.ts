@@ -6,9 +6,15 @@
  * to the model, even if they are registered in the tool registry.
  * 
  * Note: MCP tools are managed separately and not included in this list.
+ * 
+ * Runtime overrides:
+ * - Users can override this list via Settings. We keep a mutable exported array
+ *   so downstream imports always reference the latest effective list.
  */
 
-export const enabledTools: string[] = [
+import { getEnabledToolsOverride } from '../../utils/settingsStorage';
+
+export const DEFAULT_ENABLED_TOOLS: string[] = [
   // Navigation & Tab Management
   'navigateTo',
   'switchTabs',
@@ -61,3 +67,45 @@ export const enabledTools: string[] = [
   'generatePDF',
   'getReportTemplate',
 ];
+
+/**
+ * Effective enabled tools (mutable)
+ * Initialized with defaults; updated when user overrides are loaded or changed.
+ */
+export const enabledTools: string[] = [...DEFAULT_ENABLED_TOOLS];
+
+function applyOverride(override?: string[]) {
+  // Reset and apply new contents to preserve reference identity
+  enabledTools.length = 0;
+  if (override && Array.isArray(override) && override.length > 0) {
+    enabledTools.push(...override);
+  } else {
+    enabledTools.push(...DEFAULT_ENABLED_TOOLS);
+  }
+}
+
+async function loadAndApplyEnabledToolsOverride() {
+  try {
+    const override = await getEnabledToolsOverride();
+    applyOverride(override);
+  } catch {
+    applyOverride(undefined);
+  }
+}
+
+// Fire-and-forget initial load
+void loadAndApplyEnabledToolsOverride();
+
+// Listen for storage changes to keep the array up to date
+try {
+  chrome.storage.onChanged.addListener(async (changes, areaName) => {
+    if (areaName !== 'local') return;
+    if (changes.userSettings) {
+      // Reload on any userSettings change; it's cheap
+      await loadAndApplyEnabledToolsOverride();
+    }
+  });
+} catch {
+  // chrome might be unavailable in non-extension contexts; ignore
+}
+

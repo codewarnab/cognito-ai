@@ -22,6 +22,7 @@ interface CopilotChatWindowProps {
     isLoading: boolean;
     messagesEndRef: React.RefObject<HTMLDivElement | null>;
     onSettingsClick?: () => void;
+    onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
     onMemoryClick?: () => void;
@@ -48,6 +49,7 @@ export function CopilotChatWindow({
     isLoading,
     messagesEndRef,
     onSettingsClick,
+    onGeneralSettingsClick,
     onThreadsClick,
     onNewThreadClick,
     onMemoryClick,
@@ -202,6 +204,7 @@ export function CopilotChatWindow({
 
             <ChatHeader
                 onSettingsClick={onSettingsClick}
+                onGeneralSettingsClick={onGeneralSettingsClick}
                 onThreadsClick={onThreadsClick}
                 onNewThreadClick={handleNewThread}
                 onMemoryClick={onMemoryClick}

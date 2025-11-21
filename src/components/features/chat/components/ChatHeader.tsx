@@ -4,6 +4,7 @@ import { StreamingWarningDialog } from '../context/StreamingWarningDialog';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;
+    onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
     onMemoryClick?: () => void;
@@ -17,6 +18,7 @@ interface ChatHeaderProps {
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onSettingsClick,
+    onGeneralSettingsClick,
     onThreadsClick,
     onNewThreadClick,
     onMemoryClick,
@@ -118,6 +120,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
                         {showHeaderMenu && (
                             <div className="copilot-header-menu">
+                                <button
+                                    className="copilot-header-menu-item"
+                                    onClick={() => {
+                                        setShowHeaderMenu(false);
+                                        onGeneralSettingsClick?.();
+                                    }}
+                                >
+                                    Settings
+                                </button>
                                 <button
                                     className="copilot-header-menu-item"
                                     onClick={() => {
