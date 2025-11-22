@@ -82,6 +82,31 @@
     box-shadow: 0 4px 40px rgba(220, 38, 38, 0.6);
 }
 
+/* Compact mode - triggered when fullscreen is active */
+.ask-ai-button.compact-mode {
+    padding: 10px;
+    border-radius: 50%;
+    min-width: unset;
+    width: 44px;
+    height: 44px;
+    justify-content: center;
+    gap: 0;
+    background: rgba(20, 20, 20, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ask-ai-button.compact-mode:hover:not(.dragging) {
+    background: rgba(40, 40, 40, 0.9);
+    transform: scale(1.1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ask-ai-button.compact-mode .ask-ai-icon {
+    margin: 0;
+}
+
 /* Icon */
 .ask-ai-icon {
     display: flex;
