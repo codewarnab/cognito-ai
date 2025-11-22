@@ -14,6 +14,7 @@ import { Webflow } from "@assets/brands/integrations/Webflow"
 import deepwikiImage from "@assets/brands/integrations/deepwiki.webp"
 import coingeckoImage from "@assets/brands/integrations/coingecko.webp"
 import context7Image from "@assets/brands/integrations/context7.png"
+import livekitImage from "@assets/brands/integrations/livekit.png"
 
 export interface ServerConfig {
     id: string
@@ -292,6 +293,16 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialEnabled: false,
         initialAuthenticated: false,
         paid: true
+    },
+    {
+        id: "livekit-docs",
+        name: "LiveKit Docs",
+        icon: <img src={livekitImage} alt="LiveKit" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://docs.livekit.io/mcp",
+        description: "LiveKit documentation MCP server with tools for AI coding assistants to browse and search the docs site for voice, video, and physical AI agents.",
+        requiresAuthentication: false
     }
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
 ]
