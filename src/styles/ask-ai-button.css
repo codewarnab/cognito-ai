@@ -84,11 +84,11 @@
 
 /* Compact mode - triggered when fullscreen is active */
 .ask-ai-button.compact-mode {
-    padding: 10px;
+    padding: 6px;
     border-radius: 50%;
     min-width: unset;
-    width: 44px;
-    height: 44px;
+    width: 32px;
+    height: 32px;
     justify-content: center;
     gap: 0;
     background: rgba(20, 20, 20, 0.85);
@@ -99,7 +99,7 @@
 
 .ask-ai-button.compact-mode:hover:not(.dragging) {
     background: rgba(40, 40, 40, 0.9);
-    transform: scale(1.1);
+    transform: scale(1.15);
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
