@@ -391,7 +391,7 @@ const AskAIButton = () => {
                     aria-label="Ask AI Assistant"
                     title="Ask AI (Ctrl+Shift+H)"
                 >
-                    <SparklesIcon className="ask-ai-icon" size={isCompactMode ? 18 : 16} />
+                    <SparklesIcon className="ask-ai-icon" size={isCompactMode ? 16 : 16} />
                     {!isCompactMode && <span className="ask-ai-text">Ask AI</span>}
                 </div>
             )}
