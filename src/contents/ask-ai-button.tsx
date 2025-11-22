@@ -30,13 +30,16 @@ interface Position {
 
 const AskAIButton = () => {
     console.log("[AskAI] Component mounted");
-    const [isVisible, setIsVisible] = useState(true);
+    const [isVisible, setIsVisible] = useState(false); // Start hidden to prevent flash
     const [isDragging, setIsDragging] = useState(false);
     const [position, setPosition] = useState<Position | null>(null);
     const [showTrashZone, setShowTrashZone] = useState(false);
     const [isOverTrash, setIsOverTrash] = useState(false);
     const [isButtonNear, setIsButtonNear] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [isCompactMode, setIsCompactMode] = useState(false);
+    const [savedPosition, setSavedPosition] = useState<Position | null>(null);
+    const [isReady, setIsReady] = useState(false); // Track if position is loaded
     const buttonRef = useRef<HTMLDivElement>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
     const hasDragged = useRef(false);
@@ -45,30 +48,43 @@ const AskAIButton = () => {
     // Load saved position and check visibility settings on mount
     useEffect(() => {
         (async () => {
-            // Check if button should be visible based on visibility settings
+            // Load saved position from storage FIRST (before showing)
+            const storageResult = await new Promise<{ askAiButtonPosition?: Position }>((resolve) => {
+                chrome.storage.local.get(["askAiButtonPosition"], (result) => {
+                    resolve(result);
+                });
+            });
+
+            if (storageResult.askAiButtonPosition) {
+                setPosition(storageResult.askAiButtonPosition);
+            }
+
+            // Now check if button should be visible based on visibility settings
             const shouldShow = await shouldShowButton();
 
             if (!shouldShow) {
                 console.log("[AskAI] Button hidden based on visibility settings");
                 setIsVisible(false);
+                setIsReady(true);
                 return; // Don't continue if button should be hidden
             }
-
-            // Load saved position from storage
-            chrome.storage.local.get(["askAiButtonPosition"], (result) => {
-                if (result.askAiButtonPosition) {
-                    setPosition(result.askAiButtonPosition);
-                }
-            });
 
             // Check if sidebar is already open
             chrome.runtime.sendMessage({ action: "CHECK_SIDEBAR_STATUS" }, (response) => {
                 // Ignore errors (e.g. if no listener responds)
-                if (chrome.runtime.lastError) return;
+                if (chrome.runtime.lastError) {
+                    // If we get here, button should be shown
+                    setIsVisible(true);
+                    setIsReady(true);
+                    return;
+                }
 
                 if (response && response.isOpen) {
                     setIsVisible(false);
+                } else {
+                    setIsVisible(true);
                 }
+                setIsReady(true);
             });
         })();
     }, []);
@@ -86,6 +102,51 @@ const AskAIButton = () => {
         chrome.runtime.onMessage.addListener(handleMessage);
         return () => chrome.runtime.onMessage.removeListener(handleMessage);
     }, []);
+
+    // Listen for fullscreen changes
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isFullscreen = !!(document.fullscreenElement ||
+                (document as any).webkitFullscreenElement);
+
+            if (isFullscreen) {
+                // Entering fullscreen - save current position and enable compact mode
+                console.log('[AskAI] Entering fullscreen - activating compact mode', { currentPosition: position });
+                setSavedPosition(position);
+                setIsCompactMode(true);
+
+                // Move to top-right corner in compact mode
+                setPosition({
+                    x: window.innerWidth - 80,
+                    y: 20
+                });
+            } else {
+                // Exiting fullscreen - restore previous position and disable compact mode
+                console.log('[AskAI] Exiting fullscreen - restoring normal mode', { savedPosition });
+                setIsCompactMode(false);
+
+                // Restore saved position (or null to use default CSS position)
+                if (savedPosition === null) {
+                    // If there was no custom position, clear it to use default bottom-right from CSS
+                    setPosition(null);
+                } else {
+                    // Restore the saved position
+                    setPosition(savedPosition);
+                }
+
+                // Clear saved position after restoring
+                setSavedPosition(null);
+            }
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        };
+    }, [position, savedPosition]);
 
 
 
@@ -306,6 +367,7 @@ const AskAIButton = () => {
     const getButtonClasses = () => {
         const classes = ['ask-ai-button'];
         classes.push(isVisible ? 'visible' : 'hidden');
+        if (isCompactMode) classes.push('compact-mode');
         if (isDragging) {
             classes.push('dragging');
             if (isButtonNear) classes.push('near-trash');
@@ -316,8 +378,8 @@ const AskAIButton = () => {
 
     return (
         <>
-            {/* Ask AI Button - hidden when menu is showing */}
-            {!showMenu && (
+            {/* Ask AI Button - hidden when menu is showing or not ready */}
+            {!showMenu && isReady && (
                 <div
                     ref={buttonRef}
                     className={getButtonClasses()}
@@ -329,8 +391,8 @@ const AskAIButton = () => {
                     aria-label="Ask AI Assistant"
                     title="Ask AI (Ctrl+Shift+H)"
                 >
-                    <SparklesIcon className="ask-ai-icon" size={16} />
-                    <span className="ask-ai-text">Ask AI</span>
+                    <SparklesIcon className="ask-ai-icon" size={isCompactMode ? 18 : 16} />
+                    {!isCompactMode && <span className="ask-ai-text">Ask AI</span>}
                 </div>
             )}
 
