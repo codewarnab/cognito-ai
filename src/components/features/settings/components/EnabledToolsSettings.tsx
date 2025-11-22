@@ -1,25 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Wrench, Search } from 'lucide-react';
+import { Wrench, Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { createLogger } from '~logger';
 import { DEFAULT_ENABLED_TOOLS } from '../../../../ai/tools/enabledTools';
-import { getEnabledToolsOverride, setEnabledToolsOverride } from '../../../../utils/settingsStorage';
+import { getEnabledToolsOverride, setEnabledToolsOverride } from '~utils/settingsStorage';
 import { Toggle } from '../../../shared/inputs/Toggle';
+import { TOOL_CATEGORIES, TOOL_DESCRIPTIONS } from '../../../../constants/toolDescriptions';
 
 const log = createLogger('EnabledToolsSettings');
-
-// Tool categories for better organization
-const TOOL_CATEGORIES: Record<string, string[]> = {
-    'Navigation': ['navigateTo', 'switchTabs', 'getActiveTab', 'getAllTabs', 'applyTabGroups', 'ungroupTabs', 'organizeTabsByContext'],
-    'Content': ['takeScreenshot', 'readPageContent', 'extractText', 'findSearchBar'],
-    'Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo'],
-    'Search & History': ['chromeSearch', 'getSearchResults', 'openSearchResult', 'searchHistory', 'getUrlVisits'],
-    'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'suggestSaveMemory', 'createReminder', 'listReminders', 'cancelReminder'],
-    'Other': ['analyzeYouTubeVideo', 'generateMarkdown', 'generatePDF', 'getReportTemplate']
-};
 
 export const EnabledToolsSettings: React.FC = () => {
     const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});
     const [toolSearchQuery, setToolSearchQuery] = useState('');
+    const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const allTools = useMemo(() => DEFAULT_ENABLED_TOOLS, []);
 
     useEffect(() => {
@@ -92,6 +84,13 @@ export const EnabledToolsSettings: React.FC = () => {
         return groups;
     }, [filteredTools]);
 
+    const toggleCategory = (category: string) => {
+        setExpandedCategories(prev => ({
+            ...prev,
+            [category]: !prev[category]
+        }));
+    };
+
     return (
         <div className="settings-section">
             <div className="settings-section-header">
@@ -103,11 +102,11 @@ export const EnabledToolsSettings: React.FC = () => {
 
             <div className="settings-card" style={{ padding: '12px' }}>
                 <div className="settings-input-group" style={{ marginTop: 0, marginBottom: '12px' }}>
-                    <div style={{ position: 'relative', flex: 1 }}>
+                    <div style={{ position: 'relative', width: '100%' }}>
                         <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
                         <input
                             className="settings-input"
-                            style={{ paddingLeft: 32 }}
+                            style={{ paddingLeft: 32, width: '100%' }}
                             value={toolSearchQuery}
                             onChange={(e) => setToolSearchQuery(e.target.value)}
                             placeholder="Search tools..."
@@ -115,47 +114,127 @@ export const EnabledToolsSettings: React.FC = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {Object.entries(groupedTools).map(([category, tools]) => (
-                        <div key={category}>
-                            <h3 style={{
-                                fontSize: '12px',
-                                fontWeight: 600,
-                                color: 'var(--text-secondary)',
-                                textTransform: 'uppercase',
-                                marginBottom: '8px',
-                                paddingLeft: '4px'
-                            }}>
-                                {category}
-                            </h3>
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '1px',
-                                backgroundColor: 'var(--border-color)',
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {Object.entries(groupedTools).map(([category, tools]) => {
+                        const isExpanded = expandedCategories[category] ?? false;
+                        const enabledCount = tools.filter(tool => enabledMap[tool] ?? true).length;
+                        const totalCount = tools.length;
+                        return (
+                            <div key={category} style={{
+                                border: '1px solid var(--border-color)',
                                 borderRadius: 'var(--radius-md)',
-                                overflow: 'hidden'
+                                overflow: 'hidden',
+                                backgroundColor: 'var(--bg-tertiary)'
                             }}>
-                                {tools.map(tool => {
-                                    const enabled = enabledMap[tool] ?? true;
-                                    return (
-                                        <div key={tool} className="settings-item" style={{ backgroundColor: 'var(--bg-tertiary)', borderBottom: 'none' }}>
-                                            <div className="settings-item-content">
-                                                <div className="settings-item-title">{tool}</div>
-                                            </div>
-                                            <Toggle
-                                                checked={enabled}
-                                                onChange={(checked) => handleToggleTool(tool, checked)}
-                                            />
-                                        </div>
-                                    );
-                                })}
+                                <button
+                                    onClick={() => toggleCategory(category)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '10px 12px',
+                                        backgroundColor: 'var(--bg-secondary)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '13px',
+                                        fontWeight: 600,
+                                        color: 'var(--text-primary)',
+                                        transition: 'background-color 0.15s ease'
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                        <span>{category}</span>
+                                        <span style={{ 
+                                            fontSize: '11px', 
+                                            color: enabledCount < totalCount ? 'var(--text-warning)' : 'var(--text-tertiary)',
+                                            fontWeight: 400
+                                        }}>
+                                            ({enabledCount}/{totalCount})
+                                        </span>
+                                    </div>
+                                </button>
+                                
+                                {isExpanded && (
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        borderTop: '1px solid var(--border-color)'
+                                    }}>
+                                        {tools.map((tool, index) => {
+                                            const enabled = enabledMap[tool] ?? true;
+                                            const description = TOOL_DESCRIPTIONS[tool];
+                                            return (
+                                                <div 
+                                                    key={tool} 
+                                                    style={{ 
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        padding: '8px 12px',
+                                                        backgroundColor: 'var(--bg-tertiary)',
+                                                        borderTop: index > 0 ? '1px solid var(--border-color)' : 'none'
+                                                    }}
+                                                >
+                                                    <div style={{ 
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        flex: 1
+                                                    }}>
+                                                        <div style={{ 
+                                                            fontSize: '13px',
+                                                            color: 'var(--text-primary)',
+                                                            fontFamily: 'monospace'
+                                                        }}>
+                                                            {tool}
+                                                        </div>
+                                                        {description && (
+                                                            <div 
+                                                                style={{ 
+                                                                    position: 'relative',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                                title={description}
+                                                            >
+                                                                <Info 
+                                                                    size={14} 
+                                                                    style={{ 
+                                                                        color: 'var(--text-tertiary)',
+                                                                        cursor: 'help'
+                                                                    }} 
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ transform: 'scale(0.85)' }}>
+                                                        <Toggle
+                                                            checked={enabled}
+                                                            onChange={(checked) => handleToggleTool(tool, checked)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
 
                     {Object.keys(groupedTools).length === 0 && (
-                        <div className="empty-state">No tools found matching "{toolSearchQuery}"</div>
+                        <div style={{ 
+                            padding: '24px 12px',
+                            textAlign: 'center',
+                            color: 'var(--text-tertiary)',
+                            fontSize: '13px'
+                        }}>
+                            No tools found matching "{toolSearchQuery}"
+                        </div>
                     )}
                 </div>
             </div>

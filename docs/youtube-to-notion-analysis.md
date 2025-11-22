@@ -191,7 +191,7 @@ async function detectVideoType(params: {
 
 #### Process:
 1. **LLM-Based Planning**: Uses Gemini 2.5 Flash with structured output mode
-   - Temperature: 0.5 (consistent planning)
+   - Temperature: 0.7 (creative variety with structured output)
    - Schema: `{ questions: [{ title, question }] }`
    - Guaranteed JSON parsing
 
@@ -227,7 +227,7 @@ async function detectVideoType(params: {
    [template examples]
    
    TRANSCRIPT:
-   [first 8000 chars]
+   [smart sample across beginning/middle/end, up to 10000 chars]
    ```
 
 5. **Retry Strategy**:
@@ -254,7 +254,7 @@ interface QuestionItem {
 1. **Page Setup**:
    ```typescript
    title: `${videoTitle} Notes [Cognito AI]`
-   content: `# ${title}\n\nVideo: ${videoUrl}`
+   content: `# ${title}\n\nVideo: ${videoUrl || 'N/A'}`
    parentPageId: optional
    ```
 
@@ -302,7 +302,7 @@ for (let i = 0; i < questions.length; i++) {
 #### Answer Generation (Sub-Agent):
 1. **Model**: Gemini 2.5 Flash
    - Temperature: 0.6 (balance creativity + groundedness)
-   - Max tokens: 4096 (detailed answers)
+   - Max tokens: 16384 (detailed answers)
    - Structured output: `{ title, content }`
 
 2. **Prompt Structure**:
@@ -596,7 +596,7 @@ The YouTube to Notion workflow is a **production-grade, fully agent-based system
 ✅ **Answer Generation**: Context-aware writing with full transcript grounding  
 ✅ **Page Creation**: Notion MCP integration with retry logic  
 
-**Latest Update (Nov 2025)**: All phases now use LLM-based intelligence with structured output, retry logic, and comprehensive error handling. No legacy pattern matching remains.
+**Latest Update (Nov 2025)**: All phases now use LLM-based intelligence with structured output, retry logic, and comprehensive error handling. Keyword-based constants may remain exported for backward compatibility, but detection is 100% agent-based (no keyword matching used).
 
 **System Characteristics**:
 - High accuracy (90%+ for all classification tasks)

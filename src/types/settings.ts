@@ -4,6 +4,8 @@
 
 export type VoiceName = 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Orion';
 
+export type TTSProvider = 'gemini' | 'web-native';
+
 export interface VoiceSettings {
   voiceName: VoiceName;
 }
@@ -16,6 +18,8 @@ export interface UserSettings {
    */
   enabledToolsOverride?: string[];
   voice?: VoiceSettings;
+  ttsProvider?: TTSProvider;
+  suggestionsEnabled?: boolean;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -24,6 +28,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   voice: {
     voiceName: 'Aoede',
   },
+  ttsProvider: 'gemini',
+  suggestionsEnabled: true,
 };
 
 

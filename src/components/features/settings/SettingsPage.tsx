@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { VoiceSettings } from './components/VoiceSettings';
 import { AskAiButtonSettings } from './components/AskAiButtonSettings';
 import { EnabledToolsSettings } from './components/EnabledToolsSettings';
+import { TTSAndDataSettings } from './components/TTSAndDataSuggestionsSettings';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -23,13 +24,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
         </button>
         <div className="settings-title-container">
           <h1 className="settings-title">Settings</h1>
-          <p className="settings-subtitle">Manage tools, voice, and Ask AI button</p>
+          <p className="settings-subtitle">Manage tools, voice, TTS, and data</p>
         </div>
       </div>
 
       {/* Content */}
       <div className="settings-content">
         <VoiceSettings />
+        <TTSAndDataSettings />
         <AskAiButtonSettings />
         <EnabledToolsSettings />
       </div>
