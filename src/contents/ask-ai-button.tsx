@@ -44,6 +44,10 @@ const AskAIButton = () => {
     const dragOffset = useRef({ x: 0, y: 0 });
     const hasDragged = useRef(false);
     const dragStartPosition = useRef<Position | null>(null);
+    const isDraggingRef = useRef(false);
+    const currentPositionRef = useRef<Position | null>(null);
+    const rafIdRef = useRef<number | null>(null);
+    const isOverTrashRef = useRef(false);
 
     // Load saved position and check visibility settings on mount
     useEffect(() => {
@@ -57,6 +61,7 @@ const AskAIButton = () => {
 
             if (storageResult.askAiButtonPosition) {
                 setPosition(storageResult.askAiButtonPosition);
+                currentPositionRef.current = storageResult.askAiButtonPosition;
             }
 
             // Now check if button should be visible based on visibility settings
@@ -116,10 +121,12 @@ const AskAIButton = () => {
                 setIsCompactMode(true);
 
                 // Move to top-right corner in compact mode
-                setPosition({
+                const newPos = {
                     x: window.innerWidth - 80,
                     y: 20
-                });
+                };
+                setPosition(newPos);
+                currentPositionRef.current = newPos;
             } else {
                 // Exiting fullscreen - restore previous position and disable compact mode
                 console.log('[AskAI] Exiting fullscreen - restoring normal mode', { savedPosition });
@@ -129,9 +136,11 @@ const AskAIButton = () => {
                 if (savedPosition === null) {
                     // If there was no custom position, clear it to use default bottom-right from CSS
                     setPosition(null);
+                    currentPositionRef.current = null;
                 } else {
                     // Restore the saved position
                     setPosition(savedPosition);
+                    currentPositionRef.current = savedPosition;
                 }
 
                 // Clear saved position after restoring
@@ -200,6 +209,7 @@ const AskAIButton = () => {
 
         // Reset to default bottom-right position
         setPosition(null);
+        currentPositionRef.current = null;
         chrome.storage.local.remove('askAiButtonPosition');
     };
 
@@ -231,80 +241,106 @@ const AskAIButton = () => {
         }
 
         hasDragged.current = false;
+        isDraggingRef.current = true;
         setIsDragging(true);
         e.preventDefault();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-        if (!isDragging) return;
+        if (!isDraggingRef.current) return;
 
-        hasDragged.current = true; // Mark that dragging occurred
+        // Cancel any pending animation frame
+        if (rafIdRef.current !== null) {
+            cancelAnimationFrame(rafIdRef.current);
+        }
 
-        const newX = e.clientX - dragOffset.current.x;
-        const newY = e.clientY - dragOffset.current.y;
+        // Use requestAnimationFrame for smooth 60fps updates
+        rafIdRef.current = requestAnimationFrame(() => {
+            hasDragged.current = true;
 
-        // Constrain to viewport
-        const maxX = window.innerWidth - (buttonRef.current?.offsetWidth || 120);
-        const maxY = window.innerHeight - (buttonRef.current?.offsetHeight || 48);
+            const newX = e.clientX - dragOffset.current.x;
+            const newY = e.clientY - dragOffset.current.y;
 
-        const constrainedPosition = {
-            x: Math.max(0, Math.min(newX, maxX)),
-            y: Math.max(0, Math.min(newY, maxY)),
-        };
+            // Constrain to viewport
+            const maxX = window.innerWidth - (buttonRef.current?.offsetWidth || 120);
+            const maxY = window.innerHeight - (buttonRef.current?.offsetHeight || 48);
 
-        setPosition(constrainedPosition);
+            const constrainedPosition = {
+                x: Math.max(0, Math.min(newX, maxX)),
+                y: Math.max(0, Math.min(newY, maxY)),
+            };
 
-        // Show trash zone after moving a bit (threshold: 10px)
-        if (dragStartPosition.current) {
-            const distanceMoved = Math.sqrt(
-                Math.pow(newX - dragStartPosition.current.x, 2) +
-                Math.pow(newY - dragStartPosition.current.y, 2)
+            // Update ref immediately for smooth visual updates
+            currentPositionRef.current = constrainedPosition;
+
+            // Apply position directly to DOM (bypass React)
+            if (buttonRef.current) {
+                buttonRef.current.style.left = `${constrainedPosition.x}px`;
+                buttonRef.current.style.top = `${constrainedPosition.y}px`;
+            }
+
+            // Show trash zone after moving a bit (threshold: 10px)
+            if (dragStartPosition.current) {
+                const distanceMoved = Math.sqrt(
+                    Math.pow(newX - dragStartPosition.current.x, 2) +
+                    Math.pow(newY - dragStartPosition.current.y, 2)
+                );
+
+                if (distanceMoved > 10 && !showTrashZone) {
+                    setShowTrashZone(true);
+                }
+            }
+
+            // Calculate trash zone position (bottom-center)
+            const trashPosition: Position = {
+                x: window.innerWidth / 2,
+                y: window.innerHeight - 40,
+            };
+
+            // Calculate button center position
+            const buttonWidth = buttonRef.current?.offsetWidth || 120;
+            const buttonHeight = buttonRef.current?.offsetHeight || 48;
+            const buttonCenter: Position = {
+                x: constrainedPosition.x + buttonWidth / 2,
+                y: constrainedPosition.y + buttonHeight / 2,
+            };
+
+            // Calculate distance from button center to trash zone center
+            const distance = Math.sqrt(
+                Math.pow(buttonCenter.x - trashPosition.x, 2) +
+                Math.pow(buttonCenter.y - trashPosition.y, 2)
             );
 
-            if (distanceMoved > 10 && !showTrashZone) {
-                setShowTrashZone(true);
-            }
-        }
+            // Update proximity states (batched)
+            const near = distance < 150;
+            const over = distance < 80;
 
-        // Calculate trash zone position (bottom-center)
-        const trashPosition: Position = {
-            x: window.innerWidth / 2,
-            y: window.innerHeight - 40,
-        };
+            // Update ref immediately for accurate drop detection
+            isOverTrashRef.current = over;
 
-        // Calculate button center position (button position is top-left corner)
-        const buttonWidth = buttonRef.current?.offsetWidth || 120;
-        const buttonHeight = buttonRef.current?.offsetHeight || 48;
-        const buttonCenter: Position = {
-            x: constrainedPosition.x + buttonWidth / 2,
-            y: constrainedPosition.y + buttonHeight / 2,
-        };
-
-        // Calculate distance from button center to trash zone center
-        const distance = Math.sqrt(
-            Math.pow(buttonCenter.x - trashPosition.x, 2) +
-            Math.pow(buttonCenter.y - trashPosition.y, 2)
-        );
-
-        // Update proximity states
-        const near = distance < 150; // Near threshold
-        const over = distance < 80;  // Over threshold
-
-        setIsButtonNear(near);
-
-        if (over && !isOverTrash) {
-            setIsOverTrash(true);
-        } else if (!over && isOverTrash) {
-            setIsOverTrash(false);
-        }
+            setIsButtonNear(near);
+            setIsOverTrash(over);
+        });
     };
 
     const handleMouseUp = () => {
-        if (isDragging) {
+        if (isDraggingRef.current) {
+            // Cancel any pending animation frame
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+                rafIdRef.current = null;
+            }
+
+            isDraggingRef.current = false;
             setIsDragging(false);
 
-            // Check if button was over trash when released
-            if (isOverTrash) {
+            // Sync React state with final position from ref
+            if (currentPositionRef.current) {
+                setPosition(currentPositionRef.current);
+            }
+
+            // Check if button was over trash when released (use ref for latest value)
+            if (isOverTrashRef.current) {
                 // Show menu, hide trash zone
                 setShowMenu(true);
                 setShowTrashZone(false);
@@ -316,13 +352,14 @@ const AskAIButton = () => {
                 setIsButtonNear(false);
 
                 // Save position to storage if dragged
-                if (hasDragged.current && position) {
-                    chrome.storage.local.set({ askAiButtonPosition: position });
+                if (hasDragged.current && currentPositionRef.current) {
+                    chrome.storage.local.set({ askAiButtonPosition: currentPositionRef.current });
                 }
             }
 
-            // Reset drag start position
+            // Reset drag start position and refs
             dragStartPosition.current = null;
+            isOverTrashRef.current = false;
         }
     };
 
@@ -335,11 +372,17 @@ const AskAIButton = () => {
             return () => {
                 document.removeEventListener("mousemove", handleMouseMove);
                 document.removeEventListener("mouseup", handleMouseUp);
+
+                // Clean up any pending animation frame
+                if (rafIdRef.current !== null) {
+                    cancelAnimationFrame(rafIdRef.current);
+                    rafIdRef.current = null;
+                }
             };
         }
 
         return undefined;
-    }, [isDragging, position]);
+    }, [isDragging]);
 
     const buttonStyle: React.CSSProperties = position
         ? {
