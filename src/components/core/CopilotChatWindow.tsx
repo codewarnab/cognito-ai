@@ -174,7 +174,7 @@ export function CopilotChatWindow({
     const handleApiKeySaved = async () => {
         // Refresh API key state when dialog saves the key
         try {
-            const hasKey = await hasGeminiApiKey();
+            const hasKey = await hasGoogleApiKey();
             setModelState(prev => ({
                 ...prev,
                 hasApiKey: hasKey,

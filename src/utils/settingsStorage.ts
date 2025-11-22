@@ -17,6 +17,8 @@ export async function getSettings(): Promise<UserSettings> {
       ...DEFAULT_USER_SETTINGS,
       ...stored,
       voice: mergedVoice,
+      ttsProvider: stored.ttsProvider ?? DEFAULT_USER_SETTINGS.ttsProvider,
+      suggestionsEnabled: stored.suggestionsEnabled ?? DEFAULT_USER_SETTINGS.suggestionsEnabled,
     };
     return merged;
   } catch {
@@ -59,6 +61,26 @@ export async function getVoiceName(): Promise<VoiceName> {
 
 export async function setVoiceName(voiceName: VoiceName): Promise<UserSettings> {
   return updateSettings({ voice: { voiceName } });
+}
+
+// TTS provider helpers
+export async function getTTSProvider(): Promise<import('../types/settings').TTSProvider> {
+  const settings = await getSettings();
+  return settings.ttsProvider || DEFAULT_USER_SETTINGS.ttsProvider!;
+}
+
+export async function setTTSProvider(provider: import('../types/settings').TTSProvider): Promise<UserSettings> {
+  return updateSettings({ ttsProvider: provider });
+}
+
+// Suggestions enabled helpers
+export async function getSuggestionsEnabled(): Promise<boolean> {
+  const settings = await getSettings();
+  return settings.suggestionsEnabled ?? DEFAULT_USER_SETTINGS.suggestionsEnabled!;
+}
+
+export async function setSuggestionsEnabled(enabled: boolean): Promise<UserSettings> {
+  return updateSettings({ suggestionsEnabled: enabled });
 }
 
 

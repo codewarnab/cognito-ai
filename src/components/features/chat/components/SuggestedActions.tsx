@@ -6,6 +6,7 @@ import type { Message, ModelState } from '../types';
 import type { FileAttachmentData } from './FileAttachment';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
+import { getSuggestionsEnabled } from '~utils/settingsStorage';
 
 const log = createLogger('SuggestedActions');
 
@@ -46,11 +47,23 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
 }) => {
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
+    // Track if suggestions are enabled in settings
+    const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
 
-    // Use AI suggestions hook
+    // Load suggestions enabled setting
+    useEffect(() => {
+        const loadSetting = async () => {
+            const enabled = await getSuggestionsEnabled();
+            setSuggestionsEnabled(enabled);
+        };
+        loadSetting();
+    }, []);
+
+    // Use AI suggestions hook - only when enabled
     const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(
         modelState,
-        messages.length
+        messages.length,
+        suggestionsEnabled
     );
 
     // Debug logging
@@ -87,6 +100,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     }
 
     const showSuggestedActions = 
+        suggestionsEnabled &&
         messages.length === 0 && 
         !input.trim() && 
         !isLoading && 

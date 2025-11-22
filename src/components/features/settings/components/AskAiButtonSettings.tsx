@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, ChevronUp, ChevronDown, Plus, X } from 'lucide-react';
 import { createLogger } from '~logger';
-import type { VisibilitySettings } from '../../../../utils/ask-ai-button-visibility';
+import type { VisibilitySettings } from '~utils/ask-ai-button-visibility';
 import {
     getVisibilitySettings,
     reEnableButton,
@@ -11,7 +11,7 @@ import {
     clearAllHiddenDomains,
     removeDomainFromHidden,
     hideForCurrentPage,
-} from '../../../../utils/ask-ai-button-visibility';
+} from '~utils/ask-ai-button-visibility';
 import { Toggle } from '../../../shared/inputs/Toggle';
 
 const log = createLogger('AskAiButtonSettings');
@@ -71,10 +71,17 @@ export const AskAiButtonSettings: React.FC = () => {
     };
 
     const handleAddDomain = async () => {
-        const domain = newHiddenDomain.trim();
-        if (!domain) return;
+        let input = newHiddenDomain.trim();
+        if (!input) return;
+        
         try {
-            await hideForCurrentPage(`https://${domain}`);
+            // If user didn't include protocol, add it for URL parsing
+            if (!input.startsWith('http://') && !input.startsWith('https://')) {
+                input = `https://${input}`;
+            }
+            
+            // Use hideForCurrentPage which will extract the hostname properly
+            await hideForCurrentPage(input);
             const vis = await getVisibilitySettings();
             setAskAiVisibility(vis);
             setNewHiddenDomain('');
@@ -141,43 +148,52 @@ export const AskAiButtonSettings: React.FC = () => {
                     </button>
 
                     {isHiddenDomainsOpen && (
-                        <div style={{ padding: '0 12px 12px 12px', borderTop: '1px solid var(--border-color)' }}>
-                            <div className="settings-input-group">
-                                <input
-                                    className="settings-input"
-                                    value={newHiddenDomain}
-                                    onChange={(e) => setNewHiddenDomain(e.target.value)}
-                                    placeholder="example.com"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
-                                />
-                                <button onClick={handleAddDomain} className="settings-button primary">
-                                    <Plus size={16} />
-                                </button>
-                            </div>
-
+                        <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
                             {askAiVisibility.hiddenDomains.length > 0 ? (
-                                <div className="hidden-domains-list">
-                                    {askAiVisibility.hiddenDomains.map((domain) => (
-                                        <div key={domain} className="hidden-domain-item">
-                                            <span className="hidden-domain-name">{domain}</span>
-                                            <button
-                                                className="hidden-domain-remove"
-                                                onClick={() => handleRemoveDomain(domain)}
-                                                title="Remove from hidden"
-                                            >
-                                                <X size={14} />
+                                <>
+                                    <div className="hidden-domains-list">
+                                        {askAiVisibility.hiddenDomains.map((domain) => (
+                                            <div key={domain} className="hidden-domain-item">
+                                                <span className="hidden-domain-name">{domain}</span>
+                                                <button
+                                                    className="hidden-domain-remove"
+                                                    onClick={() => handleRemoveDomain(domain)}
+                                                    title="Remove from hidden"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+                                        <div className="settings-input-group" style={{ flex: 1 }}>
+                                            <input
+                                                className="settings-input"
+                                                value={newHiddenDomain}
+                                                onChange={(e) => setNewHiddenDomain(e.target.value)}
+                                                placeholder="example.com"
+                                                onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
+                                            />
+                                            <button onClick={handleAddDomain} className="settings-button primary">
+                                                <Plus size={16} />
                                             </button>
                                         </div>
-                                    ))}
-                                </div>
+                                        <button onClick={handleClearDomains} className="settings-button danger">
+                                            Clear All
+                                        </button>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="empty-state">No hidden domains</div>
-                            )}
-
-                            {askAiVisibility.hiddenDomains.length > 0 && (
-                                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
-                                    <button onClick={handleClearDomains} className="settings-button danger">
-                                        Clear All
+                                <div className="settings-input-group">
+                                    <input
+                                        className="settings-input"
+                                        value={newHiddenDomain}
+                                        onChange={(e) => setNewHiddenDomain(e.target.value)}
+                                        placeholder="example.com"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
+                                    />
+                                    <button onClick={handleAddDomain} className="settings-button primary">
+                                        <Plus size={16} />
                                     </button>
                                 </div>
                             )}

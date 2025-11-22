@@ -11,7 +11,7 @@ import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
-import { hasGoogleApiKey as hasGeminiApiKey } from '../../utils/providerCredentials';
+import { hasGoogleApiKey } from '../../utils/providerCredentials';
 import { getModelConfig } from '../../utils/modelSettings';
 import {
   APIError,
@@ -79,7 +79,7 @@ export async function streamAIResponse(params: {
   let missingApiKey = false;
 
   if (effectiveMode === 'remote') {
-    const hasKey = await hasGeminiApiKey();
+    const hasKey = await hasGoogleApiKey();
     if (!hasKey) {
       log.warn('?? Remote mode requested but no API key found');
       missingApiKey = true;

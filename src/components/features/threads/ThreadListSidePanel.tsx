@@ -42,6 +42,17 @@ export function ThreadListSidePanel({
         }
     }, [isOpen]);
 
+    // Refresh threads periodically when panel is open to catch external deletions
+    useEffect(() => {
+        if (!isOpen) return;
+        
+        const interval = setInterval(() => {
+            loadThreads();
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isOpen]);
+
     const handleDeleteThread = async (threadId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         try {

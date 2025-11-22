@@ -386,3 +386,84 @@
     cursor: wait;
     opacity: 0.8;
 }
+
+/* TTS Settings Vertical Layout */
+.tts-settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.tts-settings-item .settings-item-content {
+    margin-right: 0;
+    margin-bottom: 4px;
+    width: 100%;
+}
+
+.tts-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.tts-select {
+    appearance: none;
+    padding-right: 32px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    height: 36px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tts-select:hover {
+    border-color: var(--text-secondary);
+}
+
+.tts-select:focus {
+    border-color: var(--color-secondary);
+    box-shadow: 0 0 0 2px var(--glass-bg-hover);
+    outline: none;
+}
+
+.tts-select-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-secondary);
+}
+
+/* Delete Chats Vertical Layout */
+.delete-chats-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.delete-chats-item .settings-item-content {
+    margin-right: 0;
+    width: 100%;
+}
+
+.delete-chats-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+
+.delete-chats-actions .settings-button {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.delete-all-btn {
+    width: 100%;
+    justify-content: center;
+}

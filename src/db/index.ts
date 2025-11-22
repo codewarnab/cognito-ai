@@ -366,10 +366,13 @@ export async function clearThreadMessages(threadId: string): Promise<void> {
 }
 
 /**
- * Clear all chat messages (legacy - clears all threads)
+ * Clear all chat messages and threads
  */
 export async function clearChatHistory(): Promise<void> {
-    await db.chatMessages.clear();
+    await db.transaction('rw', [db.chatMessages, db.chatThreads], async () => {
+        await db.chatMessages.clear();
+        await db.chatThreads.clear();
+    });
 }
 
 /**

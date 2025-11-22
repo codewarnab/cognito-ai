@@ -1,10 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CopyIcon, type CopyIconHandle } from '../../../shared/icons/CopyIcon';
-import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
-import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
-import { generateSpeech, playAudioBuffer } from '../../../../utils/geminiTTS';
-import { getGeminiApiKey } from '../../../../utils/geminiApiKey';
+import { VoiceButton } from './VoiceButton';
 import { DownloadButton } from './DownloadButton';
 
 interface CopyButtonProps {
@@ -13,27 +10,9 @@ interface CopyButtonProps {
 
 export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
     const [copied, setCopied] = useState(false);
-    const [isReading, setIsReading] = useState(false);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
     const [audioBuffer, setAudioBuffer] = useState<ArrayBuffer | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
     const iconRef = useRef<CopyIconHandle>(null);
-    const audioIconRef = useRef<AudioLinesIconHandle>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Cleanup audio on unmount
-    useEffect(() => {
-        return () => {
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
-            }
-            if (tooltipTimeoutRef.current) {
-                clearTimeout(tooltipTimeoutRef.current);
-            }
-        };
-    }, []);
 
     const handleCopy = async () => {
         if (!content) return;
@@ -52,100 +31,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
         }
     };
 
-    const handleVoiceToggle = async () => {
-        if (isReading) {
-            // Stop reading
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
-            }
-            setIsReading(false);
-            setAudioBuffer(null);
-            audioIconRef.current?.stopAnimation();
-        } else {
-            // Start reading with Gemini TTS
-            if (!content || isGenerating) return;
 
-            try {
-                setIsGenerating(true);
-                
-                // Show tooltip briefly
-                setShowTooltip(true);
-                tooltipTimeoutRef.current = setTimeout(() => {
-                    setShowTooltip(false);
-                }, 1000);
-                
-                // Get API key
-                const apiKey = await getGeminiApiKey();
-                if (!apiKey) {
-                    console.error('No Gemini API key found. Please configure in settings.');
-                    setShowTooltip(false);
-                    // Fallback to browser TTS
-                    fallbackToSpeechSynthesis();
-                    return;
-                }
-
-                // Generate speech using Gemini TTS
-                const buffer = await generateSpeech(content, apiKey);
-                setAudioBuffer(buffer);
-                
-                // Play the audio
-                const audio = playAudioBuffer(buffer);
-                audioRef.current = audio;
-
-                audio.onplay = () => {
-                    setIsReading(true);
-                    setIsGenerating(false);
-                    audioIconRef.current?.startAnimation();
-                };
-
-                audio.onended = () => {
-                    setIsReading(false);
-                    audioRef.current = null;
-                    setAudioBuffer(null);
-                    audioIconRef.current?.stopAnimation();
-                };
-
-                audio.onerror = () => {
-                    setIsReading(false);
-                    setIsGenerating(false);
-                    audioRef.current = null;
-                    setAudioBuffer(null);
-                    audioIconRef.current?.stopAnimation();
-                    console.error('Audio playback error');
-                };
-
-            } catch (error) {
-                console.error('Failed to generate speech with Gemini TTS:', error);
-                setIsGenerating(false);
-                // Fallback to browser TTS
-                fallbackToSpeechSynthesis();
-            }
-        }
-    };
-
-    const fallbackToSpeechSynthesis = () => {
-        if (!content) return;
-        
-        const utterance = new SpeechSynthesisUtterance(content);
-
-        utterance.onstart = () => {
-            setIsReading(true);
-            audioIconRef.current?.startAnimation();
-        };
-
-        utterance.onend = () => {
-            setIsReading(false);
-            audioIconRef.current?.stopAnimation();
-        };
-
-        utterance.onerror = () => {
-            setIsReading(false);
-            audioIconRef.current?.stopAnimation();
-        };
-
-        window.speechSynthesis.speak(utterance);
-    };
 
     return (
         <div className="copy-message-button-wrapper">
@@ -196,50 +82,14 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                     )}
                 </AnimatePresence>
             </button>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-                <button
-                    className={`copy-message-button ${isGenerating ? 'generating-audio' : ''}`}
-                    onClick={handleVoiceToggle}
-                    title={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
-                    aria-label={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
-                    style={{ marginLeft: '8px' }}
-                    disabled={isGenerating}
-                >
-                    <motion.div
-                        animate={isGenerating ? {
-                            opacity: [0.4, 1, 0.4],
-                            scale: [0.95, 1.05, 0.95],
-                        } : {}}
-                        transition={isGenerating ? {
-                            duration: 1.5,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        } : {}}
-                    >
-                        {isReading ? (
-                            <AudioLinesIcon ref={audioIconRef} size={18} />
-                        ) : (
-                            <AnimatedVolumeIcon size={18} />
-                        )}
-                    </motion.div>
-                </button>
-                <AnimatePresence>
-                    {showTooltip && (
-                        <motion.div
-                            className="audio-generating-tooltip"
-                            initial={{ opacity: 0, y: 5, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -5, scale: 0.9 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            Generating audio...
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+            <VoiceButton 
+                content={content}
+                onAudioBufferChange={setAudioBuffer}
+                onPlayingStateChange={setIsPlaying}
+            />
             <DownloadButton 
                 audioBuffer={audioBuffer} 
-                isPlaying={isReading}
+                isPlaying={isPlaying}
                 fileName={`message-audio-${Date.now()}.mp3`}
             />
         </div>

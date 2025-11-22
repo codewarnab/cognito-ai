@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getTimeBasedGreeting } from '../../../../utils/greetings';
 
 interface EmptyStateProps {
     isLocalMode?: boolean;
@@ -13,22 +14,14 @@ const TIPS = [
     "You can drag and drop files into the chat input",
     "Ask me to organize your tabs for you",
     "I can analyze YouTube videos for you",
-    "you can send message to cognito by typing 'ai' in address bar"
+    "You can send messages to Cognito by typing 'ai' in the address bar",
+    "Set keyboard shortcuts at chrome://extensions/shortcuts for quick access",
+    "Customize which AI tools are enabled in Settings → Enabled Tools",
+    "Toggle suggested actions on/off in Settings ",
+    "Choose between Gemini TTS or Web Native TTS in Settings",
+    "Delete all chat history anytime from Settings ",
+    "Control Ask AI button visibility per domain in Settings"
 ];
-
-const getTimeBasedGreeting = (): string => {
-    const hour = new Date().getHours();
-    
-    if (hour >= 5 && hour < 12) {
-        return "Good morning! What should we dive into today?";
-    } else if (hour >= 12 && hour < 17) {
-        return "Good afternoon! What can I help you with?";
-    } else if (hour >= 17 && hour < 22) {
-        return "Good evening! Ready to get things done?";
-    } else {
-        return "Burning the midnight oil? Let's make it count! 🌙";
-    }
-};
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigureApiKey }) => {
     const [currentTip, setCurrentTip] = useState<string>('');

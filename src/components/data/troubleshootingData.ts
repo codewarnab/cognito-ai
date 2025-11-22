@@ -1,3 +1,5 @@
+import { HIDE_LOCAL_MODE } from '../../constants';
+
 export interface TroubleshootingItem {
     id: string;
     issue: string;
@@ -5,7 +7,7 @@ export interface TroubleshootingItem {
     solutions: string[];
 }
 
-export const troubleshootingData: TroubleshootingItem[] = [
+const allTroubleshootingData: TroubleshootingItem[] = [
     {
         id: '1',
         issue: 'AI not calling MCP tools',
@@ -215,3 +217,8 @@ export const troubleshootingData: TroubleshootingItem[] = [
         ],
     },
 ];
+
+// Filter out local mode related issues when HIDE_LOCAL_MODE is true
+export const troubleshootingData: TroubleshootingItem[] = HIDE_LOCAL_MODE
+    ? allTroubleshootingData.filter(item => !['2', '11', '12'].includes(item.id))
+    : allTroubleshootingData;

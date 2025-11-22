@@ -6,7 +6,7 @@ import { processFile } from '../utils/fileProcessor';
 import { processTabsForMessage, type ProcessedTab } from '../utils/tabProcessor';
 import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
 import { HIDE_LOCAL_MODE } from '../constants';
-import { hasGeminiApiKey } from '../utils/geminiApiKey';
+import { hasGoogleApiKey } from '../utils/providerCredentials';
 import type { FileAttachmentData } from '../components/features/chat/components/FileAttachment';
 import type { TabAttachmentData } from '../components/features/chat/components/TabAttachment';
 import type { UIMessage } from 'ai';
@@ -79,7 +79,7 @@ export function useMessageHandlers({
         try {
             // Validate API key if HIDE_LOCAL_MODE is enabled or if in remote mode
             const config = await getModelConfig();
-            if ((HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGeminiApiKey())) {
+            if ((HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
                 onError?.(
                     'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
                     'error'

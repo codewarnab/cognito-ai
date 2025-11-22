@@ -29,7 +29,8 @@ interface UseSuggestionsResult {
  */
 export function useSuggestions(
     modelState: ModelState,
-    messagesLength: number
+    messagesLength: number,
+    enabled: boolean = true
 ): UseSuggestionsResult {
     const [currentUrl, setCurrentUrl] = useState<string>('');
     const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
@@ -44,8 +45,8 @@ export function useSuggestions(
     const previousMessagesLengthRef = useRef<number>(messagesLength);
     const shouldGenerateRef = useRef<boolean>(false);
 
-    // Generate suggestions in both local and remote modes when no messages
-    const shouldGenerate = messagesLength === 0;
+    // Generate suggestions in both local and remote modes when no messages and enabled
+    const shouldGenerate = enabled && messagesLength === 0;
 
     // Update refs for next render
     shouldGenerateRef.current = shouldGenerate;
