@@ -198,21 +198,33 @@ async function initializeGoogleModel(modelName: string): Promise<ModelInitResult
     // Validate and get API key (throws APIError if invalid)
     const apiKey = await validateAndGetApiKey();
 
-    // Create Google Generative AI client with custom fetch
-    const google = createGoogleGenerativeAI({
-        apiKey,
-        fetch: customFetch
-    });
-    const model = google(modelName);
+    try {
+        // Create Google Generative AI client with custom fetch
+        const google = createGoogleGenerativeAI({
+            apiKey,
+            fetch: customFetch
+        });
+        const model = google(modelName);
 
-    log.info('✅ Google Generative AI model initialized successfully:', modelName);
+        log.info('✅ Google Generative AI model initialized successfully:', modelName);
 
-    return {
-        model,
-        provider: 'google',
-        modelName,
-        providerInstance: google, // Return provider instance for tool access
-    };
+        return {
+            model,
+            provider: 'google',
+            modelName,
+            providerInstance: google, // Return provider instance for tool access
+        };
+    } catch (error) {
+        log.error('❌ Failed to initialize Google Generative AI model:', error);
+        throw new APIError({
+            message: 'Failed to initialize Google Generative AI',
+            statusCode: 500,
+            retryable: false,
+            userMessage: 'Could not initialize Google AI. Please verify your API key and try again.',
+            technicalDetails: error instanceof Error ? error.message : String(error),
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+    }
 }
 
 /**

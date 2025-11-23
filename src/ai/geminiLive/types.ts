@@ -21,7 +21,7 @@ export enum Modality {
  */
 export interface VoiceConfig {
     prebuiltVoiceConfig?: {
-        voiceName: 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Orion';
+        voiceName: 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Leda' | 'Zephyr';
     };
 }
 

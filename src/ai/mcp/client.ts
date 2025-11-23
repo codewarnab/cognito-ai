@@ -41,19 +41,6 @@ export interface MCPClientManager {
   sessionIds: Map<string, string>; // Track session IDs for persistence
 }
 
-// /**
-//  * Load stored session ID for a server from chrome.storage
-//  */
-// async function getStoredSessionId(serverId: string): Promise<string | undefined> {
-//   try {
-//     const result = await chrome.storage.local.get(`mcp.${serverId}.sessionId`);
-//     return result[`mcp.${serverId}.sessionId`];
-//   } catch (error) {
-//     log.warn(`⚠️ Failed to load session ID for ${serverId}:`, error);
-//     return undefined;
-//   }
-// }
-
 /**
  * Get enabled MCP server configurations from background script
  * This ensures we get the most up-to-date configurations and tokens

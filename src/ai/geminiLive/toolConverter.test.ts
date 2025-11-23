@@ -134,7 +134,7 @@ export function runToolConverterTests() {
     console.log('\n✅ All tests passed! 🎉\n');
 }
 
-// Run tests if executed directly
-if (typeof window !== 'undefined' && (window as any).runToolConverterTests) {
+// Expose for manual testing in browser environment
+if (typeof window !== 'undefined') {
     (window as any).runToolConverterTests = runToolConverterTests;
 }

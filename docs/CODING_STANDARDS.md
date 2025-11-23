@@ -22,6 +22,8 @@
   - Assets: `import icon from '@assets/...';`
 - Group and sort imports consistently; rely on the Prettier sort-imports plugin.
 - Prefer named exports; avoid default exports for shared utilities.
+- **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks.
+- **CRITICAL**: Remove duplicate imports of the same identifier; consolidate into single import statement.
 
 ## Logger Usage
 - Initialize a module-scoped logger and reuse it:
@@ -38,6 +40,8 @@
 - **CRITICAL**: Never use empty catch blocks; always log errors with context for debugging. Use logger's `warn()` or `error()` methods with descriptive messages.
 - Prefer `unknown` over `any` for function parameters that will be validated; type `any` bypasses compile-time safety.
 - **CRITICAL**: Validate API response structure before accessing properties; check for `null` or non-object responses to prevent runtime errors.
+- **CRITICAL**: Always use `APIError` instead of generic `Error` for consistency across the codebase; include statusCode, retryable flag, userMessage, technicalDetails, and errorCode from ErrorType enum.
+- **CRITICAL**: Wrap initialization logic in try-catch blocks; ensure all async initialization functions handle errors gracefully and provide meaningful error context.
 
 ## React and Hooks
 - Use functional components with hooks.
@@ -83,6 +87,7 @@
 - Validate user inputs and tool parameters.
 - Respect Chrome MV3 permissions and protected pages; handle injection failures gracefully (`src/errors/errorTypes.ts:535`).
 - **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` to prevent regex injection and runtime errors.
+- **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`) to prevent exposure in logs, browser history, and proxy servers.
 
 ## Build Scripts and Node.js Utilities
 - Always validate array bounds before accessing elements; add defensive checks with clear warning messages.
@@ -90,6 +95,7 @@
 - Use `String.replaceAll()` or global regex when replacing all occurrences; `String.replace()` only replaces the first match.
 - Implement concurrency guards for async operations that shouldn't run simultaneously; check flags before starting and clear them in finally blocks.
 - Calculate progress percentages correctly: use `(loaded / total) * 100`, not raw byte manipulation; provide fallbacks when totals are unavailable.
+- Remove commented-out code from source files; rely on git history for recovery if needed.
 
 ## Canvas and DOM Element Lifecycle
 - **CRITICAL**: Always clean up injected DOM elements (canvas, style tags) when tools unregister or components unmount.
@@ -127,10 +133,21 @@
 - Wrap selector queries in try-catch to handle malformed selectors or DOM exceptions gracefully.
 - **CRITICAL**: Use relative/child selectors (e.g., `element.querySelector('#child')`) instead of nested absolute selectors that redundantly repeat parent IDs; nested absolute selectors are logically impossible and will always fail.
 
+## API Integration Best Practices
+- Validate enum/union types against official API documentation before hardcoding values; invalid values cause runtime errors.
+- When APIs support multiple valid values (voice names, model IDs, etc.), maintain complete lists in type definitions.
+- Monitor API deprecation notices and update hardcoded identifiers before deprecation dates; add comments with expiration dates for preview/beta endpoints.
+
 ## Formatting and Checks
 - Use Prettier for formatting and the sort-imports plugin.
 - Run type checks before pushing: `pnpm type:check` (`package.json:13`).
 - **CRITICAL**: Keep comments and documentation in sync with code; update comments immediately when implementation changes to prevent confusion and maintenance issues.
+
+## TypeScript Type Safety
+- **CRITICAL**: Maintain type consistency across related interfaces; if external APIs return a type (e.g., `string`), use that type consistently throughout the codebase rather than converting arbitrarily.
+- Prefer `unknown` over `any` for generic parameters, callbacks, and unvalidated data; `unknown` forces type checking before use.
+- When defining configuration interfaces, ensure all properties used in default/constant objects are declared in the interface.
+- Validate external data types (API responses, user input) and use type guards before accessing properties.
 
 ## Examples
 - Logger import:

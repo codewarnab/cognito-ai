@@ -12,8 +12,8 @@ export interface GeminiLiveEventHandlers {
     onError?: (error: LiveAPIError) => void;
     onModelSpeaking?: (isSpeaking: boolean) => void;
     onUserSpeaking?: (isSpeaking: boolean) => void;
-    onToolCall?: (toolName: string, args: any) => void;
-    onToolResult?: (toolName: string, result: any) => void;
+    onToolCall?: (toolName: string, args: unknown) => void;
+    onToolResult?: (toolName: string, result: unknown) => void;
     onToolExecutionChange?: (isExecuting: boolean) => void;
 }
 
@@ -40,6 +40,8 @@ export interface GeminiLiveClientConfig {
     proactivity?: ProactivityConfig;
     eventHandlers?: GeminiLiveEventHandlers;
     errorRecoveryConfig?: ErrorRecoveryConfig;
+    maxConnectionRetries?: number;
+    maxContentLength?: number;
 }
 
 /**

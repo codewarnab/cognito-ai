@@ -6,9 +6,6 @@
 
 import { createLogger } from '~logger';
 import { markGoogleApiKeyInvalid } from '../../utils/providerCredentials';
-
-// Helper function for compatibility
-const markApiKeyInvalid = (errorCode?: string) => markGoogleApiKeyInvalid(errorCode || 'AUTH_FAILED');
 import {
   APIError,
   NetworkError,
@@ -18,6 +15,9 @@ import { parseVertexError, parseVertexErrorAsync } from './vertexErrorParser';
 import type { AIProvider } from '../../utils/providerTypes';
 
 const log = createLogger('AI-ErrorHandlers');
+
+// Helper function for compatibility
+const markApiKeyInvalid = (errorCode?: string) => markGoogleApiKeyInvalid(errorCode || 'AUTH_FAILED');
 
 /**
  * Extract malformed function call details from Gemini response
