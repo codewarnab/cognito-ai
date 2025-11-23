@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion, useAnimation } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
@@ -104,17 +104,15 @@ const KeyboardIcon = forwardRef<KeyboardIconHandle, KeyboardIconProps>(
           strokeLinejoin="round"
         >
           <rect width="20" height="16" x="2" y="4" rx="2" />
-          <AnimatePresence>
-            {KEYBOARD_PATHS.map((path, index) => (
-              <motion.path
-                key={path.id}
-                d={path.d}
-                initial={{ opacity: 1 }}
-                animate={controls}
-                custom={index}
-              />
-            ))}
-          </AnimatePresence>
+          {KEYBOARD_PATHS.map((path, index) => (
+            <motion.path
+              key={path.id}
+              d={path.d}
+              initial={{ opacity: 1 }}
+              animate={controls}
+              custom={index}
+            />
+          ))}
         </svg>
       </div>
     );

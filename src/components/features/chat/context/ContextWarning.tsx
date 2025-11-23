@@ -76,7 +76,7 @@ export const ContextWarning: React.FC<ContextWarningProps> = ({
                             >
                                 <X size={16} />
                             </button>
-                        </button>
+                        </div>
                     </div>
                 </motion.div>
             )}

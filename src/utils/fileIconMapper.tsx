@@ -19,8 +19,8 @@ import {
     PHPIcon,
     RSIcon,
     SwiftIcon,
-    XML,
-    YAMl,
+    XMLIcon,
+    YAMLIcon,
     RubyIcon,
     ShellIcon,
     GoIcon,
@@ -104,10 +104,10 @@ export function getFileIconComponent(extension: string): React.ComponentType<{ s
         case "text":
             return TxtIcon;
         case "xml":
-            return XML;
+            return XMLIcon;
         case "yaml":
         case "yml":
-            return YAMl;
+            return YAMLIcon;
         case "csv":
         case "tsv":
             return CSVIcon;
