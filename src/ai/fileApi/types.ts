@@ -22,7 +22,7 @@ export interface FileMetadata {
     name: string;
     uri: string;
     mimeType: string;
-    sizeBytes: number;
+    sizeBytes: string;
     state: string;
     expirationTime: string;
 }

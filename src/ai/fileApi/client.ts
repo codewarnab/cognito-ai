@@ -54,7 +54,14 @@ export async function uploadPdfFromUrl(
     log.debug('Fetching PDF content...');
     const pdfResponse = await fetch(pdfUrl);
     if (!pdfResponse.ok) {
-        throw new Error(`Failed to fetch PDF: ${pdfResponse.statusText}`);
+        throw new APIError({
+            message: 'Failed to fetch PDF',
+            statusCode: pdfResponse.status,
+            retryable: pdfResponse.status >= 500,
+            userMessage: 'Unable to download the PDF. Please check the URL and try again.',
+            technicalDetails: `HTTP ${pdfResponse.status}: ${pdfResponse.statusText}`,
+            errorCode: ErrorType.API_INVALID_REQUEST,
+        });
     }
 
     const pdfBlob = await pdfResponse.blob();
@@ -75,14 +82,24 @@ export async function uploadPdfFromUrl(
     const formData = new FormData();
     formData.append('file', pdfBlob, displayName || 'document.pdf');
 
-    const uploadResponse = await fetch(`${FILE_API_BASE}/files?key=${apiKey}`, {
+    const uploadResponse = await fetch(`${FILE_API_BASE}/files`, {
         method: 'POST',
+        headers: {
+            'X-Goog-Api-Key': apiKey,
+        },
         body: formData,
     });
 
     if (!uploadResponse.ok) {
         const error = await uploadResponse.text();
-        throw new Error(`File API upload failed: ${error}`);
+        throw new APIError({
+            message: 'File API upload failed',
+            statusCode: uploadResponse.status,
+            retryable: uploadResponse.status >= 500,
+            userMessage: 'Failed to upload PDF to Google File API. Please try again.',
+            technicalDetails: error,
+            errorCode: ErrorType.API_INVALID_REQUEST,
+        });
     }
 
     const uploadData = await uploadResponse.json();
@@ -113,7 +130,7 @@ export async function uploadPdfFromUrl(
             name: file.name,
             uri: file.uri,
             mimeType: file.mimeType,
-            sizeBytes: parseInt(file.sizeBytes),
+            sizeBytes: file.sizeBytes,
             state: file.state,
             expirationTime: file.expirationTime,
         },
@@ -148,13 +165,27 @@ async function waitForProcessing(
         }
 
         if (metadata.state === 'FAILED') {
-            throw new Error('File processing failed');
+            throw new APIError({
+                message: 'File processing failed',
+                statusCode: 500,
+                retryable: false,
+                userMessage: 'The PDF processing failed. Please try uploading again.',
+                technicalDetails: `File ${fileName} processing state: FAILED`,
+                errorCode: ErrorType.API_SERVER_ERROR,
+            });
         }
 
         log.debug(`Processing... (${i + 1}/${maxAttempts})`, { state: metadata.state });
     }
 
-    throw new Error('File processing timeout');
+    throw new APIError({
+        message: 'File processing timeout',
+        statusCode: 408,
+        retryable: true,
+        userMessage: 'PDF processing took too long. Please try again.',
+        technicalDetails: `File ${fileName} did not reach ACTIVE state after ${maxAttempts} attempts`,
+        errorCode: ErrorType.NETWORK_TIMEOUT,
+    });
 }
 
 /**
@@ -170,10 +201,21 @@ export async function getFileMetadata(
 ): Promise<FileMetadata> {
     const key = apiKey || (await validateAndGetApiKey());
 
-    const response = await fetch(`${FILE_API_BASE}/${fileName}?key=${key}`);
+    const response = await fetch(`${FILE_API_BASE}/${fileName}`, {
+        headers: {
+            'X-Goog-Api-Key': key,
+        },
+    });
 
     if (!response.ok) {
-        throw new Error(`Failed to get file metadata: ${response.statusText}`);
+        throw new APIError({
+            message: 'Failed to get file metadata',
+            statusCode: response.status,
+            retryable: response.status >= 500,
+            userMessage: 'Unable to retrieve file information. Please try again.',
+            technicalDetails: `HTTP ${response.status}: ${response.statusText}`,
+            errorCode: ErrorType.API_INVALID_REQUEST,
+        });
     }
 
     const data = await response.json();
@@ -182,7 +224,7 @@ export async function getFileMetadata(
         name: data.name,
         uri: data.uri,
         mimeType: data.mimeType,
-        sizeBytes: parseInt(data.sizeBytes),
+        sizeBytes: data.sizeBytes,
         state: data.state,
         expirationTime: data.expirationTime,
     };
@@ -196,12 +238,22 @@ export async function getFileMetadata(
 export async function deleteFile(fileName: string): Promise<void> {
     const apiKey = await validateAndGetApiKey();
 
-    const response = await fetch(`${FILE_API_BASE}/${fileName}?key=${apiKey}`, {
+    const response = await fetch(`${FILE_API_BASE}/${fileName}`, {
         method: 'DELETE',
+        headers: {
+            'X-Goog-Api-Key': apiKey,
+        },
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to delete file: ${response.statusText}`);
+        throw new APIError({
+            message: 'Failed to delete file',
+            statusCode: response.status,
+            retryable: response.status >= 500,
+            userMessage: 'Unable to delete the file. Please try again.',
+            technicalDetails: `HTTP ${response.status}: ${response.statusText}`,
+            errorCode: ErrorType.API_INVALID_REQUEST,
+        });
     }
 
     log.info('File deleted', { fileName });

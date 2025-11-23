@@ -30,10 +30,8 @@ import {
   downloadSummarizer,
   type DownloadProgressEvent,
 } from '../models/downloader';
-import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
-import { writeErrorToStream, writeDownloadProgressToStream } from '../stream/streamHelpers';
-
-const log = createLogger('ModelSetup', 'AI_CHAT');
+import { BrowserAPIError } from '../../errors/errorTypes';
+import { writeErrorToStream, writeDownloadProgressToStream } from '../stream/streamHelpers'; const log = createLogger('ModelSetup', 'AI_CHAT');
 
 export interface LocalModelSetup {
   model: any;
