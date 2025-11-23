@@ -41,7 +41,7 @@ export const Features: React.FC<FeaturesProps> = ({ onBack, onPromptClick }) => 
 
             {/* Content */}
             <div className="features-content">
-                {examplePrompts.map((category) => {
+                {(examplePrompts ?? []).map((category) => {
                     const IconComponent = category.icon;
                     return (
                         <div key={category.id} className="features-category">
@@ -50,9 +50,9 @@ export const Features: React.FC<FeaturesProps> = ({ onBack, onPromptClick }) => 
                                 {category.category}
                             </h2>
                             <div className="features-prompts-grid">
-                                {category.prompts.map((prompt, idx) => (
+                                {category.prompts.map((prompt) => (
                                     <button
-                                        key={idx}
+                                        key={prompt}
                                         className="features-prompt-card"
                                         onClick={() => handlePromptClick(prompt)}
                                     >

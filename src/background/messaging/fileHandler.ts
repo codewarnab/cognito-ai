@@ -10,15 +10,39 @@ import { isFileAccessError } from '../../errors';
 
 const backgroundLog = createLogger('Background-File-Handler', 'BACKGROUND');
 
+interface FileMessage {
+    type: 'READ_LOCAL_PDF';
+    payload: {
+        filePath: string;
+    };
+}
+
+function isFileMessage(message: unknown): message is FileMessage {
+    return (
+        typeof message === 'object' &&
+        message !== null &&
+        'type' in message &&
+        message.type === 'READ_LOCAL_PDF' &&
+        'payload' in message &&
+        typeof message.payload === 'object' &&
+        message.payload !== null &&
+        'filePath' in message.payload
+    );
+}
+
 /**
  * Handle file-related messages
  */
 export async function handleFileMessage(
-    message: any,
+    message: unknown,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
 ): Promise<void> {
-    if (message?.type === 'READ_LOCAL_PDF') {
+    if (!isFileMessage(message)) {
+        return;
+    }
+
+    if (message.type === 'READ_LOCAL_PDF') {
         try {
             const { filePath } = message.payload;
 
@@ -46,7 +70,7 @@ export async function handleFileMessage(
             const chunkSize = 0x8000; // Process in chunks to avoid call stack issues
             for (let i = 0; i < uint8Array.length; i += chunkSize) {
                 const chunk = uint8Array.subarray(i, i + chunkSize);
-                binary += String.fromCharCode.apply(null, Array.from(chunk));
+                binary += String.fromCharCode(...chunk);
             }
             const base64Data = btoa(binary);
 

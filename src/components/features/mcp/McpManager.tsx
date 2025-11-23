@@ -93,7 +93,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             const results = await Promise.all(statusPromises)
 
             // Build the statuses object from successful results
-            const newStatuses: Record<string, any> = {}
+            const newStatuses: Record<string, { state: string; error?: string }> = {}
             results.forEach(result => {
                 if (result) {
                     newStatuses[result.serverId] = result.status
@@ -110,7 +110,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         loadStatuses()
 
         // Listen for status updates from any server
-        const handleMessage = (message: any) => {
+        const handleMessage = (message: { type?: string; payload?: any }) => {
             // Match pattern: mcp/{serverId}/status/update
             const match = message.type?.match(/^mcp\/([^/]+)\/status\/update$/)
             if (match) {
@@ -174,7 +174,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     // Handler for plus icon click
     const handlePlusIconClick = () => {
         setActiveView('add-custom')
-        
+
         // Trigger animation on click
         if (plusIconRef.current) {
             plusIconRef.current.startAnimation()
@@ -277,7 +277,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                         </button>
                     )}
                 </div>
-                
+
                 {/* Plus Icon Button with Tooltip */}
                 <Popover>
                     <PopoverTrigger asChild>
@@ -306,7 +306,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
                             }}
                         >
-                            <PlusIcon 
+                            <PlusIcon
                                 ref={plusIconRef}
                                 size={24}
                                 style={{

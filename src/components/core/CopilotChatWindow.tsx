@@ -213,7 +213,6 @@ export function CopilotChatWindow({
                 onFeaturesClick={onFeaturesClick}
                 onProviderSetupClick={onProviderSetupClick}
                 isLoading={isLoading}
-            // onApiKeySaved={handleApiKeySaved}
             />
 
             <ChatMessages

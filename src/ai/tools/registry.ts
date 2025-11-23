@@ -159,13 +159,15 @@ export function getCloudToolsCount(): number {
   // Workflow-only tools that should be excluded from normal mode
   const workflowOnlyTools = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
 
-  // Count extension tools (excluding workflow-only)
-  const extensionToolCount = Object.keys(allTools).filter(
-    name => !workflowOnlyTools.includes(name)
+  // Count extension tools (excluding workflow-only and disabled tools)
+  const extensionToolCount = BASIC_TOOLS.filter(
+    name => allTools[name] && enabledTools.includes(name) && !workflowOnlyTools.includes(name)
   ).length;
 
-  // Count agent tools (currently just analyzeYouTubeVideo in non-workflow mode)
-  const agentToolCount = 1; // analyzeYouTubeVideo
+  // Count agent tools (excluding disabled tools)
+  const agentToolCount = AGENT_TOOLS.filter(
+    name => allTools[name] && enabledTools.includes(name)
+  ).length;
 
   const totalCount = extensionToolCount + agentToolCount;
 

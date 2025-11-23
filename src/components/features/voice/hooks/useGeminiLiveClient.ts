@@ -15,6 +15,16 @@ import type { VoiceModeStatus } from '../../../../ai/geminiLive/types';
 
 const log = createLogger('useGeminiLiveClient', 'VOICE_CLIENT');
 
+interface AudioManager {
+    getInputNode(): GainNode | null;
+    getOutputNode(): GainNode | null;
+    getOutputContext?(): AudioContext;
+}
+
+interface GeminiLiveClientWithAudio extends GeminiLiveClient {
+    audioManager?: AudioManager;
+}
+
 interface UseGeminiLiveClientOptions {
     apiKey: string;
     systemInstruction?: string;
@@ -105,7 +115,7 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                     const existingClient = manager.getActiveClient();
                     if (existingClient) {
                         liveClientRef.current = existingClient;
-                        const audioManager = (existingClient as any).audioManager;
+                        const audioManager = (existingClient as GeminiLiveClientWithAudio).audioManager;
                         if (audioManager) {
                             inputNodeRef.current = audioManager.getInputNode();
                             outputNodeRef.current = audioManager.getOutputNode();
@@ -140,7 +150,7 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                         log.debug('Tab visible - resuming audio contexts if needed');
                         const client = liveClientRef.current;
                         if (client) {
-                            const audioManager = (client as any).audioManager;
+                            const audioManager = (client as GeminiLiveClientWithAudio).audioManager;
                             const outputContext = audioManager?.getOutputContext();
                             if (outputContext && outputContext.state === 'suspended') {
                                 outputContext.resume().catch((err: Error) =>
@@ -207,7 +217,7 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
                     }
                 });
 
-                const audioManager = (client as any).audioManager;
+                const audioManager = (client as GeminiLiveClientWithAudio).audioManager;
                 if (audioManager) {
                     inputNodeRef.current = audioManager.getInputNode();
                     outputNodeRef.current = audioManager.getOutputNode();
@@ -364,7 +374,7 @@ export const useGeminiLiveClient = (options: UseGeminiLiveClientOptions): UseGem
 
             liveClientRef.current = newClient;
 
-            const audioManager = (newClient as any).audioManager;
+            const audioManager = (newClient as GeminiLiveClientWithAudio).audioManager;
             if (audioManager) {
                 inputNodeRef.current = audioManager.getInputNode();
                 outputNodeRef.current = audioManager.getOutputNode();

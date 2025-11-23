@@ -240,7 +240,7 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
                     </div>
 
                     {/* Tabs List */}
-                    <div 
+                    <div
                         className="tabs-list-scrollable"
                         style={{
                             flex: 1,
@@ -277,6 +277,14 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
                                 <div
                                     key={tab.id}
                                     onClick={() => toggleTab(tab.id)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            toggleTab(tab.id);
+                                        }
+                                    }}
+                                    role="button"
+                                    tabIndex={0}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'center',

@@ -11,6 +11,12 @@ interface AttachmentDropdownProps {
     isLocalMode: boolean;
 }
 
+interface ButtonConfig {
+    label: string;
+    icon: React.ComponentType<{ size: number }>;
+    onClick: () => void;
+}
+
 export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
     onFileClick,
     onScreenshotClick,
@@ -31,6 +37,28 @@ export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [onClose]);
 
+    const buttons: ButtonConfig[] = [
+        { label: 'File', icon: PaperclipIcon, onClick: onFileClick },
+        { label: 'Screenshot', icon: CameraIcon, onClick: onScreenshotClick },
+        { label: 'Add tabs', icon: TabsIcon, onClick: onAddTabsClick },
+    ];
+
+    const buttonStyle: React.CSSProperties = {
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '10px 12px',
+        border: 'none',
+        background: 'transparent',
+        borderRadius: '6px',
+        cursor: isLocalMode ? 'not-allowed' : 'pointer',
+        fontSize: '14px',
+        color: isLocalMode ? 'var(--text-disabled, #64748b)' : 'var(--text-primary, #e2e8f0)',
+        transition: 'background-color 0.15s ease',
+        opacity: isLocalMode ? 0.5 : 1,
+    };
+
     return (
         <div
             ref={dropdownRef}
@@ -49,113 +77,30 @@ export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
                 zIndex: 1000,
             }}
         >
-            <button
-                type="button"
-                className="attachment-dropdown-item"
-                onClick={() => {
-                    onFileClick();
-                    onClose();
-                }}
-                disabled={isLocalMode}
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px 12px',
-                    border: 'none',
-                    background: 'transparent',
-                    borderRadius: '6px',
-                    cursor: isLocalMode ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    color: isLocalMode ? 'var(--text-disabled, #64748b)' : 'var(--text-primary, #e2e8f0)',
-                    transition: 'background-color 0.15s ease',
-                    opacity: isLocalMode ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => {
-                    if (!isLocalMode) {
-                        e.currentTarget.style.backgroundColor = 'var(--dropdown-hover, #334155)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-            >
-                <PaperclipIcon size={18} />
-                <span>File</span>
-            </button>
-
-            <button
-                type="button"
-                className="attachment-dropdown-item"
-                onClick={() => {
-                    onScreenshotClick();
-                    onClose();
-                }}
-                disabled={isLocalMode}
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px 12px',
-                    border: 'none',
-                    background: 'transparent',
-                    borderRadius: '6px',
-                    cursor: isLocalMode ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    color: isLocalMode ? 'var(--text-disabled, #64748b)' : 'var(--text-primary, #e2e8f0)',
-                    transition: 'background-color 0.15s ease',
-                    opacity: isLocalMode ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => {
-                    if (!isLocalMode) {
-                        e.currentTarget.style.backgroundColor = 'var(--dropdown-hover, #334155)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-            >
-                <CameraIcon size={18} />
-                <span>Screenshot</span>
-            </button>
-
-            <button
-                type="button"
-                className="attachment-dropdown-item"
-                onClick={() => {
-                    onAddTabsClick();
-                    onClose();
-                }}
-                disabled={isLocalMode}
-                style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '10px 12px',
-                    border: 'none',
-                    background: 'transparent',
-                    borderRadius: '6px',
-                    cursor: isLocalMode ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    color: isLocalMode ? 'var(--text-disabled, #64748b)' : 'var(--text-primary, #e2e8f0)',
-                    transition: 'background-color 0.15s ease',
-                    opacity: isLocalMode ? 0.5 : 1,
-                }}
-                onMouseEnter={(e) => {
-                    if (!isLocalMode) {
-                        e.currentTarget.style.backgroundColor = 'var(--dropdown-hover, #334155)';
-                    }
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-            >
-                <TabsIcon size={18} />
-                <span>Add tabs</span>
-            </button>
+            {buttons.map(({ label, icon: Icon, onClick }) => (
+                <button
+                    key={label}
+                    type="button"
+                    className="attachment-dropdown-item"
+                    onClick={() => {
+                        onClick();
+                        onClose();
+                    }}
+                    disabled={isLocalMode}
+                    style={buttonStyle}
+                    onMouseEnter={(e) => {
+                        if (!isLocalMode) {
+                            e.currentTarget.style.backgroundColor = 'var(--dropdown-hover, #334155)';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                >
+                    <Icon size={18} />
+                    <span>{label}</span>
+                </button>
+            ))}
         </div>
     );
 };

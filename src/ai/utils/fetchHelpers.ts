@@ -21,7 +21,9 @@ export async function customFetch(url: RequestInfo | URL, init?: RequestInit): P
 
     // Remove referrer header to avoid 403 errors in Chrome extensions
     if (newInit.headers) {
-        delete (newInit.headers as any).Referer;
+        const newHeaders = new Headers(newInit.headers);
+        newHeaders.delete('Referer');
+        newInit.headers = newHeaders;
     }
 
     const response = await fetch(url, newInit);

@@ -78,63 +78,71 @@ export async function handleMcpMessage(
 
     backgroundLog.info(` Handling MCP message for ${serverId}:`, action);
 
-    switch (action) {
-        case 'auth/start':
-            response = await startOAuthFlow(serverId);
-            break;
+    try {
+        switch (action) {
+            case 'auth/start':
+                response = await startOAuthFlow(serverId);
+                break;
 
-        case 'enable':
-            response = await enableMcpServer(serverId);
-            break;
+            case 'enable':
+                response = await enableMcpServer(serverId);
+                break;
 
-        case 'disable':
-            response = await disableMcpServer(serverId);
-            break;
+            case 'disable':
+                response = await disableMcpServer(serverId);
+                break;
 
-        case 'disconnect':
-            response = await disconnectServerAuth(serverId);
-            break;
+            case 'disconnect':
+                response = await disconnectServerAuth(serverId);
+                break;
 
-        case 'status/get':
-            response = { success: true, data: getServerStatus(serverId) };
-            break;
+            case 'status/get':
+                response = { success: true, data: getServerStatus(serverId) };
+                break;
 
-        case 'auth/refresh':
-            const refreshed = await refreshServerToken(serverId);
-            response = refreshed
-                ? { success: true, data: { state: 'authenticated' } }
-                : { success: false, error: 'Token refresh failed' };
-            break;
+            case 'auth/refresh':
+                const refreshed = await refreshServerToken(serverId);
+                response = refreshed
+                    ? { success: true, data: { state: 'authenticated' } }
+                    : { success: false, error: 'Token refresh failed' };
+                break;
 
-        case 'tool/call':
-            response = await callServerTool(
-                serverId,
-                message.payload?.name,
-                message.payload?.arguments
-            );
-            break;
+            case 'tool/call':
+                response = await callServerTool(
+                    serverId,
+                    message.payload?.name,
+                    message.payload?.arguments
+                );
+                break;
 
-        case 'health/check':
-            response = await performHealthCheck(serverId);
-            break;
+            case 'health/check':
+                response = await performHealthCheck(serverId);
+                break;
 
-        case 'tools/list':
-            const tools = await getServerTools(serverId);
-            response = { success: true, data: tools };
-            break;
+            case 'tools/list':
+                const tools = await getServerTools(serverId);
+                response = { success: true, data: tools };
+                break;
 
-        case 'tools/config/get':
-            const disabledTools = await getDisabledTools(serverId);
-            response = { success: true, data: disabledTools };
-            break;
+            case 'tools/config/get':
+                const disabledTools = await getDisabledTools(serverId);
+                response = { success: true, data: disabledTools };
+                break;
 
-        case 'tools/config/set':
-            await setDisabledTools(serverId, message.payload?.disabledTools || []);
-            response = { success: true };
-            break;
+            case 'tools/config/set':
+                await setDisabledTools(serverId, message.payload?.disabledTools || []);
+                response = { success: true };
+                break;
 
-        default:
-            response = { success: false, error: `Unknown action: ${action}` };
+            default:
+                response = { success: false, error: `Unknown action: ${action}` };
+        }
+    } catch (error) {
+        backgroundLog.error(` Error handling MCP action ${action} for ${serverId}:`, error);
+        response = {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to process MCP action'
+        };
     }
 
     mcpLog.info(`[${serverId}] Sending MCP response:`, response);

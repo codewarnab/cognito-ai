@@ -418,6 +418,8 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
 
             const mesh = new Mesh(glContext, { geometry, program });
 
+            // Define resize handler in outer scope for proper cleanup
+            let resizeHandler: (() => void) | null = null;
             const resize = () => {
                 if (!container || !rendererInstance || !glContext) return;
                 const dpr = window.devicePixelRatio || 1;
@@ -439,6 +441,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                     );
                 }
             };
+            resizeHandler = resize;
             window.addEventListener("resize", resize);
             resize();
 
@@ -562,7 +565,9 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
                 container.removeChild(container.firstChild);
             }
             return () => {
-                window.removeEventListener("resize", () => { });
+                if (resizeHandler) {
+                    window.removeEventListener("resize", resizeHandler);
+                }
             };
         }
     }, [

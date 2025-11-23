@@ -104,7 +104,7 @@ export function writeRetryStatusToStream(
       attempt,
       maxAttempts,
       delay,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     },
     transient: true,
   });
@@ -125,7 +125,7 @@ export function writeCountdownToStream(
       status: 'countdown',
       remainingSeconds,
       attempt,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     },
     transient: true,
   });

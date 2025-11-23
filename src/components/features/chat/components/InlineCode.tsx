@@ -59,6 +59,14 @@ export function InlineCode({ children, ...props }: InlineCodeProps) {
             <code
                 className={`inline-code-clickable ${isUrl ? 'inline-code-link' : ''}`}
                 onClick={handleClick}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleClick(e as any);
+                    }
+                }}
+                role="button"
+                tabIndex={0}
                 title={isUrl ? content : undefined}
                 {...props}
             >
