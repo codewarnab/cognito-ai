@@ -131,8 +131,8 @@ export function useSearchBookmarks() {
                             </div>
                             {output.bookmarks && output.bookmarks.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
-                                    {output.bookmarks.map((bookmark: any, idx: number) => (
-                                        <div key={idx} style={{
+                                    {output.bookmarks.map((bookmark: any) => (
+                                        <div key={bookmark.id} style={{
                                             padding: '6px 8px',
                                             background: 'var(--bg-tertiary)',
                                             borderRadius: '3px',

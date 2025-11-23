@@ -3,7 +3,7 @@
  * Generates detailed answers for individual questions using full transcript
  * Uses Gemini structured output for guaranteed JSON parsing
  * 
- * NO RETRIEVAL/SPLITTING - Uses full transcript every time (Gemini 2.5 Flash has 2M token limit)
+ * NO RETRIEVAL/SPLITTING - Uses full transcript every time (Gemini 2.5 Flash has ~1M token context window)
  */
 
 import { createRetryManager } from '../../../errors/retryManager';
@@ -46,7 +46,7 @@ const answerSchema = {
 
 /**
  * Minimum content length in characters (~200 words heuristic)
- * If content is shorter, we'll retry once
+ * If content is shorter, a warning will be logged
  */
 const MIN_CONTENT_LENGTH = 1000;
 
@@ -190,7 +190,7 @@ function buildPrompt(params: {
 - Focus Question: ${question}
 
 **Your Task:**
-1. Write a thorough, self-contained answer (200-500 words minimum)
+1. Write a thorough, self-contained answer (minimum 1000 characters, aim for detailed coverage)
 2. Ground your answer ONLY in the provided transcript - do not add external facts or hallucinate
 3. Use Notion Markdown format:
    - Headings with # (e.g., # Main Point, ## Sub Point)

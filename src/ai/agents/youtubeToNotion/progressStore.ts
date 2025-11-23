@@ -98,14 +98,12 @@ class ProgressStore {
             listenerCount: this.listeners.size
         });
 
-        // Immediately call with current state (trigger update)
-        const triggerUpdate: ProgressUpdate = {
-            id: 'init',
-            title: '',
-            status: 'pending',
-            timestamp: Date.now()
-        };
-        callback(triggerUpdate);
+        // Immediately call with most recent update if one exists
+        const allUpdates = this.getAll();
+        if (allUpdates.length > 0) {
+            const latestUpdate = allUpdates[allUpdates.length - 1];
+            callback(latestUpdate);
+        }
 
         return () => {
             this.listeners.delete(callback);

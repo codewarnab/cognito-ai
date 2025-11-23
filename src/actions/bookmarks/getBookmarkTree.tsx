@@ -165,7 +165,7 @@ export function useGetBookmarkTree() {
                     'Set to true when user specifically asks to "show all bookmarks", "list everything", or needs to see individual bookmark details. ' +
                     'Warning: Can produce large output for users with many bookmarks (>100).'
                 ),
-                maxDepth: z.number().optional().describe(
+                maxDepth: z.number().int().min(1).max(10).optional().describe(
                     'Optional: Maximum depth of folders to include (1-10). ' +
                     'Use to limit output for deeply nested folder structures. ' +
                     'If not specified, includes all levels.'
@@ -191,7 +191,7 @@ export function useGetBookmarkTree() {
                     let simplified = simplifyTree(rootNode, includeBookmarks);
 
                     // Apply depth limit if specified
-                    if (maxDepth !== undefined && maxDepth > 0) {
+                    if (maxDepth !== undefined) {
                         simplified = limitTreeDepth(simplified, maxDepth, 0);
                     }
 

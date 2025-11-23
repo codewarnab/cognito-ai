@@ -65,6 +65,7 @@ export const AuthToggle: React.FC<AuthToggleProps> = ({ checked, onChange }) => 
                   </div>
                   <ul style={{ margin: "0.5rem 0", paddingLeft: "1.25rem" }}>
                     <li>OAuth 2.0 Protected Resource Metadata (RFC9728)</li>
+                    <li>Dynamic Client Registration (DCR, RFC7591)</li>
                     <li>Authorization code flow with PKCE</li>
                     <li>Resource Indicators (RFC8707)</li>
                     <li>Token validation via Bearer header</li>

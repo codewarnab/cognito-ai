@@ -25,9 +25,7 @@ const BookTextIcon = forwardRef<BookTextIconHandle, BookTextIconProps>(
                 startAnimation: () => controls.start('animate'),
                 stopAnimation: () => controls.start('normal'),
             };
-        });
-
-        const handleMouseEnter = useCallback(
+        }, [controls]); const handleMouseEnter = useCallback(
             (e: React.MouseEvent<HTMLDivElement>) => {
                 if (!isControlledRef.current) {
                     controls.start('animate');

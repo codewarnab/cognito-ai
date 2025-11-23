@@ -90,8 +90,8 @@ export function useListBookmarks() {
                             </div>
                             {output.items && output.items.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
-                                    {output.items.map((item: any, idx: number) => (
-                                        <div key={idx} style={{
+                                    {output.items.map((item: any) => (
+                                        <div key={item.id} style={{
                                             padding: '6px 8px',
                                             background: 'var(--bg-tertiary)',
                                             borderRadius: '3px',

@@ -57,14 +57,16 @@ const ClockIcon = forwardRef<ClockIconHandle, ClockIconProps>(
         const controls = useAnimation();
         const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
-
-            return {
-                startAnimation: () => controls.start('animate'),
-                stopAnimation: () => controls.start('normal'),
-            };
-        });
+        useImperativeHandle(ref, () => ({
+            startAnimation: () => {
+                isControlledRef.current = true;
+                controls.start('animate');
+            },
+            stopAnimation: () => {
+                isControlledRef.current = true;
+                controls.start('normal');
+            },
+        }), [controls]);
 
         const handleMouseEnter = useCallback(
             (e: React.MouseEvent<HTMLDivElement>) => {

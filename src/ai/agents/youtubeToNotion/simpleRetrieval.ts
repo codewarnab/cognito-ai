@@ -99,8 +99,10 @@ export function retrieveContextFromTranscript(
 
         // Count occurrences of each term
         window.score = questionTerms.reduce((score, term) => {
+            // Escape regex special characters to prevent errors
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             // Count how many times this term appears in the window
-            const matches = (windowLower.match(new RegExp(term, 'g')) || []).length;
+            const matches = (windowLower.match(new RegExp(escapedTerm, 'g')) || []).length;
             return score + matches;
         }, 0);
     }

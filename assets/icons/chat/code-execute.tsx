@@ -19,20 +19,18 @@ const CodeExecuteIcon = forwardRef<CodeExecuteIconHandle, CodeExecuteIconProps>(
         const playControls = useAnimation();
         const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
-
-            return {
-                startAnimation: async () => {
-                    await controls.start('animate');
-                    await playControls.start('play');
-                },
-                stopAnimation: () => {
-                    controls.start('normal');
-                    playControls.start('normal');
-                },
-            };
-        });
+        useImperativeHandle(ref, () => ({
+            startAnimation: async () => {
+                isControlledRef.current = true;
+                await controls.start('animate');
+                await playControls.start('play');
+            },
+            stopAnimation: () => {
+                isControlledRef.current = true;
+                controls.start('normal');
+                playControls.start('normal');
+            },
+        }), [controls, playControls]);
 
         const handleMouseEnter = useCallback(
             async (e: React.MouseEvent<HTMLDivElement>) => {

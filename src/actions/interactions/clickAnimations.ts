@@ -3,6 +3,34 @@
  * Provides visual feedback for click actions with fallback support
  */
 
+// Track active animations and cleanup resources
+let activeAnimations = 0;
+let cleanupTimer: number | null = null;
+let resizeHandler: (() => void) | null = null;
+const IDLE_CLEANUP_DELAY = 3000; // 3 seconds
+
+/**
+ * Clean up canvas and event listeners when idle
+ */
+function scheduleCleanup(): void {
+    if (cleanupTimer !== null) {
+        clearTimeout(cleanupTimer);
+    }
+
+    cleanupTimer = window.setTimeout(() => {
+        if (activeAnimations === 0) {
+            const canvas = document.getElementById('ai-click-spark-canvas');
+            if (canvas) {
+                canvas.remove();
+            }
+            if (resizeHandler) {
+                window.removeEventListener('resize', resizeHandler);
+                resizeHandler = null;
+            }
+        }
+    }, IDLE_CLEANUP_DELAY);
+}
+
 export interface ClickAnimationOptions {
     sparkColor?: string;
     sparkSize?: number;
@@ -52,6 +80,9 @@ export function getClickAnimationScript(options?: ClickAnimationOptions) {
                 easing: string;
             }
         ): void {
+            // Track active animation
+            activeAnimations++;
+
             // Check if canvas already exists
             let canvas = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement;
 
@@ -71,11 +102,17 @@ export function getClickAnimationScript(options?: ClickAnimationOptions) {
                 canvas.height = window.innerHeight;
                 document.body.appendChild(canvas);
 
-                // Handle window resize
-                window.addEventListener('resize', () => {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                });
+                // Handle window resize (register once)
+                if (!resizeHandler) {
+                    resizeHandler = () => {
+                        const c = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement;
+                        if (c) {
+                            c.width = window.innerWidth;
+                            c.height = window.innerHeight;
+                        }
+                    };
+                    window.addEventListener('resize', resizeHandler);
+                }
             }
 
             const ctx = canvas.getContext('2d');
@@ -159,6 +196,10 @@ export function getClickAnimationScript(options?: ClickAnimationOptions) {
                 } else {
                     // Clean up when animation is done
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    activeAnimations--;
+                    if (activeAnimations === 0) {
+                        scheduleCleanup();
+                    }
                 }
             }
 

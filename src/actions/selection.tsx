@@ -99,7 +99,7 @@ export function queryByRole(
   return null;
 }
 
-export function registerSelectionActions() {
+export function useSelectionActions() {
   const log = createLogger("Actions-Selection");
   const { registerToolUI, unregisterToolUI } = useToolUI();
 

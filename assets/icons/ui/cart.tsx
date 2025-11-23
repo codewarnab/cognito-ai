@@ -45,9 +45,8 @@ const CartIcon = forwardRef<CartIconHandle, CartIconProps>(
             (e: React.MouseEvent<HTMLDivElement>) => {
                 if (!isControlledRef.current) {
                     controls.start('animate');
-                } else {
-                    onMouseEnter?.(e);
                 }
+                onMouseEnter?.(e);
             },
             [controls, onMouseEnter]
         );
@@ -56,9 +55,8 @@ const CartIcon = forwardRef<CartIconHandle, CartIconProps>(
             (e: React.MouseEvent<HTMLDivElement>) => {
                 if (!isControlledRef.current) {
                     controls.start('normal');
-                } else {
-                    onMouseLeave?.(e);
                 }
+                onMouseLeave?.(e);
             },
             [controls, onMouseLeave]
         );

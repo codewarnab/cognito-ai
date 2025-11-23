@@ -63,7 +63,7 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
           dotGroup8Controls.start('initial');
         },
       };
-    });
+    }, [wormControls, checkControls, popStartControls, popEndControls, dotGroup1Controls, dotGroup2Controls, dotGroup3Controls, dotGroup4Controls, dotGroup5Controls, dotGroup6Controls, dotGroup7Controls, dotGroup8Controls]);
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
