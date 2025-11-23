@@ -94,7 +94,7 @@ export function useNavigateToTool() {
             return <CompactToolRenderer state={state} />;
         }, {
             // Optional: Custom input renderer for navigateTo tool
-            renderInput: (input: any) => (
+            renderInput: (input: { url: string; newTab: boolean }) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                     <span style={{ opacity: 0.7 }}>URL:</span>
                     <a href={input.url} target="_blank" rel="noopener noreferrer"
@@ -104,12 +104,21 @@ export function useNavigateToTool() {
                 </div>
             ),
             // Optional: Custom output renderer for navigateTo tool
-            renderOutput: (output: any) => (
-                <a href={output.url} target="_blank" rel="noopener noreferrer"
-                    style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
-                    {output.url}
-                </a>
-            )
+            renderOutput: (output: any) => {
+                if (output.error) {
+                    return (
+                        <div style={{ fontSize: '12px', color: 'var(--error-color)', opacity: 0.9 }}>
+                            {output.error}
+                        </div>
+                    );
+                }
+                return (
+                    <a href={output.url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: '12px', color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
+                        {output.url}
+                    </a>
+                );
+            }
         });
 
         log.info('✅ openTab tool registration complete');

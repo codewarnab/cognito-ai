@@ -158,11 +158,22 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
 
         log.info('💉 Injecting script to extract description from page', { tabId: tab.id });
 
-        // Execute script to extract description from page
+        // Execute script to extract description from page with timeout
+        const EXTRACTION_TIMEOUT = 5000; // 5 seconds max
+
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {
                 return new Promise((resolve) => {
+                    const TIMEOUT_MS = 5000;
+                    let timeoutId: number | undefined;
+
+                    // Timeout guard - ensures Promise always resolves
+                    timeoutId = window.setTimeout(() => {
+                        console.error('[YT Description] Extraction timed out');
+                        resolve(undefined);
+                    }, TIMEOUT_MS);
+
                     try {
                         console.log('[YT Description] Starting extraction...');
 
@@ -171,6 +182,7 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
 
                         if (!descriptionExpander) {
                             console.error('[YT Description] Could not find description container');
+                            clearTimeout(timeoutId);
                             resolve(undefined);
                             return;
                         }
@@ -180,7 +192,8 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
 
                         // Function to extract the description text
                         const extractDescription = () => {
-                            const fullDescriptionElement = descriptionExpander.querySelector('#description-inline-expander #description-inner yt-attributed-string');
+                            // Fixed: use relative selector instead of nested absolute selector
+                            const fullDescriptionElement = descriptionExpander.querySelector('#description-inner yt-attributed-string');
                             if (fullDescriptionElement && fullDescriptionElement.textContent) {
                                 const description = fullDescriptionElement.textContent.trim();
                                 console.log('[YT Description] Successfully extracted description, length:', description.length);
@@ -206,19 +219,24 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
                                     if (collapseButton) {
                                         collapseButton.click();
                                     }
+                                    clearTimeout(timeoutId);
                                     resolve(description);
                                 }, 500);
                             } else {
                                 console.error('[YT Description] Could not find expand button');
+                                clearTimeout(timeoutId);
                                 resolve(undefined);
                             }
                         } else {
                             // Already expanded, extract directly
                             console.log('[YT Description] Description already expanded');
-                            resolve(extractDescription());
+                            const description = extractDescription();
+                            clearTimeout(timeoutId);
+                            resolve(description);
                         }
                     } catch (error) {
                         console.error('[YT Description] Error extracting description:', error);
+                        if (timeoutId !== undefined) clearTimeout(timeoutId);
                         resolve(undefined);
                     }
                 });

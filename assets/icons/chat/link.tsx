@@ -41,9 +41,9 @@ const LinkIcon = forwardRef<LinkIconHandle, LinkIconProps>(
 
       return {
         startAnimation: () => controls.start('animate'),
-        stopAnimation: () => controls.start('normal'),
+        stopAnimation: () => controls.start('initial'),
       };
-    });
+    }, [controls]);
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
@@ -59,7 +59,7 @@ const LinkIcon = forwardRef<LinkIconHandle, LinkIconProps>(
     const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          controls.start('normal');
+          controls.start('initial');
         } else {
           onMouseLeave?.(e);
         }

@@ -112,7 +112,7 @@ EXAMPLE: getAllTabs() -> {count: 15, tabs: [{id: 123, title: "GitHub", url: "...
                                     gap: '3px'
                                 }}>
                                     {output.tabs.slice(0, 3).map((tab: any, i: number) => (
-                                        <div key={i} style={{
+                                        <div key={tab.id} style={{
                                             padding: '5px 8px',
                                             background: 'var(--bg-tertiary)',
                                             borderRadius: '3px',

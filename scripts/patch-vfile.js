@@ -48,6 +48,11 @@ console.log('🔧 Patching vfile imports for browser compatibility...\n');
 vfilePaths.forEach((filePath, index) => {
     const fullPath = path.join(process.cwd(), filePath);
 
+    if (!patches[index]) {
+        console.warn(`⚠️  No patch defined for ${filePath} at index ${index}`);
+        return;
+    }
+
     if (!fs.existsSync(fullPath)) {
         console.log(`⏭️  Skipping ${filePath} (not found)`);
         return;

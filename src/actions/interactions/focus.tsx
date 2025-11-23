@@ -52,9 +52,14 @@ EXAMPLE: focusElement(selector="#search-input") or focusElement(selector="input[
                         target: { tabId: tab.id },
                         args: [selector],
                         func: (sel: string) => {
+                            // Track spotlight count for concurrent executions
+                            (window as any).__aiSpotlightCount = (window as any).__aiSpotlightCount || 0;
+
                             // Animation: Spotlight (Option B)
                             function showSpotlight(element: Element) {
                                 try {
+                                    (window as any).__aiSpotlightCount++;
+
                                     const css = `
                                         @keyframes ai-spotlight-dim { 0% { opacity: 0; } 100% { opacity: 1; } }
                                         @keyframes ai-spotlight-brighten { 0% { filter: brightness(1); } 100% { filter: brightness(1.3); } }
@@ -69,10 +74,15 @@ EXAMPLE: focusElement(selector="#search-input") or focusElement(selector="input[
                                             box-shadow: 0 0 30px 10px rgba(59, 130, 246, 0.6) !important;
                                         }
                                     `;
-                                    const style = document.createElement('style');
-                                    style.id = 'ai-spotlight-style';
-                                    style.textContent = css;
-                                    document.head.appendChild(style);
+
+                                    // Idempotent style injection
+                                    let style = document.getElementById('ai-spotlight-style') as HTMLStyleElement;
+                                    if (!style) {
+                                        style = document.createElement('style');
+                                        style.id = 'ai-spotlight-style';
+                                        style.textContent = css;
+                                        document.head.appendChild(style);
+                                    }
 
                                     document.body.classList.add('ai-spotlight-active');
                                     (element as HTMLElement).classList.add('ai-spotlight-element');
@@ -81,10 +91,20 @@ EXAMPLE: focusElement(selector="#search-input") or focusElement(selector="input[
                                         try {
                                             document.body.classList.remove('ai-spotlight-active');
                                             (element as HTMLElement).classList.remove('ai-spotlight-element');
-                                            document.getElementById('ai-spotlight-style')?.remove();
-                                        } catch (e) { }
+
+                                            // Only remove style when no active spotlights
+                                            (window as any).__aiSpotlightCount--;
+                                            if ((window as any).__aiSpotlightCount === 0) {
+                                                document.getElementById('ai-spotlight-style')?.remove();
+                                            }
+                                        } catch (e) {
+                                            log.debug('Spotlight cleanup error:', e);
+                                        }
                                     }, 250);
-                                } catch (e) { }
+                                } catch (e) {
+                                    log.debug('Spotlight animation error:', e);
+                                    (window as any).__aiSpotlightCount--;
+                                }
                             }
 
                             const el = document.querySelector(sel) as HTMLElement | null;

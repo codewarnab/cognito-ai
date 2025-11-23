@@ -138,9 +138,31 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
 
                             const results: Array<{ rank: number; href: string; title: string } | null> = [];
 
-                            // Google SERP
+                            // Google SERP with fallback selectors
                             if (url.includes("google.")) {
-                                const h3s = Array.from(document.querySelectorAll("#search h3"));
+                                let h3s: Element[] = [];
+
+                                // Try multiple selectors in order of reliability
+                                const selectors = [
+                                    "h3.LC20lb",           // Modern Google class
+                                    ".g h3",                // Container-based selector
+                                    "[role='heading'] h3",  // ARIA-based selector
+                                    "#search h3"            // Fallback to original
+                                ];
+
+                                for (const selector of selectors) {
+                                    try {
+                                        h3s = Array.from(document.querySelectorAll(selector));
+                                        if (h3s.length > 0) break;
+                                    } catch (e) {
+                                        console.debug(`Selector failed: ${selector}`, e);
+                                    }
+                                }
+
+                                if (h3s.length === 0) {
+                                    console.warn('[SERP] No Google results found with any selector');
+                                }
+
                                 let validIndex = 0;
                                 const foundResults: Record<number, { href: string; title: string }> = {};
 
@@ -159,6 +181,10 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
                                     }
                                 }
 
+                                if (validIndex < requestedRanks.length) {
+                                    console.warn(`[SERP] Google extracted ${validIndex} results, requested ${requestedRanks.length}`);
+                                }
+
                                 // Map results to requested order
                                 for (const rank of requestedRanks) {
                                     if (foundResults[rank]) {
@@ -169,9 +195,31 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
                                 }
                             }
 
-                            // Bing SERP
+                            // Bing SERP with fallback selectors
                             else if (url.includes("bing.")) {
-                                const anchors = Array.from(document.querySelectorAll("li.b_algo h2 a")) as HTMLAnchorElement[];
+                                let anchors: HTMLAnchorElement[] = [];
+
+                                // Try multiple selectors
+                                const selectors = [
+                                    "li.b_algo h2 a",      // Primary Bing selector
+                                    "li.b_algo a",         // Alternative within result container
+                                    ".b_title a",          // Title class fallback
+                                    "[role='heading'] a"   // ARIA-based fallback
+                                ];
+
+                                for (const selector of selectors) {
+                                    try {
+                                        anchors = Array.from(document.querySelectorAll(selector)) as HTMLAnchorElement[];
+                                        if (anchors.length > 0) break;
+                                    } catch (e) {
+                                        console.debug(`Bing selector failed: ${selector}`, e);
+                                    }
+                                }
+
+                                if (anchors.length === 0) {
+                                    console.warn('[SERP] No Bing results found with any selector');
+                                }
+
                                 let validIndex = 0;
                                 const foundResults: Record<number, { href: string; title: string }> = {};
 
@@ -186,6 +234,10 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
                                             title: a.textContent?.trim() || 'Untitled'
                                         };
                                     }
+                                }
+
+                                if (validIndex < requestedRanks.length) {
+                                    console.warn(`[SERP] Bing extracted ${validIndex} results, requested ${requestedRanks.length}`);
                                 }
 
                                 // Map results to requested order

@@ -62,7 +62,7 @@ const ClockIcon = forwardRef<ClockIconHandle, ClockIconProps>(
         startAnimation: () => controls.start('animate'),
         stopAnimation: () => controls.start('normal'),
       };
-    });
+    }, [controls]);
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
@@ -103,6 +103,8 @@ const ClockIcon = forwardRef<ClockIconHandle, ClockIconProps>(
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-label="waiting for response"
+          role="img"
         >
           <circle cx="12" cy="12" r="10" />
           <motion.line

@@ -1,12 +1,17 @@
-import { useState } from "react";
 import { motion, useAnimation } from "framer-motion";
+import type React from "react";
 
-export const JSIcon = ({ size = 24 }) => {
+interface JSIconProps {
+    size?: number;
+}
+
+export const JSIcon: React.FC<JSIconProps> = ({ size = 24 }) => {
     const controls = useAnimation();
-    const [isHovered, setIsHovered] = useState(false);
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             style={{
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -19,14 +24,25 @@ export const JSIcon = ({ size = 24 }) => {
                 justifyContent: 'center'
             }}
             onMouseEnter={(e) => {
-                setIsHovered(true);
                 controls.start("animate");
                 e.currentTarget.style.backgroundColor = 'rgba(254, 252, 232, 1)';
             }}
             onMouseLeave={(e) => {
-                setIsHovered(false);
                 controls.start("normal");
                 e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    controls.start("animate");
+                    e.currentTarget.style.backgroundColor = 'rgba(254, 252, 232, 1)';
+                }
+            }}
+            onKeyUp={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    controls.start("normal");
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                }
             }}
         >
             <motion.svg
@@ -34,6 +50,8 @@ export const JSIcon = ({ size = 24 }) => {
                 width={size}
                 height={size}
                 viewBox="0 0 24 24"
+                role="img"
+                aria-label="JavaScript file icon"
                 variants={{
                     normal: { scale: 1, rotate: "0deg" },
                     animate: { scale: 1.1, rotate: "5deg" },

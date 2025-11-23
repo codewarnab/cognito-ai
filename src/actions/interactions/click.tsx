@@ -27,9 +27,33 @@ export function useClickElementTool() {
                         target: { tabId: tab.id },
                         args: [selector],
                         func: (sel: string) => {
+                            // Track animations and cleanup
+                            (window as any).__aiClickAnimations = (window as any).__aiClickAnimations || 0;
+                            (window as any).__aiClickResizeHandler = (window as any).__aiClickResizeHandler || null;
+
+                            function scheduleCanvasCleanup() {
+                                if ((window as any).__aiClickCleanupTimer) {
+                                    clearTimeout((window as any).__aiClickCleanupTimer);
+                                }
+                                (window as any).__aiClickCleanupTimer = setTimeout(() => {
+                                    if ((window as any).__aiClickAnimations === 0) {
+                                        const canvas = document.getElementById('ai-click-spark-canvas');
+                                        if (canvas) canvas.remove();
+                                        const style = document.getElementById('ai-ripple-click-style');
+                                        if (style) style.remove();
+                                        if ((window as any).__aiClickResizeHandler) {
+                                            window.removeEventListener('resize', (window as any).__aiClickResizeHandler);
+                                            (window as any).__aiClickResizeHandler = null;
+                                        }
+                                    }
+                                }, 3000);
+                            }
+
                             // Click Animation with ClickSpark + Ripple Fallback
                             async function showClickAnimation(x: number, y: number): Promise<void> {
                                 try {
+                                    (window as any).__aiClickAnimations++;
+
                                     // Try ClickSpark animation
                                     let canvas = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement | null;
 
@@ -41,12 +65,16 @@ export function useClickElementTool() {
                                         canvas.height = window.innerHeight;
                                         document.body.appendChild(canvas);
 
-                                        window.addEventListener('resize', () => {
-                                            if (canvas) {
-                                                canvas.width = window.innerWidth;
-                                                canvas.height = window.innerHeight;
-                                            }
-                                        });
+                                        if (!(window as any).__aiClickResizeHandler) {
+                                            (window as any).__aiClickResizeHandler = () => {
+                                                const c = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement;
+                                                if (c) {
+                                                    c.width = window.innerWidth;
+                                                    c.height = window.innerHeight;
+                                                }
+                                            };
+                                            window.addEventListener('resize', (window as any).__aiClickResizeHandler);
+                                        }
                                     }
 
                                     const ctx = canvas.getContext('2d');
@@ -111,6 +139,10 @@ export function useClickElementTool() {
                                             requestAnimationFrame(animate);
                                         } else {
                                             ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                            (window as any).__aiClickAnimations--;
+                                            if ((window as any).__aiClickAnimations === 0) {
+                                                scheduleCanvasCleanup();
+                                            }
                                         }
                                     }
 

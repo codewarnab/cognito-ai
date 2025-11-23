@@ -27,15 +27,12 @@ const PlusIcon = forwardRef<PlusIconHandle, PlusIconProps>(
         startAnimation: () => controls.start('animate'),
         stopAnimation: () => controls.start('normal'),
       };
-    });
-
-    const handleMouseEnter = useCallback(
+    }, [controls]); const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
           controls.start('animate');
-        } else {
-          onMouseEnter?.(e);
         }
+        onMouseEnter?.(e);
       },
       [controls, onMouseEnter]
     );
@@ -44,9 +41,8 @@ const PlusIcon = forwardRef<PlusIconHandle, PlusIconProps>(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
           controls.start('normal');
-        } else {
-          onMouseLeave?.(e);
         }
+        onMouseLeave?.(e);
       },
       [controls, onMouseLeave]
     );

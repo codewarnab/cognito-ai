@@ -22,9 +22,14 @@ buildDirs.forEach(buildDir => {
             const dest = path.join(buildDir, fileName);
 
             if (fs.existsSync(file)) {
-                fs.copyFileSync(file, dest);
-                console.log(`✓ Copied ${fileName} to ${buildDir}`);
-                copiedCount++;
+                try {
+                    fs.copyFileSync(file, dest);
+                    console.log(`✓ Copied ${fileName} to ${buildDir}`);
+                    copiedCount++;
+                } catch (err) {
+                    console.error(`✗ Failed to copy ${fileName} to ${buildDir}: ${err.message}`);
+                    process.exit(1);
+                }
             }
         });
     }

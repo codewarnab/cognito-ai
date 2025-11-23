@@ -194,7 +194,7 @@ function calculateAnalysis(bookmarks: BookmarkInfo[]) {
 const paramsSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('create'), url: z.string().describe('Full URL to bookmark (http:// or https://)'), title: z.string().optional().describe('Bookmark title'), folderId: z.string().optional().describe('Parent folder ID, default "2"') }),
   z.object({ action: z.literal('search'), query: z.string().describe('Search query for title/URL'), limit: z.number().optional().default(10).describe('Max results 1-50') }),
-  z.object({ action: z.literal('list'), folderId: z.string().optional().describe('Folder ID to list, default "2"'), includeSubfolders: z.boolean().optional().default(false).describe('Include subfolders') }),
+  z.object({ action: z.literal('list'), folderId: z.string().optional().describe('Folder ID to list, default "2"') }),
   z.object({ action: z.literal('delete'), bookmarkId: z.string().describe('Bookmark ID to delete') }),
   z.object({ action: z.literal('update'), bookmarkId: z.string().describe('Bookmark ID to update'), title: z.string().optional().describe('New title'), url: z.string().optional().describe('New URL starting with http(s)') }),
   z.object({ action: z.literal('tree'), includeBookmarks: z.boolean().optional().default(false).describe('Include individual bookmarks'), maxDepth: z.number().optional().describe('Max folder depth 1-10') }),
@@ -209,7 +209,7 @@ export function useBookmarksTool() {
       name: 'bookmarksTool',
       description: 'Unified bookmarks tool: create, search, list, delete, update, get tree, organize. Use action parameter to select operation.',
       parameters: paramsSchema,
-      execute: async (args: any) => {
+      execute: async (args: unknown) => {
         try {
           const parsed = paramsSchema.parse(args);
           if (parsed.action === 'create') {
@@ -237,13 +237,10 @@ export function useBookmarksTool() {
             return out;
           }
           if (parsed.action === 'list') {
-            const { folderId = '2', includeSubfolders = false } = parsed;
+            const { folderId = '2' } = parsed;
             const children = await safeBookmarksGetChildren(folderId);
             const items = children.map(item => ({ id: item.id, title: item.title || 'Untitled', url: item.url, type: (item.url ? 'bookmark' : 'folder') as 'bookmark' | 'folder', dateAdded: item.dateAdded, childCount: item.children?.length || 0 }));
             const out: BookmarkListResult = { success: true, folderId, count: items.length, items };
-            if (includeSubfolders) {
-              return errorWithHints('Recursive listing not implemented', ['Set includeSubfolders=false', 'Use getBookmarkTree for hierarchy']);
-            }
             return out;
           }
           if (parsed.action === 'delete') {
@@ -310,7 +307,9 @@ export function useBookmarksTool() {
                 try {
                   const created = await safeBookmarksCreate({ title: s.name, parentId: folderId || '2' });
                   autoCreatedFolders.push(created.id);
-                } catch {}
+                } catch (err) {
+                  log.warn(`Failed to auto-create folder "${s.name}":`, err);
+                }
               }
             }
             return { success: true, suggestions, analysis, autoCreatedFolders: autoCreate ? autoCreatedFolders : undefined };

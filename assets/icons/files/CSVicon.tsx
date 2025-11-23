@@ -1,10 +1,17 @@
 import { motion, useAnimation } from "framer-motion";
+import type React from "react";
 
-export const CSVIcon = ({ size = 24 }) => {
+interface CSVIconProps {
+    size?: number;
+}
+
+export const CSVIcon: React.FC<CSVIconProps> = ({ size = 24 }) => {
     const controls = useAnimation();
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             style={{
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -24,12 +31,27 @@ export const CSVIcon = ({ size = 24 }) => {
                 controls.start("normal");
                 e.currentTarget.style.backgroundColor = 'transparent';
             }}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    controls.start("animate");
+                    e.currentTarget.style.backgroundColor = 'rgba(249, 250, 251, 1)';
+                }
+            }}
+            onKeyUp={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    controls.start("normal");
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                }
+            }}
         >
             <motion.svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={size}
                 height={size}
                 viewBox="0 0 24 24"
+                role="img"
+                aria-label="CSV file icon"
                 variants={{
                     normal: { scale: 1, rotate: "0deg" },
                     animate: { scale: 1.1, rotate: "5deg" },
@@ -38,9 +60,10 @@ export const CSVIcon = ({ size = 24 }) => {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
             >
                 {/* File shape background with a green theme for CSV */}
+                {/* green fill (industry typical for CSV/Excel-like files) */}
                 <path
                     d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
-                    fill="#217346"  // green fill (industry typical for CSV/Excel-like files)
+                    fill="#217346"
                     stroke="#f0f0f0"
                     strokeWidth="1.5"
                 />

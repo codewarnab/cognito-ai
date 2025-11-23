@@ -86,9 +86,13 @@ EXAMPLE: scrollPage(direction="down", amount=500) or scrollPage(direction="to-el
                                         try {
                                             indicator.remove();
                                             document.getElementById('ai-page-slide-style')?.remove();
-                                        } catch (e) { }
+                                        } catch (e) {
+                                            console.debug('Scroll indicator cleanup error:', e);
+                                        }
                                     }, 250);
-                                } catch (e) { }
+                                } catch (e) {
+                                    console.debug('Scroll indicator creation error:', e);
+                                }
                             }
 
                             const beforeScroll = window.scrollY;
@@ -112,11 +116,21 @@ EXAMPLE: scrollPage(direction="down", amount=500) or scrollPage(direction="to-el
                                 default:
                                     return { success: false, error: `Invalid direction: ${dir}. Use 'up','down','top','bottom','to-element'` };
                             }
-                            setTimeout(() => {
-                                const afterScroll = window.scrollY;
-                                return { success: true, direction: dir, scrolledFrom: beforeScroll, scrolledTo: afterScroll, scrollDistance: Math.abs(afterScroll - beforeScroll) };
-                            }, 100);
-                            return { success: true, direction: dir, message: `Scrolling ${dir}${amt ? ' by ' + amt + 'px' : ''}${sel ? ' to ' + sel : ''}` };
+
+                            // Wait for scroll to complete and return metrics
+                            return new Promise(resolve => {
+                                setTimeout(() => {
+                                    const afterScroll = window.scrollY;
+                                    resolve({
+                                        success: true,
+                                        direction: dir,
+                                        scrolledFrom: beforeScroll,
+                                        scrolledTo: afterScroll,
+                                        scrollDistance: Math.abs(afterScroll - beforeScroll),
+                                        message: `Scrolling ${dir}${amt ? ' by ' + amt + 'px' : ''}${sel ? ' to ' + sel : ''}`
+                                    });
+                                }, 100);
+                            });
                         }
                     });
                     const result = results[0]?.result;

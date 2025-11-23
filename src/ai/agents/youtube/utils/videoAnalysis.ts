@@ -259,7 +259,7 @@ Your consolidated response:`;
             );
 
             // Check if this chunk seems to have relevant information
-            const hasAnswer = !/no.*mention|not.*discussed|don't.*see|doesn't.*cover|no.*information/i.test(chunkResult);
+            const hasAnswer = !NEGATIVE_ANSWER_PATTERN.test(chunkResult);
 
             chunkResults.push({
                 chunkNum: i + 1,
@@ -288,7 +288,7 @@ Your consolidated response:`;
                         nextChunkInfo
                     );
 
-                    const nextHasAnswer = !/no.*mention|not.*discussed|don't.*see|doesn't.*cover|no.*information/i.test(nextChunkResult);
+                    const nextHasAnswer = !NEGATIVE_ANSWER_PATTERN.test(nextChunkResult);
 
                     chunkResults.push({
                         chunkNum: nextI + 1,

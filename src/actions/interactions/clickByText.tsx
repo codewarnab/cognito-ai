@@ -267,6 +267,11 @@ EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
                                         const x = rect.left + rect.width / 2;
                                         const y = rect.top + rect.height / 2;
 
+                                        // Track animations
+                                        (window as any).__aiClickAnimations = (window as any).__aiClickAnimations || 0;
+                                        (window as any).__aiClickResizeHandler = (window as any).__aiClickResizeHandler || null;
+                                        (window as any).__aiClickAnimations++;
+
                                         // Try ClickSpark animation
                                         try {
                                             let canvas = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement | null;
@@ -279,12 +284,16 @@ EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
                                                 canvas.height = window.innerHeight;
                                                 document.body.appendChild(canvas);
 
-                                                window.addEventListener('resize', () => {
-                                                    if (canvas) {
-                                                        canvas.width = window.innerWidth;
-                                                        canvas.height = window.innerHeight;
-                                                    }
-                                                });
+                                                if (!(window as any).__aiClickResizeHandler) {
+                                                    (window as any).__aiClickResizeHandler = () => {
+                                                        const c = document.getElementById('ai-click-spark-canvas') as HTMLCanvasElement;
+                                                        if (c) {
+                                                            c.width = window.innerWidth;
+                                                            c.height = window.innerHeight;
+                                                        }
+                                                    };
+                                                    window.addEventListener('resize', (window as any).__aiClickResizeHandler);
+                                                }
                                             }
 
                                             const ctx = canvas.getContext('2d');
@@ -352,6 +361,7 @@ EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
                                                     requestAnimationFrame(animate);
                                                 } else {
                                                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                                    (window as any).__aiClickAnimations--;
                                                     resolve();
                                                 }
                                             }
@@ -450,7 +460,7 @@ EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
                                     if (!match) {
                                         return {
                                             success: false,
-                                            error: `Could not access match at index ${targetIndex}`
+                                            error: `Could not access match at index ${targetIndex + 1} (requested ${occurrence})`
                                         };
                                     }
 

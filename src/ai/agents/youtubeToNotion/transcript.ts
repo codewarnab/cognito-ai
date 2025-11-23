@@ -63,6 +63,12 @@ export async function fetchTranscriptDirect(
 
         const data = await res.json();
 
+        // Validate response structure
+        if (!data || typeof data !== 'object') {
+            log.warn("Invalid API response structure, degrading to video analysis", { data });
+            return await degradeToVideoAnalysis(videoUrl);
+        }
+
         // Handle null/empty transcript - degrade to video analysis
         if (!data.transcript || data.transcript.trim().length === 0) {
             log.info(

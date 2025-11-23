@@ -16,6 +16,9 @@ import coingeckoImage from "@assets/brands/integrations/coingecko.webp"
 import context7Image from "@assets/brands/integrations/context7.png"
 import livekitImage from "@assets/brands/integrations/livekit.png"
 
+
+// http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
+//https://discord.com/channels/1312302100125843476/1336755085841137808 find  more relevent mcps here and add them here 
 export interface ServerConfig {
     id: string
     name: string

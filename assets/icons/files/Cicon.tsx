@@ -1,10 +1,17 @@
 import { motion, useAnimation } from "framer-motion";
+import type React from "react";
 
-export const CIcon = ({ size = 24 }) => {
+interface CIconProps {
+    size?: number;
+}
+
+export const CIcon: React.FC<CIconProps> = ({ size = 24 }) => {
     const controls = useAnimation();
 
     return (
         <div
+            role="button"
+            tabIndex={0}
             style={{
                 cursor: 'pointer',
                 userSelect: 'none',
@@ -24,12 +31,27 @@ export const CIcon = ({ size = 24 }) => {
                 controls.start("normal");
                 e.currentTarget.style.backgroundColor = 'transparent';
             }}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    controls.start("animate");
+                    e.currentTarget.style.backgroundColor = 'rgba(249, 250, 251, 1)';
+                }
+            }}
+            onKeyUp={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    controls.start("normal");
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                }
+            }}
         >
             <motion.svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={size}
                 height={size}
                 viewBox="0 0 24 24"
+                role="img"
+                aria-label="C programming language file icon"
                 variants={{
                     normal: { scale: 1, rotate: "0deg" },
                     animate: { scale: 1.1, rotate: "5deg" },

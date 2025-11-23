@@ -1,7 +1,7 @@
 import { registerTabActions } from "./tabs";
-import { registerSelectionActions } from "./selection";
+import { useSelectionActions } from "./selection";
 import { registerInteractionActions } from "./interactions";
-import { registerHistoryActions } from "./history";
+import { useRegisterHistoryActions } from "./history";
 import { registerReminderActions } from "./reminder";
 import { registerMemoryActions } from "./memory";
 import { registerReportActions } from "./reports";
@@ -14,9 +14,9 @@ export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
   // Hooks must be called unconditionally on every render to satisfy React's Rules of Hooks.
   registerTabActions();
-  registerSelectionActions();
+  useSelectionActions();
   registerInteractionActions();
-  registerHistoryActions();
+  useRegisterHistoryActions();
   registerReminderActions();
   registerMemoryActions();
   registerReportActions(); // Always register, but will be filtered in aiLogic.ts

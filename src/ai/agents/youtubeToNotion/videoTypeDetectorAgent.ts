@@ -16,6 +16,21 @@ import { progressStore } from './progressStore';
 const log = createLogger('VideoTypeDetectorAgent');
 
 /**
+ * Valid video types - single source of truth
+ */
+const VIDEO_TYPES = [
+    'tutorial',
+    'lecture',
+    'podcast',
+    'documentary',
+    'presentation',
+    'webinar',
+    'course',
+    'review',
+    'generic'
+] as const;
+
+/**
  * JSON schema for structured output
  * Ensures LLM returns valid JSON with all required fields
  */
@@ -24,17 +39,7 @@ const detectionSchema = {
     properties: {
         videoType: {
             type: 'string',
-            enum: [
-                'tutorial',
-                'lecture',
-                'podcast',
-                'documentary',
-                'presentation',
-                'webinar',
-                'course',
-                'review',
-                'generic'
-            ],
+            enum: VIDEO_TYPES,
             description: 'The detected video type'
         },
         confidence: {
@@ -54,17 +59,7 @@ const detectionSchema = {
                 properties: {
                     type: {
                         type: 'string',
-                        enum: [
-                            'tutorial',
-                            'lecture',
-                            'podcast',
-                            'documentary',
-                            'presentation',
-                            'webinar',
-                            'course',
-                            'review',
-                            'generic'
-                        ]
+                        enum: VIDEO_TYPES
                     },
                     confidence: {
                         type: 'number',
@@ -183,19 +178,7 @@ export async function detectVideoType(params: {
         };
 
         // Validate video type
-        const validTypes: VideoType[] = [
-            'tutorial',
-            'lecture',
-            'podcast',
-            'documentary',
-            'presentation',
-            'webinar',
-            'course',
-            'review',
-            'generic'
-        ];
-
-        if (!validTypes.includes(result.videoType)) {
+        if (!VIDEO_TYPES.includes(result.videoType as any)) {
             log.warn('⚠️ Invalid video type returned, falling back to generic', {
                 returnedType: result.videoType
             });
@@ -318,8 +301,8 @@ Analyze the video's content, structure, tone, and purpose to classify it into ON
 - Provide a confidence score:
   - 0.9-1.0: Very confident (clear indicators)
   - 0.7-0.8: Confident (strong indicators)
-  - 0.6-0.6: Moderate (some indicators)
-  - < 0.6: Low confidence (ambiguous, use generic)
+  - 0.5-0.6: Moderate (some indicators)
+  - < 0.5: Low confidence (ambiguous, use generic)
 
 **Output Format:**
 Return JSON with:

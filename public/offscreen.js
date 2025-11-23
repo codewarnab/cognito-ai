@@ -41,37 +41,46 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     sharedContext: options?.sharedContext
                 };
 
+                // Check if we can reuse the cached summarizer first
+                const optionsKey = JSON.stringify(summarizerOptions);
+
+                if (cachedSummarizer && lastSummarizerOptions === optionsKey) {
+                    console.log('[Offscreen] Reusing cached summarizer');
+                    const summary = await cachedSummarizer.summarize(String(text || ''), { context });
+                    sendResponse({ ok: true, summary });
+                    return;
+                }
+
+                // Prevent concurrent creation
+                if (creating) {
+                    sendResponse({ ok: false, code: 'busy', message: 'Summarizer creation in progress' });
+                    return;
+                }
+
                 if (availability === 'downloadable') {
                     summarizerOptions.monitor = (m) => {
                         m.addEventListener('downloadprogress', (e) => {
-                            // Throttle progress updates - only send every 10%
-                            const progress = e.loaded ?? 0;
-                            const progressPercent = Math.floor(progress * 10); // 0-10 range
+                            // Throttle progress updates - only send every 10% of total
+                            const loaded = e.loaded ?? 0;
+                            const total = e.total ?? loaded; // fallback if total unavailable
+                            const progressPercent = total > 0 ? Math.floor((loaded / total) * 10) : 0; // 0-10 range
 
                             // Only send if this is a new 10% increment
                             if (!window._lastProgressPercent || window._lastProgressPercent !== progressPercent) {
                                 window._lastProgressPercent = progressPercent;
                                 chrome.runtime.sendMessage({
                                     type: 'summarize:progress',
-                                    payload: { requestId, loaded: progress }
+                                    payload: { requestId, loaded, total }
                                 }).catch(() => { });
                             }
                         });
                     };
                 }
 
-                // Check if we can reuse the cached summarizer
-                const optionsKey = JSON.stringify(summarizerOptions);
-                let summarizer;
-
-                if (cachedSummarizer && lastSummarizerOptions === optionsKey) {
-                    console.log('[Offscreen] Reusing cached summarizer');
-                    summarizer = cachedSummarizer;
-                } else {
-                    creating = true;
-
-                    // Clean up old summarizer if exists
-                    if (cachedSummarizer) {
+                // Create new summarizer
+                creating = true;
+                let summarizer;arizer if exists
+                if (cachedSummarizer) {
                         try {
                             cachedSummarizer.destroy();
                         } catch (e) {
@@ -79,6 +88,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                         }
                     }
 
+                try {
                     summarizer = await window.Summarizer.create(summarizerOptions);
 
                     // Cache the summarizer for reuse
@@ -87,6 +97,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
                     creating = false;
                     ready = true;
+                } catch (createError) {
+                    creating = false;
+                    throw createError;
                 }
 
                 const summary = await summarizer.summarize(String(text || ''), { context });
