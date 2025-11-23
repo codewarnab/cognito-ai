@@ -38,6 +38,7 @@ import { Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle } from 'react';
 import { YouTubeNotionIcon } from '@assets/icons/ui/youtubeplusnotion';
 import { CameraIcon } from '@assets/icons/chat/camera';
+import { CodeExecuteIcon } from '@assets/icons/chat/code-execute';
 
 const log = createLogger('ToolIconMapper');
 
@@ -97,7 +98,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
 
     // Memory tools
     saveMemory: HardDriveDownloadIcon,
-    takeScreenshot:CameraIcon,
+    takeScreenshot: CameraIcon,
     getMemory: HardDriveUploadIcon,
     deleteMemory: DeleteIcon,
     listMemories: FoldersIcon,
@@ -140,6 +141,13 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     getReportTemplate: BookTextIcon,
     generatePDF: BookTextIcon,
     generateMarkdown: BookTextIcon,
+
+    // DOM tools
+    analyzeDom: ExpandIcon,
+    executeScript: CodeExecuteIcon,
+    
+    // Unified tools
+    bookmarksTool: FoldersIcon,
 };
 
 /**

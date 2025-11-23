@@ -12,7 +12,7 @@ import { createLogger } from '~logger';
 import { useActionHelpers } from '../useActionHelpers';
 import { CompactToolRenderer } from '../../ai/tools/components';
 import type { ToolUIState } from '../../ai/tools/components';
-import { safeTabsQuery, safeTabUpdate } from '../chromeApiHelpers';
+import { safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
 const log = createLogger('Tool-SwitchTabs');

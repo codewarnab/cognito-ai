@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Wrench, Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { createLogger } from '~logger';
-import { DEFAULT_ENABLED_TOOLS } from '../../../../ai/tools/enabledTools';
+import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '../../../../ai/tools/enabledTools';
 import { getEnabledToolsOverride, setEnabledToolsOverride } from '~utils/settingsStorage';
 import { Toggle } from '../../../shared/inputs/Toggle';
 import { TOOL_CATEGORIES, TOOL_DESCRIPTIONS } from '../../../../constants/toolDescriptions';
@@ -19,22 +19,26 @@ export const EnabledToolsSettings: React.FC = () => {
             try {
                 const override = await getEnabledToolsOverride();
                 const initialMap: Record<string, boolean> = {};
+                const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
+
                 if (override && Array.isArray(override)) {
                     const set = new Set(override);
                     allTools.forEach(t => {
                         initialMap[t] = set.has(t);
                     });
                 } else {
+                    // No override: use defaults, but respect TOOLS_DISABLED_BY_DEFAULT
                     allTools.forEach(t => {
-                        initialMap[t] = true;
+                        initialMap[t] = !disabledByDefaultSet.has(t);
                     });
                 }
                 setEnabledMap(initialMap);
             } catch (err) {
                 log.error('Failed to load enabled tools', err);
                 const initialMap: Record<string, boolean> = {};
+                const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
                 allTools.forEach(t => {
-                    initialMap[t] = true;
+                    initialMap[t] = !disabledByDefaultSet.has(t);
                 });
                 setEnabledMap(initialMap);
             }
@@ -83,6 +87,17 @@ export const EnabledToolsSettings: React.FC = () => {
 
         return groups;
     }, [filteredTools]);
+
+    // Auto-expand categories when searching and they contain matching tools
+    useEffect(() => {
+        if (toolSearchQuery) {
+            const newExpanded: Record<string, boolean> = {};
+            Object.keys(groupedTools).forEach(category => {
+                newExpanded[category] = true;
+            });
+            setExpandedCategories(newExpanded);
+        }
+    }, [toolSearchQuery, groupedTools]);
 
     const toggleCategory = (category: string) => {
         setExpandedCategories(prev => ({
@@ -148,8 +163,8 @@ export const EnabledToolsSettings: React.FC = () => {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                         <span>{category}</span>
-                                        <span style={{ 
-                                            fontSize: '11px', 
+                                        <span style={{
+                                            fontSize: '11px',
                                             color: enabledCount < totalCount ? 'var(--text-warning)' : 'var(--text-tertiary)',
                                             fontWeight: 400
                                         }}>
@@ -157,7 +172,7 @@ export const EnabledToolsSettings: React.FC = () => {
                                         </span>
                                     </div>
                                 </button>
-                                
+
                                 {isExpanded && (
                                     <div style={{
                                         display: 'flex',
@@ -168,9 +183,9 @@ export const EnabledToolsSettings: React.FC = () => {
                                             const enabled = enabledMap[tool] ?? true;
                                             const description = TOOL_DESCRIPTIONS[tool];
                                             return (
-                                                <div 
-                                                    key={tool} 
-                                                    style={{ 
+                                                <div
+                                                    key={tool}
+                                                    style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'space-between',
@@ -179,13 +194,13 @@ export const EnabledToolsSettings: React.FC = () => {
                                                         borderTop: index > 0 ? '1px solid var(--border-color)' : 'none'
                                                     }}
                                                 >
-                                                    <div style={{ 
+                                                    <div style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         gap: '6px',
                                                         flex: 1
                                                     }}>
-                                                        <div style={{ 
+                                                        <div style={{
                                                             fontSize: '13px',
                                                             color: 'var(--text-primary)',
                                                             fontFamily: 'monospace'
@@ -193,20 +208,20 @@ export const EnabledToolsSettings: React.FC = () => {
                                                             {tool}
                                                         </div>
                                                         {description && (
-                                                            <div 
-                                                                style={{ 
+                                                            <div
+                                                                style={{
                                                                     position: 'relative',
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center'
                                                                 }}
                                                                 title={description}
                                                             >
-                                                                <Info 
-                                                                    size={14} 
-                                                                    style={{ 
+                                                                <Info
+                                                                    size={14}
+                                                                    style={{
                                                                         color: 'var(--text-tertiary)',
                                                                         cursor: 'help'
-                                                                    }} 
+                                                                    }}
                                                                 />
                                                             </div>
                                                         )}
@@ -227,7 +242,7 @@ export const EnabledToolsSettings: React.FC = () => {
                     })}
 
                     {Object.keys(groupedTools).length === 0 && (
-                        <div style={{ 
+                        <div style={{
                             padding: '24px 12px',
                             textAlign: 'center',
                             color: 'var(--text-tertiary)',

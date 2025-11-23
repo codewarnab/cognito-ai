@@ -14,7 +14,7 @@ import { createLogger } from '~logger';
 import { useActionHelpers } from '../useActionHelpers';
 import { CompactToolRenderer } from '../../ai/tools/components';
 import type { ToolUIState } from '../../ai/tools/components';
-import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApiHelpers';
+import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
 const log = createLogger('Tool-NavigateTo');

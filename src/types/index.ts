@@ -30,6 +30,9 @@ export * from './events';
 // Utility types
 export * from './utils';
 
+// Bookmarks types
+export * from './bookmarks';
+
 // Keep existing sidepanel types
 export * from './sidepanel';
 

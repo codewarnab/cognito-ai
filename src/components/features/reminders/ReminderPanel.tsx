@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Clock, Trash2, Calendar } from 'lucide-react';
+import { X, Trash2, Calendar } from 'lucide-react';
+import { ClockIcon } from '../../../../assets/icons/chat/clock';
 import { getActiveReminders, deleteReminder } from '../../../actions/reminder/storage';
 import type { Reminder } from '../../../actions/reminder/types';
 import { createLogger } from '~logger';
@@ -90,7 +91,7 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                 {/* Header */}
                 <div className="thread-sidepanel-header">
                     <div className="thread-sidepanel-header-content">
-                        <Clock size={18} strokeWidth={2} style={{ flexShrink: 0 }} />
+                        <ClockIcon size={18} style={{ flexShrink: 0 }} />
                         <h2 className="thread-sidepanel-title">Reminders</h2>
                     </div>
                     <button
@@ -111,7 +112,7 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                         </div>
                     ) : reminders.length === 0 ? (
                         <div className="reminder-panel-empty">
-                            <Clock size={56} strokeWidth={1.5} />
+                            <ClockIcon size={56} />
                             <p>No active reminders</p>
                             <span className="reminder-panel-empty-hint">
                                 Ask the AI assistant to create a reminder and it will appear here
