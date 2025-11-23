@@ -50,8 +50,6 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
     const updatedServers = [...existingServers, newServer]
     localStorage.setItem("customMcpServers", JSON.stringify(updatedServers))
 
-    console.log("Added custom MCP server:", newServer)
-
     onBack()
   }
 
@@ -66,20 +64,20 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <ServerNameInput value={serverName} onChange={setServerName} />
             <ServerUrlInput value={serverUrl} onChange={setServerUrl} />
-            <DescriptionInput 
-              value={description} 
-              onChange={setDescription} 
-              maxLength={MAX_DESCRIPTION_LENGTH} 
+            <DescriptionInput
+              value={description}
+              onChange={setDescription}
+              maxLength={MAX_DESCRIPTION_LENGTH}
             />
-            <ImageUpload 
-              imageData={imageData} 
-              onImageChange={setImageData} 
-              onError={() => {}} 
+            <ImageUpload
+              imageData={imageData}
+              onImageChange={setImageData}
+              onError={() => { }}
             />
             <AuthToggle checked={requiresAuth} onChange={setRequiresAuth} />
-            <FormActions 
-              onCancel={onBack} 
-              isSubmitDisabled={description.length > MAX_DESCRIPTION_LENGTH} 
+            <FormActions
+              onCancel={onBack}
+              isSubmitDisabled={description.length > MAX_DESCRIPTION_LENGTH}
             />
           </div>
         </form>

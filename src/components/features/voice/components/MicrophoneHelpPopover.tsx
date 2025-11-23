@@ -21,6 +21,7 @@ export const MicrophoneHelpPopover: React.FC<MicrophoneHelpPopoverProps> = ({
                 <button
                     className="voice-mode-mic-help-button"
                     title="How to fix microphone permission"
+                    aria-label="How to fix microphone permission"
                     style={{
                         width: '36px',
                         height: '36px',
@@ -86,6 +87,7 @@ export const MicrophoneHelpPopover: React.FC<MicrophoneHelpPopoverProps> = ({
                     </h3>
                     <button
                         onClick={() => onOpenChange(false)}
+                        aria-label="Close help"
                         style={{
                             background: 'none',
                             border: 'none',

@@ -95,18 +95,20 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     const shouldShowSuggestions = messages.length === 0 && !input.trim();
 
     // Reset dismissal state when conditions allow showing suggestions again
-    if (shouldShowSuggestions && userDismissed) {
-        setUserDismissed(false);
-    }
+    useEffect(() => {
+        if (shouldShowSuggestions && userDismissed) {
+            setUserDismissed(false);
+        }
+    }, [shouldShowSuggestions, userDismissed]);
 
-    const showSuggestedActions = 
+    const showSuggestedActions =
         suggestionsEnabled &&
-        messages.length === 0 && 
-        !input.trim() && 
-        !isLoading && 
-        !activeWorkflow && 
-        !userDismissed && 
-        attachments.length === 0 && 
+        messages.length === 0 &&
+        !input.trim() &&
+        !isLoading &&
+        !activeWorkflow &&
+        !userDismissed &&
+        attachments.length === 0 &&
         tabAttachments.length === 0;
 
     const handleSuggestionClick = (action: string) => {
@@ -128,7 +130,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                     {/* Show loading indicator when generating (no suggestions yet) */}
                     {isGenerating && suggestedActions.length === 0 ? (
                         <div className="suggested-actions-loading-state">
-                            <div className="loading-shimmer">Generating  suggestions...</div>
+                            <div className="loading-shimmer">Generating suggestions...</div>
                             <div className="suggested-actions-grid">
                                 {[1, 2].map((i) => (
                                     <div key={`skeleton-${i}`} className="suggested-action-skeleton">

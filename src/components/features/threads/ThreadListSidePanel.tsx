@@ -29,10 +29,15 @@ export function ThreadListSidePanel({
 
     const loadThreads = async () => {
         try {
+            setIsLoading(true);
+            setError(null);
             const allThreads = await getAllThreads();
             setThreads(allThreads);
         } catch (error) {
             log.error('Failed to load threads', error);
+            setError(error instanceof Error ? error.message : 'Failed to load conversations');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -45,10 +50,10 @@ export function ThreadListSidePanel({
     // Refresh threads periodically when panel is open to catch external deletions
     useEffect(() => {
         if (!isOpen) return;
-        
+
         const interval = setInterval(() => {
             loadThreads();
-        }, 1000);
+        }, 5000);
 
         return () => clearInterval(interval);
     }, [isOpen]);
@@ -136,7 +141,37 @@ export function ThreadListSidePanel({
                         </button>
 
                         <div className="thread-sidepanel-content">
-                            {threads.length === 0 ? (
+                            {isLoading ? (
+                                <div className="thread-sidepanel-empty">
+                                    <div className="thread-sidepanel-empty-icon">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                            <circle cx="12" cy="12" r="10" opacity="0.25" />
+                                            <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round">
+                                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <h3>Loading conversations...</h3>
+                                </div>
+                            ) : error ? (
+                                <div className="thread-sidepanel-empty">
+                                    <div className="thread-sidepanel-empty-icon">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <path d="M12 8v4M12 16h.01" strokeLinecap="round" />
+                                        </svg>
+                                    </div>
+                                    <h3>Failed to load conversations</h3>
+                                    <p>{error}</p>
+                                    <button onClick={loadThreads} className="thread-sidepanel-new-button" style={{ marginTop: '16px' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M1 4v6h6M23 20v-6h-6" />
+                                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+                                        </svg>
+                                        Retry
+                                    </button>
+                                </div>
+                            ) : threads.length === 0 ? (
                                 <div className="thread-sidepanel-empty">
                                     <div className="thread-sidepanel-empty-icon">
                                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

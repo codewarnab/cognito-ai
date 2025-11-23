@@ -12,48 +12,48 @@ export const StreamingWarningDialog: React.FC<StreamingWarningDialogProps> = ({
     onClose,
     onContinue,
 }) => {
-    if (!isOpen) return null;
-
     return (
         <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="streaming-warning-overlay"
-                onClick={onClose}
-            >
+            {isOpen && (
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    transition={{ duration: 0.2 }}
-                    className="streaming-warning-dialog"
-                    onClick={(e) => e.stopPropagation()}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="streaming-warning-overlay"
+                    onClick={onClose}
                 >
-                    <div className="streaming-warning-content">
-                        <h3 className="streaming-warning-title">Message Being Streamed</h3>
-                        <p className="streaming-warning-message">
-                            Starting a new thread while a message is being streamed will interrupt the current response.
-                        </p>
-                    </div>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        transition={{ duration: 0.2 }}
+                        className="streaming-warning-dialog"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="streaming-warning-content">
+                            <h3 className="streaming-warning-title">Message Being Streamed</h3>
+                            <p className="streaming-warning-message">
+                                Starting a new thread while a message is being streamed will interrupt the current response.
+                            </p>
+                        </div>
 
-                    <div className="streaming-warning-actions">
-                        <button
-                            className="streaming-warning-button streaming-warning-button-secondary"
-                            onClick={onClose}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            className="streaming-warning-button streaming-warning-button-primary"
-                            onClick={onContinue}
-                        >
-                            Continue Anyway
-                        </button>
-                    </div>
+                        <div className="streaming-warning-actions">
+                            <button
+                                className="streaming-warning-button streaming-warning-button-secondary"
+                                onClick={onClose}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="streaming-warning-button streaming-warning-button-primary"
+                                onClick={onContinue}
+                            >
+                                Continue Anyway
+                            </button>
+                        </div>
+                    </motion.div>
                 </motion.div>
-            </motion.div>
+            )}
         </AnimatePresence>
     );
 };

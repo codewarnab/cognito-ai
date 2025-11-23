@@ -93,12 +93,13 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                 )}
             </div>
             {showPreview && attachment.type === 'image' && attachment.preview && (
-                <div 
+                <div
                     className="file-attachment-preview"
                     onClick={(e) => e.stopPropagation()}
                 >
                     <img src={attachment.preview} alt={attachment.file.name} />
                     <button
+                        type="button"
                         className="message-image-preview-close"
                         onClick={(e) => {
                             e.stopPropagation();

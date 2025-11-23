@@ -104,7 +104,7 @@ export function AnimatedCircularProgressBar({
                     data-current-value={currentPercent}
                     className="circular-progress-percentage"
                 >
-                    {currentPercent}
+                    {currentPercent}%
                 </span>
             )}
         </div>

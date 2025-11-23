@@ -207,11 +207,11 @@ export function useSpeechRecognition(
         // Update state
         if (interim) {
           setInterimTranscript(interim);
-          setTranscript(finalTranscript + interim);
+          setTranscript(finalTranscriptRef.current + interim);
         }
 
         if (final) {
-          const newFinal = finalTranscript + final;
+          const newFinal = finalTranscriptRef.current + final;
           setFinalTranscript(newFinal);
           finalTranscriptRef.current = newFinal; // Update ref
           setTranscript(newFinal);

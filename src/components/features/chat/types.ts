@@ -1,8 +1,17 @@
+export interface MessagePart {
+    type: string;
+    content?: string;
+    toolCallId?: string;
+    toolName?: string;
+    result?: any;
+    args?: Record<string, any>;
+}
+
 export interface Message {
     id?: string;
     role: 'user' | 'assistant';
     content: string;
-    parts?: any[];
+    parts?: MessagePart[];
     generativeUI?: () => React.ReactElement | null;
     attachments?: FileAttachment[];
 }

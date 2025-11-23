@@ -238,7 +238,6 @@ export async function startOAuthFlow(serverId: string): Promise<McpExtensionResp
     } catch (error) {
         authLog.error(`[${serverId}] OAuth error:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
-        authLog.error("full error :", error);
 
         // Check if user cancelled or denied the flow
         const wasCancelled = errorMessage.toLowerCase().includes('cancelled') ||

@@ -49,7 +49,8 @@ export class SimpleFrontendTransport {
     messageId: string;
     messages: UIMessage[];
     abortSignal: AbortSignal;
-  } & any): Promise<ReadableStream> {
+    id?: string;
+  }): Promise<ReadableStream> {
     const { chatId, messages, abortSignal, trigger, id, messageId } = params;
 
     log.info('Sending messages', {
@@ -298,9 +299,10 @@ export class SimpleFrontendTransport {
 
       log.info('📥 Stream received from streamAIResponse, returning to caller');
 
+      // Remove abort listener (stream won't be aborted via external signal)
+      abortSignal?.removeEventListener('abort', onAbort);
+
       // Return the stream as ReadableStream
-      // Note: Do NOT cleanup here - the stream needs to stay alive!
-      // Cleanup will happen when the stream is consumed or aborted
       return uiMessageStream;
     } catch (error) {
       log.error('Transport error', error);

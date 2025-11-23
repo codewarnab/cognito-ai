@@ -10,7 +10,6 @@ export interface TabAttachmentData {
 
 interface TabAttachmentProps {
     tabs: TabAttachmentData[];
-    onRemove: (id: string) => void;
     onRemoveAll: () => void;
 }
 

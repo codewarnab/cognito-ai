@@ -74,7 +74,7 @@ export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData
                 onUrlRevoke(fileData.url);
             }
         };
-    }, [fileData.url, fileData.name, messageId, onUrlRevoke]);
+    }, [fileData.url, fileData.name, messageId]);
 
     return (
         <div

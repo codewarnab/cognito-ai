@@ -34,8 +34,15 @@ export const VoiceSettings: React.FC = () => {
 
     const handleVoiceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value as VoiceName;
+        const previousVoice = voice;
         setVoice(value);
-        await setVoiceName(value);
+        try {
+            await setVoiceName(value);
+        } catch (err) {
+            log.error('Failed to save voice preference', err);
+            setVoice(previousVoice);
+            // TODO: Show user-facing error notification
+        }
     };
 
     const handlePreviewVoice = async () => {

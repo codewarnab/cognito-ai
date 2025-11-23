@@ -23,7 +23,8 @@ class BlobURLRegistry {
             this.registry.set(messageId, new Set());
         }
         this.registry.get(messageId)!.add(url);
-        log.debug(`Registered Blob URL for message ${messageId}`, { url, totalUrls: this.registry.size });
+        const totalUrls = Array.from(this.registry.values()).reduce((sum, urls) => sum + urls.size, 0);
+        log.debug(`Registered Blob URL for message ${messageId}`, { url, totalUrls });
     }
 
     /**

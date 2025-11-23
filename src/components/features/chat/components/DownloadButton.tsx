@@ -8,8 +8,8 @@ interface DownloadButtonProps {
     fileName?: string;
 }
 
-export const DownloadButton: React.FC<DownloadButtonProps> = ({ 
-    audioBuffer, 
+export const DownloadButton: React.FC<DownloadButtonProps> = ({
+    audioBuffer,
     isPlaying,
     fileName = 'audio.mp3'
 }) => {
@@ -53,7 +53,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     return (
         <div style={{ position: 'relative', display: 'inline-block' }}>
             <motion.button
-                className="copy-message-button"
+                className="download-button"
                 onClick={handleDownload}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}

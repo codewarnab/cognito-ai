@@ -81,8 +81,8 @@ function buildBehaviorGuidelines(): string {
     "SUGGEST: After completing tasks, suggest 1-2 relevant follow-up actions.",
     "TOOL CALLS: Call tools directly via function calling. NEVER use Python syntax.",
     "AVAILABLE TOOLS ONLY: Only use tools that are available to you. Don't reference or attempt to use tools that aren't provided.",
-    "When you dont no something do not ask permission to search google just do it ",
-    "Always check active tab if what you need is in the current tab do try to  navigate when same tab when it is already opened ",
+    "When you don't know something, search proactively without asking permission.",
+    "Always check the active tab first; only navigate if the content needed isn't already visible.",
   ];
 
   return `BEHAVIOR GUIDELINES:\n${guidelines.map(g => `- ${g}`).join('\n')}`;

@@ -33,13 +33,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
 
         // Get and increment tip index from storage
         chrome.storage.local.get(['tipIndex'], (result) => {
+            if (chrome.runtime.lastError) {
+                console.error('Failed to get tip index:', chrome.runtime.lastError);
+                setCurrentTip(TIPS[0] ?? '');
+                return;
+            }
             const currentIndex = result.tipIndex || 0;
             const nextIndex = (currentIndex + 1) % TIPS.length;
-            
+
             setCurrentTip(TIPS[currentIndex] ?? TIPS[0] ?? '');
-            
+
             // Store next index for next thread
-            chrome.storage.local.set({ tipIndex: nextIndex });
+            chrome.storage.local.set({ tipIndex: nextIndex }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('Failed to set tip index:', chrome.runtime.lastError);
+                }
+            });
         });
     }, []);
 

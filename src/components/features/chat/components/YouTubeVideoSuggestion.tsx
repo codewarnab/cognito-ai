@@ -32,6 +32,8 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
             voiceFab.style.visibility = 'hidden';
         }
         return () => {
+            // Re-query to avoid stale reference
+            const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
             if (voiceFab) {
                 voiceFab.style.visibility = '';
             }

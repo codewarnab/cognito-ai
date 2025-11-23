@@ -43,7 +43,7 @@ export const Troubleshooting: React.FC<TroubleshootingProps> = ({ onBack }) => {
                                     </h3>
                                     <ul className="troubleshooting-list">
                                         {item.causes.map((cause, idx) => (
-                                            <li key={idx}>{cause}</li>
+                                            <li key={`${item.id}-cause-${idx}`}>{cause}</li>
                                         ))}
                                     </ul>
                                 </div>
@@ -54,7 +54,7 @@ export const Troubleshooting: React.FC<TroubleshootingProps> = ({ onBack }) => {
                                     </h3>
                                     <ol className="troubleshooting-list troubleshooting-list-ordered">
                                         {item.solutions.map((solution, idx) => (
-                                            <li key={idx}>{solution}</li>
+                                            <li key={`${item.id}-solution-${idx}`}>{solution}</li>
                                         ))}
                                     </ol>
                                 </div>

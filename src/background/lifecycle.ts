@@ -58,7 +58,11 @@ export function initializeLifecycleEventListeners(): void {
         }
 
         // Initialize all MCP servers from storage
-        await initializeAllServers();
+        try {
+            await initializeAllServers();
+        } catch (error) {
+            log.error('onStartup - Error initializing servers:', error);
+        }
 
         // Keep-alive is initialized by initializeAllServers
         log.info('Keep-alive initialized on startup');

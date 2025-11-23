@@ -1,0 +1,222 @@
+---
+alwaysApply: true
+---
+# Chrome AI Extension - Coding Standards
+
+## Core Principles
+- Use TypeScript with strict type checking enabled
+- Prefer `const` over `let`; avoid `var`
+- Keep modules small and single-responsibility; co-locate related hooks/components
+- Never log secrets, API keys, or personally identifiable information
+
+## TypeScript and Imports
+- Use strict TypeScript: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess`
+- **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks
+- **CRITICAL**: Remove duplicate imports; consolidate into single import statement
+- Always use path aliases instead of deep relative paths:
+  - Logger: `import { createLogger } from '~logger';`
+  - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';`
+  - Assets: `import icon from '@assets/...';`
+- Prefer named exports; avoid default exports for shared utilities
+- Group and sort imports consistently using Prettier sort-imports plugin
+
+## Logger Usage
+- Initialize module-scoped logger: `const log = createLogger('FeatureName');` or `createLogger('FeatureName', 'CONTEXT')`
+- Levels: `debug` for verbose state, `info` for normal operation, `warn` for recoverable issues, `error` for failures
+- Never include API keys or secrets in logs; sanitize error objects
+- **CRITICAL**: Remove debug logging statements that output raw error objects; log only sanitized error messages
+
+## Error Handling
+- **CRITICAL**: Never use empty catch blocks; always log errors with context using logger's `warn()` or `error()` methods
+- **CRITICAL**: Always use `APIError` instead of generic `Error`; include statusCode, retryable flag, userMessage, technicalDetails, and errorCode
+- **CRITICAL**: Validate API response structure before accessing properties; check for `null` or non-object responses
+- **CRITICAL**: Wrap initialization logic in try-catch blocks; ensure all async initialization functions handle errors gracefully
+- **CRITICAL**: Define proper TypeScript interfaces for callback parameters instead of `any`; validate objects have required methods before calling
+- **CRITICAL**: Wrap all external I/O operations (writer.write, API calls) in try-catch blocks; log failures with context but continue execution where possible
+- **CRITICAL**: Always null-check error objects before accessing properties (use `error?.message || 'Unknown error'`)
+- Prefer `unknown` over `any` for function parameters that will be validated
+- Use standardized error types: API/Gemini errors, Browser/Chrome API errors, Stream write helpers
+- Provide user-facing messages via `apiErrorHandler` toast mapping
+
+## React and Hooks
+- Use functional components with hooks
+- Derive UI state via hooks; avoid global mutable state
+- Keep side effects inside `useEffect` with correct dependencies; guard async flows
+- **CRITICAL**: Always include dependency arrays in `useImperativeHandle` (e.g., `[controls]`) to prevent unnecessary re-renders
+- **CRITICAL**: Always call prop event handlers (onMouseEnter/onMouseLeave/etc.) unconditionally; only conditionally trigger internal animations
+- **CRITICAL**: Use refs for values that need to stay current across closure boundaries in event handlers
+- **CRITICAL**: Tool UI renderers (renderInput/renderOutput) must handle both success and error responses; check for `error` property before accessing success-only fields
+- **CRITICAL**: Observer pattern should send real current state to new subscribers, not synthetic dummy triggers
+- **CRITICAL**: Exclude callback props from useEffect dependency arrays when they're only used in cleanup
+- **CRITICAL**: Never call state setters during render phase; move conditional state updates into `useEffect`
+- Ensure animation variant names match defined states in variants objects
+- Add accessibility attributes to SVG icons: `aria-label` and `role="img"` for meaningful icons, or `aria-hidden="true"` for decorative ones
+
+## Component Best Practices
+- Always define TypeScript interfaces for component props, even for simple components
+- Never use inline `//` comments inside JSX attributes; use `{/* */}` JSX comments or move comments outside tags
+- Export names must use `Icon` suffix for all icon exports (e.g., `XMLIcon`, not `XML`)
+- Remove unused state variables to avoid dead code
+- Interactive elements (cursor: pointer) must include keyboard support: `role="button"`, `tabIndex={0}`, and `onKeyDown`/`onKeyUp` handlers for Enter and Space keys
+- Always call parent event handlers in controlled/uncontrolled components; never skip them based on control state
+- **CRITICAL**: Use stable unique identifiers (e.g., `item.id`) as React keys, never array indices
+- **CRITICAL**: Extract duplicate component configurations into reusable arrays with interfaces
+- **CRITICAL**: Use `type="button"` on all buttons that shouldn't submit forms
+- **CRITICAL**: Always append units to numeric displays (%, px, ms) for clarity
+
+## Accessibility
+- **CRITICAL**: All icon-only buttons must have `aria-label` attributes; `title` attributes are insufficient for screen readers
+- **CRITICAL**: Always add `aria-label` to close buttons (×) and help buttons (?)
+- Add keyboard accessibility to clickable non-button elements: `role="button"`, `tabIndex={0}`, `onKeyDown` handlers
+
+## Event Listener Management
+- **CRITICAL**: Always remove event listeners in cleanup functions; memory leaks accumulate across content script reloads
+- **CRITICAL**: Store named handler references in outer scope for proper cleanup; use named function variables (not inline arrows) for listeners that need removal
+- **CRITICAL**: Event listeners on success paths must be cleaned up; always remove abort/signal listeners before returning from async functions
+- Store references to event listeners for proper removal; use named functions instead of anonymous functions
+- Guard against duplicate listener registration: check if handler already exists before adding
+- For content scripts: use `(window as any).__handlerName` to persist handler references across function calls
+- Remove listeners when: component unmounts, tool unregisters, canvas is destroyed, or page unloads
+
+## Canvas and DOM Element Lifecycle
+- **CRITICAL**: Always clean up injected DOM elements (canvas, style tags) when tools unregister or components unmount
+- **CRITICAL**: Re-query DOM elements in cleanup functions instead of capturing references once; elements can be recreated/replaced
+- Track active animations with counters or flags; implement cleanup when animation count reaches zero
+- Schedule idle cleanup (e.g., 3 seconds after last animation) to remove canvas elements and event listeners
+- Never let DOM elements persist indefinitely without a cleanup strategy
+
+## Animation and Resource Tracking
+- Implement animation counters to track active animations: increment on start, decrement on completion
+- Schedule cleanup after idle timeout (e.g., 3 seconds) when animation count reaches zero
+- Clean up: canvas elements, style tags, event listeners, timers, and animation frame requests
+- Use global flags for shared resources accessed by multiple tool executions
+- Ensure cleanup runs even if animation fails; use try-catch with counter decrement in catch block
+- **CRITICAL**: AnimatePresence must remain mounted to coordinate exit animations; move conditional rendering inside AnimatePresence
+- **CRITICAL**: Always wrap AnimatePresence children in conditionals; add stable `key` props to motion elements
+
+## Async Operations and Promises
+- **CRITICAL**: Never use `setTimeout` with a return statement expecting the outer function to receive the delayed value
+- Use Promises for async operations: wrap `setTimeout` in `new Promise((resolve) => ...)` and `await` or return the Promise
+- **CRITICAL**: Add timeout guards to all Promises that interact with external systems (DOM, APIs, user input); use `Promise.race()` with timeout
+- Always ensure every Promise branch calls resolve/reject
+- **CRITICAL**: Wrap async switch/case statements in try-catch blocks to ensure response callbacks always execute
+- **CRITICAL**: Check `chrome.runtime.lastError` in all Chrome API callbacks (storage, notifications)
+
+## Type Safety
+- **CRITICAL**: Maintain type consistency across related interfaces; if external APIs return a type (e.g., `string`), use that type consistently
+- **CRITICAL**: Never use `& any` in type definitions; define explicit interfaces with all required and optional properties
+- **CRITICAL**: All destructured variables must be declared in the function's type signature
+- **CRITICAL**: Define specific interfaces for complex data structures instead of using `any[]`; use `unknown[]` with type guards if structure varies
+- **CRITICAL**: Define proper TypeScript interfaces for third-party object properties instead of using `as any`
+- Prefer `unknown` over `any` for generic parameters, callbacks, and unvalidated data
+- Validate external data types (API responses, user input) and use type guards before accessing properties
+
+## Security
+- Never embed secrets in code or logs
+- Validate user inputs and tool parameters
+- **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')`
+- **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`)
+- Respect Chrome MV3 permissions and protected pages; handle injection failures gracefully
+
+## Browser Tools and Workflows
+- Register tools through provided hooks/components; follow existing patterns
+- Keep tool descriptions actionable and include preconditions/limitations
+- Remove unimplemented features from tool schemas; don't expose parameters that always return errors
+- Use Zod's built-in validators (`.min()`, `.max()`, `.int()`) for parameter validation
+- **CRITICAL**: Test assertions must throw errors or use assertion libraries when expectations fail
+- **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions
+
+## Third-Party DOM Selector Robustness
+- For DOM queries dependent on third-party page structure, implement fallback selector arrays
+- Try selectors in order of reliability: specific class names → generic containers → ARIA attributes → broad fallbacks
+- Log warnings when primary selectors fail and fallbacks are used
+- Wrap selector queries in try-catch to handle malformed selectors or DOM exceptions gracefully
+- **CRITICAL**: Use relative/child selectors (e.g., `element.querySelector('#child')`) instead of nested absolute selectors
+
+## Storage and Data
+- Use `@plasmohq/storage` for extension storage; avoid direct `localStorage`
+- Maintain indices for efficient queries; update index on CRUD
+- **CRITICAL**: Wrap all storage persistence calls in try-catch blocks; on failure, revert UI state and notify user
+- Always store previous state before async updates; use it to rollback on persistence failure
+
+## Performance and UX
+- Avoid heavy operations on the UI thread; use offscreen where applicable
+- Throttle/batch UI updates during streaming and downloads
+- **CRITICAL**: Always use `Math.floor()` for numeric calculations that should produce integer values
+- Extract duplicate constants (regex patterns, enums, magic values) to single source of truth
+- **CRITICAL**: Always provide loading states during async operations; show spinners or skeletons
+- **CRITICAL**: Display error states with retry functionality; never fail silently
+- **CRITICAL**: Polling intervals should be 5+ seconds minimum
+
+## Build Scripts and Node.js Utilities
+- Always validate array bounds before accessing elements; add defensive checks with clear warning messages
+- Wrap file I/O operations in try-catch blocks; log errors with full context and exit with non-zero status code on failure
+- Use `String.replaceAll()` or global regex when replacing all occurrences
+- Implement concurrency guards for async operations that shouldn't run simultaneously
+- Calculate progress percentages correctly: use `(loaded / total) * 100`, not raw byte manipulation
+- Remove commented-out code from source files
+- **CRITICAL**: When modifying HTTP headers in fetch operations, create new Headers objects to avoid mutating the original RequestInit
+
+## Aggregate Calculations
+- **CRITICAL**: When logging or tracking totals from nested collections (Map<K, Set<V>>), calculate actual sum of all nested sizes
+- Use `Array.from(map.values()).reduce((sum, set) => sum + set.size, 0)` pattern
+
+## API Integration
+- Validate enum/union types against official API documentation before hardcoding values
+- When APIs support multiple valid values, maintain complete lists in type definitions
+- Monitor API deprecation notices and update hardcoded identifiers before deprecation dates
+
+## Formatting and Checks
+- Use Prettier for formatting and the sort-imports plugin
+- Run type checks before pushing: `pnpm type:check`
+- **CRITICAL**: Keep comments and documentation in sync with code; update comments immediately when implementation changes
+- Maintain consistent trailing commas in object literals and arrays
+- Avoid double semicolons and other syntax redundancies
+- **CRITICAL**: All CSS numeric values with units must include the unit identifier (px, %, em, etc.); unitless values are invalid except for specific properties like line-height, z-index, or opacity
+
+## Examples
+
+### Logger Import
+```ts
+import { createLogger } from '~logger';
+const log = createLogger('SettingsPage');
+log.info('Loaded');
+```
+
+### Utils Import
+```ts
+import { handleAPIError } from '@/utils/apiErrorHandler';
+try { /* ... */ } catch (err) { const toast = handleAPIError(err as Error); }
+```
+
+### Error Handling
+```ts
+try {
+  // operation
+} catch (err) {
+  log.error('Operation failed', { context: 'FeatureName', error: err?.message || 'Unknown error' });
+  // handle error
+}
+```
+
+### Event Listener Cleanup
+```ts
+const handleResize = () => { /* ... */ };
+useEffect(() => {
+  window.addEventListener('resize', handleResize);
+  return () => {
+    window.removeEventListener('resize', handleResize);
+  };
+}, []);
+```
+
+### Async with Timeout
+```ts
+const fetchWithTimeout = async (url: string, timeout: number) => {
+  return Promise.race([
+    fetch(url),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+  ]);
+};
+```
+

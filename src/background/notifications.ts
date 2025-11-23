@@ -90,7 +90,7 @@ export function initializeNotificationListeners(): void {
                 await chrome.storage.local.set({ reminders: remindersMap });
             }
 
-            chrome.notifications.clear(notificationId);
+            await clearNotification(notificationId);
         } catch (error) {
             log.error('Error handling notification click:', error);
         }

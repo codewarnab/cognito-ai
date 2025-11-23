@@ -33,7 +33,7 @@ export const hasToolCalls = (message: Message): boolean => {
 
             const isToolCall = part.type === 'tool-call';
             const isToolResult = part.type === 'tool-result';
-            const startsWithTool = part.type?.startsWith && part.type.startsWith('tool-');
+            const startsWithTool = part.type.startsWith('tool-');
             const isDynamicTool = part.type === 'dynamic-tool';
 
             return isToolCall || isToolResult || startsWithTool || isDynamicTool;
