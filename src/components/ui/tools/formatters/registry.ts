@@ -62,6 +62,19 @@ import {
     generateMarkdownFormatter
 } from './formatters/reports';
 import { takeScreenshotFormatter } from './formatters/screenshot';
+import {
+    createBookmarkFormatter,
+    searchBookmarksFormatter,
+    listBookmarksFormatter,
+    deleteBookmarkFormatter,
+    updateBookmarkFormatter,
+    getBookmarkTreeFormatter,
+    organizeBookmarksFormatter
+} from './formatters/bookmarks';
+import {
+    analyzeDomFormatter,
+    executeScriptFormatter
+} from './formatters/dom';
 
 export const formatters: Record<string, ActionFormatter> = {
     // Navigation
@@ -146,4 +159,18 @@ export const formatters: Record<string, ActionFormatter> = {
     getReportTemplate: getReportTemplateFormatter,
     generatePDF: generatePDFFormatter,
     generateMarkdown: generateMarkdownFormatter,
+
+    // Bookmarks
+    createBookmark: createBookmarkFormatter,
+    searchBookmarks: searchBookmarksFormatter,
+    listBookmarks: listBookmarksFormatter,
+    deleteBookmark: deleteBookmarkFormatter,
+    updateBookmark: updateBookmarkFormatter,
+    getBookmarkTree: getBookmarkTreeFormatter,
+    organizeBookmarks: organizeBookmarksFormatter,
+
+    // DOM Analysis & Script Execution
+    analyzeDom: analyzeDomFormatter,
+    executeScript: executeScriptFormatter,
 };
+

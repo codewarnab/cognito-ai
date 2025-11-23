@@ -14,6 +14,20 @@
 
 import { getEnabledToolsOverride } from '../../utils/settingsStorage';
 
+/**
+ * Tools that should be disabled by default in the UI
+ * These tools will appear in Settings but require explicit user opt-in
+ */
+export const TOOLS_DISABLED_BY_DEFAULT: string[] = [
+  'createBookmark',
+  'searchBookmarks',
+  'listBookmarks',
+  'deleteBookmark',
+  'updateBookmark',
+  'getBookmarkTree',
+  'organizeBookmarks',
+];
+
 export const DEFAULT_ENABLED_TOOLS: string[] = [
   // Navigation & Tab Management
   'navigateTo',
@@ -66,21 +80,36 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'generateMarkdown',
   'generatePDF',
   'getReportTemplate',
+
+  // Bookmarks
+  'createBookmark',
+  'searchBookmarks',
+  'listBookmarks',
+  'deleteBookmark',
+  'updateBookmark',
+  'getBookmarkTree',
+  'organizeBookmarks',
 ];
 
 /**
  * Effective enabled tools (mutable)
- * Initialized with defaults; updated when user overrides are loaded or changed.
+ * Initialized with defaults minus the disabled-by-default tools
+ * Updated when user overrides are loaded or changed.
  */
-export const enabledTools: string[] = [...DEFAULT_ENABLED_TOOLS];
+const initialEnabledTools = DEFAULT_ENABLED_TOOLS.filter(
+  tool => !TOOLS_DISABLED_BY_DEFAULT.includes(tool)
+);
+export const enabledTools: string[] = [...initialEnabledTools];
 
 function applyOverride(override?: string[]) {
   // Reset and apply new contents to preserve reference identity
   enabledTools.length = 0;
   if (override && Array.isArray(override) && override.length > 0) {
+    // User has explicitly set their preferences
     enabledTools.push(...override);
   } else {
-    enabledTools.push(...DEFAULT_ENABLED_TOOLS);
+    // No override: use defaults minus disabled-by-default tools
+    enabledTools.push(...initialEnabledTools);
   }
 }
 

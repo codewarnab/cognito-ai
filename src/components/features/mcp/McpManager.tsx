@@ -1,11 +1,14 @@
-import React, { useState, useMemo, useEffect } from "react"
+import React, { useState, useMemo, useEffect, useRef } from "react"
 import { McpHeader } from "./McpHeader"
 import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
+import { AddCustomMcp } from "./AddCustomMcp"
+import { ToolCountWarning } from "./ToolCountWarning"
 import { MCP_SERVERS } from "../../../constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "../../ui/primitives/popover"
-import { getCloudToolsCount } from "../../../ai/tools";
-import { TOOLS_WARNING_THRESHOLD } from "../../../constants"
+import { getCloudToolsCount } from "../../../ai/tools"
+import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "../../../constants"
+import { PlusIcon, type PlusIconHandle } from "@assets/icons/ui/plus"
 
 interface McpManagerProps {
     onBack: () => void
@@ -20,10 +23,11 @@ interface ServerStatus {
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [searchQuery, setSearchQuery] = useState("")
     const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
-    const [activeView, setActiveView] = useState<'list' | 'tools'>('list')
+    const [activeView, setActiveView] = useState<'list' | 'tools' | 'add-custom'>('list')
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null)
     const [mcpToolCount, setMcpToolCount] = useState(0)
     const [cloudToolCount, setCloudToolCount] = useState(0)
+    const plusIconRef = useRef<PlusIconHandle>(null)
 
     // Fetch MCP tool count on mount and when server statuses change
     useEffect(() => {
@@ -167,11 +171,32 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         setSelectedServerId(null)
     }
 
+    // Handler for plus icon click
+    const handlePlusIconClick = () => {
+        setActiveView('add-custom')
+        
+        // Trigger animation on click
+        if (plusIconRef.current) {
+            plusIconRef.current.startAnimation()
+            setTimeout(() => {
+                plusIconRef.current?.stopAnimation()
+            }, 500)
+        }
+    }
+
     // Conditional rendering based on active view
     if (activeView === 'tools' && selectedServerId) {
         return (
             <McpToolsManager
                 serverId={selectedServerId}
+                onBack={handleBackToList}
+            />
+        )
+    }
+
+    if (activeView === 'add-custom') {
+        return (
+            <AddCustomMcp
                 onBack={handleBackToList}
             />
         )
@@ -183,143 +208,31 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
 
             {/* Tool count warning */}
             {showWarning && (
-                <div style={{
-                    padding: '0.75rem 1rem',
-                    margin: '1rem 1rem 0.5rem 1rem',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.75rem'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                        <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            style={{ color: 'rgb(239, 68, 68)', flexShrink: 0 }}
-                        >
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                        </svg>
-                        <span style={{ fontWeight: 500 }}>
-                            Too many tools enabled ({totalToolCount} total)
-                        </span>
-                    </div>
-                    <Popover>
-                        <PopoverTrigger
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '4px',
-                                padding: '0.25rem 0.5rem',
-                                fontSize: '0.75rem',
-                                color: 'var(--text-primary)',
-                                cursor: 'pointer',
-                                transition: 'all 150ms ease',
-                                fontWeight: 500
-                            }}
-                            aria-label="Show tool count details"
-                        >
-                            Details
-                        </PopoverTrigger>
-                        <PopoverContent align="end" sideOffset={8}>
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.75rem'
-                            }}>
-                                <div>
-                                    <h3 style={{
-                                        fontSize: '0.875rem',
-                                        fontWeight: 600,
-                                        marginBottom: '0.5rem',
-                                        color: 'var(--text-primary)'
-                                    }}>
-                                        Tool Count Warning
-                                    </h3>
-                                    <p style={{
-                                        fontSize: '0.8rem',
-                                        lineHeight: 1.5,
-                                        color: 'var(--text-secondary, rgba(255, 255, 255, 0.7))',
-                                        margin: 0
-                                    }}>
-                                        There are too many tools enabled. LLMs might not use tools reliably when there are more than {TOOLS_WARNING_THRESHOLD} tools available.
-                                    </p>
-                                </div>
-                                <div style={{
-                                    padding: '0.5rem',
-                                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                    borderRadius: '4px',
-                                    fontSize: '0.75rem'
-                                }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '0.25rem'
-                                    }}>
-                                        <span style={{ color: 'var(--text-secondary)' }}>Cloud tools:</span>
-                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cloudToolCount}</span>
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        marginBottom: '0.25rem'
-                                    }}>
-                                        <span style={{ color: 'var(--text-secondary)' }}>MCP tools:</span>
-                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{mcpToolCount}</span>
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        paddingTop: '0.25rem',
-                                        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-                                    }}>
-                                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Total:</span>
-                                        <span style={{ fontWeight: 700, color: 'rgb(239, 68, 68)' }}>{totalToolCount}</span>
-                                    </div>
-                                </div>
-                                <p style={{
-                                    fontSize: '0.75rem',
-                                    lineHeight: 1.4,
-                                    color: 'var(--text-secondary, rgba(255, 255, 255, 0.6))',
-                                    margin: 0,
-                                    fontStyle: 'italic'
-                                }}>
-                                    💡 Tip: Use the "Manage Tools" option on each server to disable unnecessary MCP tools.
-                                </p>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                <ToolCountWarning
+                    cloudToolCount={cloudToolCount}
+                    mcpToolCount={mcpToolCount}
+                    totalToolCount={totalToolCount}
+                />
             )}
 
             {/* Note about local mode */}
-            <div style={{
-                padding: '0.75rem 1rem',
-                margin: '1rem 1rem 0.5rem 1rem',
-                backgroundColor: 'rgba(251, 191, 36, 0.1)',
-                border: '1px solid rgba(251, 191, 36, 0.3)',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                color: 'var(--text-primary)'
-            }}>
-                Note: MCP servers only work in remote mode
-            </div>
+            {!HIDE_LOCAL_MODE && (
+                <div style={{
+                    padding: '0.75rem 1rem',
+                    margin: '1rem 1rem 0.5rem 1rem',
+                    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    color: 'var(--text-primary)'
+                }}>
+                    Note: MCP servers only work in remote mode
+                </div>
+            )}
 
-            {/* Search Bar */}
-            <div className="mcp-search-container">
-                <div className="mcp-search-wrapper">
+            {/* Search Bar with Plus Icon */}
+            <div className="mcp-search-container" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div className="mcp-search-wrapper" style={{ flex: 1 }}>
                     <svg
                         className="mcp-search-icon"
                         width="18"
@@ -364,6 +277,55 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                         </button>
                     )}
                 </div>
+                
+                {/* Plus Icon Button with Tooltip */}
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button
+                            onClick={handlePlusIconClick}
+                            aria-label="Add custom MCP server"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '44px',
+                                height: '44px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                flexShrink: 0
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)'
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                            }}
+                        >
+                            <PlusIcon 
+                                ref={plusIconRef}
+                                size={24}
+                                style={{
+                                    color: 'var(--text-primary, #fff)',
+                                    opacity: 0.8
+                                }}
+                            />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" sideOffset={8}>
+                        <div style={{
+                            fontSize: '0.8rem',
+                            color: 'var(--text-primary)',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            Add custom MCP server
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
 
             <div className="mcp-content">
@@ -402,8 +364,59 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                         </svg>
                         <p className="mcp-no-results-text">No servers found</p>
                         <p className="mcp-no-results-subtext">
-                            Try searching for a different server name
+                            Try searching for a different server name or add a custom server
                         </p>
+                        <button
+                            onClick={handlePlusIconClick}
+                            style={{
+                                marginTop: '1rem',
+                                padding: '0.625rem 1rem',
+                                backgroundColor: 'rgb(59, 130, 246)',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.875rem',
+                                fontWeight: 500,
+                                color: '#fff',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgb(37, 99, 235)'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgb(59, 130, 246)'
+                            }}
+                        >
+                            Add Custom MCP Server
+                        </button>
+                        <div style={{
+                            marginTop: '1rem',
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary, rgba(255, 255, 255, 0.6))'
+                        }}>
+                            Can't find what you're looking for?{' '}
+                            <a
+                                href="https://example.com/request-integration"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    color: 'rgb(59, 130, 246)',
+                                    textDecoration: 'none',
+                                    fontWeight: 500
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.textDecoration = 'underline'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.textDecoration = 'none'
+                                }}
+                            >
+                                Request an integration
+                            </a>
+                        </div>
                     </div>
                 )}
             </div>

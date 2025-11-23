@@ -319,7 +319,7 @@ EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
                                     cursor: 'pointer',
                                     transition: 'transform 0.2s ease'
                                 }}
-                                onClick={(e) => {
+                                onClick={() => {
                                     // Dispatch custom event to open image preview modal
                                     const event = new CustomEvent('openImagePreview', {
                                         detail: {

@@ -45,7 +45,16 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     analyzeYouTubeVideo: 'Analyze YouTube video content',
     generateMarkdown: 'Generate markdown documents',
     generatePDF: 'Generate PDF documents',
-    getReportTemplate: 'Get report templates'
+    getReportTemplate: 'Get report templates',
+
+    // Bookmarks
+    createBookmark: 'Save pages to Chrome bookmarks',
+    searchBookmarks: 'Search saved bookmarks by keyword',
+    listBookmarks: 'List bookmarks from folders',
+    deleteBookmark: 'Remove saved bookmarks',
+    updateBookmark: 'Edit bookmark title or URL',
+    getBookmarkTree: 'View bookmark folder structure',
+    organizeBookmarks: 'AI-powered bookmark organization'
 };
 
 /**
@@ -57,5 +66,6 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo'],
     'Search & History': ['chromeSearch', 'getSearchResults', 'openSearchResult', 'searchHistory', 'getUrlVisits'],
     'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'suggestSaveMemory', 'createReminder', 'listReminders', 'cancelReminder'],
+    'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Other': ['analyzeYouTubeVideo', 'generateMarkdown', 'generatePDF', 'getReportTemplate']
 };
