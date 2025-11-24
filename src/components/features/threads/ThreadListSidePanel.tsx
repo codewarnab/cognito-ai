@@ -26,6 +26,8 @@ export function ThreadListSidePanel({
     onNewThread
 }: ThreadListSidePanelProps) {
     const [threads, setThreads] = useState<ChatThread[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const loadThreads = async () => {
         try {

@@ -38,9 +38,9 @@
 
 .thread-sidepanel-header-content {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 }
 
 .thread-sidepanel-header-content h2 {
