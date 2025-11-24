@@ -8,8 +8,8 @@ import { McpSSEClient } from '../../mcp/sseClient';
 import type { McpExtensionResponse, McpTool } from '../../mcp/types';
 import { getServerState, getServerConfig, serverStates } from '../../mcp/state';
 import { ensureValidToken, refreshServerToken } from '../../mcp/authHelpers';
-import { MCP_OAUTH_CONFIG } from '@constants';
-import { MCP_SERVERS } from '@constants/mcpServers';
+import { MCP_OAUTH_CONFIG } from '@/constants';
+import { MCP_SERVERS } from '@/constants/mcpServers';
 import { createLogger } from '~logger';
 
 const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');

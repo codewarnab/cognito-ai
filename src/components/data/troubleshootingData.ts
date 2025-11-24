@@ -1,4 +1,4 @@
-import { HIDE_LOCAL_MODE } from '@constants';
+import { HIDE_LOCAL_MODE } from '@/constants';
 
 export interface TroubleshootingItem {
     id: string;

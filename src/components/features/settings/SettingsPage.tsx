@@ -1,9 +1,10 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { VoiceSettings } from '@components/features/settings/components/VoiceSettings';
-import { AskAiButtonSettings } from '@components/features/settings/components/AskAiButtonSettings';
-import { EnabledToolsSettings } from '@components/features/settings/components/EnabledToolsSettings';
-import { TTSAndDataSettings } from '@components/features/settings/components/TTSAndDataSuggestionsSettings';
+import { VoiceSettings } from '@/components/features/settings/components/VoiceSettings';
+import { AskAiButtonSettings } from '@/components/features/settings/components/AskAiButtonSettings';
+import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
+import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
+import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
 import './SettingsPage.css';
 
 interface SettingsPageProps {
@@ -34,6 +35,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
         <TTSAndDataSettings />
         <AskAiButtonSettings />
         <EnabledToolsSettings />
+        <MaxToolCallSettings />
       </div>
     </div>
   );

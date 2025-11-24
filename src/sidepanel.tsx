@@ -1,22 +1,22 @@
 import "./polyfills/process";
 import { useState, useRef, useEffect } from "react";
 import { motion } from 'framer-motion';
-import { CopilotChatWindow } from "@components/core/CopilotChatWindow";
-import { McpManager } from "@components/features/mcp";
-import { Troubleshooting } from "@components/features/help/Troubleshooting";
-import { Features } from "@components/features/help/Features";
-import { ProviderSetup } from "@components/features/help/ProviderSetup";
+import { CopilotChatWindow } from "@/components/core/CopilotChatWindow";
+import { McpManager } from "@/components/features/mcp";
+import { Troubleshooting } from "@/components/features/help/Troubleshooting";
+import { Features } from "@/components/features/help/Features";
+import { ProviderSetup } from "@/components/features/help/ProviderSetup";
 import { ToolUIProvider } from "./ai/tools/components";
-import { ThreadListSidePanel } from "@components/features/threads";
-import { MemorySidebar } from "@components/features/memory";
-import { ReminderPanel } from "@components/features/reminders";
-import { SettingsPage } from "@components/features/settings/SettingsPage";
-import { OnboardingScreen } from "@components/features/onboarding";
-import { AudioLinesIcon } from "@components/shared/icons";
-import { VoiceModeUI } from "@components/features/voice";
-import { VoiceRecordingPill } from "@components/shared/inputs";
-import { ContextWarning } from "@components/features/chat/context/ContextWarning";
-import { ErrorToast } from "@components/shared/notifications";
+import { ThreadListSidePanel } from "@/components/features/threads";
+import { MemorySidebar } from "@/components/features/memory";
+import { ReminderPanel } from "@/components/features/reminders";
+import { SettingsPage } from "@/components/features/settings/SettingsPage";
+import { OnboardingScreen } from "@/components/features/onboarding";
+import { AudioLinesIcon } from "@/components/shared/icons";
+import { VoiceModeUI } from "@/components/features/voice";
+import { VoiceRecordingPill } from "@/components/shared/inputs";
+import { ContextWarning } from "@/components/features/chat/context/ContextWarning";
+import { ErrorToast } from "@/components/shared/notifications";
 import type { VoiceInputHandle } from "./audio/VoiceInput";
 import { WindowVisibilityProvider } from "./contexts/WindowVisibilityContext";
 import { DocumentProvider } from "./contexts/documentContext";
@@ -67,8 +67,8 @@ import {
 
 // Types
 import type { ContextWarningState } from "./types/sidepanel";
-import type { FileAttachmentData } from "@components/features/chat/components/FileAttachment";
-import type { TabAttachmentData } from "@components/features/chat/components/TabAttachment";
+import type { FileAttachmentData } from "@/components/features/chat/components/FileAttachment";
+import type { TabAttachmentData } from "@/components/features/chat/components/TabAttachment";
 
 // Utils
 import { handleAPIError } from "./utils/apiErrorHandler";

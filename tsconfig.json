@@ -27,30 +27,6 @@
       ],
       "~logger": [
         "./src/logger"
-      ],
-      "@constants": [
-        "./src/constants"
-      ],
-      "@constants/*": [
-        "./src/constants/*"
-      ],
-      "@components": [
-        "./src/components"
-      ],
-      "@components/*": [
-        "./src/components/*"
-      ],
-      "@ai": [
-        "./src/ai"
-      ],
-      "@ai/*": [
-        "./src/ai/*"
-      ],
-      "@hooks": [
-        "./src/hooks"
-      ],
-      "@hooks/*": [
-        "./src/hooks/*"
       ]
     },
     

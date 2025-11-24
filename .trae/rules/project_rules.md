@@ -15,8 +15,6 @@
   - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
   - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
-  - `@constants` → `./src/constants` (e.g., `import { DEFAULT_CONFIG } from '@constants';`)
-  - `@constants/*` → `./src/constants/*` (e.g., `import { API_ENDPOINTS } from '@constants/api';`)
   - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
   - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
   - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
@@ -29,7 +27,7 @@
   - Logger: `import { createLogger } from '~logger';` (not `import { createLogger } from '../../logger';`)
   - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';` (not `import { handleAPIError } from '../utils/apiErrorHandler';`)
   - Components: `import { Button } from '@components/ui/Button';` (not `import { Button } from '../../components/ui/Button';`)
-  - Constants: `import { API_ENDPOINTS } from '@constants/api';` (not `import { API_ENDPOINTS } from '../constants/api';`)
+  - Constants: `import { API_ENDPOINTS } from '@/constants/api';` (not `import { API_ENDPOINTS } from '../constants/api';`)
   - AI: `import { ModelSetup } from '@ai/core/modelSetup';` (not `import { ModelSetup } from '../../ai/core/modelSetup';`)
   - Assets: `import icon from '@assets/icon.png';` (not `import icon from '../../assets/icon.png';`)
 - Group and sort imports consistently; rely on the Prettier sort-imports plugin.

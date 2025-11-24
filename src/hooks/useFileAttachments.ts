@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { validateFile, createImagePreview, isImageFile } from '../utils/fileProcessor';
-import type { FileAttachmentData } from '@components/features/chat/components/FileAttachment';
-import type { AIMode } from '@components/features/chat/types';
+import type { FileAttachmentData } from '@/components/features/chat/components/FileAttachment';
+import type { AIMode } from '@/components/features/chat/types';
 
 interface UseFileAttachmentsOptions {
     mode: AIMode;

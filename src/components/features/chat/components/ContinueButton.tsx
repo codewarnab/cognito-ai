@@ -1,4 +1,5 @@
 import React from 'react';
+import { Info } from 'lucide-react';
 
 interface ContinueButtonProps {
     onContinue: () => void;
@@ -20,6 +21,13 @@ export const ContinueButton: React.FC<ContinueButtonProps> = ({ onContinue, isLo
             >
                 <span className="continue-button-text">Continue</span>
             </button>
+            <div className="continue-info-icon" title="How to increase limit">
+                <Info size={14} />
+                <div className="continue-info-tooltip">
+                    <strong>Max tool call limit reached</strong>
+                    <p>To increase the limit, go to Settings → AI Configuration → Maximum Tool Call Limit</p>
+                </div>
+            </div>
         </div>
     );
 };

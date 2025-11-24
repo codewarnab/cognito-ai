@@ -1,5 +1,5 @@
 // Lightweight logger with levels and prefix; respects NODE_ENV
-import { LOG_CONFIG, type LogCategory } from '@constants';
+import { LOG_CONFIG, type LogCategory } from '@/constants';
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 

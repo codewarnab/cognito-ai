@@ -10,7 +10,7 @@
 import { createLogger } from '~logger';
 import { getStoredTokens, getStoredClientCredentials } from '../mcp/oauth';
 import { getServerState } from '../mcp/state';
-import { MCP_SERVERS } from '@constants/mcpServers';
+import { MCP_SERVERS } from '@/constants/mcpServers';
 import { ensureTokenValidity, refreshServerToken } from '../mcp/authHelpers';
 import { updateKeepAliveState } from './keepAlive';
 import { connectMcpServer } from './mcp/manager';

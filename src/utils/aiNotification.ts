@@ -6,7 +6,7 @@
 
 import type { NotificationOptions, ParsedNotificationId } from '../types/notifications';
 import { createLogger } from '~logger';
-import { APP_ICON } from '@constants';
+import { APP_ICON } from '@/constants';
 
 const notificationLog = createLogger('Notifications', 'NOTIFICATIONS');
 

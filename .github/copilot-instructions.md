@@ -71,7 +71,7 @@ pnpm type:check                 # Run TypeScript checks (do this before commits)
 ### Path Aliases (Always Use These)
 ```typescript
 import { createLogger } from '~logger';        // Logger utility
-import { handleAPIError } from '@/utils/...';  // Anything in src/
+import { handleAPIError } from '@/utils/...';  // Anything in src/ (includes components)
 import icon from '@assets/...';                 // Assets folder
 ```
 

@@ -1,5 +1,5 @@
 import { captureTabSnapshot, type TabSnapshotResult } from './tabSnapshot';
-import type { TabAttachmentData } from '@components/features/chat/components/TabAttachment';
+import type { TabAttachmentData } from '@/components/features/chat/components/TabAttachment';
 import { createLogger } from '~logger';
 
 const log = createLogger('TabProcessor', 'UTILS');

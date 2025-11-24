@@ -11,7 +11,7 @@ import { broadcastStatusUpdate } from '../../mcp/events';
 import { ensureValidToken, refreshServerToken } from '../../mcp/authHelpers';
 import { getStoredTokens } from '../../mcp/oauth';
 import { updateKeepAliveState } from '../keepAlive';
-import { MCP_OAUTH_CONFIG } from '@constants';
+import { MCP_OAUTH_CONFIG } from '@/constants';
 import { MCPError, NetworkError } from '../../errors';
 import { buildUserMessage } from '../../errors/errorMessages';
 import { createLogger } from '~logger';

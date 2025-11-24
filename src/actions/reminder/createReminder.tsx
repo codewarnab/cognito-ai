@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { useEffect } from 'react';
 import { createLogger } from '~logger';
-import { registerTool } from '@ai/tools';
-import { useToolUI } from '@ai/tools/components';
-import type { ToolUIState } from '@ai/tools/components';
-import { CompactToolRenderer } from '@ai/tools/components';
+import { registerTool } from '@/ai/tools';
+import { useToolUI } from '@/ai/tools/components';
+import type { ToolUIState } from '@/ai/tools/components';
+import { CompactToolRenderer } from '@/ai/tools/components';
 import { parseDateTimeToEpoch } from "./utils";
 import { saveReminder } from "./storage";
 import type { Reminder } from "./types";

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
-import { fetchTranscriptDirect } from '@ai/agents/youtubeToNotion/transcript';
+import { fetchTranscriptDirect } from '@/ai/agents/youtubeToNotion/transcript';
 import type { YouTubeVideoInfo } from './useYouTubeVideoDetection';
-import type { AIMode } from '@components/features/chat/types';
+import type { AIMode } from '@/components/features/chat/types';
 
 const log = createLogger('useYouTubeVideoAttachment');
 

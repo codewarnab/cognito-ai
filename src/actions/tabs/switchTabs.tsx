@@ -6,12 +6,12 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '@ai/tools';
-import { useToolUI } from '@ai/tools/components';
+import { registerTool } from '@/ai/tools';
+import { useToolUI } from '@/ai/tools/components';
 import { createLogger } from '~logger';
 import { useActionHelpers } from '../useActionHelpers';
-import { CompactToolRenderer } from '@ai/tools/components';
-import type { ToolUIState } from '@ai/tools/components';
+import { CompactToolRenderer } from '@/ai/tools/components';
+import type { ToolUIState } from '@/ai/tools/components';
 import { safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
