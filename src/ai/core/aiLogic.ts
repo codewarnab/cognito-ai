@@ -306,7 +306,7 @@ export async function streamAIResponse(params: {
             result.toUIMessageStream({
               onError: (error) => {
                 // Log the raw error first to help debug
-                log.error('?? AI stream onError callback - RAW ERROR:', {
+                log.error('🔥 AI stream onError callback - RAW ERROR:', {
                   error,
                   errorType: typeof error,
                   errorKeys: error ? Object.keys(error) : [],
@@ -317,9 +317,35 @@ export async function streamAIResponse(params: {
 
                 // Safely extract error properties with defensive checks
                 const errorObj = error as any;
+                const errorMessage = errorObj?.message || (error ? String(error) : 'Unknown error');
                 const errorName = errorObj?.name || 'UnknownError';
-                const errorMessage = errorObj?.message || (error ? String(error) : 'Unknown error occurred');
                 const errorStack = errorObj?.stack || 'No stack trace available';
+
+                // Check if this is a tool-not-found error
+                // Detect "Model tried to call unavailable tool" errors
+                if (errorMessage.includes('Model tried to call unavailable tool') ||
+                  errorMessage.includes('unavailable tool') ||
+                  errorMessage.includes('AI_NoSuchToolError')) {
+
+                  log.warn('🔧 TOOL NOT FOUND - Providing feedback to AI:', { errorMessage });
+
+                  // Extract tool name from error message (e.g., "Model tried to call unavailable tool 'analyzeDom'")
+                  const toolNameMatch = errorMessage.match(/tool ['"]([^'"]+)['"]/);
+                  const attemptedTool = toolNameMatch ? toolNameMatch[1] : 'unknown';
+
+                  // Get available tool names
+                  const availableTools = Object.keys(tools);
+
+                  // Create helpful feedback message
+                  const feedback = `Tool "${attemptedTool}" is not available.\n\n` +
+                    `**Available tools:** ${availableTools.slice(0, 15).join(', ')}${availableTools.length > 15 ? ', ...' : ''}\n\n` +
+                    `Please choose from the available tools and try again. Make sure the tool name is spelled correctly.`;
+
+                  log.info('📝 Sending tool-not-found feedback to AI:', { attemptedTool, availableToolsCount: availableTools.length });
+
+                  // Return feedback message instead of error - AI SDK will include this as context
+                  return feedback;
+                }
 
                 log.error('AI stream onError callback - PARSED', {
                   errorName,

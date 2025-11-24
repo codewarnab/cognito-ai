@@ -48,7 +48,11 @@ export async function executeStreamText(params: {
     } = params;
 
     try {
-        // Create tools with abort signal binding
+        // Get list of available tool names for error feedback
+        const availableToolNames = Object.keys(tools);
+        log.info('🔧 Available tools for this session:', { count: availableToolNames.length, tools: availableToolNames });
+
+        // Create tools with abort signal binding AND error feedback handling
         const abortableTools = abortSignal ? (() => {
             const boundTools: Record<string, any> = {};
             Object.entries(tools).forEach(([name, tool]) => {
@@ -59,13 +63,61 @@ export async function executeStreamText(params: {
                         if (abortSignal.aborted) {
                             throw new Error('Operation cancelled');
                         }
-                        // Call original execute with abort signal
-                        return tool.execute(args, abortSignal);
+
+                        try {
+                            // Call original execute with abort signal
+                            const result = await tool.execute(args, abortSignal);
+                            return result;
+                        } catch (toolError) {
+                            // Log tool execution error
+                            log.error(`❌ Tool "${name}" execution failed:`, {
+                                error: toolError instanceof Error ? toolError.message : String(toolError),
+                                args
+                            });
+
+                            // Return error as result instead of throwing
+                            // This allows the AI to see what went wrong and try again
+                            return {
+                                error: true,
+                                message: toolError instanceof Error ? toolError.message : String(toolError),
+                                toolName: name,
+                                feedback: `Tool "${name}" failed: ${toolError instanceof Error ? toolError.message : String(toolError)}\n\nPlease try a different approach or check the tool parameters.`
+                            };
+                        }
                     }
                 };
             });
             return boundTools;
-        })() : tools;
+        })() : (() => {
+            // Also wrap tools without abort signal for consistency
+            const boundTools: Record<string, any> = {};
+            Object.entries(tools).forEach(([name, tool]) => {
+                boundTools[name] = {
+                    ...tool,
+                    execute: async (args: any) => {
+                        try {
+                            const result = await tool.execute(args);
+                            return result;
+                        } catch (toolError) {
+                            // Log tool execution error
+                            log.error(`❌ Tool "${name}" execution failed:`, {
+                                error: toolError instanceof Error ? toolError.message : String(toolError),
+                                args
+                            });
+
+                            // Return error as result instead of throwing
+                            return {
+                                error: true,
+                                message: toolError instanceof Error ? toolError.message : String(toolError),
+                                toolName: name,
+                                feedback: `Tool "${name}" failed: ${toolError instanceof Error ? toolError.message : String(toolError)}\n\nPlease try a different approach or check the tool parameters.`
+                            };
+                        }
+                    }
+                };
+            });
+            return boundTools;
+        })();
 
         return await streamText({
             model,
