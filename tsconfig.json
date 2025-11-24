@@ -27,6 +27,30 @@
       ],
       "~logger": [
         "./src/logger"
+      ],
+      "@constants": [
+        "./src/constants"
+      ],
+      "@constants/*": [
+        "./src/constants/*"
+      ],
+      "@components": [
+        "./src/components"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@ai": [
+        "./src/ai"
+      ],
+      "@ai/*": [
+        "./src/ai/*"
+      ],
+      "@hooks": [
+        "./src/hooks"
+      ],
+      "@hooks/*": [
+        "./src/hooks/*"
       ]
     },
     
@@ -56,8 +80,6 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    
-    // Skip lib check to avoid conflicts with custom type folders
     "skipLibCheck": true
   }
 }

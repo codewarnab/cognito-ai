@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
-import { fetchTranscriptDirect } from '../ai/agents/youtubeToNotion/transcript';
+import { fetchTranscriptDirect } from '@ai/agents/youtubeToNotion/transcript';
 import type { YouTubeVideoInfo } from './useYouTubeVideoDetection';
-import type { AIMode } from '../components/features/chat/types';
+import type { AIMode } from '@components/features/chat/types';
 
 const log = createLogger('useYouTubeVideoAttachment');
 
@@ -37,12 +37,12 @@ function isVideoDismissed(videoId: string): boolean {
     try {
         const dismissed = localStorage.getItem(DISMISSED_VIDEOS_KEY);
         if (!dismissed) return false;
-        
+
         const dismissedVideos = JSON.parse(dismissed) as Record<string, number>;
         const dismissedTime = dismissedVideos[videoId];
-        
+
         if (!dismissedTime) return false;
-        
+
         // Auto-expire dismissals after 24 hours
         const hoursSinceDismissal = (Date.now() - dismissedTime) / (1000 * 60 * 60);
         return hoursSinceDismissal < 24;
@@ -59,7 +59,7 @@ function dismissVideo(videoId: string): void {
     try {
         const dismissed = localStorage.getItem(DISMISSED_VIDEOS_KEY);
         const dismissedVideos = dismissed ? JSON.parse(dismissed) : {};
-        
+
         dismissedVideos[videoId] = Date.now();
         localStorage.setItem(DISMISSED_VIDEOS_KEY, JSON.stringify(dismissedVideos));
     } catch (error) {
@@ -82,7 +82,7 @@ export const useYouTubeVideoAttachment = ({
     // Reset dismissedVideoId and clear cache when video changes
     useEffect(() => {
         const currentVideoId = youtubeVideoInfo?.videoId;
-        
+
         // Reset dismissed state if video changed
         if (currentVideoId && dismissedVideoId && dismissedVideoId !== currentVideoId) {
             log.info('Video changed, resetting dismissed state', {
@@ -91,7 +91,7 @@ export const useYouTubeVideoAttachment = ({
             });
             setDismissedVideoId(null);
         }
-        
+
         // Clear cache if video changed or no video
         if (!currentVideoId || (cachedTranscriptRef.current && cachedTranscriptRef.current.videoId !== currentVideoId)) {
             if (cachedTranscriptRef.current) {
@@ -103,7 +103,7 @@ export const useYouTubeVideoAttachment = ({
             cachedTranscriptRef.current = null;
             setIsFetchingInBackground(false);
         }
-        
+
         // Update current video ID ref
         currentVideoIdRef.current = currentVideoId || null;
     }, [youtubeVideoInfo?.videoId, dismissedVideoId]);

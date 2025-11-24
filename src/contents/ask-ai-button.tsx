@@ -2,7 +2,7 @@ import type { PlasmoCSConfig } from "plasmo";
 import { useEffect, useState, useRef } from "react";
 import cssText from "data-text:~/styles/ask-ai-button.css";
 import { SparklesIcon } from "@assets/icons/ui/star";
-import { TrashZone, getStyle as getTrashZoneStyle } from "~components/ui/trash-zone";
+import { TrashZone, getStyle as getTrashZoneStyle } from "@components/ui/trash-zone";
 import { EyeOff, Clock, XCircle } from "lucide-react";
 import {
     shouldShowButton,

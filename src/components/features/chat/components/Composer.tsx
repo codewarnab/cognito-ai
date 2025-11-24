@@ -16,7 +16,7 @@ import { LocalPdfSuggestion } from './LocalPdfSuggestion';
 import { YouTubeVideoSuggestion } from './YouTubeVideoSuggestion';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 import type { YouTubeVideoInfo } from '../../../../hooks/useYouTubeVideoDetection';
-import { HIDE_LOCAL_MODE } from '../../../../constants';
+import { HIDE_LOCAL_MODE } from '@constants';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
 
@@ -135,7 +135,7 @@ export const Composer: React.FC<ComposerProps> = ({
             // - Any file attachments exist (including YouTube transcripts)
             // - Any tab attachments exist
             const shouldHide = showAttachmentDropdown || attachments.length > 0 || tabAttachments.length > 0;
-            
+
             if (shouldHide) {
                 voiceFab.style.visibility = 'hidden';
             } else {

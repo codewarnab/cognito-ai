@@ -1,9 +1,9 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { VoiceSettings } from './components/VoiceSettings';
-import { AskAiButtonSettings } from './components/AskAiButtonSettings';
-import { EnabledToolsSettings } from './components/EnabledToolsSettings';
-import { TTSAndDataSettings } from './components/TTSAndDataSuggestionsSettings';
+import { VoiceSettings } from '@components/features/settings/components/VoiceSettings';
+import { AskAiButtonSettings } from '@components/features/settings/components/AskAiButtonSettings';
+import { EnabledToolsSettings } from '@components/features/settings/components/EnabledToolsSettings';
+import { TTSAndDataSettings } from '@components/features/settings/components/TTSAndDataSuggestionsSettings';
 import './SettingsPage.css';
 
 interface SettingsPageProps {

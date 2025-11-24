@@ -16,7 +16,7 @@
  * - Video analysis produces transcript-like text from existing analyzeYouTubeVideo
  */
 
-import { TRANSCRIPT_API_URL } from "../../../constants";
+import { TRANSCRIPT_API_URL } from "@constants";
 import { createLogger } from '~logger';
 import { executeYouTubeAnalysis } from "../youtube/youtubeAgentTool";
 import type { TranscriptEntry } from "./transcriptCache";

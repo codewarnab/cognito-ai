@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '~logger';
-import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from '../constants';
+import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from '@constants';
 import { getServerState, getServerConfig } from './state';
 import { broadcastStatusUpdate } from './events';
 import type { McpOAuthTokens } from './types';

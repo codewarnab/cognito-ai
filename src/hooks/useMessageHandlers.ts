@@ -5,10 +5,10 @@ import { extractPageContext, formatPageContextForAI } from '../utils/pageContext
 import { processFile } from '../utils/fileProcessor';
 import { processTabsForMessage, type ProcessedTab } from '../utils/tabProcessor';
 import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
-import { HIDE_LOCAL_MODE } from '../constants';
+import { HIDE_LOCAL_MODE } from '@constants';
 import { hasGoogleApiKey } from '../utils/providerCredentials';
-import type { FileAttachmentData } from '../components/features/chat/components/FileAttachment';
-import type { TabAttachmentData } from '../components/features/chat/components/TabAttachment';
+import type { FileAttachmentData } from '@components/features/chat/components/FileAttachment';
+import type { TabAttachmentData } from '@components/features/chat/components/TabAttachment';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('useMessageHandlers');
@@ -62,11 +62,11 @@ export function useMessageHandlers({
         if (lastSentMessageRef.current) {
             const timeSinceLastSend = now - lastSentMessageRef.current.timestamp;
             const isSameMessage = lastSentMessageRef.current.text === trimmedInput;
-            
+
             if (isSameMessage && timeSinceLastSend < 2000) {
-                log.warn('⚠️ Duplicate message detected and prevented', { 
+                log.warn('⚠️ Duplicate message detected and prevented', {
                     text: trimmedInput.substring(0, 50),
-                    timeSinceLastSend 
+                    timeSinceLastSend
                 });
                 return;
             }
@@ -232,7 +232,7 @@ export function useMessageHandlers({
 
                         // Add formatted text part for AI to understand the tab content
                         let tabContextText = `\n\n[TAB ATTACHMENT: ${tab.title}]\nURL: ${tab.url}\n`;
-                        
+
                         if (tab.error) {
                             tabContextText += `Error: ${tab.error}\n`;
                         } else if (tab.content) {
@@ -240,7 +240,7 @@ export function useMessageHandlers({
                         } else {
                             tabContextText += `Content: (No content available)\n`;
                         }
-                        
+
                         tabContextText += `[/TAB ATTACHMENT]\n`;
 
                         tabMessageParts.push({

@@ -10,17 +10,33 @@
 - Create typed interfaces for third-party library objects when accessing undocumented properties
 
 ## Configuration
-- Path aliases (use these for imports):
-  - `~*` → `./src/*`
-  - `@/*` → `./src/*`
-  - `@assets/*` → `./assets/*`
-  - `~logger` → `./src/logger`
+- **CRITICAL**: Reference the canonical import guide at `.cursor/rules/coding-standards.mdc` for complete import patterns.
+- Path aliases (configured in `tsconfig.json:18-48`; always use these instead of relative paths):
+  - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
+  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
+  - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
+  - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
+  - `@constants` → `./src/constants` (e.g., `import { DEFAULT_CONFIG } from '@constants';`)
+  - `@constants/*` → `./src/constants/*` (e.g., `import { API_ENDPOINTS } from '@constants/api';`)
+  - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
+  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
+  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
+  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@ai/core/modelSetup';`)
 
 ## Imports
-- Always use path aliases instead of deep relative paths
+- **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
 - Group imports at the top; never define functions/constants between import blocks
 - Remove duplicate imports; consolidate into single statements
 - Prefer named exports over default exports for shared utilities
+- Examples:
+  - ✅ `import { createLogger } from '~logger';`
+  - ✅ `import { handleAPIError } from '@/utils/apiErrorHandler';`
+  - ✅ `import { Button } from '@components/ui/Button';`
+  - ✅ `import { ModelSetup } from '@ai/core/modelSetup';`
+  - ❌ `import { createLogger } from '../../logger';`
+  - ❌ `import { handleAPIError } from '../utils/apiErrorHandler';`
+  - ❌ `import { Button } from '../../../components/ui/Button';`
+  - ❌ `import { ModelSetup } from '../../ai/core/modelSetup';`
 
 ## Variables
 - Prefer `const` over `let`; avoid `var`

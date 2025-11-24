@@ -3,9 +3,9 @@
  * Manages AI model configuration and conversation mode restrictions
  */
 
-import type { AIMode, RemoteModelType } from '../ai/types/types';
+import type { AIMode, RemoteModelType } from '@ai/types/types';
 import type { AIProvider } from './providerTypes';
-import { HIDE_LOCAL_MODE } from '../constants';
+import { HIDE_LOCAL_MODE } from '@constants';
 
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_model_config',

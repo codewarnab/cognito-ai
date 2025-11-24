@@ -9,8 +9,8 @@
 
 import { createLogger } from '~logger';
 import { handleTokenRefreshAlarm, refreshServerToken } from '../mcp/authHelpers';
-import { cleanupCache } from '../ai/fileApi/cache';
-import { APP_ICON } from '../constants';
+import { cleanupCache } from '@ai/fileApi/cache';
+import { APP_ICON } from '@constants';
 
 const log = createLogger('Background-Alarms', 'BACKGROUND');
 

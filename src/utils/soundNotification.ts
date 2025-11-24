@@ -3,7 +3,7 @@
  * Handles playing notification sounds with autoplay policy workaround
  */
 
-import { AUDIO_PATHS, AUDIO_CONFIG } from '../constants/audio';
+import { AUDIO_PATHS, AUDIO_CONFIG } from '@constants/audio';
 import { createLogger } from '~logger';
 
 const soundLog = createLogger('Sound', 'NOTIFICATIONS');

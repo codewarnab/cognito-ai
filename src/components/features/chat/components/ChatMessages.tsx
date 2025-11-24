@@ -5,7 +5,7 @@ import remarkBreaks from 'remark-breaks';
 import rehypeHighlight from 'rehype-highlight';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '../../../shared/inputs';
-import { ToolPartRenderer } from '../../../../ai/tools/components';
+import { ToolPartRenderer } from '@ai/tools/components';
 import type { Message } from '../types';
 import { getMessageContent, hasToolCalls, hasAttachments } from '../utils';
 import { EmptyState } from './EmptyState';
@@ -339,10 +339,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         // Check if this is the first file in a sequence
                                                         const fileParts = mergedParts.filter((p: any) => p.type === 'file');
                                                         const isFirstFile = fileParts[0] === part;
-                                                        
+
                                                         // Only render the container for the first file
                                                         if (!isFirstFile) return null;
-                                                        
+
                                                         const totalFiles = fileParts.length;
                                                         const firstFile = fileParts[0];
                                                         const remainingCount = totalFiles - 1;
@@ -383,10 +383,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         // Check if this is the first tab in a sequence
                                                         const tabParts = mergedParts.filter((p: any) => p.type === 'tab-context');
                                                         const isFirstTab = tabParts[0] === part;
-                                                        
+
                                                         // Only render the container for the first tab
                                                         if (!isFirstTab) return null;
-                                                        
+
                                                         const totalTabs = tabParts.length;
                                                         const firstTab = tabParts[0];
                                                         const remainingCount = totalTabs - 1;
@@ -396,9 +396,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                 <div className="message-tab-attachment">
                                                                     <div className="tab-attachment-icon">
                                                                         {firstTab.favicon ? (
-                                                                            <img 
-                                                                                src={firstTab.favicon} 
-                                                                                alt="" 
+                                                                            <img
+                                                                                src={firstTab.favicon}
+                                                                                alt=""
                                                                                 className="tab-favicon"
                                                                             />
                                                                         ) : (
