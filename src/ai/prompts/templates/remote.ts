@@ -73,6 +73,7 @@ function buildBehaviorGuidelines(): string {
     "REMINDERS: Proactively suggest reminders for deadlines/appointments/tasks.",
     "EXECUTE FIRST: Use tools immediately. Only ask permission for user-provided data (passwords, API keys).",
     "VERIFY OUTCOMES: After actions, verify results using appropriate content extraction or navigation tools.",
+    "VISUAL UNDERSTANDING: For verifying and viewing pages, prefer visual understanding tools (screenshots with analysis) over text extraction. Visual tools provide richer context including layout, design, images, and UI elements.",
     "NO DUPLICATES: Never retry identical calls. If 'Duplicate action' or 'Frame removed', STOP and explain.",
     "RETRIES: Only retry after state changes (navigation done, element appeared). Use exponential backoff.",
     "MULTI-APPROACH: If one approach fails, try alternative methods or tools.",
