@@ -5,7 +5,7 @@ import { Composer } from './Composer';
 import type { FileAttachmentData } from './FileAttachment';
 import type { TabAttachmentData } from './TabAttachment';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../types';
-import type { AppUsage } from '../../../../ai/types/usage';
+import type { AppUsage } from '@ai/types/usage';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 import { useFileAttachments } from '../../../../hooks/useFileAttachments';
 import { useLocalPdfAttachment } from '../../../../hooks/useLocalPdfAttachment';
@@ -19,8 +19,8 @@ interface ChatInputProps {
     input: string;
     setInput: (value: string) => void;
     onSendMessage: (
-        messageText?: string, 
-        attachments?: FileAttachmentData[], 
+        messageText?: string,
+        attachments?: FileAttachmentData[],
         tabAttachments?: TabAttachmentData[],
         workflowId?: string
     ) => void;

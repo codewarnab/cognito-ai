@@ -7,19 +7,31 @@
 - Do not log secrets, API keys, or personally identifiable information.
 
 ## TypeScript Configuration
-- Strictness: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess` (`/c:/Users/User/code/hackathons/chrome-ai/tsconfig.json:33-50`).
-- Module resolution: `moduleResolution: bundler`, `resolveJsonModule: true` (`/c:/Users/User/code/hackathons/chrome-ai/tsconfig.json:52-54`).
-- Path aliases (use these for imports):
-  - `~*` → `./src/*`
-  - `@/*` → `./src/*`
-  - `@assets/*` → `./assets/*`
-  - `~logger` → `./src/logger` (`/c:/Users/User/code/hackathons/chrome-ai/tsconfig.json:18-31`)
+- Strictness: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess` (`tsconfig.json:46-61`).
+- Module resolution: `moduleResolution: bundler`, `resolveJsonModule: true` (`tsconfig.json:64-65`).
+- **CRITICAL**: Always use path aliases instead of relative paths; see canonical source at `.cursor/rules/coding-standards.mdc` for the complete import guide.
+- Path aliases (configured in `tsconfig.json:18-48`):
+  - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
+  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
+  - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
+  - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
+  - `@constants` → `./src/constants` (e.g., `import { DEFAULT_CONFIG } from '@constants';`)
+  - `@constants/*` → `./src/constants/*` (e.g., `import { API_ENDPOINTS } from '@constants/api';`)
+  - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
+  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
+  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
+  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@ai/core/modelSetup';`)
 
 ## Imports and Modules
-- Always use path aliases instead of deep relative paths:
-  - Logger: `import { createLogger } from '~logger';` (`src/sidepanel.tsx:44`).
-  - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';` (`src/sidepanel.tsx:74`).
-  - Assets: `import icon from '@assets/...';`
+- **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
+- **CRITICAL**: Reference the canonical import guide at `.cursor/rules/coding-standards.mdc` for complete import patterns.
+- Always use path aliases configured in `tsconfig.json`:
+  - Logger: `import { createLogger } from '~logger';` (not `import { createLogger } from '../../logger';`)
+  - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';` (not `import { handleAPIError } from '../utils/apiErrorHandler';`)
+  - Components: `import { Button } from '@components/ui/Button';` (not `import { Button } from '../../components/ui/Button';`)
+  - Constants: `import { API_ENDPOINTS } from '@constants/api';` (not `import { API_ENDPOINTS } from '../constants/api';`)
+  - AI: `import { ModelSetup } from '@ai/core/modelSetup';` (not `import { ModelSetup } from '../../ai/core/modelSetup';`)
+  - Assets: `import icon from '@assets/icon.png';` (not `import icon from '../../assets/icon.png';`)
 - Group and sort imports consistently; rely on the Prettier sort-imports plugin.
 - Prefer named exports; avoid default exports for shared utilities.
 - **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks.

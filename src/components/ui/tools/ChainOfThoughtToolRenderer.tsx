@@ -12,9 +12,9 @@ import { YoutubeIcon } from '@assets/icons/chat/youtube';
 import { YouTubeTranscriptIcon } from '@assets/icons/chat/youtube-transcipt';
 import { VideoScanIcon, VideoSearchIcon, VideoTagIcon } from '@assets/icons/chat/videotype-detection';
 import { QuestionPlanner, AnswerWriter, NotionPageWriter } from '@assets/icons/chat/youtube-notion-agent-icons';
-import { progressStore } from '../../../ai/agents/youtubeToNotion/progressStore';
-import type { ProgressUpdate } from '../../../ai/agents/youtubeToNotion/progressTypes';
-import type { ToolUIState } from '../../../ai/tools/components';
+import { progressStore } from '@ai/agents/youtubeToNotion/progressStore';
+import type { ProgressUpdate } from '@ai/agents/youtubeToNotion/progressTypes';
+import type { ToolUIState } from '@ai/tools/components';
 import {
     ChainOfThought,
     ChainOfThoughtHeader,

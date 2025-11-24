@@ -12,8 +12,8 @@ import { UploadIcon, type UploadIconHandle } from '../../../shared/icons/UploadI
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';
 import { createLogger } from '~logger';
-import type { CustomInputOutputRenderers } from '../../../../ai/tools/components';
-import { ToolFileAttachment, type ToolFileAttachmentData } from '../../../features/chat/components/ToolFileAttachment';
+import type { CustomInputOutputRenderers } from '@ai/tools/components';
+import { ToolFileAttachment, type ToolFileAttachmentData } from '@components/features/chat/components/ToolFileAttachment';
 
 const log = createLogger('CompactToolCard');
 

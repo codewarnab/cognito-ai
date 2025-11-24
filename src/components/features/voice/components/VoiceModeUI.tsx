@@ -14,7 +14,7 @@ import { VoiceModeStatusDisplay } from './VoiceModeStatus';
 import { ErrorNotification, WarningNotification, SetupNotification } from './VoiceModeNotifications';
 import { VoiceModeDebugPanel } from './VoiceModeDebugPanel';
 import { useGeminiLiveClient } from '../hooks/useGeminiLiveClient';
-import { runToolIntegrationReport } from '../../../../ai/geminiLive/toolIntegrationTest';
+import { runToolIntegrationReport } from '@ai/geminiLive/toolIntegrationTest';
 import { createLogger } from '~logger';
 import type { VoiceModeUIProps } from '../types';
 import '../styles/VoiceModeUI.css';

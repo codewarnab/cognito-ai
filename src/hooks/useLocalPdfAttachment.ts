@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { isPdfDismissed, dismissPdf } from '../utils/localPdfDismissals';
 import type { LocalPdfInfo } from './useActiveTabDetection';
-import type { AIMode } from '../components/features/chat/types';
+import type { AIMode } from '@components/features/chat/types';
 
 interface UseLocalPdfAttachmentOptions {
     localPdfInfo?: LocalPdfInfo | null;

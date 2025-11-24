@@ -5,15 +5,15 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '../../ai/tools';
-import { useToolUI } from '../../ai/tools/components';
+import { registerTool } from '@ai/tools';
+import { useToolUI } from '@ai/tools/components';
 import { createLogger } from '~logger';
 import { canonicalizeKey } from '../../memory/types';
 
 const log = createLogger('Tool-SuggestSaveMemory');
 
 export function useSuggestSaveMemory() {
-    const {  unregisterToolUI } = useToolUI();
+    const { unregisterToolUI } = useToolUI();
 
     useEffect(() => {
         log.info('🔧 Registering suggestSaveMemory tool...');

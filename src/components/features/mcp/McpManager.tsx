@@ -4,10 +4,10 @@ import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
 import { AddCustomMcp } from "./AddCustomMcp"
 import { ToolCountWarning } from "./ToolCountWarning"
-import { MCP_SERVERS } from "../../../constants/mcpServers"
-import { Popover, PopoverTrigger, PopoverContent } from "../../ui/primitives/popover"
-import { getCloudToolsCount } from "../../../ai/tools"
-import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "../../../constants"
+import { MCP_SERVERS } from "@constants/mcpServers"
+import { Popover, PopoverTrigger, PopoverContent } from "@components/ui/primitives/popover"
+import { getCloudToolsCount } from "@ai/tools"
+import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "@constants"
 import { PlusIcon, type PlusIconHandle } from "@assets/icons/ui/plus"
 
 interface McpManagerProps {
@@ -93,7 +93,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             const results = await Promise.all(statusPromises)
 
             // Build the statuses object from successful results
-            const newStatuses: Record<string, { state: string; error?: string }> = {}
+            const newStatuses: Record<string, ServerStatus> = {}
             results.forEach(result => {
                 if (result) {
                     newStatuses[result.serverId] = result.status
@@ -113,7 +113,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         const handleMessage = (message: { type?: string; payload?: any }) => {
             // Match pattern: mcp/{serverId}/status/update
             const match = message.type?.match(/^mcp\/([^/]+)\/status\/update$/)
-            if (match) {
+            if (match && match[1]) {
                 const serverId = match[1]
                 const status = message.payload
                 const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
@@ -399,7 +399,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                         }}>
                             Can't find what you're looking for?{' '}
                             <a
-                                href="https://example.com/request-integration"
+                                href="https://tally.so/r/yPPB0B"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{

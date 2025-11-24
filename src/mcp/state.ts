@@ -8,7 +8,7 @@
 import type { McpOAuthTokens, McpServerStatus, OAuthEndpoints, OAuthState } from './types';
 import type { DynamicClientCredentials } from './oauth';
 import type { McpSSEClient } from './sseClient';
-import { MCP_SERVERS, type ServerConfig } from '../constants/mcpServers';
+import { MCP_SERVERS, type ServerConfig } from '@constants/mcpServers';
 
 /**
  * State for each MCP server

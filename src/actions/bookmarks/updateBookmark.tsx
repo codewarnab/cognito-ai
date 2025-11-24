@@ -5,11 +5,11 @@
 
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { registerTool } from '../../ai/tools';
-import { useToolUI } from '../../ai/tools/components';
+import { registerTool } from '@ai/tools';
+import { useToolUI } from '@ai/tools/components';
 import { createLogger } from '~logger';
-import { CompactToolRenderer } from '../../ai/tools/components';
-import type { ToolUIState } from '../../ai/tools/components';
+import { CompactToolRenderer } from '@ai/tools/components';
+import type { ToolUIState } from '@ai/tools/components';
 import { safeBookmarksUpdate } from '../chromeApi/bookmarks';
 import { BrowserAPIError } from '../../errors';
 import type { BookmarkUpdateResult } from '../../types/bookmarks';

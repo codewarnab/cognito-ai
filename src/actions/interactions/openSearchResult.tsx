@@ -6,10 +6,10 @@
 
 import { z } from 'zod';
 import { useEffect, useRef } from 'react';
-import { registerTool } from '../../ai/tools';
-import { useToolUI } from '../../ai/tools/components';
-import type { ToolUIState } from '../../ai/tools/components';
-import { CompactToolRenderer } from '../../ai/tools/components';
+import { registerTool } from '@ai/tools';
+import { useToolUI } from '@ai/tools/components';
+import type { ToolUIState } from '@ai/tools/components';
+import { CompactToolRenderer } from '@ai/tools/components';
 import { createLogger } from '~logger';
 
 const log = createLogger('Tool-OpenSearchResult');

@@ -23,7 +23,7 @@ import type { McpExtensionResponse, OAuthEndpoints } from '../../mcp/types';
 import { getServerState, getServerConfig } from '../../mcp/state';
 import { broadcastStatusUpdate } from '../../mcp/events';
 import { scheduleTokenRefresh, refreshServerToken } from '../../mcp/authHelpers';
-import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from '../../constants';
+import { MCP_OAUTH_CONFIG, SERVER_SPECIFIC_CONFIGS } from '@constants';
 import { createLogger } from '~logger';
 import { disconnectMcpServer, connectMcpServer, registerAuthHandlers } from './manager';
 import { updateKeepAliveState } from '../keepAlive';

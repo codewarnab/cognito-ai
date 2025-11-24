@@ -10,7 +10,7 @@
 import { createLogger } from '~logger';
 import { getStoredTokens, getStoredClientCredentials } from '../mcp/oauth';
 import { getServerState } from '../mcp/state';
-import { MCP_SERVERS } from '../constants/mcpServers';
+import { MCP_SERVERS } from '@constants/mcpServers';
 import { ensureTokenValidity, refreshServerToken } from '../mcp/authHelpers';
 import { updateKeepAliveState } from './keepAlive';
 import { connectMcpServer } from './mcp/manager';
@@ -29,9 +29,9 @@ async function initializeServerStatus(serverId: string): Promise<void> {
         const tokens = await getStoredTokens(serverId);
 
         // Also restore OAuth endpoints from storage if available
-        const { [`mcp.${serverId}.oauthEndpoints`]: storedEndpoints } = 
+        const { [`mcp.${serverId}.oauthEndpoints`]: storedEndpoints } =
             await chrome.storage.local.get(`mcp.${serverId}.oauthEndpoints`);
-        
+
         if (storedEndpoints) {
             state.oauthEndpoints = storedEndpoints;
             log.info(`[${serverId}] OAuth endpoints restored from storage`);
@@ -71,7 +71,7 @@ export async function initializeAllServers(): Promise<void> {
             await initializeServerStatus(serverId);
 
             // Check if server is enabled
-            const { [`mcp.${serverId}.enabled`]: isEnabled } = 
+            const { [`mcp.${serverId}.enabled`]: isEnabled } =
                 await chrome.storage.local.get(`mcp.${serverId}.enabled`);
             const state = getServerState(serverId);
             state.isEnabled = isEnabled || false;
