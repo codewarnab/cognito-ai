@@ -26,10 +26,10 @@ export const MaxToolCallSettings: React.FC = () => {
 
         // Enforce min/max bounds
         const clampedValue = Math.max(1, Math.min(50, value));
-        
+
         const previousLimit = maxLimit;
         setMaxLimit(clampedValue);
-        
+
         try {
             await setMaxToolCallLimit(clampedValue);
             log.info('Max tool call limit updated', { limit: clampedValue });
@@ -48,8 +48,8 @@ export const MaxToolCallSettings: React.FC = () => {
                 </h2>
             </div>
             <div className="settings-card">
-                <div className="settings-item">
-                    <div className="settings-item-content">
+                <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+                    <div>
                         <div className="settings-item-title">Maximum Tool Call Limit</div>
                         <div className="settings-item-description">
                             Maximum number of steps the AI can take in a single response (1-50). Higher values allow more complex multi-step operations but may increase response time.
@@ -57,7 +57,7 @@ export const MaxToolCallSettings: React.FC = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <input
-                            type="number"
+                            type="text"
                             className="settings-input"
                             value={maxLimit}
                             onChange={handleLimitChange}
