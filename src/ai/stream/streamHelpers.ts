@@ -131,3 +131,22 @@ export function writeCountdownToStream(
   });
 }
 
+/**
+ * Create error feedback for unavailable tool calls
+ * Returns a message that helps the AI understand what went wrong and what tools are available
+ */
+export function createToolNotFoundFeedback(
+  attemptedTool: string,
+  availableTools: string[],
+  error?: string
+): string {
+  const toolList = availableTools.length > 0
+    ? availableTools.slice(0, 20).join(', ') + (availableTools.length > 20 ? '...' : '')
+    : 'No tools available';
+
+  return `ERROR: Tool "${attemptedTool}" is not available.\n\n` +
+    `Available tools: ${toolList}\n\n` +
+    `Please choose from the available tools listed above and try again with a valid tool name.` +
+    (error ? `\n\nTechnical details: ${error}` : '');
+}
+
