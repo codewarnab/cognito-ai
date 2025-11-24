@@ -1,6 +1,6 @@
 import { createLogger } from '~logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../../errors';
-import { TRANSCRIPT_API_URL } from '@constants';
+import { TRANSCRIPT_API_URL } from '@/constants';
 import { withRetry, MAX_RETRIES, INITIAL_RETRY_DELAY } from './retry';
 
 const log = createLogger('YouTube-Transcript');

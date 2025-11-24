@@ -1,6 +1,6 @@
 import React from "react"
 import { Popover, PopoverTrigger, PopoverContent } from "../../ui/primitives/popover"
-import { TOOLS_WARNING_THRESHOLD } from "@constants"
+import { TOOLS_WARNING_THRESHOLD } from "@/constants"
 
 interface ToolCountWarningProps {
     cloudToolCount: number

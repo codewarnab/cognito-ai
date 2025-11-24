@@ -5,10 +5,10 @@ import { extractPageContext, formatPageContextForAI } from '../utils/pageContext
 import { processFile } from '../utils/fileProcessor';
 import { processTabsForMessage, type ProcessedTab } from '../utils/tabProcessor';
 import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
-import { HIDE_LOCAL_MODE } from '@constants';
+import { HIDE_LOCAL_MODE } from '@/constants';
 import { hasGoogleApiKey } from '../utils/providerCredentials';
-import type { FileAttachmentData } from '@components/features/chat/components/FileAttachment';
-import type { TabAttachmentData } from '@components/features/chat/components/TabAttachment';
+import type { FileAttachmentData } from '@/components/features/chat/components/FileAttachment';
+import type { TabAttachmentData } from '@/components/features/chat/components/TabAttachment';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('useMessageHandlers');

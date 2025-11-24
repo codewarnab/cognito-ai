@@ -5,7 +5,7 @@ import remarkBreaks from 'remark-breaks';
 import rehypeHighlight from 'rehype-highlight';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '../../../shared/inputs';
-import { ToolPartRenderer } from '@ai/tools/components';
+import { ToolPartRenderer } from '@/ai/tools/components';
 import type { Message } from '../types';
 import { getMessageContent, hasToolCalls, hasAttachments } from '../utils';
 import { EmptyState } from './EmptyState';

@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import type { VoiceModeStatus } from '@ai/geminiLive/types';
+import type { VoiceModeStatus } from '@/ai/geminiLive/types';
 
 interface VoiceModeStatusProps {
     status: VoiceModeStatus;

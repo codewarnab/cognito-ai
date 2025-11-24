@@ -13,6 +13,7 @@ import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prom
 
 import { hasGoogleApiKey } from '../../utils/providerCredentials';
 import { getModelConfig } from '../../utils/modelSettings';
+import { getMaxToolCallLimit } from '../../utils/settingsStorage';
 import {
   APIError,
   NetworkError,
@@ -214,7 +215,15 @@ export async function streamAIResponse(params: {
           const modelMessages = convertToModelMessages(messages);
 
           // Determine step count based on mode and workflow
-          const stepCount = workflowConfig?.stepCount || (effectiveMode === 'local' ? 5 : 20);
+          // For workflows, use their stepCount; for local mode use 5; for remote mode use user's setting (default 20)
+          let stepCount: number;
+          if (workflowConfig?.stepCount) {
+            stepCount = workflowConfig.stepCount;
+          } else if (effectiveMode === 'local') {
+            stepCount = 5;
+          } else {
+            stepCount = await getMaxToolCallLimit();
+          }
 
           // Stream with appropriate configuration
           log.info(' Starting streamText...', {

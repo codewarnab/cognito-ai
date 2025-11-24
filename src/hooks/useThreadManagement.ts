@@ -11,7 +11,7 @@ import {
 } from '../db';
 import type { UIMessage } from 'ai';
 import type { ContextWarningState } from '../types/sidepanel';
-import type { AppUsage } from '@ai/types/usage';
+import type { AppUsage } from '@/ai/types/usage';
 import { clearAllDismissals } from '../utils/localPdfDismissals';
 
 const log = createLogger('useThreadManagement');

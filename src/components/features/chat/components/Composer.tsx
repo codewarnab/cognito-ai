@@ -16,7 +16,7 @@ import { LocalPdfSuggestion } from './LocalPdfSuggestion';
 import { YouTubeVideoSuggestion } from './YouTubeVideoSuggestion';
 import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
 import type { YouTubeVideoInfo } from '../../../../hooks/useYouTubeVideoDetection';
-import { HIDE_LOCAL_MODE } from '@constants';
+import { HIDE_LOCAL_MODE } from '@/constants';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
 

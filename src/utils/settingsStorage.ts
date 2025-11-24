@@ -19,6 +19,7 @@ export async function getSettings(): Promise<UserSettings> {
       voice: mergedVoice,
       ttsProvider: stored.ttsProvider ?? DEFAULT_USER_SETTINGS.ttsProvider,
       suggestionsEnabled: stored.suggestionsEnabled ?? DEFAULT_USER_SETTINGS.suggestionsEnabled,
+      maxToolCallLimit: stored.maxToolCallLimit ?? DEFAULT_USER_SETTINGS.maxToolCallLimit,
     };
     return merged;
   } catch {
@@ -81,6 +82,16 @@ export async function getSuggestionsEnabled(): Promise<boolean> {
 
 export async function setSuggestionsEnabled(enabled: boolean): Promise<UserSettings> {
   return updateSettings({ suggestionsEnabled: enabled });
+}
+
+// Max tool call limit helpers
+export async function getMaxToolCallLimit(): Promise<number> {
+  const settings = await getSettings();
+  return settings.maxToolCallLimit ?? DEFAULT_USER_SETTINGS.maxToolCallLimit!;
+}
+
+export async function setMaxToolCallLimit(limit: number): Promise<UserSettings> {
+  return updateSettings({ maxToolCallLimit: limit });
 }
 
 

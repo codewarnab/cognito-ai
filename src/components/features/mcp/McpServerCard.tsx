@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { ConfirmDialog } from "../../ui/primitives/dialog"
 import { McpServerCardHeader } from "./McpServerCardHeader"
 import { McpServerCardFooter } from "./McpServerCardFooter"

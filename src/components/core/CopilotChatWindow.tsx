@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ChatHeader } from '@components/features/chat/components/ChatHeader';
-import { ChatMessages } from '@components/features/chat/components/ChatMessages';
-import { ChatInput } from '@components/features/chat/components/ChatInput';
-import { ErrorNotification } from '@components/features/chat/components/ErrorNotification';
-import { ModelDownloadToastContainer } from '@components/shared/notifications';
+import { ChatHeader } from '@/components/features/chat/components/ChatHeader';
+import { ChatMessages } from '@/components/features/chat/components/ChatMessages';
+import { ChatInput } from '@/components/features/chat/components/ChatInput';
+import { ErrorNotification } from '@/components/features/chat/components/ErrorNotification';
+import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '../../audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
 import { hasGoogleApiKey } from '../../utils/providerCredentials';
 import type { Message, AIMode, RemoteModelType, ModelState } from '../features/chat/types';
-import type { AppUsage } from '@ai/types/usage';
+import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '../../hooks/useActiveTabDetection';
 import { clearAllDismissals } from '../../utils/localPdfDismissals';
 

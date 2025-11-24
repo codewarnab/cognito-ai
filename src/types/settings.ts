@@ -20,6 +20,11 @@ export interface UserSettings {
   voice?: VoiceSettings;
   ttsProvider?: TTSProvider;
   suggestionsEnabled?: boolean;
+  /**
+   * Maximum number of tool calls (steps) the AI can make in a single response.
+   * Default is 20. Higher values allow more complex multi-step operations but may increase response time.
+   */
+  maxToolCallLimit?: number;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -30,6 +35,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   },
   ttsProvider: 'gemini',
   suggestionsEnabled: true,
+  maxToolCallLimit: 20,
 };
 
 

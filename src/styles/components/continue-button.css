@@ -2,7 +2,9 @@
 
 .continue-button-container {
     display: flex;
+    align-items: center;
     justify-content: flex-start;
+    gap: 8px;
     margin: 6px 0;
     padding: 0;
 }
@@ -77,4 +79,74 @@
 
 .continue-button-container {
     animation: slideInFromBottom 0.3s ease-out;
+}
+
+/* Info Icon and Tooltip */
+.continue-info-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--text-secondary);
+    cursor: help;
+    transition: color 0.2s ease;
+}
+
+.continue-info-icon:hover {
+    color: var(--text-primary);
+}
+
+.continue-info-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    width: 280px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.continue-info-icon:hover .continue-info-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-12px);
+}
+
+.continue-info-tooltip strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.continue-info-tooltip p {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Tooltip arrow */
+.continue-info-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--border-color);
 }

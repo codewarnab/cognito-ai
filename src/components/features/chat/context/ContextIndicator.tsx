@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { AnimatedCircularProgressBar } from "@components/features/chat/components/AnimatedCircularProgressBar";
-import type { AppUsage } from "@ai/types/usage";
+import { AnimatedCircularProgressBar } from "@/components/features/chat/components/AnimatedCircularProgressBar";
+import type { AppUsage } from "@/ai/types/usage";
 import { cn } from "../../../../utils/cn";
 import { createLogger } from '~logger';
 

@@ -8,20 +8,10 @@ import { createLogger } from '~logger';
 
 const log = createLogger('AI-APIKeyCheck');
 
-interface StreamWriter {
-    write(data: {
-        type: string;
-        id: string;
-        delta?: string;
-        data?: Record<string, any>;
-        transient?: boolean;
-    }): void;
-}
-
 /**
  * Write missing API key error to stream
  */
-export function writeMissingApiKeyError(writer: StreamWriter): void {
+export function writeMissingApiKeyError(writer: any): void {
     const errorMsg = 'Please configure your Gemini API key to use the AI assistant.';
     const instructionMsg = '\n\n**How to add your API key:**\n1. Click the **⋯** (three dots) menu in the chat header\n2. Select "Gemini API Key Setup"\n3. Enter your Gemini API key\n4. Click "Save API Key"\n\n**Don\'t have an API key?**\nGet a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey)';
 

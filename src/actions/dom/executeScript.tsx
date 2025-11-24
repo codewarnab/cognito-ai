@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from '~logger';
-import { registerTool } from "@ai/tools";
-import { useToolUI } from "@ai/tools/components";
+import { registerTool } from "@/ai/tools";
+import { useToolUI } from "@/ai/tools/components";
 
 const log = createLogger("Actions-DOM-ExecuteScript");
 
