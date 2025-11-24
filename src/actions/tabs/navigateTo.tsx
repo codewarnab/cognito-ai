@@ -42,13 +42,22 @@ export function useNavigateToTool() {
             execute: async ({ url, newTab = true }) => {
                 try {
                     log.info("TOOL CALL: openTab", { url, newTab });
-                    const key = normalizeUrl(url);
+
+                    // Ensure URL has proper protocol to avoid Chrome interpreting it as extension-relative path
+                    let finalUrl = url.trim();
+                    if (!finalUrl.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//)) {
+                        // No protocol found, add https://
+                        finalUrl = 'https://' + finalUrl;
+                        log.debug('Added https:// protocol to URL', { original: url, final: finalUrl });
+                    }
+
+                    const key = normalizeUrl(finalUrl);
                     markOpened(key);
 
                     if (newTab) {
                         // Open in new tab using safe helper
-                        const tab = await safeTabCreate({ url });
-                        log.info('📑 Opened URL in new tab', { tabId: tab.id, url });
+                        const tab = await safeTabCreate({ url: finalUrl });
+                        log.info('📑 Opened URL in new tab', { tabId: tab.id, url: tab.url });
                         return {
                             success: true,
                             action: 'opened_new_tab',
@@ -64,13 +73,13 @@ export function useNavigateToTool() {
                             throw BrowserAPIError.tabNotFound(-1);
                         }
 
-                        await safeTabUpdate(currentTab.id, { url });
-                        log.info('🔄 Opened URL in current tab', { tabId: currentTab.id, url });
+                        await safeTabUpdate(currentTab.id, { url: finalUrl });
+                        log.info('🔄 Opened URL in current tab', { tabId: currentTab.id, url: finalUrl });
                         return {
                             success: true,
                             action: 'opened_current_tab',
                             tabId: currentTab.id,
-                            url
+                            url: finalUrl
                         };
                     }
                 } catch (error) {
