@@ -20,6 +20,8 @@ interface SuggestedActionsProps {
     modelState: ModelState;
     onSuggestionClick: (action: string) => void;
     tabAttachments?: Array<{ id: string; title: string; url: string; favIconUrl?: string }>;
+    /** Whether the YouTube video suggestion badge is showing */
+    shouldShowYouTubeVideoSuggestion?: boolean;
 }
 
 // Fallback suggestions (static) - only shown when generation fails
@@ -44,6 +46,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     modelState,
     onSuggestionClick,
     tabAttachments = [],
+    shouldShowYouTubeVideoSuggestion = false,
 }) => {
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
@@ -109,7 +112,8 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         !activeWorkflow &&
         !userDismissed &&
         attachments.length === 0 &&
-        tabAttachments.length === 0;
+        tabAttachments.length === 0 &&
+        !shouldShowYouTubeVideoSuggestion;
 
     const handleSuggestionClick = (action: string) => {
         onSuggestionClick(action);
