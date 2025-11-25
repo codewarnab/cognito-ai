@@ -282,6 +282,10 @@
     transition: all 0.15s;
 }
 
+.composer-tools-count {
+    font-size: 9px;
+}
+
 .composer-tools-button:hover {
     background-color: var(--bg-tertiary);
     color: var(--text-primary);

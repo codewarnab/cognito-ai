@@ -6,7 +6,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -15,69 +15,72 @@
 }
 
 .streaming-warning-dialog {
-    background: var(--vscode-sideBar-background, #1e1e1e);
-    border: 1px solid var(--vscode-contrastBorder, #454545);
+    background: var(--bg-secondary, #0f1420);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
     border-radius: 12px;
+    padding: 24px;
     width: 90%;
-    max-width: 440px;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
-    overflow: hidden;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .streaming-warning-content {
-    padding: 28px 28px 24px 28px;
+    margin-bottom: 24px;
 }
 
 .streaming-warning-title {
+    margin: 0 0 12px 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--vscode-foreground, #cccccc);
-    margin: 0 0 12px 0;
+    color: var(--text-primary, #ffffff);
 }
 
 .streaming-warning-message {
-    font-size: 14px;
-    color: var(--vscode-descriptionForeground, #999999);
-    line-height: 1.6;
     margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
 }
 
 .streaming-warning-actions {
     display: flex;
     gap: 12px;
-    padding: 0 24px 24px 24px;
     justify-content: flex-end;
 }
 
 .streaming-warning-button {
-    padding: 10px 20px;
-    border-radius: 6px;
+    padding: 8px 16px;
+    border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
     border: none;
     outline: none;
-    min-width: 100px;
 }
 
 .streaming-warning-button-secondary {
-    background-color: var(--vscode-button-secondaryBackground, #3a3d41);
-    color: var(--vscode-button-secondaryForeground, #cccccc);
-    border: 1px solid var(--vscode-contrastBorder, #454545);
+    background: transparent;
+    color: var(--text-primary, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
 }
 
 .streaming-warning-button-secondary:hover {
-    background-color: var(--vscode-button-secondaryHoverBackground, #45494e);
+    background: var(--bg-tertiary, #141f30);
 }
 
 .streaming-warning-button-primary {
-    background-color: var(--vscode-button-background, #0e639c);
-    color: var(--vscode-button-foreground, #ffffff);
+    background: var(--blue-stride, #1264FF);
+    color: var(--text-primary, #ffffff);
 }
 
 .streaming-warning-button-primary:hover {
-    background-color: var(--vscode-button-hoverBackground, #1177bb);
+    background: #0d4fd8;
+}
+
+.streaming-warning-button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
 }
 
 .streaming-warning-button:active {

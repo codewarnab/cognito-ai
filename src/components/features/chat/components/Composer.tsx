@@ -363,7 +363,7 @@ export const Composer: React.FC<ComposerProps> = ({
                             title={activeWorkflow ? "Tools are managed by the active workflow" : "Manage enabled tools"}
                         >
                             <Wrench size={14} />
-                            <span>{enabledToolsCount}/{totalToolsCount}</span>
+                            <span className="composer-tools-count">{enabledToolsCount}/{totalToolsCount}</span>
                         </button>
 
                         {/* Tools Popover */}
