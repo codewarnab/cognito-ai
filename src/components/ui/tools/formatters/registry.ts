@@ -57,8 +57,7 @@ import {
 } from './formatters/pdf';
 import {
     getReportTemplateFormatter,
-    generatePDFFormatter,
-    generateMarkdownFormatter
+    generatePDFFormatter
 } from './formatters/reports';
 import { takeScreenshotFormatter } from './formatters/screenshot';
 import {
@@ -156,7 +155,6 @@ export const formatters: Record<string, ActionFormatter> = {
     // Reports
     getReportTemplate: getReportTemplateFormatter,
     generatePDF: generatePDFFormatter,
-    generateMarkdown: generateMarkdownFormatter,
 
     // Bookmarks
     createBookmark: createBookmarkFormatter,

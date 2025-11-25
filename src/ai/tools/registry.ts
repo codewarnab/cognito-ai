@@ -157,7 +157,7 @@ export function getCloudToolsCount(): number {
   const allTools = getAllTools();
 
   // Workflow-only tools that should be excluded from normal mode
-  const workflowOnlyTools = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
+  const workflowOnlyTools = ['generatePDF', 'getReportTemplate'];
 
   // Count extension tools (excluding workflow-only and disabled tools)
   const extensionToolCount = BASIC_TOOLS.filter(

@@ -77,7 +77,6 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'getYouTubeTranscript',
 
   // Report Generation (workflow-specific, may be filtered in certain modes)
-  'generateMarkdown',
   'generatePDF',
   'getReportTemplate',
 

@@ -61,7 +61,6 @@ export const researchWorkflow: WorkflowDefinition = {
 
       // Report generation
       'getReportTemplate',
-      'generateMarkdown',
       'generatePDF',
    ],
 
@@ -85,7 +84,7 @@ AVAILABLE TOOLS (FULL ACCESS FOR RESEARCH):
 - Interaction: clickByText, typeInField, pressKey, scrollPage
 - Memory: saveMemory, getMemory, listMemories
 - Tab Management: applyTabGroups, organizeTabsByContext
-- Report Generation: getReportTemplate, generateMarkdown, generatePDF
+- Report Generation: getReportTemplate, generatePDF
 
 TOOL USAGE PLAYBOOK FOR RESEARCH:
 
@@ -169,7 +168,7 @@ After completing research, present a brief summary (2-3 sentences) then auto-gen
 - DO NOT use emojis in the PDF/Markdown report content
 - DO NOT use special Unicode characters or symbols
 - Use plain text only: letters, numbers, basic punctuation (.,!?-:)
-- Emojis are OK in chat messages, but NOT in the report content passed to generatePDF/generateMarkdown
+- Emojis are OK in chat messages, but NOT in the report content passed to generatePDF
 
 FULL REPORT TEMPLATE (for PDF/Markdown generation):
 
@@ -292,7 +291,7 @@ POST-RESEARCH INTERACTION:
 1. **Show brief summary** (2-3 sentences only)
 2. **Generate PDF** → Use generatePDF with full report content (displays as interactive attachment with Open/Download buttons)
 3. **Ask about Markdown** → "Would you also like a Markdown version?"
-4. **If user wants Markdown** → Generate with generateMarkdown
+
 5. **Mark complete** → Add [WORKFLOW_COMPLETE] only after user responds
 
 REPORT GENERATION:
