@@ -21,7 +21,7 @@ export interface ToolSetup {
 /**
  * Workflow-only tools (only available in workflow mode)
  */
-const WORKFLOW_ONLY_TOOLS = ['generateMarkdown', 'generatePDF', 'getReportTemplate'];
+const WORKFLOW_ONLY_TOOLS = ['generatePDF', 'getReportTemplate'];
 
 /**
  * Setup tools for local mode

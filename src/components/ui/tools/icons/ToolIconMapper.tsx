@@ -139,7 +139,6 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     // Report tools
     getReportTemplate: BookTextIcon,
     generatePDF: BookTextIcon,
-    generateMarkdown: BookTextIcon,
 
     // DOM tools
     analyzeDom: ExpandIcon,

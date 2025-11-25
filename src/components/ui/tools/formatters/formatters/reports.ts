@@ -57,26 +57,3 @@ export const generatePDFFormatter: ActionFormatter = ({ state, input, output }) 
         description: filename ? truncateText(filename, 40) : undefined
     };
 };
-
-export const generateMarkdownFormatter: ActionFormatter = ({ state, input, output }) => {
-    const filename = output?.filename || input?.filename;
-    const size = output?.size;
-    const formattedSize = size ? `${Math.round(size / 1024)}KB` : '';
-
-    if (state === 'loading') {
-        return {
-            action: 'Generating Markdown',
-            description: filename ? truncateText(filename, 40) : undefined
-        };
-    }
-    if (state === 'success') {
-        return {
-            action: 'Markdown Downloaded',
-            description: filename ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''}` : undefined
-        };
-    }
-    return {
-        action: 'Markdown generation failed',
-        description: filename ? truncateText(filename, 40) : undefined
-    };
-};
