@@ -16,6 +16,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     readPageContent: 'Extract page text content',
     extractText: 'Extract text from elements',
     findSearchBar: 'Locate search inputs on page',
+    analyzeDom: 'Analyze DOM structure and interactive elements',
 
     // Interaction
     typeInField: 'Type text into input fields',
@@ -23,6 +24,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     pressKey: 'Simulate keyboard input',
     focusElement: 'Focus on specific elements',
     scrollTo: 'Scroll to page elements',
+    executeScript: 'Execute custom JavaScript on page',
 
     // Search & History
     chromeSearch: 'Search using Chrome search',
@@ -59,11 +61,13 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
  * Tool categories for organization
  */
 export const TOOL_CATEGORIES: Record<string, string[]> = {
-    'Navigation': ['navigateTo', 'switchTabs', 'getActiveTab', 'getAllTabs', 'applyTabGroups', 'ungroupTabs', 'organizeTabsByContext'],
-    'Content': ['takeScreenshot', 'readPageContent', 'extractText', 'findSearchBar'],
-    'Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo'],
-    'Search & History': ['chromeSearch', 'getSearchResults', 'openSearchResult', 'searchHistory', 'getUrlVisits'],
-    'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'createReminder', 'listReminders', 'cancelReminder'],
+    'Tabs & Navigation': ['navigateTo', 'switchTabs', 'getActiveTab', 'getAllTabs', 'applyTabGroups', 'ungroupTabs', 'organizeTabsByContext'],
+    'Page Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo', 'findSearchBar', 'executeScript'],
+    'Page Content': ['takeScreenshot', 'readPageContent', 'extractText', 'analyzeDom'],
+    'Search': ['chromeSearch', 'getSearchResults', 'openSearchResult'],
+    'History': ['searchHistory', 'getUrlVisits'],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
-    'Other': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate']
+    'Memory': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory'],
+    'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
+    'Utilities': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate']
 };

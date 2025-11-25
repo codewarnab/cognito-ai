@@ -19,6 +19,10 @@ import type { YouTubeVideoInfo } from '../../../../hooks/useYouTubeVideoDetectio
 import { HIDE_LOCAL_MODE } from '@/constants';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { createLogger } from '~logger';
+import { ToolsModal } from './ToolsModal';
+import { Wrench } from 'lucide-react';
+import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
+import { getEnabledToolsOverride } from '~utils/settingsStorage';
 
 const log = createLogger('Composer', 'AI_CHAT');
 
@@ -124,7 +128,40 @@ export const Composer: React.FC<ComposerProps> = ({
     const plusIconRef = useRef<PlusIconHandle>(null);
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
+    const [showToolsModal, setShowToolsModal] = useState(false);
+    const [enabledToolsCount, setEnabledToolsCount] = useState(0);
+    const totalToolsCount = DEFAULT_ENABLED_TOOLS.length;
     const isLocalMode = modelState.mode === 'local';
+
+    useEffect(() => {
+        const loadToolsCount = async () => {
+            try {
+                const override = await getEnabledToolsOverride();
+                if (override && Array.isArray(override)) {
+                    setEnabledToolsCount(override.length);
+                } else {
+                    const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
+                    const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
+                    setEnabledToolsCount(count);
+                }
+            } catch (err) {
+                const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
+                const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
+                setEnabledToolsCount(count);
+            }
+        };
+        loadToolsCount();
+
+        const handleStorageChange = (changes: any, areaName: string) => {
+            if (areaName === 'local' && changes.userSettings) {
+                loadToolsCount();
+            }
+        };
+        chrome.storage.onChanged.addListener(handleStorageChange);
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+        };
+    }, []);
 
     // Hide voice-mode-fab when attachment dropdown is open or when there are attachments
     useEffect(() => {
@@ -236,7 +273,6 @@ export const Composer: React.FC<ComposerProps> = ({
                 <div className="tab-attachments-container">
                     <TabAttachment
                         tabs={tabAttachments}
-                        onRemove={handleRemoveTabAttachment}
                         onRemoveAll={() => {
                             tabAttachments.forEach(tab => handleRemoveTabAttachment(tab.id));
                         }}
@@ -307,7 +343,7 @@ export const Composer: React.FC<ComposerProps> = ({
             {/* Bottom section with options (left) and buttons (right) */}
             <div className="copilot-composer-bottom">
                 {/* Mode Selector - Bottom Left */}
-                <div className="copilot-composer-left">
+                <div className="copilot-composer-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {!HIDE_LOCAL_MODE && (
                         <ModeSelector
                             modelState={modelState}
@@ -317,6 +353,25 @@ export const Composer: React.FC<ComposerProps> = ({
                             onError={onError}
                         />
                     )}
+
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            type="button"
+                            className={`composer-tools-button ${activeWorkflow ? 'disabled' : ''}`}
+                            onClick={() => !activeWorkflow && setShowToolsModal(!showToolsModal)}
+                            disabled={!!activeWorkflow}
+                            title={activeWorkflow ? "Tools are managed by the active workflow" : "Manage enabled tools"}
+                        >
+                            <Wrench size={14} />
+                            <span>{enabledToolsCount}/{totalToolsCount}</span>
+                        </button>
+
+                        {/* Tools Popover */}
+                        <ToolsModal
+                            isOpen={showToolsModal}
+                            onClose={() => setShowToolsModal(false)}
+                        />
+                    </div>
                 </div>
 
                 {/* Action Buttons - Bottom Right */}

@@ -54,6 +54,21 @@ export const EnabledToolsSettings: React.FC = () => {
         });
     };
 
+    const handleToggleCategoryTools = (e: React.MouseEvent, tools: string[]) => {
+        e.stopPropagation();
+        const allEnabled = tools.every(t => enabledMap[t] ?? true);
+        const newState = !allEnabled;
+
+        setEnabledMap(prev => {
+            const next = { ...prev };
+            tools.forEach(t => {
+                next[t] = newState;
+            });
+            void setEnabledToolsOverride(Object.values(next).every(v => v) ? undefined : Object.entries(next).filter(([, v]) => v).map(([k]) => k));
+            return next;
+        });
+    };
+
     const selectedList = useMemo(() => {
         return Object.entries(enabledMap)
             .filter(([, v]) => v)
@@ -171,6 +186,24 @@ export const EnabledToolsSettings: React.FC = () => {
                                             ({enabledCount}/{totalCount})
                                         </span>
                                     </div>
+                                    {isExpanded && (
+                                        <div
+                                            onClick={(e) => handleToggleCategoryTools(e, tools)}
+                                            style={{
+                                                fontSize: '10px',
+                                                padding: '2px 8px',
+                                                borderRadius: '10px',
+                                                backgroundColor: enabledCount === totalCount ? 'var(--bg-tertiary)' : 'var(--button-primary-bg)',
+                                                color: enabledCount === totalCount ? 'var(--text-secondary)' : 'white',
+                                                border: '1px solid var(--border-color)',
+                                                fontWeight: 500
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = enabledCount === totalCount ? 'var(--bg-quaternary)' : 'var(--button-primary-hover)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = enabledCount === totalCount ? 'var(--bg-tertiary)' : 'var(--button-primary-bg)'}
+                                        >
+                                            {enabledCount === totalCount ? 'Disable All' : 'Enable All'}
+                                        </div>
+                                    )}
                                 </button>
 
                                 {isExpanded && (

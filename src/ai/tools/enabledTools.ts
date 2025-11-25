@@ -44,6 +44,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'readPageContent',
   'extractText',
   'findSearchBar',
+  'analyzeDom',
 
   // Interaction Tools
   'typeInField',
@@ -51,6 +52,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'pressKey',
   'focusElement',
   'scrollTo',
+  'executeScript',
 
   // Search Functionality
   'chromeSearch',
