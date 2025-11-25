@@ -1,44 +1,38 @@
 /**
- * Transcript Fetching with Graceful Degradation
+ * Transcript Fetching (Transcript-Only Approach)
  * 
  * This module fetches YouTube video transcripts from the transcript API.
- * If transcript is unavailable (null/empty), it gracefully degrades to
- * video-based analysis using the existing youtubeAgentTool.
+ * If transcript is unavailable, it returns an error message instead of
+ * falling back to video analysis (per Phase 3 decision - transcript only).
  * 
  * API Response Contract:
  * - Endpoint: POST TRANSCRIPT_API_URL with { url: youtubeUrl }
  * - Response: { duration: number | null, title: string | null, transcript: string | null }
  * - All fields can be null - must handle safely with fallbacks
- * 
- * Graceful Degradation:
- * - If transcript is null/empty: Use video-based analysis as fallback
- * - If API fails: Use video-based analysis as fallback
- * - Video analysis produces transcript-like text from existing analyzeYouTubeVideo
  */
 
 import { TRANSCRIPT_API_URL } from "@/constants";
 import { createLogger } from '~logger';
-import { executeYouTubeAnalysis } from "../youtube/youtubeAgentTool";
 import type { TranscriptEntry } from "./transcriptCache";
 
 const log = createLogger("TranscriptFetch");
 
 /**
- * Fetch transcript from API with graceful degradation to video analysis
+ * Fetch transcript from API (transcript-only, no video analysis fallback)
  * 
  * Process:
  * 1. Call transcript API with video URL
  * 2. If transcript available: Return it with metadata
- * 3. If transcript null/empty: Degrade to video analysis
- * 4. If API fails: Degrade to video analysis
+ * 3. If transcript null/empty: Return error entry
+ * 4. If API fails: Return error entry
  * 
  * Handles null values:
  * - title: Falls back to "Untitled Video"
  * - duration: Left as undefined if null
- * - transcript: Degrades to video analysis if null/empty
+ * - transcript: Returns error if null/empty (no fallback)
  * 
  * @param videoUrl - YouTube video URL
- * @returns TranscriptEntry with transcript (from API or video analysis)
+ * @returns TranscriptEntry with transcript or error message
  */
 export async function fetchTranscriptDirect(
     videoUrl: string
@@ -55,26 +49,26 @@ export async function fetchTranscriptDirect(
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
             log.warn(
-                `⚠️ Transcript API error ${res.status}, degrading to video analysis`,
+                `⚠️ Transcript API error ${res.status}`,
                 data
             );
-            return await degradeToVideoAnalysis(videoUrl);
+            return createErrorEntry(videoUrl, `Transcript API error: ${res.status}`);
         }
 
         const data = await res.json();
 
         // Validate response structure
         if (!data || typeof data !== 'object') {
-            log.warn("Invalid API response structure, degrading to video analysis", { data });
-            return await degradeToVideoAnalysis(videoUrl);
+            log.warn("Invalid API response structure", { data });
+            return createErrorEntry(videoUrl, "Invalid API response structure");
         }
 
-        // Handle null/empty transcript - degrade to video analysis
+        // Handle null/empty transcript - return error (no fallback)
         if (!data.transcript || data.transcript.trim().length === 0) {
             log.info(
-                "ℹ️ No transcript returned from API, degrading to video analysis"
+                "ℹ️ No transcript returned from API"
             );
-            return await degradeToVideoAnalysis(videoUrl);
+            return createErrorEntry(videoUrl, "No transcript available for this video. The video may not have captions enabled.");
         }
 
         // API returns duration in minutes (can be null)
@@ -100,69 +94,30 @@ export async function fetchTranscriptDirect(
         return entry;
     } catch (error) {
         log.error(
-            "❌ Transcript API request failed, degrading to video analysis",
+            "❌ Transcript API request failed",
             error
         );
-        return await degradeToVideoAnalysis(videoUrl);
+        return createErrorEntry(videoUrl, `Failed to fetch transcript: ${error instanceof Error ? error.message : String(error)}`);
     }
 }
 
 /**
- * Degrade to video-based analysis when transcript is unavailable
- * 
- * Uses existing youtubeAgentTool's analyzeYouTubeVideo function with a
- * comprehensive question to get detailed transcript-like text.
- * 
- * This ensures the workflow continues even when transcripts are unavailable
- * (e.g., videos without captions, private videos, API failures).
+ * Create an error entry when transcript is unavailable
  * 
  * @param videoUrl - YouTube video URL
- * @returns TranscriptEntry with video analysis text as transcript
+ * @param errorMessage - Error message to include
+ * @returns TranscriptEntry with error message as transcript
  */
-async function degradeToVideoAnalysis(
-    videoUrl: string
-): Promise<TranscriptEntry> {
-    log.info("🎥 Using video-based analysis as fallback", { videoUrl });
+function createErrorEntry(videoUrl: string, errorMessage: string): TranscriptEntry {
+    log.info("⚠️ Creating error entry", { videoUrl, errorMessage });
 
-    // Call existing video analysis tool with comprehensive question
-    // This produces detailed text similar to a transcript
-    const question =
-        "Please provide a detailed, comprehensive overview of this video's content. Include all major topics discussed, key points made, main arguments, examples given, and important information covered. Be thorough and extract as much detail as possible from the video.";
-
-    try {
-        const result = await executeYouTubeAnalysis({
-            youtubeUrl: videoUrl,
-            question
-        });
-
-        if (!result.success || !result.answer || result.answer.trim().length === 0) {
-            throw new Error(result.error || "Video analysis produced no content");
-        }
-
-        log.info("✅ Video analysis completed as fallback", {
-            textLength: result.answer.length
-        });
-
-        return {
-            videoUrl,
-            videoId: extractVideoId(videoUrl),
-            title: "Video Analysis",
-            durationSeconds: undefined,
-            transcript: result.answer
-        };
-    } catch (error) {
-        log.error("❌ Video analysis fallback failed", error);
-
-        // Last resort: return error message as transcript
-        // This allows workflow to continue and provide feedback
-        return {
-            videoUrl,
-            videoId: extractVideoId(videoUrl),
-            title: "Unable to Analyze Video",
-            durationSeconds: undefined,
-            transcript: `Unable to analyze video content. Error: ${error instanceof Error ? error.message : String(error)}`
-        };
-    }
+    return {
+        videoUrl,
+        videoId: extractVideoId(videoUrl),
+        title: "Transcript Unavailable",
+        durationSeconds: undefined,
+        transcript: `⚠️ ${errorMessage}`
+    };
 }
 
 /**

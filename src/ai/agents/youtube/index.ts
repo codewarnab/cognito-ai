@@ -1,15 +1,10 @@
 // YouTube agent implementation
-// Barrel export for YouTube agent
+// Barrel export for YouTube transcript tool
 
-export { youtubeAgentAsTool } from './youtubeAgent';
-
-export {
-    analyzeYouTubeVideoDeclaration,
-    executeYouTubeAnalysis
-} from './youtubeAgentTool';
+export { getYouTubeTranscript } from './youtubeTranscriptTool';
+export type { YouTubeTranscriptResult } from './youtubeTranscriptTool';
 
 // Export utilities
 export { fetchTranscript } from './utils/transcript';
-export { getVideoDuration, getVideoDescription } from './utils/videoMetadata';
+export { getVideoDuration, getVideoDescription, extractVideoId } from './utils/videoMetadata';
 export { formatDuration } from './utils/formatting';
-export { analyzeYouTubeVideo } from './utils/videoAnalysis';

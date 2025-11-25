@@ -8,6 +8,93 @@ import { createLogger } from '~logger';
 
 const log = createLogger('Tool-TakeScreenshot');
 
+// Quality presets for screenshot compression
+const QUALITY_PRESETS = {
+    low: { jpegQuality: 0.3, maxWidth: 800, maxHeight: 600 },
+    medium: { jpegQuality: 0.5, maxWidth: 1200, maxHeight: 900 },
+    high: { jpegQuality: 0.85, maxWidth: 1920, maxHeight: 1080 },
+} as const;
+
+type QualityLevel = keyof typeof QUALITY_PRESETS;
+
+/**
+ * Compresses a base64 PNG image to JPEG with optional resizing
+ * @param dataUrl - Original PNG data URL (data:image/png;base64,...)
+ * @param quality - Quality level: 'low', 'medium', or 'high'
+ * @returns Compressed JPEG data URL
+ */
+async function compressScreenshot(
+    dataUrl: string,
+    quality: QualityLevel
+): Promise<{ compressedDataUrl: string; originalSize: number; compressedSize: number }> {
+    const preset = QUALITY_PRESETS[quality];
+
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+
+        img.onload = () => {
+            try {
+                // Calculate new dimensions while maintaining aspect ratio
+                let { width, height } = img;
+                const aspectRatio = width / height;
+
+                if (width > preset.maxWidth) {
+                    width = preset.maxWidth;
+                    height = Math.round(width / aspectRatio);
+                }
+
+                if (height > preset.maxHeight) {
+                    height = preset.maxHeight;
+                    width = Math.round(height * aspectRatio);
+                }
+
+                // Create canvas and draw resized image
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Failed to get canvas 2d context'));
+                    return;
+                }
+
+                // Use better image smoothing for downscaling
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to JPEG with specified quality
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', preset.jpegQuality);
+
+                // Calculate sizes for logging
+                const originalSize = Math.round((dataUrl.length * 3) / 4); // Approximate base64 to bytes
+                const compressedSize = Math.round((compressedDataUrl.length * 3) / 4);
+
+                log.info('Screenshot compressed', {
+                    quality,
+                    originalDimensions: `${img.width}x${img.height}`,
+                    newDimensions: `${width}x${height}`,
+                    originalSizeKB: Math.round(originalSize / 1024),
+                    compressedSizeKB: Math.round(compressedSize / 1024),
+                    compressionRatio: `${Math.round((1 - compressedSize / originalSize) * 100)}%`
+                });
+
+                resolve({ compressedDataUrl, originalSize, compressedSize });
+            } catch (err) {
+                reject(err);
+            }
+        };
+
+        img.onerror = () => {
+            reject(new Error('Failed to load image for compression'));
+        };
+
+        img.src = dataUrl;
+    });
+}
+
 export function useScreenshotTool() {
     const { registerToolUI, unregisterToolUI } = useToolUI();
 
@@ -18,10 +105,17 @@ export function useScreenshotTool() {
             name: "takeScreenshot",
             description: `Capture a visual screenshot of the current viewport. Use this as the PRIMARY method to understand what's visible on a page - it's faster and more reliable than text extraction for initial page analysis.
 
+QUALITY PARAMETER - IMPORTANT:
+- "low" (PREFERRED): Use for navigation verification, checking if page loaded, quick overviews. Fastest AI processing.
+- "medium" (DEFAULT): Use for general page analysis, identifying elements, forms, layouts.
+- "high": ONLY use when you need to read small text, analyze fine visual details, or inspect precise UI elements(use it when you dont understand the visual details from low or medium ).
+
+⚠️ ALWAYS prefer "low" quality unless you specifically need to read text or see fine details. High quality screenshots slow down AI response significantly.
+
 WHEN TO USE:
 - First step when analyzing any new page (before readPageContent or extractText)
 - User asks "what's on this page?", "show me the page", "what do you see?"
-- Verifying page loaded correctly after navigateTo
+- Verifying page loaded correctly after navigateTo (use quality="low")
 - Checking visual layout, design, UI elements, forms, buttons
 - Identifying clickable elements before using clickByText
 - Debugging why interactions failed (see what's actually visible)
@@ -35,24 +129,30 @@ PRECONDITIONS:
 WORKFLOW:
 1. Verify tab is accessible and visible
 2. Capture current viewport as PNG image
-3. Return base64-encoded image for AI analysis
-4. Use visual info to decide next actions (click, type, read, etc.)
+3. Compress image based on quality setting for AI analysis
+4. Return high-quality image for display, compressed version for AI
+5. Use visual info to decide next actions (click, type, read, etc.)
 
 LIMITATIONS:
 - Only captures visible viewport (not full page scroll)
 - Cannot capture restricted browser pages (chrome://, etc.)
 - Requires tab to be in foreground and window visible
-- Image is base64-encoded (large data size)
 
-EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
+EXAMPLE: 
+- takeScreenshot(quality="low", reason="verify page loaded") - for navigation checks
+- takeScreenshot(quality="medium", reason="analyze page layout") - for general analysis  
+- takeScreenshot(quality="high", reason="read small text in footer") - only when needed`,
             parameters: z.object({
+                quality: z.enum(["low", "medium", "high"])
+                    .default("medium")
+                    .describe("Image quality for AI processing. Use 'low' for quick checks (PREFERRED - fastest), 'medium' for general analysis, 'high' ONLY for reading small text or fine details. Lower quality = faster AI response."),
                 reason: z.string()
                     .optional()
                     .describe("Optional brief reason for screenshot (for logging/debugging). Examples: 'analyze page layout', 'verify form fields', 'check search results'. Not required but helpful for context.")
             }),
-            execute: async ({ reason }) => {
+            execute: async ({ reason, quality = "medium" }) => {
                 try {
-                    log.info("TOOL CALL: takeScreenshot", { reason });
+                    log.info("TOOL CALL: takeScreenshot", { reason, quality });
 
                     // Step 1: Check permissions first
                     let hasPermission = false;
@@ -234,7 +334,27 @@ EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
                         };
                     }
 
-                    // Step 6: Get additional metadata
+                    // Step 6: Compress screenshot for AI processing
+                    let screenshotForAI = dataUrl;
+                    let compressionInfo: { originalSizeKB: number; compressedSizeKB: number; compressionRatio: string } | null = null;
+
+                    try {
+                        const { compressedDataUrl, originalSize, compressedSize } = await compressScreenshot(
+                            dataUrl,
+                            quality as QualityLevel
+                        );
+                        screenshotForAI = compressedDataUrl;
+                        compressionInfo = {
+                            originalSizeKB: Math.round(originalSize / 1024),
+                            compressedSizeKB: Math.round(compressedSize / 1024),
+                            compressionRatio: `${Math.round((1 - compressedSize / originalSize) * 100)}%`
+                        };
+                    } catch (compressionError) {
+                        log.warn('Failed to compress screenshot, using original', { error: (compressionError as Error).message });
+                        // Fall back to original image if compression fails
+                    }
+
+                    // Step 7: Get additional metadata
                     const viewport = {
                         width: tab.width || null,
                         height: tab.height || null
@@ -243,13 +363,19 @@ EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
                     log.info("✅ Screenshot captured successfully", {
                         url: tab.url,
                         title: tab.title,
-                        dataUrlLength: dataUrl.length,
+                        quality,
+                        originalSizeKB: compressionInfo?.originalSizeKB,
+                        compressedSizeKB: compressionInfo?.compressedSizeKB,
                         viewport
                     });
 
                     return {
                         success: true,
-                        screenshot: dataUrl, // data:image/png;base64,...
+                        screenshot: dataUrl, // Full quality PNG for UI display
+                        screenshotForAI: screenshotForAI, // Compressed JPEG for AI analysis
+                        quality,
+                        compressionApplied: compressionInfo !== null,
+                        compressionInfo,
                         url: tab.url,
                         title: tab.title,
                         timestamp: new Date().toISOString(),
@@ -257,7 +383,7 @@ EXAMPLE: takeScreenshot(reason="verify search results loaded")`,
                         tabId: tab.id,
                         windowId: tab.windowId,
                         tabStatus: tab.status,
-                        description: `Screenshot of ${tab.title || tab.url}`,
+                        description: `Screenshot of ${tab.title || tab.url} (quality: ${quality})`,
                         reason: reason || undefined
                     };
 

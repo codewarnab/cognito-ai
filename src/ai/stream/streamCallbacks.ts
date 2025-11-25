@@ -74,7 +74,7 @@ export function createOnStepFinishCallback(writer: any) {
                 calls: toolCalls.map((call: any) => ({
                     id: call.toolCallId,
                     name: call.toolName,
-                    isAgentTool: call.toolName === 'analyzeYouTubeVideo',
+                    isAgentTool: call.toolName === 'getYouTubeTranscript',
                 })),
             });
         }

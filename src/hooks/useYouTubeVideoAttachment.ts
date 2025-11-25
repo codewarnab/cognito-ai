@@ -223,7 +223,7 @@ Title: ${transcriptEntry.title || youtubeVideoInfo.title}
 Video URL: ${transcriptEntry.videoUrl}
 Duration: ${transcriptEntry.durationSeconds ? `${Math.floor(transcriptEntry.durationSeconds / 60)}m ${transcriptEntry.durationSeconds % 60}s` : 'Unknown'}
 
-IMPORTANT: This is a YouTube video transcript. Do NOT use the analyzeYouTubeVideo tool to fetch the transcript again. 
+IMPORTANT: This is a YouTube video transcript. Do NOT use the getYouTubeTranscript tool to fetch the transcript again. 
 Answer questions based ONLY on this transcript content provided below.
 
 --- TRANSCRIPT START ---
