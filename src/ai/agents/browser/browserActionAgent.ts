@@ -117,13 +117,12 @@ async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSi
                 // - MCP tools (start with 'mcp_')
                 // - This agent itself ('executeBrowserAction')
                 // - YouTube agent ('youtubeAgent')
-                // - Memory tools (saveMemory, getMemory, listMemories, deleteMemory, suggestSaveMemory)
+                // - Memory tools (saveMemory, getMemory, listMemories, deleteMemory)
                 const isMemoryTool = [
                     'saveMemory',
                     'getMemory',
                     'listMemories',
-                    'deleteMemory',
-                    'suggestSaveMemory'
+                    'deleteMemory'
                 ].includes(name);
 
                 if (!name.startsWith('mcp_') &&

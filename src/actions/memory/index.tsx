@@ -8,7 +8,6 @@ import { useSaveMemory } from "./saveMemory";
 import { useGetMemory } from "./getMemory";
 import { useListMemories } from "./listMemories";
 import { useDeleteMemory } from "./deleteMemory";
-import { useSuggestSaveMemory } from "./suggestSaveMemory";
 
 const log = createLogger("Actions-Memory");
 
@@ -17,7 +16,6 @@ export function registerMemoryActions() {
     useGetMemory();
     useListMemories();
     useDeleteMemory();
-    useSuggestSaveMemory();
 
     log.debug("Memory actions registered");
 }
@@ -28,7 +26,6 @@ export {
     useGetMemory,
     useListMemories,
     useDeleteMemory,
-    useSuggestSaveMemory,
 };
 
 

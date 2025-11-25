@@ -36,7 +36,6 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     getMemory: 'Retrieve saved memories',
     listMemories: 'List all saved memories',
     deleteMemory: 'Delete saved memories',
-    suggestSaveMemory: 'Suggest saving information',
     createReminder: 'Create time-based reminders',
     listReminders: 'List active reminders',
     cancelReminder: 'Cancel existing reminders',
@@ -64,7 +63,7 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Content': ['takeScreenshot', 'readPageContent', 'extractText', 'findSearchBar'],
     'Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo'],
     'Search & History': ['chromeSearch', 'getSearchResults', 'openSearchResult', 'searchHistory', 'getUrlVisits'],
-    'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'suggestSaveMemory', 'createReminder', 'listReminders', 'cancelReminder'],
+    'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'createReminder', 'listReminders', 'cancelReminder'],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Other': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate']
 };
