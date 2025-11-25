@@ -38,7 +38,7 @@ export class McpSSEClient {
     private onStatusChange: (status: McpServerStatus) => void;
     private onMessage: (message: McpMessage) => void;
     private currentStatus: McpServerStatus;
-    private config: Required<SSEClientConfig>;
+    private config: Required<Omit<SSEClientConfig, 'customHeaders'>> & { customHeaders?: Record<string, string> };
 
     // Initialization tracking
     private initialized = false;
@@ -103,6 +103,7 @@ export class McpSSEClient {
             serverId: this.serverId,
             sseUrl: this.sseUrl,
             accessToken: this.accessToken,
+            customHeaders: this.config.customHeaders,
             messageHandler: this.messageHandler,
             errorHandler: this.errorHandler,
             setSessionId: (id) => { this.sessionId = id; },

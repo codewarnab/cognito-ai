@@ -6,6 +6,7 @@ import { ServerUrlInput } from "./add-custom/ServerUrlInput"
 import { DescriptionInput } from "./add-custom/DescriptionInput"
 import { ImageUpload } from "./add-custom/ImageUpload"
 import { AuthToggle } from "./add-custom/AuthToggle"
+import { HeadersInput, type KeyValuePair } from "./add-custom/HeadersInput"
 import { FormActions } from "./add-custom/FormActions"
 import { generateServerId } from "./add-custom/utils"
 import { MCP_SERVERS } from "@/constants/mcpServers"
@@ -35,6 +36,15 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
   const [description, setDescription] = useState("")
   const [imageData, setImageData] = useState("")
   const [requiresAuth, setRequiresAuth] = useState(false)
+  const [headers, setHeaders] = useState<KeyValuePair[]>([])
+
+  // Clear headers when OAuth is enabled (they're managed automatically)
+  const handleAuthChange = (checked: boolean) => {
+    setRequiresAuth(checked)
+    if (checked) {
+      setHeaders([]) // Clear custom headers when enabling OAuth
+    }
+  }
 
   // Create a set of normalized official MCP URLs for quick lookup
   const officialMcpUrls = useMemo(() => {
@@ -88,6 +98,7 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
         description: description,
         image: imageData || undefined,
         requiresAuthentication: requiresAuth,
+        headers: requiresAuth ? undefined : headers.length > 0 ? headers : undefined,
         initialEnabled: false,
         initialAuthenticated: false,
         isCustom: true
@@ -128,7 +139,12 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
               onImageChange={setImageData}
               onError={() => { }}
             />
-            <AuthToggle checked={requiresAuth} onChange={setRequiresAuth} />
+            <AuthToggle checked={requiresAuth} onChange={handleAuthChange} />
+            <HeadersInput
+              headers={headers}
+              onChange={setHeaders}
+              disabled={requiresAuth}
+            />
             <FormActions
               onCancel={onBack}
               isSubmitDisabled={description.length > MAX_DESCRIPTION_LENGTH || !!urlError}

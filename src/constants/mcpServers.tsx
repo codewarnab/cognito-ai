@@ -21,6 +21,11 @@ import livekitImage from '@assets/brands/integrations/livekit.png';
 
 // http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
 //https://discord.com/channels/1312302100125843476/1336755085841137808 find  more relevent mcps here and add them here 
+export interface KeyValuePair {
+    key: string
+    value: string
+}
+
 export interface ServerConfig {
     id: string
     name: string
@@ -32,6 +37,10 @@ export interface ServerConfig {
     requiresAuthentication: boolean
     paid?: boolean
     isCustom?: boolean
+    /** Custom HTTP headers for non-OAuth servers */
+    headers?: KeyValuePair[]
+    /** Base64 image data for custom server icons */
+    imageData?: string
 
     // OAuth configuration (optional - will use discovery if not provided)
     oauth?: {
