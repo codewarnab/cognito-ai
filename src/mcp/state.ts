@@ -115,7 +115,8 @@ export async function loadCustomServersCache(): Promise<void> {
                 initialEnabled: server.initialEnabled ?? false,
                 initialAuthenticated: server.initialAuthenticated ?? false,
                 isCustom: true,
-                imageData: server.image // Store base64 image data
+                imageData: server.image, // Store base64 image data
+                headers: server.headers // Custom HTTP headers for non-OAuth servers
             }));
             log.info(`Loaded ${customServersCache.length} custom MCP servers from storage`);
         } else {

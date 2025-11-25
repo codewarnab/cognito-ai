@@ -88,6 +88,18 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
             mcpLog.info(`[${serverId}] Server does not require authentication, proceeding without token`);
         }
 
+        // Convert KeyValuePair[] headers to Record<string, string> for the client
+        let customHeaders: Record<string, string> | undefined;
+        if (serverConfig.headers && serverConfig.headers.length > 0) {
+            customHeaders = serverConfig.headers.reduce((acc, header) => {
+                if (header.key) {
+                    acc[header.key] = header.value || '';
+                }
+                return acc;
+            }, {} as Record<string, string>);
+            mcpLog.info(`[${serverId}] Using ${serverConfig.headers.length} custom headers`);
+        }
+
         // Create SSE client with error handling callbacks
         state.client = new McpSSEClient(
             serverId,
@@ -116,6 +128,7 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
                 reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER,
                 maxReconnectAttempts: 5,
                 requestTimeout: 30000,
+                customHeaders, // Pass custom headers for non-OAuth servers
             }
         );
 

@@ -15,7 +15,7 @@ const log = createLogger('MCP-SSE', 'MCP_SSE');
 export interface RequestManagerDeps {
     serverId: string;
     accessToken: string;
-    config: Required<SSEClientConfig>;
+    config: Required<Omit<SSEClientConfig, 'customHeaders'>> & { customHeaders?: Record<string, string> };
     messageHandler: MessageHandler;
     errorHandler: ErrorHandler;
     getSessionId: () => string | null;
@@ -44,13 +44,18 @@ export class RequestManager {
             params
         };
 
-        // Build headers
+        // Build headers - include custom headers if provided
         const headers: Record<string, string> = {
-            'Authorization': `Bearer ${this.deps.accessToken}`,
             'Content-Type': 'application/json',
             'Accept': 'application/json, text/event-stream',
-            'MCP-Protocol-Version': '2025-06-18'
+            'MCP-Protocol-Version': '2025-06-18',
+            ...this.deps.config.customHeaders, // Custom headers (may include auth)
         };
+
+        // Add Authorization header if access token is provided (OAuth flow)
+        if (this.deps.accessToken) {
+            headers['Authorization'] = `Bearer ${this.deps.accessToken}`;
+        }
 
         // Include session ID if available
         const sessionId = this.deps.getSessionId();
@@ -112,13 +117,18 @@ export class RequestManager {
                 }
             }, timeoutMs);
 
-            // Build headers
+            // Build headers - include custom headers if provided
             const headers: Record<string, string> = {
-                'Authorization': `Bearer ${this.deps.accessToken}`,
                 'Content-Type': 'application/json',
                 'Accept': 'application/json, text/event-stream',
-                'MCP-Protocol-Version': '2025-06-18'
+                'MCP-Protocol-Version': '2025-06-18',
+                ...this.deps.config.customHeaders, // Custom headers (may include auth)
             };
+
+            // Add Authorization header if access token is provided (OAuth flow)
+            if (this.deps.accessToken) {
+                headers['Authorization'] = `Bearer ${this.deps.accessToken}`;
+            }
 
             // Include session ID if available
             const isInitialize = method === 'initialize';

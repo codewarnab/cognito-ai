@@ -15,6 +15,7 @@ export interface TransportDetectorDeps {
     serverId: string;
     sseUrl: string;
     accessToken: string;
+    customHeaders?: Record<string, string>;
     messageHandler: MessageHandler;
     errorHandler: ErrorHandler;
     setSessionId: (sessionId: string | null) => void;
@@ -37,23 +38,36 @@ export class TransportDetector {
      */
     async detectAndConnect(messageId: number): Promise<Response> {
         log.info(`[${this.deps.serverId}] Connecting to SSE endpoint:`, this.deps.sseUrl);
-        log.info(`[${this.deps.serverId}] Using access token (first 20 chars):`, this.deps.accessToken.substring(0, 20) + '...');
+        if (this.deps.accessToken) {
+            log.info(`[${this.deps.serverId}] Using access token (first 20 chars):`, this.deps.accessToken.substring(0, 20) + '...');
+        }
+        if (this.deps.customHeaders) {
+            log.info(`[${this.deps.serverId}] Using custom headers:`, Object.keys(this.deps.customHeaders));
+        }
 
         // Try new Streamable HTTP transport first (POST with initialize request)
         // Fall back to old HTTP+SSE transport (GET to open SSE stream) if POST fails with 405
         let response: Response;
 
+        // Build base headers - include custom headers if provided
+        const baseHeaders: Record<string, string> = {
+            'Accept': 'text/event-stream, application/json',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'MCP-Protocol-Version': '2025-06-18',
+            ...this.deps.customHeaders, // Custom headers (may include auth)
+        };
+
+        // Add Authorization header if access token is provided (OAuth flow)
+        if (this.deps.accessToken) {
+            baseHeaders['Authorization'] = `Bearer ${this.deps.accessToken}`;
+        }
+
         // Attempt 1: Try new Streamable HTTP transport (POST with initialize)
         try {
             response = await fetch(this.deps.sseUrl, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.deps.accessToken}`,
-                    'Accept': 'text/event-stream, application/json',
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache',
-                    'MCP-Protocol-Version': '2025-06-18'
-                },
+                headers: baseHeaders,
                 body: JSON.stringify({
                     jsonrpc: '2.0',
                     id: messageId,
@@ -127,15 +141,23 @@ export class TransportDetector {
             if (error instanceof Error && error.message.includes('Method not allowed')) {
                 log.info(`[${this.deps.serverId}] Streamable HTTP not supported, trying HTTP+SSE:`, error);
 
+                // Build GET headers - include custom headers if provided
+                const getHeaders: Record<string, string> = {
+                    'Accept': 'text/event-stream',
+                    'Cache-Control': 'no-cache',
+                    'MCP-Protocol-Version': '2025-06-18',
+                    ...this.deps.customHeaders, // Custom headers (may include auth)
+                };
+
+                // Add Authorization header if access token is provided (OAuth flow)
+                if (this.deps.accessToken) {
+                    getHeaders['Authorization'] = `Bearer ${this.deps.accessToken}`;
+                }
+
                 // Attempt 2: Fall back to old HTTP+SSE transport (GET)
                 response = await fetch(this.deps.sseUrl, {
                     method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${this.deps.accessToken}`,
-                        'Accept': 'text/event-stream',
-                        'Cache-Control': 'no-cache',
-                        'MCP-Protocol-Version': '2024-11-05'
-                    }
+                    headers: getHeaders
                 });
 
                 this.transportType = 'http-sse';
