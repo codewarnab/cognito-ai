@@ -13,6 +13,7 @@ interface ChatHeaderProps {
     onFeaturesClick?: () => void;
     onProviderSetupClick?: () => void;
     isLoading?: boolean;
+    needsProviderSetup?: boolean;
     // onApiKeySaved?: () => void;
 }
 
@@ -27,6 +28,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onFeaturesClick,
     onProviderSetupClick,
     isLoading,
+    needsProviderSetup,
 }) => {
     const [showHeaderMenu, setShowHeaderMenu] = useState(false);
     const [showStreamingWarning, setShowStreamingWarning] = useState(false);
@@ -166,7 +168,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     Features
                                 </button>
                                 <button
-                                    className="copilot-header-menu-item"
+                                    className={`copilot-header-menu-item ${needsProviderSetup ? 'copilot-header-menu-item--glow' : ''}`}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onProviderSetupClick?.();

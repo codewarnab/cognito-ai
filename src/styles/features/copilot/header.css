@@ -82,6 +82,17 @@
     background: rgba(255, 255, 255, 0.08);
 }
 
+/* Subtle text glow for AI Provider Setup when not configured */
+.copilot-header-menu-item--glow {
+    color: rgba(147, 197, 253, 1);
+    text-shadow: 0 0 8px rgba(147, 197, 253, 0.6);
+}
+
+.copilot-header-menu-item--glow:hover {
+    color: rgba(191, 219, 254, 1);
+    text-shadow: 0 0 10px rgba(147, 197, 253, 0.8);
+}
+
 .copilot-avatar {
     width: 32px;
     height: 32px;

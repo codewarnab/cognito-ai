@@ -106,6 +106,24 @@
     padding: 0 20px 20px;
 }
 
+/* Modern minimal scrollbar */
+.thread-sidepanel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.thread-sidepanel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.thread-sidepanel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.thread-sidepanel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
 .thread-sidepanel-empty {
     display: flex;
     flex-direction: column;

@@ -9,7 +9,7 @@
 
 import { createLogger } from '~logger';
 import { getStoredTokens, getStoredClientCredentials } from '../mcp/oauth';
-import { getServerState } from '../mcp/state';
+import { getServerState, loadCustomServersCache, getCustomServers } from '../mcp/state';
 import { MCP_SERVERS } from '@/constants/mcpServers';
 import { ensureTokenValidity, refreshServerToken } from '../mcp/authHelpers';
 import { updateKeepAliveState } from './keepAlive';
@@ -63,7 +63,15 @@ async function initializeServerStatus(serverId: string): Promise<void> {
 export async function initializeAllServers(): Promise<void> {
     log.info('Initializing all MCP servers');
 
-    for (const serverConfig of MCP_SERVERS) {
+    // Load custom servers cache first
+    await loadCustomServersCache();
+    const customServers = getCustomServers();
+    log.info(`Found ${customServers.length} custom MCP servers`);
+
+    // Combine official and custom servers
+    const allServers = [...MCP_SERVERS, ...customServers];
+
+    for (const serverConfig of allServers) {
         const serverId = serverConfig.id;
 
         try {

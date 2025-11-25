@@ -9,14 +9,14 @@ import { Notion } from "@assets/brands/integrations/Notion"
 import { PayPal } from "@assets/brands/integrations/PayPal"
 import { Sentry } from "@assets/brands/integrations/Sentry"
 import { Supabase } from "@assets/brands/integrations/Supabase"
-import { Supermemory } from "@assets/brands/integrations/Supermemory"
+// import { Supermemory } from "@assets/brands/integrations/Supermemory"
 import { Webflow } from "@assets/brands/integrations/Webflow"
-// import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
-// import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
-// import context7Image from '@assets/brands/integrations/context7.png';
-// import livekitImage from '@assets/brands/integrations/livekit.png';
+import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
+import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
+import context7Image from '@assets/brands/integrations/context7.png';
+import livekitImage from '@assets/brands/integrations/livekit.png';
 
-import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
+// import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
 
 
 // http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
@@ -31,6 +31,7 @@ export interface ServerConfig {
     description: string
     requiresAuthentication: boolean
     paid?: boolean
+    isCustom?: boolean
 
     // OAuth configuration (optional - will use discovery if not provided)
     oauth?: {
@@ -46,20 +47,20 @@ export interface ServerConfig {
 }
 
 export const MCP_SERVERS: ServerConfig[] = [
-    { // working - DCR supported
-        id: "supermemory",
-        name: "Supermemory",
-        icon: <Supermemory />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://api.supermemory.ai/mcp",
-        description: "Universal memory system that persists context across conversations. Automatically stores and retrieves important information with global tagging.",
-        requiresAuthentication: true,
-        oauth: {
-            // DCR supported - will use OAuth discovery
-            scopes: [] // Use default scopes from discovery
-        }
-    },
+    // { // working - DCR not  supported without mcp-remote 
+    //     id: "supermemory",
+    //     name: "Supermemory",
+    //     icon: <Supermemory />,
+    //     initialEnabled: false,
+    //     initialAuthenticated: false,
+    //     url: "https://api.supermemory.ai/mcp",
+    //     description: "Universal memory system that persists context across conversations. Automatically stores and retrieves important information with global tagging.",
+    //     requiresAuthentication: true,
+    //     oauth: {
+    //         // DCR supported - will use OAuth discovery
+    //         scopes: [] // Use default scopes from discovery
+    //     }
+    // },
     {   // working 
         id: "ahrefs",
         name: "Ahrefs",
@@ -173,7 +174,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     {
         id: "context7",
         name: "Context7",
-        icon: <img src={context7} alt="Context7" style={{ width: 24, height: 24 }} />,
+        icon: <img src={context7Image} alt="Context7" style={{ width: 24, height: 24 }} />,
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.context7.com/mcp",
@@ -241,7 +242,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     {
         id: "deepwiki",
         name: "DeepWiki",
-        icon: <img src={deepwiki} alt="DeepWiki" style={{ width: 24, height: 24 }} />,
+        icon: <img src={deepwikiImage} alt="DeepWiki" style={{ width: 24, height: 24 }} />,
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.deepwiki.com/mcp",
@@ -251,7 +252,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     {
         id: "coingecko",
         name: "CoinGecko",
-        icon: <img src={coingecko} alt="CoinGecko" style={{ width: 24, height: 24 }} />,
+        icon: <img src={coingeckoImage} alt="CoinGecko" style={{ width: 24, height: 24 }} />,
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://mcp.api.coingecko.com/sse",
@@ -302,7 +303,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     {
         id: "livekit-docs",
         name: "LiveKit Docs",
-        icon: <img src={livekit} alt="LiveKit" style={{ width: 24, height: 24 }} />,
+        icon: <img src={livekitImage} alt="LiveKit" style={{ width: 24, height: 24 }} />,
         initialEnabled: false,
         initialAuthenticated: false,
         url: "https://docs.livekit.io/mcp",

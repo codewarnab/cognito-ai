@@ -170,6 +170,34 @@
     /* Subtract header height (65px) + search bar height (80px) */
 }
 
+/* Form content (for Add Custom MCP page without search bar) */
+.mcp-form-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    background: var(--bg-primary, #0a0e1a);
+    min-height: 0;
+}
+
+/* Modern minimal scrollbar */
+.mcp-form-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mcp-form-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mcp-form-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.mcp-form-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
 /* Server List */
 .mcp-list {
     list-style: none;
@@ -234,12 +262,18 @@
     font-size: 16px;
     font-weight: 600;
     color: var(--text-primary, #ffffff);
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .mcp-card__name-container {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
 }
 
 .mcp-card__service-badge {
@@ -254,6 +288,28 @@
     letter-spacing: 0.5px;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.mcp-card__delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+    transition: all 0.2s ease;
+}
+
+.mcp-card__delete-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.mcp-card__delete-btn:active {
+    background: rgba(239, 68, 68, 0.25);
 }
 
 .mcp-card__footer {
@@ -620,7 +676,7 @@
     }
 }
 
-/* Scrollbar Styling */
+/* Modern minimal scrollbar */
 .mcp-content::-webkit-scrollbar {
     width: 6px;
 }
@@ -630,12 +686,12 @@
 }
 
 .mcp-content::-webkit-scrollbar-thumb {
-    background: #525252;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
 }
 
 .mcp-content::-webkit-scrollbar-thumb:hover {
-    background: #737373;
+    background: rgba(255, 255, 255, 0.25);
 }
 
 /* MCP Tools Management Panel */
