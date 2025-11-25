@@ -58,7 +58,6 @@ export const BASIC_TOOLS = [
   'getMemory',
   'listMemories',
   'deleteMemory',
-  'suggestSaveMemory',
 
   // Reminders
   'createReminder',

@@ -66,7 +66,6 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'getMemory',
   'listMemories',
   'deleteMemory',
-  'suggestSaveMemory',
 
   // Reminders
   'createReminder',

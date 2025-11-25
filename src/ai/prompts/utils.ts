@@ -273,9 +273,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
                 "  SUGGESTING SAVES - POST-TASK:",
                 "  - After completing tasks, if I discover useful info (emails, API keys, preferences, etc.), I should suggest saving",
-                "  - Use suggestSaveMemory({ key, value, category, reason }) to suggest",
-                "  - Then ASK: 'I found your email (user@example.com). Do you want me to remember this for future tasks?'",
-                "  - Wait for consent before calling saveMemory",
+                "  - ASK: 'I found your email (user@example.com). Do you want me to remember this for future tasks?'",
+                "  - Wait for consent before calling saveMemory directly, do not ask for consent when user asks to save",
 
                 "  DETECTION & PROACTIVE SUGGESTIONS:",
                 "  - When user shares personal info in conversation, I should notice and suggest saving:",
@@ -380,7 +379,6 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "getMemory - Retrieve a specific memory by key",
                 "listMemories - List all memories or filter by category (fact/behavior)",
                 "deleteMemory - Delete a memory by key",
-                "suggestSaveMemory - Suggest saving info after tasks (use to prompt user for consent)",
                 "EMAIL TOOLS:",
                 "navigateTo - Open any email service (Gmail, Outlook, Yahoo, iCloud, etc.)",
                 "typeInField - Compose emails by typing in email fields (To, Subject, Body)",

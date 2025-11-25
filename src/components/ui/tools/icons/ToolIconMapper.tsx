@@ -21,7 +21,6 @@ import { ChromeIcon } from '@assets/icons/chat/chrome';
 import { FoldersIcon } from '@assets/icons/chat/folder';
 import { HardDriveUploadIcon } from '@assets/icons/chat/retrieve-memory';
 import { DeleteIcon } from '@assets/icons/chat/delete-memory';
-import { WaypointsIcon } from '@assets/icons/chat/suggest-memery';
 import { HistoryIcon } from '@assets/icons/chat/history';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 import { PdfIcon } from '@assets/icons/chat/pdf';
@@ -102,7 +101,6 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     getMemory: HardDriveUploadIcon,
     deleteMemory: DeleteIcon,
     listMemories: FoldersIcon,
-    suggestSaveMemory: WaypointsIcon,
 
     // History tools
     getRecentHistory: HistoryIcon,
