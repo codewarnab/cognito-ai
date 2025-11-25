@@ -195,6 +195,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 modelState={modelState}
                 onSuggestionClick={handleSuggestionClick}
                 tabAttachments={tabAttachments}
+                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
             />
 
             <form
