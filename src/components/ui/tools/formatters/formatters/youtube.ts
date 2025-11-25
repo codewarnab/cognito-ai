@@ -6,23 +6,49 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }) => {
-    const videoTitle = output?.videoTitle;
-    const lang = input?.lang;
+    const videoTitle = output?.title || output?.videoTitle;
+    const url = input?.youtubeUrl;
 
     if (state === 'loading') {
         return {
             action: 'Fetching transcript',
-            description: videoTitle ? truncateText(videoTitle, 40) : undefined
+            description: videoTitle ? truncateText(videoTitle, 40) : url ? truncateText(url, 40) : undefined
         };
     }
     if (state === 'success') {
-        // Check if actually successful (YouTube tool returns success:false on error)
-        if (output?.success === false || output?.error) {
+        // Check if actually successful (YouTube tool returns error on failure)
+        if (output?.error) {
             return {
                 action: 'Transcript unavailable',
-                description: videoTitle ? truncateText(videoTitle, 40) : output?.error ? truncateText(output.error, 40) : undefined
+                description: output.error ? truncateText(output.error, 40) : undefined
             };
         }
+
+        // Handle new tool output format (hasTranscript, transcriptLength, durationFormatted)
+        if (output?.hasTranscript !== undefined) {
+            if (!output.hasTranscript) {
+                return {
+                    action: 'No transcript available',
+                    description: videoTitle
+                        ? truncateText(videoTitle, 40)
+                        : output.durationFormatted
+                            ? `Duration: ${output.durationFormatted}`
+                            : 'Video metadata retrieved'
+                };
+            }
+
+            const charCount = output.transcriptLength || 0;
+            const durationStr = output.durationFormatted || '';
+
+            return {
+                action: 'Transcript fetched',
+                description: videoTitle
+                    ? `${truncateText(videoTitle, 30)}${durationStr ? ' • ' + durationStr : ''}`
+                    : `${Math.round(charCount / 1000)}k chars${durationStr ? ' • ' + durationStr : ''}`
+            };
+        }
+
+        // Legacy format (transcript array with segments)
         const segmentCount = output?.transcript?.length || 0;
         const duration = output?.transcript?.[output.transcript.length - 1]?.timestamp || 0;
         const minutes = Math.floor(duration / 60);
@@ -38,58 +64,5 @@ export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, o
     return {
         action: 'Transcript failed',
         description: videoTitle ? truncateText(videoTitle, 40) : undefined
-    };
-};
-
-export const youtubeAgentFormatter: ActionFormatter = ({ state, input, output }) => {
-    const question = input?.question;
-    const wasChunked = output?.wasChunked;
-    const usedTranscript = output?.usedTranscript;
-    const errorMsg = output?.error || output?.errorType;
-
-    if (state === 'loading') {
-        return {
-            action: 'Analyzing YouTube video',
-            description: question ? truncateText(question, 40) : undefined
-        };
-    }
-    if (state === 'success') {
-        // Check if actually failed (YouTube tool may return success: false)
-        if (output?.success === false || errorMsg) {
-            return {
-                action: 'Analysis failed',
-                description: errorMsg ? truncateText(String(errorMsg), 50) : question ? truncateText(question, 40) : undefined
-            };
-        }
-
-        const answerLength = output?.answer?.length || 0;
-        const duration = output?.videoDuration;
-        const durationText = duration
-            ? duration >= 3600
-                ? `${Math.floor(duration / 3600)}h ${Math.floor((duration % 3600) / 60)}m`
-                : duration >= 60
-                    ? `${Math.floor(duration / 60)}m`
-                    : `${duration}s`
-            : '';
-
-        // Build description showing analysis method
-        const parts = [];
-        if (usedTranscript) {
-            parts.push('transcript');
-        } else if (wasChunked) {
-            parts.push('chunked');
-        }
-        if (durationText) {
-            parts.push(durationText);
-        }
-
-        return {
-            action: 'Video analyzed',
-            description: parts.length > 0 ? parts.join(' • ') : 'Analysis complete'
-        };
-    }
-    return {
-        action: 'Analysis failed',
-        description: errorMsg ? truncateText(String(errorMsg), 50) : question ? truncateText(question, 40) : undefined
     };
 };

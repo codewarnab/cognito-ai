@@ -74,7 +74,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'cancelReminder',
 
   // Agent Tools
-  'analyzeYouTubeVideo',
+  'getYouTubeTranscript',
 
   // Report Generation (workflow-specific, may be filtered in certain modes)
   'generateMarkdown',

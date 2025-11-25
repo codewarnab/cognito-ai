@@ -22,7 +22,7 @@ import type { FunctionDeclaration } from '@google/genai';
 import { createLogger } from '~logger';
 import { getAllTools } from '../../tools/registryUtils';
 import { convertAllTools } from '../../geminiLive/toolConverter';
-import { analyzeYouTubeVideoDeclaration, executeYouTubeAnalysis } from '../youtube';
+import { getYouTubeTranscript } from '../youtube';
 import { BROWSER_ACTION_AGENT_SYSTEM_INSTRUCTION, BROWSER_ACTION_TOOL_DESCRIPTION } from './prompts';
 import { initializeGenAIClient } from '../../core/genAIFactory';
 
@@ -134,6 +134,9 @@ async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSi
                 }
             }
 
+            // Add YouTube transcript tool (it's an agent tool, not in registry)
+            availableTools['getYouTubeTranscript'] = getYouTubeTranscript;
+
             const toolNames = Object.keys(availableTools);
             log.info('Available tools for agent', { count: toolNames.length, tools: toolNames });
 
@@ -143,9 +146,6 @@ async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSi
 
             // Convert browser tools to Gemini format
             const geminiToolDeclarations = convertAllTools(availableTools);
-
-            // Add YouTube analysis tool declaration
-            geminiToolDeclarations.push(analyzeYouTubeVideoDeclaration);
 
             // Use the centralized system instruction from prompts.ts
             // This prompt tells the agent HOW to execute browser automation tasks
@@ -217,34 +217,24 @@ async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSi
 
                     log.info(`🔨 Executing tool: ${toolName}`, {
                         args: toolArgs,
-                        toolType: toolName === 'analyzeYouTubeVideo' ? 'YouTube Agent' : 'Browser Tool'
+                        toolType: 'Browser Tool'
                     });
 
                     try {
                         let toolResult;
 
-                        // Handle YouTube analysis tool separately
-                        if (toolName === 'analyzeYouTubeVideo') {
-                            log.info('🎥 Calling YouTube analysis tool...');
-                            toolResult = await executeYouTubeAnalysis(toolArgs as { question: string; youtubeUrl?: string });
-                            log.info('✅ YouTube analysis completed', {
-                                resultLength: JSON.stringify(toolResult).length,
-                                hasResult: !!toolResult
-                            });
-                        } else {
-                            // Handle regular browser tools
-                            const tool = availableTools[toolName];
-                            if (!tool) {
-                                throw new Error(`Tool not found: ${toolName}`);
-                            }
-                            log.info('🌐 Executing browser tool...', { toolName });
-                            toolResult = await tool.execute(toolArgs);
-                            log.info('✅ Browser tool completed', {
-                                toolName,
-                                resultLength: JSON.stringify(toolResult).length,
-                                hasResult: !!toolResult
-                            });
+                        // Handle regular browser tools (including getYouTubeTranscript)
+                        const tool = availableTools[toolName];
+                        if (!tool) {
+                            throw new Error(`Tool not found: ${toolName}`);
                         }
+                        log.info('🌐 Executing browser tool...', { toolName });
+                        toolResult = await tool.execute(toolArgs);
+                        log.info('✅ Browser tool completed', {
+                            toolName,
+                            resultLength: JSON.stringify(toolResult).length,
+                            hasResult: !!toolResult
+                        });
 
                         log.info(`✅ Tool ${toolName} completed successfully`, {
                             resultType: typeof toolResult,

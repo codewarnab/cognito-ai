@@ -42,7 +42,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     cancelReminder: 'Cancel existing reminders',
 
     // Other
-    analyzeYouTubeVideo: 'Analyze YouTube video content',
+    getYouTubeTranscript: 'Fetch YouTube video transcript and metadata',
     generateMarkdown: 'Generate markdown documents',
     generatePDF: 'Generate PDF documents',
     getReportTemplate: 'Get report templates',
@@ -67,5 +67,5 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Search & History': ['chromeSearch', 'getSearchResults', 'openSearchResult', 'searchHistory', 'getUrlVisits'],
     'Memory & Reminders': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory', 'suggestSaveMemory', 'createReminder', 'listReminders', 'cancelReminder'],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
-    'Other': ['analyzeYouTubeVideo', 'generateMarkdown', 'generatePDF', 'getReportTemplate']
+    'Other': ['getYouTubeTranscript', 'generateMarkdown', 'generatePDF', 'getReportTemplate']
 };

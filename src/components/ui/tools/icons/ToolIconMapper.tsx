@@ -115,8 +115,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     youtubeToNotionAgent: YouTubeNotionIcon,
     youtubeTranscript: YoutubeIcon,
     getYoutubeTranscript: YoutubeIcon,
-    youtubeAgentAsTool: YoutubeIcon,
-    analyzeYouTubeVideo: YoutubeIcon,  // YouTube agent tool
+    getYouTubeTranscript: YoutubeIcon,
 
     // PDF tools
     analyzePdfDocument: PdfIcon,
@@ -145,7 +144,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     // DOM tools
     analyzeDom: ExpandIcon,
     executeScript: CodeExecuteIcon,
-    
+
     // Unified tools
     bookmarksTool: FoldersIcon,
 };

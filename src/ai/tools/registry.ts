@@ -77,7 +77,7 @@ export const INTERACTION_TOOLS = [
 ];
 
 export const AGENT_TOOLS = [
-  'analyzeYouTubeVideo',
+  'getYouTubeTranscript',
 ];
 
 // MCP tools are dynamic and fetched from background

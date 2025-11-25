@@ -50,8 +50,7 @@ import {
     getUrlVisitsFormatter
 } from './formatters/history';
 import {
-    getYoutubeTranscriptFormatter,
-    youtubeAgentFormatter
+    getYoutubeTranscriptFormatter
 } from './formatters/youtube';
 import {
     pdfAgentFormatter
@@ -147,9 +146,8 @@ export const formatters: Record<string, ActionFormatter> = {
 
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,
+    getYouTubeTranscript: getYoutubeTranscriptFormatter,
     youtubeTranscript: getYoutubeTranscriptFormatter,
-    analyzeYouTubeVideo: youtubeAgentFormatter,
-    youtubeAgentAsTool: youtubeAgentFormatter,
 
     // PDF
     analyzePdfDocument: pdfAgentFormatter,
