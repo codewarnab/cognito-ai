@@ -73,15 +73,17 @@
 }
 
 .copilot-message-bubble-user {
-    background: var(--message-user-bg);
-    color: var(--white-stream);
+    background: #3b82f6;
+    color: #ffffff;
     margin-left: auto;
     box-shadow: 0 2px 8px var(--message-user-shadow);
+    border-radius: 16px;
+    border-bottom-right-radius: 0;
 }
 
 .copilot-message-bubble-assistant {
     background: transparent !important;
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
