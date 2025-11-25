@@ -137,7 +137,10 @@ export function useChromeSearchTool() {
                         success: true,
                         query,
                         results: uniqueResults,
-                        totalCount: uniqueResults.length
+                        totalCount: uniqueResults.length,
+                        suggestion: uniqueResults.length === 0
+                            ? "No results found. If you didn't find what you're looking for, prefer searching Google for more comprehensive results."
+                            : "If you didn't find what you're looking for, prefer searching Google for more comprehensive results."
                     };
 
                 } catch (error) {

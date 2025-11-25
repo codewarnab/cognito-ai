@@ -10,10 +10,8 @@ export const LoadingIndicator: React.FC = () => {
             className="copilot-message copilot-message-assistant"
         >
             <div className="copilot-message-bubble copilot-message-bubble-assistant">
-                <div className="copilot-loading">
-                    <div className="copilot-loading-dot" style={{ animationDelay: '0ms' }}></div>
-                    <div className="copilot-loading-dot" style={{ animationDelay: '150ms' }}></div>
-                    <div className="copilot-loading-dot" style={{ animationDelay: '300ms' }}></div>
+                <div className="copilot-thinking-shimmer">
+                    Thinking<span className="copilot-thinking-dots">...</span>
                 </div>
             </div>
         </motion.div>

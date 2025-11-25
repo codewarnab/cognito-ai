@@ -473,8 +473,23 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                 <ContinueButton onContinue={onContinue} isLoading={isLoading} />
             )}
 
-            {/* Loading Indicator */}
-            {isLoading && <LoadingIndicator />}
+            {/* Loading Indicator - only show when loading AND assistant hasn't started streaming content yet */}
+            {isLoading && (() => {
+                // Check if the last message is from the assistant AND has actual content
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage?.role !== 'assistant') {
+                    // No assistant message yet - show loading
+                    return true;
+                }
+                // Check if assistant message has any actual content (text or tool calls)
+                const hasContent = lastMessage.parts?.some((part: any) =>
+                    (part.type === 'text' && part.text?.trim()) ||
+                    part.type === 'tool-call' ||
+                    part.type === 'tool-result'
+                );
+                // Only show loading if assistant message has no content yet
+                return !hasContent;
+            })() && <LoadingIndicator />}
 
             <div ref={messagesEndRef as React.RefObject<HTMLDivElement>} />
 
