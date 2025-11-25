@@ -13,7 +13,9 @@ interface McpServerCardProps {
     initialAuthenticated?: boolean
     requiresAuth?: boolean
     paid?: boolean
+    isCustom?: boolean
     onManageTools?: (serverId: string) => void
+    onDelete?: (serverId: string) => void
 }
 
 export const McpServerCard: React.FC<McpServerCardProps> = ({
@@ -25,10 +27,13 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     initialAuthenticated = false,
     requiresAuth = true,
     paid = false,
-    onManageTools
+    isCustom = false,
+    onManageTools,
+    onDelete
 }) => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
     const [showDisableConfirm, setShowDisableConfirm] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isNarrowView, setIsNarrowView] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
 
@@ -91,6 +96,15 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         setShowDisableConfirm(false)
     }
 
+    const handleDelete = () => {
+        setShowDeleteConfirm(true)
+    }
+
+    const confirmDelete = () => {
+        onDelete?.(id)
+        setShowDeleteConfirm(false)
+    }
+
     return (
         <>
             <div className="mcp-card" ref={cardRef}>
@@ -104,7 +118,9 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                     isAuthenticated={isAuthenticated}
                     requiresAuth={requiresAuth}
                     isNarrowView={isNarrowView}
+                    isCustom={isCustom}
                     onToggle={onToggle}
+                    onDelete={handleDelete}
                 />
 
                 <McpServerCardFooter
@@ -145,6 +161,17 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                 variant="default"
                 onConfirm={confirmDisable}
                 onCancel={() => setShowDisableConfirm(false)}
+            />
+
+            <ConfirmDialog
+                isOpen={showDeleteConfirm}
+                title="Delete Custom Server"
+                message={`Are you sure you want to delete "${name}"? This action cannot be undone.`}
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+                onConfirm={confirmDelete}
+                onCancel={() => setShowDeleteConfirm(false)}
             />
         </>
     )

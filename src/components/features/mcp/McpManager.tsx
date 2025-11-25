@@ -4,11 +4,12 @@ import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
 import { AddCustomMcp } from "./AddCustomMcp"
 import { ToolCountWarning } from "./ToolCountWarning"
-import { MCP_SERVERS } from "@/constants/mcpServers"
+import { MCP_SERVERS, type ServerConfig } from "@/constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/primitives/popover"
 import { getCloudToolsCount } from "@/ai/tools"
 import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "@/constants"
 import { PlusIcon, type PlusIconHandle } from "@assets/icons/ui/plus"
+import { McpServerDefault } from "@assets/brands/integrations/McpServerDefault"
 
 interface McpManagerProps {
     onBack: () => void
@@ -20,6 +21,34 @@ interface ServerStatus {
     isAuthenticated: boolean
 }
 
+// Custom server stored in localStorage
+interface CustomServerData {
+    id: string
+    name: string
+    url: string
+    description: string
+    image?: string
+    requiresAuthentication: boolean
+    initialEnabled?: boolean
+    initialAuthenticated?: boolean
+    isCustom: boolean
+}
+
+// Helper to convert custom server data to ServerConfig
+const customServerToConfig = (server: CustomServerData): ServerConfig => ({
+    id: server.id,
+    name: server.name,
+    icon: server.image
+        ? <img src={server.image} alt={server.name} style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover' }} />
+        : <McpServerDefault style={{ width: 24, height: 24 }} />,
+    url: server.url,
+    description: server.description,
+    requiresAuthentication: server.requiresAuthentication,
+    initialEnabled: server.initialEnabled ?? false,
+    initialAuthenticated: server.initialAuthenticated ?? false,
+    isCustom: true
+})
+
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [searchQuery, setSearchQuery] = useState("")
     const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
@@ -27,7 +56,29 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null)
     const [mcpToolCount, setMcpToolCount] = useState(0)
     const [cloudToolCount, setCloudToolCount] = useState(0)
+    const [customServers, setCustomServers] = useState<ServerConfig[]>([])
     const plusIconRef = useRef<PlusIconHandle>(null)
+
+    // Load custom servers from chrome.storage.local on mount and when returning from add-custom view
+    useEffect(() => {
+        const loadCustomServers = async () => {
+            try {
+                const result = await chrome.storage.local.get("customMcpServers")
+                const stored = result.customMcpServers
+                if (stored && Array.isArray(stored)) {
+                    const configs = stored.map(customServerToConfig)
+                    setCustomServers(configs)
+                } else {
+                    setCustomServers([])
+                }
+            } catch (error) {
+                console.error('Failed to load custom MCP servers:', error)
+                setCustomServers([])
+            }
+        }
+
+        loadCustomServers()
+    }, [activeView]) // Reload when view changes (e.g., after adding a new server)
 
     // Fetch MCP tool count on mount and when server statuses change
     useEffect(() => {
@@ -64,8 +115,11 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     // Fetch real authentication status on mount and listen for updates
     useEffect(() => {
         const loadStatuses = async () => {
+            // Combine official and custom servers
+            const allServers = [...MCP_SERVERS, ...customServers]
+
             // Fetch status for all servers in parallel
-            const statusPromises = MCP_SERVERS.map(async (server) => {
+            const statusPromises = allServers.map(async (server) => {
                 try {
                     const response = await chrome.runtime.sendMessage({
                         type: `mcp/${server.id}/status/get`
@@ -130,21 +184,29 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
 
         chrome.runtime.onMessage.addListener(handleMessage)
         return () => chrome.runtime.onMessage.removeListener(handleMessage)
-    }, [])
+    }, [customServers])
 
     // Filter servers based on search query
     const filteredServers = useMemo(() => {
+        // Combine custom servers (at top) with official servers
+        const allServers = [...customServers, ...MCP_SERVERS]
+
         let results = !searchQuery.trim()
-            ? MCP_SERVERS
-            : MCP_SERVERS.filter(server =>
+            ? allServers
+            : allServers.filter(server =>
                 server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 server.id.toLowerCase().includes(searchQuery.toLowerCase())
             )
 
-        // Sort priority: enabled > authenticated > unauthenticated
+        // Sort priority: custom servers first > enabled > authenticated > unauthenticated
         return results.sort((a, b) => {
             const aStatus = serverStatuses[a.id]
             const bStatus = serverStatuses[b.id]
+
+            // Priority 0: Custom servers always at the top
+            const aCustom = (a as ServerConfig & { isCustom?: boolean }).isCustom ? 1 : 0
+            const bCustom = (b as ServerConfig & { isCustom?: boolean }).isCustom ? 1 : 0
+            if (aCustom !== bCustom) return bCustom - aCustom
 
             // Priority 1: Enabled servers first (use real status if available, fallback to initial)
             const aEnabled = aStatus?.isEnabled ?? a.initialEnabled ? 1 : 0
@@ -159,7 +221,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             // Keep original order for same priority
             return 0
         })
-    }, [searchQuery, serverStatuses])
+    }, [searchQuery, serverStatuses, customServers])
 
     const handleManageTools = (serverId: string) => {
         setSelectedServerId(serverId)
@@ -169,6 +231,24 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const handleBackToList = () => {
         setActiveView('list')
         setSelectedServerId(null)
+    }
+
+    // Handler for deleting custom MCP servers
+    const handleDeleteServer = async (serverId: string) => {
+        try {
+            const result = await chrome.storage.local.get("customMcpServers")
+            const servers = result.customMcpServers || []
+            const updatedServers = servers.filter((s: CustomServerData) => s.id !== serverId)
+            await chrome.storage.local.set({ customMcpServers: updatedServers })
+
+            // Notify background to reload custom servers cache
+            await chrome.runtime.sendMessage({ type: 'mcp/custom-servers/reload' })
+
+            // Update local state
+            setCustomServers(prev => prev.filter(s => s.id !== serverId))
+        } catch (error) {
+            console.error('Failed to delete custom MCP server:', error)
+        }
     }
 
     // Handler for plus icon click
@@ -342,7 +422,9 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                     initialAuthenticated={server.initialAuthenticated}
                                     requiresAuth={server.requiresAuthentication}
                                     paid={server.paid}
+                                    isCustom={server.isCustom}
                                     onManageTools={handleManageTools}
+                                    onDelete={server.isCustom ? handleDeleteServer : undefined}
                                 />
                             </li>
                         ))}

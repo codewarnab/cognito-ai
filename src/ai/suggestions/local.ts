@@ -20,8 +20,8 @@ const SUGGESTION_SCHEMA = {
     properties: {
         suggestions: {
             type: "array",
-            minItems: 4,
-            maxItems: 4,
+            minItems: 2,
+            maxItems: 2,
             items: {
                 type: "object",
                 properties: {
@@ -83,7 +83,7 @@ async function createSuggestionSession() {
             temperature: 0.8, // More creative for suggestions
             topK: 40,
             systemInstruction: `You are a browser AI assistant that generates contextual suggestions.
-Generate exactly 4 diverse, actionable suggestions based on the current page context.
+Generate exactly 2 diverse, actionable suggestions based on the current page context.
 Return ONLY valid JSON matching the required schema.`,
         });
 
@@ -108,7 +108,7 @@ function buildSuggestionPrompt(pageContext: PageContext | null): string {
         'interact with pages (click buttons, fill forms, read content)',
     ];
 
-    let prompt = `You are a browser AI assistant. Generate 4 contextual action suggestions based on the current page.
+    let prompt = `You are a browser AI assistant. Generate 2 contextual action suggestions based on the current page.
 
 Your capabilities include:
 ${capabilities.map(c => `- ${c}`).join('\n')}
@@ -155,7 +155,7 @@ ${capabilities.map(c => `- ${c}`).join('\n')}
         prompt += `Current Page: No specific page context available (may be on a restricted page)\n`;
     }
 
-    prompt += `\nGenerate 4 diverse, actionable suggestions that are relevant to this page and context.
+    prompt += `\nGenerate 2 diverse, actionable suggestions that are relevant to this page and context.
 Each suggestion should:
 - Be specific and actionable
 - Relate to the current page or browser context
@@ -250,8 +250,8 @@ export async function generateLocalContextualSuggestions(
                 return null;
             }
 
-            // Take up to 4 suggestions
-            const suggestions = parsed.suggestions.slice(0, 4);
+            // Take up to 2 suggestions
+            const suggestions = parsed.suggestions.slice(0, 2);
 
             if (suggestions.length === 0) {
                 log.warn('No suggestions in result');
@@ -289,28 +289,6 @@ export async function generateLocalContextualSuggestions(
     } catch (error) {
         log.error('Failed to generate local suggestions:', error);
         return null;
-    }
-}
-
-// TypeScript declarations for Chrome LanguageModel API
-declare global {
-    interface Window {
-        LanguageModel?: {
-            availability: () => Promise<'available' | 'readily' | 'downloading' | 'no' | 'downloaded' | undefined>
-            create: (options?: {
-                topK?: number
-                temperature?: number
-                signal?: AbortSignal
-                systemInstruction?: string
-            }) => Promise<{
-                prompt: (text: string, options?: {
-                    signal?: AbortSignal
-                    responseConstraint?: any
-                }) => Promise<string>
-                promptStreaming: (text: string, options?: { signal?: AbortSignal }) => ReadableStream<string>
-                destroy: () => void
-            }>
-        }
     }
 }
 

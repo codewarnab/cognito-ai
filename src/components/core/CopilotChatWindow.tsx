@@ -6,7 +6,7 @@ import { ErrorNotification } from '@/components/features/chat/components/ErrorNo
 import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '../../audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '../../utils/modelSettings';
-import { hasGoogleApiKey } from '../../utils/providerCredentials';
+import { hasGoogleApiKey, hasAnyProviderConfigured } from '../../utils/providerCredentials';
 import type { Message, AIMode, RemoteModelType, ModelState } from '../features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '../../hooks/useActiveTabDetection';
@@ -81,6 +81,7 @@ export function CopilotChatWindow({
         message: string;
         type: 'error' | 'warning' | 'info';
     } | null>(null);
+    const [needsProviderSetup, setNeedsProviderSetup] = useState(false);
 
     // Load initial state with error handling
     useEffect(() => {
@@ -88,6 +89,7 @@ export function CopilotChatWindow({
             try {
                 const config = await getModelConfig();
                 const hasKey = await hasGoogleApiKey();
+                const hasProvider = await hasAnyProviderConfigured();
 
                 setModelState({
                     mode: config.mode,
@@ -96,6 +98,7 @@ export function CopilotChatWindow({
                     conversationStartMode: config.conversationStartMode,
                     isLoading: false,
                 });
+                setNeedsProviderSetup(!hasProvider);
             } catch (error) {
                 console.error('Failed to load model state:', error);
                 // Set error state but keep defaults
@@ -124,10 +127,12 @@ export function CopilotChatWindow({
                 // Check new provider config storage
                 if (changes.ai_provider_config) {
                     const hasKey = await hasGoogleApiKey();
+                    const hasProvider = await hasAnyProviderConfigured();
                     setModelState(prev => ({
                         ...prev,
                         hasApiKey: hasKey,
                     }));
+                    setNeedsProviderSetup(!hasProvider);
                 }
             }
         };
@@ -213,6 +218,7 @@ export function CopilotChatWindow({
                 onFeaturesClick={onFeaturesClick}
                 onProviderSetupClick={onProviderSetupClick}
                 isLoading={isLoading}
+                needsProviderSetup={needsProviderSetup}
             />
 
             <ChatMessages

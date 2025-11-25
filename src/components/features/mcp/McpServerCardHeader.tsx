@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Info } from "lucide-react"
 import { Toggle } from "../../ui/primitives/toggle"
+import { DeleteIcon, type DeleteIconHandle } from "@assets/icons/ui/trash"
 
 interface McpServerCardHeaderProps {
     name: string
@@ -12,7 +13,9 @@ interface McpServerCardHeaderProps {
     isAuthenticated: boolean
     requiresAuth?: boolean
     isNarrowView: boolean
+    isCustom?: boolean
     onToggle: (checked: boolean) => Promise<string | void>
+    onDelete?: () => void
 }
 
 export const McpServerCardHeader: React.FC<McpServerCardHeaderProps> = ({
@@ -25,10 +28,13 @@ export const McpServerCardHeader: React.FC<McpServerCardHeaderProps> = ({
     isAuthenticated,
     requiresAuth = true,
     isNarrowView,
-    onToggle
+    isCustom = false,
+    onToggle,
+    onDelete
 }) => {
     const [showTooltip, setShowTooltip] = useState(false)
     const tooltipRef = useRef<HTMLDivElement>(null)
+    const deleteIconRef = useRef<DeleteIconHandle>(null)
 
     // Handle clicking outside tooltip to close it
     useEffect(() => {
@@ -91,6 +97,21 @@ export const McpServerCardHeader: React.FC<McpServerCardHeaderProps> = ({
                 )}
             </div>
             <div className="mcp-card__right">
+                {isCustom && onDelete && (
+                    <button
+                        className="mcp-card__delete-btn"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            onDelete()
+                        }}
+                        onMouseEnter={() => deleteIconRef.current?.startAnimation()}
+                        onMouseLeave={() => deleteIconRef.current?.stopAnimation()}
+                        aria-label={`Delete ${name}`}
+                        title={`Delete ${name}`}
+                    >
+                        <DeleteIcon ref={deleteIconRef} size={18} />
+                    </button>
+                )}
                 <Toggle
                     checked={isEnabled}
                     onChange={onToggle}

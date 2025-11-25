@@ -6,7 +6,7 @@
 
 import { createLogger } from '~logger';
 import type { McpExtensionResponse } from '../../mcp/types';
-import { getServerState } from '../../mcp/state';
+import { getServerState, loadCustomServersCache } from '../../mcp/state';
 import { getDisabledTools, setDisabledTools } from '../../mcp/toolsConfig';
 import { refreshServerToken } from '../../mcp/authHelpers';
 import { startOAuthFlow, disconnectServerAuth } from '../mcp/auth';
@@ -43,6 +43,22 @@ export async function handleMcpMessage(
             sendResponse({
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to get MCP tools'
+            });
+        }
+        return;
+    }
+
+    // Handle custom servers cache reload request
+    if (message.type === 'mcp/custom-servers/reload') {
+        try {
+            await loadCustomServersCache();
+            backgroundLog.info(' Reloaded custom MCP servers cache');
+            sendResponse({ success: true });
+        } catch (error) {
+            backgroundLog.error(' Error reloading custom servers cache:', error);
+            sendResponse({
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to reload custom servers'
             });
         }
         return;

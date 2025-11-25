@@ -418,7 +418,15 @@ function AIChatContent() {
 
     // Render Settings page
     if (showSettings) {
-        return <SettingsPage onBack={() => setShowSettings(false)} />;
+        return (
+            <SettingsPage
+                onBack={() => setShowSettings(false)}
+                onProviderSetupClick={() => {
+                    setShowSettings(false);
+                    setShowProviderSetup(true);
+                }}
+            />
+        );
     }
 
     // Show onboarding screen if enabled
