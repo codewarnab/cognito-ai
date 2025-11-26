@@ -9,6 +9,7 @@ import {
     hasGoogleApiKey,
     hasVertexCredentials,
 } from '@/utils/credentials';
+import { GEMINI_MODELS } from '~/constants';
 import { createLogger } from '~logger';
 import { generateVertexAccessToken } from './vertexAuth';
 
@@ -47,7 +48,7 @@ const SUMMARY_LENGTH_TOKENS: Record<string, number> = {
 };
 
 export class GeminiSummarizer {
-    private model = 'gemini-2.5-flash-lite';
+    private model = GEMINI_MODELS.LITE;
 
     // Gemini API (Google AI) base URL - preferred when API key is available
     private googleBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';

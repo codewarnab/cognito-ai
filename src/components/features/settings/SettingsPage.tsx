@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { VoiceSettings } from '@/components/features/settings/components/VoiceSettings';
 import { AskAiButtonSettings } from '@/components/features/settings/components/AskAiButtonSettings';
 import { TextSummarizerSettings } from '@/components/features/settings/components/TextSummarizerSettings';
+import { WriteCommandSettings } from '@/components/features/settings/components/WriteCommandSettings';
 import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
@@ -61,6 +62,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <TTSAndDataSettings />
         <AskAiButtonSettings />
         <TextSummarizerSettings />
+        <WriteCommandSettings />
         <EnabledToolsSettings />
         <MaxToolCallSettings />
       </div>

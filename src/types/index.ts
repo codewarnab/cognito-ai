@@ -36,6 +36,9 @@ export * from './bookmarks';
 // Text Summarizer types
 export * from './textSummarizer';
 
+// Write Command types
+export * from './writeCommand';
+
 // Keep existing sidepanel types
 export * from './sidepanel';
 
