@@ -6,6 +6,7 @@
  */
 
 import { createLogger } from '~logger';
+import { HIDE_LOCAL_MODE } from '@/constants';
 
 const log = createLogger('Summarizer');
 
@@ -97,6 +98,12 @@ export async function generateHeadline(
 
     if (!cleanText || cleanText.length < 10) {
         log.warn('Text too short to summarize');
+        return null;
+    }
+
+    // Skip offscreen summarizer if HIDE_LOCAL_MODE is enabled (uses local Gemini Nano)
+    if (HIDE_LOCAL_MODE) {
+        log.info('HIDE_LOCAL_MODE is enabled, skipping offscreen summarizer');
         return null;
     }
 

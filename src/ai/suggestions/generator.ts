@@ -10,6 +10,7 @@ import { createLogger } from '~logger';
 import type { PageContext } from '../../utils/pageContextExtractor';
 import { generateLocalContextualSuggestions } from './local';
 import { initializeModel } from '../core/modelFactory';
+import { HIDE_LOCAL_MODE } from '@/constants';
 
 const log = createLogger('SuggestionGenerator');
 
@@ -38,8 +39,12 @@ export async function generateContextualSuggestions(
     mode: 'remote' | 'local' = 'remote'
 ): Promise<Suggestion[] | null> {
     try {
-        // If local mode requested, use local AI
+        // If local mode requested, use local AI (but skip if HIDE_LOCAL_MODE is enabled)
         if (mode === 'local') {
+            if (HIDE_LOCAL_MODE) {
+                log.info('Local mode requested but HIDE_LOCAL_MODE is enabled, skipping local AI');
+                return null;
+            }
             log.info('Using local AI for suggestions');
             return await generateLocalContextualSuggestions(pageContext);
         }
@@ -61,18 +66,27 @@ export async function generateContextualSuggestions(
 
             if (!result?.suggestions || result.suggestions.length !== 2) {
                 log.warn('Invalid suggestions result:', result);
-                // Fallback to local if remote fails
-                log.info('Falling back to local AI');
-                return await generateLocalContextualSuggestions(pageContext);
+                // Fallback to local if remote fails (but skip if HIDE_LOCAL_MODE is enabled)
+                if (!HIDE_LOCAL_MODE) {
+                    log.info('Falling back to local AI');
+                    return await generateLocalContextualSuggestions(pageContext);
+                }
+                log.info('Remote failed but HIDE_LOCAL_MODE is enabled, returning null');
+                return null;
             }
 
             log.info('Generated remote suggestions successfully');
             return result.suggestions;
 
         } catch (error) {
-            log.error('Remote suggestion generation failed, falling back to local:', error);
-            // Fallback to local AI if remote fails
-            return await generateLocalContextualSuggestions(pageContext);
+            log.error('Remote suggestion generation failed:', error);
+            // Fallback to local AI if remote fails (but skip if HIDE_LOCAL_MODE is enabled)
+            if (!HIDE_LOCAL_MODE) {
+                log.info('Falling back to local AI');
+                return await generateLocalContextualSuggestions(pageContext);
+            }
+            log.info('Remote failed but HIDE_LOCAL_MODE is enabled, returning null');
+            return null;
         }
 
     } catch (error) {
