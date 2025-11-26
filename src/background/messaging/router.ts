@@ -9,7 +9,8 @@ import { handleMcpMessage } from './mcpHandler';
 import { handleFileMessage } from './fileHandler';
 import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
-import { handleWriteGenerateStreaming } from '../writer';
+import { handleWriteGenerate } from '../writer';
+import { handleRewriteRequest } from '../rewriter';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -88,7 +89,7 @@ export function initializeWriterPortListener(): void {
 
             port.onMessage.addListener(async (message) => {
                 if (message.action === 'WRITE_GENERATE') {
-                    await handleWriteGenerateStreaming(message, port);
+                    await handleWriteGenerate(message, port);
                 }
             });
 
@@ -99,4 +100,28 @@ export function initializeWriterPortListener(): void {
     });
 
     backgroundLog.info('Writer port listener initialized');
+}
+
+/**
+ * Initialize the rewriter port listener
+ * Handles text rewrite requests (non-streaming) via chrome.runtime.connect
+ */
+export function initializeRewriterPortListener(): void {
+    chrome.runtime.onConnect.addListener((port) => {
+        if (port.name === 'text-rewriter') {
+            backgroundLog.info('Text rewriter port connected');
+
+            port.onMessage.addListener(async (message) => {
+                if (message.action === 'REWRITE_REQUEST') {
+                    await handleRewriteRequest(message, port);
+                }
+            });
+
+            port.onDisconnect.addListener(() => {
+                backgroundLog.debug('Text rewriter port disconnected');
+            });
+        }
+    });
+
+    backgroundLog.info('Rewriter port listener initialized');
 }

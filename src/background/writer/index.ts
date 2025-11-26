@@ -5,7 +5,7 @@
 
 export { geminiWriter, GeminiWriter } from './geminiWriter';
 export type { WriterOptions } from './geminiWriter';
-export { handleWriteGenerateStreaming } from './handler';
+export { handleWriteGenerate } from './handler';
 export {
     detectPlatform,
     extractDomain,

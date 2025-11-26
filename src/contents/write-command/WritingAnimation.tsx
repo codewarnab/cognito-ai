@@ -1,6 +1,6 @@
 /**
  * Writing Animation Component
- * Displays a bouncing dots animation while generating content
+ * Displays a skeleton loading animation while generating content
  */
 
 interface WritingAnimationProps {
@@ -9,10 +9,11 @@ interface WritingAnimationProps {
 
 export function WritingAnimation({ className = '' }: WritingAnimationProps) {
     return (
-        <div className={`writing-animation ${className}`}>
-            <span className="writing-animation-dot" />
-            <span className="writing-animation-dot" />
-            <span className="writing-animation-dot" />
+        <div className={`writer-skeleton ${className}`}>
+            <div className="writer-skeleton-line writer-skeleton-line--full" />
+            <div className="writer-skeleton-line writer-skeleton-line--full" />
+            <div className="writer-skeleton-line writer-skeleton-line--medium" />
+            <div className="writer-skeleton-line writer-skeleton-line--short" />
         </div>
     );
 }

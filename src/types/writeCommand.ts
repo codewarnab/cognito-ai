@@ -32,6 +32,9 @@ export interface WriteGenerateRequest {
         settings?: {
             tone?: WriteTone;
             maxTokens?: number;
+            // Gemini Tool settings
+            enableUrlContext?: boolean;    // Enable URL fetching/analysis tool
+            enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
         };
     };
 }

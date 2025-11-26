@@ -124,7 +124,7 @@ export const WriteCommandSettings: React.FC = () => {
                                 </div>
 
                                 {/* Include Page Context */}
-                                <div className="settings-item" style={{ padding: 0, border: 'none' }}>
+                                <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
                                     <div className="settings-item-content">
                                         <div className="settings-item-title">Include Page Context</div>
                                         <div className="settings-item-description">Use page title and URL to improve AI suggestions</div>
@@ -133,6 +133,37 @@ export const WriteCommandSettings: React.FC = () => {
                                         checked={settings.includePageContext}
                                         onChange={(v) => handleSettingChange('includePageContext', v)}
                                     />
+                                </div>
+
+                                {/* Gemini Tools Section */}
+                                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                                    <div className="settings-item-title" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        Gemini Tools
+                                    </div>
+
+                                    {/* Google Search Tool */}
+                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="settings-item-content">
+                                            <div className="settings-item-title">Google Search</div>
+                                            <div className="settings-item-description">Enable real-time web search for up-to-date information</div>
+                                        </div>
+                                        <Toggle
+                                            checked={settings.enableGoogleSearch}
+                                            onChange={(v) => handleSettingChange('enableGoogleSearch', v)}
+                                        />
+                                    </div>
+
+                                    {/* URL Context Tool */}
+                                    <div className="settings-item" style={{ padding: 0, border: 'none' }}>
+                                        <div className="settings-item-content">
+                                            <div className="settings-item-title">URL Context</div>
+                                            <div className="settings-item-description">Fetch and analyze content from URLs mentioned in prompts</div>
+                                        </div>
+                                        <Toggle
+                                            checked={settings.enableUrlContext}
+                                            onChange={(v) => handleSettingChange('enableUrlContext', v)}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}

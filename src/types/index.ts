@@ -39,6 +39,9 @@ export * from './textSummarizer';
 // Write Command types
 export * from './writeCommand';
 
+// Rewrite Command types
+export * from './rewriteCommand';
+
 // Keep existing sidepanel types
 export * from './sidepanel';
 

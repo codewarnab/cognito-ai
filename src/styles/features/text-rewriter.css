@@ -1,0 +1,596 @@
+/* ============================================
+   Text Rewriter - Content Script Styles
+   ============================================ */
+
+/* Rewriter Tooltip Container */
+.rewriter-tooltip {
+    position: absolute;
+    z-index: 2147483647;
+
+    width: 360px;
+    max-width: 90vw;
+
+    background: rgba(25, 25, 25, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white;
+
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+    animation: rewriter-tooltip-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    overflow: hidden;
+}
+
+@keyframes rewriter-tooltip-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.rewriter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 14px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+}
+
+.rewriter-title-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+}
+
+.rewriter-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 26px;
+    height: 26px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.rewriter-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Presets Section */
+.rewriter-presets-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.rewriter-preset-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 6px 10px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rewriter-preset-button:hover:not(:disabled) {
+    background: rgba(var(--preset-color-rgb, 139, 92, 246), 0.15);
+    border-color: var(--preset-color, #8b5cf6);
+    color: var(--preset-color, #c4b5fd);
+}
+
+.rewriter-preset-button:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.rewriter-preset-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rewriter-preset-button svg {
+    width: 14px;
+    height: 14px;
+    color: inherit;
+}
+
+.rewriter-preset-label {
+    white-space: nowrap;
+}
+
+/* Custom Instruction Row */
+.rewriter-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Tools Row */
+.rewriter-tools-row {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-input {
+    flex: 1;
+
+    padding: 8px 12px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+
+    color: white;
+    font-size: 13px;
+    font-family: inherit;
+
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.rewriter-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.rewriter-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.rewriter-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rewriter-send-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 34px;
+    height: 34px;
+    padding: 0;
+
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+
+    color: #c4b5fd;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.rewriter-send-button:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+.rewriter-send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.rewriter-send-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Loading State */
+.rewriter-loading {
+    padding: 14px;
+}
+
+.rewriter-shimmer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rewriter-shimmer-line {
+    height: 12px;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.06) 100%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: rewriter-shimmer 1.5s ease-in-out infinite;
+}
+
+.rewriter-shimmer-line--full {
+    width: 100%;
+}
+
+.rewriter-shimmer-line--medium {
+    width: 75%;
+}
+
+.rewriter-shimmer-line--short {
+    width: 50%;
+}
+
+@keyframes rewriter-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Output Display */
+.rewriter-output {
+    padding: 14px;
+    max-height: 200px;
+    overflow-y: auto;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-output::-webkit-scrollbar {
+    width: 5px;
+}
+
+.rewriter-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rewriter-output::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.rewriter-output-text {
+    margin: 0;
+
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Actions Row */
+.rewriter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+
+    padding: 10px 14px;
+
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-action-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 7px 12px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 7px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rewriter-action-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.rewriter-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rewriter-action-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.rewriter-action-button--primary {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.rewriter-action-button--primary:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+/* Error State */
+.rewriter-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+
+    margin: 14px;
+    padding: 10px;
+
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+
+    color: #fca5a5;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.rewriter-error svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: #f87171;
+}
+
+.rewriter-error span {
+    flex: 1;
+}
+
+/* ============================================
+   Tools Toggle - Inline Settings
+   ============================================ */
+
+.tools-toggle-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tools-toggle-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-trigger:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-trigger--active {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.2);
+    color: #a78bfa;
+}
+
+.tools-toggle-trigger--expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+}
+
+.tools-toggle-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-label {
+    flex: 1;
+    text-align: left;
+}
+
+.tools-toggle-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+
+    background: #a78bfa;
+    border-radius: 8px;
+
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.tools-toggle-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-chevron--rotated {
+    transform: rotate(180deg);
+}
+
+.tools-toggle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    padding: 6px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.tools-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-item--active {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.tools-toggle-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.tools-toggle-item--active .tools-toggle-item-icon {
+    color: #a78bfa;
+}
+
+.tools-toggle-item-label {
+    flex: 1;
+}
+
+.tools-toggle-item-switch {
+    position: relative;
+    width: 28px;
+    height: 16px;
+
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+
+    transition: background 0.15s ease;
+}
+
+.tools-toggle-item-switch--on {
+    background: #a78bfa;
+}
+
+.tools-toggle-item-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+
+    width: 12px;
+    height: 12px;
+
+    background: white;
+    border-radius: 50%;
+
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-item-switch--on .tools-toggle-item-switch-thumb {
+    transform: translateX(12px);
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .rewriter-tooltip,
+    .rewriter-shimmer-line {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+
+    .rewriter-shimmer-line {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* Light mode support - keep dark theme for consistency */
+@media (prefers-color-scheme: light) {
+    .rewriter-tooltip {
+        background: rgba(25, 25, 25, 0.98);
+    }
+}

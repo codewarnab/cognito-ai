@@ -82,7 +82,7 @@ function getErrorDetails(error: unknown): { message: string; code: string } {
  * Handle write generate request (non-streaming)
  * Returns full response at once via port
  */
-export async function handleWriteGenerateStreaming(
+export async function handleWriteGenerate(
     request: WriteGenerateRequest,
     port: chrome.runtime.Port
 ): Promise<void> {
@@ -98,6 +98,9 @@ export async function handleWriteGenerateStreaming(
         tone: settings?.tone,
         maxTokens: settings?.maxTokens,
         pageContext,
+        // Pass Gemini tool settings
+        enableUrlContext: settings?.enableUrlContext ?? false,
+        enableGoogleSearch: settings?.enableGoogleSearch ?? false,
     };
 
     // Track if port is still connected
