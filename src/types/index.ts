@@ -33,6 +33,9 @@ export * from './utils';
 // Bookmarks types
 export * from './bookmarks';
 
+// Text Summarizer types
+export * from './textSummarizer';
+
 // Keep existing sidepanel types
 export * from './sidepanel';
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { VoiceSettings } from '@/components/features/settings/components/VoiceSettings';
 import { AskAiButtonSettings } from '@/components/features/settings/components/AskAiButtonSettings';
+import { TextSummarizerSettings } from '@/components/features/settings/components/TextSummarizerSettings';
 import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
@@ -59,6 +60,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <VoiceSettings />
         <TTSAndDataSettings />
         <AskAiButtonSettings />
+        <TextSummarizerSettings />
         <EnabledToolsSettings />
         <MaxToolCallSettings />
       </div>

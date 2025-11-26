@@ -1,0 +1,428 @@
+/* ============================================
+   Text Selection Summarizer - Content Script Styles
+   ============================================ */
+
+/* Floating Summarize Button */
+.summarize-button {
+    position: absolute;
+    z-index: 2147483647;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 36px;
+    height: 36px;
+    padding: 0;
+
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    opacity: 0;
+    transform: scale(0.8);
+    animation: summarize-button-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    transition: all 0.15s ease;
+}
+
+.summarize-button:hover {
+    background: rgba(50, 50, 50, 0.95);
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.summarize-button:active {
+    transform: scale(0.95);
+}
+
+.summarize-button svg {
+    width: 18px;
+    height: 18px;
+    color: white;
+}
+
+@keyframes summarize-button-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Tooltip on hover */
+.summarize-button::after {
+    content: 'Summarize';
+    position: absolute;
+    top: -32px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 4px 10px;
+
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.summarize-button:hover::after {
+    opacity: 1;
+}
+
+/* ============================================
+   Summary Popup
+   ============================================ */
+
+.summary-popup {
+    position: absolute;
+    z-index: 2147483647;
+
+    width: 380px;
+    max-width: 90vw;
+    max-height: 400px;
+
+    background: rgba(25, 25, 25, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white;
+
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+    animation: summary-popup-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    overflow: hidden;
+}
+
+@keyframes summary-popup-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.summary-popup__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.summary-popup__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.summary-popup__title svg {
+    width: 16px;
+    height: 16px;
+    color: #a78bfa;
+}
+
+.summary-popup__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.summary-popup__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.summary-popup__close svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Content */
+.summary-popup__content {
+    padding: 16px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.summary-popup__content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.summary-popup__content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.summary-popup__content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.summary-popup__text {
+    margin: 0;
+
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Streaming cursor */
+.summary-popup__cursor {
+    display: inline-block;
+    color: #a78bfa;
+    animation: cursor-blink 0.8s infinite;
+}
+
+@keyframes cursor-blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Loading state */
+.summary-popup__loading {
+    padding: 32px 16px;
+    text-align: center;
+}
+
+.summary-popup__shimmer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.summary-popup__shimmer-line {
+    height: 14px;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.06) 100%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: shimmer 1.5s infinite;
+}
+
+.summary-popup__shimmer-line:nth-child(1) {
+    width: 100%;
+}
+
+.summary-popup__shimmer-line:nth-child(2) {
+    width: 90%;
+}
+
+.summary-popup__shimmer-line:nth-child(3) {
+    width: 75%;
+}
+
+.summary-popup__shimmer-line:nth-child(4) {
+    width: 60%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Actions */
+.summary-popup__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.summary-popup__action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.summary-popup__action-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.summary-popup__action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.summary-popup__action-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.summary-popup__action-button--primary {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.summary-popup__action-button--primary:hover {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+/* Success state for copy button */
+.summary-popup__action-button--success {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #86efac;
+}
+
+.summary-popup__action-button--success:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+/* Error state */
+.summary-popup__error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    padding: 16px;
+
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 8px;
+
+    color: #fca5a5;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.summary-popup__error svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #f87171;
+}
+
+/* Toast notification */
+.summary-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2147483647;
+
+    padding: 10px 18px;
+
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+
+    opacity: 0;
+    animation: toast-appear 0.3s ease forwards;
+}
+
+@keyframes toast-appear {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .summarize-button,
+    .summary-popup,
+    .summary-popup__shimmer-line,
+    .summary-popup__cursor,
+    .summary-toast {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+}

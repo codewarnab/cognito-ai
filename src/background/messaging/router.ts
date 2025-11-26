@@ -8,6 +8,7 @@ import { createLogger } from '~logger';
 import { handleMcpMessage } from './mcpHandler';
 import { handleFileMessage } from './fileHandler';
 import { handleUiMessage } from './uiHandler';
+import { handleSummarizeRequest } from '../summarizer';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -49,4 +50,28 @@ export function initializeMessageRouter(): void {
     });
 
     backgroundLog.info('Message router initialized');
+}
+
+/**
+ * Initialize the summarizer port listener
+ * Handles streaming summarization requests via chrome.runtime.connect
+ */
+export function initializeSummarizerPortListener(): void {
+    chrome.runtime.onConnect.addListener((port) => {
+        if (port.name === 'text-summarizer') {
+            backgroundLog.info('Text summarizer port connected');
+
+            port.onMessage.addListener(async (message) => {
+                if (message.action === 'SUMMARIZE_REQUEST') {
+                    await handleSummarizeRequest(message, port);
+                }
+            });
+
+            port.onDisconnect.addListener(() => {
+                backgroundLog.debug('Text summarizer port disconnected');
+            });
+        }
+    });
+
+    backgroundLog.info('Summarizer port listener initialized');
 }
