@@ -2,6 +2,17 @@
  * Configuration constants for the extension
  */
 
+// Gemini Model Configuration
+// Shared model constants for features like summarizer, writer, and rewriter
+export const GEMINI_MODELS = {
+    /** Lite model for fast, cost-effective operations (summarizer, writer, rewriter) */
+    LITE: 'gemini-2.5-flash-lite',
+    /** Standard model for general-purpose tasks */
+    FLASH: 'gemini-2.5-flash',
+    /** Pro model for complex reasoning tasks */
+    PRO: 'gemini-2.5-pro',
+} as const;
+
 // Chrome Built-in AI (Gemini Nano) limits
 // Based on Chrome AI documentation and community reports
 export const CHROME_AI_LIMITS = {

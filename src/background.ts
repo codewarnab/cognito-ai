@@ -20,7 +20,7 @@ import { initializeLifecycleEventListeners } from './background/lifecycle';
 import { initializeAlarmListeners } from './background/alarms';
 import { initializeNotificationListeners } from './background/notifications';
 import { initializeOmnibox } from './background/omnibox';
-import { initializeMessageRouter, initializeSummarizerPortListener } from './background/messaging/router';
+import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener } from './background/messaging/router';
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
 
@@ -41,6 +41,7 @@ initializeOAuthRedirectURI();
 initializeLifecycleEventListeners();
 initializeMessageRouter();
 initializeSummarizerPortListener();
+initializeWriterPortListener();
 initializeAlarmListeners();
 initializeNotificationListeners();
 initializeOmnibox();

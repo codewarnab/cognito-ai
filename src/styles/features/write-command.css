@@ -1,0 +1,492 @@
+/* ============================================
+   Write Command - Content Script Styles
+   ============================================ */
+
+/* Writer Overlay Container */
+.writer-overlay {
+    position: fixed;
+    z-index: 2147483647;
+
+    width: 400px;
+    max-width: 90vw;
+
+    background: rgba(25, 25, 25, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white;
+
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+    animation: writer-overlay-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    overflow: hidden;
+}
+
+@keyframes writer-overlay-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.writer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.writer-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+
+    color: rgba(255, 255, 255, 0.4);
+    cursor: grab;
+
+    transition: color 0.15s ease;
+}
+
+.writer-drag-handle:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.writer-drag-handle:active {
+    cursor: grabbing;
+}
+
+.writer-title {
+    flex: 1;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.writer-title-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: text-bottom;
+    color: #a78bfa;
+}
+
+.writer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.writer-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.writer-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Input Row */
+.writer-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.writer-input {
+    flex: 1;
+
+    padding: 10px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.writer-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.writer-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.writer-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.writer-send-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 10px;
+
+    color: #c4b5fd;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.writer-send-button:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+    transform: scale(1.05);
+}
+
+.writer-send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.writer-send-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.writer-send-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Loading State */
+.writer-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    padding: 32px 16px;
+}
+
+.writer-loading-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Writing Animation */
+.writing-animation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.writing-animation-dot {
+    width: 8px;
+    height: 8px;
+
+    background: #a78bfa;
+    border-radius: 50%;
+
+    animation: writing-bounce 1.4s infinite ease-in-out both;
+}
+
+.writing-animation-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.writing-animation-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.writing-animation-dot:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes writing-bounce {
+
+    0%,
+    80%,
+    100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Output Display */
+.writer-output {
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.writer-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.writer-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.writer-output::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.writer-output-text {
+    margin: 0;
+
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Streaming cursor */
+.writer-cursor {
+    display: inline-block;
+    color: #a78bfa;
+    animation: cursor-blink 0.8s infinite;
+}
+
+@keyframes cursor-blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Hint Text */
+.writer-hint {
+    margin-top: 12px;
+    padding-top: 12px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.writer-hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* Actions Row */
+.writer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.writer-action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.writer-action-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.writer-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.writer-action-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.writer-action-button--primary {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.writer-action-button--primary:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+/* Error State */
+.writer-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 16px;
+    padding: 14px;
+
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+
+    color: #fca5a5;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.writer-error svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #f87171;
+}
+
+.writer-error span {
+    flex: 1;
+}
+
+.writer-error-retry {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 4px 10px;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.writer-error-retry:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.writer-error-retry:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error Boundary Fallback */
+.writer-error-boundary {
+    width: 320px;
+}
+
+.writer-error-boundary .writer-header {
+    background: rgba(239, 68, 68, 0.1);
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.writer-error-boundary .writer-title {
+    color: #fca5a5;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .writer-overlay,
+    .writing-animation-dot,
+    .writer-cursor {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+
+    .writing-animation-dot {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Dark mode adjustments - already dark by default */
+
+/* Light mode support (if needed) */
+@media (prefers-color-scheme: light) {
+
+    /* Keep dark theme for overlay regardless of system preference
+       for consistent experience and better contrast */
+    .writer-overlay {
+        background: rgba(25, 25, 25, 0.98);
+    }
+}

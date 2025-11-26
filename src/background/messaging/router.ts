@@ -9,6 +9,7 @@ import { handleMcpMessage } from './mcpHandler';
 import { handleFileMessage } from './fileHandler';
 import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
+import { handleWriteGenerateStreaming } from '../writer';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -74,4 +75,28 @@ export function initializeSummarizerPortListener(): void {
     });
 
     backgroundLog.info('Summarizer port listener initialized');
+}
+
+/**
+ * Initialize the writer port listener
+ * Handles streaming write generation requests via chrome.runtime.connect
+ */
+export function initializeWriterPortListener(): void {
+    chrome.runtime.onConnect.addListener((port) => {
+        if (port.name === 'write-command') {
+            backgroundLog.info('Write command port connected');
+
+            port.onMessage.addListener(async (message) => {
+                if (message.action === 'WRITE_GENERATE') {
+                    await handleWriteGenerateStreaming(message, port);
+                }
+            });
+
+            port.onDisconnect.addListener(() => {
+                backgroundLog.debug('Write command port disconnected');
+            });
+        }
+    });
+
+    backgroundLog.info('Writer port listener initialized');
 }
