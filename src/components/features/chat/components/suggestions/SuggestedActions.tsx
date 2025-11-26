@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useSuggestions } from '../../../../hooks/useSuggestions';
-import { TextMorph } from '../../../ui/feedback';
-import type { Message, ModelState } from '../types';
-import type { FileAttachmentData } from './FileAttachment';
-import type { WorkflowDefinition } from '../../../../workflows/types';
+import { useSuggestions } from '@/hooks/useSuggestions';
+import { TextMorph } from '@/components/ui/feedback';
+import type { Message, ModelState } from '../../types';
+import type { FileAttachmentData } from '../attachments/FileAttachment';
+import type { WorkflowDefinition } from '@/workflows/types';
 import { createLogger } from '~logger';
 import { getSuggestionsEnabled } from '~utils/settingsStorage';
 

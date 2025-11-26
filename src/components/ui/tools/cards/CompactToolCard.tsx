@@ -8,12 +8,12 @@ import { LoadingCheckIcon, type LoadingCheckIconHandle } from '@assets/icons/cha
 import { CircleCheckIcon, type CircleCheckIconHandle } from '@assets/icons/chat/circle-check';
 import { ChevronRightIcon, type ChevronRightIconHandle } from '@assets/icons/chat/chevron-right';
 import { ChevronDownIcon, type ChevronDownIconHandle } from '@assets/icons/chat/chevrown-down';
-import { UploadIcon, type UploadIconHandle } from '../../../shared/icons/UploadIcon';
+import { UploadIcon, type UploadIconHandle } from '@/components/shared/icons/UploadIcon';
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { formatToolAction } from '../formatters';
 import { createLogger } from '~logger';
 import type { CustomInputOutputRenderers } from '@/ai/tools/components';
-import { ToolFileAttachment, type ToolFileAttachmentData } from '@/components/features/chat/components/ToolFileAttachment';
+import { ToolFileAttachment, type ToolFileAttachmentData } from '@/components/features/chat/components/attachments';
 
 const log = createLogger('CompactToolCard');
 

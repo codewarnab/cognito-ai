@@ -3,6 +3,7 @@ export { AudioLinesIcon } from './AudioLinesIcon';
 export { CloudCogIcon } from './CloudCogIcon';
 export { CopyIcon } from './CopyIcon';
 export { FoldersIcon } from './FoldersIcon';
+export { HeartPulseIcon } from './HeartPulseIcon';
 export { LaptopMinimalCheckIcon } from './LaptopMinimalCheckIcon';
 export { PaperclipIcon } from './PaperclipIcon';
 export { RobotIcon } from './RobotIcon';

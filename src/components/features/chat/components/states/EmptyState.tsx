@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getTimeBasedGreeting } from '../../../../utils/greetings';
+import { getTimeBasedGreeting } from '@/utils/greetings';
 
 interface EmptyStateProps {
     isLocalMode?: boolean;

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { AIMode, Message } from '@/components/features/chat/types';
-import type { FileAttachmentData } from '@/components/features/chat/components/FileAttachment';
+import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import { hasGoogleApiKey } from '../utils/providerCredentials';
 import { HIDE_LOCAL_MODE } from '@/constants';
 
