@@ -1,18 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { type VoiceInputHandle } from '../../../../audio/VoiceInput';
-import { SuggestedActions } from './SuggestedActions';
+import { type VoiceInputHandle } from '@/audio/VoiceInput';
+import { SuggestedActions } from '../suggestions/SuggestedActions';
 import { Composer } from './Composer';
-import type { FileAttachmentData } from './FileAttachment';
-import type { TabAttachmentData } from './TabAttachment';
-import type { AIMode, RemoteModelType, ModelState, Message } from '../types';
+import type { FileAttachmentData } from '../attachments/FileAttachment';
+import type { TabAttachmentData } from '../attachments/TabAttachment';
+import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
-import type { LocalPdfInfo } from '../../../../hooks/useActiveTabDetection';
-import { useFileAttachments } from '../../../../hooks/useFileAttachments';
-import { useLocalPdfAttachment } from '../../../../hooks/useLocalPdfAttachment';
-import { useYouTubeVideoDetection } from '../../../../hooks/useYouTubeVideoDetection';
-import { useYouTubeVideoAttachment } from '../../../../hooks/useYouTubeVideoAttachment';
-import { useWorkflowMode } from '../../../../hooks/useWorkflowMode';
-import { useChatInputValidation } from '../../../../hooks/useChatInputValidation';
+import type { LocalPdfInfo } from '@/hooks/useActiveTabDetection';
+import { useFileAttachments } from '@/hooks/useFileAttachments';
+import { useLocalPdfAttachment } from '@/hooks/useLocalPdfAttachment';
+import { useYouTubeVideoDetection } from '@/hooks/useYouTubeVideoDetection';
+import { useYouTubeVideoAttachment } from '@/hooks/useYouTubeVideoAttachment';
+import { useWorkflowMode } from '@/hooks/useWorkflowMode';
+import { useChatInputValidation } from '@/hooks/useChatInputValidation';
 
 interface ChatInputProps {
     messages: Message[];

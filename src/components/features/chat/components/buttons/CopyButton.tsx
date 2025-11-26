@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CopyIcon, type CopyIconHandle } from '../../../shared/icons/CopyIcon';
+import { CopyIcon, type CopyIconHandle } from '@/components/shared/icons/CopyIcon';
 import { VoiceButton } from './VoiceButton';
 import { DownloadButton } from './DownloadButton';
 
@@ -82,13 +82,13 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content }) => {
                     )}
                 </AnimatePresence>
             </button>
-            <VoiceButton 
+            <VoiceButton
                 content={content}
                 onAudioBufferChange={setAudioBuffer}
                 onPlayingStateChange={setIsPlaying}
             />
-            <DownloadButton 
-                audioBuffer={audioBuffer} 
+            <DownloadButton
+                audioBuffer={audioBuffer}
                 isPlaying={isPlaying}
                 fileName={`message-audio-${Date.now()}.mp3`}
             />

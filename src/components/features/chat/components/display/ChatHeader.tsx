@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
-import { StreamingWarningDialog } from '../context/StreamingWarningDialog';
+import { StreamingWarningDialog } from '../../context/StreamingWarningDialog';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;

@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { YoutubeIcon } from '../../../../../assets/icons/chat/youtube';
+import { YoutubeIcon } from '@assets/icons/chat/youtube';
 
 interface YouTubeVideoSuggestionProps {
     /** Title of the YouTube video */

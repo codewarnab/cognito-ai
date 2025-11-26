@@ -2,22 +2,47 @@
 export * from './types';
 export * from './utils';
 
-// Components
-export { ChatHeader } from './components/ChatHeader';
-export { ChatMessages } from './components/ChatMessages';
-export { ChatInput } from './components/ChatInput';
-export { EmptyState } from './components/EmptyState';
-export { LoadingIndicator } from './components/LoadingIndicator';
-export { ErrorNotification } from './components/ErrorNotification';
-export { FileAttachment } from './components/FileAttachment';
-export { AnimatedCircularProgressBar } from './components/AnimatedCircularProgressBar';
-export { ContinueButton } from './components/ContinueButton';
-export { LocalBanner } from './components/LocalBanner';
-export { ResearchProgress } from './components/ResearchProgress';
-export { SuggestedActions } from './components/SuggestedActions';
-export { WorkflowBadge } from './components/WorkflowBadge';
-export { CopyButton } from './components/CopyButton';
-export { DownloadButton } from './components/DownloadButton';
+// Components - Re-export all from organized subfolders
+// Note: FileAttachment component is renamed to avoid collision with FileAttachment type
+export {
+    // Attachments
+    AttachmentDropdown,
+    FileAttachment as FileAttachmentComponent,
+    type FileAttachmentData,
+    TabAttachment,
+    type TabAttachmentData,
+    ToolFileAttachment,
+    type ToolFileAttachmentData,
+    // Badges
+    WorkflowBadge,
+    // Buttons
+    ContinueButton,
+    CopyButton,
+    DownloadButton,
+    VoiceButton,
+    // Composer
+    Composer,
+    ChatInput,
+    // Display
+    ChatHeader,
+    ChatMessages,
+    InlineCode,
+    // Feedback
+    AnimatedCircularProgressBar,
+    ErrorNotification,
+    LoadingIndicator,
+    ResearchProgress,
+    // Modals
+    AddTabsModal,
+    ToolsModal,
+    // States
+    EmptyState,
+    LocalBanner,
+    // Suggestions
+    LocalPdfSuggestion,
+    SuggestedActions,
+    YouTubeVideoSuggestion,
+} from './components';
 
 // Context components
 export { ContextIndicator } from './context/ContextIndicator';

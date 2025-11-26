@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { PaperclipIcon } from '../../../shared/icons';
+import { PaperclipIcon } from '@/components/shared/icons';
 
 interface LocalPdfSuggestionProps {
     /** Name of the PDF file */

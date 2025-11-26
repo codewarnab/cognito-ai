@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XIcon } from '../../../shared/icons/XIcon';
+import { XIcon } from '@/components/shared/icons/XIcon';
 
 interface Tab {
     id: string;

@@ -1,7 +1,7 @@
 import "./polyfills/process";
 import { useState, useRef, useEffect } from "react";
 import { motion } from 'framer-motion';
-import { CopilotChatWindow } from "@/components/core/CopilotChatWindow";
+import { CopilotChatWindow } from "@/components/shell";
 import { McpManager } from "@/components/features/mcp";
 import { Troubleshooting } from "@/components/features/help/Troubleshooting";
 import { Features } from "@/components/features/help/Features";
@@ -67,8 +67,8 @@ import {
 
 // Types
 import type { ContextWarningState } from "./types/sidepanel";
-import type { FileAttachmentData } from "@/components/features/chat/components/FileAttachment";
-import type { TabAttachmentData } from "@/components/features/chat/components/TabAttachment";
+import type { FileAttachmentData } from "@/components/features/chat/components/attachments";
+import type { TabAttachmentData } from "@/components/features/chat/components/attachments";
 
 // Utils
 import { handleAPIError } from "./utils/apiErrorHandler";

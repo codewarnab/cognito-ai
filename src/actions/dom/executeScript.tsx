@@ -97,18 +97,37 @@ Output: { success: true, result: { filled: 3 } }`,
                         url: tab.url
                     });
 
-                    // Execute script with timeout handling
+                    // Execute script using injected script element (CSP-safe approach)
+                    // We inject a <script> tag into the page which runs in page context
+                    // and communicates results back via a custom event
+                    const executionId = `exec_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
-                        args: [code, returnValue, timeout],
-                        func: (scriptCode: string, shouldReturn: boolean, timeoutMs: number) => {
+                        args: [code, returnValue, timeout, executionId],
+                        func: (scriptCode: string, shouldReturn: boolean, timeoutMs: number, execId: string) => {
                             return new Promise<ScriptExecutionResult>((resolve) => {
                                 let timedOut = false;
                                 let timeoutId: number | null = null;
+                                let resolved = false;
+
+                                const cleanup = () => {
+                                    if (timeoutId !== null) clearTimeout(timeoutId);
+                                    window.removeEventListener(`__script_result_${execId}`, handleResult as EventListener);
+                                };
+
+                                const handleResult = (event: CustomEvent) => {
+                                    if (resolved || timedOut) return;
+                                    resolved = true;
+                                    cleanup();
+                                    resolve(event.detail);
+                                };
 
                                 // Set up timeout
                                 timeoutId = window.setTimeout(() => {
+                                    if (resolved) return;
                                     timedOut = true;
+                                    cleanup();
                                     resolve({
                                         success: false,
                                         error: `Script execution timeout after ${timeoutMs}ms`,
@@ -117,75 +136,93 @@ Output: { success: true, result: { filled: 3 } }`,
                                     });
                                 }, timeoutMs);
 
+                                // Listen for result
+                                window.addEventListener(`__script_result_${execId}`, handleResult as EventListener, { once: true });
+
+                                // Helper function to generate error suggestions (needs to be in the script)
+                                const generateErrorSuggestionCode = `
+                                    function __generateErrorSuggestion(errorMsg) {
+                                        if (errorMsg.includes('is not defined')) {
+                                            return "Variable or function not found. Check if it exists in page context.";
+                                        }
+                                        if (errorMsg.includes('Cannot read property') || errorMsg.includes('Cannot read properties')) {
+                                            return "Trying to access property of null/undefined. Use analyzeDom to verify element exists.";
+                                        }
+                                        if (errorMsg.includes('querySelector') || errorMsg.includes('getElementById')) {
+                                            return "Element not found. Use analyzeDom to get correct selector.";
+                                        }
+                                        if (errorMsg.includes('Unexpected token')) {
+                                            return "Syntax error in code. Check JavaScript syntax.";
+                                        }
+                                        if (errorMsg.includes('canvas') || errorMsg.includes('context')) {
+                                            return "Canvas error. Ensure canvas exists and context is available.";
+                                        }
+                                        if (errorMsg.includes('Permission') || errorMsg.includes('denied')) {
+                                            return "Permission denied. Page may have security restrictions.";
+                                        }
+                                        return "Check console for details and verify code logic.";
+                                    }
+                                `;
+
+                                // Create script element that runs in page context
+                                const script = document.createElement('script');
+                                script.textContent = `
+                                    (async function() {
+                                        ${generateErrorSuggestionCode}
+                                        try {
+                                            const __result = await (async function() {
+                                                ${scriptCode}
+                                            })();
+                                            window.dispatchEvent(new CustomEvent('__script_result_${execId}', {
+                                                detail: {
+                                                    success: true,
+                                                    result: ${shouldReturn} ? __result : undefined,
+                                                    executed: true
+                                                }
+                                            }));
+                                        } catch (error) {
+                                            window.dispatchEvent(new CustomEvent('__script_result_${execId}', {
+                                                detail: {
+                                                    success: false,
+                                                    error: error.message,
+                                                    stack: error.stack,
+                                                    type: error.constructor.name,
+                                                    suggestion: __generateErrorSuggestion(error.message)
+                                                }
+                                            }));
+                                        }
+                                    })();
+                                `;
+
                                 try {
-                                    // Create async function to support await
-                                    const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-                                    const fn = new AsyncFunction(scriptCode);
-
-                                    // Execute the function
-                                    const resultPromise = fn();
-
-                                    // Handle result
-                                    Promise.resolve(resultPromise)
-                                        .then((result) => {
-                                            if (timedOut) return;
-                                            if (timeoutId !== null) clearTimeout(timeoutId);
-
-                                            resolve({
-                                                success: true,
-                                                result: shouldReturn ? result : undefined,
-                                                executed: true
-                                            });
-                                        })
-                                        .catch((error: Error) => {
-                                            if (timedOut) return;
-                                            if (timeoutId !== null) clearTimeout(timeoutId);
-
-                                            resolve({
-                                                success: false,
-                                                error: error.message,
-                                                stack: error.stack,
-                                                type: error.constructor.name,
-                                                suggestion: generateErrorSuggestion(error.message)
-                                            });
-                                        });
+                                    document.documentElement.appendChild(script);
+                                    script.remove(); // Clean up immediately after injection
                                 } catch (error) {
-                                    if (timedOut) return;
-                                    if (timeoutId !== null) clearTimeout(timeoutId);
+                                    if (resolved || timedOut) return;
+                                    resolved = true;
+                                    cleanup();
 
                                     const err = error as Error;
-                                    resolve({
-                                        success: false,
-                                        error: err.message,
-                                        stack: err.stack,
-                                        type: err.constructor.name,
-                                        suggestion: generateErrorSuggestion(err.message)
-                                    });
+                                    // Check if it's a CSP error
+                                    if (err.message?.includes('Content Security Policy') ||
+                                        err.message?.includes("Refused to execute inline script")) {
+                                        resolve({
+                                            success: false,
+                                            error: "Content Security Policy blocked script execution",
+                                            cspBlocked: true,
+                                            suggestion: "This site has strict CSP that blocks inline scripts. Try using specific DOM tools instead."
+                                        });
+                                    } else {
+                                        resolve({
+                                            success: false,
+                                            error: err.message,
+                                            stack: err.stack,
+                                            type: err.constructor?.name,
+                                            suggestion: "Failed to inject script into page."
+                                        });
+                                    }
                                 }
                             });
-
-                            // Helper function to generate error suggestions
-                            function generateErrorSuggestion(errorMsg: string): string {
-                                if (errorMsg.includes('is not defined')) {
-                                    return "Variable or function not found. Check if it exists in page context.";
-                                }
-                                if (errorMsg.includes('Cannot read property') || errorMsg.includes('Cannot read properties')) {
-                                    return "Trying to access property of null/undefined. Use analyzeDom to verify element exists.";
-                                }
-                                if (errorMsg.includes('querySelector') || errorMsg.includes('getElementById')) {
-                                    return "Element not found. Use analyzeDom to get correct selector.";
-                                }
-                                if (errorMsg.includes('Unexpected token')) {
-                                    return "Syntax error in code. Check JavaScript syntax.";
-                                }
-                                if (errorMsg.includes('canvas') || errorMsg.includes('context')) {
-                                    return "Canvas error. Ensure canvas exists and context is available.";
-                                }
-                                if (errorMsg.includes('Permission') || errorMsg.includes('denied')) {
-                                    return "Permission denied. Page may have security restrictions.";
-                                }
-                                return "Check console for details and verify code logic.";
-                            }
                         }
                     });
 

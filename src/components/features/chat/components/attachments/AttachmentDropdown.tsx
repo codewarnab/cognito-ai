@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { PaperclipIcon } from '../../../shared/icons';
-import { CameraIcon } from '../../../../../assets/icons/chat/camera';
-import { TabsIcon } from '../../../../../assets/icons/chat/tabs';
+import { PaperclipIcon } from '@/components/shared/icons';
+import { CameraIcon } from '@assets/icons/chat/camera';
+import { TabsIcon } from '@assets/icons/chat/tabs';
 
 interface AttachmentDropdownProps {
     onFileClick: () => void;
@@ -13,7 +13,7 @@ interface AttachmentDropdownProps {
 
 interface ButtonConfig {
     label: string;
-    icon: React.ComponentType<{ size: number }>;
+    icon: React.ComponentType<{ size?: number }>;
     onClick: () => void;
 }
 

@@ -3,7 +3,7 @@
  * Displays above input field with workflow icon, name, and close button
  */
 
-import type { WorkflowDefinition } from '../../../../workflows/types';
+import type { WorkflowDefinition } from '@/workflows/types';
 import { SearchIcon } from '@assets/icons/chat/search';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 
