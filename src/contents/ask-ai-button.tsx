@@ -9,7 +9,7 @@ import {
     hideForCurrentPage,
     hideForSession,
     hideForever,
-} from "~utils/ask-ai-button-visibility";
+} from "@/utils/settings";
 
 export const config: PlasmoCSConfig = {
     matches: ["<all_urls>"],

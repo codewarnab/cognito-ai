@@ -120,7 +120,7 @@ export async function getMCPToolsFromBackground(): Promise<{
 
         // Debug: Log the registry for troubleshooting
         if (registeredToolNames.length > 0) {
-            const { debugRegistry } = await import('../../utils/toolMetadataStore');
+            const { debugRegistry } = await import('@/utils/mcp/toolMetadataStore');
             debugRegistry();
         }
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Eye, ChevronUp, ChevronDown, Plus, X } from 'lucide-react';
 import { createLogger } from '~logger';
-import type { VisibilitySettings } from '~utils/ask-ai-button-visibility';
+import type { VisibilitySettings } from '@/utils/settings/ask-ai-button-visibility';
 import {
     getVisibilitySettings,
     reEnableButton,
@@ -11,7 +11,7 @@ import {
     clearAllHiddenDomains,
     removeDomainFromHidden,
     hideForCurrentPage,
-} from '~utils/ask-ai-button-visibility';
+} from '@/utils/settings';
 import { Toggle } from '../../../shared/inputs/Toggle';
 
 const log = createLogger('AskAiButtonSettings');

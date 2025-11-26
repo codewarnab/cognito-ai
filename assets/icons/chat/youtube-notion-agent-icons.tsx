@@ -8,7 +8,7 @@ import React, {
     useRef,
 } from 'react';
 import { motion, useAnimation, type Variants } from 'framer-motion';
-import { cn } from '~utils/cn';
+import { cn } from '@/utils/ui';
 
 export interface IconHandle {
     startAnimation: () => void;
