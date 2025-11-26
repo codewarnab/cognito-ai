@@ -13,7 +13,7 @@
 
 import { createLogger } from '~logger';
 import { z } from 'zod';
-import { registerToolServer } from '../../utils/toolMetadataStore';
+import { registerToolServer } from '@/utils/mcp';
 
 const log = createLogger('MCP-Proxy', 'MCP_EXECUTION');
 

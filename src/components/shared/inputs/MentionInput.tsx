@@ -10,8 +10,8 @@ import {
     formatTabMention,
     insertMentionAtCursor,
     getCursorPosition
-} from '../../../utils/mentionUtils';
-import { detectSlashCommand, getSlashSearchQuery } from '../../../utils/slashCommandUtils';
+} from '@/utils/chat';
+import { detectSlashCommand, getSlashSearchQuery } from '@/utils/chat';
 
 interface MentionInputProps {
     value: string;

@@ -25,13 +25,17 @@ const QuestionPlanner = forwardRef<IconHandle, IconProps>(
         const controls = useAnimation();
         const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
-            return {
-                startAnimation: () => controls.start('animate'),
-                stopAnimation: () => controls.start('normal'),
-            };
-        });
+        useImperativeHandle(
+            ref,
+            () => {
+                isControlledRef.current = true;
+                return {
+                    startAnimation: () => controls.start('animate'),
+                    stopAnimation: () => controls.start('normal'),
+                };
+            },
+            [controls]
+        );
 
         const handleMouseEnter = useCallback(
             (e: React.MouseEvent<HTMLDivElement>) => {
@@ -109,13 +113,17 @@ const AnswerWriter = forwardRef<IconHandle, IconProps>(
         const controls = useAnimation();
         const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
-            return {
-                startAnimation: () => controls.start('animate'),
-                stopAnimation: () => controls.start('normal'),
-            };
-        });
+        useImperativeHandle(
+            ref,
+            () => {
+                isControlledRef.current = true;
+                return {
+                    startAnimation: () => controls.start('animate'),
+                    stopAnimation: () => controls.start('normal'),
+                };
+            },
+            [controls]
+        );
 
         const handleMouseEnter = useCallback(
             (e: React.MouseEvent<HTMLDivElement>) => {
@@ -211,13 +219,17 @@ const NotionPageWriter = forwardRef<IconHandle, IconProps>(
         const controls = useAnimation();
         const isControlledRef = useRef(false);
 
-        useImperativeHandle(ref, () => {
-            isControlledRef.current = true;
-            return {
-                startAnimation: () => controls.start('animate'),
-                stopAnimation: () => controls.start('normal'),
-            };
-        });
+        useImperativeHandle(
+            ref,
+            () => {
+                isControlledRef.current = true;
+                return {
+                    startAnimation: () => controls.start('animate'),
+                    stopAnimation: () => controls.start('normal'),
+                };
+            },
+            [controls]
+        );
 
         const handleMouseEnter = useCallback(
             (e: React.MouseEvent<HTMLDivElement>) => {

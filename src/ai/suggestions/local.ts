@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import type { PageContext } from '../../utils/pageContextExtractor';
+import type { PageContext } from '@/utils/tabs';
 
 const log = createLogger('LocalSuggestionGenerator');
 

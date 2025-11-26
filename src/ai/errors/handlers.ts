@@ -5,14 +5,14 @@
  */
 
 import { createLogger } from '~logger';
-import { markGoogleApiKeyInvalid } from '../../utils/providerCredentials';
+import { markGoogleApiKeyInvalid } from '@/utils/credentials';
 import {
   APIError,
   NetworkError,
   ErrorType,
 } from '../../errors/errorTypes';
 import { parseVertexError, parseVertexErrorAsync } from './vertexErrorParser';
-import type { AIProvider } from '../../utils/providerTypes';
+import type { AIProvider } from '@/utils/credentials';
 
 const log = createLogger('AI-ErrorHandlers');
 

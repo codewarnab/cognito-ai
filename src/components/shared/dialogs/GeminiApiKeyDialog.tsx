@@ -8,8 +8,8 @@ import {
     DialogTitle,
 } from '../../ui/primitives/dialog';
 import { createLogger } from '~logger';
-import { getGoogleApiKey, setGoogleApiKey, clearGoogleApiKey } from '../../../utils/providerCredentials';
-import { getModelConfig, setModelConfig } from '../../../utils/modelSettings';
+import { getGoogleApiKey, setGoogleApiKey, clearGoogleApiKey } from '@/utils/credentials';
+import { getModelConfig, setModelConfig } from '@/utils/ai';
 import type { RemoteModelType } from '../../features/chat/types';
 
 const log = createLogger('GeminiApiKeyDialog');

@@ -9,7 +9,7 @@ import { APIError } from '../../errors/errorTypes';
 import { extractMalformedCallInfo } from '../errors/handlers';
 import { type AppUsage, getContextLimits } from '../types/usage';
 import { workflowSessionManager } from '../../workflows/sessionManager';
-import { markGoogleApiKeyValid } from '../../utils/providerCredentials';
+import { markGoogleApiKeyValid } from '@/utils/credentials';
 
 // Helper function for compatibility
 const markApiKeyValid = markGoogleApiKeyValid;

@@ -31,7 +31,7 @@ import { BanIcon } from '@assets/icons/chat/blocked';
 import { ExpandIcon } from '@assets/icons/chat/expand';
 import { ScanTextIcon } from '@assets/icons/chat/reading-page-content';
 import { BookTextIcon } from '@assets/icons/ui/report';
-import { isMcpTool } from '../../../../utils/toolMetadataStore';
+import { isMcpTool } from '@/utils/mcp';
 import { createLogger } from '~logger';
 import { Wrench } from 'lucide-react';
 import { forwardRef, useImperativeHandle } from 'react';

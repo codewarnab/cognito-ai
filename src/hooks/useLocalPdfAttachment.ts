@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { isPdfDismissed, dismissPdf } from '../utils/localPdfDismissals';
+import { isPdfDismissed, dismissPdf } from '@/utils/settings';
 import type { LocalPdfInfo } from './useActiveTabDetection';
 import type { AIMode } from '@/components/features/chat/types';
 

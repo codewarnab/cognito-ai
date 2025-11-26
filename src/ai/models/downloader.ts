@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import { broadcastDownloadProgress } from '../../utils/modelDownloadBroadcast';
+import { broadcastDownloadProgress } from '@/utils/ai';
 import { BrowserAPIError } from '../../errors/errorTypes';
 
 const log = createLogger('ModelDownloader');

@@ -7,7 +7,7 @@
 
 import { createLogger } from '~logger';
 import { APIError, NetworkError, ErrorType } from '../../errors/errorTypes';
-import { markVertexCredentialsInvalid } from '../../utils/providerCredentials';
+import { markVertexCredentialsInvalid } from '@/utils/credentials';
 
 const log = createLogger('AI-VertexErrorParser');
 

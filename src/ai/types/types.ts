@@ -4,7 +4,7 @@
  */
 
 import type { UIMessage } from 'ai';
-import type { AIProvider } from '../../utils/providerTypes';
+import type { AIProvider } from '@/utils/credentials';
 
 // AI Mode types
 export type AIMode = 'local' | 'remote';

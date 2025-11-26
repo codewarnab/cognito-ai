@@ -8,7 +8,7 @@ import { createLogger } from '~logger';
 import { openSidePanel, sendMessageToSidepanelWithAttachments } from '../sidepanelUtils';
 import { getLastFocusedWindowId } from '../omnibox';
 import { ensureOffscreenDocument } from '../../offscreen/ensure';
-import { createAINotification } from '../../utils/aiNotification';
+import { createAINotification } from '@/utils/notifications';
 import type { AINotificationPayload } from '../../types/notifications';
 
 const backgroundLog = createLogger('Background-UI-Handler', 'BACKGROUND');

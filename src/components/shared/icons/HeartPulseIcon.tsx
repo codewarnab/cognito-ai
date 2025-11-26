@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react';
 import { forwardRef } from 'react';
 
-import { cn } from '../../../utils/cn';
+import { cn } from '@/utils/ui';
 
 interface HeartPulseIconProps extends HTMLAttributes<HTMLDivElement> {
     size?: number;

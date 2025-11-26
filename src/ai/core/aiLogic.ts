@@ -11,9 +11,9 @@ import { remoteSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
-import { hasGoogleApiKey } from '../../utils/providerCredentials';
-import { getModelConfig } from '../../utils/modelSettings';
-import { getMaxToolCallLimit } from '../../utils/settingsStorage';
+import { hasGoogleApiKey } from '@/utils/credentials';
+import { getModelConfig } from '@/utils/ai';
+import { getMaxToolCallLimit } from '@/utils/settings';
 import {
   APIError,
   NetworkError,

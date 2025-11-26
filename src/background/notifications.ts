@@ -7,7 +7,7 @@
  */
 
 import { createLogger } from '~logger';
-import { isAINotification, parseNotificationId, clearNotification } from '../utils/aiNotification';
+import { isAINotification, parseNotificationId, clearNotification } from '@/utils/notifications';
 
 const log = createLogger('Background-Notifications', 'BACKGROUND');
 

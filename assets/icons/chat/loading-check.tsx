@@ -32,11 +32,11 @@ const LoadingCheckIcon = forwardRef<LoadingCheckIconHandle, LoadingCheckIconProp
     const isControlledRef = useRef(false);
 
     useEffect(() => {
-      if (active) {
-        wormControls.start('animate');
-      } else {
-        wormControls.start('initial');
+      if (isControlledRef.current || active === undefined) {
+        return;
       }
+
+      wormControls.start(active ? 'animate' : 'initial');
     }, [active, wormControls]);
 
     useImperativeHandle(ref, () => {

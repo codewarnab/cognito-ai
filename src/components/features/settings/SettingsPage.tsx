@@ -5,7 +5,7 @@ import { AskAiButtonSettings } from '@/components/features/settings/components/A
 import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
-import { hasAnyProviderConfigured } from '@/utils/providerCredentials';
+import { hasAnyProviderConfigured } from '@/utils/credentials';
 import './SettingsPage.css';
 
 interface SettingsPageProps {

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { createLogger } from '~logger';
 import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '../db';
-import { generateThreadTitle } from '../utils/summarizer';
+import { generateThreadTitle } from '@/utils/ai';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('useAIChatMessages');

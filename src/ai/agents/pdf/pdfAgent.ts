@@ -8,7 +8,7 @@ import { generateText, tool } from 'ai';
 import { z } from 'zod';
 import { createLogger } from '~logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../errors';
-import { isPdfUrl } from '../../../utils/pdfDetector';
+import { isPdfUrl } from '@/utils/files';
 import { initializeModel } from '../../core/modelFactory';
 
 const log = createLogger('PDF-Agent');

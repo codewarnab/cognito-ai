@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
-import type { ModelDownloadProgress } from '../../../utils/modelDownloadBroadcast';
+import type { ModelDownloadProgress } from '@/utils/ai';
 
 interface ModelDownloadToastProps {
     model: 'language' | 'summarizer';
