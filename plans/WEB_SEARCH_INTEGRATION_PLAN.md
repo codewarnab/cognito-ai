@@ -43,12 +43,14 @@ Integrate Morphic-style web search capabilities into the Cognito Chrome Extensio
 **Goal:** Store search API keys and preferences using Chrome storage
 
 **Tasks:**
-1. Extend `src/utils/providerCredentials.ts` to include search provider credentials
-2. Add search settings to `src/utils/settingsStorage.ts`:
+1. Extend `src/utils/credentials/providerCredentials.ts` to include search provider credentials
+2. Add search settings to `src/utils/settings/` directory:
+   - Create `src/utils/settings/searchSettings.ts` for search-specific settings
    - Default search provider
    - Default search depth
    - Max results preference
-3. Create `src/constants/searchProviders.tsx` for provider configurations
+3. Update `src/utils/settings/index.ts` to export new settings
+4. Create `src/constants/searchProviders.tsx` for provider configurations
 
 ---
 
@@ -113,7 +115,7 @@ Integrate Morphic-style web search capabilities into the Cognito Chrome Extensio
    - Tooltip explaining search mode
    - Styling consistent with existing composer buttons
 
-2. Style file: `src/styles/components/search-mode-toggle.css`:
+2. Style file: `src/styles/features/search-mode-toggle.css`:
    - Default/pressed states
    - Hover/focus states
    - Icon animations
@@ -245,24 +247,326 @@ Integrate Morphic-style web search capabilities into the Cognito Chrome Extensio
 **Goal:** Add search configuration to settings page
 
 **Tasks:**
-1. Create `src/components/features/settings/components/SearchSettings.tsx`:
-   - Search provider selection
-   - API key input for selected provider
-   - Default search depth preference
-   - Default max results slider
-   - Enable/disable search by default
+1. Create `src/utils/settings/searchSettings.ts`:
+   ```typescript
+   import { createLogger } from '~logger';
 
-2. Update `SettingsPage.tsx` to include SearchSettings section
+   const log = createLogger('SearchSettings', 'SETTINGS');
+
+   export const SEARCH_SETTINGS_STORAGE_KEY = 'searchSettings';
+
+   export interface SearchSettings {
+       enabled: boolean;
+       defaultProvider: 'tavily' | 'serper' | 'brave';
+       defaultSearchDepth: 'basic' | 'advanced';
+       maxResults: number;
+       includeImages: boolean;
+   }
+
+   export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
+       enabled: true,
+       defaultProvider: 'tavily',
+       defaultSearchDepth: 'basic',
+       maxResults: 10,
+       includeImages: true,
+   };
+
+   export async function getSearchSettings(): Promise<SearchSettings> {
+       try {
+           const result = await chrome.storage.local.get(SEARCH_SETTINGS_STORAGE_KEY);
+           return { ...DEFAULT_SEARCH_SETTINGS, ...(result[SEARCH_SETTINGS_STORAGE_KEY] || {}) };
+       } catch (error) {
+           log.error('Failed to get settings:', error);
+           return DEFAULT_SEARCH_SETTINGS;
+       }
+   }
+
+   export async function saveSearchSettings(settings: SearchSettings): Promise<void> {
+       try {
+           await chrome.storage.local.set({ [SEARCH_SETTINGS_STORAGE_KEY]: settings });
+           log.info('Settings saved');
+       } catch (error) {
+           log.error('Failed to save settings:', error);
+           throw error;
+       }
+   }
+
+   export async function isSearchEnabled(): Promise<boolean> {
+       const settings = await getSearchSettings();
+       return settings.enabled;
+   }
+   ```
+
+2. Update `src/utils/settings/index.ts` to export new settings:
+   ```typescript
+   // Add to existing exports
+   export * from './searchSettings';
+   ```
+
+3. Create `src/components/features/settings/components/SearchSettings.tsx`:
+
+   > **Note:** This component follows the minimal style pattern used by existing settings components like `AskAiButtonSettings.tsx`, `TextSummarizerSettings.tsx`, etc. It uses the shared `Toggle` component and CSS classes defined in `SettingsPage.css`.
+
+   ```tsx
+   import React, { useState, useEffect } from 'react';
+   import { Globe, ChevronUp, ChevronDown, Key } from 'lucide-react';
+   import { createLogger } from '~logger';
+   import {
+       getSearchSettings,
+       saveSearchSettings,
+       DEFAULT_SEARCH_SETTINGS,
+       type SearchSettings as Settings,
+   } from '@/utils/settings';
+   import { Toggle } from '@/components/shared/inputs/Toggle';
+
+   const log = createLogger('SearchSettings');
+
+   export const SearchSettings: React.FC = () => {
+       const [settings, setSettings] = useState<Settings>(DEFAULT_SEARCH_SETTINGS);
+       const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+       const [isApiKeysOpen, setIsApiKeysOpen] = useState(false);
+
+       useEffect(() => {
+           const loadSettings = async () => {
+               try {
+                   const loaded = await getSearchSettings();
+                   setSettings(loaded);
+               } catch (err) {
+                   log.error('Failed to load settings', err);
+               }
+           };
+           loadSettings();
+       }, []);
+
+       const handleToggleEnabled = async (checked: boolean) => {
+           const newSettings = { ...settings, enabled: checked };
+           setSettings(newSettings);
+           await saveSearchSettings(newSettings);
+       };
+
+       const handleSettingChange = async <K extends keyof Settings>(key: K, value: Settings[K]) => {
+           const newSettings = { ...settings, [key]: value };
+           setSettings(newSettings);
+           await saveSearchSettings(newSettings);
+       };
+
+       return (
+           <div className="settings-section">
+               <div className="settings-section-header">
+                   <h2 className="settings-section-title">
+                       <Globe size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
+                       Web Search
+                   </h2>
+               </div>
+               <div className="settings-card">
+                   {/* Enable/Disable Toggle */}
+                   <div className="settings-item">
+                       <div className="settings-item-content">
+                           <div className="settings-item-title">Enable Web Search</div>
+                           <div className="settings-item-description">Allow AI to search the web for current information</div>
+                       </div>
+                       <Toggle
+                           checked={settings.enabled}
+                           onChange={handleToggleEnabled}
+                       />
+                   </div>
+
+                   {/* Options Accordion - only show when enabled */}
+                   {settings.enabled && (
+                       <>
+                           {/* Search Options */}
+                           <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                               <button
+                                   className="settings-item-header-button"
+                                   onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+                                   style={{
+                                       width: '100%',
+                                       display: 'flex',
+                                       justifyContent: 'space-between',
+                                       alignItems: 'center',
+                                       padding: '12px',
+                                       background: 'none',
+                                       border: 'none',
+                                       cursor: 'pointer',
+                                       color: 'inherit'
+                                   }}
+                               >
+                                   <div style={{ textAlign: 'left' }}>
+                                       <div className="settings-item-title">Search Options</div>
+                                       <div className="settings-item-description">
+                                           {settings.defaultProvider} • {settings.defaultSearchDepth} • {settings.maxResults} results
+                                       </div>
+                                   </div>
+                                   {isOptionsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                               </button>
+
+                               {isOptionsOpen && (
+                                   <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
+                                       {/* Default Provider */}
+                                       <div style={{ marginBottom: '12px' }}>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Search Provider</div>
+                                           <select
+                                               className="settings-select"
+                                               value={settings.defaultProvider}
+                                               onChange={(e) => handleSettingChange('defaultProvider', e.target.value as Settings['defaultProvider'])}
+                                           >
+                                               <option value="tavily">Tavily (Recommended)</option>
+                                               <option value="serper">Serper.dev</option>
+                                               <option value="brave">Brave Search</option>
+                                           </select>
+                                       </div>
+
+                                       {/* Search Depth */}
+                                       <div style={{ marginBottom: '12px' }}>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Default Search Depth</div>
+                                           <select
+                                               className="settings-select"
+                                               value={settings.defaultSearchDepth}
+                                               onChange={(e) => handleSettingChange('defaultSearchDepth', e.target.value as Settings['defaultSearchDepth'])}
+                                           >
+                                               <option value="basic">Basic (Faster)</option>
+                                               <option value="advanced">Advanced (More thorough)</option>
+                                           </select>
+                                       </div>
+
+                                       {/* Max Results */}
+                                       <div style={{ marginBottom: '12px' }}>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Max Results</div>
+                                           <select
+                                               className="settings-select"
+                                               value={settings.maxResults}
+                                               onChange={(e) => handleSettingChange('maxResults', Number(e.target.value))}
+                                           >
+                                               <option value={5}>5 results</option>
+                                               <option value={10}>10 results (default)</option>
+                                               <option value={15}>15 results</option>
+                                               <option value={20}>20 results</option>
+                                           </select>
+                                       </div>
+
+                                       {/* Include Images */}
+                                       <div className="settings-item" style={{ padding: 0, border: 'none' }}>
+                                           <div className="settings-item-content">
+                                               <div className="settings-item-title">Include Images</div>
+                                               <div className="settings-item-description">Show image results when available</div>
+                                           </div>
+                                           <Toggle
+                                               checked={settings.includeImages}
+                                               onChange={(v) => handleSettingChange('includeImages', v)}
+                                           />
+                                       </div>
+                                   </div>
+                               )}
+                           </div>
+
+                           {/* API Keys Section */}
+                           <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                               <button
+                                   className="settings-item-header-button"
+                                   onClick={() => setIsApiKeysOpen(!isApiKeysOpen)}
+                                   style={{
+                                       width: '100%',
+                                       display: 'flex',
+                                       justifyContent: 'space-between',
+                                       alignItems: 'center',
+                                       padding: '12px',
+                                       background: 'none',
+                                       border: 'none',
+                                       cursor: 'pointer',
+                                       color: 'inherit'
+                                   }}
+                               >
+                                   <div style={{ textAlign: 'left' }}>
+                                       <div className="settings-item-title">
+                                           <Key size={14} style={{ display: 'inline', marginRight: 6, verticalAlign: 'text-bottom' }} />
+                                           API Keys
+                                       </div>
+                                       <div className="settings-item-description">Configure search provider API keys</div>
+                                   </div>
+                                   {isApiKeysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                               </button>
+
+                               {isApiKeysOpen && (
+                                   <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
+                                       {/* API key inputs would go here - similar to existing provider credential inputs */}
+                                       <div className="settings-item-description" style={{ marginBottom: '8px' }}>
+                                           Enter API keys for your preferred search providers.
+                                       </div>
+                                       {/* Tavily API Key */}
+                                       <div style={{ marginBottom: '12px' }}>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Tavily API Key</div>
+                                           <input
+                                               type="password"
+                                               className="settings-input"
+                                               placeholder="tvly-..."
+                                               style={{ width: '100%' }}
+                                           />
+                                       </div>
+                                       {/* Serper API Key */}
+                                       <div style={{ marginBottom: '12px' }}>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Serper API Key</div>
+                                           <input
+                                               type="password"
+                                               className="settings-input"
+                                               placeholder="Enter Serper API key"
+                                               style={{ width: '100%' }}
+                                           />
+                                       </div>
+                                       {/* Brave API Key */}
+                                       <div>
+                                           <div className="settings-item-title" style={{ marginBottom: '6px' }}>Brave Search API Key</div>
+                                           <input
+                                               type="password"
+                                               className="settings-input"
+                                               placeholder="Enter Brave API key"
+                                               style={{ width: '100%' }}
+                                           />
+                                       </div>
+                                   </div>
+                               )}
+                           </div>
+                       </>
+                   )}
+               </div>
+           </div>
+       );
+   };
+   ```
+
+4. Update `src/components/features/settings/SettingsPage.tsx` to include SearchSettings:
+   ```tsx
+   import { SearchSettings } from '@/components/features/settings/components/SearchSettings';
+
+   // In the settings-content div, add after WriteCommandSettings:
+   <SearchSettings />
+   ```
+
+   The updated content section should look like:
+   ```tsx
+   {/* Content */}
+   <div className="settings-content">
+       <VoiceSettings />
+       <TTSAndDataSettings />
+       <AskAiButtonSettings />
+       <TextSummarizerSettings />
+       <WriteCommandSettings />
+       <SearchSettings />   {/* ADD THIS */}
+       <EnabledToolsSettings />
+       <MaxToolCallSettings />
+   </div>
+   ```
 
 ### 6.2 Provider Setup for Search
 **Goal:** Guide users through search API setup
 
 **Tasks:**
-1. Update `ProviderSetup.tsx` or create `SearchProviderSetup.tsx`:
-   - Instructions for getting API keys
-   - Links to provider dashboards (Tavily, Serper, etc.)
-   - Test connection button
-   - Pricing/usage information
+1. Add provider setup links in the API Keys accordion section
+2. Include links to provider dashboards:
+   - Tavily: https://tavily.com
+   - Serper: https://serper.dev
+   - Brave: https://brave.com/search/api/
+3. Add test connection functionality
+4. Show pricing/usage information
 
 ---
 
@@ -353,7 +657,7 @@ Phase 6        Phase 3        Phase 7
 
 ### Existing Files:
 | File | Changes |
-|------|---------|
+|------|--------|
 | `src/components/features/chat/components/Composer.tsx` | Add search toggle |
 | `src/components/features/chat/components/ChatInput.tsx` | Search state |
 | `src/components/core/CopilotChatWindow.tsx` | Props passing |
@@ -361,16 +665,21 @@ Phase 6        Phase 3        Phase 7
 | `src/constants/toolDescriptions.ts` | Tool descriptions |
 | `src/ai/agents/browser/prompts.ts` | Agent instructions |
 | `src/ai/core/aiLogic.ts` | Tool filtering |
-| `src/utils/providerCredentials.ts` | Search API keys |
-| `src/utils/settingsStorage.ts` | Search settings |
-| `src/components/features/settings/SettingsPage.tsx` | Settings UI |
+| `src/utils/credentials/providerCredentials.ts` | Search API keys |
+| `src/utils/settings/index.ts` | Export search settings |
+| `src/components/features/settings/SettingsPage.tsx` | Add SearchSettings component |
 
 ### New Files to Create:
 | Directory/File | Purpose |
-|----------------|---------|
+|----------------|--------|
 | `src/search/` | Entire search infrastructure |
+| `src/search/types.ts` | Search result types |
+| `src/search/schema.ts` | Zod schemas |
+| `src/search/providers/` | Search provider implementations |
 | `src/actions/search/` | Search tools |
 | `src/hooks/useSearchMode.ts` | Search mode state |
+| `src/utils/settings/searchSettings.ts` | Search settings storage |
+| `src/types/search.ts` | Search-related type definitions |
 | `src/components/features/chat/components/SearchModeToggle.tsx` | Toggle button |
 | `src/components/features/chat/components/SearchDepthSelector.tsx` | Depth dropdown |
 | `src/components/features/chat/components/SearchSection.tsx` | Results container |
@@ -378,7 +687,7 @@ Phase 6        Phase 3        Phase 7
 | `src/components/features/chat/components/SearchResultCard.tsx` | Result card |
 | `src/components/features/chat/components/SearchResultsImageSection.tsx` | Image results |
 | `src/components/features/settings/components/SearchSettings.tsx` | Settings section |
-| `src/styles/components/search-mode-toggle.css` | Toggle styles |
+| `src/styles/features/search-mode-toggle.css` | Toggle styles |
 | `src/styles/features/search/` | Search-specific styles |
 
 ---

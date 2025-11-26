@@ -13,6 +13,9 @@ export interface WriteCommandSettings {
     defaultTone: 'professional' | 'casual' | 'formal' | 'friendly';
     includePageContext: boolean;
     maxOutputTokens: number;
+    // Gemini Tool settings
+    enableUrlContext: boolean;    // Enable URL fetching/analysis tool
+    enableGoogleSearch: boolean;  // Enable Google Search grounding tool
 }
 
 export const DEFAULT_WRITE_SETTINGS: WriteCommandSettings = {
@@ -20,6 +23,8 @@ export const DEFAULT_WRITE_SETTINGS: WriteCommandSettings = {
     defaultTone: 'professional',
     includePageContext: true,
     maxOutputTokens: 1024,
+    enableUrlContext: false,
+    enableGoogleSearch: false,
 };
 
 /**

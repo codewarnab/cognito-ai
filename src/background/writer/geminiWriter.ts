@@ -24,6 +24,9 @@ export interface WriterOptions {
     tone?: WriteTone;
     maxTokens?: number;
     pageContext?: WritePageContext;
+    // Gemini Tool options
+    enableUrlContext?: boolean;    // Enable URL fetching/analysis tool
+    enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
 }
 
 /**
@@ -142,7 +145,10 @@ ${contextInfo}
 
 Important guidelines:
 - Generate ONLY the requested content, no explanations or meta-commentary
-- Match the appropriate length for the platform and request
+- BE CONCISE by default - keep responses brief and to the point unless the user explicitly asks for detailed, long, or comprehensive content
+- For most requests, aim for 1-3 short paragraphs or less
+- Only write longer content when specifically asked (e.g., "write a detailed...", "explain thoroughly...", "comprehensive guide...")
+- Match the appropriate length for the platform (tweets should be short, emails moderate, articles can be longer if requested)
 - Be accurate and don't make up facts
 - If the request is unclear, provide a reasonable interpretation
 - Format appropriately for the context (e.g., markdown for GitHub, plain text for emails)`;
@@ -157,6 +163,15 @@ Important guidelines:
         const systemPrompt = this.buildSystemPrompt(options);
         const maxTokens = options?.maxTokens || 1024;
 
+        // Build tools array based on options
+        const tools: Array<Record<string, unknown>> = [];
+        if (options?.enableUrlContext) {
+            tools.push({ url_context: {} });
+        }
+        if (options?.enableGoogleSearch) {
+            tools.push({ google_search: {} });
+        }
+
         const body = {
             contents: [{
                 role: 'user',
@@ -169,13 +184,16 @@ Important guidelines:
                 temperature: 0.7,
                 maxOutputTokens: maxTokens,
                 topP: 0.95,
-            }
+            },
+            // Conditionally add tools if any are enabled
+            ...(tools.length > 0 && { tools }),
         };
 
         log.info('Making non-streaming API call', {
             promptLength: prompt.length,
             provider: provider.type,
             platform: options?.pageContext?.platform,
+            tools: tools.length > 0 ? tools.map(t => Object.keys(t)[0]) : undefined,
         });
 
         const response = await fetch(provider.url, {
@@ -213,6 +231,15 @@ Important guidelines:
         const systemPrompt = this.buildSystemPrompt(options);
         const maxTokens = options?.maxTokens || 1024;
 
+        // Build tools array based on options
+        const tools: Array<Record<string, unknown>> = [];
+        if (options?.enableUrlContext) {
+            tools.push({ url_context: {} });
+        }
+        if (options?.enableGoogleSearch) {
+            tools.push({ google_search: {} });
+        }
+
         const body = {
             contents: [{
                 role: 'user',
@@ -225,7 +252,9 @@ Important guidelines:
                 temperature: 0.7,
                 maxOutputTokens: maxTokens,
                 topP: 0.95,
-            }
+            },
+            // Conditionally add tools if any are enabled
+            ...(tools.length > 0 && { tools }),
         };
 
         log.debug('Starting write stream', {

@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { PenLine, ChevronUp, ChevronDown } from 'lucide-react';
+import { RefreshCw, ChevronUp, ChevronDown } from 'lucide-react';
 import { createLogger } from '~logger';
 import {
-    getWriteCommandSettings,
-    saveWriteCommandSettings,
-    DEFAULT_WRITE_SETTINGS,
-    type WriteCommandSettings as Settings,
+    getRewriteSettings,
+    saveRewriteSettings,
+    DEFAULT_REWRITE_SETTINGS,
+    type RewriteSettings as Settings,
 } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 
-const log = createLogger('WriteCommandSettings');
+const log = createLogger('TextRewriterSettings');
 
-export const WriteCommandSettings: React.FC = () => {
-    const [settings, setSettings] = useState<Settings>(DEFAULT_WRITE_SETTINGS);
+export const TextRewriterSettings: React.FC = () => {
+    const [settings, setSettings] = useState<Settings>(DEFAULT_REWRITE_SETTINGS);
     const [isOptionsOpen, setIsOptionsOpen] = useState(false);
 
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const loaded = await getWriteCommandSettings();
+                const loaded = await getRewriteSettings();
                 setSettings(loaded);
             } catch (err) {
                 log.error('Failed to load settings', err);
@@ -30,33 +30,29 @@ export const WriteCommandSettings: React.FC = () => {
     const handleToggleEnabled = async (checked: boolean) => {
         const newSettings = { ...settings, enabled: checked };
         setSettings(newSettings);
-        await saveWriteCommandSettings(newSettings);
+        await saveRewriteSettings(newSettings);
     };
 
     const handleSettingChange = async <K extends keyof Settings>(key: K, value: Settings[K]) => {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
-        await saveWriteCommandSettings(newSettings);
-    };
-
-    const capitalizeFirst = (str: string): string => {
-        return str.charAt(0).toUpperCase() + str.slice(1);
+        await saveRewriteSettings(newSettings);
     };
 
     return (
         <div className="settings-section">
             <div className="settings-section-header">
                 <h2 className="settings-section-title">
-                    <PenLine size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
-                    Write Command
+                    <RefreshCw size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
+                    Text Rewriter
                 </h2>
             </div>
             <div className="settings-card">
                 {/* Enable/Disable Toggle */}
                 <div className="settings-item">
                     <div className="settings-item-content">
-                        <div className="settings-item-title">Enable /write Command</div>
-                        <div className="settings-item-description">Type /write in any text field to generate AI content</div>
+                        <div className="settings-item-title">Show on Text Selection</div>
+                        <div className="settings-item-description">Display rewrite tooltip when selecting text on pages</div>
                     </div>
                     <Toggle
                         checked={settings.enabled}
@@ -83,9 +79,9 @@ export const WriteCommandSettings: React.FC = () => {
                             }}
                         >
                             <div style={{ textAlign: 'left' }}>
-                                <div className="settings-item-title">Writing Options</div>
+                                <div className="settings-item-title">Rewrite Options</div>
                                 <div className="settings-item-description">
-                                    Tone: {capitalizeFirst(settings.defaultTone)} • Context: {settings.includePageContext ? 'on' : 'off'}
+                                    Presets: {settings.showPresets ? 'on' : 'off'} • Min: {settings.minSelectionLength} chars
                                 </div>
                             </div>
                             {isOptionsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -93,46 +89,32 @@ export const WriteCommandSettings: React.FC = () => {
 
                         {isOptionsOpen && (
                             <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
-                                {/* Default Tone */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Default Tone</div>
-                                    <select
-                                        className="settings-select"
-                                        value={settings.defaultTone}
-                                        onChange={(e) => handleSettingChange('defaultTone', e.target.value as Settings['defaultTone'])}
-                                    >
-                                        <option value="professional">Professional - Clear and business-appropriate</option>
-                                        <option value="casual">Casual - Relaxed and conversational</option>
-                                        <option value="formal">Formal - Structured and official</option>
-                                        <option value="friendly">Friendly - Warm and approachable</option>
-                                    </select>
-                                </div>
-
-                                {/* Max Output Tokens */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Max Output Length</div>
-                                    <select
-                                        className="settings-select"
-                                        value={settings.maxOutputTokens}
-                                        onChange={(e) => handleSettingChange('maxOutputTokens', Number(e.target.value))}
-                                    >
-                                        <option value={256}>Short (~256 tokens)</option>
-                                        <option value={512}>Medium (~512 tokens)</option>
-                                        <option value={1024}>Long (~1024 tokens)</option>
-                                        <option value={2048}>Extended (~2048 tokens)</option>
-                                    </select>
-                                </div>
-
-                                {/* Include Page Context */}
+                                {/* Show Presets */}
                                 <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
                                     <div className="settings-item-content">
-                                        <div className="settings-item-title">Include Page Context</div>
-                                        <div className="settings-item-description">Use page title and URL to improve AI suggestions</div>
+                                        <div className="settings-item-title">Show Preset Buttons</div>
+                                        <div className="settings-item-description">Display quick rewrite options (Shorter, Professional, etc.)</div>
                                     </div>
                                     <Toggle
-                                        checked={settings.includePageContext}
-                                        onChange={(v) => handleSettingChange('includePageContext', v)}
+                                        checked={settings.showPresets}
+                                        onChange={(v) => handleSettingChange('showPresets', v)}
                                     />
+                                </div>
+
+                                {/* Minimum Selection Length */}
+                                <div style={{ marginBottom: '12px' }}>
+                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Minimum Selection Length</div>
+                                    <select
+                                        className="settings-select"
+                                        value={settings.minSelectionLength}
+                                        onChange={(e) => handleSettingChange('minSelectionLength', Number(e.target.value))}
+                                    >
+                                        <option value={5}>5 characters</option>
+                                        <option value={10}>10 characters</option>
+                                        <option value={20}>20 characters</option>
+                                        <option value={50}>50 characters</option>
+                                        <option value={100}>100 characters</option>
+                                    </select>
                                 </div>
 
                                 {/* Gemini Tools Section */}
@@ -145,7 +127,7 @@ export const WriteCommandSettings: React.FC = () => {
                                     <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
                                         <div className="settings-item-content">
                                             <div className="settings-item-title">Google Search</div>
-                                            <div className="settings-item-description">Enable real-time web search for up-to-date information</div>
+                                            <div className="settings-item-description">Enable real-time web search for up-to-date rewrites</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableGoogleSearch}
@@ -157,7 +139,7 @@ export const WriteCommandSettings: React.FC = () => {
                                     <div className="settings-item" style={{ padding: 0, border: 'none' }}>
                                         <div className="settings-item-content">
                                             <div className="settings-item-title">URL Context</div>
-                                            <div className="settings-item-description">Fetch and analyze content from URLs mentioned in prompts</div>
+                                            <div className="settings-item-description">Fetch and analyze content from URLs in the selected text</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableUrlContext}

@@ -4,11 +4,13 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WritingAnimation } from './WritingAnimation';
+import { ToolsToggle } from '../shared/ToolsToggle';
+import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
 import type { WritePosition } from '@/types';
 
 interface WriterOverlayProps {
     position: WritePosition;
-    onGenerate: (prompt: string) => void;
+    onGenerate: (prompt: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }) => void;
     onInsert: () => void;
     onClose: () => void;
     isGenerating: boolean;
@@ -87,14 +89,95 @@ export function WriterOverlay({
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [overlayPosition, setOverlayPosition] = useState(position);
     const [copied, setCopied] = useState(false);
+    const [maxOutputHeight, setMaxOutputHeight] = useState(300);
+
+    // Tool settings state
+    const [enableUrlContext, setEnableUrlContext] = useState(false);
+    const [enableGoogleSearch, setEnableGoogleSearch] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
 
-    // Update position when prop changes
+    // Load tool settings on mount
+    useEffect(() => {
+        getWriteCommandSettings().then((settings) => {
+            setEnableUrlContext(settings.enableUrlContext);
+            setEnableGoogleSearch(settings.enableGoogleSearch);
+        }).catch(() => {
+            // Use defaults on error
+        });
+    }, []);
+
+    // Handle tool setting changes
+    const handleUrlContextChange = useCallback((enabled: boolean) => {
+        setEnableUrlContext(enabled);
+        void updateWriteCommandSetting('enableUrlContext', enabled);
+    }, []);
+
+    const handleGoogleSearchChange = useCallback((enabled: boolean) => {
+        setEnableGoogleSearch(enabled);
+        void updateWriteCommandSetting('enableGoogleSearch', enabled);
+    }, []);
+
+    // Update position when prop changes and constrain to viewport
     useEffect(() => {
         setOverlayPosition(position);
     }, [position]);
+
+    // Constrain overlay to viewport and calculate dynamic output height
+    useEffect(() => {
+        const constrainToViewport = () => {
+            if (!overlayRef.current) return;
+
+            const overlay = overlayRef.current;
+            const rect = overlay.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
+            const viewportWidth = window.innerWidth;
+            const padding = 16; // Padding from viewport edges
+
+            let newX = overlayPosition.x;
+            let newY = overlayPosition.y;
+
+            // Constrain horizontally
+            if (rect.right > viewportWidth - padding) {
+                newX = viewportWidth - rect.width - padding;
+            }
+            if (newX < padding) {
+                newX = padding;
+            }
+
+            // Constrain vertically
+            if (rect.bottom > viewportHeight - padding) {
+                newY = viewportHeight - rect.height - padding;
+            }
+            if (newY < padding) {
+                newY = padding;
+            }
+
+            // Update position if constrained
+            if (newX !== overlayPosition.x || newY !== overlayPosition.y) {
+                setOverlayPosition({ x: newX, y: newY });
+            }
+
+            // Calculate available space for output area
+            // Base height (header + input + tools + actions) is approximately 180px
+            const baseOverlayHeight = 180;
+            const availableHeight = viewportHeight - newY - padding - baseOverlayHeight;
+            const newMaxHeight = Math.max(100, Math.min(400, availableHeight));
+            setMaxOutputHeight(newMaxHeight);
+        };
+
+        // Run after render to get accurate measurements
+        const timer = requestAnimationFrame(constrainToViewport);
+
+        // Also handle window resize
+        window.addEventListener('resize', constrainToViewport);
+
+        return () => {
+            cancelAnimationFrame(timer);
+            window.removeEventListener('resize', constrainToViewport);
+        };
+    }, [overlayPosition.x, overlayPosition.y, generatedText]);
 
     // Auto-focus on mount
     useEffect(() => {
@@ -113,10 +196,8 @@ export function WriterOverlay({
 
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (generatedText && !isGenerating) {
-                    onInsert();
-                } else if (prompt.trim() && !isGenerating) {
-                    onGenerate(prompt);
+                if (prompt.trim() && !isGenerating) {
+                    onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -126,9 +207,10 @@ export function WriterOverlay({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [prompt, generatedText, isGenerating, onGenerate, onInsert, onClose]);
+    }, [prompt, generatedText, isGenerating, onGenerate, onInsert, onClose, enableUrlContext, enableGoogleSearch]);
 
     // Handle click outside - check if click target is part of the overlay
+    // Uses composedPath() to properly traverse Shadow DOM boundaries (Plasmo renders in shadow DOM)
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             // Don't close if we're in the middle of dragging
@@ -136,10 +218,30 @@ export function WriterOverlay({
 
             const target = e.target as HTMLElement;
 
-            // Check if click is on the overlay or any of its children
-            // Use closest() to handle clicks on nested elements like SVG icons
-            if (target.closest('.writer-overlay')) {
+            // Use composedPath() to traverse through Shadow DOM boundaries
+            // This is critical because Plasmo content scripts render inside a Shadow DOM (plasmo-csui)
+            const path = e.composedPath();
+
+            // Check if any element in the path is our overlay
+            const isInsideOverlay = path.some((el) => {
+                if (el instanceof HTMLElement) {
+                    // Check by ref
+                    if (el === overlayRef.current) return true;
+                    // Check by class (works inside shadow DOM)
+                    if (el.classList?.contains('writer-overlay')) return true;
+                    // Check if it's a plasmo container (shadow host)
+                    if (el.tagName === 'PLASMO-CSUI') return true;
+                }
+                return false;
+            });
+
+            if (isInsideOverlay) {
                 return; // Click is inside overlay, don't close
+            }
+
+            // Fallback: Also check the direct target for non-shadow DOM contexts
+            if (target.closest?.('.writer-overlay')) {
+                return;
             }
 
             // Also check using the ref as a fallback
@@ -212,7 +314,7 @@ export function WriterOverlay({
     // Handle regenerate
     const handleRegenerate = () => {
         if (prompt.trim()) {
-            onGenerate(prompt);
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
         }
     };
 
@@ -221,7 +323,7 @@ export function WriterOverlay({
         e.preventDefault();
         e.stopPropagation();
         if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt);
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
         }
     };
 
@@ -230,7 +332,7 @@ export function WriterOverlay({
         e.preventDefault();
         e.stopPropagation();
         if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt);
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
         }
     };
 
@@ -244,6 +346,7 @@ export function WriterOverlay({
             }}
             role="dialog"
             aria-label="AI Writer"
+            onMouseDown={(e) => e.stopPropagation()}
         >
             {/* Header */}
             <div className="writer-header">
@@ -291,11 +394,21 @@ export function WriterOverlay({
                 </button>
             </form>
 
-            {/* Loading State */}
+            {/* Tools Toggle - Inline Settings */}
+            <div className="writer-tools-row">
+                <ToolsToggle
+                    enableUrlContext={enableUrlContext}
+                    enableGoogleSearch={enableGoogleSearch}
+                    onUrlContextChange={handleUrlContextChange}
+                    onGoogleSearchChange={handleGoogleSearchChange}
+                    disabled={isGenerating}
+                />
+            </div>
+
+            {/* Loading State - Skeleton Animation */}
             {isGenerating && !generatedText && (
                 <div className="writer-loading">
                     <WritingAnimation />
-                    <span className="writer-loading-text">Writing...</span>
                 </div>
             )}
 
@@ -316,7 +429,10 @@ export function WriterOverlay({
 
             {/* Output Display */}
             {generatedText && (
-                <div className="writer-output">
+                <div
+                    className="writer-output"
+                    style={{ maxHeight: `${maxOutputHeight}px` }}
+                >
                     <p className="writer-output-text">
                         {generatedText}
                         {isGenerating && <span className="writer-cursor">▌</span>}
@@ -352,12 +468,6 @@ export function WriterOverlay({
                 </div>
             )}
 
-            {/* Keyboard hint when output ready */}
-            {generatedText && !isGenerating && (
-                <div className="writer-hint">
-                    Press <kbd>Enter</kbd> to insert
-                </div>
-            )}
         </div>
     );
 }

@@ -1,16 +1,16 @@
 /**
- * Writer Message Handler
- * Handles write request messages with streaming response via port
+ * Rewriter Message Handler
+ * Handles rewrite request messages (non-streaming) via port
  */
 
 import { createLogger } from '~logger';
-import { geminiWriter, type WriterOptions } from './geminiWriter';
-import type { WriteGenerateRequest } from '@/types';
+import { geminiRewriter, type RewriterOptions } from './geminiRewriter';
+import type { RewriteRequest } from '@/types';
 
-const log = createLogger('WriterHandler', 'BACKGROUND');
+const log = createLogger('RewriterHandler', 'BACKGROUND');
 
 /**
- * Error codes for write generation failures
+ * Error codes for rewrite failures
  */
 const ERROR_CODES = {
     NO_API_KEY: 'NO_API_KEY',
@@ -18,7 +18,7 @@ const ERROR_CODES = {
     NETWORK_ERROR: 'NETWORK_ERROR',
     INVALID_RESPONSE: 'INVALID_RESPONSE',
     PORT_DISCONNECTED: 'PORT_DISCONNECTED',
-    WRITE_FAILED: 'WRITE_FAILED',
+    REWRITE_FAILED: 'REWRITE_FAILED',
 } as const;
 
 /**
@@ -30,7 +30,7 @@ function getErrorDetails(error: unknown): { message: string; code: string } {
     // No API key configured
     if (errorMessage.includes('No AI provider configured') || errorMessage.includes('API key')) {
         return {
-            message: 'Please configure your API key in settings to use the write command.',
+            message: 'Please configure your API key in settings to use the rewrite feature.',
             code: ERROR_CODES.NO_API_KEY,
         };
     }
@@ -66,7 +66,7 @@ function getErrorDetails(error: unknown): { message: string; code: string } {
         if (status >= 500) {
             return {
                 message: 'The AI service is temporarily unavailable. Please try again later.',
-                code: ERROR_CODES.WRITE_FAILED,
+                code: ERROR_CODES.REWRITE_FAILED,
             };
         }
     }
@@ -74,62 +74,53 @@ function getErrorDetails(error: unknown): { message: string; code: string } {
     // Default error
     return {
         message: errorMessage || 'An unexpected error occurred. Please try again.',
-        code: ERROR_CODES.WRITE_FAILED,
+        code: ERROR_CODES.REWRITE_FAILED,
     };
 }
 
 /**
- * Handle write generate request (non-streaming)
- * Returns full response at once via port
+ * Handle rewrite request (non-streaming)
+ * Returns complete rewritten text in a single message
  */
-export async function handleWriteGenerate(
-    request: WriteGenerateRequest,
+export async function handleRewriteRequest(
+    request: RewriteRequest,
     port: chrome.runtime.Port
 ): Promise<void> {
-    const { prompt, pageContext, settings } = request.payload;
+    const { selectedText, instruction, preset, enableUrlContext, enableGoogleSearch } = request.payload;
 
-    log.info('Processing write request', {
-        promptLength: prompt.length,
-        platform: pageContext?.platform,
-        domain: pageContext?.domain,
+    log.info('Processing rewrite request', {
+        textLength: selectedText.length,
+        preset,
+        hasInstruction: !!instruction,
     });
 
-    const options: WriterOptions = {
-        tone: settings?.tone,
-        maxTokens: settings?.maxTokens,
-        pageContext,
-        // Pass Gemini tool settings
-        enableUrlContext: settings?.enableUrlContext ?? false,
-        enableGoogleSearch: settings?.enableGoogleSearch ?? false,
-    };
-
-    // Track if port is still connected
+    // Track port connection
     let isPortConnected = true;
     port.onDisconnect.addListener(() => {
         isPortConnected = false;
-        log.debug('Port disconnected during write generation');
+        log.debug('Port disconnected during rewrite');
     });
 
     try {
-        // Generate complete response (non-streaming)
-        const text = await geminiWriter.generate(prompt, options);
+        const options: RewriterOptions = {
+            preset,
+            instruction,
+            enableUrlContext: enableUrlContext ?? false,
+            enableGoogleSearch: enableGoogleSearch ?? false,
+        };
 
-        log.info('Generation complete', { textLength: text.length });
+        // Generate complete rewrite (non-streaming)
+        const rewrittenText = await geminiRewriter.rewrite(selectedText, options);
 
-        // Send the complete response
+        log.info('Rewrite complete', { outputLength: rewrittenText.length });
+
+        // Send complete response
         if (isPortConnected) {
             try {
                 port.postMessage({
-                    action: 'WRITE_STREAM_CHUNK',
-                    text: text,
-                    done: false,
+                    action: 'REWRITE_COMPLETE',
+                    text: rewrittenText,
                 });
-                port.postMessage({
-                    action: 'WRITE_STREAM_CHUNK',
-                    text: '',
-                    done: true,
-                });
-                log.info('Response sent to content script');
             } catch (postError) {
                 log.error('Failed to post message', postError);
             }
@@ -137,7 +128,7 @@ export async function handleWriteGenerate(
             log.warn('Port disconnected before response could be sent');
         }
     } catch (error) {
-        log.error('Write generation failed', error);
+        log.error('Rewrite failed', error);
 
         const { message, code } = getErrorDetails(error);
 
@@ -145,7 +136,7 @@ export async function handleWriteGenerate(
         if (isPortConnected) {
             try {
                 port.postMessage({
-                    action: 'WRITE_ERROR',
+                    action: 'REWRITE_ERROR',
                     error: message,
                     code,
                 });

@@ -7,6 +7,35 @@ import { createLogger } from '~logger';
 
 const log = createLogger('TextInsertion');
 
+export interface InsertResult {
+    success: boolean;
+    fallbackUsed?: 'clipboard' | 'none';
+    error?: string;
+}
+
+/**
+ * Check if element is still attached to the DOM
+ */
+function isElementInDOM(el: HTMLElement): boolean {
+    // Check if in main document
+    if (document.body.contains(el)) {
+        return true;
+    }
+    // Check if in shadow DOM
+    const root = el.getRootNode();
+    if (root instanceof ShadowRoot && root.host) {
+        return document.body.contains(root.host);
+    }
+    return false;
+}
+
+/**
+ * Wait for next animation frame (allows focus to settle)
+ */
+function waitForFrame(): Promise<void> {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
+
 /**
  * Get cursor position in an element
  */
@@ -97,15 +126,28 @@ function focusAndSetCursor(el: HTMLElement, position: number): void {
 export function useTextInsertion() {
     /**
      * Insert text into the target element at the specified cursor position
+     * Returns a result object indicating success and any fallback used
      */
-    const insertText = useCallback((
+    const insertText = useCallback(async (
         target: HTMLElement,
         text: string,
         cursorPosition: number
-    ): boolean => {
+    ): Promise<InsertResult> => {
         if (!target || !text) {
             log.warn('Invalid insert params', { hasTarget: !!target, hasText: !!text });
-            return false;
+            return { success: false, error: 'Invalid parameters' };
+        }
+
+        // Validate element is still in DOM
+        if (!isElementInDOM(target)) {
+            log.warn('Target element is no longer in DOM');
+            // Try clipboard fallback
+            try {
+                await navigator.clipboard.writeText(text);
+                return { success: false, fallbackUsed: 'clipboard', error: 'Target field is no longer available' };
+            } catch {
+                return { success: false, error: 'Target field is no longer available' };
+            }
         }
 
         log.debug('Inserting text', {
@@ -115,11 +157,12 @@ export function useTextInsertion() {
         });
 
         try {
-            // Focus the target first
+            // Focus the target first and wait for focus to settle
             target.focus();
+            await waitForFrame();
 
             if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-                // Standard input/textarea
+                // Strategy 1: Direct value manipulation (most reliable for standard inputs)
                 const before = target.value.substring(0, cursorPosition);
                 const after = target.value.substring(cursorPosition);
                 target.value = before + text + after;
@@ -128,11 +171,12 @@ export function useTextInsertion() {
                 const newPos = cursorPosition + text.length;
                 target.setSelectionRange(newPos, newPos);
 
-                // Trigger framework events - these help React/Vue/Angular pick up the change
+                // Strategy 2: Dispatch multiple event types for framework compatibility
+                // Standard events
                 target.dispatchEvent(new Event('input', { bubbles: true }));
                 target.dispatchEvent(new Event('change', { bubbles: true }));
 
-                // Also dispatch InputEvent for more compatibility
+                // InputEvent with more details (for React, Vue, etc.)
                 try {
                     target.dispatchEvent(new InputEvent('input', {
                         bubbles: true,
@@ -144,24 +188,49 @@ export function useTextInsertion() {
                     // Fallback for older browsers
                 }
 
+                // Strategy 3: React-specific property descriptor trick
+                // Some React versions use Object.getOwnPropertyDescriptor to track value changes
+                try {
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                        window.HTMLInputElement.prototype,
+                        'value'
+                    )?.set || Object.getOwnPropertyDescriptor(
+                        window.HTMLTextAreaElement.prototype,
+                        'value'
+                    )?.set;
+
+                    if (nativeInputValueSetter) {
+                        nativeInputValueSetter.call(target, before + text + after);
+                        target.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                } catch {
+                    // This is just an extra attempt, failure is acceptable
+                }
+
                 log.debug('Text inserted into input/textarea');
-                return true;
+                return { success: true };
             } else if (target.isContentEditable) {
                 // ContentEditable (Draft.js, Slate, rich editors)
 
                 // Set cursor position first
                 focusAndSetCursor(target, cursorPosition);
+                await waitForFrame();
 
-                // Try execCommand first (works well with most frameworks)
-                const success = document.execCommand('insertText', false, text);
+                // Strategy 1: execCommand (works with most frameworks, including Draft.js)
+                let success = false;
+                try {
+                    success = document.execCommand('insertText', false, text);
+                } catch {
+                    success = false;
+                }
 
                 if (!success) {
-                    log.debug('execCommand failed, using fallback');
-                    // Fallback: direct DOM manipulation
+                    log.debug('execCommand failed, using DOM manipulation fallback');
+                    // Strategy 2: Direct DOM manipulation
                     insertTextAtCursor(target, text);
                 }
 
-                // Trigger InputEvent for frameworks (especially React with Draft.js)
+                // Strategy 3: Dispatch events for framework compatibility
                 try {
                     target.dispatchEvent(new InputEvent('input', {
                         bubbles: true,
@@ -178,38 +247,64 @@ export function useTextInsertion() {
                 target.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
 
                 log.debug('Text inserted into contenteditable');
-                return true;
+                return { success: true };
             }
 
             log.warn('Unsupported element type', { tagName: target.tagName });
-            return false;
+
+            // Final fallback: copy to clipboard
+            try {
+                await navigator.clipboard.writeText(text);
+                return { success: false, fallbackUsed: 'clipboard', error: 'Unsupported element type' };
+            } catch {
+                return { success: false, error: 'Unsupported element type' };
+            }
         } catch (error) {
             log.error('Failed to insert text', { error });
-            return false;
+
+            // Final fallback: copy to clipboard
+            try {
+                await navigator.clipboard.writeText(text);
+                return { success: false, fallbackUsed: 'clipboard', error: 'Failed to insert text' };
+            } catch {
+                return { success: false, error: 'Failed to insert text' };
+            }
         }
     }, []);
 
     /**
      * Replace all text in the target element
      */
-    const replaceText = useCallback((
+    const replaceText = useCallback(async (
         target: HTMLElement,
         text: string
-    ): boolean => {
+    ): Promise<InsertResult> => {
         if (!target) {
             log.warn('No target element for replaceText');
-            return false;
+            return { success: false, error: 'No target element' };
+        }
+
+        // Validate element is still in DOM
+        if (!isElementInDOM(target)) {
+            log.warn('Target element is no longer in DOM');
+            try {
+                await navigator.clipboard.writeText(text);
+                return { success: false, fallbackUsed: 'clipboard', error: 'Target field is no longer available' };
+            } catch {
+                return { success: false, error: 'Target field is no longer available' };
+            }
         }
 
         try {
             target.focus();
+            await waitForFrame();
 
             if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
                 target.value = text;
                 target.setSelectionRange(text.length, text.length);
                 target.dispatchEvent(new Event('input', { bubbles: true }));
                 target.dispatchEvent(new Event('change', { bubbles: true }));
-                return true;
+                return { success: true };
             } else if (target.isContentEditable) {
                 // Select all and replace
                 const selection = window.getSelection();
@@ -231,13 +326,18 @@ export function useTextInsertion() {
                     data: text,
                 }));
 
-                return true;
+                return { success: true };
             }
 
-            return false;
+            return { success: false, error: 'Unsupported element type' };
         } catch (error) {
             log.error('Failed to replace text', { error });
-            return false;
+            try {
+                await navigator.clipboard.writeText(text);
+                return { success: false, fallbackUsed: 'clipboard', error: 'Failed to replace text' };
+            } catch {
+                return { success: false, error: 'Failed to replace text' };
+            }
         }
     }, []);
 

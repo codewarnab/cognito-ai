@@ -1,23 +1,19 @@
 /* ============================================
-   Write Command - Content Script Styles
+   Text Rewriter - Content Script Styles
    ============================================ */
 
-/* Writer Overlay Container */
-.writer-overlay {
-    position: fixed;
+/* Rewriter Tooltip Container */
+.rewriter-tooltip {
+    position: absolute;
     z-index: 2147483647;
 
-    width: 400px;
+    width: 360px;
     max-width: 90vw;
-    max-height: calc(100vh - 32px);
-
-    display: flex;
-    flex-direction: column;
 
     background: rgba(25, 25, 25, 0.98);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
+    border-radius: 14px;
 
     box-shadow:
         0 8px 40px rgba(0, 0, 0, 0.4),
@@ -28,12 +24,12 @@
 
     opacity: 0;
     transform: scale(0.95) translateY(8px);
-    animation: writer-overlay-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: rewriter-tooltip-appear 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 
     overflow: hidden;
 }
 
-@keyframes writer-overlay-appear {
+@keyframes rewriter-tooltip-appear {
     from {
         opacity: 0;
         transform: scale(0.95) translateY(8px);
@@ -46,63 +42,41 @@
 }
 
 /* Header */
-.writer-header {
+.rewriter-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
 
-    padding: 12px 16px;
+    padding: 12px 14px;
 
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.writer-drag-handle {
+.rewriter-title {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 6px;
 
-    width: 24px;
-    height: 24px;
-
-    color: rgba(255, 255, 255, 0.4);
-    cursor: grab;
-
-    transition: color 0.15s ease;
-}
-
-.writer-drag-handle:hover {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.writer-drag-handle:active {
-    cursor: grabbing;
-}
-
-.writer-title {
-    flex: 1;
-
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: white;
 }
 
-.writer-title-icon {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    margin-right: 6px;
-    vertical-align: text-bottom;
+.rewriter-title-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #a78bfa;
 }
 
-.writer-close {
+.rewriter-close {
     display: flex;
     align-items: center;
     justify-content: center;
 
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     padding: 0;
 
     background: rgba(255, 255, 255, 0.05);
@@ -115,70 +89,127 @@
     transition: all 0.15s ease;
 }
 
-.writer-close:hover {
+.rewriter-close:hover {
     background: rgba(255, 255, 255, 0.1);
     color: white;
 }
 
-.writer-close svg {
-    width: 16px;
-    height: 16px;
-}
-
-/* Input Row */
-.writer-input-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    padding: 14px 16px;
-
+/* Presets Section */
+.rewriter-presets-section {
+    padding: 10px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.writer-input {
-    flex: 1;
+.rewriter-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.rewriter-preset-button {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 6px 10px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.rewriter-preset-button:hover:not(:disabled) {
+    background: rgba(var(--preset-color-rgb, 139, 92, 246), 0.15);
+    border-color: var(--preset-color, #8b5cf6);
+    color: var(--preset-color, #c4b5fd);
+}
+
+.rewriter-preset-button:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.rewriter-preset-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.rewriter-preset-button svg {
+    width: 14px;
+    height: 14px;
+    color: inherit;
+}
+
+.rewriter-preset-label {
+    white-space: nowrap;
+}
+
+/* Custom Instruction Row */
+.rewriter-custom-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
     padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Tools Row */
+.rewriter-tools-row {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rewriter-input {
+    flex: 1;
+
+    padding: 8px 12px;
 
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    border-radius: 8px;
 
     color: white;
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
 
     outline: none;
     transition: all 0.15s ease;
 }
 
-.writer-input::placeholder {
+.rewriter-input::placeholder {
     color: rgba(255, 255, 255, 0.4);
 }
 
-.writer-input:focus {
+.rewriter-input:focus {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(139, 92, 246, 0.5);
 }
 
-.writer-input:disabled {
+.rewriter-input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.writer-send-button {
+.rewriter-send-button {
     display: flex;
     align-items: center;
     justify-content: center;
 
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     padding: 0;
 
     background: rgba(139, 92, 246, 0.2);
     border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 10px;
+    border-radius: 8px;
 
     color: #c4b5fd;
     cursor: pointer;
@@ -186,69 +217,54 @@
     transition: all 0.15s ease;
 }
 
-.writer-send-button:hover:not(:disabled) {
+.rewriter-send-button:hover:not(:disabled) {
     background: rgba(139, 92, 246, 0.3);
-    transform: scale(1.05);
 }
 
-.writer-send-button:active:not(:disabled) {
+.rewriter-send-button:active:not(:disabled) {
     transform: scale(0.95);
 }
 
-.writer-send-button:disabled {
+.rewriter-send-button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
 }
 
-.writer-send-button svg {
-    width: 18px;
-    height: 18px;
-}
-
-/* Tools Row */
-.writer-tools-row {
-    padding: 8px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
 /* Loading State */
-.writer-loading {
-    padding: 0;
+.rewriter-loading {
+    padding: 14px;
 }
 
-/* Skeleton Loading Animation */
-.writer-skeleton {
+.rewriter-shimmer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 16px;
-    width: 100%;
+    gap: 8px;
 }
 
-.writer-skeleton-line {
-    height: 14px;
+.rewriter-shimmer-line {
+    height: 12px;
     background: linear-gradient(90deg,
             rgba(255, 255, 255, 0.06) 0%,
             rgba(255, 255, 255, 0.12) 50%,
             rgba(255, 255, 255, 0.06) 100%);
     background-size: 200% 100%;
     border-radius: 6px;
-    animation: writer-skeleton-shimmer 1.5s ease-in-out infinite;
+    animation: rewriter-shimmer 1.5s ease-in-out infinite;
 }
 
-.writer-skeleton-line--full {
+.rewriter-shimmer-line--full {
     width: 100%;
 }
 
-.writer-skeleton-line--medium {
+.rewriter-shimmer-line--medium {
     width: 75%;
 }
 
-.writer-skeleton-line--short {
-    width: 45%;
+.rewriter-shimmer-line--short {
+    width: 50%;
 }
 
-@keyframes writer-skeleton-shimmer {
+@keyframes rewriter-shimmer {
     0% {
         background-position: 200% 0;
     }
@@ -259,31 +275,31 @@
 }
 
 /* Output Display */
-.writer-output {
-    padding: 16px;
-    max-height: 300px;
-    min-height: 60px;
+.rewriter-output {
+    padding: 14px;
+    max-height: 200px;
     overflow-y: auto;
-    flex-shrink: 1;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.writer-output::-webkit-scrollbar {
-    width: 6px;
+.rewriter-output::-webkit-scrollbar {
+    width: 5px;
 }
 
-.writer-output::-webkit-scrollbar-track {
+.rewriter-output::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.writer-output::-webkit-scrollbar-thumb {
+.rewriter-output::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
 }
 
-.writer-output-text {
+.rewriter-output-text {
     margin: 0;
 
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.9);
 
@@ -291,51 +307,32 @@
     word-wrap: break-word;
 }
 
-/* Streaming cursor */
-.writer-cursor {
-    display: inline-block;
-    color: #a78bfa;
-    animation: cursor-blink 0.8s infinite;
-}
-
-@keyframes cursor-blink {
-
-    0%,
-    50% {
-        opacity: 1;
-    }
-
-    51%,
-    100% {
-        opacity: 0;
-    }
-}
-
 /* Actions Row */
-.writer-actions {
+.rewriter-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
 
-    padding: 12px 16px;
+    padding: 10px 14px;
 
     background: rgba(255, 255, 255, 0.02);
     border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.writer-action-button {
+.rewriter-action-button {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 
-    padding: 8px 14px;
+    padding: 7px 12px;
 
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    border-radius: 7px;
 
     color: rgba(255, 255, 255, 0.9);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     font-family: inherit;
 
@@ -343,125 +340,57 @@
     transition: all 0.15s ease;
 }
 
-.writer-action-button:hover:not(:disabled) {
+.rewriter-action-button:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
 }
 
-.writer-action-button:disabled {
+.rewriter-action-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.writer-action-button svg {
+.rewriter-action-button svg {
     width: 14px;
     height: 14px;
 }
 
-.writer-action-button--primary {
+.rewriter-action-button--primary {
     background: rgba(139, 92, 246, 0.2);
     border-color: rgba(139, 92, 246, 0.3);
     color: #c4b5fd;
 }
 
-.writer-action-button--primary:hover:not(:disabled) {
+.rewriter-action-button--primary:hover:not(:disabled) {
     background: rgba(139, 92, 246, 0.3);
 }
 
 /* Error State */
-.writer-error {
+.rewriter-error {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
 
-    margin: 16px;
-    padding: 14px;
+    margin: 14px;
+    padding: 10px;
 
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 10px;
+    border-radius: 8px;
 
     color: #fca5a5;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
-.writer-error svg {
+.rewriter-error svg {
     flex-shrink: 0;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     color: #f87171;
 }
 
-.writer-error span {
+.rewriter-error span {
     flex: 1;
-}
-
-.writer-error-retry {
-    flex-shrink: 0;
-    margin-left: auto;
-    padding: 4px 10px;
-
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 6px;
-
-    color: white;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: inherit;
-
-    cursor: pointer;
-    transition: background 0.15s ease;
-}
-
-.writer-error-retry:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.writer-error-retry:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Error Boundary Fallback */
-.writer-error-boundary {
-    width: 320px;
-}
-
-.writer-error-boundary .writer-header {
-    background: rgba(239, 68, 68, 0.1);
-    border-bottom-color: rgba(239, 68, 68, 0.2);
-}
-
-.writer-error-boundary .writer-title {
-    color: #fca5a5;
-}
-
-/* Reduce motion */
-@media (prefers-reduced-motion: reduce) {
-
-    .writer-overlay,
-    .writer-skeleton-line,
-    .writer-cursor {
-        animation: none !important;
-        transition-duration: 0.1s !important;
-    }
-
-    .writer-skeleton-line {
-        background: rgba(255, 255, 255, 0.08);
-    }
-}
-
-/* Dark mode adjustments - already dark by default */
-
-/* Light mode support (if needed) */
-@media (prefers-color-scheme: light) {
-
-    /* Keep dark theme for overlay regardless of system preference
-       for consistent experience and better contrast */
-    .writer-overlay {
-        background: rgba(25, 25, 25, 0.98);
-    }
 }
 
 /* ============================================
@@ -643,4 +572,25 @@
 
 .tools-toggle-item-switch--on .tools-toggle-item-switch-thumb {
     transform: translateX(12px);
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .rewriter-tooltip,
+    .rewriter-shimmer-line {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+
+    .rewriter-shimmer-line {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* Light mode support - keep dark theme for consistency */
+@media (prefers-color-scheme: light) {
+    .rewriter-tooltip {
+        background: rgba(25, 25, 25, 0.98);
+    }
 }

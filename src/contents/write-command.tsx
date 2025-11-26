@@ -85,7 +85,10 @@ function WriteCommandContent() {
     }, []); // Empty dependency array - only run on mount/unmount
 
     // Handle text generation via background service worker
-    const handleGenerate = useCallback(async (prompt: string) => {
+    const handleGenerate = useCallback(async (
+        prompt: string,
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }
+    ) => {
         if (!prompt.trim()) return;
 
         // Disconnect any existing port
@@ -101,7 +104,7 @@ function WriteCommandContent() {
         setGeneratedText('');
         setError(null);
 
-        log.debug('Starting generation', { promptLength: prompt.length });
+        log.debug('Starting generation', { promptLength: prompt.length, toolSettings });
 
         try {
             // Check if extension context is still valid (important for iframes)
@@ -157,7 +160,7 @@ function WriteCommandContent() {
                 activePortRef.current = null;
             });
 
-            // Send the request
+            // Send the request - use passed tool settings if available, fallback to stored settings
             const request: WriteGenerateRequest = {
                 action: 'WRITE_GENERATE',
                 payload: {
@@ -166,6 +169,8 @@ function WriteCommandContent() {
                     settings: {
                         tone: settings.defaultTone,
                         maxTokens: settings.maxOutputTokens,
+                        enableUrlContext: toolSettings?.enableUrlContext ?? settings.enableUrlContext,
+                        enableGoogleSearch: toolSettings?.enableGoogleSearch ?? settings.enableGoogleSearch,
                     },
                 },
             };
@@ -178,26 +183,7 @@ function WriteCommandContent() {
             setError(errorMessage);
             log.error('Failed to start generation', { error: errorMessage });
         }
-    }, [isGenerating]);
-
-    // Handle text insertion
-    const handleInsert = useCallback(() => {
-        if (targetElement && generatedText) {
-            log.debug('Inserting text into element', {
-                elementType: targetElement.tagName,
-                textLength: generatedText.length,
-            });
-
-            const success = insertText(targetElement, generatedText, cursorPosition);
-
-            if (success) {
-                log.info('Text inserted successfully');
-                handleClose();
-            } else {
-                setError('Failed to insert text. Please copy and paste manually.');
-            }
-        }
-    }, [targetElement, generatedText, cursorPosition, insertText]);
+    }, []);
 
     // Handle close/cleanup
     const handleClose = useCallback(() => {
@@ -206,6 +192,30 @@ function WriteCommandContent() {
         setIsGenerating(false);
         setError(null);
     }, [setIsWriterMode]);
+
+    // Handle text insertion
+    const handleInsert = useCallback(async () => {
+        if (targetElement && generatedText) {
+            log.debug('Inserting text into element', {
+                elementType: targetElement.tagName,
+                textLength: generatedText.length,
+            });
+
+            const result = await insertText(targetElement, generatedText, cursorPosition);
+
+            if (result.success) {
+                log.info('Text inserted successfully');
+                handleClose();
+            } else if (result.fallbackUsed === 'clipboard') {
+                // Text was copied to clipboard as fallback
+                log.info('Text copied to clipboard as fallback');
+                setError('Text copied to clipboard. Please paste manually (Ctrl+V / Cmd+V).');
+                // Don't close overlay - let user see the message
+            } else {
+                setError(result.error || 'Failed to insert text. Please copy and paste manually.');
+            }
+        }
+    }, [targetElement, generatedText, cursorPosition, insertText, handleClose]);
 
     // Don't render if feature is disabled or not in writer mode
     if (!isEnabled || !isWriterMode) {
