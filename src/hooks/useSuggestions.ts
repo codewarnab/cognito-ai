@@ -6,8 +6,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
-import { extractPageContext } from '../utils/pageContextExtractor';
-import { suggestionCache } from '../utils/suggestionCache';
+import { extractPageContext } from '@/utils/tabs';
+import { suggestionCache } from '@/utils/ai';
 import { generateContextualSuggestions, type Suggestion } from '@/ai/suggestions';
 import type { ModelState } from '@/components/features/chat/types';
 

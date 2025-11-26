@@ -12,7 +12,7 @@ import {
 import type { UIMessage } from 'ai';
 import type { ContextWarningState } from '../types/sidepanel';
 import type { AppUsage } from '@/ai/types/usage';
-import { clearAllDismissals } from '../utils/localPdfDismissals';
+import { clearAllDismissals } from '@/utils/settings';
 
 const log = createLogger('useThreadManagement');
 

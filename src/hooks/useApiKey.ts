@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
-import { getGoogleApiKey } from '../utils/providerCredentials';
+import { getGoogleApiKey } from '@/utils/credentials';
 
 const log = createLogger('useApiKey');
 

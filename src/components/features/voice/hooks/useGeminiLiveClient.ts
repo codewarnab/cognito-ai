@@ -10,7 +10,7 @@ import {
     MicrophonePermissionHandler,
 } from '@/ai/geminiLive/errorHandler';
 import { createLogger } from '~logger';
-import { getVoiceName } from '../../../../utils/settingsStorage';
+import { getVoiceName } from '@/utils/settings';
 import type { VoiceModeStatus } from '@/ai/geminiLive/types';
 
 const log = createLogger('useGeminiLiveClient', 'VOICE_CLIENT');

@@ -12,7 +12,7 @@
  *   so downstream imports always reference the latest effective list.
  */
 
-import { getEnabledToolsOverride } from '../../utils/settingsStorage';
+import { getEnabledToolsOverride } from '@/utils/settings';
 
 /**
  * Tools that should be disabled by default in the UI

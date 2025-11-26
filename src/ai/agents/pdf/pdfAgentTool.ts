@@ -9,7 +9,7 @@ import { generateText } from 'ai';
 import { Type as SchemaType, type FunctionDeclaration } from '@google/genai';
 import { createLogger } from '~logger';
 import { NetworkError, parseError } from '../../../errors';
-import { isPdfUrl } from '../../../utils/pdfDetector';
+import { isPdfUrl } from '@/utils/files';
 import { initializeModel } from '../../core/modelFactory';
 
 const log = createLogger('PDF-Agent-Tool');

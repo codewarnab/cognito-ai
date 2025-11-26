@@ -12,10 +12,10 @@ import { formatErrorInline } from '../../errors/errorMessages';
 import { APIError, NetworkError, ErrorType } from '../../errors';
 import type { AppUsage } from '../types/usage';
 import { updateThreadUsage } from '../../db';
-import { debounce } from '../../utils/debounce';
+import { debounce } from '@/utils/general';
 import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
 import { useWindowVisibility } from '../../contexts/WindowVisibilityContext';
-import { playNotificationSound } from '../../utils/soundNotification';
+import { playNotificationSound } from '@/utils/notifications';
 
 const log = createLogger('useAIChat');
 

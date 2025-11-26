@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import { readLocalFile, extractFilename } from '../../utils/localFileReader';
+import { readLocalFile, extractFilename } from '@/utils/files';
 import { isFileAccessError } from '../../errors';
 
 const backgroundLog = createLogger('Background-File-Handler', 'BACKGROUND');

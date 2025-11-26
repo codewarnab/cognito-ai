@@ -1,4 +1,4 @@
-import { getGoogleApiKey } from '../../utils/providerCredentials';
+import { getGoogleApiKey } from '@/utils/credentials';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 
 // Helper function for compatibility

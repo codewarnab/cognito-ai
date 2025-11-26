@@ -4,8 +4,8 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { getAllTabs } from '../../../utils/tabSnapshot';
-import { extractMentions } from '../../../utils/mentionUtils';
+import { getAllTabs } from '@/utils/tabs';
+import { extractMentions } from '@/utils/chat';
 
 interface TabMentionDropdownProps {
     searchQuery: string;

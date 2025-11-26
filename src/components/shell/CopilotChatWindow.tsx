@@ -5,12 +5,12 @@ import { ChatInput } from '@/components/features/chat/components/composer';
 import { ErrorNotification } from '@/components/features/chat/components/feedback';
 import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '@/audio/VoiceInput';
-import { getModelConfig, setModelConfig, clearConversationStartMode } from '@/utils/modelSettings';
-import { hasGoogleApiKey, hasAnyProviderConfigured } from '@/utils/providerCredentials';
+import { getModelConfig, setModelConfig, clearConversationStartMode } from '@/utils/ai';
+import { hasGoogleApiKey, hasAnyProviderConfigured } from '@/utils/credentials';
 import type { Message, AIMode, RemoteModelType, ModelState } from '@/components/features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/useActiveTabDetection';
-import { clearAllDismissals } from '@/utils/localPdfDismissals';
+import { clearAllDismissals } from '@/utils/settings';
 
 interface CopilotChatWindowProps {
     messages: Message[];

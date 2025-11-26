@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatedCircularProgressBar } from "@/components/features/chat/components/feedback";
 import type { AppUsage } from "@/ai/types/usage";
-import { cn } from "@/utils/cn";
+import { cn } from "@/utils/ui";
 import { createLogger } from '~logger';
 
 const log = createLogger('ContextIndicator');

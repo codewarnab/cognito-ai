@@ -9,10 +9,10 @@ import { createVertex } from '@ai-sdk/google-vertex';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
-import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '../../utils/providerCredentials';
+import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/credentials';
 import { customFetch } from '../utils/fetchHelpers';
 import type { AIMode } from '../types/types';
-import type { AIProvider } from '../../utils/providerTypes';
+import type { AIProvider } from '@/utils/credentials';
 
 // TODO(@ui): when we add more than a couple of providers, update ProviderSetup to use a searchable combo-box instead of simple radio buttons so the selection stays manageable.
 

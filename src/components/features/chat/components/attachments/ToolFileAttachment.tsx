@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Download, ExternalLink } from 'lucide-react';
-import { getFileIcon } from '@/utils/fileIconMapper';
+import { getFileIcon } from '@/utils/files';
 
 export interface ToolFileAttachmentData {
     type: 'file';

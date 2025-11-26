@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { AIMode, Message } from '@/components/features/chat/types';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
-import { hasGoogleApiKey } from '../utils/providerCredentials';
+import { hasGoogleApiKey } from '@/utils/credentials';
 import { HIDE_LOCAL_MODE } from '@/constants';
 
 interface UseChatInputValidationOptions {

@@ -12,7 +12,7 @@ import { EmptyState } from '../states/EmptyState';
 import { LoadingIndicator } from '../feedback/LoadingIndicator';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
-import { getFileIcon } from '@/utils/fileIconMapper';
+import { getFileIcon } from '@/utils/files';
 import { InlineCode } from './InlineCode';
 import { XIcon } from '@assets/icons/chat/x';
 

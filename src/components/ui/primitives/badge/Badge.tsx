@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
-import { cn } from "../../../../utils/cn"
+import { cn } from "@/utils/ui"
 import "./badge.css"
 
 type BadgeVariant = "default" | "secondary" | "destructive" | "outline"

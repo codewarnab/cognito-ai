@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { replaceSlashCommand } from '../utils/slashCommandUtils';
+import { replaceSlashCommand } from '@/utils/chat';
 import { validateYouTubeToNotionPrerequisites } from '../workflows/definitions/youtubeToNotionWorkflow';
 import type { WorkflowDefinition } from '../workflows/types';
 

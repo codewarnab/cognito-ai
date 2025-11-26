@@ -1,12 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { createLogger } from '~logger';
 import { db } from '../db';
-import { extractPageContext, formatPageContextForAI } from '../utils/pageContextExtractor';
-import { processFile } from '../utils/fileProcessor';
-import { processTabsForMessage, type ProcessedTab } from '../utils/tabProcessor';
-import { getModelConfig, setConversationStartMode } from '../utils/modelSettings';
+import { extractPageContext, formatPageContextForAI } from '@/utils/tabs';
+import { processFile } from '@/utils/files';
+import { processTabsForMessage, type ProcessedTab } from '@/utils/tabs';
+import { getModelConfig, setConversationStartMode } from '@/utils/ai';
 import { HIDE_LOCAL_MODE } from '@/constants';
-import { hasGoogleApiKey } from '../utils/providerCredentials';
+import { hasGoogleApiKey } from '@/utils/credentials';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import type { UIMessage } from 'ai';

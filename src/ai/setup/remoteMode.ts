@@ -12,7 +12,7 @@ import { getYouTubeTranscript } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
 import { initializeModel } from '../core/modelFactory';
 import type { WorkflowDefinition } from '../../workflows/types';
-import type { AIProvider } from '../../utils/providerTypes';
+import type { AIProvider } from '@/utils/credentials';
 
 const log = createLogger('RemoteMode', 'AI_CHAT');
 
