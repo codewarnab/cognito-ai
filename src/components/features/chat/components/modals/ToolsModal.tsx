@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
 import { createLogger } from '~logger';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
-import { getEnabledToolsOverride, setEnabledToolsOverride } from '~utils/settingsStorage';
+import { getEnabledToolsOverride, setEnabledToolsOverride } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import { TOOL_CATEGORIES } from '@/constants/toolDescriptions';
 import { motion, AnimatePresence } from 'framer-motion';

@@ -22,7 +22,7 @@ import { createLogger } from '~logger';
 import { ToolsModal } from '../modals/ToolsModal';
 import { Wrench } from 'lucide-react';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
-import { getEnabledToolsOverride } from '~utils/settingsStorage';
+import { getEnabledToolsOverride } from '@/utils/settings';
 
 const log = createLogger('Composer', 'AI_CHAT');
 

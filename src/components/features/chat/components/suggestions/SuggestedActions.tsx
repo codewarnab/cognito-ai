@@ -6,7 +6,7 @@ import type { Message, ModelState } from '../../types';
 import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { WorkflowDefinition } from '@/workflows/types';
 import { createLogger } from '~logger';
-import { getSuggestionsEnabled } from '~utils/settingsStorage';
+import { getSuggestionsEnabled } from '@/utils/settings';
 
 const log = createLogger('SuggestedActions');
 

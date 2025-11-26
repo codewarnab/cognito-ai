@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { getFileIcon } from '~utils/fileIconMapper';
+import { getFileIcon } from '@/utils/files';
 
 export interface FileAttachmentData {
     id: string;

@@ -71,7 +71,7 @@ import type { FileAttachmentData } from "@/components/features/chat/components/a
 import type { TabAttachmentData } from "@/components/features/chat/components/attachments";
 
 // Utils
-import { handleAPIError } from "./utils/apiErrorHandler";
+import { handleAPIError } from "@/utils/errors";
 
 /**
  * Inner component that uses AI SDK v5

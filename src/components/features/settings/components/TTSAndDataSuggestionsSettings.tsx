@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MessageSquare, Trash2, ChevronDown } from 'lucide-react';
 import { createLogger } from '~logger';
-import { getTTSProvider, setTTSProvider, getSuggestionsEnabled, setSuggestionsEnabled } from '~utils/settingsStorage';
+import { getTTSProvider, setTTSProvider, getSuggestionsEnabled, setSuggestionsEnabled } from '@/utils/settings';
 import type { TTSProvider } from '../../../../types/settings';
 import { clearChatHistory, getDBStats } from '../../../../db';
 import { Toggle } from '../../../shared/inputs/Toggle';

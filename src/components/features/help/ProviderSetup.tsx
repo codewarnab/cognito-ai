@@ -10,9 +10,9 @@ import {
     hasGoogleApiKey,
     hasVertexCredentials,
     setSelectedProvider,
-} from '~utils/providerCredentials';
-import type { AIProvider, VertexCredentials } from '~utils/providerTypes';
-import { getModelConfig, setModelConfig } from '~utils/modelSettings';
+} from '@/utils/credentials';
+import type { AIProvider, VertexCredentials } from '@/utils/credentials';
+import { getModelConfig, setModelConfig } from '@/utils/ai';
 import type { RemoteModelType } from '../../features/chat/types';
 import './ProviderSetup.css';
 

@@ -2,9 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
 import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
-import { generateSpeech, playAudioBuffer } from '~utils/geminiTTS';
-import { getGoogleApiKey } from '~utils/providerCredentials';
-import { getTTSProvider } from '~utils/settingsStorage';
+import { generateSpeech, playAudioBuffer } from '@/utils/ai/geminiTTS';
+import { getGoogleApiKey } from '@/utils/credentials';
+import { getTTSProvider } from '@/utils/settings';
 import type { TTSProvider } from '~types/settings';
 
 interface VoiceButtonProps {

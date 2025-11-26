@@ -1,4 +1,4 @@
-import { cn } from "~utils/cn";
+import { cn } from '@/utils/ui';
 
 export function YouTubeTranscriptIcon({
     className,

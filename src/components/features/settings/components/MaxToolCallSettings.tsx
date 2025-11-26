@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Settings } from 'lucide-react';
 import { createLogger } from '~logger';
-import { getMaxToolCallLimit, setMaxToolCallLimit } from '~utils/settingsStorage';
+import { getMaxToolCallLimit, setMaxToolCallLimit } from '@/utils/settings';
 
 const log = createLogger('MaxToolCallSettings');
 
