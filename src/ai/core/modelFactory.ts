@@ -126,7 +126,7 @@ async function wrapWithSupermemoryIfEnabled(result: ModelInitResult): Promise<Mo
         // Wrap the model with Supermemory middleware
         // This automatically injects user profile context into every request
         const wrappedModel = withSupermemory(result.model, userId, {
-            mode: 'profile', // Use profile mode for automatic context injection
+            mode: 'full', // Use profile mode for automatic context injection
             verbose: false,  // Set to true for debugging
         });
 

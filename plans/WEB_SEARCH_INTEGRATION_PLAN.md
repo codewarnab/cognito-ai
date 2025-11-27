@@ -1072,13 +1072,118 @@ useRetrieve();
 
 ---
 
+#### File: `src/styles/features/search-mode-toggle.css`
+
+```css
+/* Search Mode Toggle Styles */
+.search-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 150ms ease-in-out;
+    border: 1px solid var(--border-color, #e5e7eb);
+    cursor: pointer;
+    background: transparent;
+}
+
+.search-mode-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus-ring-color, rgba(59, 130, 246, 0.5));
+}
+
+.search-mode-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.search-mode-toggle--loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Enabled state */
+.search-mode-toggle--enabled {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--color-blue-600, #2563eb);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.search-mode-toggle--enabled:hover {
+    background-color: rgba(59, 130, 246, 0.25);
+}
+
+/* Disabled state (not pressed) */
+.search-mode-toggle--disabled {
+    background: transparent;
+    color: var(--text-secondary, #6b7280);
+    border-color: var(--border-color, #d1d5db);
+}
+
+.search-mode-toggle--disabled:hover:not(:disabled) {
+    background-color: var(--bg-hover, #f3f4f6);
+    color: var(--text-primary, #374151);
+}
+
+/* Icon */
+.search-mode-toggle__icon {
+    transition: color 150ms;
+}
+
+.search-mode-toggle--enabled .search-mode-toggle__icon {
+    color: var(--color-blue-500, #3b82f6);
+}
+
+/* Label - hidden on small screens */
+.search-mode-toggle__label {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .search-mode-toggle__label {
+        display: inline;
+    }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .search-mode-toggle--enabled {
+        color: var(--color-blue-400, #60a5fa);
+    }
+    
+    .search-mode-toggle--disabled {
+        color: var(--text-secondary-dark, #9ca3af);
+        border-color: var(--border-color-dark, #4b5563);
+    }
+    
+    .search-mode-toggle--disabled:hover:not(:disabled) {
+        background-color: var(--bg-hover-dark, #1f2937);
+        color: var(--text-primary-dark, #d1d5db);
+    }
+    
+    .search-mode-toggle--enabled .search-mode-toggle__icon {
+        color: var(--color-blue-400, #60a5fa);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SearchModeToggle.tsx`
 
 ```tsx
 import React from 'react';
 import { Globe } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import { Tooltip } from '@/components/shared/Tooltip';
+import '@/styles/features/search-mode-toggle.css';
 
 export interface SearchModeToggleProps {
     /** Whether search mode is enabled */
@@ -1123,6 +1228,15 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
           ? 'Web search enabled - AI can search the internet'
           : 'Click to enable web search';
 
+    // Build class list
+    const classNames = [
+        'search-mode-toggle',
+        isLoading && 'search-mode-toggle--loading',
+        isEnabled && hasApiKey && 'search-mode-toggle--enabled',
+        !isEnabled && hasApiKey && 'search-mode-toggle--disabled',
+        className
+    ].filter(Boolean).join(' ');
+
     return (
         <Tooltip content={tooltipContent}>
             <button
@@ -1132,44 +1246,10 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
                 disabled={isLoading || !hasApiKey}
                 aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
                 aria-pressed={isEnabled}
-                className={cn(
-                    // Base styles
-                    'inline-flex items-center justify-center gap-1',
-                    'px-2 py-1 rounded-full',
-                    'text-xs font-medium',
-                    'transition-all duration-150 ease-in-out',
-                    'border',
-                    'focus:outline-none focus:ring-2 focus:ring-offset-1',
-                    // Disabled state
-                    !hasApiKey && 'opacity-50 cursor-not-allowed',
-                    // Loading state
-                    isLoading && 'animate-pulse',
-                    // Enabled state (pressed)
-                    isEnabled && hasApiKey && [
-                        'bg-blue-500/15 text-blue-600 dark:text-blue-400',
-                        'border-blue-500/30',
-                        'hover:bg-blue-500/25',
-                        'focus:ring-blue-500/50',
-                    ],
-                    // Disabled state (not pressed)
-                    !isEnabled && hasApiKey && [
-                        'bg-transparent text-gray-500 dark:text-gray-400',
-                        'border-gray-300 dark:border-gray-600',
-                        'hover:bg-gray-100 dark:hover:bg-gray-800',
-                        'hover:text-gray-700 dark:hover:text-gray-300',
-                        'focus:ring-gray-400/50',
-                    ],
-                    className
-                )}
+                className={classNames}
             >
-                <Globe
-                    size={14}
-                    className={cn(
-                        'transition-colors',
-                        isEnabled && 'text-blue-500 dark:text-blue-400'
-                    )}
-                />
-                <span className="hidden sm:inline">Search</span>
+                <Globe size={14} className="search-mode-toggle__icon" />
+                <span className="search-mode-toggle__label">Search</span>
             </button>
         </Tooltip>
     );
@@ -1185,13 +1265,155 @@ export default SearchModeToggle;
 
 ---
 
+#### File: `src/styles/features/search-depth-selector.css`
+
+```css
+/* Search Depth Selector Styles */
+.search-depth-selector {
+    position: relative;
+}
+
+.search-depth-selector__trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+}
+
+.search-depth-selector__trigger:hover:not(:disabled) {
+    background-color: var(--bg-hover, #f3f4f6);
+}
+
+.search-depth-selector__trigger:focus {
+    outline: none;
+    box-shadow: 0 0 0 1px var(--focus-ring-color, rgba(107, 114, 128, 0.5));
+}
+
+.search-depth-selector__trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.search-depth-selector__chevron {
+    transition: transform 150ms;
+}
+
+.search-depth-selector__chevron--open {
+    transform: rotate(180deg);
+}
+
+/* Dropdown */
+.search-depth-selector__dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 4px;
+    min-width: 140px;
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 4px 0;
+    z-index: 50;
+}
+
+.search-depth-selector__option {
+    width: 100%;
+    text-align: left;
+    padding: 6px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 100ms;
+}
+
+.search-depth-selector__option:hover {
+    background-color: var(--bg-hover, #f3f4f6);
+}
+
+.search-depth-selector__option--selected {
+    background-color: var(--bg-selected, #f9fafb);
+}
+
+.search-depth-selector__option-icon {
+    margin-top: 2px;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.search-depth-selector__option-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary, #374151);
+}
+
+.search-depth-selector__option-description {
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+}
+
+/* Hide label on small screens */
+.search-depth-selector__trigger-label {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    .search-depth-selector__trigger-label {
+        display: inline;
+    }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .search-depth-selector__trigger {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-depth-selector__trigger:hover:not(:disabled) {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .search-depth-selector__dropdown {
+        background-color: var(--bg-primary-dark, #111827);
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .search-depth-selector__option:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .search-depth-selector__option--selected {
+        background-color: var(--bg-selected-dark, #1f2937);
+    }
+    
+    .search-depth-selector__option-label {
+        color: var(--text-primary-dark, #e5e7eb);
+    }
+    
+    .search-depth-selector__option-description {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SearchDepthSelector.tsx`
 
 ```tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Zap, Search } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { SearchDepth } from '@/search/types';
+import '@/styles/features/search-depth-selector.css';
 
 export interface SearchDepthSelectorProps {
     /** Current search depth */
@@ -1272,8 +1494,11 @@ export const SearchDepthSelector: React.FC<SearchDepthSelectorProps> = ({
         }
     };
 
+    const containerClasses = ['search-depth-selector', className].filter(Boolean).join(' ');
+    const chevronClasses = ['search-depth-selector__chevron', isOpen && 'search-depth-selector__chevron--open'].filter(Boolean).join(' ');
+
     return (
-        <div ref={containerRef} className={cn('relative', className)}>
+        <div ref={containerRef} className={containerClasses}>
             {/* Trigger button */}
             <button
                 type="button"
@@ -1283,67 +1508,43 @@ export const SearchDepthSelector: React.FC<SearchDepthSelectorProps> = ({
                 aria-label={`Search depth: ${currentOption.label}`}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                className={cn(
-                    'inline-flex items-center gap-1',
-                    'px-1.5 py-0.5 rounded',
-                    'text-xs text-gray-500 dark:text-gray-400',
-                    'hover:bg-gray-100 dark:hover:bg-gray-800',
-                    'transition-colors duration-150',
-                    'focus:outline-none focus:ring-1 focus:ring-gray-400/50',
-                    disabled && 'opacity-50 cursor-not-allowed'
-                )}
+                className="search-depth-selector__trigger"
             >
                 {currentOption.icon}
-                <span className="hidden sm:inline">{currentOption.label}</span>
-                <ChevronDown
-                    size={10}
-                    className={cn(
-                        'transition-transform duration-150',
-                        isOpen && 'rotate-180'
-                    )}
-                />
+                <span className="search-depth-selector__trigger-label">{currentOption.label}</span>
+                <ChevronDown size={10} className={chevronClasses} />
             </button>
 
             {/* Dropdown menu */}
             {isOpen && (
-                <div
-                    role="listbox"
-                    className={cn(
-                        'absolute bottom-full left-0 mb-1',
-                        'min-w-[140px]',
-                        'bg-white dark:bg-gray-900',
-                        'border border-gray-200 dark:border-gray-700',
-                        'rounded-lg shadow-lg',
-                        'py-1',
-                        'z-50'
-                    )}
-                >
-                    {DEPTH_OPTIONS.map((option) => (
-                        <button
-                            key={option.value}
-                            type="button"
-                            role="option"
-                            aria-selected={option.value === value}
-                            onClick={() => handleSelect(option.value)}
-                            className={cn(
-                                'w-full text-left px-3 py-1.5',
-                                'flex items-start gap-2',
-                                'hover:bg-gray-100 dark:hover:bg-gray-800',
-                                'transition-colors duration-100',
-                                option.value === value && 'bg-gray-50 dark:bg-gray-800/50'
-                            )}
-                        >
-                            <span className="mt-0.5 text-gray-400">{option.icon}</span>
-                            <div>
-                                <div className="text-xs font-medium text-gray-700 dark:text-gray-200">
-                                    {option.label}
+                <div role="listbox" className="search-depth-selector__dropdown">
+                    {DEPTH_OPTIONS.map((option) => {
+                        const optionClasses = [
+                            'search-depth-selector__option',
+                            option.value === value && 'search-depth-selector__option--selected'
+                        ].filter(Boolean).join(' ');
+                        
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                role="option"
+                                aria-selected={option.value === value}
+                                onClick={() => handleSelect(option.value)}
+                                className={optionClasses}
+                            >
+                                <span className="search-depth-selector__option-icon">{option.icon}</span>
+                                <div>
+                                    <div className="search-depth-selector__option-label">
+                                        {option.label}
+                                    </div>
+                                    <div className="search-depth-selector__option-description">
+                                        {option.description}
+                                    </div>
                                 </div>
-                                <div className="text-[10px] text-gray-500 dark:text-gray-400">
-                                    {option.description}
-                                </div>
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
@@ -1360,85 +1561,16 @@ export default SearchDepthSelector;
 
 ---
 
-#### File: `src/components/features/chat/components/SearchControls.tsx`
-
-```tsx
-import React from 'react';
-import { SearchModeToggle } from './SearchModeToggle';
-import { SearchDepthSelector } from './SearchDepthSelector';
-import { useSearchMode } from '@/hooks/useSearchMode';
-import { cn } from '@/utils/cn';
-
-export interface SearchControlsProps {
-    /** Additional CSS classes */
-    className?: string;
-}
-
-/**
- * Combined search controls component for the composer.
- * Shows search toggle and depth selector in a compact horizontal layout.
- */
-export const SearchControls: React.FC<SearchControlsProps> = ({ className }) => {
-    const {
-        isSearchMode,
-        toggleSearchMode,
-        searchDepth,
-        setSearchDepth,
-        hasApiKey,
-        isLoading,
-    } = useSearchMode();
-
-    return (
-        <div className={cn('flex items-center gap-1', className)}>
-            <SearchModeToggle
-                isEnabled={isSearchMode}
-                onToggle={toggleSearchMode}
-                hasApiKey={hasApiKey}
-                isLoading={isLoading}
-            />
-            {/* Only show depth selector when search is enabled */}
-            {isSearchMode && hasApiKey && (
-                <SearchDepthSelector
-                    value={searchDepth}
-                    onChange={setSearchDepth}
-                    disabled={isLoading}
-                />
-            )}
-        </div>
-    );
-};
-
-export default SearchControls;
-```
-
----
-
-#### Integration into Composer.tsx
-
-Add `SearchControls` to the composer's left section, next to existing controls:
-
-```tsx
-// In Composer.tsx, add import:
-import { SearchControls } from './SearchControls';
-
-// In the left section of the composer (where ModeSelector and tools button are):
-<div className="flex items-center gap-2">
-    {/* Existing controls */}
-    <ModeSelector ... />
-    <ToolsButton ... />
-    
-    {/* Add search controls */}
-    <SearchControls />
-</div>
-```
-
----
-
-### 3.4 Styles (Optional CSS File)
-
 #### File: `src/styles/features/search-controls.css`
 
 ```css
+/* Search Controls Styles */
+.search-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 /* Search Mode Toggle Animation */
 .search-toggle-enter {
     opacity: 0;
@@ -1489,6 +1621,61 @@ import { SearchControls } from './SearchControls';
 
 ---
 
+#### File: `src/components/features/chat/components/SearchControls.tsx`
+
+```tsx
+import React from 'react';
+import { SearchModeToggle } from './SearchModeToggle';
+import { SearchDepthSelector } from './SearchDepthSelector';
+import { useSearchMode } from '@/hooks/useSearchMode';
+import '@/styles/features/search-controls.css';
+
+export interface SearchControlsProps {
+    /** Additional CSS classes */
+    className?: string;
+}
+
+/**
+ * Combined search controls component for the composer.
+ * Shows search toggle and depth selector in a compact horizontal layout.
+ */
+export const SearchControls: React.FC<SearchControlsProps> = ({ className }) => {
+    const {
+        isSearchMode,
+        toggleSearchMode,
+        searchDepth,
+        setSearchDepth,
+        hasApiKey,
+        isLoading,
+    } = useSearchMode();
+
+    const classNames = ['search-controls', className].filter(Boolean).join(' ');
+
+    return (
+        <div className={classNames}>
+            <SearchModeToggle
+                isEnabled={isSearchMode}
+                onToggle={toggleSearchMode}
+                hasApiKey={hasApiKey}
+                isLoading={isLoading}
+            />
+            {/* Only show depth selector when search is enabled */}
+            {isSearchMode && hasApiKey && (
+                <SearchDepthSelector
+                    value={searchDepth}
+                    onChange={setSearchDepth}
+                    disabled={isLoading}
+                />
+            )}
+        </div>
+    );
+};
+
+export default SearchControls;
+```
+
+---
+
 ## Phase 4: Search Results Display Components
 
 ### 4.1 Search Section Component
@@ -1502,16 +1689,196 @@ import { SearchControls } from './SearchControls';
 
 ---
 
+#### File: `src/styles/features/search-section.css`
+
+```css
+/* Search Section Styles */
+.search-section {
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background-color: var(--bg-primary, #ffffff);
+    overflow: hidden;
+}
+
+/* Header button */
+.search-section__header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.search-section__header:hover {
+    background-color: var(--bg-hover, #f9fafb);
+}
+
+/* Icon container */
+.search-section__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-blue-600, #2563eb);
+}
+
+.search-section__icon--loading svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Query text */
+.search-section__query {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: var(--text-primary, #374151);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Result count badge */
+.search-section__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--color-green-700, #15803d);
+    border-radius: 9999px;
+}
+
+/* Chevron */
+.search-section__chevron {
+    flex-shrink: 0;
+    color: var(--text-tertiary, #9ca3af);
+    transition: transform 200ms;
+}
+
+.search-section__chevron--open {
+    transform: rotate(180deg);
+}
+
+/* Content */
+.search-section__content {
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.search-section__content-inner {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Sources label */
+.search-section__sources-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 8px;
+}
+
+/* No results message */
+.search-section__no-results {
+    font-size: 14px;
+    color: var(--text-secondary, #6b7280);
+    text-align: center;
+    padding: 16px 0;
+}
+
+/* Loading skeleton */
+.search-section__skeleton {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-section__skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.search-section__skeleton-item {
+    height: 64px;
+    border-radius: 8px;
+    background-color: var(--bg-skeleton, #f3f4f6);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .search-section {
+        border-color: var(--border-color-dark, #374151);
+        background-color: var(--bg-primary-dark, #111827);
+    }
+    
+    .search-section__header:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .search-section__icon {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: var(--color-blue-400, #60a5fa);
+    }
+    
+    .search-section__query {
+        color: var(--text-primary-dark, #e5e7eb);
+    }
+    
+    .search-section__badge {
+        background-color: rgba(34, 197, 94, 0.2);
+        color: var(--color-green-400, #4ade80);
+    }
+    
+    .search-section__content {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .search-section__sources-label {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-section__no-results {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-section__skeleton-item {
+        background-color: var(--bg-skeleton-dark, #1f2937);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SearchSection.tsx`
 
 ```tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { ChevronDown, Search, Check, Loader2 } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { ToolInvocation } from 'ai';
 import type { SearchResults as SearchResultsType } from '@/search/types';
 import { SearchResults } from './SearchResults';
 import { SearchResultsImageSection } from './SearchResultsImageSection';
+import '@/styles/features/search-section.css';
 
 export interface SearchSectionProps {
     /** Tool invocation data from AI SDK */
@@ -1547,78 +1914,52 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
     const resultCount = searchResults?.results?.length || 0;
     const hasImages = (searchResults?.images?.length || 0) > 0;
 
+    const iconClasses = ['search-section__icon', isLoading && 'search-section__icon--loading'].filter(Boolean).join(' ');
+    const chevronClasses = ['search-section__chevron', isOpen && 'search-section__chevron--open'].filter(Boolean).join(' ');
+
     return (
-        <div className={cn(
-            'rounded-lg border border-gray-200 dark:border-gray-700',
-            'bg-white dark:bg-gray-900',
-            'overflow-hidden'
-        )}>
+        <div className="search-section">
             {/* Header - always visible */}
             <button
                 type="button"
                 onClick={() => onOpenChange(!isOpen)}
                 aria-expanded={isOpen}
                 aria-label={`Search results for ${query}`}
-                className={cn(
-                    'w-full flex items-center gap-2 p-3',
-                    'text-left',
-                    'hover:bg-gray-50 dark:hover:bg-gray-800',
-                    'transition-colors duration-150'
-                )}
+                className="search-section__header"
             >
                 {/* Icon */}
-                <div className={cn(
-                    'flex-shrink-0 w-6 h-6 rounded-full',
-                    'flex items-center justify-center',
-                    'bg-blue-100 dark:bg-blue-900/30',
-                    'text-blue-600 dark:text-blue-400'
-                )}>
+                <div className={iconClasses}>
                     {isLoading ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={14} />
                     ) : (
                         <Search size={14} />
                     )}
                 </div>
 
                 {/* Query text */}
-                <div className="flex-1 min-w-0">
-                    <span className="text-sm text-gray-700 dark:text-gray-200 truncate block">
-                        {headerText || 'Searching...'}
-                    </span>
-                </div>
+                <span className="search-section__query">
+                    {headerText || 'Searching...'}
+                </span>
 
                 {/* Result count badge */}
                 {!isLoading && resultCount > 0 && (
-                    <span className={cn(
-                        'flex items-center gap-1 px-2 py-0.5',
-                        'text-xs font-medium',
-                        'bg-green-100 dark:bg-green-900/30',
-                        'text-green-700 dark:text-green-400',
-                        'rounded-full'
-                    )}>
+                    <span className="search-section__badge">
                         <Check size={10} />
                         {resultCount} results
                     </span>
                 )}
 
                 {/* Expand/collapse chevron */}
-                <ChevronDown
-                    size={16}
-                    className={cn(
-                        'flex-shrink-0 text-gray-400',
-                        'transition-transform duration-200',
-                        isOpen && 'rotate-180'
-                    )}
-                />
+                <ChevronDown size={16} className={chevronClasses} />
             </button>
 
             {/* Collapsible content */}
             {isOpen && (
-                <div className="border-t border-gray-200 dark:border-gray-700">
+                <div className="search-section__content">
                     {isLoading ? (
                         <SearchSkeleton />
                     ) : searchResults ? (
-                        <div className="p-3 space-y-3">
+                        <div className="search-section__content-inner">
                             {/* Images section */}
                             {hasImages && (
                                 <SearchResultsImageSection
@@ -1630,7 +1971,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
                             {/* Results list */}
                             {resultCount > 0 && (
                                 <div>
-                                    <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                                    <div className="search-section__sources-label">
                                         Sources
                                     </div>
                                     <SearchResults results={searchResults.results} />
@@ -1639,7 +1980,7 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
                             
                             {/* No results message */}
                             {resultCount === 0 && !hasImages && (
-                                <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                                <div className="search-section__no-results">
                                     No results found for "{query}"
                                 </div>
                             )}
@@ -1655,14 +1996,10 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
  * Loading skeleton for search results.
  */
 const SearchSkeleton: React.FC = () => (
-    <div className="p-3 space-y-2">
-        {/* Skeleton cards - 2x2 grid */}
-        <div className="grid grid-cols-2 gap-2">
+    <div className="search-section__skeleton">
+        <div className="search-section__skeleton-grid">
             {[1, 2, 3, 4].map((i) => (
-                <div
-                    key={i}
-                    className="h-16 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse"
-                />
+                <div key={i} className="search-section__skeleton-item" />
             ))}
         </div>
     </div>
@@ -1678,13 +2015,207 @@ export default SearchSection;
 
 ---
 
+#### File: `src/styles/features/search-results.css`
+
+```css
+/* Search Results Styles */
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Grid layout */
+.search-results__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+/* List layout */
+.search-results__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Result card base */
+.search-result-card {
+    display: block;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    text-decoration: none;
+    transition: background-color 150ms;
+}
+
+.search-result-card:hover {
+    background-color: var(--bg-hover, #f9fafb);
+}
+
+/* Grid card */
+.search-result-card--grid .search-result-card__title {
+    font-size: 12px;
+    color: var(--text-primary, #374151);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 32px;
+}
+
+.search-result-card--grid .search-result-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.search-result-card--grid .search-result-card__favicon {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.search-result-card--grid .search-result-card__domain {
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* List card */
+.search-result-card--list {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.search-result-card--list .search-result-card__favicon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border-radius: 2px;
+}
+
+.search-result-card--list .search-result-card__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-result-card--list .search-result-card__title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.search-result-card--list .search-result-card__snippet {
+    font-size: 12px;
+    color: var(--text-secondary, #4b5563);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 2px;
+}
+
+.search-result-card--list .search-result-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.search-result-card__external-link {
+    flex-shrink: 0;
+    opacity: 0;
+    color: var(--text-tertiary, #9ca3af);
+    margin-top: 2px;
+    transition: opacity 150ms;
+}
+
+.search-result-card:hover .search-result-card__external-link {
+    opacity: 1;
+}
+
+/* View more button */
+.search-results__view-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background: none;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.search-results__view-more:hover {
+    background-color: var(--bg-hover, #f9fafb);
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .search-result-card {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .search-result-card:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .search-result-card--grid .search-result-card__title {
+        color: var(--text-primary-dark, #e5e7eb);
+    }
+    
+    .search-result-card--grid .search-result-card__domain {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-result-card--list .search-result-card__title {
+        color: var(--text-primary-dark, #f3f4f6);
+    }
+    
+    .search-result-card--list .search-result-card__snippet {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-result-card--list .search-result-card__meta {
+        color: var(--text-tertiary-dark, #6b7280);
+    }
+    
+    .search-results__view-more {
+        border-color: var(--border-color-dark, #374151);
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .search-results__view-more:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SearchResults.tsx`
 
 ```tsx
 import React, { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { SearchResultItem } from '@/search/types';
+import '@/styles/features/search-results.css';
 
 export interface SearchResultsProps {
     /** Array of search results */
@@ -1749,50 +2280,37 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     // List mode rendering
     if (displayMode === 'list') {
         return (
-            <div className="space-y-2">
+            <div className="search-results__list">
                 {displayedResults.map((result, index) => (
                     <a
                         key={`${result.url}-${index}`}
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(
-                            'block p-2 rounded-lg',
-                            'border border-gray-200 dark:border-gray-700',
-                            'hover:bg-gray-50 dark:hover:bg-gray-800',
-                            'transition-colors duration-150',
-                            'group'
-                        )}
+                        className="search-result-card search-result-card--list"
                     >
-                        <div className="flex items-start gap-2">
-                            <img
-                                src={getFaviconUrl(result.url)}
-                                alt=""
-                                width={16}
-                                height={16}
-                                className="flex-shrink-0 mt-0.5 rounded"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                }}
-                            />
-                            <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
-                                    {result.title || getDomain(result.url)}
-                                </div>
-                                <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-0.5">
-                                    {result.content}
-                                </div>
-                                <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400 dark:text-gray-500">
-                                    <span className="truncate">{getDomain(result.url)}</span>
-                                    <span>•</span>
-                                    <span>{index + 1}</span>
-                                </div>
+                        <img
+                            src={getFaviconUrl(result.url)}
+                            alt=""
+                            className="search-result-card__favicon"
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                        />
+                        <div className="search-result-card__content">
+                            <div className="search-result-card__title">
+                                {result.title || getDomain(result.url)}
                             </div>
-                            <ExternalLink 
-                                size={12} 
-                                className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 mt-0.5" 
-                            />
+                            <div className="search-result-card__snippet">
+                                {result.content}
+                            </div>
+                            <div className="search-result-card__meta">
+                                <span>{getDomain(result.url)}</span>
+                                <span>•</span>
+                                <span>{index + 1}</span>
+                            </div>
                         </div>
+                        <ExternalLink size={12} className="search-result-card__external-link" />
                     </a>
                 ))}
             </div>
@@ -1801,37 +2319,29 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
     // Grid mode rendering (default)
     return (
-        <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+        <div className="search-results">
+            <div className="search-results__grid">
                 {displayedResults.map((result, index) => (
                     <a
                         key={`${result.url}-${index}`}
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={cn(
-                            'block p-2 rounded-lg',
-                            'border border-gray-200 dark:border-gray-700',
-                            'hover:bg-gray-50 dark:hover:bg-gray-800',
-                            'transition-colors duration-150',
-                            'group'
-                        )}
+                        className="search-result-card search-result-card--grid"
                     >
-                        <div className="text-xs text-gray-700 dark:text-gray-200 line-clamp-2 min-h-[2rem]">
+                        <div className="search-result-card__title">
                             {result.title || result.content}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-2">
+                        <div className="search-result-card__meta">
                             <img
                                 src={getFaviconUrl(result.url)}
                                 alt=""
-                                width={12}
-                                height={12}
-                                className="flex-shrink-0 rounded"
+                                className="search-result-card__favicon"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                 }}
                             />
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                            <span className="search-result-card__domain">
                                 {getShortDomain(result.url)} • {index + 1}
                             </span>
                         </div>
@@ -1843,13 +2353,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     <button
                         type="button"
                         onClick={() => setShowAll(true)}
-                        className={cn(
-                            'flex items-center justify-center p-2 rounded-lg',
-                            'border border-gray-200 dark:border-gray-700',
-                            'hover:bg-gray-50 dark:hover:bg-gray-800',
-                            'transition-colors duration-150',
-                            'text-xs text-gray-500 dark:text-gray-400'
-                        )}
+                        className="search-results__view-more"
                     >
                         View {hiddenCount} more
                     </button>
@@ -1869,13 +2373,164 @@ export default SearchResults;
 
 ---
 
+#### File: `src/styles/features/search-images.css`
+
+```css
+/* Search Images Section Styles */
+.search-images__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.search-images__item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 150ms;
+}
+
+.search-images__item:hover {
+    opacity: 0.9;
+}
+
+.search-images__item:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-blue-500, #3b82f6);
+}
+
+.search-images__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Zoom overlay */
+.search-images__zoom-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 150ms;
+}
+
+.search-images__item:hover .search-images__zoom-overlay {
+    opacity: 1;
+}
+
+.search-images__zoom-overlay svg {
+    color: white;
+}
+
+/* More count overlay */
+.search-images__more-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Lightbox */
+.search-images__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.9);
+}
+
+.search-images__lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    padding: 8px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.search-images__lightbox-close:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.search-images__lightbox-nav {
+    position: absolute;
+    z-index: 10;
+    padding: 8px;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.search-images__lightbox-nav:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.search-images__lightbox-nav--prev {
+    left: 16px;
+}
+
+.search-images__lightbox-nav--next {
+    right: 16px;
+}
+
+.search-images__lightbox-content {
+    max-width: 90vw;
+    max-height: 80vh;
+}
+
+.search-images__lightbox-content img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.search-images__lightbox-description {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.search-images__lightbox-counter {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SearchResultsImageSection.tsx`
 
 ```tsx
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { SearchResultImage } from '@/search/types';
+import '@/styles/features/search-images.css';
 
 export interface SearchResultsImageSectionProps {
     /** Array of image results */
@@ -1937,24 +2592,18 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
     return (
         <>
             {/* Image grid */}
-            <div className="grid grid-cols-4 gap-1">
+            <div className="search-images__grid">
                 {previewImages.map((image, index) => (
                     <button
                         key={`${image.url}-${index}`}
                         type="button"
                         onClick={() => setSelectedIndex(index)}
                         aria-label={`View image ${index + 1}${image.description ? `: ${image.description}` : ''}`}
-                        className={cn(
-                            'relative aspect-square rounded overflow-hidden',
-                            'hover:opacity-90 transition-opacity',
-                            'focus:outline-none focus:ring-2 focus:ring-blue-500',
-                            'group'
-                        )}
+                        className="search-images__item"
                     >
                         <img
                             src={image.url}
                             alt={image.description || `Search result ${index + 1} for ${query}`}
-                            className="w-full h-full object-cover"
                             loading="lazy"
                             onError={(e) => {
                                 (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23ccc"><rect width="24" height="24"/></svg>';
@@ -1962,20 +2611,13 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                         />
                         
                         {/* Zoom indicator on hover */}
-                        <div className={cn(
-                            'absolute inset-0 flex items-center justify-center',
-                            'bg-black/30 opacity-0 group-hover:opacity-100',
-                            'transition-opacity duration-150'
-                        )}>
-                            <ZoomIn size={16} className="text-white" />
+                        <div className="search-images__zoom-overlay">
+                            <ZoomIn size={16} />
                         </div>
 
                         {/* "More" overlay on last image */}
                         {index === maxPreview - 1 && remainingCount > 0 && (
-                            <div className={cn(
-                                'absolute inset-0 flex items-center justify-center',
-                                'bg-black/50 text-white text-sm font-medium'
-                            )}>
+                            <div className="search-images__more-overlay">
                                 +{remainingCount}
                             </div>
                         )}
@@ -1989,14 +2631,73 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                     role="dialog"
                     aria-modal="true"
                     aria-label="Image viewer"
-                    className={cn(
-                        'fixed inset-0 z-50',
-                        'flex items-center justify-center',
-                        'bg-black/90'
-                    )}
+                    className="search-images__lightbox"
                     onClick={() => setSelectedIndex(null)}
                     onKeyDown={handleKeyDown}
                     tabIndex={0}
+                >
+                    {/* Close button */}
+                    <button
+                        type="button"
+                        onClick={() => setSelectedIndex(null)}
+                        aria-label="Close image viewer"
+                        className="search-images__lightbox-close"
+                    >
+                        <X size={20} />
+                    </button>
+
+                    {/* Previous button */}
+                    {normalizedImages.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+                            aria-label="Previous image"
+                            className="search-images__lightbox-nav search-images__lightbox-nav--prev"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                    )}
+
+                    {/* Image */}
+                    <div
+                        className="search-images__lightbox-content"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img
+                            src={normalizedImages[selectedIndex].url}
+                            alt={normalizedImages[selectedIndex].description || `Image ${selectedIndex + 1}`}
+                        />
+                        {/* Description */}
+                        {normalizedImages[selectedIndex].description && (
+                            <div className="search-images__lightbox-description">
+                                {normalizedImages[selectedIndex].description}
+                            </div>
+                        )}
+                        {/* Counter */}
+                        <div className="search-images__lightbox-counter">
+                            {selectedIndex + 1} / {normalizedImages.length}
+                        </div>
+                    </div>
+
+                    {/* Next button */}
+                    {normalizedImages.length > 1 && (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); goToNext(); }}
+                            aria-label="Next image"
+                            className="search-images__lightbox-nav search-images__lightbox-nav--next"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    )}
+                </div>
+            )}
+        </>
+    );
+};
+
+export default SearchResultsImageSection;
+```
                 >
                     {/* Close button */}
                     <button
@@ -2087,15 +2788,185 @@ export default SearchResultsImageSection;
 
 ---
 
+#### File: `src/styles/features/retrieve-section.css`
+
+```css
+/* Retrieve Section Styles - similar to search section */
+.retrieve-section {
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background-color: var(--bg-primary, #ffffff);
+    overflow: hidden;
+}
+
+.retrieve-section__header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.retrieve-section__header:hover {
+    background-color: var(--bg-hover, #f9fafb);
+}
+
+.retrieve-section__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(168, 85, 247, 0.1);
+    color: var(--color-purple-600, #9333ea);
+}
+
+.retrieve-section__icon--loading svg {
+    animation: spin 1s linear infinite;
+}
+
+.retrieve-section__url {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: var(--text-primary, #374151);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.retrieve-section__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--color-green-700, #15803d);
+    border-radius: 9999px;
+}
+
+.retrieve-section__chevron {
+    flex-shrink: 0;
+    color: var(--text-tertiary, #9ca3af);
+    transition: transform 200ms;
+}
+
+.retrieve-section__chevron--open {
+    transform: rotate(180deg);
+}
+
+.retrieve-section__content {
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.retrieve-section__content-inner {
+    padding: 12px;
+}
+
+.retrieve-section__content-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 8px;
+}
+
+.retrieve-section__error {
+    font-size: 14px;
+    color: var(--text-secondary, #6b7280);
+    text-align: center;
+    padding: 12px;
+}
+
+/* Skeleton */
+.retrieve-section__skeleton {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.retrieve-section__skeleton-line {
+    height: 16px;
+    border-radius: 4px;
+    background-color: var(--bg-skeleton, #f3f4f6);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.retrieve-section__skeleton-line--short {
+    width: 75%;
+}
+
+.retrieve-section__skeleton-line--medium {
+    width: 100%;
+}
+
+.retrieve-section__skeleton-line--long {
+    width: 66%;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .retrieve-section {
+        border-color: var(--border-color-dark, #374151);
+        background-color: var(--bg-primary-dark, #111827);
+    }
+    
+    .retrieve-section__header:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .retrieve-section__icon {
+        background-color: rgba(168, 85, 247, 0.2);
+        color: var(--color-purple-400, #c084fc);
+    }
+    
+    .retrieve-section__url {
+        color: var(--text-primary-dark, #e5e7eb);
+    }
+    
+    .retrieve-section__badge {
+        background-color: rgba(34, 197, 94, 0.2);
+        color: var(--color-green-400, #4ade80);
+    }
+    
+    .retrieve-section__content {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .retrieve-section__content-label {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .retrieve-section__error {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .retrieve-section__skeleton-line {
+        background-color: var(--bg-skeleton-dark, #1f2937);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/RetrieveSection.tsx`
 
 ```tsx
 import React from 'react';
 import { ChevronDown, Link, Check, Loader2 } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { ToolInvocation } from 'ai';
 import type { SearchResults as SearchResultsType } from '@/search/types';
 import { SearchResults } from './SearchResults';
+import '@/styles/features/retrieve-section.css';
 
 export interface RetrieveSectionProps {
     /** Tool invocation data from AI SDK */
@@ -2132,83 +3003,57 @@ export const RetrieveSection: React.FC<RetrieveSectionProps> = ({
 
     const hasResults = (data?.results?.length || 0) > 0;
 
+    const iconClasses = ['retrieve-section__icon', isLoading && 'retrieve-section__icon--loading'].filter(Boolean).join(' ');
+    const chevronClasses = ['retrieve-section__chevron', isOpen && 'retrieve-section__chevron--open'].filter(Boolean).join(' ');
+
     return (
-        <div className={cn(
-            'rounded-lg border border-gray-200 dark:border-gray-700',
-            'bg-white dark:bg-gray-900',
-            'overflow-hidden'
-        )}>
+        <div className="retrieve-section">
             {/* Header */}
             <button
                 type="button"
                 onClick={() => onOpenChange(!isOpen)}
                 aria-expanded={isOpen}
                 aria-label={`Retrieved content from ${getDomain(url)}`}
-                className={cn(
-                    'w-full flex items-center gap-2 p-3',
-                    'text-left',
-                    'hover:bg-gray-50 dark:hover:bg-gray-800',
-                    'transition-colors duration-150'
-                )}
+                className="retrieve-section__header"
             >
                 {/* Icon */}
-                <div className={cn(
-                    'flex-shrink-0 w-6 h-6 rounded-full',
-                    'flex items-center justify-center',
-                    'bg-purple-100 dark:bg-purple-900/30',
-                    'text-purple-600 dark:text-purple-400'
-                )}>
+                <div className={iconClasses}>
                     {isLoading ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={14} />
                     ) : (
                         <Link size={14} />
                     )}
                 </div>
 
                 {/* URL text */}
-                <div className="flex-1 min-w-0">
-                    <span className="text-sm text-gray-700 dark:text-gray-200 truncate block">
-                        {getDomain(url) || 'Retrieving...'}
-                    </span>
-                </div>
+                <span className="retrieve-section__url">
+                    {getDomain(url) || 'Retrieving...'}
+                </span>
 
                 {/* Success badge */}
                 {!isLoading && hasResults && (
-                    <span className={cn(
-                        'flex items-center gap-1 px-2 py-0.5',
-                        'text-xs font-medium',
-                        'bg-green-100 dark:bg-green-900/30',
-                        'text-green-700 dark:text-green-400',
-                        'rounded-full'
-                    )}>
+                    <span className="retrieve-section__badge">
                         <Check size={10} />
                         Retrieved
                     </span>
                 )}
 
                 {/* Chevron */}
-                <ChevronDown
-                    size={16}
-                    className={cn(
-                        'flex-shrink-0 text-gray-400',
-                        'transition-transform duration-200',
-                        isOpen && 'rotate-180'
-                    )}
-                />
+                <ChevronDown size={16} className={chevronClasses} />
             </button>
 
             {/* Content */}
             {isOpen && (
-                <div className="border-t border-gray-200 dark:border-gray-700">
+                <div className="retrieve-section__content">
                     {isLoading ? (
-                        <div className="p-3 space-y-2">
-                            <div className="h-4 w-3/4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                            <div className="h-4 w-full bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-                            <div className="h-4 w-2/3 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                        <div className="retrieve-section__skeleton">
+                            <div className="retrieve-section__skeleton-line retrieve-section__skeleton-line--short" />
+                            <div className="retrieve-section__skeleton-line retrieve-section__skeleton-line--medium" />
+                            <div className="retrieve-section__skeleton-line retrieve-section__skeleton-line--long" />
                         </div>
                     ) : data && hasResults ? (
-                        <div className="p-3">
-                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                        <div className="retrieve-section__content-inner">
+                            <div className="retrieve-section__content-label">
                                 Content
                             </div>
                             <SearchResults 
@@ -2217,7 +3062,7 @@ export const RetrieveSection: React.FC<RetrieveSectionProps> = ({
                             />
                         </div>
                     ) : (
-                        <div className="p-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                        <div className="retrieve-section__error">
                             Could not retrieve content from this URL
                         </div>
                     )}
@@ -3055,12 +3900,127 @@ import { SearchSettingsSection } from '@/components/features/settings/components
 
 ---
 
+#### File: `src/styles/features/source-citation.css`
+
+```css
+/* Source Citation Styles */
+.source-citation {
+    display: inline-block;
+    position: relative;
+}
+
+.source-citation__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 500;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-blue-600, #2563eb);
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 100ms;
+    vertical-align: super;
+    margin-top: -4px;
+}
+
+.source-citation__trigger:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+/* Tooltip */
+.source-citation__tooltip {
+    position: absolute;
+    z-index: 50;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    width: 200px;
+    padding: 8px;
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+}
+
+.source-citation__tooltip-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.source-citation__favicon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border-radius: 2px;
+}
+
+.source-citation__info {
+    overflow: hidden;
+}
+
+.source-citation__title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.source-citation__url {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+}
+
+.source-citation__url span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .source-citation__trigger {
+        color: var(--color-blue-400, #60a5fa);
+    }
+    
+    .source-citation__tooltip {
+        background-color: var(--bg-primary-dark, #1f2937);
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .source-citation__title {
+        color: var(--text-primary-dark, #f3f4f6);
+    }
+    
+    .source-citation__url {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/SourceCitation.tsx`
 
 ```tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import '@/styles/features/source-citation.css';
 
 export interface CitationSource {
     /** Citation number (1, 2, 3...) */
@@ -3112,8 +4072,6 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
     useEffect(() => {
         if (showTooltip && tooltipRef.current && triggerRef.current) {
             const tooltip = tooltipRef.current;
-            const trigger = triggerRef.current;
-            const rect = trigger.getBoundingClientRect();
             
             // Reset positioning
             tooltip.style.left = '50%';
@@ -3143,8 +4101,10 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
         }
     };
 
+    const containerClasses = ['source-citation', className].filter(Boolean).join(' ');
+
     return (
-        <span className={cn('inline-block relative', className)}>
+        <span className={containerClasses}>
             <button
                 ref={triggerRef}
                 type="button"
@@ -3155,56 +4115,30 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
                 onFocus={() => setShowTooltip(true)}
                 onBlur={() => setShowTooltip(false)}
                 aria-label={`Source ${source.number}: ${source.title}`}
-                className={cn(
-                    'inline-flex items-center justify-center',
-                    'min-w-[16px] h-[16px] px-1',
-                    'text-[10px] font-medium',
-                    'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-                    'rounded-sm',
-                    'hover:bg-blue-500/20',
-                    'transition-colors duration-100',
-                    'cursor-pointer',
-                    'align-super',
-                    '-mt-1'
-                )}
+                className="source-citation__trigger"
             >
                 {source.number}
             </button>
 
             {/* Tooltip */}
             {showTooltip && (
-                <div
-                    ref={tooltipRef}
-                    role="tooltip"
-                    className={cn(
-                        'absolute z-50',
-                        'bottom-full mb-1',
-                        'w-[200px]',
-                        'p-2',
-                        'bg-white dark:bg-gray-800',
-                        'border border-gray-200 dark:border-gray-700',
-                        'rounded-lg shadow-lg',
-                        'pointer-events-none'
-                    )}
-                >
-                    <div className="flex items-start gap-2">
+                <div ref={tooltipRef} role="tooltip" className="source-citation__tooltip">
+                    <div className="source-citation__tooltip-content">
                         <img
                             src={source.favicon || getFaviconUrl(source.url)}
                             alt=""
-                            width={16}
-                            height={16}
-                            className="mt-0.5 flex-shrink-0 rounded"
+                            className="source-citation__favicon"
                             onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                             }}
                         />
-                        <div className="overflow-hidden">
-                            <div className="text-xs font-medium text-gray-900 dark:text-gray-100 line-clamp-2">
+                        <div className="source-citation__info">
+                            <div className="source-citation__title">
                                 {source.title}
                             </div>
-                            <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-500 dark:text-gray-400">
+                            <div className="source-citation__url">
                                 <ExternalLink size={10} />
-                                <span className="truncate">{getDomain(source.url)}</span>
+                                <span>{getDomain(source.url)}</span>
                             </div>
                         </div>
                     </div>
@@ -3219,13 +4153,142 @@ export default SourceCitation;
 
 ---
 
+#### File: `src/styles/features/citation-list.css`
+
+```css
+/* Citation List Styles */
+.citation-list {
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+    padding-top: 12px;
+}
+
+.citation-list__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 150ms;
+}
+
+.citation-list__header:hover {
+    color: var(--text-primary, #374151);
+}
+
+.citation-list__chevron {
+    margin-left: auto;
+    transition: transform 200ms;
+}
+
+.citation-list__chevron--open {
+    transform: rotate(180deg);
+}
+
+.citation-list__items {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.citation-list__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 100ms;
+}
+
+.citation-list__item:hover {
+    background-color: var(--bg-hover, #f3f4f6);
+}
+
+.citation-list__number {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 500;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-blue-600, #2563eb);
+    border-radius: 2px;
+}
+
+.citation-list__favicon {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.citation-list__title {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-primary, #374151);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.citation-list__link-icon {
+    flex-shrink: 0;
+    opacity: 0;
+    color: var(--text-tertiary, #9ca3af);
+    transition: opacity 150ms;
+}
+
+.citation-list__item:hover .citation-list__link-icon {
+    opacity: 1;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .citation-list {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .citation-list__header {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .citation-list__header:hover {
+        color: var(--text-primary-dark, #d1d5db);
+    }
+    
+    .citation-list__item:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+    }
+    
+    .citation-list__number {
+        color: var(--color-blue-400, #60a5fa);
+    }
+    
+    .citation-list__title {
+        color: var(--text-primary-dark, #d1d5db);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/CitationList.tsx`
 
 ```tsx
 import React from 'react';
 import { Newspaper, ExternalLink } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import type { CitationSource } from './SourceCitation';
+import '@/styles/features/citation-list.css';
 
 export interface CitationListProps {
     /** Array of citation sources */
@@ -3259,81 +4322,48 @@ export const CitationList: React.FC<CitationListProps> = ({
         }
     };
 
-    // Get domain from URL
-    const getDomain = (url: string): string => {
-        try {
-            return new URL(url).hostname.replace('www.', '');
-        } catch {
-            return url;
-        }
-    };
+    const containerClasses = ['citation-list', className].filter(Boolean).join(' ');
+    const chevronClasses = ['citation-list__chevron', isExpanded && 'citation-list__chevron--open'].filter(Boolean).join(' ');
 
     return (
-        <div className={cn('mt-3 border-t border-gray-200 dark:border-gray-700 pt-3', className)}>
+        <div className={containerClasses}>
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 aria-expanded={isExpanded}
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${sources.length} sources`}
-                className={cn(
-                    'flex items-center gap-1.5 w-full',
-                    'text-xs text-gray-500 dark:text-gray-400',
-                    'hover:text-gray-700 dark:hover:text-gray-300',
-                    'transition-colors duration-150'
-                )}
+                className="citation-list__header"
             >
                 <Newspaper size={12} />
                 <span>{sources.length} source{sources.length !== 1 ? 's' : ''}</span>
-                <span className={cn(
-                    'ml-auto transition-transform duration-200',
-                    isExpanded ? 'rotate-180' : ''
-                )}>
-                    ▼
-                </span>
+                <span className={chevronClasses}>▼</span>
             </button>
 
             {isExpanded && (
-                <div className="mt-2 space-y-1">
+                <div className="citation-list__items">
                     {sources.map((source) => (
                         <a
                             key={source.number}
                             href={source.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={cn(
-                                'flex items-center gap-2 p-1.5',
-                                'rounded-md',
-                                'hover:bg-gray-100 dark:hover:bg-gray-800',
-                                'transition-colors duration-100',
-                                'group'
-                            )}
+                            className="citation-list__item"
                         >
-                            <span className={cn(
-                                'flex-shrink-0',
-                                'w-4 h-4 flex items-center justify-center',
-                                'text-[10px] font-medium',
-                                'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-                                'rounded-sm'
-                            )}>
+                            <span className="citation-list__number">
                                 {source.number}
                             </span>
                             <img
                                 src={source.favicon || getFaviconUrl(source.url)}
                                 alt=""
-                                width={12}
-                                height={12}
-                                className="flex-shrink-0 rounded"
+                                className="citation-list__favicon"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                 }}
                             />
-                            <span className="flex-1 text-xs text-gray-700 dark:text-gray-300 truncate">
+                            <span className="citation-list__title">
                                 {source.title}
                             </span>
-                            <ExternalLink 
-                                size={10} 
-                                className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400" 
-                            />
+                            <ExternalLink size={10} className="citation-list__link-icon" />
                         </a>
                     ))}
                 </div>
@@ -3358,12 +4388,117 @@ export default CitationList;
 
 ---
 
+#### File: `src/styles/features/related-questions.css`
+
+```css
+/* Related Questions Styles */
+.related-questions {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.related-questions__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+}
+
+.related-questions__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.related-questions__item {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text-secondary, #4b5563);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+}
+
+.related-questions__item:hover {
+    background-color: var(--bg-hover, #f3f4f6);
+    color: var(--text-primary, #111827);
+}
+
+.related-questions__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text-tertiary, #9ca3af);
+    transition: color 150ms;
+}
+
+.related-questions__item:hover .related-questions__icon {
+    color: var(--color-blue-500, #3b82f6);
+}
+
+.related-questions__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Skeleton loading */
+.related-questions__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.related-questions__skeleton-item {
+    height: 24px;
+    border-radius: 4px;
+    background-color: var(--bg-skeleton, #f3f4f6);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .related-questions {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .related-questions__header {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .related-questions__item {
+        color: var(--text-secondary-dark, #d1d5db);
+    }
+    
+    .related-questions__item:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+        color: var(--text-primary-dark, #ffffff);
+    }
+    
+    .related-questions__skeleton-item {
+        background-color: var(--bg-skeleton-dark, #1f2937);
+    }
+}
+```
+
+---
+
 #### File: `src/components/features/chat/components/RelatedQuestions.tsx`
 
 ```tsx
 import React from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { cn } from '@/utils/cn';
+import '@/styles/features/related-questions.css';
 
 export interface RelatedQuestion {
     /** The follow-up question text */
@@ -3396,19 +4531,21 @@ export const RelatedQuestions: React.FC<RelatedQuestionsProps> = ({
     // Don't render if no questions and not loading
     if (questions.length === 0 && !isLoading) return null;
 
+    const containerClasses = ['related-questions', className].filter(Boolean).join(' ');
+
     // Show skeleton while loading
     if (isLoading) {
         return (
-            <div className={cn('mt-4 pt-3 border-t border-gray-200 dark:border-gray-700', className)}>
-                <div className="flex items-center gap-1.5 mb-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className={containerClasses}>
+                <div className="related-questions__header">
                     <Sparkles size={12} />
                     <span>Related</span>
                 </div>
-                <div className="space-y-2">
+                <div className="related-questions__skeleton">
                     {[1, 2, 3].map((i) => (
                         <div
                             key={i}
-                            className="h-6 bg-gray-100 dark:bg-gray-800 rounded animate-pulse"
+                            className="related-questions__skeleton-item"
                             style={{ width: `${70 + Math.random() * 20}%` }}
                         />
                     ))}
@@ -3425,34 +4562,22 @@ export const RelatedQuestions: React.FC<RelatedQuestionsProps> = ({
     if (validQuestions.length === 0) return null;
 
     return (
-        <div className={cn('mt-4 pt-3 border-t border-gray-200 dark:border-gray-700', className)}>
-            <div className="flex items-center gap-1.5 mb-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className={containerClasses}>
+            <div className="related-questions__header">
                 <Sparkles size={12} />
                 <span>Related</span>
             </div>
             
-            <div className="space-y-1">
+            <div className="related-questions__list">
                 {validQuestions.map((question, index) => (
                     <button
                         key={question.id || index}
                         type="button"
                         onClick={() => onSelect(question.query)}
-                        className={cn(
-                            'w-full flex items-start gap-2 p-2',
-                            'text-left text-sm',
-                            'text-gray-600 dark:text-gray-300',
-                            'hover:text-gray-900 dark:hover:text-white',
-                            'hover:bg-gray-100 dark:hover:bg-gray-800',
-                            'rounded-lg',
-                            'transition-colors duration-150',
-                            'group'
-                        )}
+                        className="related-questions__item"
                     >
-                        <ArrowRight 
-                            size={14} 
-                            className="flex-shrink-0 mt-0.5 text-gray-400 group-hover:text-blue-500 transition-colors" 
-                        />
-                        <span className="line-clamp-2">{question.query}</span>
+                        <ArrowRight size={14} className="related-questions__icon" />
+                        <span className="related-questions__text">{question.query}</span>
                     </button>
                 ))}
             </div>

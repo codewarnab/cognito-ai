@@ -1,7 +1,7 @@
 /**
  * Settings storage utilities for user-configurable preferences
  */
-import type { UserSettings, VoiceName, VoiceSettings } from '@/types/settings';
+import type { UserSettings, VoiceName, VoiceSettings, ToolsMode } from '@/types/settings';
 import { DEFAULT_USER_SETTINGS } from '@/types/settings';
 
 const STORAGE_KEY = 'userSettings';
@@ -114,6 +114,16 @@ export async function getSupermemoryEnabled(): Promise<boolean> {
 
 export async function setSupermemoryEnabled(enabled: boolean): Promise<UserSettings> {
   return updateSettings({ supermemoryEnabled: enabled });
+}
+
+// Tools mode helpers
+export async function getToolsMode(): Promise<ToolsMode> {
+  const settings = await getSettings();
+  return settings.toolsMode ?? DEFAULT_USER_SETTINGS.toolsMode!;
+}
+
+export async function setToolsMode(mode: ToolsMode): Promise<UserSettings> {
+  return updateSettings({ toolsMode: mode });
 }
 
 

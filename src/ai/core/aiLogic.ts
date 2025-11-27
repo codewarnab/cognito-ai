@@ -7,13 +7,13 @@
 import { createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
 import { createLogger } from '~logger';
 import { localSystemPrompt } from '../prompts/templates/local';
-import { remoteSystemPrompt } from '../prompts/templates/remote';
+import { remoteSystemPrompt, chatModeSystemPrompt } from '../prompts/templates/remote';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
 import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
-import { getMaxToolCallLimit } from '@/utils/settings';
+import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import {
   APIError,
   NetworkError,
@@ -147,10 +147,23 @@ export async function streamAIResponse(params: {
               // ========== REMOTE MODE (Gemini API or Vertex AI) ==========
               const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
 
+              // Check current tools mode to determine which system prompt to use
+              // Only use chat mode prompt when explicitly in 'chat' mode (not workflow, not custom)
+              const toolsMode = await getToolsMode();
+              const usePrompt = (toolsMode === 'chat' && !workflowConfig)
+                ? chatModeSystemPrompt
+                : remoteSystemPrompt;
+
+              log.info('📝 System prompt selection:', {
+                toolsMode,
+                isWorkflow: !!workflowConfig,
+                usingChatPrompt: toolsMode === 'chat' && !workflowConfig
+              });
+
               const remoteSetup = await setupRemoteMode(
                 modelName,
                 workflowConfig || null,
-                remoteSystemPrompt
+                usePrompt
               );
 
               model = remoteSetup.model;

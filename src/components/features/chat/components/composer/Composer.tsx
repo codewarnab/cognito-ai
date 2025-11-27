@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { VoiceInput, type VoiceInputHandle } from '@/audio/VoiceInput';
 import { ModeSelector } from '../../dropdowns/ModeSelector';
@@ -130,26 +130,56 @@ export const Composer: React.FC<ComposerProps> = ({
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
     const [enabledToolsCount, setEnabledToolsCount] = useState(0);
-    const totalToolsCount = DEFAULT_ENABLED_TOOLS.length;
+    const [mcpToolsCount, setMcpToolsCount] = useState(0);
     const isLocalMode = modelState.mode === 'local';
+    const totalEnabledCount = enabledToolsCount + mcpToolsCount;
+    const isTooManyTools = totalEnabledCount > 40;
 
-    useEffect(() => {
-        const loadToolsCount = async () => {
-            try {
-                const override = await getEnabledToolsOverride();
-                if (override && Array.isArray(override)) {
-                    setEnabledToolsCount(override.length);
-                } else {
-                    const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-                    const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
-                    setEnabledToolsCount(count);
-                }
-            } catch (err) {
+    // Function to load tools count - extracted so it can be called on modal close
+    const loadToolsCount = useCallback(async () => {
+        try {
+            const override = await getEnabledToolsOverride();
+            if (override && Array.isArray(override)) {
+                setEnabledToolsCount(override.length);
+            } else {
                 const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
                 const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
                 setEnabledToolsCount(count);
             }
-        };
+
+            // Load MCP tools count
+            try {
+                const mcpResponse = await chrome.runtime.sendMessage({ type: 'mcp/tools/list' });
+                if (mcpResponse?.success && mcpResponse.data?.tools) {
+                    const tools = mcpResponse.data.tools as { serverId: string; name: string }[];
+                    // Get disabled tools for each server
+                    const serverIds = [...new Set(tools.map(t => t.serverId))];
+                    let enabledMcpCount = tools.length;
+
+                    for (const serverId of serverIds) {
+                        const configResponse = await chrome.runtime.sendMessage({
+                            type: `mcp/${serverId}/tools/config/get`
+                        });
+                        if (configResponse?.success && Array.isArray(configResponse.data)) {
+                            const disabledTools = configResponse.data as string[];
+                            const serverTools = tools.filter(t => t.serverId === serverId);
+                            const disabledCount = serverTools.filter(t => disabledTools.includes(t.name)).length;
+                            enabledMcpCount -= disabledCount;
+                        }
+                    }
+                    setMcpToolsCount(enabledMcpCount);
+                }
+            } catch {
+                // MCP not available, ignore
+            }
+        } catch (err) {
+            const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
+            const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
+            setEnabledToolsCount(count);
+        }
+    }, []);
+
+    useEffect(() => {
         loadToolsCount();
 
         const handleStorageChange = (changes: any, areaName: string) => {
@@ -161,7 +191,7 @@ export const Composer: React.FC<ComposerProps> = ({
         return () => {
             chrome.storage.onChanged.removeListener(handleStorageChange);
         };
-    }, []);
+    }, [loadToolsCount]);
 
     // Hide voice-mode-fab when attachment dropdown is open or when there are attachments
     useEffect(() => {
@@ -357,19 +387,29 @@ export const Composer: React.FC<ComposerProps> = ({
                     <div style={{ position: 'relative' }}>
                         <button
                             type="button"
-                            className={`composer-tools-button ${activeWorkflow ? 'disabled' : ''}`}
+                            className={`composer-tools-button ${activeWorkflow ? 'disabled' : ''} ${isTooManyTools ? 'warning' : ''}`}
                             onClick={() => !activeWorkflow && setShowToolsModal(!showToolsModal)}
                             disabled={!!activeWorkflow}
-                            title={activeWorkflow ? "Tools are managed by the active workflow" : "Manage enabled tools"}
+                            title={activeWorkflow ? "Tools are managed by the active workflow" : isTooManyTools ? "Too many tools enabled - may slow AI responses" : "Manage enabled tools"}
                         >
                             <Wrench size={14} />
-                            <span className="composer-tools-count">{enabledToolsCount}/{totalToolsCount}</span>
+                            <span className="composer-tools-count">
+                                {totalEnabledCount}{mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}
+                            </span>
                         </button>
 
                         {/* Tools Popover */}
                         <ToolsModal
                             isOpen={showToolsModal}
-                            onClose={() => setShowToolsModal(false)}
+                            onClose={() => {
+                                setShowToolsModal(false);
+                                // Refresh tools count after modal closes
+                                loadToolsCount();
+                            }}
+                            onCountChange={(extCount, mcpCount) => {
+                                setEnabledToolsCount(extCount);
+                                setMcpToolsCount(mcpCount);
+                            }}
                         />
                     </div>
                 </div>
