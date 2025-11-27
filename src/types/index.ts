@@ -18,9 +18,6 @@ export * from './database';
 // MCP types
 export * from './mcp';
 
-// Memory types
-export * from './memory';
-
 // Workflow types
 export * from './workflows';
 

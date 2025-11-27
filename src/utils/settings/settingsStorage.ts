@@ -94,4 +94,26 @@ export async function setMaxToolCallLimit(limit: number): Promise<UserSettings> 
   return updateSettings({ maxToolCallLimit: limit });
 }
 
+// Supermemory settings helpers
+// Note: These integrate with the dedicated supermemory credential utilities
+// in src/utils/supermemory/credentials.ts for actual storage operations.
+
+export async function getSupermemoryApiKey(): Promise<string | undefined> {
+  const settings = await getSettings();
+  return settings.supermemoryApiKey;
+}
+
+export async function setSupermemoryApiKey(apiKey: string | undefined): Promise<UserSettings> {
+  return updateSettings({ supermemoryApiKey: apiKey });
+}
+
+export async function getSupermemoryEnabled(): Promise<boolean> {
+  const settings = await getSettings();
+  return settings.supermemoryEnabled ?? DEFAULT_USER_SETTINGS.supermemoryEnabled!;
+}
+
+export async function setSupermemoryEnabled(enabled: boolean): Promise<UserSettings> {
+  return updateSettings({ supermemoryEnabled: enabled });
+}
+
 

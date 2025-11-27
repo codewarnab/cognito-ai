@@ -2,14 +2,17 @@
  * Model Factory
  * Centralized model initialization logic for all AI providers
  * Supports local (Gemini Nano), Google Generative AI, and Vertex AI
+ * Optionally wraps models with Supermemory for persistent user memory
  */
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { builtInAI } from '@built-in-ai/core';
+import { withSupermemory } from '@supermemory/tools/ai-sdk';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/credentials';
+import { getSupermemoryUserId, getSupermemoryApiKey, isSupermemoryReady } from '@/utils/supermemory';
 import { customFetch } from '../utils/fetchHelpers';
 import type { AIMode } from '../types/types';
 import type { AIProvider } from '@/utils/credentials';
@@ -42,6 +45,7 @@ export interface ModelInitResult {
     provider: AIProvider | 'local';
     modelName: string;
     providerInstance?: any; // Google or Vertex provider instance for accessing tools
+    supermemoryEnabled?: boolean; // Whether Supermemory wrapper is active
 }
 
 /**
@@ -81,16 +85,73 @@ export async function initializeModel(
 
     log.info('🚀 Using provider:', activeProvider, 'with model:', modelName);
 
+    // Initialize base model
+    let result: ModelInitResult;
     if (activeProvider === 'vertex') {
-        return initializeVertexModel(modelName);
+        result = await initializeVertexModel(modelName);
     } else {
-        return initializeGoogleModel(modelName);
+        result = await initializeGoogleModel(modelName);
+    }
+
+    // Wrap with Supermemory if enabled (remote mode only)
+    result = await wrapWithSupermemoryIfEnabled(result);
+
+    return result;
+}
+
+/**
+ * Wrap model with Supermemory middleware if enabled
+ * Provides automatic user profile injection and personalization
+ * 
+ * @param result - Model initialization result to wrap
+ * @returns Updated result with Supermemory wrapper if enabled
+ */
+async function wrapWithSupermemoryIfEnabled(result: ModelInitResult): Promise<ModelInitResult> {
+    try {
+        const smReady = await isSupermemoryReady();
+
+        if (!smReady) {
+            log.debug('🧠 Supermemory not ready, skipping wrapper');
+            return { ...result, supermemoryEnabled: false };
+        }
+
+        const smApiKey = await getSupermemoryApiKey();
+        const userId = await getSupermemoryUserId();
+
+        if (!smApiKey || !userId) {
+            log.warn('🧠 Supermemory ready but missing credentials');
+            return { ...result, supermemoryEnabled: false };
+        }
+
+        // Wrap the model with Supermemory middleware
+        // This automatically injects user profile context into every request
+        const wrappedModel = withSupermemory(result.model, userId, {
+            mode: 'profile', // Use profile mode for automatic context injection
+            verbose: false,  // Set to true for debugging
+        });
+
+        log.info('🧠 Supermemory wrapper applied:', {
+            userId: userId.substring(0, 8) + '...',
+            provider: result.provider,
+            modelName: result.modelName,
+        });
+
+        return {
+            ...result,
+            model: wrappedModel,
+            supermemoryEnabled: true,
+        };
+    } catch (error) {
+        log.error('🧠 Failed to apply Supermemory wrapper:', error);
+        // Return original model without wrapper on error
+        return { ...result, supermemoryEnabled: false };
     }
 }
 
 /**
  * Initialize local Gemini Nano model
  * Note: Model download is handled separately in setupLocalMode
+ * Note: Supermemory is NOT available in local mode
  * 
  * @returns Model initialization result for local model
  */
@@ -103,6 +164,7 @@ async function initializeLocalModel(): Promise<ModelInitResult> {
         model,
         provider: 'local',
         modelName: 'gemini-nano',
+        supermemoryEnabled: false, // Supermemory not available in local mode
     };
 }
 

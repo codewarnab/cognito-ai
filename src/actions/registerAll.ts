@@ -3,7 +3,6 @@ import { useSelectionActions } from "./selection";
 import { registerInteractionActions } from "./interactions";
 import { useRegisterHistoryActions } from "./history";
 import { registerReminderActions } from "./reminder";
-import { registerMemoryActions } from "./memory";
 import { registerReportActions } from "./reports";
 import { useScreenshotTool } from "./screenshot";
 import { registerYouTubeToNotionActions } from "./youtubeToNotion";
@@ -18,7 +17,6 @@ export function useRegisterAllActions() {
   registerInteractionActions();
   useRegisterHistoryActions();
   registerReminderActions();
-  registerMemoryActions();
   registerReportActions(); // Always register, but will be filtered in aiLogic.ts
   useScreenshotTool(); // Screenshot capture tool
   registerYouTubeToNotionActions(); // YouTube to Notion agent tool

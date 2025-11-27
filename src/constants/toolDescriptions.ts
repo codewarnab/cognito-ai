@@ -33,11 +33,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     searchHistory: 'Search browsing history',
     getUrlVisits: 'Get visit history for URLs',
 
-    // Memory & Reminders
-    saveMemory: 'Save information to memory',
-    getMemory: 'Retrieve saved memories',
-    listMemories: 'List all saved memories',
-    deleteMemory: 'Delete saved memories',
+    // Reminders
     createReminder: 'Create time-based reminders',
     listReminders: 'List active reminders',
     cancelReminder: 'Cancel existing reminders',
@@ -54,7 +50,13 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     deleteBookmark: 'Remove saved bookmarks',
     updateBookmark: 'Edit bookmark title or URL',
     getBookmarkTree: 'View bookmark folder structure',
-    organizeBookmarks: 'AI-powered bookmark organization'
+    organizeBookmarks: 'AI-powered bookmark organization',
+
+    // Supermemory (Cloud Memory)
+    addMemory: 'Save information to persistent cloud memory',
+    searchMemory: 'Search memories semantically',
+    searchMemories: 'Search memories semantically', // Actual SDK name
+    getMemories: 'Retrieve all stored memories'
 };
 
 /**
@@ -67,7 +69,12 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Search': ['chromeSearch', 'getSearchResults', 'openSearchResult'],
     'History': ['searchHistory', 'getUrlVisits'],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
-    'Memory': ['saveMemory', 'getMemory', 'listMemories', 'deleteMemory'],
     'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
-    'Utilities': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate']
+    'Utilities': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate'],
+    'Memory': ['addMemory', 'searchMemory', 'searchMemories', 'getMemories']
 };
+
+/**
+ * Tools that require Supermemory to be configured
+ */
+export const SUPERMEMORY_TOOLS: string[] = ['addMemory', 'searchMemory', 'searchMemories', 'getMemories'];

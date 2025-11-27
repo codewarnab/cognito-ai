@@ -25,6 +25,16 @@ export interface UserSettings {
    * Default is 20. Higher values allow more complex multi-step operations but may increase response time.
    */
   maxToolCallLimit?: number;
+  /**
+   * Supermemory API key for cloud-based memory persistence.
+   * Stored separately in chrome.storage.local for security.
+   */
+  supermemoryApiKey?: string;
+  /**
+   * Whether Supermemory is enabled for persistent memory across conversations.
+   * Requires a valid API key to function.
+   */
+  supermemoryEnabled?: boolean;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -36,6 +46,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   ttsProvider: 'gemini',
   suggestionsEnabled: true,
   maxToolCallLimit: 20,
+  supermemoryApiKey: undefined,
+  supermemoryEnabled: false,
 };
 
 

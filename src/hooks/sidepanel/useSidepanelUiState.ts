@@ -14,8 +14,6 @@ export interface SidepanelUiStateReturn {
     setShowSettings: (value: boolean) => void;
     showThreads: boolean;
     setShowThreads: (value: boolean) => void;
-    showMemory: boolean;
-    setShowMemory: (value: boolean) => void;
     showReminders: boolean;
     setShowReminders: (value: boolean) => void;
     showTroubleshooting: boolean;
@@ -52,7 +50,6 @@ export function useSidepanelUiState({
     const [showMcp, setShowMcp] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
     const [showThreads, setShowThreads] = useState(false);
-    const [showMemory, setShowMemory] = useState(false);
     const [showReminders, setShowReminders] = useState(false);
     const [showTroubleshooting, setShowTroubleshooting] = useState(false);
     const [showFeatures, setShowFeatures] = useState(false);
@@ -99,8 +96,6 @@ export function useSidepanelUiState({
         setShowSettings,
         showThreads,
         setShowThreads,
-        showMemory,
-        setShowMemory,
         showReminders,
         setShowReminders,
         showTroubleshooting,

@@ -8,7 +8,6 @@ import { Features } from "@/components/features/help/Features";
 import { ProviderSetup } from "@/components/features/help/ProviderSetup";
 import { ToolUIProvider } from "./ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
-import { MemorySidebar } from "@/components/features/memory";
 import { ReminderPanel } from "@/components/features/reminders";
 import { SettingsPage } from "@/components/features/settings/SettingsPage";
 import { OnboardingScreen } from "@/components/features/onboarding";
@@ -24,7 +23,6 @@ import { DocumentProvider } from "./contexts/documentContext";
 // Styles
 import "./styles/features/copilot/index.css";
 import "./styles/features/mcp/index.css";
-import "./styles/features/memory/index.css";
 import "./styles/features/mentions/index.css";
 import "./styles/features/threads/index.css";
 import "./styles/features/reminders/index.css";
@@ -323,8 +321,6 @@ function AIChatContent() {
         setShowSettings,
         showThreads,
         setShowThreads,
-        showMemory,
-        setShowMemory,
         showReminders,
         setShowReminders,
         showTroubleshooting,
@@ -470,9 +466,6 @@ function AIChatContent() {
                 />
             )}
 
-            {/* Memory Sidebar - Right sliding sidebar */}
-            <MemorySidebar isOpen={showMemory} onClose={() => setShowMemory(false)} />
-
             {/* Reminder Panel - Side panel overlay */}
             <ReminderPanel isOpen={showReminders} onClose={() => setShowReminders(false)} />
 
@@ -506,7 +499,6 @@ function AIChatContent() {
                                 onSettingsClick={() => setShowMcp(true)}
                                 onGeneralSettingsClick={() => setShowSettings(true)}
                                 onThreadsClick={() => setShowThreads(true)}
-                                onMemoryClick={() => setShowMemory(true)}
                                 onRemindersClick={() => setShowReminders(true)}
                                 onTroubleshootingClick={() => setShowTroubleshooting(true)}
                                 onFeaturesClick={() => setShowFeatures(true)}

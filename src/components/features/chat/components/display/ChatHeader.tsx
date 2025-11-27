@@ -7,7 +7,6 @@ interface ChatHeaderProps {
     onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
-    onMemoryClick?: () => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
@@ -22,7 +21,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onGeneralSettingsClick,
     onThreadsClick,
     onNewThreadClick,
-    onMemoryClick,
     onRemindersClick,
     onTroubleshootingClick,
     onFeaturesClick,
@@ -130,15 +128,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     }}
                                 >
                                     Settings
-                                </button>
-                                <button
-                                    className="copilot-header-menu-item"
-                                    onClick={() => {
-                                        setShowHeaderMenu(false);
-                                        onMemoryClick?.();
-                                    }}
-                                >
-                                    Memory Management
                                 </button>
                                 <button
                                     className="copilot-header-menu-item"

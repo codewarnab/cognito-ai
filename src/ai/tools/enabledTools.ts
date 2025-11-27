@@ -26,6 +26,11 @@ export const TOOLS_DISABLED_BY_DEFAULT: string[] = [
   'updateBookmark',
   'getBookmarkTree',
   'organizeBookmarks',
+  // Supermemory tools - require API key configuration
+  'addMemory',
+  'searchMemory',
+  'searchMemories',
+  'getMemories',
 ];
 
 export const DEFAULT_ENABLED_TOOLS: string[] = [
@@ -63,12 +68,6 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'searchHistory',
   'getUrlVisits',
 
-  // Memory Management
-  'saveMemory',
-  'getMemory',
-  'listMemories',
-  'deleteMemory',
-
   // Reminders
   'createReminder',
   'listReminders',
@@ -89,6 +88,12 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'updateBookmark',
   'getBookmarkTree',
   'organizeBookmarks',
+
+  // Supermemory (Cloud Memory)
+  'addMemory',
+  'searchMemory',
+  'searchMemories',
+  'getMemories',
 ];
 
 /**

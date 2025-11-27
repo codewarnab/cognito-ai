@@ -38,6 +38,7 @@ import { forwardRef, useImperativeHandle } from 'react';
 import { YouTubeNotionIcon } from '@assets/icons/ui/youtubeplusnotion';
 import { CameraIcon } from '@assets/icons/chat/camera';
 import { CodeExecuteIcon } from '@assets/icons/chat/code-execute';
+import { SupermemoryIcon } from '@assets/icons/chat/supermemory';
 
 const log = createLogger('ToolIconMapper');
 
@@ -144,6 +145,12 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
 
     // Unified tools
     bookmarksTool: FoldersIcon,
+
+    // Supermemory tools
+    addMemory: SupermemoryIcon,
+    searchMemory: SupermemoryIcon,
+    searchMemories: SupermemoryIcon, // Actual name from @supermemory/tools SDK
+    getMemories: SupermemoryIcon,
 };
 
 /**
