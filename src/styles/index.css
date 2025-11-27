@@ -25,7 +25,6 @@
 @import './features/copilot/index.css';
 @import './features/onboarding/index.css';
 @import './features/mcp/index.css';
-@import './features/memory/index.css';
 @import './features/threads/index.css';
 @import './features/reminders/index.css';
 @import './features/workflows/index.css';

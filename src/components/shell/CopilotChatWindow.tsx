@@ -25,7 +25,6 @@ interface CopilotChatWindowProps {
     onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: () => void;
-    onMemoryClick?: () => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
@@ -52,7 +51,6 @@ export function CopilotChatWindow({
     onGeneralSettingsClick,
     onThreadsClick,
     onNewThreadClick,
-    onMemoryClick,
     onRemindersClick,
     onTroubleshootingClick,
     onFeaturesClick,
@@ -212,7 +210,6 @@ export function CopilotChatWindow({
                 onGeneralSettingsClick={onGeneralSettingsClick}
                 onThreadsClick={onThreadsClick}
                 onNewThreadClick={handleNewThread}
-                onMemoryClick={onMemoryClick}
                 onRemindersClick={onRemindersClick}
                 onTroubleshootingClick={onTroubleshootingClick}
                 onFeaturesClick={onFeaturesClick}

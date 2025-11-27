@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Search, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Info, AlertCircle } from 'lucide-react';
 import { createLogger } from '~logger';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
 import { getEnabledToolsOverride, setEnabledToolsOverride } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
-import { TOOL_CATEGORIES } from '@/constants/toolDescriptions';
+import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS } from '@/constants/toolDescriptions';
+import { isSupermemoryReady } from '@/utils/supermemory';
+import { Supermemory } from '@assets/brands/integrations/Supermemory';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const log = createLogger('ToolsPopover');
@@ -19,6 +21,8 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose }) => 
     const [toolSearchQuery, setToolSearchQuery] = useState('');
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
     const [showInfoTooltip, setShowInfoTooltip] = useState(false);
+    const [supermemoryConfigured, setSupermemoryConfigured] = useState(false);
+    const [showSupermemoryTooltip, setShowSupermemoryTooltip] = useState<string | null>(null);
     const popoverRef = useRef<HTMLDivElement>(null);
     const allTools = useMemo(() => DEFAULT_ENABLED_TOOLS, []);
 
@@ -64,8 +68,19 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose }) => 
     useEffect(() => {
         if (isOpen) {
             loadTools();
+            checkSupermemory();
         }
     }, [isOpen]);
+
+    const checkSupermemory = async () => {
+        try {
+            const ready = await isSupermemoryReady();
+            setSupermemoryConfigured(ready);
+        } catch (err) {
+            log.error('Failed to check Supermemory status', err);
+            setSupermemoryConfigured(false);
+        }
+    };
 
     const loadTools = async () => {
         try {
@@ -90,9 +105,17 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose }) => 
     };
 
     const handleToggleTool = async (tool: string, checked: boolean) => {
+        // Prevent enabling Supermemory tools if not configured
+        if (checked && SUPERMEMORY_TOOLS.includes(tool) && !supermemoryConfigured) {
+            setShowSupermemoryTooltip(tool);
+            return;
+        }
+
         setEnabledMap(prev => {
             const next = { ...prev, [tool]: checked };
-            void setEnabledToolsOverride(Object.values(next).every(v => v) ? undefined : Object.entries(next).filter(([, v]) => v).map(([k]) => k));
+            // Always save the explicit list to ensure persistence
+            const enabledList = Object.entries(next).filter(([, v]) => v).map(([k]) => k);
+            void setEnabledToolsOverride(enabledList);
             return next;
         });
     };
@@ -102,12 +125,24 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose }) => 
         const allEnabled = tools.every(t => enabledMap[t] ?? true);
         const newState = !allEnabled;
 
+        // Filter out Supermemory tools if trying to enable and not configured
+        const toolsToUpdate = newState && !supermemoryConfigured
+            ? tools.filter(t => !SUPERMEMORY_TOOLS.includes(t))
+            : tools;
+
+        if (toolsToUpdate.length === 0) {
+            setShowSupermemoryTooltip(tools[0] || null);
+            return;
+        }
+
         setEnabledMap(prev => {
             const next = { ...prev };
-            tools.forEach(t => {
+            toolsToUpdate.forEach(t => {
                 next[t] = newState;
             });
-            void setEnabledToolsOverride(Object.values(next).every(v => v) ? undefined : Object.entries(next).filter(([, v]) => v).map(([k]) => k));
+            // Always save the explicit list to ensure persistence
+            const enabledList = Object.entries(next).filter(([, v]) => v).map(([k]) => k);
+            void setEnabledToolsOverride(enabledList);
             return next;
         });
     };
@@ -230,16 +265,83 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose }) => 
                                                 <div className="tools-popover-tools">
                                                     {tools.map((tool) => {
                                                         const enabled = enabledMap[tool] ?? true;
+                                                        const isSupermemoryTool = SUPERMEMORY_TOOLS.includes(tool);
+                                                        const isGated = isSupermemoryTool && !supermemoryConfigured;
+                                                        const showTooltip = showSupermemoryTooltip === tool;
 
                                                         return (
-                                                            <div key={tool} className="tools-popover-tool">
-                                                                <span className="tools-popover-tool-name" title={tool}>
-                                                                    {tool}
-                                                                </span>
+                                                            <div
+                                                                key={tool}
+                                                                className="tools-popover-tool"
+                                                                style={{ opacity: isGated ? 0.7 : 1 }}
+                                                            >
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    <span className="tools-popover-tool-name" title={tool}>
+                                                                        {tool}
+                                                                    </span>
+                                                                    {isGated && (
+                                                                        <div style={{ position: 'relative' }}>
+                                                                            <div
+                                                                                style={{ display: 'inline-flex', cursor: 'pointer' }}
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setShowSupermemoryTooltip(showTooltip ? null : tool);
+                                                                                }}
+                                                                                onMouseEnter={() => setShowSupermemoryTooltip(tool)}
+                                                                                onMouseLeave={() => setShowSupermemoryTooltip(null)}
+                                                                            >
+                                                                                <AlertCircle
+                                                                                    size={12}
+                                                                                    style={{ color: 'var(--text-warning)' }}
+                                                                                />
+                                                                            </div>
+                                                                            {showTooltip && (
+                                                                                <div
+                                                                                    style={{
+                                                                                        position: 'absolute',
+                                                                                        bottom: '100%',
+                                                                                        left: '50%',
+                                                                                        transform: 'translateX(-50%)',
+                                                                                        marginBottom: '8px',
+                                                                                        padding: '10px',
+                                                                                        backgroundColor: 'var(--bg-primary)',
+                                                                                        border: '1px solid var(--border-color)',
+                                                                                        borderRadius: 'var(--radius-md)',
+                                                                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                                                                        zIndex: 100,
+                                                                                        width: '180px',
+                                                                                        textAlign: 'center'
+                                                                                    }}
+                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                >
+                                                                                    <div style={{
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        marginBottom: '6px',
+                                                                                        gap: '4px'
+                                                                                    }}>
+                                                                                        <Supermemory />
+                                                                                        <span style={{ fontWeight: 600, fontSize: '11px' }}>Supermemory</span>
+                                                                                    </div>
+                                                                                    <p style={{
+                                                                                        fontSize: '10px',
+                                                                                        color: 'var(--text-secondary)',
+                                                                                        margin: 0,
+                                                                                        lineHeight: '1.4'
+                                                                                    }}>
+                                                                                        Configure API key in Settings to enable
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                 <Toggle
                                                                     checked={enabled}
                                                                     onChange={(checked) => handleToggleTool(tool, checked)}
                                                                     className="tools-popover-toggle"
+                                                                    disabled={isGated && !enabled}
                                                                 />
                                                             </div>
                                                         );

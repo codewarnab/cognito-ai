@@ -20,7 +20,8 @@ const TIPS = [
     "Toggle suggested actions on/off in Settings ",
     "Choose between Gemini TTS or Web Native TTS in Settings",
     "Delete all chat history anytime from Settings ",
-    "Control Ask AI button visibility per domain in Settings"
+    "Control Ask AI button visibility per domain in Settings",
+    "Enable Supermemory in Settings to let me remember things about you across conversations"
 ];
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigureApiKey }) => {

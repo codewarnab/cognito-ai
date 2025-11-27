@@ -14,7 +14,6 @@ export { useTabContext } from './useTabContext';
 export { useVoiceRecording } from './useVoiceRecording';
 export { useThreadManagement } from './useThreadManagement';
 export { useMessageHandlers } from './useMessageHandlers';
-export { useBehavioralPreferences } from './useBehavioralPreferences';
 export { useAIChatMessages } from './useAIChatMessages';
 export { useActiveTabDetection } from './useActiveTabDetection';
 export type { LocalPdfInfo, ActiveTabDetection } from './useActiveTabDetection';

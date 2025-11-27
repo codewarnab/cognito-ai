@@ -2,15 +2,18 @@
  * Remote Mode Setup
  * Handles remote AI model initialization and tool configuration
  * Supports both Google Generative AI and Vertex AI providers
+ * Optionally includes Supermemory tools for persistent memory
  */
 
 import { createLogger } from '~logger';
+import { supermemoryTools } from '@supermemory/tools/ai-sdk';
 import { getAllTools } from '../tools/registryUtils';
 import { enabledTools } from '../tools/enabledTools';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
 import { initializeModel } from '../core/modelFactory';
+import { getSupermemoryApiKey, isSupermemoryReady, getSupermemoryUserId } from '@/utils/supermemory';
 import type { WorkflowDefinition } from '../../workflows/types';
 import type { AIProvider } from '@/utils/credentials';
 
@@ -21,6 +24,7 @@ export interface RemoteModeSetup {
     tools: Record<string, any>;
     systemPrompt: string;
     provider: AIProvider;
+    supermemoryEnabled?: boolean; // Whether Supermemory is active
 }
 
 /**
@@ -123,15 +127,54 @@ export async function setupRemoteMode(
         filtered: 2 - Object.keys(agentTools).length
     });
 
+    // Add Supermemory tools if enabled (not in workflow mode)
+    let smTools: Record<string, any> = {};
+    let supermemoryEnabled = false;
+    if (!workflowConfig) {
+        try {
+            const smReady = await isSupermemoryReady();
+            const smApiKey = await getSupermemoryApiKey();
+            const userId = await getSupermemoryUserId();
+
+            if (smReady && smApiKey && userId) {
+                // Check if Supermemory tools are enabled in user settings
+                const smToolsEnabled = enabledTools.some(t =>
+                    ['addMemory', 'searchMemory', 'searchMemories', 'getMemories'].includes(t)
+                );
+
+                if (smToolsEnabled) {
+                    // Create Supermemory tools with user's container tag
+                    smTools = supermemoryTools(smApiKey, {
+                        containerTags: [userId],
+                    });
+                    supermemoryEnabled = true;
+                    log.info('🧠 Supermemory tools loaded:', {
+                        count: Object.keys(smTools).length,
+                        names: Object.keys(smTools),
+                        userId: userId.substring(0, 8) + '...',
+                    });
+                } else {
+                    log.debug('🧠 Supermemory ready but tools not enabled');
+                }
+            } else {
+                log.debug('🧠 Supermemory not configured, skipping tools');
+            }
+        } catch (error) {
+            log.warn('⚠️ Failed to load Supermemory tools:', error);
+        }
+    }
+
     // Combine all tools
-    const tools = { ...extensionTools, ...mcpTools, ...agentTools };
+    const tools = { ...extensionTools, ...mcpTools, ...agentTools, ...smTools };
 
     log.info('🔧 All tools loaded:', {
         count: Object.keys(tools).length,
         extension: Object.keys(extensionTools).length,
         mcp: Object.keys(mcpTools).length,
         agents: Object.keys(agentTools).length,
-        workflowMode: !!workflowConfig
+        supermemory: Object.keys(smTools).length,
+        workflowMode: !!workflowConfig,
+        supermemoryEnabled
     });
 
     // Use workflow system prompt if in workflow mode, otherwise use default remote prompt
@@ -142,6 +185,7 @@ export async function setupRemoteMode(
         tools,
         systemPrompt,
         provider,
+        supermemoryEnabled,
     };
 }
 

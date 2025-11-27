@@ -8,6 +8,7 @@ import { WriteCommandSettings } from '@/components/features/settings/components/
 import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
+import { SupermemorySettings } from '@/components/features/settings/components/SupermemorySettings';
 import { hasAnyProviderConfigured } from '@/utils/credentials';
 import './SettingsPage.css';
 
@@ -67,6 +68,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <WriteCommandSettings />
         <EnabledToolsSettings />
         <MaxToolCallSettings />
+        <SupermemorySettings />
       </div>
     </div>
   );
