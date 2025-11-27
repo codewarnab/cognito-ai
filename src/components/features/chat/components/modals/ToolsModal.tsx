@@ -499,12 +499,12 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onCou
     const totalToolCount = allTools.length + mcpTools.length;
     const isTooManyTools = totalEnabledCount > TOOL_WARNING_THRESHOLD;
 
-    // Notify parent of count changes
+    // Notify parent of count changes (only when modal is open)
     useEffect(() => {
-        if (onCountChange) {
+        if (isOpen && onCountChange) {
             onCountChange(enabledExtensionCount, enabledMcpCount);
         }
-    }, [enabledExtensionCount, enabledMcpCount, onCountChange]);
+    }, [isOpen, enabledExtensionCount, enabledMcpCount, onCountChange]);
 
     // Determine which mode to display
     const displayMode: ToolMode = hasUserModified ? 'custom' : currentMode;

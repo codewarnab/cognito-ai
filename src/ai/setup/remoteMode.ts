@@ -24,7 +24,6 @@ export interface RemoteModeSetup {
     tools: Record<string, any>;
     systemPrompt: string;
     provider: AIProvider;
-    supermemoryEnabled?: boolean; // Whether Supermemory is active
 }
 
 /**
@@ -129,7 +128,6 @@ export async function setupRemoteMode(
 
     // Add Supermemory tools if enabled (not in workflow mode)
     let smTools: Record<string, any> = {};
-    let supermemoryEnabled = false;
     if (!workflowConfig) {
         try {
             const smReady = await isSupermemoryReady();
@@ -144,10 +142,10 @@ export async function setupRemoteMode(
 
                 if (smToolsEnabled) {
                     // Create Supermemory tools with user's container tag
+                    // The apiKey is passed directly to supermemoryTools (no process.env needed)
                     smTools = supermemoryTools(smApiKey, {
                         containerTags: [userId],
                     });
-                    supermemoryEnabled = true;
                     log.info('🧠 Supermemory tools loaded:', {
                         count: Object.keys(smTools).length,
                         names: Object.keys(smTools),
@@ -174,7 +172,6 @@ export async function setupRemoteMode(
         agents: Object.keys(agentTools).length,
         supermemory: Object.keys(smTools).length,
         workflowMode: !!workflowConfig,
-        supermemoryEnabled
     });
 
     // Use workflow system prompt if in workflow mode, otherwise use default remote prompt
@@ -185,7 +182,6 @@ export async function setupRemoteMode(
         tools,
         systemPrompt,
         provider,
-        supermemoryEnabled,
     };
 }
 

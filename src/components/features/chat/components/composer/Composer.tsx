@@ -129,7 +129,20 @@ export const Composer: React.FC<ComposerProps> = ({
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
-    const [enabledToolsCount, setEnabledToolsCount] = useState(0);
+
+    // Calculate initial tool count synchronously to avoid showing 0 on first render
+    const [enabledToolsCount, setEnabledToolsCount] = useState(() => {
+        const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
+        const filteredTools = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t));
+        const count = filteredTools.length;
+        log.info('🔧 Initial tool count:', {
+            defaultTotal: DEFAULT_ENABLED_TOOLS.length,
+            disabledByDefault: TOOLS_DISABLED_BY_DEFAULT.length,
+            calculated: count,
+            sample: filteredTools.slice(0, 5)
+        });
+        return count;
+    });
     const [mcpToolsCount, setMcpToolsCount] = useState(0);
     const isLocalMode = modelState.mode === 'local';
     const totalEnabledCount = enabledToolsCount + mcpToolsCount;
