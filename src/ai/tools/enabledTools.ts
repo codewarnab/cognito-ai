@@ -29,6 +29,9 @@ export const TOOLS_DISABLED_BY_DEFAULT: string[] = [
   // Supermemory tools - require API key configuration
   'addMemory',
   'searchMemories',
+  // Workflow-only tools - automatically enabled during specific workflows
+  'generatePDF',
+  'getReportTemplate',
 ];
 
 export const DEFAULT_ENABLED_TOOLS: string[] = [

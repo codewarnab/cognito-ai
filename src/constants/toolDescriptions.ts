@@ -68,7 +68,7 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'History': ['searchHistory', 'getUrlVisits'],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
-    'Utilities': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate'],
+    'Utilities': ['getYouTubeTranscript'],
     'Memory': ['addMemory', 'searchMemories']
 };
 
@@ -76,3 +76,10 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
  * Tools that require Supermemory to be configured
  */
 export const SUPERMEMORY_TOOLS: string[] = ['addMemory', 'searchMemories'];
+
+/**
+ * Workflow-only tools that are hidden from the ToolsModal
+ * These tools are automatically enabled during specific workflows (e.g., Research workflow)
+ * and should not be manually toggled by users in normal mode
+ */
+export const WORKFLOW_ONLY_TOOLS: string[] = ['generatePDF', 'getReportTemplate'];

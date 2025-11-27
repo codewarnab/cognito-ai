@@ -6,6 +6,14 @@ export type VoiceName = 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir'
 
 export type TTSProvider = 'gemini' | 'web-native';
 
+/**
+ * Tools mode determines which system prompt and tool set to use.
+ * - 'chat': Minimal tools, focused on reading and Q&A (simpler system prompt)
+ * - 'agent': Full browser automation capabilities (full system prompt)
+ * - 'custom': User has customized the tool selection
+ */
+export type ToolsMode = 'chat' | 'agent' | 'custom';
+
 export interface VoiceSettings {
   voiceName: VoiceName;
 }
@@ -35,6 +43,11 @@ export interface UserSettings {
    * Requires a valid API key to function.
    */
   supermemoryEnabled?: boolean;
+  /**
+   * Current tools mode selection.
+   * Determines system prompt and available tools.
+   */
+  toolsMode?: ToolsMode;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -48,6 +61,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   maxToolCallLimit: 20,
   supermemoryApiKey: undefined,
   supermemoryEnabled: false,
+  toolsMode: 'agent',
 };
 
 
