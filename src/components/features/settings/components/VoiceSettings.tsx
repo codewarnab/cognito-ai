@@ -5,7 +5,7 @@ import { createLogger } from '~logger';
 import { getVoiceName, setVoiceName } from '@/utils/settings';
 import type { VoiceName } from '@/types/settings';
 import { generateSpeech, playAudioBuffer } from '@/utils/ai';
-import { useApiKey } from '../../../../hooks/useApiKey';
+import { useApiKey } from '@/hooks/settings';
 import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
 import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
 

@@ -9,7 +9,7 @@ import { getModelConfig, setModelConfig, clearConversationStartMode } from '@/ut
 import { hasGoogleApiKey, hasAnyProviderConfigured } from '@/utils/credentials';
 import type { Message, AIMode, RemoteModelType, ModelState } from '@/components/features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
-import type { LocalPdfInfo } from '@/hooks/useActiveTabDetection';
+import type { LocalPdfInfo } from '@/hooks/browser';
 import { clearAllDismissals } from '@/utils/settings';
 
 interface CopilotChatWindowProps {

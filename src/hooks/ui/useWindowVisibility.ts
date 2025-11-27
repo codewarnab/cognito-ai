@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { WindowVisibilityContext } from '../contexts/WindowVisibilityContext';
+import { WindowVisibilityContext } from '@/contexts/WindowVisibilityContext';
 
 /**
  * Hook to access window visibility state

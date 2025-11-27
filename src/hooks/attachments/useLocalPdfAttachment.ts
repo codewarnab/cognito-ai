@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { isPdfDismissed, dismissPdf } from '@/utils/settings';
-import type { LocalPdfInfo } from './useActiveTabDetection';
+import type { LocalPdfInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
 
 interface UseLocalPdfAttachmentOptions {
@@ -40,7 +40,7 @@ export const useLocalPdfAttachment = ({
                 // Handle specific error cases
                 if (response.needsPermission) {
                     // Show permission guide
-                    const { FileAccessError } = await import('../errors');
+                    const { FileAccessError } = await import('../../errors');
                     const helpText = FileAccessError.getPermissionHelpText();
                     onError?.(
                         `${response.error}\n\n${helpText}`,
