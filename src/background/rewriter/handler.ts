@@ -86,12 +86,13 @@ export async function handleRewriteRequest(
     request: RewriteRequest,
     port: chrome.runtime.Port
 ): Promise<void> {
-    const { selectedText, instruction, preset, enableUrlContext, enableGoogleSearch } = request.payload;
+    const { selectedText, instruction, preset, enableUrlContext, enableGoogleSearch, enableSupermemorySearch } = request.payload;
 
     log.info('Processing rewrite request', {
         textLength: selectedText.length,
         preset,
         hasInstruction: !!instruction,
+        enableSupermemorySearch,
     });
 
     // Track port connection
@@ -102,11 +103,15 @@ export async function handleRewriteRequest(
     });
 
     try {
+        // Build options - AI-driven memory search is handled within geminiRewriter
+        // via function calling when enableSupermemorySearch is true
         const options: RewriterOptions = {
             preset,
             instruction,
             enableUrlContext: enableUrlContext ?? false,
             enableGoogleSearch: enableGoogleSearch ?? false,
+            // Phase 6: Pass to rewriter for AI-driven function calling
+            enableSupermemorySearch: enableSupermemorySearch ?? false,
         };
 
         // Generate complete rewrite (non-streaming)

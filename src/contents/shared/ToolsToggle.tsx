@@ -1,6 +1,6 @@
 /**
  * Minimal Tool Settings Toggle
- * Compact inline toggle for enabling/disabling Gemini tools (URL Context, Google Search)
+ * Compact inline toggle for enabling/disabling Gemini tools (URL Context, Google Search, Supermemory)
  * Used in Writer Overlay and Rewriter Tooltip
  */
 import React, { useState, useCallback } from 'react';
@@ -8,10 +8,21 @@ import React, { useState, useCallback } from 'react';
 interface ToolsToggleProps {
     enableUrlContext: boolean;
     enableGoogleSearch: boolean;
+    enableSupermemorySearch: boolean;
     onUrlContextChange: (enabled: boolean) => void;
     onGoogleSearchChange: (enabled: boolean) => void;
+    onSupermemorySearchChange: (enabled: boolean) => void;
+    supermemoryConfigured: boolean;
     disabled?: boolean;
 }
+
+// Info icon for tooltip trigger
+const InfoIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
 
 // Compact icons
 const GlobeIcon = () => (
@@ -41,11 +52,35 @@ const SettingsIcon = () => (
     </svg>
 );
 
+const BrainIcon = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+        <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+        <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+        <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+        <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+        <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+        <path d="M19.938 10.5a4 4 0 0 1 .585.396" />
+        <path d="M6 18a4 4 0 0 1-1.967-.516" />
+        <path d="M19.967 17.484A4 4 0 0 1 18 18" />
+    </svg>
+);
+
+const AlertIcon = () => (
+    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4M12 16h.01" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 export function ToolsToggle({
     enableUrlContext,
     enableGoogleSearch,
+    enableSupermemorySearch,
     onUrlContextChange,
     onGoogleSearchChange,
+    onSupermemorySearchChange,
+    supermemoryConfigured,
     disabled = false,
 }: ToolsToggleProps) {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -72,7 +107,15 @@ export function ToolsToggle({
         }
     }, [disabled, enableGoogleSearch, onGoogleSearchChange]);
 
-    const activeToolsCount = (enableUrlContext ? 1 : 0) + (enableGoogleSearch ? 1 : 0);
+    const handleSupermemorySearchToggle = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!disabled && supermemoryConfigured) {
+            onSupermemorySearchChange(!enableSupermemorySearch);
+        }
+    }, [disabled, supermemoryConfigured, enableSupermemorySearch, onSupermemorySearchChange]);
+
+    const activeToolsCount = (enableUrlContext ? 1 : 0) + (enableGoogleSearch ? 1 : 0) + (enableSupermemorySearch ? 1 : 0);
 
     return (
         <div className="tools-toggle-container">
@@ -102,10 +145,12 @@ export function ToolsToggle({
                         className={`tools-toggle-item ${enableUrlContext ? 'tools-toggle-item--active' : ''}`}
                         onClick={handleUrlContextToggle}
                         disabled={disabled}
-                        title="Enable URL Context - Analyze web content"
                     >
                         <span className="tools-toggle-item-icon"><GlobeIcon /></span>
                         <span className="tools-toggle-item-label">URL Context</span>
+                        <span className="tools-toggle-item-info" title="Analyze linked web pages to provide contextual information">
+                            <InfoIcon />
+                        </span>
                         <span className={`tools-toggle-item-switch ${enableUrlContext ? 'tools-toggle-item-switch--on' : ''}`}>
                             <span className="tools-toggle-item-switch-thumb" />
                         </span>
@@ -115,11 +160,38 @@ export function ToolsToggle({
                         className={`tools-toggle-item ${enableGoogleSearch ? 'tools-toggle-item--active' : ''}`}
                         onClick={handleGoogleSearchToggle}
                         disabled={disabled}
-                        title="Enable Google Search - Real-time information"
                     >
                         <span className="tools-toggle-item-icon"><SearchIcon /></span>
                         <span className="tools-toggle-item-label">Google Search</span>
+                        <span className="tools-toggle-item-info" title="Search the web for real-time information and current events">
+                            <InfoIcon />
+                        </span>
                         <span className={`tools-toggle-item-switch ${enableGoogleSearch ? 'tools-toggle-item-switch--on' : ''}`}>
+                            <span className="tools-toggle-item-switch-thumb" />
+                        </span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`tools-toggle-item ${enableSupermemorySearch ? 'tools-toggle-item--active' : ''} ${!supermemoryConfigured ? 'tools-toggle-item--gated' : ''}`}
+                        onClick={handleSupermemorySearchToggle}
+                        disabled={disabled || !supermemoryConfigured}
+                    >
+                        <span className="tools-toggle-item-icon"><BrainIcon /></span>
+                        <span className="tools-toggle-item-label">
+                            Memories
+                            {!supermemoryConfigured && (
+                                <span className="tools-toggle-item-warning"><AlertIcon /></span>
+                            )}
+                        </span>
+                        <span
+                            className="tools-toggle-item-info"
+                            title={supermemoryConfigured
+                                ? "Search your saved knowledge and past conversations from Supermemory"
+                                : "Requires Supermemory API key (configure in Settings → Integrations)"}
+                        >
+                            <InfoIcon />
+                        </span>
+                        <span className={`tools-toggle-item-switch ${enableSupermemorySearch ? 'tools-toggle-item-switch--on' : ''}`}>
                             <span className="tools-toggle-item-switch-thumb" />
                         </span>
                     </button>

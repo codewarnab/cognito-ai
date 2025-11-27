@@ -92,6 +92,7 @@ export async function handleWriteGenerate(
         promptLength: prompt.length,
         platform: pageContext?.platform,
         domain: pageContext?.domain,
+        enableSupermemorySearch: settings?.enableSupermemorySearch,
     });
 
     const options: WriterOptions = {
@@ -101,6 +102,8 @@ export async function handleWriteGenerate(
         // Pass Gemini tool settings
         enableUrlContext: settings?.enableUrlContext ?? false,
         enableGoogleSearch: settings?.enableGoogleSearch ?? false,
+        // Phase 6: AI-driven memory search via function calling
+        enableSupermemorySearch: settings?.enableSupermemorySearch ?? false,
     };
 
     // Track if port is still connected
@@ -112,6 +115,7 @@ export async function handleWriteGenerate(
 
     try {
         // Generate complete response (non-streaming)
+        // AI-driven memory search is handled within geminiWriter via function calling
         const text = await geminiWriter.generate(prompt, options);
 
         log.info('Generation complete', { textLength: text.length });

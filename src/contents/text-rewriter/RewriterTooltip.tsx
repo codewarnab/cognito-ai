@@ -14,8 +14,8 @@ interface RewriterTooltipProps {
     rewrittenText: string;
     isProcessing: boolean;
     error: string | null;
-    onPresetClick: (preset: RewritePreset, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }) => void;
-    onCustomRewrite: (instruction: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }) => void;
+    onPresetClick: (preset: RewritePreset, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }) => void;
+    onCustomRewrite: (instruction: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }) => void;
     onApply: () => void;
     onClose: () => void;
 }
@@ -79,14 +79,29 @@ export function RewriterTooltip({
     // Tool settings state
     const [enableUrlContext, setEnableUrlContext] = useState(false);
     const [enableGoogleSearch, setEnableGoogleSearch] = useState(false);
+    const [enableSupermemorySearch, setEnableSupermemorySearch] = useState(false);
+    const [supermemoryConfigured, setSupermemoryConfigured] = useState(false);
 
     // Load tool settings on mount
     useEffect(() => {
+        // Load rewrite settings
         getRewriteSettings().then((settings) => {
             setEnableUrlContext(settings.enableUrlContext);
             setEnableGoogleSearch(settings.enableGoogleSearch);
+            setEnableSupermemorySearch(settings.enableSupermemorySearch);
         }).catch(() => {
             // Use defaults on error
+        });
+
+        // Check if Supermemory is configured
+        // This is done via message to background since content scripts can't access storage directly
+        chrome.runtime.sendMessage({ type: 'CHECK_SUPERMEMORY_READY' }, (response) => {
+            if (chrome.runtime.lastError) {
+                // Fallback to not configured
+                setSupermemoryConfigured(false);
+                return;
+            }
+            setSupermemoryConfigured(response?.ready ?? false);
         });
     }, []);
 
@@ -101,11 +116,19 @@ export function RewriterTooltip({
         void updateRewriteSetting('enableGoogleSearch', enabled);
     }, []);
 
+    const handleSupermemorySearchChange = useCallback((enabled: boolean) => {
+        // Only allow enabling if Supermemory is configured
+        if (enabled && !supermemoryConfigured) return;
+        setEnableSupermemorySearch(enabled);
+        void updateRewriteSetting('enableSupermemorySearch', enabled);
+    }, [supermemoryConfigured]);
+
     // Get current tool settings
     const getToolSettings = useCallback(() => ({
         enableUrlContext,
         enableGoogleSearch,
-    }), [enableUrlContext, enableGoogleSearch]);
+        enableSupermemorySearch,
+    }), [enableUrlContext, enableGoogleSearch, enableSupermemorySearch]);
 
     // Update position when prop changes
     useEffect(() => {
@@ -282,8 +305,11 @@ export function RewriterTooltip({
                 <ToolsToggle
                     enableUrlContext={enableUrlContext}
                     enableGoogleSearch={enableGoogleSearch}
+                    enableSupermemorySearch={enableSupermemorySearch}
                     onUrlContextChange={handleUrlContextChange}
                     onGoogleSearchChange={handleGoogleSearchChange}
+                    onSupermemorySearchChange={handleSupermemorySearchChange}
+                    supermemoryConfigured={supermemoryConfigured}
                     disabled={isProcessing}
                 />
             </div>

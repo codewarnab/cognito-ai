@@ -23,6 +23,9 @@ export interface RewriteSettings {
     enableUrlContext: boolean;
     /** Enable Google Search grounding tool */
     enableGoogleSearch: boolean;
+    // Supermemory integration
+    /** Enable Supermemory semantic search for context */
+    enableSupermemorySearch: boolean;
 }
 
 export const DEFAULT_REWRITE_SETTINGS: RewriteSettings = {
@@ -32,6 +35,7 @@ export const DEFAULT_REWRITE_SETTINGS: RewriteSettings = {
     minSelectionLength: 10,
     enableUrlContext: false,
     enableGoogleSearch: false,
+    enableSupermemorySearch: false,
 };
 
 /**

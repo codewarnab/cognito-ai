@@ -66,7 +66,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <TextSummarizerSettings />
         <TextRewriterSettings />
         <WriteCommandSettings />
-        <EnabledToolsSettings />
+        {/* <EnabledToolsSettings /> */}
         <MaxToolCallSettings />
         <SupermemorySettings />
       </div>

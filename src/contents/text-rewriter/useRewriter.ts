@@ -73,7 +73,7 @@ export function useRewriter() {
         text: string,
         instruction?: string,
         preset?: RewritePreset,
-        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }
     ) => {
         // Disconnect any existing port
         if (portRef.current) {
@@ -105,6 +105,7 @@ export function useRewriter() {
             // Use inline toggle settings if provided, otherwise fall back to stored settings
             const enableUrlContext = toolSettings?.enableUrlContext ?? settings.enableUrlContext;
             const enableGoogleSearch = toolSettings?.enableGoogleSearch ?? settings.enableGoogleSearch;
+            const enableSupermemorySearch = toolSettings?.enableSupermemorySearch ?? settings.enableSupermemorySearch;
 
             // Connect to background via port
             const port = chrome.runtime.connect({ name: 'text-rewriter' });
@@ -163,6 +164,7 @@ export function useRewriter() {
                     preset,
                     enableUrlContext,
                     enableGoogleSearch,
+                    enableSupermemorySearch,
                 },
             };
 

@@ -87,7 +87,7 @@ function WriteCommandContent() {
     // Handle text generation via background service worker
     const handleGenerate = useCallback(async (
         prompt: string,
-        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }
     ) => {
         if (!prompt.trim()) return;
 
@@ -171,6 +171,7 @@ function WriteCommandContent() {
                         maxTokens: settings.maxOutputTokens,
                         enableUrlContext: toolSettings?.enableUrlContext ?? settings.enableUrlContext,
                         enableGoogleSearch: toolSettings?.enableGoogleSearch ?? settings.enableGoogleSearch,
+                        enableSupermemorySearch: toolSettings?.enableSupermemorySearch ?? settings.enableSupermemorySearch,
                     },
                 },
             };

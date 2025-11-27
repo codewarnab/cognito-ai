@@ -11,6 +11,7 @@ import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
 import { handleWriteGenerate } from '../writer';
 import { handleRewriteRequest } from '../rewriter';
+import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -31,6 +32,16 @@ export function initializeMessageRouter(): void {
         // Route file messages
         if (message.type === 'READ_LOCAL_PDF') {
             handleFileMessage(message, sender, sendResponse);
+            return true; // Will respond asynchronously
+        }
+
+        // Handle Supermemory ready check
+        if (message.type === 'CHECK_SUPERMEMORY_READY') {
+            checkSupermemoryReady().then((ready) => {
+                sendResponse({ ready });
+            }).catch(() => {
+                sendResponse({ ready: false });
+            });
             return true; // Will respond asynchronously
         }
 

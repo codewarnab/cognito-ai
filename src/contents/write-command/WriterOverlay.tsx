@@ -10,7 +10,7 @@ import type { WritePosition } from '@/types';
 
 interface WriterOverlayProps {
     position: WritePosition;
-    onGenerate: (prompt: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }) => void;
+    onGenerate: (prompt: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }) => void;
     onInsert: () => void;
     onClose: () => void;
     isGenerating: boolean;
@@ -94,17 +94,32 @@ export function WriterOverlay({
     // Tool settings state
     const [enableUrlContext, setEnableUrlContext] = useState(false);
     const [enableGoogleSearch, setEnableGoogleSearch] = useState(false);
+    const [enableSupermemorySearch, setEnableSupermemorySearch] = useState(false);
+    const [supermemoryConfigured, setSupermemoryConfigured] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
 
     // Load tool settings on mount
     useEffect(() => {
+        // Load write command settings
         getWriteCommandSettings().then((settings) => {
             setEnableUrlContext(settings.enableUrlContext);
             setEnableGoogleSearch(settings.enableGoogleSearch);
+            setEnableSupermemorySearch(settings.enableSupermemorySearch);
         }).catch(() => {
             // Use defaults on error
+        });
+
+        // Check if Supermemory is configured
+        // This is done via message to background since content scripts can't access storage directly
+        chrome.runtime.sendMessage({ type: 'CHECK_SUPERMEMORY_READY' }, (response) => {
+            if (chrome.runtime.lastError) {
+                // Fallback to not configured
+                setSupermemoryConfigured(false);
+                return;
+            }
+            setSupermemoryConfigured(response?.ready ?? false);
         });
     }, []);
 
@@ -118,6 +133,13 @@ export function WriterOverlay({
         setEnableGoogleSearch(enabled);
         void updateWriteCommandSetting('enableGoogleSearch', enabled);
     }, []);
+
+    const handleSupermemorySearchChange = useCallback((enabled: boolean) => {
+        // Only allow enabling if Supermemory is configured
+        if (enabled && !supermemoryConfigured) return;
+        setEnableSupermemorySearch(enabled);
+        void updateWriteCommandSetting('enableSupermemorySearch', enabled);
+    }, [supermemoryConfigured]);
 
     // Update position when prop changes and constrain to viewport
     useEffect(() => {
@@ -197,7 +219,7 @@ export function WriterOverlay({
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 if (prompt.trim() && !isGenerating) {
-                    onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
+                    onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -207,7 +229,7 @@ export function WriterOverlay({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [prompt, generatedText, isGenerating, onGenerate, onInsert, onClose, enableUrlContext, enableGoogleSearch]);
+    }, [prompt, generatedText, isGenerating, onGenerate, onInsert, onClose, enableUrlContext, enableGoogleSearch, enableSupermemorySearch]);
 
     // Handle click outside - check if click target is part of the overlay
     // Uses composedPath() to properly traverse Shadow DOM boundaries (Plasmo renders in shadow DOM)
@@ -314,7 +336,7 @@ export function WriterOverlay({
     // Handle regenerate
     const handleRegenerate = () => {
         if (prompt.trim()) {
-            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
         }
     };
 
@@ -323,7 +345,7 @@ export function WriterOverlay({
         e.preventDefault();
         e.stopPropagation();
         if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
         }
     };
 
@@ -332,7 +354,7 @@ export function WriterOverlay({
         e.preventDefault();
         e.stopPropagation();
         if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt, { enableUrlContext, enableGoogleSearch });
+            onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
         }
     };
 
@@ -399,8 +421,11 @@ export function WriterOverlay({
                 <ToolsToggle
                     enableUrlContext={enableUrlContext}
                     enableGoogleSearch={enableGoogleSearch}
+                    enableSupermemorySearch={enableSupermemorySearch}
                     onUrlContextChange={handleUrlContextChange}
                     onGoogleSearchChange={handleGoogleSearchChange}
+                    onSupermemorySearchChange={handleSupermemorySearchChange}
+                    supermemoryConfigured={supermemoryConfigured}
                     disabled={isGenerating}
                 />
             </div>
