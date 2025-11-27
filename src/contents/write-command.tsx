@@ -15,7 +15,7 @@ import { WriterOverlay } from './write-command/WriterOverlay';
 import { WriteCommandErrorBoundary } from './write-command/ErrorBoundary';
 import { getPageContext } from './write-command/platformDetector';
 import { getWriteCommandSettings } from '@/utils/settings';
-import type { WriteStreamChunk, WriteError, WriteGenerateRequest } from '@/types';
+import type { WriteStreamChunk, WriteError, WriteGenerateRequest, WriteAttachmentPayload } from '@/types';
 import { createLogger } from '~logger';
 
 const log = createLogger('WriteCommand');
@@ -87,9 +87,11 @@ function WriteCommandContent() {
     // Handle text generation via background service worker
     const handleGenerate = useCallback(async (
         prompt: string,
-        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean },
+        attachment?: WriteAttachmentPayload
     ) => {
-        if (!prompt.trim()) return;
+        // Allow generation with just an attachment (no text prompt required)
+        if (!prompt.trim() && !attachment) return;
 
         // Disconnect any existing port
         if (activePortRef.current) {
@@ -173,6 +175,8 @@ function WriteCommandContent() {
                         enableGoogleSearch: toolSettings?.enableGoogleSearch ?? settings.enableGoogleSearch,
                         enableSupermemorySearch: toolSettings?.enableSupermemorySearch ?? settings.enableSupermemorySearch,
                     },
+                    // Include attachment if provided
+                    attachment,
                 },
             };
 

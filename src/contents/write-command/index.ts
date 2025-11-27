@@ -5,6 +5,8 @@
 
 export { useWriteCommandDetection } from './useWriteCommandDetection';
 export { useTextInsertion, type InsertResult } from './useTextInsertion';
+export { useWriterAttachment } from './useWriterAttachment';
+export { WriterAttachmentPreview } from './WriterAttachmentPreview';
 export { WriterOverlay } from './WriterOverlay';
 export { WritingAnimation } from './WritingAnimation';
 export { WriteCommandErrorBoundary } from './ErrorBoundary';
@@ -14,3 +16,11 @@ export {
     getPlatformInstructions,
     type PlatformInfo,
 } from './platformDetector';
+export {
+    validateWriterAttachment,
+    fileToBase64,
+    createPreview,
+    getAttachmentType,
+    getAcceptedFileTypes,
+    type AttachmentValidation,
+} from './writerAttachmentUtils';

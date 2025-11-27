@@ -9,6 +9,45 @@
 export type WriteTone = 'professional' | 'casual' | 'formal' | 'friendly';
 
 /**
+ * Attachment data for write command
+ * Simplified version of chat attachments - single file focus
+ */
+export interface WriteAttachment {
+    id: string;
+    file: File;
+    preview?: string; // Base64 preview for images
+    type: 'image' | 'document';
+    base64Data?: string; // Cached base64 for API call
+    mimeType: string;
+}
+
+/**
+ * Serializable attachment data for messaging
+ */
+export interface WriteAttachmentPayload {
+    base64Data: string;
+    mimeType: string;
+    fileName: string;
+    fileSize: number;
+}
+
+/**
+ * Supported attachment MIME types for writer
+ */
+export const WRITER_SUPPORTED_MIME_TYPES = {
+    images: ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'] as const,
+    documents: ['application/pdf', 'text/plain'] as const,
+} as const;
+
+/**
+ * Maximum file sizes
+ */
+export const WRITER_FILE_LIMITS = {
+    image: 7 * 1024 * 1024, // 7MB
+    document: 20 * 1024 * 1024, // 20MB (keeping under 20MB total request limit)
+} as const;
+
+/**
  * Page context information
  * Provides context about the current page for better writing suggestions
  */
@@ -33,11 +72,13 @@ export interface WriteGenerateRequest {
             tone?: WriteTone;
             maxTokens?: number;
             // Gemini Tool settings
-            enableUrlContext?: boolean;    // Enable URL fetching/analysis tool
-            enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
+            enableUrlContext?: boolean; // Enable URL fetching/analysis tool
+            enableGoogleSearch?: boolean; // Enable Google Search grounding tool
             // Supermemory integration
-            enableSupermemorySearch?: boolean;  // Enable Supermemory semantic search
+            enableSupermemorySearch?: boolean; // Enable Supermemory semantic search
         };
+        // Attachment data (serialized for messaging)
+        attachment?: WriteAttachmentPayload;
     };
 }
 

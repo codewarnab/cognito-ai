@@ -4,13 +4,20 @@
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WritingAnimation } from './WritingAnimation';
+import { WriterAttachmentPreview } from './WriterAttachmentPreview';
+import { useWriterAttachment } from './useWriterAttachment';
+import { getAcceptedFileTypes } from './writerAttachmentUtils';
 import { ToolsToggle } from '../shared/ToolsToggle';
 import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
-import type { WritePosition } from '@/types';
+import type { WritePosition, WriteAttachmentPayload } from '@/types';
 
 interface WriterOverlayProps {
     position: WritePosition;
-    onGenerate: (prompt: string, toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }) => void;
+    onGenerate: (
+        prompt: string,
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean },
+        attachment?: WriteAttachmentPayload
+    ) => void;
     onInsert: () => void;
     onClose: () => void;
     isGenerating: boolean;
@@ -68,6 +75,13 @@ const CheckIcon = () => (
     </svg>
 );
 
+const PaperclipIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+            strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+);
+
 const RefreshIcon = () => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M1 4v6h6M23 20v-6h-6" />
@@ -99,6 +113,27 @@ export function WriterOverlay({
 
     const inputRef = useRef<HTMLInputElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
+
+    // Attachment hook
+    const {
+        attachment,
+        isProcessing,
+        fileInputRef,
+        handleFileChange,
+        handleFileDrop: onFileDrop,
+        handlePaste,
+        clearAttachment,
+        openFilePicker,
+        getAttachmentForApi,
+    } = useWriterAttachment({
+        onError: (message) => {
+            // Could integrate with existing error state if needed
+            console.warn('[WriterOverlay] Attachment error:', message);
+        },
+    });
+
+    // Drag state for file drop
+    const [isFileDragOver, setIsFileDragOver] = useState(false);
 
     // Load tool settings on mount
     useEffect(() => {
@@ -210,6 +245,22 @@ export function WriterOverlay({
         return () => clearTimeout(timer);
     }, []);
 
+    // Paste listener for images
+    useEffect(() => {
+        const inputEl = inputRef.current;
+        if (!inputEl) return;
+
+        const handlePasteEvent = (e: ClipboardEvent) => {
+            // Check if there are files in clipboard
+            if (e.clipboardData?.files?.length) {
+                handlePaste(e);
+            }
+        };
+
+        inputEl.addEventListener('paste', handlePasteEvent);
+        return () => inputEl.removeEventListener('paste', handlePasteEvent);
+    }, [handlePaste]);
+
     // Handle keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -218,8 +269,13 @@ export function WriterOverlay({
 
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (prompt.trim() && !isGenerating) {
-                    onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
+                if ((prompt.trim() || attachment) && !isGenerating) {
+                    onGenerate(
+                        prompt,
+                        { enableUrlContext, enableGoogleSearch, enableSupermemorySearch },
+                        getAttachmentForApi()
+                    );
+                    clearAttachment();
                 }
             } else if (e.key === 'Escape') {
                 e.preventDefault();
@@ -229,7 +285,7 @@ export function WriterOverlay({
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [prompt, generatedText, isGenerating, onGenerate, onInsert, onClose, enableUrlContext, enableGoogleSearch, enableSupermemorySearch]);
+    }, [prompt, attachment, isGenerating, onGenerate, onClose, enableUrlContext, enableGoogleSearch, enableSupermemorySearch, getAttachmentForApi, clearAttachment]);
 
     // Handle click outside - check if click target is part of the overlay
     // Uses composedPath() to properly traverse Shadow DOM boundaries (Plasmo renders in shadow DOM)
@@ -344,8 +400,13 @@ export function WriterOverlay({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
+        if ((prompt.trim() || attachment) && !isGenerating) {
+            onGenerate(
+                prompt,
+                { enableUrlContext, enableGoogleSearch, enableSupermemorySearch },
+                getAttachmentForApi()
+            );
+            clearAttachment();
         }
     };
 
@@ -353,10 +414,35 @@ export function WriterOverlay({
     const handleSendClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (prompt.trim() && !isGenerating) {
-            onGenerate(prompt, { enableUrlContext, enableGoogleSearch, enableSupermemorySearch });
+        if ((prompt.trim() || attachment) && !isGenerating) {
+            onGenerate(
+                prompt,
+                { enableUrlContext, enableGoogleSearch, enableSupermemorySearch },
+                getAttachmentForApi()
+            );
+            clearAttachment();
         }
     };
+
+    // Handle file drag events
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.types.includes('Files')) {
+            setIsFileDragOver(true);
+        }
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsFileDragOver(false);
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        setIsFileDragOver(false);
+        onFileDrop(e);
+    }, [onFileDrop]);
 
     return (
         <div
@@ -393,28 +479,68 @@ export function WriterOverlay({
                 </button>
             </div>
 
+            {/* Attachment Preview */}
+            {attachment && (
+                <WriterAttachmentPreview
+                    attachment={attachment}
+                    onRemove={clearAttachment}
+                    disabled={isGenerating}
+                />
+            )}
+
             {/* Input Row */}
-            <form className="writer-input-row" onSubmit={handleSubmit}>
+            <form
+                className={`writer-input-row${attachment ? ' writer-input-row--has-attachment' : ''}${isFileDragOver ? ' writer-input-row--dragover' : ''}`}
+                onSubmit={handleSubmit}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
                 <input
                     ref={inputRef}
                     type="text"
                     className="writer-input"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="What would you like me to write?"
+                    placeholder={attachment ? "Describe what to write..." : "What would you like me to write?"}
                     disabled={isGenerating}
                     autoComplete="off"
                 />
                 <button
                     type="button"
+                    className={`writer-attach-button ${attachment ? 'writer-attach-button--active' : ''}`}
+                    onClick={openFilePicker}
+                    disabled={isGenerating || isProcessing}
+                    title="Attach file (image or PDF)"
+                    aria-label="Attach file"
+                >
+                    <PaperclipIcon />
+                </button>
+                <button
+                    type="button"
                     className="writer-send-button"
                     onClick={handleSendClick}
-                    disabled={!prompt.trim() || isGenerating}
+                    disabled={(!prompt.trim() && !attachment) || isGenerating}
                     title="Generate (Enter)"
                 >
                     <SendIcon />
                 </button>
             </form>
+
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept={getAcceptedFileTypes()}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                aria-hidden="true"
+            />
+
+            {/* Processing indicator */}
+            {isProcessing && (
+                <div className="writer-processing">Processing file...</div>
+            )}
 
             {/* Tools Toggle - Inline Settings */}
             <div className="writer-tools-row">
