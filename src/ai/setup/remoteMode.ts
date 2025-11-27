@@ -139,7 +139,7 @@ export async function setupRemoteMode(
             if (smReady && smApiKey && userId) {
                 // Check if Supermemory tools are enabled in user settings
                 const smToolsEnabled = enabledTools.some(t =>
-                    ['addMemory', 'searchMemory', 'searchMemories', 'getMemories'].includes(t)
+                    ['addMemory', 'searchMemories'].includes(t)
                 );
 
                 if (smToolsEnabled) {
