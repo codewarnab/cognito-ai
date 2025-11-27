@@ -109,7 +109,7 @@ function TextRewriterContent() {
     // Handle preset click
     const handlePresetClick = useCallback((
         preset: RewritePreset,
-        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }
     ) => {
         if (selection) {
             log.debug('Preset selected', { preset, textLength: selection.text.length, toolSettings });
@@ -120,7 +120,7 @@ function TextRewriterContent() {
     // Handle custom instruction rewrite
     const handleCustomRewrite = useCallback((
         instruction: string,
-        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean }
+        toolSettings?: { enableUrlContext: boolean; enableGoogleSearch: boolean; enableSupermemorySearch: boolean }
     ) => {
         if (selection && instruction.trim()) {
             log.debug('Custom rewrite', { instruction, textLength: selection.text.length, toolSettings });

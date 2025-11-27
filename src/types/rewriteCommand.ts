@@ -39,6 +39,8 @@ export interface RewriteRequest {
         // Gemini Tool settings
         enableUrlContext?: boolean;
         enableGoogleSearch?: boolean;
+        // Supermemory integration
+        enableSupermemorySearch?: boolean;  // Enable Supermemory semantic search
     };
 }
 

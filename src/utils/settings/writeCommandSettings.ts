@@ -16,6 +16,8 @@ export interface WriteCommandSettings {
     // Gemini Tool settings
     enableUrlContext: boolean;    // Enable URL fetching/analysis tool
     enableGoogleSearch: boolean;  // Enable Google Search grounding tool
+    // Supermemory integration
+    enableSupermemorySearch: boolean;  // Enable Supermemory semantic search
 }
 
 export const DEFAULT_WRITE_SETTINGS: WriteCommandSettings = {
@@ -25,6 +27,7 @@ export const DEFAULT_WRITE_SETTINGS: WriteCommandSettings = {
     maxOutputTokens: 1024,
     enableUrlContext: false,
     enableGoogleSearch: false,
+    enableSupermemorySearch: false,
 };
 
 /**

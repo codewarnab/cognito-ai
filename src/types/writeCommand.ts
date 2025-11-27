@@ -35,6 +35,8 @@ export interface WriteGenerateRequest {
             // Gemini Tool settings
             enableUrlContext?: boolean;    // Enable URL fetching/analysis tool
             enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
+            // Supermemory integration
+            enableSupermemorySearch?: boolean;  // Enable Supermemory semantic search
         };
     };
 }
