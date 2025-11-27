@@ -43,7 +43,7 @@ const YOUTUBE_WATCH_PATTERN = /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|yout
  */
 function extractVideoId(url: string): string | null {
     const match = url.match(YOUTUBE_WATCH_PATTERN);
-    return match ? match[3] : null;
+    return match?.[3] ?? null;
 }
 
 /**
@@ -69,17 +69,17 @@ async function extractVideoTitle(tabId: number): Promise<string> {
             target: { tabId },
             func: () => {
                 // Try multiple selectors for video title
-                const titleElement = 
+                const titleElement =
                     document.querySelector('h1.ytd-watch-metadata yt-formatted-string') ||
                     document.querySelector('h1.title yt-formatted-string') ||
                     document.querySelector('meta[name="title"]');
-                
+
                 if (titleElement) {
-                    return titleElement.textContent?.trim() || 
-                           (titleElement as HTMLMetaElement).content?.trim() ||
-                           'YouTube Video';
+                    return titleElement.textContent?.trim() ||
+                        (titleElement as HTMLMetaElement).content?.trim() ||
+                        'YouTube Video';
                 }
-                
+
                 return document.title.replace(' - YouTube', '') || 'YouTube Video';
             }
         });
@@ -131,7 +131,7 @@ export function useYouTubeVideoDetection(): YouTubeVideoDetection {
 
                 if (isYouTube) {
                     const videoId = extractVideoId(url);
-                    
+
                     if (!videoId) {
                         log.warn('YouTube URL detected but no video ID found', { url });
                         setVideoInfo({ isYouTubeVideo: false });

@@ -6,13 +6,11 @@ import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
-import type { LocalPdfInfo } from '@/hooks/useActiveTabDetection';
-import { useFileAttachments } from '@/hooks/useFileAttachments';
-import { useLocalPdfAttachment } from '@/hooks/useLocalPdfAttachment';
-import { useYouTubeVideoDetection } from '@/hooks/useYouTubeVideoDetection';
-import { useYouTubeVideoAttachment } from '@/hooks/useYouTubeVideoAttachment';
-import { useWorkflowMode } from '@/hooks/useWorkflowMode';
-import { useChatInputValidation } from '@/hooks/useChatInputValidation';
+import type { LocalPdfInfo } from '@/hooks/browser';
+import { useFileAttachments, useLocalPdfAttachment, useYouTubeVideoAttachment } from '@/hooks/attachments';
+import { useYouTubeVideoDetection } from '@/hooks/browser';
+import { useWorkflowMode } from '@/hooks/workflows';
+import { useChatInputValidation } from '@/hooks/chat';
 
 interface ChatInputProps {
     messages: Message[];

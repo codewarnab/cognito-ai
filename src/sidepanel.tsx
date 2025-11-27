@@ -45,14 +45,11 @@ import { useRegisterAllWorkflows } from "./workflows/registerAll";
 import { useAIChat } from "./ai/hooks";
 
 // Custom hooks
-import { useApiKey } from "./hooks/useApiKey";
-import { useOnboarding } from "./hooks/useOnboarding";
-import { useVoiceRecording } from "./hooks/useVoiceRecording";
-import { useThreadManagement } from "./hooks/useThreadManagement";
-import { useMessageHandlers } from "./hooks/useMessageHandlers";
-import { useAIChatMessages } from "./hooks/useAIChatMessages";
-import { useActiveTabDetection } from "./hooks/useActiveTabDetection";
-import type { LocalPdfInfo } from "./hooks/useActiveTabDetection";
+import { useApiKey, useOnboarding } from "./hooks/settings";
+import { useVoiceRecording } from "./hooks/ui";
+import { useThreadManagement, useMessageHandlers, useAIChatMessages } from "./hooks/chat";
+import { useActiveTabDetection } from "./hooks/browser";
+import type { LocalPdfInfo } from "./hooks/browser";
 
 // Sidepanel-specific hooks
 import {

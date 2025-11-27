@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { createLogger } from '~logger';
-import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '../db';
+import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '../../db';
 import { generateThreadTitle } from '@/utils/ai';
 import type { UIMessage } from 'ai';
 

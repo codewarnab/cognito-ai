@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { replaceSlashCommand } from '@/utils/chat';
-import { validateYouTubeToNotionPrerequisites } from '../workflows/definitions/youtubeToNotionWorkflow';
-import type { WorkflowDefinition } from '../workflows/types';
+import { validateYouTubeToNotionPrerequisites } from '@/workflows/definitions/youtubeToNotionWorkflow';
+import type { WorkflowDefinition } from '@/workflows/types';
 
 interface UseWorkflowModeOptions {
     input: string;

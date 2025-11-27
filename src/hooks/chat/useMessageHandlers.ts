@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { createLogger } from '~logger';
-import { db } from '../db';
+import { db } from '../../db';
 import { extractPageContext, formatPageContextForAI } from '@/utils/tabs';
 import { processFile } from '@/utils/files';
 import { processTabsForMessage, type ProcessedTab } from '@/utils/tabs';

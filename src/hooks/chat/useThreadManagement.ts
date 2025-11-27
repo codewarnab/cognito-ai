@@ -8,9 +8,9 @@ import {
     setLastActiveThreadId,
     setBrowserSessionId,
     type ChatMessage
-} from '../db';
+} from '../../db';
 import type { UIMessage } from 'ai';
-import type { ContextWarningState } from '../types/sidepanel';
+import type { ContextWarningState } from '../../types/sidepanel';
 import type { AppUsage } from '@/ai/types/usage';
 import { clearAllDismissals } from '@/utils/settings';
 

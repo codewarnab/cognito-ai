@@ -196,4 +196,3 @@ export function useActiveTabDetection(): ActiveTabDetection {
 
     return tabInfo;
 }
-

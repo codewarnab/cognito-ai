@@ -1,23 +1,32 @@
 /**
- * Sidepanel Custom Hooks
- * 
- * Barrel export for all sidepanel-related custom hooks.
- * Import from this file for cleaner imports.
- * 
+ * Hooks Barrel Export
+ *
+ * All hooks organized by domain. Import from this file for cleaner imports.
+ *
  * @example
- * import { useApiKey, useOnboarding } from './hooks';
+ * import { useApiKey, useOnboarding, useTabContext } from '@/hooks';
  */
 
-export { useApiKey } from './useApiKey';
-export { useOnboarding } from './useOnboarding';
-export { useTabContext } from './useTabContext';
-export { useVoiceRecording } from './useVoiceRecording';
-export { useThreadManagement } from './useThreadManagement';
-export { useMessageHandlers } from './useMessageHandlers';
-export { useAIChatMessages } from './useAIChatMessages';
-export { useActiveTabDetection } from './useActiveTabDetection';
-export type { LocalPdfInfo, ActiveTabDetection } from './useActiveTabDetection';
-export { useFileAttachments } from './useFileAttachments';
-export { useLocalPdfAttachment } from './useLocalPdfAttachment';
-export { useWorkflowMode } from './useWorkflowMode';
-export { useChatInputValidation } from './useChatInputValidation';
+// Browser/Tab hooks
+export * from './browser';
+
+// Attachment hooks
+export * from './attachments';
+
+// Chat hooks
+export * from './chat';
+
+// Settings hooks
+export * from './settings';
+
+// Sidepanel hooks
+export * from './sidepanel';
+
+// Suggestions hooks
+export * from './suggestions';
+
+// UI hooks
+export * from './ui';
+
+// Workflows hooks
+export * from './workflows';
