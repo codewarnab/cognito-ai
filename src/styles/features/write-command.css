@@ -136,6 +136,11 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* Reduce top padding when attachment is present */
+.writer-input-row--has-attachment {
+    padding-top: 10px;
+}
+
 .writer-input {
     flex: 1;
 
@@ -729,4 +734,117 @@
 .tools-toggle-item-info:hover::before {
     opacity: 1;
     visibility: visible;
+}
+
+
+/* ============================================
+   Writer Attachment Styles - Minimal Chip
+   ============================================ */
+
+.writer-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 3px 8px;
+    margin: 8px 16px 0;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 14px;
+    max-width: fit-content;
+}
+
+.writer-attachment-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    flex-shrink: 0;
+}
+
+.writer-attachment-chip-name {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.writer-attachment-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.writer-attachment-chip-remove:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.writer-attachment-chip-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Attach Button */
+.writer-attach-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.writer-attach-button:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.writer-attach-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.writer-attach-button--active {
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Processing Indicator */
+.writer-processing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Drag Over State */
+.writer-input-row--dragover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.writer-input-row--dragover .writer-input {
+    border-color: rgba(139, 92, 246, 0.5);
 }

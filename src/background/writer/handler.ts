@@ -86,13 +86,16 @@ export async function handleWriteGenerate(
     request: WriteGenerateRequest,
     port: chrome.runtime.Port
 ): Promise<void> {
-    const { prompt, pageContext, settings } = request.payload;
+    const { prompt, pageContext, settings, attachment } = request.payload;
 
     log.info('Processing write request', {
         promptLength: prompt.length,
         platform: pageContext?.platform,
         domain: pageContext?.domain,
         enableSupermemorySearch: settings?.enableSupermemorySearch,
+        hasAttachment: !!attachment,
+        attachmentType: attachment?.mimeType,
+        attachmentSize: attachment?.fileSize,
     });
 
     const options: WriterOptions = {
@@ -104,6 +107,8 @@ export async function handleWriteGenerate(
         enableGoogleSearch: settings?.enableGoogleSearch ?? false,
         // Phase 6: AI-driven memory search via function calling
         enableSupermemorySearch: settings?.enableSupermemorySearch ?? false,
+        // Attachment support - multimodal content
+        attachment,
     };
 
     // Track if port is still connected

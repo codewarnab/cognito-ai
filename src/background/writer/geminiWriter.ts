@@ -37,6 +37,13 @@ export interface WriterOptions {
     enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
     // Supermemory integration - Phase 6: AI-driven function calling
     enableSupermemorySearch?: boolean; // Enable AI to decide when to search memories
+    // Attachment support - multimodal content
+    attachment?: {
+        base64Data: string;
+        mimeType: string;
+        fileName: string;
+        fileSize: number;
+    };
 }
 
 /**
@@ -70,6 +77,17 @@ const TONE_INSTRUCTIONS: Record<WriteTone, string> = {
     formal: 'Use a formal tone. Be precise, respectful, and proper.',
     friendly: 'Use a warm, friendly tone. Be approachable and personable.',
 };
+
+/**
+ * Content part for Gemini API request
+ */
+interface GeminiRequestPart {
+    text?: string;
+    inlineData?: {
+        mimeType: string;
+        data: string;
+    };
+}
 
 export class GeminiWriter {
     private model = GEMINI_MODELS.LITE;
@@ -146,6 +164,15 @@ export class GeminiWriter {
             }
         }
 
+        // Add attachment-specific instructions
+        let attachmentInstructions = '';
+        if (options?.attachment) {
+            const isImage = options.attachment.mimeType.startsWith('image/');
+            attachmentInstructions = isImage
+                ? `\n\nThe user has attached an image. Analyze it carefully and incorporate what you see into your response. Describe relevant visual elements if they relate to the writing request.`
+                : `\n\nThe user has attached a document. Read and analyze its contents carefully. Use the information from the document to inform your response. You can reference specific details, summarize sections, or build upon the document's content as needed.`;
+        }
+
         return `You are a helpful writing assistant. Generate content based on the user's request.
 
 ${platformInstruction}
@@ -160,10 +187,34 @@ Important guidelines:
 - BE CONCISE by default - keep responses brief and to the point unless the user explicitly asks for detailed, long, or comprehensive content
 - For most requests, aim for 1-3 short paragraphs or less
 - Only write longer content when specifically asked (e.g., "write a detailed...", "explain thoroughly...", "comprehensive guide...")
+- This applies to ALL requests including those with image or document attachments - stay concise unless explicitly asked for detail
 - Match the appropriate length for the platform (tweets should be short, emails moderate, articles can be longer if requested)
 - Be accurate and don't make up facts
 - If the request is unclear, provide a reasonable interpretation
-- Format appropriately for the context (e.g., markdown for GitHub, plain text for emails)`;
+- ALWAYS return plain text only - NEVER use markdown formatting (no headers, bold, italics, bullet points, code blocks, etc.) only format in markdown when explictly asks for it for it${attachmentInstructions}`;
+    }
+
+    /**
+     * Build request parts for multimodal content
+     * Attachments are placed before text per Gemini best practices
+     */
+    private buildRequestParts(prompt: string, options?: WriterOptions): GeminiRequestPart[] {
+        const parts: GeminiRequestPart[] = [];
+
+        // Add attachment first (before text, per Gemini best practices)
+        if (options?.attachment) {
+            parts.push({
+                inlineData: {
+                    mimeType: options.attachment.mimeType,
+                    data: options.attachment.base64Data,
+                },
+            });
+        }
+
+        // Add text prompt
+        parts.push({ text: prompt });
+
+        return parts;
     }
 
     /**
@@ -219,10 +270,10 @@ Important guidelines:
             }
         }
 
-        // Build initial conversation contents
+        // Build initial conversation contents with multimodal support
         const contents: Array<{ role: string; parts: GeminiContentPart[] }> = [{
             role: 'user',
-            parts: [{ text: enrichedPrompt }]
+            parts: this.buildRequestParts(enrichedPrompt, options) as GeminiContentPart[],
         }];
 
         const baseBody = {
@@ -242,6 +293,8 @@ Important guidelines:
             promptLength: enrichedPrompt.length,
             provider: provider.type,
             platform: options?.pageContext?.platform,
+            hasAttachment: !!options?.attachment,
+            attachmentType: options?.attachment?.mimeType,
             tools: tools.length > 0 ? tools.map(t => Object.keys(t)[0]) : undefined,
             memoryMode: useMemoryFunctionCalling ? 'function-calling' : (options?.enableSupermemorySearch ? 'pre-search' : 'disabled'),
         });
@@ -378,10 +431,13 @@ Important guidelines:
             tools.push({ google_search: {} });
         }
 
+        // Build content parts with multimodal support
+        const parts = this.buildRequestParts(prompt, options);
+
         const body = {
             contents: [{
                 role: 'user',
-                parts: [{ text: prompt }]
+                parts,
             }],
             systemInstruction: {
                 parts: [{ text: systemPrompt }]
@@ -400,6 +456,8 @@ Important guidelines:
             provider: provider.type,
             platform: options?.pageContext?.platform,
             tone: options?.tone,
+            hasAttachment: !!options?.attachment,
+            attachmentType: options?.attachment?.mimeType,
         });
 
         const response = await fetch(provider.url, {
