@@ -148,9 +148,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
 
     // Supermemory tools
     addMemory: SupermemoryIcon,
-    searchMemory: SupermemoryIcon,
-    searchMemories: SupermemoryIcon, // Actual name from @supermemory/tools SDK
-    getMemories: SupermemoryIcon,
+    searchMemories: SupermemoryIcon,
 };
 
 /**

@@ -54,9 +54,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
 
     // Supermemory (Cloud Memory)
     addMemory: 'Save information to persistent cloud memory',
-    searchMemory: 'Search memories semantically',
-    searchMemories: 'Search memories semantically', // Actual SDK name
-    getMemories: 'Retrieve all stored memories'
+    searchMemories: 'Search memories semantically'
 };
 
 /**
@@ -71,10 +69,10 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
     'Utilities': ['getYouTubeTranscript', 'generatePDF', 'getReportTemplate'],
-    'Memory': ['addMemory', 'searchMemory', 'searchMemories', 'getMemories']
+    'Memory': ['addMemory', 'searchMemories']
 };
 
 /**
  * Tools that require Supermemory to be configured
  */
-export const SUPERMEMORY_TOOLS: string[] = ['addMemory', 'searchMemory', 'searchMemories', 'getMemories'];
+export const SUPERMEMORY_TOOLS: string[] = ['addMemory', 'searchMemories'];

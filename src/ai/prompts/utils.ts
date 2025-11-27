@@ -256,11 +256,10 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
                 "SUPERMEMORY (when enabled):",
                 "  - Persistent memory across sessions using Supermemory cloud storage",
-                "  - Tools: addMemory, searchMemory, getMemories",
+                "  - Tools: addMemory, searchMemories",
                 "  - CONSENT FIRST: Always ask 'Would you like me to remember this?' before saving",
                 "  - addMemory: Save facts, preferences, or important info (be selective)",
-                "  - searchMemory: Semantic search through saved memories",
-                "  - getMemories: List stored memories",
+                "  - searchMemories: Semantic search through saved memories",
                 "  - User context is auto-injected for personalization",
                 "  - Example: User says 'My name is Alice' → Ask consent → Use addMemory → Confirm 'Got it!'",
             ],

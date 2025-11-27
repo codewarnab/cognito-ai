@@ -28,9 +28,7 @@ export const TOOLS_DISABLED_BY_DEFAULT: string[] = [
   'organizeBookmarks',
   // Supermemory tools - require API key configuration
   'addMemory',
-  'searchMemory',
   'searchMemories',
-  'getMemories',
 ];
 
 export const DEFAULT_ENABLED_TOOLS: string[] = [
@@ -91,9 +89,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
 
   // Supermemory (Cloud Memory)
   'addMemory',
-  'searchMemory',
   'searchMemories',
-  'getMemories',
 ];
 
 /**
