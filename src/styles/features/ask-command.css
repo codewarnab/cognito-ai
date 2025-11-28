@@ -1,0 +1,1483 @@
+/* ============================================
+   Ask Command - Content Script Styles
+   ============================================ */
+
+/* Ask Overlay Container */
+.ask-overlay {
+    position: fixed;
+    z-index: 2147483646;
+
+    width: 420px;
+    max-width: 90vw;
+    max-height: 80vh;
+
+    display: flex;
+    flex-direction: column;
+
+    background: rgba(25, 25, 25, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white;
+
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+    animation: ask-overlay-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    overflow: hidden;
+}
+
+@keyframes ask-overlay-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.ask-header {
+    flex-shrink: 0;       /* Don't shrink header */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ask-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+
+    color: rgba(255, 255, 255, 0.4);
+    cursor: grab;
+
+    transition: color 0.15s ease;
+}
+
+.ask-drag-handle:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ask-drag-handle:active {
+    cursor: grabbing;
+}
+
+.ask-title {
+    flex: 1;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.ask-title-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: text-bottom;
+    color: #60a5fa;
+}
+
+.ask-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.ask-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Page Context Indicator */
+.ask-context-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 16px;
+
+    background: rgba(96, 165, 250, 0.08);
+    border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+
+    font-size: 11px;
+    color: rgba(96, 165, 250, 0.9);
+}
+
+.ask-context-indicator svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.ask-context-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* ============================================
+   Messages Container
+   ============================================ */
+
+.ask-messages {
+    flex: 1 1 auto;       /* Grow, shrink, auto base size */
+    min-height: 100px;    /* Ensure minimum visible area for messages */
+    max-height: 50vh;     /* Cap height to allow scrolling */
+    overflow-y: auto;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ask-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ask-messages::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ask-messages::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.ask-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Empty State */
+.ask-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+}
+
+.ask-empty-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+    color: #60a5fa;
+}
+
+.ask-empty-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.ask-empty-hint {
+    font-size: 12px;
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ============================================
+   Message Bubble
+   ============================================ */
+
+.ask-message {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 100%;
+}
+
+.ask-message--user {
+    align-items: flex-end;
+}
+
+.ask-message--assistant {
+    align-items: flex-start;
+}
+
+.ask-message-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0 4px;
+}
+
+.ask-message-role {
+    font-weight: 500;
+}
+
+.ask-message-copy {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.ask-message-copy:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.ask-message-copy svg {
+    width: 12px;
+    height: 12px;
+}
+
+.ask-message-content {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 90%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.ask-message--user .ask-message-content {
+    background: #2563eb;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.ask-message--assistant .ask-message-content {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom-left-radius: 4px;
+}
+
+/* Attachment indicator in message */
+.ask-message-attachment {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-top: 4px;
+    max-width: fit-content;
+}
+
+.ask-message-attachment svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Streaming cursor */
+.ask-cursor {
+    display: inline-block;
+    color: #60a5fa;
+    animation: ask-cursor-blink 0.8s infinite;
+}
+
+@keyframes ask-cursor-blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+
+/* ============================================
+   Input Row
+   ============================================ */
+
+.ask-input-row {
+    flex-shrink: 0;       /* Don't shrink input row */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 16px;
+
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ask-input-row--has-attachment {
+    padding-top: 10px;
+}
+
+.ask-input-row--dragover {
+    background: rgba(96, 165, 250, 0.1);
+}
+
+.ask-input-row--dragover .ask-input {
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.ask-input {
+    flex: 1;
+
+    padding: 10px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.ask-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.ask-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(96, 165, 250, 0.5);
+}
+
+.ask-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Attach Button */
+.ask-attach-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-attach-button:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ask-attach-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ask-attach-button--active {
+    color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.3);
+    background: rgba(96, 165, 250, 0.1);
+}
+
+.ask-attach-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Send Button */
+.ask-send-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    background: #2563eb;
+    border: none;
+    border-radius: 10px;
+
+    color: white;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-send-button:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: scale(1.05);
+}
+
+.ask-send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.ask-send-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ask-send-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Stop Button */
+.ask-stop-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+
+    color: #f87171;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-stop-button:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.ask-stop-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+
+/* ============================================
+   Tools Row
+   ============================================ */
+
+.ask-tools-row {
+    flex-shrink: 0;       /* Don't shrink tools row */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ============================================
+   Loading State
+   ============================================ */
+
+.ask-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+}
+
+.ask-loading-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ask-loading-dots span {
+    width: 6px;
+    height: 6px;
+    background: #60a5fa;
+    border-radius: 50%;
+    animation: ask-loading-bounce 1.4s ease-in-out infinite both;
+}
+
+.ask-loading-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.ask-loading-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.ask-loading-dots span:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes ask-loading-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.6);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Skeleton Loading */
+.ask-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    width: 100%;
+}
+
+.ask-skeleton-line {
+    height: 14px;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.06) 100%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: ask-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.ask-skeleton-line--full {
+    width: 100%;
+}
+
+.ask-skeleton-line--medium {
+    width: 75%;
+}
+
+.ask-skeleton-line--short {
+    width: 45%;
+}
+
+@keyframes ask-skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ============================================
+   Error State
+   ============================================ */
+
+.ask-error {
+    flex-shrink: 0;       /* Don't shrink error state */
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 12px 16px;
+    padding: 14px;
+
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+
+    color: #fca5a5;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.ask-error svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #f87171;
+}
+
+.ask-error-text {
+    flex: 1;
+}
+
+.ask-error-retry {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 4px 10px;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.ask-error-retry:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.ask-error-retry:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* ============================================
+   Actions Row
+   ============================================ */
+
+.ask-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ask-action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ask-action-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ask-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ask-action-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ask-action-button--primary {
+    background: rgba(96, 165, 250, 0.2);
+    border-color: rgba(96, 165, 250, 0.3);
+    color: #93c5fd;
+}
+
+.ask-action-button--primary:hover:not(:disabled) {
+    background: rgba(96, 165, 250, 0.3);
+}
+
+.ask-action-button--danger {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.2);
+}
+
+.ask-action-button--danger:hover:not(:disabled) {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* ============================================
+   Attachment Preview
+   ============================================ */
+
+.ask-attachment-preview {
+    flex-shrink: 0;       /* Don't shrink attachment preview */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 16px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ask-attachment-thumbnail {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ask-attachment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ask-attachment-name {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ask-attachment-size {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 2px;
+}
+
+.ask-attachment-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-attachment-remove:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ask-attachment-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ask-attachment-remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Attachment Chip (minimal inline style) */
+.ask-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 3px 8px;
+    margin: 8px 16px 0;
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.2);
+    border-radius: 14px;
+    max-width: fit-content;
+}
+
+.ask-attachment-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #60a5fa;
+    flex-shrink: 0;
+}
+
+.ask-attachment-chip-name {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.ask-attachment-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.ask-attachment-chip-remove:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ask-attachment-chip-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* ============================================
+   Error Boundary Fallback
+   ============================================ */
+
+.ask-error-boundary {
+    position: fixed;
+    z-index: 2147483646;
+
+    width: 320px;
+    padding: 16px;
+
+    background: rgba(25, 25, 25, 0.98);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+
+    color: #fca5a5;
+    font-size: 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.ask-error-boundary p {
+    margin: 0 0 12px;
+}
+
+.ask-error-boundary button {
+    padding: 8px 16px;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+
+    color: white;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.ask-error-boundary button:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ============================================
+   Tools Toggle - Ask Command Variant
+   Uses blue accent instead of purple
+   ============================================ */
+
+.ask-tools-toggle-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ask-tools-toggle-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ask-tools-toggle-trigger:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.ask-tools-toggle-trigger--active {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+}
+
+.ask-tools-toggle-trigger--expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+}
+
+.ask-tools-toggle-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ask-tools-toggle-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+
+    background: #60a5fa;
+    border-radius: 8px;
+
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.ask-tools-toggle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    padding: 6px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.ask-tools-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.ask-tools-toggle-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.ask-tools-toggle-item--active {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.ask-tools-toggle-item--active .ask-tools-toggle-item-icon {
+    color: #60a5fa;
+}
+
+.ask-tools-toggle-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ask-tools-toggle-item-switch--on {
+    background: #60a5fa;
+}
+
+/* ============================================
+   Accessibility & Motion
+   ============================================ */
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+    .ask-overlay,
+    .ask-skeleton-line,
+    .ask-cursor,
+    .ask-loading-dot {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+
+    .ask-skeleton-line {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .ask-loading-dot {
+        opacity: 0.7;
+    }
+}
+
+/* Focus visible for keyboard navigation */
+.ask-input:focus-visible,
+.ask-send-button:focus-visible,
+.ask-attach-button:focus-visible,
+.ask-close:focus-visible,
+.ask-action-button:focus-visible,
+.ask-message-copy:focus-visible,
+.ask-error-retry:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .ask-overlay {
+        border-width: 2px;
+    }
+
+    .ask-message--user .ask-message-content {
+        border: 1px solid white;
+    }
+
+    .ask-message--assistant .ask-message-content {
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* ============================================
+   Dark/Light Mode
+   ============================================ */
+
+/* Keep dark theme for overlay regardless of system preference
+   for consistent experience and better contrast */
+@media (prefers-color-scheme: light) {
+    .ask-overlay {
+        background: rgba(25, 25, 25, 0.98);
+    }
+}
+
+
+/* ============================================
+   Tools Toggle - Generic Styles (Issue #1 Fix)
+   ============================================
+   FIXED: Added missing .tools-toggle-* styles that the
+   ToolsToggle component (src/contents/shared/ToolsToggle.tsx)
+   uses. The component uses generic class names without the
+   'ask-' prefix, but only .ask-tools-toggle-* variants existed.
+   ============================================ */
+
+.tools-toggle-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tools-toggle-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-trigger:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-trigger--active {
+    background: rgba(96, 165, 250, 0.1);
+    border-color: rgba(96, 165, 250, 0.2);
+    color: #60a5fa;
+}
+
+.tools-toggle-trigger--expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+}
+
+.tools-toggle-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-label {
+    font-size: 11px;
+}
+
+.tools-toggle-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: #60a5fa;
+    border-radius: 8px;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.tools-toggle-chevron {
+    display: flex;
+    align-items: center;
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-chevron--rotated {
+    transform: rotate(180deg);
+}
+
+.tools-toggle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.tools-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-item--active {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.tools-toggle-item--active .tools-toggle-item-icon {
+    color: #60a5fa;
+}
+
+.tools-toggle-item--gated {
+    opacity: 0.6;
+}
+
+.tools-toggle-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-item-icon {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.tools-toggle-item-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tools-toggle-item-warning {
+    color: #f59e0b;
+}
+
+.tools-toggle-item-info {
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.3);
+    cursor: help;
+}
+
+.tools-toggle-item-switch {
+    width: 28px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    position: relative;
+    transition: background 0.15s ease;
+}
+
+.tools-toggle-item-switch--on {
+    background: #60a5fa;
+}
+
+.tools-toggle-item-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-item-switch--on .tools-toggle-item-switch-thumb {
+    transform: translateX(12px);
+}
+
+
+/* ============================================
+   Markdown Content Styles for Ask Overlay (Issue #2 Fix)
+   ============================================
+   FIXED: Added markdown rendering support for assistant
+   messages in the Ask Overlay. The AskMessageBubble component
+   now uses ReactMarkdown with remark-gfm and remark-breaks.
+   ============================================ */
+
+/* Paragraph spacing */
+.ask-message--assistant .ask-message-content p {
+    margin: 0 0 8px;
+}
+
+.ask-message--assistant .ask-message-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Inline code */
+.ask-message--assistant .ask-message-content .ask-inline-code,
+.ask-message--assistant .ask-message-content code:not(pre code) {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 13px;
+}
+
+/* Code blocks */
+.ask-message--assistant .ask-message-content .ask-code-block,
+.ask-message--assistant .ask-message-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 8px 0;
+}
+
+.ask-message--assistant .ask-message-content pre code {
+    background: none;
+    padding: 0;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Lists */
+.ask-message--assistant .ask-message-content ul,
+.ask-message--assistant .ask-message-content ol {
+    margin: 8px 0;
+    padding-left: 20px;
+}
+
+.ask-message--assistant .ask-message-content li {
+    margin: 4px 0;
+}
+
+.ask-message--assistant .ask-message-content li > p {
+    margin: 0;
+}
+
+/* Links */
+.ask-message--assistant .ask-message-content a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+.ask-message--assistant .ask-message-content a:hover {
+    text-decoration: underline;
+}
+
+/* Bold and italic */
+.ask-message--assistant .ask-message-content strong {
+    font-weight: 600;
+}
+
+.ask-message--assistant .ask-message-content em {
+    font-style: italic;
+}
+
+/* Blockquotes */
+.ask-message--assistant .ask-message-content blockquote {
+    border-left: 3px solid rgba(96, 165, 250, 0.5);
+    margin: 8px 0;
+    padding-left: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ask-message--assistant .ask-message-content blockquote p {
+    margin: 0;
+}
+
+/* Horizontal rule */
+.ask-message--assistant .ask-message-content hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 12px 0;
+}
+
+/* Tables (GFM) */
+.ask-message--assistant .ask-message-content table {
+    border-collapse: collapse;
+    margin: 8px 0;
+    width: 100%;
+    font-size: 13px;
+}
+
+.ask-message--assistant .ask-message-content th,
+.ask-message--assistant .ask-message-content td {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.ask-message--assistant .ask-message-content th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+
+/* Headings */
+.ask-message--assistant .ask-message-content h1,
+.ask-message--assistant .ask-message-content h2,
+.ask-message--assistant .ask-message-content h3,
+.ask-message--assistant .ask-message-content h4,
+.ask-message--assistant .ask-message-content h5,
+.ask-message--assistant .ask-message-content h6 {
+    margin: 12px 0 8px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.ask-message--assistant .ask-message-content h1 {
+    font-size: 18px;
+}
+
+.ask-message--assistant .ask-message-content h2 {
+    font-size: 16px;
+}
+
+.ask-message--assistant .ask-message-content h3 {
+    font-size: 15px;
+}
+
+.ask-message--assistant .ask-message-content h4,
+.ask-message--assistant .ask-message-content h5,
+.ask-message--assistant .ask-message-content h6 {
+    font-size: 14px;
+}
+
+/* Task lists (GFM) */
+.ask-message--assistant .ask-message-content input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+/* Strikethrough (GFM) */
+.ask-message--assistant .ask-message-content del {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+
+/* ============================================
+   Clear Button - Minimal Style
+   ============================================ */
+
+.ask-clear-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    margin-left: auto;
+
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.ask-clear-button:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ask-clear-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ask-clear-button svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0.8;
+}
