@@ -4,3 +4,4 @@
  */
 
 export { initializeRewriterContextMenu, createRewriterContextMenu } from './rewriterContextMenu';
+export { initializeAskerContextMenu, createAskerContextMenu } from './askerContextMenu';

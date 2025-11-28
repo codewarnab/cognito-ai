@@ -11,6 +11,7 @@ import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
 import { handleWriteGenerate } from '../writer';
 import { handleRewriteRequest } from '../rewriter';
+import { handleAskGenerate } from '../asker';
 import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
@@ -135,4 +136,28 @@ export function initializeRewriterPortListener(): void {
     });
 
     backgroundLog.info('Rewriter port listener initialized');
+}
+
+/**
+ * Initialize the asker port listener
+ * Handles Q&A requests via chrome.runtime.connect
+ */
+export function initializeAskerPortListener(): void {
+    chrome.runtime.onConnect.addListener((port) => {
+        if (port.name === 'ask-command') {
+            backgroundLog.info('Ask command port connected');
+
+            port.onMessage.addListener(async (message) => {
+                if (message.action === 'ASK_GENERATE') {
+                    await handleAskGenerate(message, port);
+                }
+            });
+
+            port.onDisconnect.addListener(() => {
+                backgroundLog.debug('Ask command port disconnected');
+            });
+        }
+    });
+
+    backgroundLog.info('Asker port listener initialized');
 }

@@ -20,8 +20,8 @@ import { initializeLifecycleEventListeners } from './background/lifecycle';
 import { initializeAlarmListeners } from './background/alarms';
 import { initializeNotificationListeners } from './background/notifications';
 import { initializeOmnibox } from './background/omnibox';
-import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener, initializeRewriterPortListener } from './background/messaging/router';
-import { initializeRewriterContextMenu } from './background/contextMenu';
+import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener, initializeRewriterPortListener, initializeAskerPortListener } from './background/messaging/router';
+import { initializeRewriterContextMenu, initializeAskerContextMenu } from './background/contextMenu';
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
 
@@ -44,10 +44,12 @@ initializeMessageRouter();
 initializeSummarizerPortListener();
 initializeWriterPortListener();
 initializeRewriterPortListener();
+initializeAskerPortListener();
 initializeAlarmListeners();
 initializeNotificationListeners();
 initializeOmnibox();
 initializeRewriterContextMenu();
+initializeAskerContextMenu();
 
 // ============================================================================
 // Action Handlers
