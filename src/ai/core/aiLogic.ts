@@ -8,12 +8,15 @@ import { createUIMessageStream, convertToModelMessages, generateId, type UIMessa
 import { createLogger } from '~logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt, chatModeSystemPrompt } from '../prompts/templates/remote';
+import { getWebSearchSystemPrompt } from '../prompts/searchPrompt';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
 import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
+import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
+import { filterToolsObjectBySearchMode } from '../tools/searchToolFilter';
 import {
   APIError,
   NetworkError,
@@ -147,18 +150,31 @@ export async function streamAIResponse(params: {
               // ========== REMOTE MODE (Gemini API or Vertex AI) ==========
               const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
 
-              // Check current tools mode to determine which system prompt to use
-              // Only use chat mode prompt when explicitly in 'chat' mode (not workflow, not custom)
-              const toolsMode = await getToolsMode();
-              const usePrompt = (toolsMode === 'chat' && !workflowConfig)
-                ? chatModeSystemPrompt
-                : remoteSystemPrompt;
+              // Check if web search mode is active
+              const searchSettings = await getSearchSettings();
+              const hasSearchKey = await hasApiKeyForProvider(searchSettings.defaultProvider);
+              const isSearchModeActive = searchSettings.enabled && hasSearchKey && !workflowConfig;
 
-              log.info('📝 System prompt selection:', {
-                toolsMode,
-                isWorkflow: !!workflowConfig,
-                usingChatPrompt: toolsMode === 'chat' && !workflowConfig
-              });
+              // Determine which system prompt to use
+              let usePrompt: string;
+              
+              if (isSearchModeActive) {
+                // SEARCH MODE: Use dedicated web search prompt (REPLACES normal prompt)
+                usePrompt = getWebSearchSystemPrompt();
+                log.info('🔍 SEARCH MODE ACTIVE - Using dedicated web search prompt');
+              } else {
+                // Normal mode: Check tools mode for chat vs agent prompt
+                const toolsMode = await getToolsMode();
+                usePrompt = (toolsMode === 'chat' && !workflowConfig)
+                  ? chatModeSystemPrompt
+                  : remoteSystemPrompt;
+                
+                log.info('📝 System prompt selection:', {
+                  toolsMode,
+                  isWorkflow: !!workflowConfig,
+                  usingChatPrompt: toolsMode === 'chat' && !workflowConfig
+                });
+              }
 
               const remoteSetup = await setupRemoteMode(
                 modelName,
@@ -167,7 +183,19 @@ export async function streamAIResponse(params: {
               );
 
               model = remoteSetup.model;
-              tools = remoteSetup.tools;
+              
+              // SEARCH MODE: Filter tools to ONLY search tools
+              if (isSearchModeActive) {
+                tools = filterToolsObjectBySearchMode(remoteSetup.tools, true);
+                log.info('🔍 SEARCH MODE - Filtered to search-only tools:', {
+                  available: Object.keys(tools),
+                  totalFiltered: Object.keys(remoteSetup.tools).length - Object.keys(tools).length
+                });
+              } else {
+                // Normal mode: Remove search tools (they're only for search mode)
+                tools = filterToolsObjectBySearchMode(remoteSetup.tools, false);
+              }
+              
               systemPrompt = remoteSetup.systemPrompt;
               provider = remoteSetup.provider; // 'google' or 'vertex'
             }

@@ -27,5 +27,17 @@ export {
 } from './registryUtils';
 export type { ToolDefinition } from './registryUtils';
 
+// Search tool filtering
+export {
+    SEARCH_TOOL_NAMES,
+    isSearchTool,
+    filterToolsBySearchMode,
+    filterToolsObjectBySearchMode,
+    getActiveSearchTools,
+    countSearchTools,
+    hasSearchTools
+} from './searchToolFilter';
+export type { SearchToolName } from './searchToolFilter';
+
 // Tool UI components
 export * from './components';

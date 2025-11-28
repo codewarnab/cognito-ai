@@ -71,11 +71,11 @@ export async function getMCPToolsFromBackground(): Promise<{
                 // Create tool in AI SDK v5 format with proxy executor
                 tools[toolDef.name] = {
                     description: toolDef.description || `Tool from ${toolDef.serverName}`,
-                    parameters: zodSchema,
-                    execute: async (args: any) => {
+                    inputSchema: zodSchema, // AI SDK v5: inputSchema instead of parameters
+                    execute: async (input: any) => {
                         log.info(`🔧 Executing ${toolDef.name} via background proxy`, {
                             server: toolDef.serverName,
-                            args
+                            input
                         });
 
                         // Execute via background service worker's persistent connection
@@ -83,7 +83,7 @@ export async function getMCPToolsFromBackground(): Promise<{
                             type: `mcp/${toolDef.serverId}/tool/call`,
                             payload: {
                                 name: toolDef.name,
-                                arguments: args
+                                arguments: input
                             }
                         });
 
