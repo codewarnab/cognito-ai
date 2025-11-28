@@ -19,6 +19,18 @@ interface UseYouTubeVideoAttachmentOptions {
 const DISMISSED_VIDEOS_KEY = 'dismissedYouTubeVideos';
 
 /**
+ * Transcript segment with timing information
+ */
+interface TranscriptSegment {
+    /** Segment text */
+    text: string;
+    /** Start time in seconds */
+    start: number;
+    /** Duration in seconds */
+    duration: number;
+}
+
+/**
  * Cached transcript data
  */
 interface CachedTranscript {
@@ -28,6 +40,18 @@ interface CachedTranscript {
     transcript: string;
     durationSeconds?: number;
     fetchedAt: number;
+    /** Channel/author name */
+    author?: string;
+    /** Video thumbnail URL */
+    thumbnail?: string;
+    /** Video description */
+    description?: string;
+    /** Video tags/keywords */
+    tags?: string[];
+    /** Timestamped transcript segments */
+    segments?: TranscriptSegment[];
+    /** Detected transcript language */
+    language?: string;
 }
 
 /**

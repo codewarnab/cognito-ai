@@ -6,11 +6,37 @@ import { withRetry, MAX_RETRIES, INITIAL_RETRY_DELAY } from './retry';
 const log = createLogger('YouTube-Transcript');
 
 /**
+ * Transcript segment with timing information
+ */
+interface TranscriptSegment {
+    text: string;
+    start: number;
+    duration: number;
+}
+
+/**
+ * Enhanced transcript response from API v2
+ */
+interface TranscriptResponse {
+    videoId: string;
+    title: string;
+    duration: number;
+    durationSeconds: number;
+    transcript: string;
+    author?: string;
+    thumbnail?: string;
+    description?: string;
+    tags?: string[];
+    segments?: TranscriptSegment[];
+    language?: string;
+}
+
+/**
  * Fetch transcript from the deployed API
  * @param youtubeUrl - The YouTube video URL
  * @returns Transcript data or undefined if not available
  */
-export async function fetchTranscript(youtubeUrl: string): Promise<{ title: string; duration: number; transcript: string } | undefined> {
+export async function fetchTranscript(youtubeUrl: string): Promise<TranscriptResponse | undefined> {
     try {
         log.info('📝 Fetching transcript from API', { youtubeUrl });
 
@@ -58,9 +84,13 @@ export async function fetchTranscript(youtubeUrl: string): Promise<{ title: stri
 
         const data = await response.json();
         log.info('✅ Transcript fetched successfully', {
+            videoId: data.videoId,
             title: data.title,
-            duration: data.duration,
+            author: data.author,
+            durationSeconds: data.durationSeconds,
             transcriptLength: data.transcript?.length || 0,
+            segmentsCount: data.segments?.length || 0,
+            language: data.language
         });
 
         return data;
