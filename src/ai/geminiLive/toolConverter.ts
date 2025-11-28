@@ -327,16 +327,19 @@ export function convertToolToLiveAPIFormat(
     try {
         log.info(`🔄 Converting tool: ${toolName}`);
 
+        // AI SDK v5: Use inputSchema instead of parameters
+        const inputSchema = toolDef.inputSchema;
+
         // Log the input schema for debugging
-        const schemaType = (toolDef.parameters as any)?._def?.typeName;
+        const schemaType = (inputSchema as any)?._def?.typeName;
         log.info(`📋 Tool ${toolName} schema type: ${schemaType}`, {
-            hasParameters: !!toolDef.parameters,
-            hasDef: !!(toolDef.parameters as any)?._def,
+            hasInputSchema: !!inputSchema,
+            hasDef: !!(inputSchema as any)?._def,
             schemaTypeName: schemaType,
         });
 
         // Convert the Zod schema to Live API schema
-        const parametersSchema = zodToLiveAPISchema(toolDef.parameters, toolName);
+        const parametersSchema = zodToLiveAPISchema(inputSchema, toolName);
 
         // Build parameters object carefully, only including defined fields
         // This prevents undefined values from appearing in the serialized JSON
@@ -424,11 +427,11 @@ export function convertAllTools(
                 log.warn(`⚠️ Tool ${toolName} has no description, using fallback`);
             }
 
-            // Convert to ToolDefinition format
+            // Convert to ToolDefinition format (AI SDK v5: inputSchema)
             const normalizedTool: ToolDefinition = {
                 name: toolName,
                 description: toolDef.description || `Tool: ${toolName}`,
-                parameters: toolDef.inputSchema,
+                inputSchema: toolDef.inputSchema, // AI SDK v5: inputSchema
                 execute: toolDef.execute,
             };
 
