@@ -48,6 +48,11 @@ function WriteCommandContent() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedText, setGeneratedText] = useState('');
     const [error, setError] = useState<string | null>(null);
+    
+    // Track whether we have an insertion target (for context menu invocation)
+    const [hasInsertionTarget, setHasInsertionTarget] = useState(true);
+    const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
+    const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
 
     // Ref to track active port for cleanup
     const activePortRef = useRef<chrome.runtime.Port | null>(null);
@@ -83,6 +88,55 @@ function WriteCommandContent() {
             }
         };
     }, []); // Empty dependency array - only run on mount/unmount
+
+    // Listen for SHOW_WRITER message from context menu
+    useEffect(() => {
+        const handleMessage = (
+            message: { action: string; payload?: { selectedText?: string; hasInsertionTarget?: boolean } },
+            _sender: chrome.runtime.MessageSender,
+            sendResponse: (response: { success: boolean }) => void
+        ) => {
+            if (message.action === 'SHOW_WRITER') {
+                log.info('Received SHOW_WRITER from context menu', {
+                    hasText: !!message.payload?.selectedText,
+                    hasInsertionTarget: message.payload?.hasInsertionTarget,
+                });
+
+                // Set insertion target flag
+                setHasInsertionTarget(message.payload?.hasInsertionTarget ?? false);
+                
+                // Set initial prompt if text was selected
+                if (message.payload?.selectedText) {
+                    setInitialPrompt(message.payload.selectedText);
+                } else {
+                    setInitialPrompt(undefined);
+                }
+
+                // Calculate position near the selection or center of viewport
+                const selection = window.getSelection();
+                let position = { x: window.innerWidth / 2 - 200, y: window.innerHeight / 3 };
+                
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    const rect = range.getBoundingClientRect();
+                    if (rect.width > 0 || rect.height > 0) {
+                        position = {
+                            x: Math.min(rect.left, window.innerWidth - 420),
+                            y: Math.min(rect.bottom + 10, window.innerHeight - 400),
+                        };
+                    }
+                }
+                
+                setContextMenuPosition(position);
+                setIsWriterMode(true);
+                sendResponse({ success: true });
+            }
+            return true; // Keep channel open for async response
+        };
+
+        chrome.runtime.onMessage.addListener(handleMessage);
+        return () => chrome.runtime.onMessage.removeListener(handleMessage);
+    }, [setIsWriterMode]);
 
     // Handle text generation via background service worker
     const handleGenerate = useCallback(async (
@@ -196,6 +250,10 @@ function WriteCommandContent() {
         setGeneratedText('');
         setIsGenerating(false);
         setError(null);
+        // Reset context menu state
+        setHasInsertionTarget(true);
+        setInitialPrompt(undefined);
+        setContextMenuPosition(null);
     }, [setIsWriterMode]);
 
     // Handle text insertion
@@ -227,16 +285,21 @@ function WriteCommandContent() {
         return null;
     }
 
+    // Use context menu position if available, otherwise use tooltip position
+    const overlayPosition = contextMenuPosition || tooltipPosition;
+
     return (
         <WriteCommandErrorBoundary onClose={handleClose}>
             <WriterOverlay
-                position={tooltipPosition}
+                position={overlayPosition}
                 onGenerate={handleGenerate}
                 onInsert={handleInsert}
                 onClose={handleClose}
                 isGenerating={isGenerating}
                 generatedText={generatedText}
                 error={error}
+                hasInsertionTarget={hasInsertionTarget}
+                initialPrompt={initialPrompt}
             />
         </WriteCommandErrorBoundary>
     );
