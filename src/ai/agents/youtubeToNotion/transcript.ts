@@ -5,10 +5,21 @@
  * If transcript is unavailable, it returns an error message instead of
  * falling back to video analysis (per Phase 3 decision - transcript only).
  * 
- * API Response Contract:
- * - Endpoint: POST TRANSCRIPT_API_URL with { url: youtubeUrl }
- * - Response: { duration: number | null, title: string | null, transcript: string | null }
- * - All fields can be null - must handle safely with fallbacks
+ * API Response Contract (v2 - Supadata):
+ * - Endpoint: POST TRANSCRIPT_API_URL with { url: youtubeUrl, lang?: string }
+ * - Response: {
+ *     videoId: string,
+ *     title: string,
+ *     author: string,
+ *     thumbnail: string,
+ *     description: string,
+ *     tags: string[],
+ *     duration: number (minutes - legacy),
+ *     durationSeconds: number,
+ *     transcript: string,
+ *     segments: Array<{ text: string, start: number, duration: number }>,
+ *     language: string
+ *   }
  */
 
 import { TRANSCRIPT_API_URL } from "@/constants";
@@ -25,11 +36,6 @@ const log = createLogger("TranscriptFetch");
  * 2. If transcript available: Return it with metadata
  * 3. If transcript null/empty: Return error entry
  * 4. If API fails: Return error entry
- * 
- * Handles null values:
- * - title: Falls back to "Untitled Video"
- * - duration: Left as undefined if null
- * - transcript: Returns error if null/empty (no fallback)
  * 
  * @param videoUrl - YouTube video URL
  * @returns TranscriptEntry with transcript or error message
@@ -71,24 +77,32 @@ export async function fetchTranscriptDirect(
             return createErrorEntry(videoUrl, "No transcript available for this video. The video may not have captions enabled.");
         }
 
-        // API returns duration in minutes (can be null)
-        const durationSeconds = data.duration
-            ? Math.floor(data.duration * 60)
-            : undefined;
+        // API v2 returns durationSeconds directly, with duration in minutes as legacy
+        const durationSeconds = data.durationSeconds ?? (data.duration ? Math.floor(data.duration * 60) : undefined);
 
         const entry: TranscriptEntry = {
             videoUrl,
-            videoId: extractVideoId(videoUrl),
+            videoId: data.videoId || extractVideoId(videoUrl),
             title: data.title || "Untitled Video",
             durationSeconds,
-            transcript: data.transcript
+            transcript: data.transcript,
+            // New v2 fields
+            author: data.author,
+            thumbnail: data.thumbnail,
+            description: data.description,
+            tags: data.tags,
+            segments: data.segments,
+            language: data.language
         };
 
         log.info("✅ Transcript fetched successfully", {
             videoId: entry.videoId,
             title: entry.title,
+            author: entry.author,
             transcriptLength: entry.transcript.length,
-            durationSeconds: entry.durationSeconds
+            segmentsCount: entry.segments?.length ?? 0,
+            durationSeconds: entry.durationSeconds,
+            language: entry.language
         });
 
         return entry;

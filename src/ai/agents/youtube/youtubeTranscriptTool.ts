@@ -75,6 +75,18 @@ async function extractVideoTitleFromTab(): Promise<string | undefined> {
 }
 
 /**
+ * Transcript segment with timing information
+ */
+export interface TranscriptSegment {
+    /** Segment text */
+    text: string;
+    /** Start time in seconds */
+    start: number;
+    /** Duration in seconds */
+    duration: number;
+}
+
+/**
  * Output schema for the YouTube transcript tool
  */
 export interface YouTubeTranscriptResult {
@@ -89,6 +101,16 @@ export interface YouTubeTranscriptResult {
     descriptionLength?: number;
     hasTranscript: boolean;
     error?: string;
+    /** Channel/author name */
+    author?: string;
+    /** Video thumbnail URL */
+    thumbnail?: string;
+    /** Video tags/keywords */
+    tags?: string[];
+    /** Timestamped transcript segments */
+    segments?: TranscriptSegment[];
+    /** Detected transcript language */
+    language?: string;
 }
 
 /**

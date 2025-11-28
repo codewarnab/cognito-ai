@@ -3,9 +3,6 @@
 const axios = require('axios');
 const express = require('express');
 const cors = require('cors');
-const ytdl = require('@distube/ytdl-core');
-const TranscriptAPI = require('youtube-transcript-api');
-const he = require('he');
 const { Redis } = require('@upstash/redis');
 
 const app = express();
@@ -30,6 +27,10 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
   console.log('[Redis] Upstash Redis not configured (missing environment variables)');
 }
 
+// Supadata API configuration
+const SUPADATA_API_KEY = process.env.SUPADATA_API_KEY;
+const SUPADATA_BASE_URL = 'https://api.supadata.ai/v1';
+
 app.use((req, res, next) => {
   console.log('Request size:', req.headers['content-length']);
   next();
@@ -46,11 +47,144 @@ app.use((req, res, next) => {
 });
 
 /**
+ * Extract YouTube video ID from various URL formats
+ * @param {string} url - YouTube URL
+ * @returns {string|null} - Video ID or null
+ */
+function extractVideoId(url) {
+  if (!url) return null;
+  
+  try {
+    const urlObj = new URL(url);
+    
+    // Standard YouTube URL: youtube.com/watch?v=ID
+    if (urlObj.hostname.includes('youtube.com')) {
+      return urlObj.searchParams.get('v');
+    }
+    
+    // Short URL: youtu.be/ID
+    if (urlObj.hostname.includes('youtu.be')) {
+      return urlObj.pathname.replace('/', '');
+    }
+    
+    // Embedded URL: youtube.com/embed/ID
+    if (urlObj.pathname.includes('/embed/')) {
+      return urlObj.pathname.split('/embed/')[1]?.split('?')[0];
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch video info from Supadata API
+ * @param {string} videoId - YouTube video ID
+ * @returns {Promise<object|null>} - Video info or null
+ */
+async function fetchVideoInfo(videoId) {
+  if (!SUPADATA_API_KEY) {
+    console.warn('[VideoInfo] SUPADATA_API_KEY not configured');
+    return null;
+  }
+
+  try {
+    console.log('[VideoInfo] Fetching from Supadata for videoId:', videoId);
+    
+    const response = await axios.get(`${SUPADATA_BASE_URL}/youtube/video`, {
+      params: { id: videoId },
+      headers: {
+        'x-api-key': SUPADATA_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    const data = response.data;
+    console.log('[VideoInfo] Supadata response received');
+
+    return {
+      title: data.title || 'Untitled Video',
+      author: data.channel?.name || data.author || 'Unknown',
+      thumbnail: data.thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      duration: typeof data.duration === 'number' ? data.duration : 0,
+      description: data.description || '',
+      tags: data.tags || data.keywords || []
+    };
+  } catch (error) {
+    console.error('[VideoInfo] Supadata API error:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch transcript from Supadata API
+ * @param {string} videoId - YouTube video ID
+ * @param {string} lang - Language code (default: 'en')
+ * @returns {Promise<object|null>} - Transcript data or null
+ */
+async function fetchTranscriptFromSupadata(videoId, lang = 'en') {
+  if (!SUPADATA_API_KEY) {
+    console.warn('[Transcript] SUPADATA_API_KEY not configured');
+    return null;
+  }
+
+  try {
+    console.log('[Transcript] Fetching from Supadata for videoId:', videoId, 'lang:', lang);
+    
+    const response = await axios.get(`${SUPADATA_BASE_URL}/transcript`, {
+      params: {
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        lang: lang
+      },
+      headers: {
+        'x-api-key': SUPADATA_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    const data = response.data;
+    
+    // Check for errors in response
+    if (data.error || !data.content) {
+      console.warn('[Transcript] Supadata returned error or empty content:', data.error || 'No content');
+      return null;
+    }
+
+    // Transform segments to consistent format
+    const segments = Array.isArray(data.content) ? data.content.map(item => ({
+      text: item.text || item.content || '',
+      start: item.offset !== undefined ? item.offset / 1000 : (item.start || 0),
+      duration: item.duration !== undefined ? item.duration / 1000 : 0
+    })) : [];
+
+    // Detect language from response or segments
+    let detectedLanguage = lang;
+    if (segments.length > 0 && segments[0].lang) {
+      detectedLanguage = segments[0].lang;
+    }
+
+    console.log('[Transcript] Supadata returned', segments.length, 'segments');
+
+    return {
+      segments,
+      language: detectedLanguage
+    };
+  } catch (error) {
+    if (error.response?.status === 404) {
+      console.warn('[Transcript] No transcript available (404)');
+      return null;
+    }
+    console.error('[Transcript] Supadata API error:', error.message);
+    return null;
+  }
+}
+
+/**
  * GET /health
  * A simple health check endpoint to verify that the service is running.
- * 
- * Response:
- *   200: 'OK' message indicating the server is operational.
  */
 app.get('/health', (req, res) => {
   res.send('OK');
@@ -59,105 +193,34 @@ app.get('/health', (req, res) => {
 /**
  * GET /debug
  * Provides debug information, including the client's IP and the server's region.
- * Useful for debugging and monitoring.
- * 
- * Response:
- *   200: JSON object with `ip` and `region`.
  */
 app.get('/debug', (req, res) => {
   res.json({
     ip: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
     region: process.env.VERCEL_REGION || 'local',
+    supadataConfigured: !!SUPADATA_API_KEY,
+    redisConfigured: !!redis
   });
 });
 
-// Helper to parse transcript XML
-function parseTranscriptXml(xml) {
-  return xml
-    .replace('<?xml version="1.0" encoding="utf-8" ?><transcript>', '')
-    .replace('</transcript>', '')
-    .split('</text>')
-    .filter(line => line.trim())
-    .map(line => {
-      const start = line.match(/start="([\d.]+)"/)[1];
-      const dur = line.match(/dur="([\d.]+)"/)[1];
-      let txt = line.replace(/<text.+?>/, '').replace(/<\/?[^>]+(>|$)/g, '');
-      txt = he.decode(txt.replace(/&amp;/g, '&'));
-      return { start, dur, text: txt };
-    });
-}
-
-// Helper to fetch transcript
-async function fetchTranscript(videoID, language) {
-  // Try the easy library first
-  try {
-    console.log('[fetchTranscript] Trying TranscriptAPI for videoID:', videoID, 'language:', language);
-    const raw = await TranscriptAPI.getTranscript(videoID, language);
-    if (!raw.length) throw new Error('empty');
-    console.log('[fetchTranscript] TranscriptAPI succeeded, got', raw.length, 'items');
-    return raw.map(({ text, start, duration }) => ({ text, start, dur: duration }));
-  } catch (err) {
-    const msg = (err.message || '').toLowerCase();
-    if (!/video unavailable|captions disabled|empty|transcript is disabled/i.test(msg)) {
-      console.error('[fetchTranscript] TranscriptAPI error:', err.message);
-      throw err;
-    }
-    console.warn('[fetchTranscript] TranscriptAPI failed, falling back to manual scrape:', err.message);
-  }
-
-  // Fallback: scrape YouTube's signed URL
-  try {
-    console.log('[fetchTranscript] Attempting manual scrape...');
-    const info = await ytdl.getBasicInfo(`https://youtube.com/watch?v=${videoID}`);
-    const tracks = info.player_response?.captions?.playerCaptionsTracklistRenderer?.captionTracks || [];
-
-    if (!tracks.length) {
-      throw new Error('No captionTracks available to scrape.');
-    }
-
-    const track = tracks.find(t => t.languageCode === language) || tracks[0];
-    const url = track.baseUrl;
-
-    console.log('[fetchTranscript] Fetching from caption URL:', url.substring(0, 100) + '...');
-
-    const { data: xml } = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.youtube.com/',
-        'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,*/*;q=0.7'
-      }
-    });
-
-    const lines = parseTranscriptXml(xml);
-    if (!lines.length) {
-      throw new Error('Manual scrape returned empty transcript.');
-    }
-
-    console.log('[fetchTranscript] Manual scrape succeeded, got', lines.length, 'items');
-    return lines;
-  } catch (scrapeError) {
-    console.error('[fetchTranscript] Manual scrape failed:', scrapeError.message);
-    throw scrapeError;
-  }
-}
-
 /**
  * POST /simple-transcript
- * Returns only the video title and a concatenated string of subtitles in the first available language.
+ * Returns comprehensive video data including transcript and metadata.
  * 
  * Request Body:
  *   url (string): The URL of the YouTube video.
  *   disableCache (boolean, optional): Set to true to bypass cache read/write for debugging.
+ *   lang (string, optional): Language code for transcript (default: 'en')
  * 
  * Response:
- *   200: JSON object containing `duration`, `title`, and `transcript`.
- *   404: No captions available for this video.
- *   500: Error fetching the transcript.
+ *   200: JSON object containing all video data
+ *   400: Invalid request (missing URL)
+ *   404: No captions available for this video
+ *   500: Error fetching the transcript
  */
 app.post('/simple-transcript', async (req, res) => {
   try {
-    const { url, disableCache } = req.body;
+    const { url, disableCache, lang = 'en' } = req.body;
 
     if (!url) {
       return res.status(400).json({ message: 'URL is required in the request body.' });
@@ -165,182 +228,133 @@ app.post('/simple-transcript', async (req, res) => {
 
     console.log('[Transcript] Processing URL:', url);
     console.log('[Transcript] Cache disabled:', disableCache === true);
+    console.log('[Transcript] Language:', lang);
 
-    const videoID = ytdl.getURLVideoID(url);
-    console.log('[Transcript] Video ID:', videoID);
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      return res.status(400).json({ message: 'Invalid YouTube URL.' });
+    }
+    console.log('[Transcript] Video ID:', videoId);
 
     // Check cache first if Redis is available and cache is not disabled
-    const cacheKey = `yt:transcript:${videoID}`;
+    const cacheKey = `yt:v2:${videoId}:${lang}`;
     const useCacheRead = redis && disableCache !== true;
     
     if (useCacheRead) {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) {
-          console.log('[Transcript] Cache hit for videoID:', videoID);
-          console.log('[Transcript] Cached data:', JSON.stringify(cached, null, 2));
-          return res.json(cached);
+          console.log('[Transcript] Cache hit for videoID:', videoId);
+          // Parse if string, otherwise use as-is
+          const cachedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
+          return res.json(cachedData);
         }
-        console.log('[Transcript] Cache miss for videoID:', videoID);
+        console.log('[Transcript] Cache miss for videoID:', videoId);
       } catch (cacheError) {
         console.warn('[Transcript] Cache read error:', cacheError.message);
-        // Continue to fetch even if cache fails
       }
     } else if (disableCache === true) {
       console.log('[Transcript] Skipping cache read (disableCache=true)');
     }
 
-    // Try to get transcript using TranscriptAPI first (more reliable)
-    try {
-      console.log('[Transcript] Attempting to fetch with TranscriptAPI...');
-      const transcript = await TranscriptAPI.getTranscript(videoID);
+    // Fetch video info and transcript in parallel from Supadata
+    const [videoInfo, transcriptData] = await Promise.all([
+      fetchVideoInfo(videoId),
+      fetchTranscriptFromSupadata(videoId, lang)
+    ]);
 
-      if (transcript && transcript.length > 0) {
-        console.log('[Transcript] Successfully fetched with TranscriptAPI');
-
-        // Get basic video info for title and duration
-        let title = 'Unknown';
-        let duration = 0;
-
-        try {
-          console.log('[Transcript] Fetching video info for title and duration...');
-          const videoInfo = await ytdl.getBasicInfo(url);
-          console.log('[Transcript] Video info fetched successfully');
-          console.log('[Transcript] videoDetails object:', JSON.stringify(videoInfo.videoDetails, null, 2));
-          
-          title = videoInfo.videoDetails.title;
-          duration = Math.floor(videoInfo.videoDetails.lengthSeconds / 60);
-          
-          console.log('[Transcript] Extracted title:', title);
-          console.log('[Transcript] Extracted duration:', duration, 'minutes');
-        } catch (infoError) {
-          console.warn('[Transcript] Could not fetch video info, using defaults:', infoError.message);
-          console.error('[Transcript] Full error:', infoError);
-          // Calculate approximate duration from transcript
-          const lastItem = transcript[transcript.length - 1];
-          duration = Math.floor((lastItem.start + lastItem.duration) / 60);
-          console.log('[Transcript] Calculated duration from transcript:', duration, 'minutes');
-        }
-
-        const transcriptText = transcript.map(item => item.text).join(' ');
-
-        const response = {
-          duration: duration,
-          title: title,
-          transcript: transcriptText
-        };
-
-        console.log('[Transcript] Final response object:', JSON.stringify({
-          duration: response.duration,
-          title: response.title,
-          transcriptLength: response.transcript.length
-        }));
-
-        // Cache the response if Redis is available and cache is not disabled
-        const useCacheWrite = redis && disableCache !== true;
-        if (useCacheWrite) {
-          try {
-            await redis.set(cacheKey, JSON.stringify(response));
-            console.log('[Transcript] Cached transcript for videoID:', videoID);
-          } catch (cacheError) {
-            console.warn('[Transcript] Cache write error:', cacheError.message);
-            // Continue even if caching fails
-          }
-        } else if (disableCache === true) {
-          console.log('[Transcript] Skipping cache write (disableCache=true)');
-        }
-
-        console.log('[Transcript] Sending response to client');
-        return res.json(response);
-      }
-    } catch (apiError) {
-      console.warn('[Transcript] TranscriptAPI failed:', apiError.message);
-      // Continue to fallback method
-    }
-
-    // Fallback: Try ytdl-core method
-    console.log('[Transcript] Attempting fallback with ytdl-core...');
-    const videoInfo = await ytdl.getBasicInfo(url);
-    console.log('[Transcript] Fallback - Video info fetched');
-    console.log('[Transcript] Fallback - videoDetails:', JSON.stringify(videoInfo.videoDetails, null, 2));
-    
-    const duration = Math.floor(videoInfo.videoDetails.lengthSeconds / 60);
-    const title = videoInfo.videoDetails.title;
-    
-    console.log('[Transcript] Fallback - Extracted title:', title);
-    console.log('[Transcript] Fallback - Extracted duration:', duration, 'minutes');
-
-    const captionTracks = videoInfo.player_response?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-
-    if (!captionTracks || captionTracks.length === 0) {
-      console.log('[Transcript] No caption tracks found');
+    // Check if we got transcript data
+    if (!transcriptData || !transcriptData.segments || transcriptData.segments.length === 0) {
+      console.log('[Transcript] No transcript available');
       return res.status(404).json({
         message: 'No captions available for this video.',
-        details: 'This video does not have any subtitles or closed captions.'
+        details: 'This video does not have any subtitles or closed captions.',
+        videoId
       });
     }
 
-    const languageCode = captionTracks[0].languageCode;
-    console.log('[Transcript] Found caption track in language:', languageCode);
+    // Build concatenated transcript text
+    const transcriptText = transcriptData.segments.map(s => s.text).join(' ');
 
-    const lines = await fetchTranscript(videoID, languageCode);
-
-    if (!lines || lines.length === 0) {
-      throw new Error(`No captions available in the selected language (${languageCode}).`);
+    // Calculate duration from transcript if not available from video info
+    let durationSeconds = videoInfo?.duration || 0;
+    if (durationSeconds === 0 && transcriptData.segments.length > 0) {
+      const lastSegment = transcriptData.segments[transcriptData.segments.length - 1];
+      durationSeconds = Math.ceil(lastSegment.start + lastSegment.duration);
     }
 
-    const transcriptText = lines.map(item => item.text).join(' ');
-
+    // Build comprehensive response
     const response = {
-      duration: duration,
-      title: title,
-      transcript: transcriptText
+      // Video identification
+      videoId,
+      
+      // Video metadata
+      title: videoInfo?.title || 'Untitled Video',
+      author: videoInfo?.author || 'Unknown',
+      thumbnail: videoInfo?.thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
+      description: videoInfo?.description || '',
+      tags: videoInfo?.tags || [],
+      
+      // Duration in seconds (for backwards compat, also include minutes)
+      duration: Math.floor(durationSeconds / 60), // minutes (legacy)
+      durationSeconds, // seconds (new)
+      
+      // Transcript data
+      transcript: transcriptText, // full concatenated text (legacy)
+      segments: transcriptData.segments, // timestamped segments array (new)
+      language: transcriptData.language || lang
     };
 
-    console.log('[Transcript] Fallback - Final response object:', JSON.stringify({
-      duration: response.duration,
+    console.log('[Transcript] Final response:', JSON.stringify({
+      videoId: response.videoId,
       title: response.title,
-      transcriptLength: response.transcript.length
+      author: response.author,
+      durationSeconds: response.durationSeconds,
+      transcriptLength: response.transcript.length,
+      segmentsCount: response.segments.length,
+      language: response.language
     }));
 
     // Cache the response if Redis is available and cache is not disabled
     const useCacheWrite = redis && disableCache !== true;
     if (useCacheWrite) {
       try {
-        await redis.set(cacheKey, JSON.stringify(response));
-        console.log('[Transcript] Cached transcript for videoID:', videoID);
+        // Cache for 24 hours (86400 seconds)
+        await redis.set(cacheKey, JSON.stringify(response), { ex: 86400 });
+        console.log('[Transcript] Cached response for videoID:', videoId);
       } catch (cacheError) {
         console.warn('[Transcript] Cache write error:', cacheError.message);
-        // Continue even if caching fails
       }
     } else if (disableCache === true) {
       console.log('[Transcript] Skipping cache write (disableCache=true)');
     }
 
-    console.log('[Transcript] Successfully fetched transcript, sending response');
-    res.json(response);
+    console.log('[Transcript] Sending response to client');
+    return res.json(response);
+
   } catch (error) {
     console.error('[Transcript] Error:', error);
 
     // Provide more detailed error messages
-    let errorMessage = 'An error occurred while fetching the simple transcript.';
+    let errorMessage = 'An error occurred while fetching the transcript.';
     let statusCode = 500;
 
-    if (error.message?.includes('410') || error.message?.includes('Status code: 410')) {
-      errorMessage = 'YouTube blocked the request. This video may have restrictions or YouTube has updated their API.';
-      statusCode = 503;
-    } else if (error.message?.includes('Video unavailable')) {
-      errorMessage = 'This video is unavailable or private.';
+    if (error.response?.status === 404) {
+      errorMessage = 'No captions available for this video.';
       statusCode = 404;
-    } else if (error.message?.includes('Transcript is disabled')) {
-      errorMessage = 'Transcripts are disabled for this video.';
-      statusCode = 404;
+    } else if (error.response?.status === 429) {
+      errorMessage = 'Rate limit exceeded. Please try again later.';
+      statusCode = 429;
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+      statusCode = 504;
     }
 
+    const videoId = extractVideoId(req.body.url);
     res.status(statusCode).json({
       message: errorMessage,
       details: error.message,
-      videoId: req.body.url ? ytdl.getURLVideoID(req.body.url) : 'unknown'
+      videoId: videoId || 'unknown'
     });
   }
 });
@@ -354,5 +368,6 @@ if (require.main === module) {
   app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
     console.log('Server started at:', new Date().toISOString());
+    console.log('Supadata API configured:', !!SUPADATA_API_KEY);
   });
 }
