@@ -124,6 +124,10 @@ export const LOG_CONFIG = {
     NOTIFICATIONS: true,        // Notification system
     CREDENTIALS: true,          // Provider credentials management
 
+    // Search Related Logs
+    SEARCH: true,               // Web search operations
+    SETTINGS: true,             // Settings management
+
     // Debug & Development
     DEBUG: false,               // Debug panels, test tools
     PERFORMANCE: false,         // Performance metrics (verbose)
@@ -155,6 +159,8 @@ export const LOG_PRESETS = {
         AI_WEBSITE_DETECTION: false,
         MEMORY_SUGGESTIONS: false,
         PERFORMANCE: false,
+        SEARCH: true,
+        SETTINGS: true,
     },
 
     // Debugging MCP Issues
@@ -185,6 +191,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: false,
         DEBUG: false,
         PERFORMANCE: false,
+        SEARCH: false,
+        SETTINGS: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -217,6 +225,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: false,
         DEBUG: false,
         PERFORMANCE: false,
+        SEARCH: false,
+        SETTINGS: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -249,6 +259,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: false,
         DEBUG: false,
         PERFORMANCE: false,
+        SEARCH: false,
+        SETTINGS: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -281,6 +293,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: false,
         DEBUG: false,
         PERFORMANCE: false,
+        SEARCH: false,
+        SETTINGS: false,
         ERRORS_ONLY: true,
         SHOW_ALL: false,
     },
@@ -313,6 +327,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: false,
         DEBUG: false,
         PERFORMANCE: false,
+        SEARCH: false,
+        SETTINGS: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -345,6 +361,8 @@ export const LOG_PRESETS = {
         CREDENTIALS: true,
         DEBUG: true,
         PERFORMANCE: true,
+        SEARCH: true,
+        SETTINGS: true,
         ERRORS_ONLY: false,
         SHOW_ALL: true,
     },

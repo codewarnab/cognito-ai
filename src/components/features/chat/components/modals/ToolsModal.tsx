@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Search, ChevronDown, ChevronRight, Info, AlertCircle, MessageSquare, Bot, AlertTriangle, Server } from 'lucide-react';
 import { createLogger } from '~logger';
-import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
+import { DEFAULT_ENABLED_TOOLS } from '@/ai/tools/enabledTools';
 import { getEnabledToolsOverride, setEnabledToolsOverride, getToolsMode, setToolsMode } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS, WORKFLOW_ONLY_TOOLS } from '@/constants/toolDescriptions';
@@ -246,35 +246,53 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onCou
             const override = await getEnabledToolsOverride();
             const savedMode = await getToolsMode();
             const initialMap: Record<string, boolean> = {};
-            const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
 
             if (override && Array.isArray(override)) {
+                // User has saved tool preferences
                 const set = new Set(override);
                 allTools.forEach(t => {
                     initialMap[t] = set.has(t);
                 });
-            } else {
-                allTools.forEach(t => {
-                    initialMap[t] = !disabledByDefaultSet.has(t);
-                });
-            }
-            setEnabledMap(initialMap);
+                setEnabledMap(initialMap);
 
-            // Use saved mode, or detect from tools if not saved
-            if (savedMode && savedMode !== 'custom') {
-                // User has a saved mode preference
-                setCurrentMode(savedMode);
-                setHasUserModified(false);
-            } else {
-                // Detect current mode based on loaded tools
-                const detectedMode = getToolsMatchingMode(initialMap);
-                if (detectedMode) {
-                    setCurrentMode(detectedMode);
+                // Use saved mode, or detect from tools if not saved
+                if (savedMode && savedMode !== 'custom') {
+                    setCurrentMode(savedMode);
                     setHasUserModified(false);
-                } else {
-                    // Tools don't match any preset - user has customized
+                } else if (savedMode === 'custom') {
                     setHasUserModified(true);
+                } else {
+                    // Detect current mode based on loaded tools
+                    const detectedMode = getToolsMatchingMode(initialMap);
+                    if (detectedMode) {
+                        setCurrentMode(detectedMode);
+                        setHasUserModified(false);
+                    } else {
+                        setHasUserModified(true);
+                    }
                 }
+            } else {
+                // No saved override - use saved mode or default to agent
+                const modeToUse = savedMode || 'agent';
+                let toolsToEnable: string[] = [];
+
+                if (modeToUse === 'chat') {
+                    toolsToEnable = [...CHAT_MODE_TOOLS];
+                } else {
+                    toolsToEnable = [...AGENT_MODE_TOOLS];
+                }
+
+                // Filter out Supermemory tools if not configured
+                if (!supermemoryConfigured) {
+                    toolsToEnable = toolsToEnable.filter(t => !SUPERMEMORY_TOOLS.includes(t));
+                }
+
+                allTools.forEach(t => {
+                    initialMap[t] = toolsToEnable.includes(t);
+                });
+                setEnabledMap(initialMap);
+                setCurrentMode(modeToUse === 'custom' ? 'agent' : modeToUse);
+                setHasUserModified(modeToUse === 'custom');
             }
         } catch (err) {
             log.error('Failed to load enabled tools', err);
@@ -613,6 +631,9 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onCou
                                                                 style={{ opacity: isGated ? 0.7 : 1 }}
                                                             >
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    {isSupermemoryTool && (
+                                                                        <Supermemory style={{ width: 14, height: 14, flexShrink: 0 }} />
+                                                                    )}
                                                                     <span className="tools-popover-tool-name" title={tool}>
                                                                         {tool}
                                                                     </span>
