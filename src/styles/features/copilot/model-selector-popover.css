@@ -1,0 +1,141 @@
+/**
+ * Model Selector Popover Styles
+ * Circular Gemini icon button with model selection popover
+ */
+
+.model-selector-popover-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* Circular Gemini Button - Minimal Style */
+.model-selector-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 4px;
+    opacity: 0.6;
+}
+
+.model-selector-button:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.model-selector-button:focus-visible {
+    outline: 2px solid var(--color-primary, #3b82f6);
+    outline-offset: 2px;
+    opacity: 1;
+}
+
+.model-selector-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Popover */
+.model-selector-popover {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    background: var(--bg-secondary, #0f172a);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.model-selector-popover-arrow {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 12px;
+    height: 12px;
+    background: var(--bg-secondary, #0f172a);
+    border-right: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.model-selector-popover-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.model-selector-popover-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.model-selector-popover-content {
+    padding: 6px;
+}
+
+/* Model Option */
+.model-selector-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    text-align: left;
+}
+
+.model-selector-option:hover {
+    background: var(--bg-tertiary, rgba(255, 255, 255, 0.05));
+}
+
+.model-selector-option:focus-visible {
+    outline: 2px solid var(--color-primary, #3b82f6);
+    outline-offset: -2px;
+}
+
+.model-selector-option.selected {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.model-selector-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.model-selector-option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.model-selector-option-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #ffffff);
+}
+
+.model-selector-option-desc {
+    font-size: 11px;
+    color: var(--text-tertiary, #6b7280);
+}
+
+.model-selector-option-check {
+    color: var(--color-primary, #3b82f6);
+    flex-shrink: 0;
+}
