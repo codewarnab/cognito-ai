@@ -30,3 +30,9 @@ export * from './ui';
 
 // Workflows hooks
 export * from './workflows';
+
+// Search hooks
+export { useSearchMode } from './useSearchMode';
+export type { UseSearchModeResult } from './useSearchMode';
+export { useSearchModeWithAI } from './useSearchModeWithAI';
+export type { UseSearchModeWithAIResult } from './useSearchModeWithAI';

@@ -5,10 +5,12 @@ import { AskAiButtonSettings } from '@/components/features/settings/components/A
 import { TextSummarizerSettings } from '@/components/features/settings/components/TextSummarizerSettings';
 import { TextRewriterSettings } from '@/components/features/settings/components/TextRewriterSettings';
 import { WriteCommandSettings } from '@/components/features/settings/components/WriteCommandSettings';
+import { AskCommandSettings } from '@/components/features/settings/components/AskCommandSettings';
 import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
 import { SupermemorySettings } from '@/components/features/settings/components/SupermemorySettings';
+import { SearchSettingsSection } from '@/components/features/settings/components/SearchSettingsSection';
 import { hasAnyProviderConfigured } from '@/utils/credentials';
 import './SettingsPage.css';
 
@@ -62,10 +64,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
       <div className="settings-content">
         <VoiceSettings />
         <TTSAndDataSettings />
+        <SearchSettingsSection />
         <AskAiButtonSettings />
         <TextSummarizerSettings />
         <TextRewriterSettings />
         <WriteCommandSettings />
+        <AskCommandSettings />
         {/* <EnabledToolsSettings /> */}
         <MaxToolCallSettings />
         <SupermemorySettings />

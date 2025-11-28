@@ -27,3 +27,6 @@ export * from './states';
 
 // Suggestions - AI suggestions UI
 export * from './suggestions';
+
+// Search - Web search controls
+export * from './search';

@@ -53,13 +53,12 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     return (
         <div style={{ position: 'relative', display: 'inline-block' }}>
             <motion.button
-                className="download-button"
+                className="copy-message-button"
                 onClick={handleDownload}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
                 title="Download audio"
                 aria-label="Download audio"
-                style={{ marginLeft: '8px' }}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}

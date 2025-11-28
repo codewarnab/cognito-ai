@@ -6,3 +6,4 @@ export * from './popover';
 export * from './toggle';
 export * from './badge';
 export * from './collapsible';
+export * from './tooltip';

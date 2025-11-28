@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface InlineCodeProps {
     children: React.ReactNode;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // Custom inline code component with tooltip and copy functionality
@@ -10,21 +11,18 @@ export function InlineCode({ children, ...props }: InlineCodeProps) {
     const [copied, setCopied] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
 
-    // Check if the content is a URL
     const content = String(children).replace(/\n$/, '');
     const isUrl = /^https?:\/\//i.test(content);
 
-    // Beautify URL display - show hostname and path instead of full URL
     const getDisplayText = () => {
         if (!isUrl) return children;
 
         try {
             const url = new URL(content);
-            const hostname = url.hostname.replace(/^www\./, ''); // Remove www. prefix
+            const hostname = url.hostname.replace(/^www\./, '');
             const path = url.pathname === '/' ? '' : url.pathname;
             return `${hostname}${path}`;
         } catch {
-            // Fallback to original content if URL parsing fails
             return children;
         }
     };
@@ -34,10 +32,8 @@ export function InlineCode({ children, ...props }: InlineCodeProps) {
         e.stopPropagation();
 
         if (isUrl) {
-            // Open URL in new tab
             window.open(content, '_blank', 'noopener,noreferrer');
         } else {
-            // Copy non-URL content
             try {
                 await navigator.clipboard.writeText(content);
                 setCopied(true);
@@ -62,7 +58,7 @@ export function InlineCode({ children, ...props }: InlineCodeProps) {
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        handleClick(e as any);
+                        handleClick(e as unknown as React.MouseEvent);
                     }
                 }}
                 role="button"
@@ -72,11 +68,20 @@ export function InlineCode({ children, ...props }: InlineCodeProps) {
             >
                 {getDisplayText()}
             </code>
-            {(showTooltip || copied) && (
-                <span className={`inline-code-tooltip ${copied ? 'inline-code-tooltip-success' : ''}`}>
-                    {copied ? '✓ Copied!' : isUrl ? 'Click to open' : 'Click to copy'}
-                </span>
-            )}
+            <AnimatePresence>
+                {(showTooltip || copied) && (
+                    <motion.span
+                        key="tooltip"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 4 }}
+                        transition={{ duration: 0.15 }}
+                        className={`inline-code-tooltip ${copied ? 'inline-code-tooltip-success' : ''}`}
+                    >
+                        {copied ? '✓ Copied!' : isUrl ? 'Click to open' : 'Click to copy'}
+                    </motion.span>
+                )}
+            </AnimatePresence>
         </span>
     );
 }
