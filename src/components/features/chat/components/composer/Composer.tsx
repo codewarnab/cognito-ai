@@ -1,32 +1,30 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { VoiceInput, type VoiceInputHandle } from '@/audio/VoiceInput';
-import { ModeSelector } from '../../dropdowns/ModeSelector';
-import { SendIcon, StopIcon, UploadIconMinimal } from '@/components/shared/icons';
-import { PlusIcon, type PlusIconHandle } from '@assets/icons/ui/plus';
-import { MentionInput } from '@/components/shared/inputs';
-import { FileAttachment, type FileAttachmentData } from '../attachments/FileAttachment';
-import { TabAttachment, type TabAttachmentData } from '../attachments/TabAttachment';
-import { AttachmentDropdown } from '../attachments/AttachmentDropdown';
-import { AddTabsModal } from '../modals/AddTabsModal';
+import React, { useState } from 'react';
+import type { VoiceInputHandle } from '@/audio/VoiceInput';
+import type { FileAttachmentData } from '../attachments/FileAttachment';
+import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, ModelState } from '../../types';
-import { SlashCommandDropdown } from '../../dropdowns/SlashCommandDropdown';
-import { WorkflowBadge } from '../badges/WorkflowBadge';
-import { LocalPdfSuggestion } from '../suggestions/LocalPdfSuggestion';
-import { YouTubeVideoSuggestion } from '../suggestions/YouTubeVideoSuggestion';
-import type { LocalPdfInfo } from '@/hooks/browser';
-import type { YouTubeVideoInfo } from '@/hooks/browser';
-import { HIDE_LOCAL_MODE } from '@/constants';
 import type { WorkflowDefinition } from '@/workflows/types';
+import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
-import { ToolsModal } from '../modals/ToolsModal';
-import { Wrench } from 'lucide-react';
-import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
-import { getEnabledToolsOverride } from '@/utils/settings';
+
+// Extracted hooks
+import { useToolsCount, useVoiceFabVisibility, useScreenshotCapture } from './hooks';
+
+// Extracted section components
+import {
+    DragOverlay,
+    SuggestionsArea,
+    WorkflowSection,
+    AttachmentsArea,
+    ComposerInput,
+    ComposerToolbar,
+    ComposerActions
+} from './sections';
 
 const log = createLogger('Composer', 'AI_CHAT');
 
-interface ComposerProps {
+export interface ComposerProps {
     input: string;
     setInput: (value: string) => void;
     isLoading: boolean;
@@ -125,389 +123,128 @@ export const Composer: React.FC<ComposerProps> = ({
     composerRef,
     textareaRef,
 }) => {
-    const plusIconRef = useRef<PlusIconHandle>(null);
+    // Modal states
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
 
-    // Calculate initial tool count synchronously to avoid showing 0 on first render
-    const [enabledToolsCount, setEnabledToolsCount] = useState(() => {
-        const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-        const filteredTools = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t));
-        const count = filteredTools.length;
-        log.info('🔧 Initial tool count:', {
-            defaultTotal: DEFAULT_ENABLED_TOOLS.length,
-            disabledByDefault: TOOLS_DISABLED_BY_DEFAULT.length,
-            calculated: count,
-            sample: filteredTools.slice(0, 5)
-        });
-        return count;
-    });
-    const [mcpToolsCount, setMcpToolsCount] = useState(0);
+    // Derived state
     const isLocalMode = modelState.mode === 'local';
-    const totalEnabledCount = enabledToolsCount + mcpToolsCount;
-    const isTooManyTools = totalEnabledCount > 40;
+    const { isSearchMode, hasApiKey: hasSearchApiKey } = useSearchMode();
+    const isSearchActive = isSearchMode && hasSearchApiKey;
 
-    // Function to load tools count - extracted so it can be called on modal close
-    const loadToolsCount = useCallback(async () => {
-        try {
-            const override = await getEnabledToolsOverride();
-            if (override && Array.isArray(override)) {
-                setEnabledToolsCount(override.length);
-            } else {
-                const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-                const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
-                setEnabledToolsCount(count);
-            }
+    // Custom hooks
+    const toolsState = useToolsCount();
+    const { handleScreenshotClick } = useScreenshotCapture(processFiles);
 
-            // Load MCP tools count
-            try {
-                const mcpResponse = await chrome.runtime.sendMessage({ type: 'mcp/tools/list' });
-                if (mcpResponse?.success && mcpResponse.data?.tools) {
-                    const tools = mcpResponse.data.tools as { serverId: string; name: string }[];
-                    // Get disabled tools for each server
-                    const serverIds = [...new Set(tools.map(t => t.serverId))];
-                    let enabledMcpCount = tools.length;
+    // Voice FAB visibility management
+    useVoiceFabVisibility(showAttachmentDropdown, attachments.length, tabAttachments.length);
 
-                    for (const serverId of serverIds) {
-                        const configResponse = await chrome.runtime.sendMessage({
-                            type: `mcp/${serverId}/tools/config/get`
-                        });
-                        if (configResponse?.success && Array.isArray(configResponse.data)) {
-                            const disabledTools = configResponse.data as string[];
-                            const serverTools = tools.filter(t => t.serverId === serverId);
-                            const disabledCount = serverTools.filter(t => disabledTools.includes(t.name)).length;
-                            enabledMcpCount -= disabledCount;
-                        }
-                    }
-                    setMcpToolsCount(enabledMcpCount);
-                }
-            } catch {
-                // MCP not available, ignore
-            }
-        } catch (err) {
-            const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-            const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
-            setEnabledToolsCount(count);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadToolsCount();
-
-        const handleStorageChange = (changes: any, areaName: string) => {
-            if (areaName === 'local' && changes.userSettings) {
-                loadToolsCount();
-            }
-        };
-        chrome.storage.onChanged.addListener(handleStorageChange);
-        return () => {
-            chrome.storage.onChanged.removeListener(handleStorageChange);
-        };
-    }, [loadToolsCount]);
-
-    // Hide voice-mode-fab when attachment dropdown is open or when there are attachments
-    useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            // Hide FAB when:
-            // - Attachment dropdown is open
-            // - Any file attachments exist (including YouTube transcripts)
-            // - Any tab attachments exist
-            const shouldHide = showAttachmentDropdown || attachments.length > 0 || tabAttachments.length > 0;
-
-            if (shouldHide) {
-                voiceFab.style.visibility = 'hidden';
-            } else {
-                voiceFab.style.visibility = '';
-            }
-        }
-    }, [showAttachmentDropdown, attachments.length, tabAttachments.length]);
-
-    const handleScreenshotClick = async () => {
-        try {
-            log.info('Taking screenshot...');
-
-            // Get active tab
-            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-            const tab = tabs[0];
-
-            if (!tab || !tab.id || !tab.windowId) {
-                log.error('No active tab found');
-                return;
-            }
-
-            // Capture screenshot
-            const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-
-            // Convert data URL to File
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
-
-            // Process the file using the existing file attachment logic
-            await processFiles([file]);
-
-            log.info('Screenshot captured and attached');
-        } catch (error) {
-            log.error('Failed to capture screenshot:', error);
-        }
-    };
-
-    const handleAddTabs = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
-        log.info('Adding tabs:', tabs);
-        handleAddTabAttachments(tabs);
-        setShowAttachmentDropdown(false);
-    };
+    log.debug('Composer render', {
+        isLoading,
+        attachmentsCount: attachments.length,
+        tabAttachmentsCount: tabAttachments.length,
+        isSearchActive
+    });
 
     return (
-        <div ref={composerRef} className={`copilot-composer ${isRecording ? 'recording-blur' : ''} ${isDragging ? 'dragging' : ''}`}>
+        <div
+            ref={composerRef}
+            className={`copilot-composer ${isRecording ? 'recording-blur' : ''} ${isDragging ? 'dragging' : ''}`}
+        >
             {/* Drag overlay */}
-            {isDragging && (
-                <div className="drag-overlay">
-                    <div className="drag-overlay-content">
-                        <UploadIconMinimal size={32} />
-                        <p>Drop files to attach</p>
-                    </div>
-                </div>
-            )}
+            <DragOverlay isDragging={isDragging} />
 
-            {/* Local PDF Suggestion - shows when local PDF is detected */}
-            {shouldShowLocalPdfSuggestion && localPdfInfo && (
-                <LocalPdfSuggestion
-                    filename={localPdfInfo.filename}
-                    onAttach={handleAttachLocalPdf}
-                    onDismiss={handleDismissLocalPdf}
-                    isLoading={isAttachingLocalPdf}
-                />
-            )}
+            {/* Suggestions area: Local PDF and YouTube video */}
+            <SuggestionsArea
+                localPdfInfo={localPdfInfo}
+                shouldShowLocalPdfSuggestion={shouldShowLocalPdfSuggestion}
+                isAttachingLocalPdf={isAttachingLocalPdf}
+                handleAttachLocalPdf={handleAttachLocalPdf}
+                handleDismissLocalPdf={handleDismissLocalPdf}
+                youtubeVideoInfo={youtubeVideoInfo}
+                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion}
+                isAttachingVideo={isAttachingVideo}
+                handleAttachYouTubeVideo={handleAttachYouTubeVideo}
+                handleDismissYouTubeVideo={handleDismissYouTubeVideo}
+            />
 
-            {/* YouTube Video Suggestion - shows when YouTube video is detected */}
-            {shouldShowYouTubeVideoSuggestion && youtubeVideoInfo && (
-                <YouTubeVideoSuggestion
-                    key={youtubeVideoInfo.videoId}
-                    videoTitle={youtubeVideoInfo.title}
-                    onAttach={handleAttachYouTubeVideo}
-                    onDismiss={handleDismissYouTubeVideo}
-                    isLoading={isAttachingVideo}
-                />
-            )}
+            {/* Workflow section: badge and slash command dropdown */}
+            <WorkflowSection
+                activeWorkflow={activeWorkflow}
+                showSlashDropdown={showSlashDropdown}
+                slashSearchQuery={slashSearchQuery}
+                handleSelectWorkflow={handleSelectWorkflow}
+                handleClearWorkflow={handleClearWorkflow}
+                handleSlashCommandDetection={handleSlashCommandDetection}
+                mode={modelState.mode}
+            />
 
-            {/* Workflow Badge - shows when workflow is active */}
-            {activeWorkflow && (
-                <WorkflowBadge
-                    workflow={activeWorkflow}
-                    onClose={handleClearWorkflow}
-                />
-            )}
+            {/* Attachments area: tab and file attachments */}
+            <AttachmentsArea
+                attachments={attachments}
+                tabAttachments={tabAttachments}
+                handleRemoveAttachment={handleRemoveAttachment}
+                handleRemoveTabAttachment={handleRemoveTabAttachment}
+            />
 
-            {/* Slash Command Dropdown */}
-            {showSlashDropdown && !activeWorkflow && (
-                <SlashCommandDropdown
-                    searchQuery={slashSearchQuery}
-                    onSelectWorkflow={handleSelectWorkflow}
-                    onClose={() => handleSlashCommandDetection(false, '')}
-                    mode={modelState.mode}
-                />
-            )}
+            {/* Main input area with MentionInput */}
+            <ComposerInput
+                input={input}
+                setInput={setInput}
+                isLoading={isLoading}
+                pendingMessageId={pendingMessageId}
+                nextMessageId={nextMessageId}
+                activeWorkflow={activeWorkflow}
+                attachments={attachments}
+                showSlashDropdown={showSlashDropdown}
+                handleSlashCommandDetection={handleSlashCommandDetection}
+                composerRef={composerRef}
+            />
 
-            {/* Tab Attachments Preview */}
-            {tabAttachments.length > 0 && (
-                <div className="tab-attachments-container">
-                    <TabAttachment
-                        tabs={tabAttachments}
-                        onRemoveAll={() => {
-                            tabAttachments.forEach(tab => handleRemoveTabAttachment(tab.id));
-                        }}
-                    />
-                </div>
-            )}
-
-            {/* File Attachments Preview */}
-            {attachments.length > 0 && (
-                <div className="file-attachments-container">
-                    {attachments.map(attachment => (
-                        <FileAttachment
-                            key={attachment.id}
-                            attachment={attachment}
-                            onRemove={handleRemoveAttachment}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* Main input area - MentionInput with @ support */}
-            <div className="copilot-composer-primary">
-                <div style={{ position: 'relative', width: '100%' }}>
-                    <MentionInput
-                        value={input}
-                        onChange={setInput}
-                        onSlashCommand={handleSlashCommandDetection}
-                        isSlashDropdownOpen={showSlashDropdown}
-                        onSend={() => {
-                            // Trigger form submit by clicking the submit button
-                            const form = composerRef.current?.closest('form');
-                            if (form) {
-                                form.requestSubmit();
-                            }
-                        }}
-                        disabled={isLoading}
-                        placeholder={
-                            activeWorkflow
-                                ? `${activeWorkflow.name} mode: Describe what to ${activeWorkflow.id}...`
-                                : attachments.length > 0
-                                    ? "Add a message (optional)..."
-                                    : "Ask anything (type @ to mention tabs, / for workflows)"
-                        }
-                        autoFocus={true}
-                    />
-                    {/* Animated Preview Overlay - iMessage style */}
-                    <AnimatePresence>
-                        {input.trim() && !pendingMessageId && nextMessageId && (
-                            <motion.div
-                                key="input-preview"
-                                layout="position"
-                                className="copilot-textarea-preview-wrapper"
-                                layoutId={`message-${nextMessageId}`}
-                                transition={{ type: 'easeOut', duration: 0.2 }}
-                                initial={{ opacity: 0.6, zIndex: -1 }}
-                                animate={{ opacity: 0.6, zIndex: -1 }}
-                                exit={{ opacity: 1, zIndex: 1 }}
-                            >
-                                <div className="copilot-textarea-preview-content">
-                                    {input}
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
-
-            {/* Bottom section with options (left) and buttons (right) */}
+            {/* Bottom section with toolbar (left) and actions (right) */}
             <div className="copilot-composer-bottom">
-                {/* Mode Selector - Bottom Left */}
-                <div className="copilot-composer-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {!HIDE_LOCAL_MODE && (
-                        <ModeSelector
-                            modelState={modelState}
-                            onModeChange={onModeChange}
-                            showModeDropdown={showModeDropdown}
-                            onToggleDropdown={onToggleModeDropdown}
-                            onError={onError}
-                        />
-                    )}
+                {/* Left toolbar: mode selector, tools, search, model */}
+                <ComposerToolbar
+                    modelState={modelState}
+                    onModeChange={onModeChange}
+                    showModeDropdown={showModeDropdown}
+                    onToggleModeDropdown={onToggleModeDropdown}
+                    onError={onError}
+                    enabledToolsCount={toolsState.enabledToolsCount}
+                    mcpToolsCount={toolsState.mcpToolsCount}
+                    totalEnabledCount={toolsState.totalEnabledCount}
+                    isTooManyTools={toolsState.isTooManyTools}
+                    showToolsModal={showToolsModal}
+                    setShowToolsModal={setShowToolsModal}
+                    loadToolsCount={toolsState.loadToolsCount}
+                    setEnabledToolsCount={toolsState.setEnabledToolsCount}
+                    setMcpToolsCount={toolsState.setMcpToolsCount}
+                    activeWorkflow={activeWorkflow}
+                    isSearchActive={isSearchActive}
+                />
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            type="button"
-                            className={`composer-tools-button ${activeWorkflow ? 'disabled' : ''} ${isTooManyTools ? 'warning' : ''}`}
-                            onClick={() => !activeWorkflow && setShowToolsModal(!showToolsModal)}
-                            disabled={!!activeWorkflow}
-                            title={activeWorkflow ? "Tools are managed by the active workflow" : isTooManyTools ? "Too many tools enabled - may slow AI responses" : "Manage enabled tools"}
-                        >
-                            <Wrench size={14} />
-                            <span className="composer-tools-count">
-                                {totalEnabledCount}{mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}
-                            </span>
-                        </button>
-
-                        {/* Tools Popover */}
-                        <ToolsModal
-                            isOpen={showToolsModal}
-                            onClose={() => {
-                                setShowToolsModal(false);
-                                // Refresh tools count after modal closes
-                                loadToolsCount();
-                            }}
-                            onCountChange={(extCount, mcpCount) => {
-                                setEnabledToolsCount(extCount);
-                                setMcpToolsCount(mcpCount);
-                            }}
-                        />
-                    </div>
-                </div>
-
-                {/* Action Buttons - Bottom Right */}
-                <div className="copilot-composer-actions" style={{ position: 'relative' }}>
-                    {/* Plus Icon - Attachment Options */}
-                    <button
-                        type="button"
-                        className={`copilot-action-button ${isLocalMode ? 'disabled' : ''}`}
-                        title={isLocalMode ? 'Switch to Cloud mode to use attachments' : 'Attach file or screenshot'}
-                        tabIndex={-1}
-                        aria-disabled={isLocalMode}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (isLocalMode) {
-                                return;
-                            }
-                            setShowAttachmentDropdown(!showAttachmentDropdown);
-                        }}
-                        onMouseEnter={() => {
-                            if (!isLocalMode) plusIconRef.current?.startAnimation();
-                        }}
-                        onMouseLeave={() => {
-                            if (!isLocalMode) plusIconRef.current?.stopAnimation();
-                        }}
-                    >
-                        <PlusIcon ref={plusIconRef} size={16} />
-                    </button>
-
-                    {/* Attachment Dropdown */}
-                    {showAttachmentDropdown && (
-                        <AttachmentDropdown
-                            onFileClick={openFilePicker}
-                            onScreenshotClick={handleScreenshotClick}
-                            onAddTabsClick={() => setShowAddTabsModal(true)}
-                            onClose={() => setShowAttachmentDropdown(false)}
-                            isLocalMode={isLocalMode}
-                        />
-                    )}
-
-                    {/* Add Tabs Modal */}
-                    <AddTabsModal
-                        isOpen={showAddTabsModal}
-                        onClose={() => setShowAddTabsModal(false)}
-                        onAddTabs={handleAddTabs}
-                    />
-
-                    {/* Voice Input OR Send Button OR Stop Button - only one shows at a time */}
-                    {isLoading && onStop ? (
-                        // Show stop button when streaming
-                        <button
-                            type="button"
-                            onClick={onStop}
-                            className="copilot-stop-button-sm"
-                            title="Stop generation"
-                        >
-                            <StopIcon size={16} />
-                        </button>
-                    ) : (input.trim() || attachments.length > 0) ? (
-                        // Show send button when there's input or attachments
-                        <button
-                            type="submit"
-                            className="copilot-send-button-sm"
-                            title="Send message (Enter)"
-                            disabled={(!input.trim() && attachments.length === 0) || isLoading}
-                        >
-                            <SendIcon size={18} />
-                        </button>
-                    ) : (
-                        // Show voice button when input is empty
-                        <VoiceInput
-                            ref={voiceInputRef}
-                            onTranscript={(text) => setInput(text)}
-                            onRecordingChange={(recording) => {
-                                onRecordingChange?.(recording);
-                            }}
-                            onRecordingComplete={(finalText) => {
-                                setInput(finalText);
-                                textareaRef.current?.focus();
-                            }}
-                            className="copilot-voice-input"
-                        />
-                    )}
-                </div>
+                {/* Right actions: attachments, voice/send/stop */}
+                <ComposerActions
+                    input={input}
+                    setInput={setInput}
+                    isLoading={isLoading}
+                    isRecording={isRecording}
+                    onRecordingChange={onRecordingChange}
+                    voiceInputRef={voiceInputRef}
+                    onStop={onStop}
+                    attachments={attachments}
+                    isLocalMode={isLocalMode}
+                    isSearchActive={isSearchActive}
+                    openFilePicker={openFilePicker}
+                    handleScreenshotClick={handleScreenshotClick}
+                    handleAddTabAttachments={handleAddTabAttachments}
+                    showAttachmentDropdown={showAttachmentDropdown}
+                    setShowAttachmentDropdown={setShowAttachmentDropdown}
+                    showAddTabsModal={showAddTabsModal}
+                    setShowAddTabsModal={setShowAddTabsModal}
+                    textareaRef={textareaRef}
+                />
             </div>
         </div>
     );
