@@ -23,6 +23,10 @@ interface WriterOverlayProps {
     isGenerating: boolean;
     generatedText: string;
     error?: string | null;
+    /** Whether there's an insertion target (editable field). When false, Insert button is hidden. */
+    hasInsertionTarget?: boolean;
+    /** Initial prompt text (e.g., from context menu selection) */
+    initialPrompt?: string;
 }
 
 // SVG Icons as inline components for bundle size
@@ -97,8 +101,10 @@ export function WriterOverlay({
     isGenerating,
     generatedText,
     error,
+    hasInsertionTarget = true,
+    initialPrompt,
 }: WriterOverlayProps) {
-    const [prompt, setPrompt] = useState('');
+    const [prompt, setPrompt] = useState(initialPrompt || '');
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [overlayPosition, setOverlayPosition] = useState(position);
@@ -180,6 +186,13 @@ export function WriterOverlay({
     useEffect(() => {
         setOverlayPosition(position);
     }, [position]);
+
+    // Update prompt when initialPrompt changes (e.g., from context menu)
+    useEffect(() => {
+        if (initialPrompt !== undefined) {
+            setPrompt(initialPrompt);
+        }
+    }, [initialPrompt]);
 
     // Constrain overlay to viewport and calculate dynamic output height
     useEffect(() => {
@@ -610,12 +623,14 @@ export function WriterOverlay({
                         <RefreshIcon />
                         Regenerate
                     </button>
-                    <button
-                        className="writer-action-button writer-action-button--primary"
-                        onClick={onInsert}
-                    >
-                        Insert
-                    </button>
+                    {hasInsertionTarget && (
+                        <button
+                            className="writer-action-button writer-action-button--primary"
+                            onClick={onInsert}
+                        >
+                            Insert
+                        </button>
+                    )}
                 </div>
             )}
 

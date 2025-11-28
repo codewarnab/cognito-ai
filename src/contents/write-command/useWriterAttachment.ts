@@ -21,7 +21,7 @@ interface UseWriterAttachmentOptions {
 interface UseWriterAttachmentReturn {
     attachment: WriteAttachment | null;
     isProcessing: boolean;
-    fileInputRef: React.RefObject<HTMLInputElement | null>;
+    fileInputRef: React.RefObject<HTMLInputElement>;
     processFile: (file: File) => Promise<boolean>;
     handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
     handleFileDrop: (e: React.DragEvent) => Promise<void>;
@@ -36,7 +36,7 @@ export function useWriterAttachment({
 }: UseWriterAttachmentOptions = {}): UseWriterAttachmentReturn {
     const [attachment, setAttachment] = useState<WriteAttachment | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
 
     /**
