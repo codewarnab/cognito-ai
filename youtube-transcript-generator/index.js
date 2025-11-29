@@ -212,8 +212,13 @@ app.get('/debug', (req, res) => {
  *   disableCache (boolean, optional): Set to true to bypass cache read/write for debugging.
  *   lang (string, optional): Language code for transcript (default: 'en')
  * 
+ * Headers:
+ *   X-API-Version (string, optional): API version. 
+ *     - "2": Returns all fields (full response)
+ *     - "1" or missing: Returns only { duration, title, transcript } for backwards compatibility
+ * 
  * Response:
- *   200: JSON object containing all video data
+ *   200: JSON object containing video data (fields depend on version)
  *   400: Invalid request (missing URL)
  *   404: No captions available for this video
  *   500: Error fetching the transcript
@@ -240,6 +245,10 @@ app.post('/simple-transcript', async (req, res) => {
     const cacheKey = `yt:v2:${videoId}:${lang}`;
     const useCacheRead = redis && disableCache !== true;
     
+    // Check API version header early for cache response filtering
+    const apiVersion = req.headers['x-api-version'];
+    console.log('[Transcript] API Version requested:', apiVersion || '1 (default)');
+
     if (useCacheRead) {
       try {
         const cached = await redis.get(cacheKey);
@@ -247,6 +256,19 @@ app.post('/simple-transcript', async (req, res) => {
           console.log('[Transcript] Cache hit for videoID:', videoId);
           // Parse if string, otherwise use as-is
           const cachedData = typeof cached === 'string' ? JSON.parse(cached) : cached;
+          
+          // Apply version filtering to cached response
+          if (!apiVersion || apiVersion === '1') {
+            const legacyResponse = {
+              duration: cachedData.duration,
+              title: cachedData.title,
+              transcript: cachedData.transcript
+            };
+            console.log('[Transcript] Sending legacy cached response (v1) to client');
+            return res.json(legacyResponse);
+          }
+          
+          console.log('[Transcript] Sending full cached response (v2) to client');
           return res.json(cachedData);
         }
         console.log('[Transcript] Cache miss for videoID:', videoId);
@@ -329,7 +351,19 @@ app.post('/simple-transcript', async (req, res) => {
       console.log('[Transcript] Skipping cache write (disableCache=true)');
     }
 
-    console.log('[Transcript] Sending response to client');
+    // For version 1 or no version header, return only legacy fields for backwards compatibility
+    if (!apiVersion || apiVersion === '1') {
+      const legacyResponse = {
+        duration: response.duration,
+        title: response.title,
+        transcript: response.transcript
+      };
+      console.log('[Transcript] Sending legacy response (v1) to client');
+      return res.json(legacyResponse);
+    }
+
+    // Version 2+: Return full response
+    console.log('[Transcript] Sending full response (v2) to client');
     return res.json(response);
 
   } catch (error) {

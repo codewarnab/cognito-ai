@@ -5,6 +5,7 @@
 
 import { createLogger } from '~logger';
 import { geminiRewriter, type RewriterOptions } from './geminiRewriter';
+import { queueContentMemoryForRewriter } from '../supermemory/contentMemory/hooks';
 import type { RewriteRequest } from '@/types';
 
 const log = createLogger('RewriterHandler', 'BACKGROUND');
@@ -126,6 +127,15 @@ export async function handleRewriteRequest(
                     action: 'REWRITE_COMPLETE',
                     text: rewrittenText,
                 });
+
+                // Queue for memory building (fire and forget)
+                queueContentMemoryForRewriter({
+                    originalText: selectedText,
+                    rewrittenText,
+                    preset,
+                    customInstruction: instruction,
+                    pageContext: undefined, // Page context not available in rewriter
+                }).catch(() => {}); // Fire and forget
             } catch (postError) {
                 log.error('Failed to post message', postError);
             }

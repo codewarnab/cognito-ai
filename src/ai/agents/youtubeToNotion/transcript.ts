@@ -20,22 +20,79 @@
  *     segments: Array<{ text: string, start: number, duration: number }>,
  *     language: string
  *   }
+ * 
+ * Retry Logic:
+ * - API sometimes incorrectly returns "no captions" for videos that have captions
+ * - Retry up to 3 times with 1.5s delay before giving up on 404 responses
  */
 
 import { TRANSCRIPT_API_URL } from "@/constants";
 import { createLogger } from '~logger';
-import type { TranscriptEntry } from "./transcriptCache";
+import type { TranscriptEntry, TranscriptSegment } from "./transcriptCache";
 
 const log = createLogger("TranscriptFetch");
+
+/** Max retries for "no captions" responses (API sometimes returns this incorrectly) */
+const NO_CAPTIONS_MAX_RETRIES = 3;
+const NO_CAPTIONS_RETRY_DELAY = 1500;
+
+/**
+ * Compact segment for AI consumption (reduced token usage)
+ */
+export interface CompactSegment {
+    /** Segment text */
+    t: string;
+    /** Start time in seconds */
+    s: number;
+}
+
+/**
+ * Processed transcript optimized for AI consumption
+ */
+export interface ProcessedTranscript {
+    videoId: string;
+    title: string;
+    author?: string;
+    durationSeconds?: number;
+    language?: string;
+    /** Compact segments with text and start time only */
+    segments: CompactSegment[];
+    /** Hint for AI to reference timestamps when needed */
+    _note: string;
+}
+
+/**
+ * Process TranscriptEntry into compact format for AI consumption
+ * - Uses only segments (not full transcript) to avoid duplication
+ * - Compacts segment format: { t: text, s: startSeconds }
+ * - Significantly reduces token usage while preserving all content
+ */
+export function processTranscriptForAI(entry: TranscriptEntry): ProcessedTranscript {
+    const compactSegments: CompactSegment[] = (entry.segments || []).map(seg => ({
+        t: seg.text.trim(),
+        s: Math.floor(seg.start)
+    }));
+
+    return {
+        videoId: entry.videoId,
+        title: entry.title || 'Untitled Video',
+        author: entry.author,
+        durationSeconds: entry.durationSeconds,
+        language: entry.language,
+        segments: compactSegments,
+        _note: 'Reference timestamps (s) when user needs to verify specific parts'
+    };
+}
 
 /**
  * Fetch transcript from API (transcript-only, no video analysis fallback)
  * 
  * Process:
  * 1. Call transcript API with video URL
- * 2. If transcript available: Return it with metadata
- * 3. If transcript null/empty: Return error entry
- * 4. If API fails: Return error entry
+ * 2. If 404 "no captions": Retry up to 3 times (API sometimes returns this incorrectly)
+ * 3. If transcript available: Return it with metadata
+ * 4. If transcript null/empty after retries: Return error entry
+ * 5. If API fails: Return error entry
  * 
  * @param videoUrl - YouTube video URL
  * @returns TranscriptEntry with transcript or error message
@@ -43,7 +100,17 @@ const log = createLogger("TranscriptFetch");
 export async function fetchTranscriptDirect(
     videoUrl: string
 ): Promise<TranscriptEntry> {
-    log.info("📝 Fetching transcript from API", { videoUrl });
+    return fetchTranscriptWithRetry(videoUrl, NO_CAPTIONS_MAX_RETRIES);
+}
+
+/**
+ * Internal fetch with retry logic for "no captions" responses
+ */
+async function fetchTranscriptWithRetry(
+    videoUrl: string,
+    retriesLeft: number
+): Promise<TranscriptEntry> {
+    log.info("📝 Fetching transcript from API", { videoUrl, retriesLeft });
 
     try {
         const res = await fetch(TRANSCRIPT_API_URL, {
@@ -57,6 +124,14 @@ export async function fetchTranscriptDirect(
 
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
+            
+            // Handle 404 "no captions" - retry as API sometimes returns this incorrectly
+            if (res.status === 404 && retriesLeft > 0) {
+                log.info(`🔄 Got "no captions" response, retrying (${retriesLeft} attempts left)...`);
+                await new Promise(resolve => setTimeout(resolve, NO_CAPTIONS_RETRY_DELAY));
+                return fetchTranscriptWithRetry(videoUrl, retriesLeft - 1);
+            }
+            
             log.warn(
                 `⚠️ Transcript API error ${res.status}`,
                 data
@@ -72,11 +147,14 @@ export async function fetchTranscriptDirect(
             return createErrorEntry(videoUrl, "Invalid API response structure");
         }
 
-        // Handle null/empty transcript - return error (no fallback)
+        // Handle null/empty transcript - retry as API sometimes returns empty incorrectly
         if (!data.transcript || data.transcript.trim().length === 0) {
-            log.info(
-                "ℹ️ No transcript returned from API"
-            );
+            if (retriesLeft > 0) {
+                log.info(`🔄 Got empty transcript, retrying (${retriesLeft} attempts left)...`);
+                await new Promise(resolve => setTimeout(resolve, NO_CAPTIONS_RETRY_DELAY));
+                return fetchTranscriptWithRetry(videoUrl, retriesLeft - 1);
+            }
+            log.info("ℹ️ No transcript returned from API (confirmed after retries)");
             return createErrorEntry(videoUrl, "No transcript available for this video. The video may not have captions enabled.");
         }
 

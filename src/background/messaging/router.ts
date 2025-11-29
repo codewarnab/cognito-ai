@@ -13,6 +13,7 @@ import { handleWriteGenerate } from '../writer';
 import { handleRewriteRequest } from '../rewriter';
 import { handleAskGenerate } from '../asker';
 import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
+import { queueThreadForExtraction } from '../supermemory/extraction/queue';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -43,6 +44,22 @@ export function initializeMessageRouter(): void {
             }).catch(() => {
                 sendResponse({ ready: false });
             });
+            return true; // Will respond asynchronously
+        }
+
+        // Handle memory extraction queue request
+        if (message.type === 'QUEUE_MEMORY_EXTRACTION') {
+            queueThreadForExtraction(message.threadId, message.messageCount)
+                .then(() => {
+                    sendResponse({ success: true });
+                })
+                .catch((error) => {
+                    backgroundLog.error('Failed to queue extraction', {
+                        threadId: message.threadId,
+                        error: error instanceof Error ? error.message : 'Unknown error',
+                    });
+                    sendResponse({ success: false, error: error instanceof Error ? error.message : 'Unknown' });
+                });
             return true; // Will respond asynchronously
         }
 
