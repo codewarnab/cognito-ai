@@ -94,8 +94,8 @@ pnpm dev
 # Build for production
 pnpm build
 
-# Run tests (if available)
-pnpm test
+# Type check
+pnpm type:check
 ```
 
 ### 5. Commit Your Changes
@@ -125,12 +125,11 @@ git push origin feature/my-new-feature
 
 ### TypeScript/JavaScript
 
-- Use **TypeScript** for type safety
-- Follow **ESLint** rules
-- Use **Prettier** for code formatting
-- Prefer `const` over `let`, avoid `var`
+- Use **TypeScript** with strict type checking
+- Use **Prettier** for code formatting (sort imports plugin is included)
+- Prefer `const` over `let`; avoid `var`
 - Use meaningful variable and function names
-- Add JSDoc comments for complex functions
+- Add JSDoc comments for complex functions when helpful
 
 ### React Components
 
@@ -141,9 +140,18 @@ git push origin feature/my-new-feature
 
 ### File Naming
 
-- Use **camelCase** for files: `myComponent.tsx`
-- Use **PascalCase** for component files: `MyComponent.tsx`
-- Use **kebab-case** for utility files: `my-util.ts`
+- Use **PascalCase** for React component files: `MyComponent.tsx`
+- Use **camelCase** for hooks and utilities: `useTabContext.ts`, `modelSettings.ts`
+- Keep directory names consistent and descriptive; avoid mixing styles within a module
+
+### Imports & Path Aliases
+
+- Avoid deep relative paths like `../../..` in imports
+- Use path aliases defined in `tsconfig.json`:
+  - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper'`)
+  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler'`, `@/components/...`, `@/ai/...`)
+  - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png'`)
+  - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger'`)
 
 ### Code Organization
 

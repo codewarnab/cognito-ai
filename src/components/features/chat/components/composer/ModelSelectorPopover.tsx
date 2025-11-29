@@ -33,7 +33,7 @@ const MODEL_OPTIONS: ModelOption[] = [
         description: 'Fast and efficient for most tasks',
     },
     {
-        id: 'gemini-3.0-pro',
+        id: 'gemini-3-pro-preview',
         name: 'Gemini 3.0 pro ',
         description: 'Most capable model ',
     },

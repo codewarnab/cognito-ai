@@ -7,7 +7,10 @@ import { navigateToFormatter } from './formatters/navigation';
 import {
     getSearchResultsFormatter,
     chromeSearchFormatter,
-    openSearchResultFormatter
+    openSearchResultFormatter,
+    webSearchFormatter,
+    retrieveFormatter,
+    deepWebSearchFormatter
 } from './formatters/search';
 import {
     readPageContentFormatter,
@@ -86,6 +89,9 @@ export const formatters: Record<string, ActionFormatter> = {
     search: getSearchResultsFormatter,
     chromeSearch: chromeSearchFormatter,
     openSearchResult: openSearchResultFormatter,
+    webSearch: webSearchFormatter,
+    retrieve: retrieveFormatter,
+    deepWebSearch: deepWebSearchFormatter,
 
     // Content
     readPageContent: readPageContentFormatter,

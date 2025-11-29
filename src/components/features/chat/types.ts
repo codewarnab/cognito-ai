@@ -35,7 +35,8 @@ export type RemoteModelType =
     | 'gemini-2.5-flash'
     | 'gemini-2.5-flash-lite'
     | 'gemini-2.5-pro'
-    | 'gemini-2.5-flash-image';
+    | 'gemini-2.5-flash-image'
+    | 'gemini-3-pro-preview';
 
 export interface ModelState {
     mode: AIMode;

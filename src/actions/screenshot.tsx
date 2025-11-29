@@ -148,11 +148,26 @@ EXAMPLE:
                     .describe("Image quality for AI processing. Use 'low' for quick checks (PREFERRED - fastest), 'medium' for general analysis, 'high' ONLY for reading small text or fine details. Lower quality = faster AI response."),
                 reason: z.string()
                     .optional()
-                    .describe("Optional brief reason for screenshot (for logging/debugging). Examples: 'analyze page layout', 'verify form fields', 'check search results'. Not required but helpful for context.")
+                    .describe("Optional brief reason for screenshot (for logging/debugging). Examples: 'analyze page layout', 'verify form fields', 'check search results'. Not required but helpful for context."),
+                delay: z.number().optional().default(0).describe("Delay in milliseconds before taking screenshot. Essential when waiting for a previous action to complete (e.g., AI response, form submission) or for dynamic content/animations to load.")
             }),
-            execute: async ({ reason, quality = "medium" }) => {
+            execute: async ({ reason, quality = "medium", delay }, abortSignal) => {
                 try {
-                    log.info("TOOL CALL: takeScreenshot", { reason, quality });
+                    // Handle delay if specified
+                    if (delay && delay > 0) {
+                        log.info(`⏳ takeScreenshot waiting for ${delay}ms...`);
+                        await new Promise<void>((resolve, reject) => {
+                            const timer = setTimeout(resolve, delay);
+                            if (abortSignal) {
+                                abortSignal.addEventListener('abort', () => {
+                                    clearTimeout(timer);
+                                    reject(new Error('Operation cancelled'));
+                                });
+                            }
+                        });
+                    }
+
+                    log.info("TOOL CALL: takeScreenshot", { reason, quality, delay });
 
                     // Step 1: Check permissions first
                     let hasPermission = false;

@@ -195,6 +195,113 @@ app.get('/health', (req, res) => {
 });
 
 /**
+ * POST /retrieve
+ * Retrieves and extracts content from a URL using Jina Reader API.
+ * 
+ * Request Body:
+ *   url (string): The URL to retrieve content from.
+ *   returnFormat (string, optional): Format to return - 'markdown' (default), 'text', 'html', 'screenshot'
+ * 
+ * Response:
+ *   200: JSON object containing { title, url, content }
+ *   400: Invalid request (missing URL)
+ *   500: Error fetching content
+ */
+app.post('/retrieve', async (req, res) => {
+  try {
+    const { url, returnFormat = 'markdown' } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ message: 'URL is required in the request body.' });
+    }
+
+    console.log('[Retrieve] Processing URL:', url);
+    console.log('[Retrieve] Return format:', returnFormat);
+
+    if (!JINA_API_KEY) {
+      console.error('[Retrieve] JINA_API_KEY not configured');
+      return res.status(500).json({ message: 'Jina API key not configured on server.' });
+    }
+
+    // Call Jina Reader API
+    const response = await axios.post(JINA_READER_URL, 
+      { url },
+      {
+        headers: {
+          'Authorization': `Bearer ${JINA_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Return-Format': returnFormat,
+          'X-With-Generated-Alt': 'true'
+        },
+        timeout: 30000
+      }
+    );
+
+    const data = response.data;
+    console.log('[Retrieve] Jina response received');
+
+    // Handle different response formats
+    let content, title;
+    
+    if (typeof data === 'string') {
+      // Plain text/markdown response
+      content = data;
+      title = 'Retrieved Content';
+    } else if (data.data) {
+      // JSON response with data wrapper
+      content = data.data.content || data.data.text || '';
+      title = data.data.title || 'Retrieved Content';
+    } else {
+      // Direct JSON response
+      content = data.content || data.text || JSON.stringify(data);
+      title = data.title || 'Retrieved Content';
+    }
+
+    const result = {
+      results: [{
+        title,
+        url: url,
+        content
+      }],
+      query: '',
+      images: []
+    };
+
+    console.log('[Retrieve] Success:', {
+      title: result.results[0].title?.substring(0, 50),
+      contentLength: result.results[0].content?.length
+    });
+
+    return res.json(result);
+
+  } catch (error) {
+    console.error('[Retrieve] Error:', error.message);
+
+    let errorMessage = 'An error occurred while retrieving the URL content.';
+    let statusCode = 500;
+
+    if (error.response?.status === 404) {
+      errorMessage = 'URL not found or inaccessible.';
+      statusCode = 404;
+    } else if (error.response?.status === 429) {
+      errorMessage = 'Rate limit exceeded. Please try again later.';
+      statusCode = 429;
+    } else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      errorMessage = 'Request timed out. Please try again.';
+      statusCode = 504;
+    }
+
+    res.status(statusCode).json({
+      message: errorMessage,
+      details: error.message,
+      results: [],
+      images: [],
+      query: ''
+    });
+  }
+});
+
+/**
  * GET /debug
  * Provides debug information, including the client's IP and the server's region.
  */

@@ -81,6 +81,9 @@ export const TOOLS_WARNING_THRESHOLD = 40 as const;
 export const TRANSCRIPT_API_URL =
     'https://youtube-transcript-generator-five.vercel.app/simple-transcript' as const;
 
+export const RETRIEVE_API_URL =
+    'https://youtube-transcript-generator-five.vercel.app/retrieve' as const;
+
 /**
  * Logging Configuration
  * Control which features should output logs to console

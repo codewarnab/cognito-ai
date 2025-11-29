@@ -10,21 +10,17 @@ alwaysApply: true
 - Never log secrets, API keys, or personally identifiable information
 
 ## TypeScript and Imports
-- Use strict TypeScript: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess`
-- **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks
-- **CRITICAL**: Remove duplicate imports; consolidate into single import statement
-- **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns
-- Path aliases (configured in `tsconfig.json:18-48`):
-  - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
-  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
-  - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
-  - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
-  - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
-  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
-  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
-  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@ai/core/modelSetup';`)
-- Prefer named exports; avoid default exports for shared utilities
-- Group and sort imports consistently using Prettier sort-imports plugin
+ - Use strict TypeScript: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess`
+ - **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks
+ - **CRITICAL**: Remove duplicate imports; consolidate into single import statement
+ - **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns
+ - Path aliases (configured in `tsconfig.json`):
+   - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
+   - `@/*` → `./src/*` (use `@/components/...`, `@/ai/...`, `@/utils/...`)
+   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
+   - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
+ - Prefer named exports; avoid default exports for shared utilities
+ - Group and sort imports consistently using Prettier sort-imports plugin
 
 ## Logger Usage
 - Initialize module-scoped logger: `const log = createLogger('FeatureName');` or `createLogger('FeatureName', 'CONTEXT')`

@@ -72,3 +72,70 @@ export const openSearchResultFormatter: ActionFormatter = ({ state, input, outpu
     }
     return { action: 'Failed to open result' };
 };
+
+export const webSearchFormatter: ActionFormatter = ({ state, input, output }) => {
+    const query = input?.query || output?.query;
+
+    if (state === 'loading') {
+        return {
+            action: 'Searching web',
+            description: query ? `"${truncateText(query, 40)}"` : undefined
+        };
+    }
+    if (state === 'success') {
+        const count = output?.results?.length || output?.number_of_results || 0;
+        return {
+            action: `Found ${count} results`,
+            description: query ? `"${truncateText(query, 40)}"` : undefined
+        };
+    }
+    return {
+        action: 'Web search failed',
+        description: query ? `"${truncateText(query, 40)}"` : undefined
+    };
+};
+
+export const retrieveFormatter: ActionFormatter = ({ state, input, output }) => {
+    const url = input?.url || output?.url;
+
+    if (state === 'loading') {
+        return {
+            action: 'Retrieving content',
+            description: url ? truncateText(url, 40) : undefined
+        };
+    }
+    if (state === 'success') {
+        const title = output?.results?.[0]?.title;
+        return {
+            action: 'Retrieved content',
+            description: title ? truncateText(title, 40) : (url ? truncateText(url, 40) : undefined)
+        };
+    }
+    return {
+        action: 'Retrieve failed',
+        description: url ? truncateText(url, 40) : undefined
+    };
+};
+
+export const deepWebSearchFormatter: ActionFormatter = ({ state, input, output }) => {
+    const queries = input?.queries || output?.executed_queries;
+
+    if (state === 'loading') {
+        return {
+            action: 'Deep searching',
+            description: queries ? `${queries.length} queries` : undefined
+        };
+    }
+    if (state === 'success') {
+        const uniqueCount = output?.unique_results || 0;
+        const queryCount = output?.executed_queries?.length || 0;
+        return {
+            action: `Found ${uniqueCount} unique results`,
+            description: `${queryCount} queries executed`
+        };
+    }
+    return {
+        action: 'Deep search failed',
+        description: queries ? `${queries.length} queries` : undefined
+    };
+};

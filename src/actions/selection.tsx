@@ -243,6 +243,7 @@ export function useSelectionActions() {
       description: `Extracts main text from active tab, removing ads/nav/scripts. Use after takeScreenshot or when user asks to read/summarize page content. Waits for page load, cleans content, returns title/URL/text. Default 5000 char limit (smart truncation at sentence boundary). Set limit param for more (10000-30000 for articles, 100000+ for full content). Cannot read chrome://, chrome-extension://, about://, or Web Store pages. Text only, no images/videos/forms. Example: {title: "React Docs", content: "...", contentLength: 10000, truncated: true}`,
       parameters: z.object({
         limit: z.number().optional().describe("Maximum characters to extract. Default: 5000 (smart truncation). Use 10000-30000 for large pages/articles. Higher values may overwhelm context. Set to very high number (100000+) to get full content."),
+        delay: z.number().optional().default(0).describe("Delay in milliseconds before reading content. Essential when waiting for a previous action to complete (e.g., AI response, form submission) or for dynamic content/animations to load."),
       }),
       validateContext: async () => {
         try {
@@ -273,14 +274,29 @@ export function useSelectionActions() {
           return { valid: false, error: `Failed to validate context: ${(error as Error).message}` };
         }
       },
-      execute: async ({ limit }, abortSignal) => {
+      execute: async ({ limit, delay }, abortSignal) => {
         // Check if aborted before starting
         if (abortSignal?.aborted) {
           log.info('🛑 readPageContent aborted before execution');
           throw new Error('Operation cancelled');
         }
+
+        // Handle delay if specified
+        if (delay && delay > 0) {
+          log.info(`⏳ readPageContent waiting for ${delay}ms...`);
+          await new Promise<void>((resolve, reject) => {
+            const timer = setTimeout(resolve, delay);
+            if (abortSignal) {
+              abortSignal.addEventListener('abort', () => {
+                clearTimeout(timer);
+                reject(new Error('Operation cancelled'));
+              });
+            }
+          });
+        }
+
         try {
-          log.info("TOOL CALL: readPageContent", { limit });
+          log.info("TOOL CALL: readPageContent", { limit, delay });
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
           if (!tab || !tab.id) return { error: "No active tab" };
 
@@ -483,6 +499,14 @@ export function useSelectionActions() {
               <span style={{ fontSize: '12px', opacity: 0.7 }}>Limit:</span>
               <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
                 {input.limit.toLocaleString()} characters
+              </span>
+            </div>
+          )}
+          {input.delay !== undefined && input.delay > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', opacity: 0.7 }}>Delay:</span>
+              <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                {input.delay}ms
               </span>
             </div>
           )}

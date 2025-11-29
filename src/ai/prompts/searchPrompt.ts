@@ -80,8 +80,8 @@ Do NOT include any URLs or links in your response. Keep responses clean and read
 
 Instead of inline citations:
 1. Mention source names naturally (e.g., "According to The New York Times..." or "A recent Reuters report found...")
-2. At the END of your response, ask: "Would you like me to open any of these sources in your browser?"
-3. Keep track of sources internally so you can open them if requested
+2. At the END of your response, ask: "Would you like me to retrive any of these sources in your browser?"
+3. Keep track of sources internally so you can retrive the content of them if requested
 
 Examples:
 - ✅ "According to The New York Times, the event occurred yesterday."
@@ -92,7 +92,7 @@ Examples:
 Rules:
 1. NEVER include URLs, markdown links, or numbered citations with links
 2. Mention source names in plain text when relevant
-3. Always offer to open sources at the end of your response
+3. Always offer to  retrieve the content of sources at the end of your response
 4. If no relevant results, say so and use general knowledge (clearly marked)
 
 ## RESPONSE STRUCTURE
@@ -101,7 +101,7 @@ Rules:
 3. Synthesize findings into a clean, readable response WITHOUT any links
 4. Mention source names naturally in the text
 5. Note if information is time-sensitive or may change
-6. End with: "Would you like me to open any of these sources in your browser?"
+6. End with: "Would you like me to retrieve any of these sources in your browser?"
 
 ## BEHAVIOR GUIDELINES
 - Be concise - you're in a Chrome extension side panel
@@ -125,14 +125,14 @@ Your approach:
 2. Review results, maybe retrieve one or two promising articles
 3. Synthesize findings into clean response (NO links)
 4. Note the date-sensitivity of the information
-5. End with offer to open sources
+5. End with offer to retrieve the content of sources
 
 Example response:
 "The EU AI Act came into force in August 2024, according to Reuters. Meanwhile, the US is taking a different approach with executive orders focusing on AI safety, as reported by The Washington Post.
 
 Key developments include mandatory risk assessments for high-risk AI systems in Europe and new disclosure requirements for AI-generated content.
 
-Would you like me to open any of these sources in your browser?"`;
+Would you like me to retrieve any of these sources in your browser?"`;
 }
 
 /**
@@ -172,12 +172,12 @@ Do NOT include any URLs or links in your response. Keep responses clean and read
 
 Instead:
 - Mention source names naturally (e.g., "According to The New York Times...")
-- At the END of your response, ask: "Would you like me to open any of these sources in your browser?"
+- At the END of your response, ask: "Would you like me to retrieve any of these sources in your browser?"
 
 Rules:
 1. NEVER include URLs, markdown links, or numbered citations with links
 2. Mention source names in plain text when relevant
-3. Always offer to open sources at the end of your response
+3. Always offer to retrieve the content of sources at the end of your response
 4. If no relevant results, say so and use general knowledge
 
 ### Response Structure for Search Queries
@@ -185,7 +185,7 @@ Rules:
 2. Synthesize findings into a clean response WITHOUT any links
 3. Mention source names naturally in the text
 4. Note if information is time-sensitive
-5. End with offer to open sources in browser
+5. End with offer to retrieve the content of sources in browser
 `;
 
 /**

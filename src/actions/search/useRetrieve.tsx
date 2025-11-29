@@ -12,6 +12,7 @@ import { createLogger } from '~logger';
 import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 import { retrieveSchema, type RetrieveParams } from '@/search/schema';
+import { RETRIEVE_API_URL } from '@/constants';
 import type { SearchResults } from '@/search/types';
 
 const log = createLogger('Tool-Retrieve');
@@ -21,9 +22,6 @@ export const RETRIEVE_TOOL_NAME = 'retrieve';
 
 /** Maximum characters to extract from a page */
 const CONTENT_CHARACTER_LIMIT = 10000;
-
-/** Jina Reader API for content extraction */
-const JINA_READER_URL = 'https://r.jina.ai';
 
 /**
  * Tool description following the USE/REQUIRES/BEHAVIOR/RETURNS format.
@@ -54,12 +52,12 @@ async function fetchJinaReaderData(url: string): Promise<SearchResults | null> {
             url: url.substring(0, 100),
         });
 
-        const response = await fetch(`${JINA_READER_URL}/${url}`, {
-            method: 'GET',
+        const response = await fetch(RETRIEVE_API_URL, {
+            method: 'POST',
             headers: {
-                Accept: 'application/json',
-                'X-With-Generated-Alt': 'true',
+                'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ url }),
         });
 
         if (!response.ok) {
@@ -70,25 +68,7 @@ async function fetchJinaReaderData(url: string): Promise<SearchResults | null> {
         }
 
         const json = await response.json();
-
-        if (!json.data || !json.data.content) {
-            log.warn('Jina Reader returned empty content');
-            return null;
-        }
-
-        const content = json.data.content.slice(0, CONTENT_CHARACTER_LIMIT);
-
-        return {
-            results: [
-                {
-                    title: json.data.title || 'Retrieved Content',
-                    content,
-                    url: json.data.url || url,
-                },
-            ],
-            query: '',
-            images: [],
-        };
+        return json as SearchResults;
     } catch (error) {
         log.error('Jina Reader API error', {
             error: error instanceof Error ? error.message : 'Unknown error',
@@ -103,7 +83,7 @@ async function fetchJinaReaderData(url: string): Promise<SearchResults | null> {
  */
 async function executeRetrieve(input: RetrieveParams): Promise<SearchResults> {
     const { url } = input;
-    
+
     log.info('Executing URL retrieve', { url: url.substring(0, 100) });
 
     const results = await fetchJinaReaderData(url);
