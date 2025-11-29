@@ -15,13 +15,15 @@
 import { createLogger } from '~logger';
 import { WEB_SEARCH_TOOL_NAME } from '@/actions/search/useWebSearch';
 import { RETRIEVE_TOOL_NAME } from '@/actions/search/useRetrieve';
+import { DEEP_WEB_SEARCH_TOOL_NAME } from '@/actions/search/useDeepWebSearch';
 
 const log = createLogger('SearchToolFilter', 'SEARCH');
 
 /** Names of all search-related tools */
 export const SEARCH_TOOL_NAMES = [
-    WEB_SEARCH_TOOL_NAME, // 'webSearch'
-    RETRIEVE_TOOL_NAME,   // 'retrieve'
+    WEB_SEARCH_TOOL_NAME,      // 'webSearch'
+    RETRIEVE_TOOL_NAME,        // 'retrieve'
+    DEEP_WEB_SEARCH_TOOL_NAME, // 'deepWebSearch'
 ] as const;
 
 export type SearchToolName = typeof SEARCH_TOOL_NAMES[number];

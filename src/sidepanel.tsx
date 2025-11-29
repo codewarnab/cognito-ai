@@ -510,6 +510,7 @@ function AIChatContent() {
                                 voiceInputRef={voiceInputRef}
                                 usage={usage}
                                 localPdfInfo={localPdfInfo}
+                                threadId={currentThreadId}
                             />
 
                             {/* Floating Recording Pill - Only in text mode */}

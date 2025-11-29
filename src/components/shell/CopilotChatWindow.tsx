@@ -38,6 +38,7 @@ interface CopilotChatWindowProps {
     onContinue?: () => void; // Callback for continue button
     usage?: AppUsage | null; // Token usage tracking
     localPdfInfo?: LocalPdfInfo | null; // Local PDF detection info
+    threadId?: string | null; // Current thread ID for brain button
 }
 
 export function CopilotChatWindow({
@@ -64,6 +65,7 @@ export function CopilotChatWindow({
     onContinue,
     usage, // Token usage tracking
     localPdfInfo, // Local PDF detection info
+    threadId, // Current thread ID for brain button
 }: CopilotChatWindowProps) {
     // Lazy initialization: compute initial state synchronously
     const [modelState, setModelState] = useState<ModelState>(() => {
@@ -226,6 +228,7 @@ export function CopilotChatWindow({
                 isLocalMode={modelState.mode === 'local'}
                 onConfigureApiKey={handleOpenApiKeyDialog}
                 onContinue={onContinue}
+                threadId={threadId}
             />
 
             <ChatInput

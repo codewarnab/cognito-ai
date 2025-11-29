@@ -58,6 +58,7 @@ export async function executeStreamText(params: {
             activeToolsParam: activeTools,
             webSearchAvailable: 'webSearch' in tools,
             retrieveAvailable: 'retrieve' in tools,
+            deepWebSearchAvailable: 'deepWebSearch' in tools,
         });
 
         // Create tools with abort signal binding AND error feedback handling

@@ -31,6 +31,10 @@ if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) 
 const SUPADATA_API_KEY = process.env.SUPADATA_API_KEY;
 const SUPADATA_BASE_URL = 'https://api.supadata.ai/v1';
 
+// Jina Reader API configuration
+const JINA_API_KEY = process.env.JINA_API_KEY;
+const JINA_READER_URL = 'https://r.jina.ai';
+
 app.use((req, res, next) => {
   console.log('Request size:', req.headers['content-length']);
   next();

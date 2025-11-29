@@ -8,7 +8,7 @@ import { useScreenshotTool } from "./screenshot";
 import { registerYouTubeToNotionActions } from "./youtubeToNotion";
 import { registerBookmarkActions } from "./bookmarks";
 import { registerDomActions } from "./dom";
-import { useWebSearch, useRetrieve } from "./search";
+import { useWebSearch, useRetrieve, useDeepWebSearch } from "./search";
 
 export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
@@ -25,4 +25,5 @@ export function useRegisterAllActions() {
   registerDomActions(); // DOM analysis and script execution tools
   useWebSearch(); // Web search tool
   useRetrieve(); // URL content retrieval tool
+  useDeepWebSearch(); // Deep web search with parallel queries
 }

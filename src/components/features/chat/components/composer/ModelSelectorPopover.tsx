@@ -25,7 +25,7 @@ const MODEL_OPTIONS: ModelOption[] = [
     {
         id: 'gemini-2.5-pro',
         name: 'Gemini 2.5 Pro',
-        description: 'Most capable model for complex tasks',
+        description: 'capable model for complex tasks',
     },
     {
         id: 'gemini-2.5-flash',
@@ -33,9 +33,9 @@ const MODEL_OPTIONS: ModelOption[] = [
         description: 'Fast and efficient for most tasks',
     },
     {
-        id: 'gemini-2.5-flash-lite',
-        name: 'Gemini 2.5 Flash Lite',
-        description: 'Lightweight model for simple tasks',
+        id: 'gemini-3.0-pro',
+        name: 'Gemini 3.0 pro ',
+        description: 'Most capable model ',
     },
 ];
 

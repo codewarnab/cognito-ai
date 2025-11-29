@@ -9,6 +9,7 @@ import { useAskAttachment } from './useAskAttachment';
 import { getAcceptedFileTypes } from './askAttachmentUtils';
 import { ToolsToggle } from '../shared/ToolsToggle';
 import { getAskCommandSettings, updateAskCommandSetting } from '@/utils/settings';
+import { APP_ICON } from '@/constants';
 import type { AskPosition, AskMessage, AskAttachmentPayload } from '@/types';
 
 interface AskOverlayProps {
@@ -383,7 +384,7 @@ export function AskOverlay({
             <div className="ask-messages">
                 {!hasMessages && (
                     <div className="ask-empty">
-                        <div className="ask-empty-icon">💬</div>
+                        <img src={APP_ICON} alt="App logo" className="ask-empty-icon" />
                         <div className="ask-empty-text">Ask me anything</div>
                         <div className="ask-empty-hint">I can help answer questions about this page</div>
                     </div>

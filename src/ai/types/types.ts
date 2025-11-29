@@ -12,9 +12,8 @@ export type AIMode = 'local' | 'remote';
 // Remote model options
 export type RemoteModelType =
   | 'gemini-2.5-flash'           // Default
-  | 'gemini-2.5-flash-lite'
+  | 'gemini-3.0-pro'
   | 'gemini-2.5-pro'
-  | 'gemini-2.5-flash-image';
 
 // Model configuration
 export interface ModelConfig {

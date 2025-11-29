@@ -16,7 +16,7 @@ import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
-import { filterToolsObjectBySearchMode } from '../tools/searchToolFilter';
+import {  getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import {
   APIError,
   NetworkError,
@@ -202,33 +202,36 @@ export async function streamAIResponse(params: {
               // Set initial activeTools based on current mode
               // prepareStep will update this if mode changes mid-conversation
               if (isSearchModeActive) {
-                initialActiveTools = ['webSearch', 'retrieve'];
+                initialActiveTools = getSearchOnlyTools();
                 
                 // DEBUG: Verify search tools are in the tools object
                 const webSearchInTools = 'webSearch' in tools;
                 const retrieveInTools = 'retrieve' in tools;
+                const deepWebSearchInTools = 'deepWebSearch' in tools;
                 
                 log.info('🔍 SEARCH MODE - Initial active tools:', {
                   active: initialActiveTools,
                   totalAvailable: Object.keys(tools).length,
                   webSearchInTools,
                   retrieveInTools,
+                  deepWebSearchInTools,
                   allToolNames: Object.keys(tools),
                 });
                 
-                if (!webSearchInTools || !retrieveInTools) {
+                if (!webSearchInTools || !retrieveInTools || !deepWebSearchInTools) {
                   log.error('❌ CRITICAL: Search tools missing from tools object!', {
                     webSearchInTools,
                     retrieveInTools,
+                    deepWebSearchInTools,
                     message: 'Search mode is active but search tools are not available'
                   });
                 }
               } else {
                 // Normal mode: All tools except search tools
-                initialActiveTools = Object.keys(tools).filter(t => t !== 'webSearch' && t !== 'retrieve');
+                initialActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
                 log.info('🔧 AGENT MODE - Initial active tools:', {
                   activeCount: initialActiveTools.length,
-                  excluded: ['webSearch', 'retrieve']
+                  excluded: SEARCH_TOOL_NAMES
                 });
               }
               
@@ -358,14 +361,14 @@ export async function streamAIResponse(params: {
                   // Update system prompt based on new mode
                   if (currentSearchModeActive) {
                     stepPrompt = getWebSearchSystemPrompt();
-                    stepActiveTools = ['webSearch', 'retrieve'];
+                    stepActiveTools = getSearchOnlyTools();
                     log.info('🔍 Switched to SEARCH MODE');
                   } else {
                     stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
                       ? chatModeSystemPrompt
                       : remoteSystemPrompt;
                     // In non-search mode, exclude search tools
-                    stepActiveTools = Object.keys(tools).filter(t => t !== 'webSearch' && t !== 'retrieve');
+                    stepActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
                     log.info(`📝 Switched to ${currentToolsMode.toUpperCase()} MODE`);
                   }
                 }

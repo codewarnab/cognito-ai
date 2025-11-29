@@ -1,0 +1,171 @@
+/* Inline Citation Styles */
+.inline-citation {
+    display: inline;
+    position: relative;
+}
+
+.inline-citation__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin: 0 1px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--color-blue-600, #2563eb);
+    background-color: var(--color-blue-50, rgba(59, 130, 246, 0.1));
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 150ms ease;
+    vertical-align: middle;
+    font-family: inherit;
+}
+
+.inline-citation__trigger:hover {
+    background-color: var(--color-blue-100, rgba(59, 130, 246, 0.2));
+    color: var(--color-blue-700, #1d4ed8);
+    transform: scale(1.05);
+}
+
+.inline-citation__trigger:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.inline-citation__trigger:active {
+    transform: scale(0.98);
+}
+
+/* Tooltip */
+.inline-citation__tooltip {
+    position: absolute;
+    z-index: 100;
+    width: 280px;
+    pointer-events: auto;
+}
+
+.inline-citation__tooltip--above {
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.inline-citation__tooltip--below {
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Card */
+.inline-citation__card {
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    animation: citation-fade-in 150ms ease;
+}
+
+@keyframes citation-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.inline-citation__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+}
+
+.inline-citation__favicon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+.inline-citation__meta {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.inline-citation__title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #1f2937);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.inline-citation__domain {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-tertiary, #9ca3af);
+}
+
+.inline-citation__domain span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inline-citation__snippet {
+    padding: 0 12px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary, #6b7280);
+    border-top: 1px solid var(--border-color-light, #f3f4f6);
+    padding-top: 10px;
+    margin-top: -2px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .inline-citation__trigger {
+        color: var(--color-blue-400, #60a5fa);
+        background-color: rgba(59, 130, 246, 0.15);
+    }
+
+    .inline-citation__trigger:hover {
+        background-color: rgba(59, 130, 246, 0.25);
+        color: var(--color-blue-300, #93c5fd);
+    }
+
+    .inline-citation__card {
+        background-color: var(--bg-primary-dark, #1f2937);
+        border-color: var(--border-color-dark, #374151);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .inline-citation__title {
+        color: var(--text-primary-dark, #f3f4f6);
+    }
+
+    .inline-citation__domain {
+        color: var(--text-tertiary-dark, #9ca3af);
+    }
+
+    .inline-citation__snippet {
+        color: var(--text-secondary-dark, #d1d5db);
+        border-top-color: var(--border-color-dark, #374151);
+    }
+}

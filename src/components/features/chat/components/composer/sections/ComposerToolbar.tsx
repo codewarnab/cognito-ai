@@ -6,6 +6,7 @@ import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Tooltip } from '@/components/ui/primitives';
 import { Wrench } from 'lucide-react';
 import { HIDE_LOCAL_MODE } from '@/constants';
+import { SEARCH_TOOL_NAMES } from '@/ai/tools/searchToolFilter';
 import { createLogger } from '~logger';
 import type { AIMode, ModelState } from '../../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
@@ -55,12 +56,14 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     isSearchActive
 }) => {
     // Debug logging for tools display
+    const searchToolsCount = SEARCH_TOOL_NAMES.length;
     log.info('🔧 ComposerToolbar render', {
         isSearchActive,
         totalEnabledCount,
         mcpToolsCount,
+        searchToolsCount,
         activeWorkflow: activeWorkflow?.name || null,
-        toolsDisplay: isSearchActive ? '2 (Search)' : `${totalEnabledCount}`
+        toolsDisplay: isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}`
     });
 
     return (
@@ -79,7 +82,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 <Tooltip
                     content={
                         isSearchActive
-                            ? "Tools are locked in Search mode (only webSearch & retrieve available)"
+                            ? `Tools are locked in Search mode (${searchToolsCount} search tools available)`
                             : activeWorkflow
                                 ? "Tools are managed by the active workflow"
                                 : isTooManyTools
@@ -98,7 +101,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     >
                         <Wrench size={14} />
                         <span className="composer-tools-count">
-                            {isSearchActive ? '2 (Search)' : `${totalEnabledCount}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
+                            {isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
                         </span>
                     </button>
                 </Tooltip>

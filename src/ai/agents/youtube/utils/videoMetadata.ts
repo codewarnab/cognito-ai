@@ -159,8 +159,6 @@ export async function getVideoDescription(youtubeUrl: string): Promise<string | 
         log.info('💉 Injecting script to extract description from page', { tabId: tab.id });
 
         // Execute script to extract description from page with timeout
-        const EXTRACTION_TIMEOUT = 5000; // 5 seconds max
-
         const results = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             func: () => {

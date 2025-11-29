@@ -1,0 +1,247 @@
+/**
+ * Streamdown Override Styles
+ * Ensures Streamdown matches the existing VS Code Dark+ theme look
+ * 
+ * Streamdown uses data-streamdown attributes for element targeting
+ */
+
+/* Base typography - match existing markdown-content */
+.markdown-content [data-streamdown] {
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+/* ============================================
+   CODE BLOCKS - Match existing .code-block-wrapper
+   ============================================ */
+
+/* Code block container */
+.markdown-content [data-streamdown-pre] {
+    position: relative;
+    margin: 1em 0;
+    border-radius: var(--radius-md, 8px);
+    overflow: hidden;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Pre element inside code block */
+.markdown-content [data-streamdown-pre] pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background: #1e1e1e !important;
+}
+
+/* Code inside pre */
+.markdown-content [data-streamdown-pre] code {
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: #d4d4d4;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+/* Streamdown copy button styling - match existing .code-block-copy-btn */
+.markdown-content [data-streamdown-pre] button {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    font-weight: 500;
+}
+
+.markdown-content [data-streamdown-pre] button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.markdown-content [data-streamdown-pre] button:active {
+    transform: scale(0.95);
+}
+
+/* ============================================
+   INLINE CODE - Match existing styling
+   ============================================ */
+
+.markdown-content [data-streamdown-code]:not([data-streamdown-pre] [data-streamdown-code]) {
+    border-radius: 0.25rem;
+    background: rgb(39 39 42);
+    padding: 0.1rem 0.3rem;
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    color: rgb(228 228 231);
+}
+
+/* ============================================
+   LINKS - Proper styling (no more URL-in-code workaround)
+   ============================================ */
+
+.markdown-content [data-streamdown-a] {
+    color: #1264FF;
+    text-decoration: underline;
+    transition: opacity 0.2s ease;
+}
+
+.markdown-content [data-streamdown-a]:hover {
+    opacity: 0.8;
+}
+
+.markdown-content [data-streamdown-a]:visited {
+    color: #1264FF;
+}
+
+/* ============================================
+   TABLES - Match existing styling
+   ============================================ */
+
+.markdown-content [data-streamdown-table] {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.5em 0;
+}
+
+.markdown-content [data-streamdown-th],
+.markdown-content [data-streamdown-td] {
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    padding: 0.5em;
+    text-align: left;
+}
+
+.markdown-content [data-streamdown-th] {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+
+/* ============================================
+   BLOCKQUOTES
+   ============================================ */
+
+.markdown-content [data-streamdown-blockquote] {
+    border-left: 3px solid var(--color-border, rgba(255, 255, 255, 0.2));
+    padding-left: 1em;
+    margin: 0.5em 0;
+    opacity: 0.8;
+}
+
+/* ============================================
+   LISTS
+   ============================================ */
+
+.markdown-content [data-streamdown-ul],
+.markdown-content [data-streamdown-ol] {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.markdown-content [data-streamdown-li] {
+    margin: 0.25em 0;
+}
+
+/* ============================================
+   HEADINGS
+   ============================================ */
+
+.markdown-content [data-streamdown-h1],
+.markdown-content [data-streamdown-h2],
+.markdown-content [data-streamdown-h3],
+.markdown-content [data-streamdown-h4],
+.markdown-content [data-streamdown-h5],
+.markdown-content [data-streamdown-h6] {
+    margin: 1em 0 0.5em 0;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.markdown-content [data-streamdown-h1] {
+    font-size: 1.5em;
+}
+
+.markdown-content [data-streamdown-h2] {
+    font-size: 1.3em;
+}
+
+.markdown-content [data-streamdown-h3] {
+    font-size: 1.1em;
+}
+
+/* ============================================
+   PARAGRAPHS
+   ============================================ */
+
+.markdown-content [data-streamdown-p] {
+    margin: 0.5em 0;
+}
+
+/* ============================================
+   HORIZONTAL RULES
+   ============================================ */
+
+.markdown-content [data-streamdown-hr] {
+    border: none;
+    border-top: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    margin: 1em 0;
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+
+@media (prefers-color-scheme: light) {
+    /* Inline code */
+    .markdown-content [data-streamdown-code]:not([data-streamdown-pre] [data-streamdown-code]) {
+        background: rgb(229 231 235);
+        color: rgb(39 39 42);
+    }
+
+    /* Code blocks */
+    .markdown-content [data-streamdown-pre] {
+        background: #f6f8fa;
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .markdown-content [data-streamdown-pre] pre {
+        background: #f6f8fa !important;
+    }
+
+    .markdown-content [data-streamdown-pre] code {
+        color: #24292e;
+    }
+
+    /* Copy button in light mode */
+    .markdown-content [data-streamdown-pre] button {
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.8);
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .markdown-content [data-streamdown-pre] button:hover {
+        background: rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Tables */
+    .markdown-content [data-streamdown-th] {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Blockquotes */
+    .markdown-content [data-streamdown-blockquote] {
+        border-left-color: rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* ============================================
+   STREAMDOWN ANIMATION STATE
+   Hide controls during streaming
+   ============================================ */
+
+.markdown-content [data-streamdown-animating="true"] button {
+    opacity: 0.3;
+    pointer-events: none;
+}
