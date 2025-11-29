@@ -22,6 +22,8 @@ import { initializeNotificationListeners } from './background/notifications';
 import { initializeOmnibox } from './background/omnibox';
 import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener, initializeRewriterPortListener, initializeAskerPortListener } from './background/messaging/router';
 import { initializeRewriterContextMenu, initializeAskerContextMenu } from './background/contextMenu';
+import { recoverExtractionQueue } from './background/supermemory/extraction/startup';
+import { recoverContentMemoryQueue } from './background/supermemory/contentMemory/startup';
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
 
@@ -95,6 +97,20 @@ if (chrome.commands) {
         }
     });
 }
+
+// ============================================================================
+// Memory Queue Recovery (runs on service worker startup)
+// ============================================================================
+
+// Recover any stuck extraction items from previous session
+recoverExtractionQueue().catch(err => {
+  log.warn('Failed to recover extraction queue:', err);
+});
+
+// Recover any stuck content memory items from previous session
+recoverContentMemoryQueue().catch(err => {
+  log.warn('Failed to recover content memory queue:', err);
+});
 
 // ============================================================================
 // Initialization Complete
