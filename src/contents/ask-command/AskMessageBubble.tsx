@@ -3,11 +3,9 @@
  * Displays individual messages in the conversation
  */
 import React, { useState, useCallback } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
 import type { AskMessage } from '@/types';
 import { formatFileSize } from './askAttachmentUtils';
+import { MarkdownRenderer } from '@/contents/shared/MarkdownRenderer';
 
 // Icons
 const CopyIcon = () => (
@@ -32,30 +30,6 @@ const PaperclipIcon = () => (
         />
     </svg>
 );
-
-// Custom link component for markdown - opens in new tab
-const MarkdownLink = ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
-    <a href={href || '#'} target="_blank" rel="noopener noreferrer" {...props}>
-        {children}
-    </a>
-);
-
-// Custom code component for markdown
-const MarkdownCode = ({ inline, className, children, ...props }: any) => {
-    if (inline) {
-        return <code className="ask-inline-code" {...props}>{children}</code>;
-    }
-    return (
-        <pre className="ask-code-block">
-            <code className={className} {...props}>{children}</code>
-        </pre>
-    );
-};
-
-const markdownComponents = {
-    a: MarkdownLink,
-    code: MarkdownCode,
-};
 
 interface AskMessageBubbleProps {
     message: AskMessage;
@@ -100,15 +74,12 @@ export function AskMessageBubble({ message, isStreaming, streamingContent }: Ask
                 {isUser ? (
                     content
                 ) : (
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm, remarkBreaks]}
-                        components={markdownComponents}
-                        skipHtml={true}
-                    >
-                        {content || ''}
-                    </ReactMarkdown>
+                    <MarkdownRenderer
+                        content={content || ''}
+                        isStreaming={isStreaming}
+                        cursorClassName="ask-cursor"
+                    />
                 )}
-                {isStreaming && <span className="ask-cursor">▌</span>}
             </div>
             {message.attachment && (
                 <div className="ask-message-attachment">

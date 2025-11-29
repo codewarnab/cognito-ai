@@ -5,6 +5,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { RewriterPresets } from './RewriterPresets';
 import { ToolsToggle } from '../shared/ToolsToggle';
+import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getRewriteSettings, updateRewriteSetting } from '@/utils/settings/rewriteSettings';
 import type { RewritePreset } from '@/types';
 
@@ -336,7 +337,9 @@ export function RewriterTooltip({
             {/* Rewritten Output */}
             {rewrittenText && (
                 <div className="rewriter-output">
-                    <p className="rewriter-output-text">{rewrittenText}</p>
+                    <div className="rewriter-output-text rewriter-markdown-content">
+                        <MarkdownRenderer content={rewrittenText} />
+                    </div>
                 </div>
             )}
 

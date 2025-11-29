@@ -2,6 +2,9 @@
    Write Command - Content Script Styles
    ============================================ */
 
+/* Import shared markdown styles */
+@import './shared-markdown.css';
+
 /* Writer Overlay Container */
 .writer-overlay {
     position: fixed;
@@ -285,6 +288,7 @@
     border-radius: 3px;
 }
 
+/* Legacy plain text output (kept for fallback) */
 .writer-output-text {
     margin: 0;
 
@@ -294,6 +298,23 @@
 
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+/* Writer-specific markdown overrides */
+.writer-markdown-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Use purple accent for writer links (matches writer theme) */
+.writer-markdown-content a {
+    color: #c4b5fd;
+}
+
+/* Use purple accent for writer blockquotes */
+.writer-markdown-content blockquote {
+    border-left-color: rgba(167, 139, 250, 0.5);
 }
 
 /* Streaming cursor */

@@ -8,6 +8,7 @@ import { WriterAttachmentPreview } from './WriterAttachmentPreview';
 import { useWriterAttachment } from './useWriterAttachment';
 import { getAcceptedFileTypes } from './writerAttachmentUtils';
 import { ToolsToggle } from '../shared/ToolsToggle';
+import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
 import type { WritePosition, WriteAttachmentPayload } from '@/types';
 
@@ -594,13 +595,14 @@ export function WriterOverlay({
             {/* Output Display */}
             {generatedText && (
                 <div
-                    className="writer-output"
+                    className="writer-output writer-markdown-content markdown-content"
                     style={{ maxHeight: `${maxOutputHeight}px` }}
                 >
-                    <p className="writer-output-text">
-                        {generatedText}
-                        {isGenerating && <span className="writer-cursor">▌</span>}
-                    </p>
+                    <MarkdownRenderer
+                        content={generatedText}
+                        isStreaming={isGenerating}
+                        cursorClassName="writer-cursor"
+                    />
                 </div>
             )}
 

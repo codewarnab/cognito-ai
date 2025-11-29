@@ -191,7 +191,13 @@ Important guidelines:
 - Match the appropriate length for the platform (tweets should be short, emails moderate, articles can be longer if requested)
 - Be accurate and don't make up facts
 - If the request is unclear, provide a reasonable interpretation
-- ALWAYS return plain text only - NEVER use markdown formatting (no headers, bold, italics, bullet points, code blocks, etc.) only format in markdown when explictly asks for it for it${attachmentInstructions}`;
+- You MAY use markdown formatting when appropriate:
+  - Use **bold** and *italics* for emphasis
+  - Use bullet points/numbered lists for structured content
+  - Use code blocks for technical content
+  - Use headers sparingly (##, ###) for longer content with sections
+- Keep formatting minimal and purposeful - don't over-format simple text
+- Match formatting style to the platform context (tweets = minimal, GitHub = more markdown)${attachmentInstructions}`;
     }
 
     /**
