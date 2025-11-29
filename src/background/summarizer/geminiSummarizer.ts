@@ -108,6 +108,15 @@ export class GeminiSummarizer {
             contextInfo = `\n\nContext: This text was selected from "${options.pageContext.title}" (${options.pageContext.domain}).`;
         }
 
+        const formatInstructions: Record<string, string> = {
+            'key-points': 'Use bullet points (- item) for each key point',
+            'tl-dr': 'Use **bold** for key terms, keep mostly plain text',
+            'headline': 'Plain text, single line only',
+            'teaser': 'Use *italics* for emphasis if needed',
+        };
+
+        const formatInstruction = formatInstructions[options.summaryType] || formatInstructions['tl-dr'];
+
         return `You are a helpful text summarizer. Your task is to summarize the selected text clearly and concisely.
 
 ${typeInstruction}${contextInfo}
@@ -116,11 +125,7 @@ Important:
 - Focus only on the selected text
 - Be accurate and don't add information not present in the text
 - Use clear, easy-to-understand language
-- Format appropriately using markdown:
-  - 'key-points': Use bullet points (- item)
-  - 'tl-dr': Use **bold** for key terms, keep mostly plain text
-  - 'headline': Plain text, single line
-  - 'teaser': Use *italics* for emphasis if needed`;
+- Format: ${formatInstruction}`;
     }
 
     /**

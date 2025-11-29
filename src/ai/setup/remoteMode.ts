@@ -65,10 +65,12 @@ export async function setupRemoteMode(
     log.info('🔍 DEBUG - Search tools registration check:', {
         webSearchRegistered: 'webSearch' in allExtensionTools,
         retrieveRegistered: 'retrieve' in allExtensionTools,
+        deepWebSearchRegistered: 'deepWebSearch' in allExtensionTools,
         allRegisteredTools: Object.keys(allExtensionTools),
         enabledToolsArray: [...enabledTools],
         webSearchInEnabled: enabledTools.includes('webSearch'),
         retrieveInEnabled: enabledTools.includes('retrieve'),
+        deepWebSearchInEnabled: enabledTools.includes('deepWebSearch'),
     });
 
     // Filter extension tools based on enabledTools and workflow
@@ -101,7 +103,7 @@ export async function setupRemoteMode(
         });
 
         // FIX: Ensure search tools are always included if registered
-        // Search tools (webSearch, retrieve) must be available for search mode to work
+        // Search tools (webSearch, retrieve, deepWebSearch) must be available for search mode to work
         // They may be filtered out if user's enabledToolsOverride doesn't include them
         if (allExtensionTools['webSearch'] && !extensionTools['webSearch']) {
             extensionTools['webSearch'] = allExtensionTools['webSearch'];
@@ -110,6 +112,10 @@ export async function setupRemoteMode(
         if (allExtensionTools['retrieve'] && !extensionTools['retrieve']) {
             extensionTools['retrieve'] = allExtensionTools['retrieve'];
             log.info('🔧 FIX: Added retrieve tool (was filtered out by enabledTools)');
+        }
+        if (allExtensionTools['deepWebSearch'] && !extensionTools['deepWebSearch']) {
+            extensionTools['deepWebSearch'] = allExtensionTools['deepWebSearch'];
+            log.info('🔧 FIX: Added deepWebSearch tool (was filtered out by enabledTools)');
         }
     }
 

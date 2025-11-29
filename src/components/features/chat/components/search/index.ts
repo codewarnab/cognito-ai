@@ -34,3 +34,10 @@ export type { CitationListProps } from './CitationList';
 
 export { RelatedQuestions } from './RelatedQuestions';
 export type { RelatedQuestionsProps, RelatedQuestion } from './RelatedQuestions';
+
+// Inline citations (Phase 8)
+export { InlineCitation } from './InlineCitation';
+export type { InlineCitationProps } from './InlineCitation';
+
+export { CitationRenderer } from './CitationRenderer';
+export type { CitationRendererProps } from './CitationRenderer';

@@ -215,55 +215,15 @@
     position: relative;
 }
 
-/* Link-specific styling for inline code */
-.inline-code-link {
-    color: rgb(37, 99, 235) !important;
-    background: transparent !important;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 2px;
-    padding: 0 !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    .inline-code-link {
-        color: rgb(96, 165, 250) !important;
-        background: transparent !important;
-    }
-}
-
-.inline-code-link:hover {
-    text-decoration-style: solid !important;
-    color: rgb(29, 78, 216) !important;
-    background: transparent !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    .inline-code-link:hover {
-        color: rgb(147, 197, 253) !important;
-        background: transparent !important;
-    }
-}
-
+/* Inline code hover - kept for non-Streamdown contexts */
 .inline-code-clickable:hover {
     background: rgb(209 213 219) !important;
     transform: translateY(-1px);
 }
 
-/* Links should not have background on hover */
-.inline-code-link:hover {
-    background: transparent !important;
-    transform: translateY(0) !important;
-}
-
 @media (prefers-color-scheme: dark) {
     .inline-code-clickable:hover {
         background: rgb(63 63 70) !important;
-    }
-
-    /* Links should not have background on hover in dark mode */
-    .inline-code-link:hover {
-        background: transparent !important;
     }
 }
 
@@ -309,7 +269,8 @@
     font-size: 0.85em;
 }
 
-/* Code Block Wrapper */
+/* Code Block Wrapper - Legacy styles for content scripts using react-markdown
+   Chat panel now uses Streamdown with styles in streamdown-overrides.css */
 .code-block-wrapper {
     position: relative;
     margin: 1em 0;
@@ -317,44 +278,6 @@
     overflow: hidden;
     background: #1e1e1e;
     border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.code-block-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.code-block-language {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.7);
-    letter-spacing: 0.5px;
-}
-
-.code-block-copy-btn {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    font-weight: 500;
-}
-
-.code-block-copy-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.code-block-copy-btn:active {
-    transform: scale(0.95);
 }
 
 .code-block-wrapper pre {
@@ -373,89 +296,10 @@
     padding: 0 !important;
 }
 
-/* Syntax highlighting styles (VS Code Dark+ theme) */
-.code-block-wrapper .hljs {
-    background: #1e1e1e;
-    color: #d4d4d4;
-}
-
-.code-block-wrapper .hljs-keyword,
-.code-block-wrapper .hljs-selector-tag,
-.code-block-wrapper .hljs-built_in {
-    color: #569cd6;
-}
-
-.code-block-wrapper .hljs-string,
-.code-block-wrapper .hljs-attr {
-    color: #ce9178;
-}
-
-.code-block-wrapper .hljs-number,
-.code-block-wrapper .hljs-literal {
-    color: #b5cea8;
-}
-
-.code-block-wrapper .hljs-comment {
-    color: #6a9955;
-    font-style: italic;
-}
-
-.code-block-wrapper .hljs-function,
-.code-block-wrapper .hljs-title {
-    color: #dcdcaa;
-}
-
-.code-block-wrapper .hljs-params {
-    color: #9cdcfe;
-}
-
-.code-block-wrapper .hljs-variable,
-.code-block-wrapper .hljs-name {
-    color: #9cdcfe;
-}
-
-.code-block-wrapper .hljs-class,
-.code-block-wrapper .hljs-type {
-    color: #4ec9b0;
-}
-
-.code-block-wrapper .hljs-meta {
-    color: #c586c0;
-}
-
-.code-block-wrapper .hljs-tag {
-    color: #808080;
-}
-
-.code-block-wrapper .hljs-attribute {
-    color: #9cdcfe;
-}
-
-/* Light mode code blocks */
 @media (prefers-color-scheme: light) {
     .code-block-wrapper {
         background: #f6f8fa;
         border-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .code-block-header {
-        background: rgba(0, 0, 0, 0.03);
-        border-bottom-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .code-block-language {
-        color: rgba(0, 0, 0, 0.7);
-    }
-
-    .code-block-copy-btn {
-        background: rgba(0, 0, 0, 0.05);
-        color: rgba(0, 0, 0, 0.8);
-        border-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .code-block-copy-btn:hover {
-        background: rgba(0, 0, 0, 0.1);
-        border-color: rgba(0, 0, 0, 0.2);
     }
 
     .code-block-wrapper pre {
@@ -464,63 +308,6 @@
 
     .code-block-wrapper code {
         color: #24292e;
-    }
-
-    .code-block-wrapper .hljs {
-        background: #ffffff;
-        color: #24292e;
-    }
-
-    .code-block-wrapper .hljs-keyword,
-    .code-block-wrapper .hljs-selector-tag,
-    .code-block-wrapper .hljs-built_in {
-        color: #d73a49;
-    }
-
-    .code-block-wrapper .hljs-string,
-    .code-block-wrapper .hljs-attr {
-        color: #032f62;
-    }
-
-    .code-block-wrapper .hljs-number,
-    .code-block-wrapper .hljs-literal {
-        color: #005cc5;
-    }
-
-    .code-block-wrapper .hljs-comment {
-        color: #6a737d;
-        font-style: italic;
-    }
-
-    .code-block-wrapper .hljs-function,
-    .code-block-wrapper .hljs-title {
-        color: #6f42c1;
-    }
-
-    .code-block-wrapper .hljs-params {
-        color: #24292e;
-    }
-
-    .code-block-wrapper .hljs-variable,
-    .code-block-wrapper .hljs-name {
-        color: #e36209;
-    }
-
-    .code-block-wrapper .hljs-class,
-    .code-block-wrapper .hljs-type {
-        color: #005cc5;
-    }
-
-    .code-block-wrapper .hljs-meta {
-        color: #d73a49;
-    }
-
-    .code-block-wrapper .hljs-tag {
-        color: #22863a;
-    }
-
-    .code-block-wrapper .hljs-attribute {
-        color: #005cc5;
     }
 }
 

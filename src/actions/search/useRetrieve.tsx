@@ -210,10 +210,10 @@ export function useRetrieve(): void {
                                             whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        {output.results[0].title}
+                                        {output?.results[0]?.title}
                                     </div>
                                     <div style={{ opacity: 0.5, fontSize: '10px' }}>
-                                        {output.results[0].content?.length.toLocaleString()} characters
+                                        {output?.results[0]?.content?.length.toLocaleString()} characters
                                     </div>
                                 </div>
                             </div>

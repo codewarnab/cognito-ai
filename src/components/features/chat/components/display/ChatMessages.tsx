@@ -1,8 +1,4 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkBreaks from 'remark-breaks';
-import rehypeHighlight from 'rehype-highlight';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '@/components/shared/inputs';
 import { ToolPartRenderer } from '@/ai/tools/components';
@@ -13,73 +9,10 @@ import { LoadingIndicator } from '../feedback/LoadingIndicator';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
 import { getFileIcon } from '@/utils/files';
-import { InlineCode } from './InlineCode';
+import { StreamdownRenderer } from './StreamdownRenderer';
 import { XIcon } from '@assets/icons/chat/x';
 
-
-
-// Custom code block component with copy button
-function CodeBlock({ node, inline, className, children, ...props }: any) {
-    const [copied, setCopied] = useState(false);
-    const match = /language-(\w+)/.exec(className || '');
-    const language = match ? match[1] : '';
-
-    const handleCopy = async () => {
-        const code = String(children).replace(/\n$/, '');
-        try {
-            await navigator.clipboard.writeText(code);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error('Failed to copy code:', err);
-        }
-    };
-
-    // Render inline code without wrapper - check both inline prop and node data
-    const isInline = inline || node?.properties?.inline || !className?.includes('language-');
-
-    if (isInline) {
-        return <InlineCode {...props}>{children}</InlineCode>;
-    }
-
-    // Render block code with wrapper and copy button
-    return (
-        <div className="code-block-wrapper">
-            <div className="code-block-header">
-                {language && <span className="code-block-language">{language}</span>}
-                <button
-                    className="code-block-copy-btn"
-                    onClick={handleCopy}
-                    title="Copy code"
-                >
-                    {copied ? '✓ Copied' : '📋 Copy'}
-                </button>
-            </div>
-            <pre>
-                <code className={className} {...props}>
-                    {children}
-                </code>
-            </pre>
-        </div>
-    );
-}
-
-// Custom components to handle streaming markdown gracefully
-const markdownComponents = {
-    a: ({ node, href, children, ...props }: any) => {
-        // Handle cases where href might be undefined during streaming
-        const safeHref = href || '#';
-        return (
-            <a href={safeHref} target="_blank" rel="noopener noreferrer" {...props}>
-                {children}
-            </a>
-        );
-    },
-    code: CodeBlock,
-    // Add other custom components as needed
-};
-
-// Error Boundary for Markdown rendering
+// Error Boundary for Markdown rendering (kept as safety net)
 class MarkdownErrorBoundary extends React.Component<
     { children: React.ReactNode; fallback: string },
     { hasError: boolean }
@@ -94,7 +27,7 @@ class MarkdownErrorBoundary extends React.Component<
     }
 
     override componentDidCatch() {
-        console.warn('Markdown rendering error (likely due to streaming)');
+        console.warn('Markdown rendering error');
     }
 
     override render() {
@@ -105,18 +38,18 @@ class MarkdownErrorBoundary extends React.Component<
     }
 }
 
-// Safe markdown wrapper to handle parsing errors during streaming
-const SafeMarkdown: React.FC<{ children: string }> = ({ children }) => {
+interface SafeMarkdownProps {
+    children: string;
+    isStreaming?: boolean;
+}
+
+// Safe markdown wrapper using Streamdown for better streaming support
+const SafeMarkdown: React.FC<SafeMarkdownProps> = ({ children, isStreaming = false }) => {
     return (
         <MarkdownErrorBoundary fallback={children}>
-            <ReactMarkdown
-                remarkPlugins={[remarkGfm, remarkBreaks]}
-                rehypePlugins={[rehypeHighlight]}
-                components={markdownComponents}
-                skipHtml={true}
-            >
+            <StreamdownRenderer isAnimating={isStreaming}>
                 {children}
-            </ReactMarkdown>
+            </StreamdownRenderer>
         </MarkdownErrorBoundary>
     );
 };
@@ -129,6 +62,7 @@ interface ChatMessagesProps {
     isLocalMode?: boolean;
     onConfigureApiKey?: () => void;
     onContinue?: () => void; // Callback to send continue message
+    threadId?: string | null; // Current thread ID for brain button
 }
 
 /**
@@ -227,6 +161,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     isLocalMode,
     onConfigureApiKey,
     onContinue,
+    threadId,
 }) => {
     const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
@@ -317,11 +252,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                             return null; // Don't render this text part
                                                         }
 
+                                                        const isCurrentlyStreaming = isLoading && index === messages.length - 1;
                                                         return (
                                                             <div key={`text-${partIndex}`} className="copilot-message-content">
                                                                 {message.role === 'assistant' ? (
                                                                     <div className="markdown-content">
-                                                                        <SafeMarkdown>
+                                                                        <SafeMarkdown isStreaming={isCurrentlyStreaming}>
                                                                             {part.text}
                                                                         </SafeMarkdown>
                                                                     </div>
@@ -455,9 +391,23 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                 })}
 
                                                 {/* Add copy button for assistant messages - only show after streaming is finished */}
-                                                {message.role === 'assistant' && extractMessageText(message) && !(isLoading && index === messages.length - 1) && (
-                                                    <CopyButton content={extractMessageText(message)} />
-                                                )}
+                                                {message.role === 'assistant' && extractMessageText(message) && !(isLoading && index === messages.length - 1) && (() => {
+                                                    // Find the previous user message for context
+                                                    const filteredMessages = messages.filter(m => !(m as any).metadata?.internal);
+                                                    const currentIndex = filteredMessages.findIndex(m => m.id === message.id);
+                                                    const previousUserMessage = currentIndex > 0
+                                                        ? filteredMessages.slice(0, currentIndex).reverse().find(m => m.role === 'user')
+                                                        : undefined;
+                                                    const previousMessageText = previousUserMessage ? extractMessageText(previousUserMessage) : undefined;
+
+                                                    return (
+                                                        <CopyButton
+                                                            content={extractMessageText(message)}
+                                                            previousMessage={previousMessageText}
+                                                            threadId={threadId ?? undefined}
+                                                        />
+                                                    );
+                                                })()}
                                             </div>
                                         );
                                     })()}

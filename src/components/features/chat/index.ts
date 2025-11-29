@@ -26,7 +26,7 @@ export {
     // Display
     ChatHeader,
     ChatMessages,
-    InlineCode,
+    StreamdownRenderer,
     // Feedback
     AnimatedCircularProgressBar,
     ErrorNotification,

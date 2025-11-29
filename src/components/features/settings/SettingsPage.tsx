@@ -6,7 +6,7 @@ import { TextSummarizerSettings } from '@/components/features/settings/component
 import { TextRewriterSettings } from '@/components/features/settings/components/TextRewriterSettings';
 import { WriteCommandSettings } from '@/components/features/settings/components/WriteCommandSettings';
 import { AskCommandSettings } from '@/components/features/settings/components/AskCommandSettings';
-import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
+// import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
 import { SupermemorySettings } from '@/components/features/settings/components/SupermemorySettings';

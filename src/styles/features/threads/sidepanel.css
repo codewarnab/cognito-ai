@@ -43,6 +43,13 @@
     gap: 4px;
 }
 
+/* Reminder panel header - icon and title side by side */
+.reminder-panel .thread-sidepanel-header-content {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
 .thread-sidepanel-header-content h2 {
     margin: 0;
     font-size: 20px;

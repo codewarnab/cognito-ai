@@ -288,6 +288,133 @@
     cursor: wait;
 }
 
+/* Brain Button Analyzing State - CSS Shimmer */
+.copy-message-button.brain-analyzing {
+    cursor: wait;
+}
+
+.brain-shimmer {
+    position: relative;
+}
+
+.brain-shimmer svg {
+    color: rgba(255, 255, 255, 0.6);
+    animation: brain-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes brain-pulse {
+    0%, 100% {
+        opacity: 0.4;
+        transform: scale(0.95);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
+    }
+}
+
+/* Brain Tooltip Shimmer Text */
+.brain-tooltip-shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.6) 40%,
+        rgba(255, 255, 255, 1) 50%,
+        rgba(255, 255, 255, 0.6) 60%,
+        rgba(255, 255, 255, 0.6) 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer-text 2s infinite linear;
+}
+
+/* Brain Tooltip Success State */
+.brain-tooltip-success {
+    background: rgba(34, 197, 94, 0.95);
+}
+
+.brain-tooltip-success::after {
+    border-top-color: rgba(34, 197, 94, 0.95);
+}
+
+/* Brain Tooltip Error State */
+.brain-tooltip-error {
+    background: rgba(239, 68, 68, 0.95);
+}
+
+.brain-tooltip-error::after {
+    border-top-color: rgba(239, 68, 68, 0.95);
+}
+
+/* Brain Tooltip Analyzed State (with facts) */
+.brain-tooltip-facts {
+    background: rgba(30, 30, 30, 0.98);
+    white-space: normal;
+    max-width: 280px;
+    padding: 0;
+    pointer-events: auto;
+}
+
+.brain-tooltip-facts::after {
+    border-top-color: rgba(30, 30, 30, 0.98);
+}
+
+/* Brain Tooltip Analyzed State (no facts) */
+.brain-tooltip-analyzed {
+    background: rgba(100, 100, 100, 0.9);
+}
+
+.brain-tooltip-analyzed::after {
+    border-top-color: rgba(100, 100, 100, 0.9);
+}
+
+/* Brain Facts Tooltip Content */
+.brain-facts-tooltip {
+    padding: 8px 0;
+}
+
+.brain-facts-header {
+    padding: 4px 12px 8px;
+    font-weight: 600;
+    color: #22c55e;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.brain-facts-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.brain-fact-item {
+    padding: 6px 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.brain-fact-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.brain-fact-item:first-child {
+    padding-top: 0;
+}
+
+/* Brain Analyzed Button State */
+.brain-analyzed {
+    cursor: default;
+}
+
 /* Audio Generating Tooltip */
 .audio-generating-tooltip {
     position: absolute;

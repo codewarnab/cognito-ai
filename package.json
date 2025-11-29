@@ -9,7 +9,7 @@
     "dev:setup": "node scripts/copy-offscreen.js",
     "build": "plasmo build && node scripts/copy-offscreen.js",
     "package": "plasmo package",
-    "postinstall": "node scripts/patch-vfile.js && node scripts/patch-math-intrinsics.js",
+    "postinstall": "node scripts/patch-vfile.js && node scripts/patch-math-intrinsics.js && node scripts/patch-streamdown.js",
     "type:check": "tsc --noEmit",
     "type:watch": "tsc --noEmit --watch"
   },
@@ -48,6 +48,7 @@
     "rehype-highlight": "^7.0.2",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "streamdown": "^1.6.9",
     "three": "^0.176.0",
     "zod": "^4.1.12"
   },

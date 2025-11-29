@@ -29,8 +29,6 @@
     opacity: 0;
     transform: scale(0.95) translateY(8px);
     animation: ask-overlay-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-
-    overflow: hidden;
 }
 
 @keyframes ask-overlay-appear {
@@ -198,10 +196,10 @@
 }
 
 .ask-empty-icon {
-    font-size: 32px;
+    width: 48px;
+    height: 48px;
     margin-bottom: 12px;
-    opacity: 0.5;
-    color: #60a5fa;
+    opacity: 0.8;
 }
 
 .ask-empty-text {
