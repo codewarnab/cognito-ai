@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 import { fetchTranscriptDirect } from '@/ai/agents/youtubeToNotion/transcript';
+import { YOUTUBE_BADGE_PREFETCH_ENABLED } from '@/constants';
 import type { YouTubeVideoInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
+import type { ProcessFileOptions } from './useFileAttachments';
 
 const log = createLogger('useYouTubeVideoAttachment');
 
@@ -10,7 +12,7 @@ interface UseYouTubeVideoAttachmentOptions {
     youtubeVideoInfo?: YouTubeVideoInfo | null;
     mode: AIMode;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
-    processFiles: (files: File[]) => Promise<void>;
+    processFiles: (files: File[] | ProcessFileOptions[]) => Promise<void>;
 }
 
 /**
@@ -52,6 +54,19 @@ interface CachedTranscript {
     segments?: TranscriptSegment[];
     /** Detected transcript language */
     language?: string;
+}
+
+/**
+ * Video metadata exposed to UI components
+ */
+export interface YouTubeVideoMetadata {
+    videoId: string;
+    title?: string;
+    author?: string;
+    thumbnail?: string;
+    durationSeconds?: number;
+    description?: string;
+    isPrefetched: boolean;
 }
 
 /**
@@ -133,7 +148,14 @@ export const useYouTubeVideoAttachment = ({
     }, [youtubeVideoInfo?.videoId, dismissedVideoId]);
 
     // Prefetch transcript in background when YouTube video is detected
+    // Only runs when YOUTUBE_BADGE_PREFETCH_ENABLED is true
     useEffect(() => {
+        // Skip prefetch entirely when flag is disabled
+        if (!YOUTUBE_BADGE_PREFETCH_ENABLED) {
+            log.debug('Prefetch disabled by YOUTUBE_BADGE_PREFETCH_ENABLED flag');
+            return;
+        }
+
         const prefetchTranscript = async () => {
             if (!youtubeVideoInfo || mode === 'local') {
                 return;
@@ -173,6 +195,11 @@ export const useYouTubeVideoAttachment = ({
                         transcript: transcriptEntry.transcript,
                         durationSeconds: transcriptEntry.durationSeconds,
                         fetchedAt: Date.now(),
+                        // Store additional metadata from API response if available
+                        author: transcriptEntry.author,
+                        thumbnail: transcriptEntry.thumbnail,
+                        description: transcriptEntry.description,
+                        tags: transcriptEntry.tags,
                     };
 
                     log.info('Transcript prefetched successfully', {
@@ -277,7 +304,17 @@ ${transcriptEntry.transcript}
             });
 
             // Use existing processFiles function to handle the attachment
-            await processFiles([file]);
+            // Pass metadata for YouTube source identification and thumbnail display
+            await processFiles([{
+                file,
+                meta: {
+                    source: 'youtube',
+                    thumbnailUrl: transcriptEntry.thumbnail,
+                    author: transcriptEntry.author,
+                    durationSeconds: transcriptEntry.durationSeconds,
+                    videoUrl: transcriptEntry.videoUrl,
+                },
+            }]);
 
             // Auto-dismiss suggestion after successful attachment
             handleDismissYouTubeVideo();
@@ -306,11 +343,29 @@ ${transcriptEntry.transcript}
         !isVideoDismissed(youtubeVideoInfo.videoId) &&
         dismissedVideoId !== youtubeVideoInfo.videoId;
 
+    // Build video metadata object for UI consumption
+    // Resets whenever youtubeVideoInfo changes (handled by cache clearing effect)
+    const videoMetadata: YouTubeVideoMetadata | null = youtubeVideoInfo
+        ? {
+            videoId: youtubeVideoInfo.videoId,
+            title: cachedTranscriptRef.current?.title ?? youtubeVideoInfo.title,
+            author: cachedTranscriptRef.current?.author,
+            thumbnail: cachedTranscriptRef.current?.thumbnail,
+            durationSeconds: cachedTranscriptRef.current?.durationSeconds,
+            description: cachedTranscriptRef.current?.description,
+            isPrefetched: cachedTranscriptRef.current?.videoId === youtubeVideoInfo.videoId,
+        }
+        : null;
+
     return {
         isAttachingVideo,
         shouldShowYouTubeVideoSuggestion,
         handleAttachYouTubeVideo,
         handleDismissYouTubeVideo,
-        isFetchingInBackground, // Expose for debugging/UI purposes
+        isFetchingInBackground,
+        /** Video metadata for UI display (thumbnail, author, etc.) */
+        videoMetadata,
+        /** Whether prefetch is enabled via config */
+        isPrefetchEnabled: YOUTUBE_BADGE_PREFETCH_ENABLED,
     };
 };

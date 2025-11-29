@@ -99,6 +99,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         shouldShowYouTubeVideoSuggestion,
         handleAttachYouTubeVideo,
         handleDismissYouTubeVideo,
+        isFetchingInBackground,
+        videoMetadata,
     } = useYouTubeVideoAttachment({
         youtubeVideoInfo: youtubeVideoInfo.isYouTubeVideo ? {
             url: youtubeVideoInfo.url!,
@@ -252,8 +254,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     } : null}
                     shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
                     isAttachingVideo={isAttachingVideo}
+                    isFetchingInBackground={isFetchingInBackground}
                     handleAttachYouTubeVideo={handleAttachYouTubeVideo}
                     handleDismissYouTubeVideo={handleDismissYouTubeVideo}
+                    videoMetadata={videoMetadata}
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={setShowModeDropdown}
                     composerRef={composerRef}

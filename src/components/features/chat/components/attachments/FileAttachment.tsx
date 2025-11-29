@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { getFileIcon } from '@/utils/files';
+import { YoutubeIcon } from '@assets/icons/chat/youtube';
+
+/** Metadata for special attachment sources (e.g., YouTube transcripts) */
+export interface FileAttachmentMeta {
+    source?: 'youtube';
+    thumbnailUrl?: string;
+    author?: string;
+    durationSeconds?: number;
+    videoUrl?: string;
+}
 
 export interface FileAttachmentData {
     id: string;
     file: File;
     preview?: string; // Base64 preview for images
     type: 'image' | 'document';
+    /** Optional metadata for special sources like YouTube */
+    meta?: FileAttachmentMeta;
 }
 
 interface FileAttachmentProps {

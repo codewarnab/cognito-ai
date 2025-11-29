@@ -46,6 +46,7 @@ export async function fetchTranscript(youtubeUrl: string): Promise<TranscriptRes
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-API-Version': '2',
                     },
                     body: JSON.stringify({ url: youtubeUrl }),
                 });
