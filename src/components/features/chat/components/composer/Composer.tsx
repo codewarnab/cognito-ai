@@ -5,6 +5,7 @@ import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
+import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 
@@ -69,8 +70,10 @@ export interface ComposerProps {
     youtubeVideoInfo?: YouTubeVideoInfo | null;
     shouldShowYouTubeVideoSuggestion: boolean;
     isAttachingVideo: boolean;
+    isFetchingInBackground?: boolean;
     handleAttachYouTubeVideo: () => void;
     handleDismissYouTubeVideo: () => void;
+    videoMetadata?: YouTubeVideoMetadata | null;
 
     // Mode dropdown
     showModeDropdown: boolean;
@@ -116,8 +119,10 @@ export const Composer: React.FC<ComposerProps> = ({
     youtubeVideoInfo,
     shouldShowYouTubeVideoSuggestion,
     isAttachingVideo,
+    isFetchingInBackground,
     handleAttachYouTubeVideo,
     handleDismissYouTubeVideo,
+    videoMetadata,
     showModeDropdown,
     onToggleModeDropdown,
     composerRef,
@@ -165,8 +170,10 @@ export const Composer: React.FC<ComposerProps> = ({
                 youtubeVideoInfo={youtubeVideoInfo}
                 shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion}
                 isAttachingVideo={isAttachingVideo}
+                isFetchingInBackground={isFetchingInBackground}
                 handleAttachYouTubeVideo={handleAttachYouTubeVideo}
                 handleDismissYouTubeVideo={handleDismissYouTubeVideo}
+                videoMetadata={videoMetadata}
             />
 
             {/* Workflow section: badge and slash command dropdown */}

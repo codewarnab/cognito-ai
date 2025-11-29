@@ -1,11 +1,17 @@
 import { useState, useRef, useCallback } from 'react';
 import { validateFile, createImagePreview, isImageFile } from '@/utils/files';
-import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
+import type { FileAttachmentData, FileAttachmentMeta } from '@/components/features/chat/components/attachments';
 import type { AIMode } from '@/components/features/chat/types';
 
 interface UseFileAttachmentsOptions {
     mode: AIMode;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
+}
+
+/** Options for processing a single file with optional metadata */
+export interface ProcessFileOptions {
+    file: File;
+    meta?: FileAttachmentMeta;
 }
 
 export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions) => {
@@ -14,8 +20,13 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Process files (shared between file input, paste, and drag & drop)
-    const processFiles = useCallback(async (files: File[]) => {
-        for (const file of files) {
+    // Accepts either File[] for backward compatibility or ProcessFileOptions[] for metadata support
+    const processFiles = useCallback(async (files: File[] | ProcessFileOptions[]) => {
+        for (const item of files) {
+            // Normalize input: support both File and ProcessFileOptions
+            const file = item instanceof File ? item : item.file;
+            const meta = item instanceof File ? undefined : item.meta;
+
             const validation = validateFile(file);
 
             if (!validation.valid) {
@@ -38,7 +49,7 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
 
             setAttachments(prev => [
                 ...prev,
-                { id, file, preview, type }
+                { id, file, preview, type, meta }
             ]);
         }
     }, []);

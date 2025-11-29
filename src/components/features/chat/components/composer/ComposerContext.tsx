@@ -4,8 +4,8 @@ import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
-import type { LocalPdfInfo } from '@/hooks/browser';
-import type { YouTubeVideoInfo } from '@/hooks/browser';
+import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
+import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
 
 export interface ComposerContextValue {
     // Input state
@@ -61,8 +61,10 @@ export interface ComposerContextValue {
     youtubeVideoInfo?: YouTubeVideoInfo | null;
     shouldShowYouTubeVideoSuggestion: boolean;
     isAttachingVideo: boolean;
+    isFetchingInBackground?: boolean;
     handleAttachYouTubeVideo: () => void;
     handleDismissYouTubeVideo: () => void;
+    videoMetadata?: YouTubeVideoMetadata | null;
 
     // Mode dropdown
     showModeDropdown: boolean;
