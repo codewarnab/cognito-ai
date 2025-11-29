@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Position } from './useTextSelection';
+import { MarkdownRenderer } from '@/contents/shared/MarkdownRenderer';
 
 interface SummaryPopupProps {
     position: Position;
@@ -138,10 +139,13 @@ export function SummaryPopup({
                     </div>
                 ) : (
                     <div className="summary-popup__content">
-                        <p className="summary-popup__text">
-                            {summary}
-                            {isStreaming && <span className="summary-popup__cursor">▊</span>}
-                        </p>
+                        <div className="summary-popup__text summary-markdown-content">
+                            <MarkdownRenderer
+                                content={summary}
+                                isStreaming={isStreaming}
+                                cursorClassName="summary-popup__cursor"
+                            />
+                        </div>
                     </div>
                 )}
 

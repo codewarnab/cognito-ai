@@ -2,6 +2,9 @@
    Text Rewriter - Content Script Styles
    ============================================ */
 
+/* Import shared markdown styles */
+@import './shared-markdown.css';
+
 /* Rewriter Tooltip Container */
 .rewriter-tooltip {
     position: absolute;
@@ -303,8 +306,119 @@
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.9);
 
-    white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+/* Rewriter Markdown Content Styles */
+.rewriter-markdown-content {
+    /* Inherit base markdown styles from shared-markdown.css */
+}
+
+.rewriter-markdown-content p {
+    margin: 0 0 0.5em 0;
+}
+
+.rewriter-markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+.rewriter-markdown-content ul,
+.rewriter-markdown-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.rewriter-markdown-content li {
+    margin: 0.25em 0;
+}
+
+.rewriter-markdown-content code {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-size: 0.9em;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.rewriter-markdown-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 0.75em;
+    margin: 0.5em 0;
+    overflow-x: auto;
+}
+
+.rewriter-markdown-content pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.85em;
+}
+
+.rewriter-markdown-content strong {
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+.rewriter-markdown-content em {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.rewriter-markdown-content a {
+    color: #a78bfa;
+    text-decoration: none;
+}
+
+.rewriter-markdown-content a:hover {
+    text-decoration: underline;
+}
+
+.rewriter-markdown-content blockquote {
+    border-left: 3px solid rgba(139, 92, 246, 0.4);
+    margin: 0.5em 0;
+    padding-left: 1em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.rewriter-markdown-content h1,
+.rewriter-markdown-content h2,
+.rewriter-markdown-content h3,
+.rewriter-markdown-content h4 {
+    margin: 0.75em 0 0.5em 0;
+    font-weight: 600;
+    color: white;
+}
+
+.rewriter-markdown-content h1 { font-size: 1.3em; }
+.rewriter-markdown-content h2 { font-size: 1.2em; }
+.rewriter-markdown-content h3 { font-size: 1.1em; }
+.rewriter-markdown-content h4 { font-size: 1em; }
+
+.rewriter-markdown-content hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0.75em 0;
+}
+
+.rewriter-markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    font-size: 0.9em;
+}
+
+.rewriter-markdown-content th,
+.rewriter-markdown-content td {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.4em 0.6em;
+    text-align: left;
+}
+
+.rewriter-markdown-content th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
 }
 
 /* Actions Row */

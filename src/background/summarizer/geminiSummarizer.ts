@@ -116,7 +116,11 @@ Important:
 - Focus only on the selected text
 - Be accurate and don't add information not present in the text
 - Use clear, easy-to-understand language
-- Format appropriately for the summary type requested`;
+- Format appropriately using markdown:
+  - 'key-points': Use bullet points (- item)
+  - 'tl-dr': Use **bold** for key terms, keep mostly plain text
+  - 'headline': Plain text, single line
+  - 'teaser': Use *italics* for emphasis if needed`;
     }
 
     /**

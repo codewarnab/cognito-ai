@@ -2,6 +2,8 @@
    Text Selection Summarizer - Content Script Styles
    ============================================ */
 
+@import './shared-markdown.css';
+
 /* Floating Summarize Button */
 .summarize-button {
     position: absolute;
@@ -237,6 +239,103 @@
     100% {
         opacity: 0;
     }
+}
+
+/* ============================================
+   Markdown Content Styles for Summarizer
+   ============================================ */
+
+.summary-markdown-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.summary-markdown-content p {
+    margin: 0 0 0.75em 0;
+}
+
+.summary-markdown-content p:last-child {
+    margin-bottom: 0;
+}
+
+.summary-markdown-content ul,
+.summary-markdown-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+}
+
+.summary-markdown-content li {
+    margin: 0.25em 0;
+}
+
+.summary-markdown-content strong {
+    color: white;
+    font-weight: 600;
+}
+
+.summary-markdown-content em {
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.summary-markdown-content a {
+    color: #c4b5fd;
+    text-decoration: none;
+}
+
+.summary-markdown-content a:hover {
+    text-decoration: underline;
+}
+
+.summary-markdown-content .markdown-inline-code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.9em;
+}
+
+.summary-markdown-content .markdown-code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 0.75em 0;
+    overflow-x: auto;
+}
+
+.summary-markdown-content .markdown-code-block code {
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.summary-markdown-content blockquote {
+    margin: 0.75em 0;
+    padding-left: 1em;
+    border-left: 3px solid #a78bfa;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.summary-markdown-content h1,
+.summary-markdown-content h2,
+.summary-markdown-content h3 {
+    margin: 0.75em 0 0.5em 0;
+    font-weight: 600;
+    color: white;
+}
+
+.summary-markdown-content h1 {
+    font-size: 1.25em;
+}
+
+.summary-markdown-content h2 {
+    font-size: 1.1em;
+}
+
+.summary-markdown-content h3 {
+    font-size: 1em;
 }
 
 /* Loading state */
