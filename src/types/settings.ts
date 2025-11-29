@@ -48,6 +48,16 @@ export interface UserSettings {
    * Determines system prompt and available tools.
    */
   toolsMode?: ToolsMode;
+  /**
+   * Whether to automatically extract facts from conversations and save to Supermemory.
+   * Requires Supermemory to be enabled and configured.
+   */
+  autoMemoryExtraction?: boolean;
+  /**
+   * Minimum number of messages required before auto-extraction triggers.
+   * Default: 4 (at least 2 user + 2 assistant messages)
+   */
+  autoMemoryMinMessages?: number;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -62,6 +72,8 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   supermemoryApiKey: undefined,
   supermemoryEnabled: false,
   toolsMode: 'agent',
+  autoMemoryExtraction: false,
+  autoMemoryMinMessages: 4,
 };
 
 

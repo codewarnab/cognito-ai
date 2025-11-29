@@ -5,6 +5,7 @@
 
 import { createLogger } from '~logger';
 import { geminiSummarizer, type SummarizerOptions } from './geminiSummarizer';
+import { queueContentMemoryForSummarizer } from '../supermemory/contentMemory/hooks';
 import type { SummarizeRequest } from '@/types';
 
 const log = createLogger('SummarizerHandler', 'BACKGROUND');
@@ -107,6 +108,9 @@ export async function handleSummarizeRequest(
     });
 
     try {
+        // Accumulate full summary for memory building
+        let fullSummary = '';
+
         // Stream chunks back via port
         for await (const chunk of geminiSummarizer.summarizeStream(text, options)) {
             // Check if port is still connected before sending
@@ -114,6 +118,9 @@ export async function handleSummarizeRequest(
                 log.warn('Port disconnected, stopping stream');
                 return;
             }
+
+            // Accumulate for memory
+            fullSummary += chunk;
 
             try {
                 port.postMessage({
@@ -137,6 +144,14 @@ export async function handleSummarizeRequest(
                     done: true,
                 });
                 log.info('Summary stream completed');
+
+                // Queue for memory building (fire and forget)
+                queueContentMemoryForSummarizer({
+                    originalText: text,
+                    summary: fullSummary,
+                    summaryType: options.summaryType || 'tl-dr',
+                    pageContext: pageContext || { title: '', url: '', domain: '' },
+                }).catch(() => {}); // Fire and forget
             } catch {
                 log.debug('Failed to send completion message');
             }

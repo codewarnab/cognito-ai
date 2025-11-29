@@ -5,12 +5,15 @@
  * - Token refresh alarms for MCP servers
  * - PDF cache cleanup
  * - Reminder notifications
+ * - Memory extraction queue processing
  */
 
 import { createLogger } from '~logger';
 import { handleTokenRefreshAlarm, refreshServerToken } from '../mcp/authHelpers';
 import { cleanupCache } from '@/ai/fileApi/cache';
 import { APP_ICON } from '@/constants';
+import { processExtractionQueue } from './supermemory/extraction/processor';
+import { processContentMemoryQueue } from './supermemory/contentMemory/processor';
 
 const log = createLogger('Background-Alarms', 'BACKGROUND');
 
@@ -55,6 +58,26 @@ export function initializeAlarmListeners(): void {
                 await cleanupCache();
             } catch (error) {
                 log.error('PDF cache cleanup failed:', error);
+            }
+            return;
+        }
+
+        // Handle memory extraction queue processing
+        if (alarm.name === 'memory-extraction') {
+            try {
+                await processExtractionQueue();
+            } catch (error) {
+                log.error('Memory extraction processing failed:', error);
+            }
+            return;
+        }
+
+        // Handle content memory queue processing (summarizer, writer, rewriter)
+        if (alarm.name === 'content-memory-processing') {
+            try {
+                await processContentMemoryQueue();
+            } catch (error) {
+                log.error('Content memory processing failed:', error);
             }
             return;
         }
