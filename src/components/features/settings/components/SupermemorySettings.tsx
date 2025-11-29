@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Eye, EyeOff, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, ExternalLink, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import { createLogger } from '~logger';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import {
@@ -8,13 +8,42 @@ import {
     clearSupermemoryApiKey,
     isSupermemoryEnabled,
     setSupermemoryEnabled,
-    validateSupermemoryApiKeyFormat
+    validateSupermemoryApiKeyFormat,
+    isAutoExtractionEnabled,
+    setAutoExtractionEnabled,
+    isContentMemoryEnabled,
+    setContentMemoryEnabled,
 } from '@/utils/supermemory';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
 
 const log = createLogger('SupermemorySettings');
 
 const SUPERMEMORY_CONSOLE_URL = 'https://console.supermemory.ai/keys';
+
+const AUTO_EXTRACTION_TOOLTIP = `When enabled, Cognito analyzes your conversations after you leave a chat and automatically extracts useful information like:
+
+• Your preferences and working style
+• Facts about projects you're working on
+• Tools and technologies you use
+• Searches and topics you're interested in
+• Instructions you've given the AI
+
+This information is securely saved to your Supermemory and helps Cognito provide more personalized assistance in future conversations.
+
+Processing happens in the background and won't slow down your experience.`;
+
+const CONTENT_MEMORY_TOOLTIP = `When enabled, Cognito learns from your interactions with content features:
+
+• Summarizer: Learns what topics and content you read and research
+• Writer: Learns what topics you write about and your writing contexts
+• Rewriter: Learns your preferred writing styles and common transformations
+
+Examples of insights captured:
+- "User frequently researches React performance optimization"
+- "User writes professional emails on Gmail"
+- "User prefers concise, simplified writing"
+
+Processing happens in the background and won't slow down these features.`;
 
 type ConnectionStatus = 'not-configured' | 'connected' | 'invalid';
 
@@ -24,13 +53,19 @@ export const SupermemorySettings: React.FC = () => {
     const [enabled, setEnabled] = useState(false);
     const [status, setStatus] = useState<ConnectionStatus>('not-configured');
     const [isSaving, setIsSaving] = useState(false);
+    const [autoExtraction, setAutoExtraction] = useState(false);
+    const [contentMemory, setContentMemory] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [showContentMemoryTooltip, setShowContentMemoryTooltip] = useState(false);
 
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const [storedKey, storedEnabled] = await Promise.all([
+                const [storedKey, storedEnabled, storedAutoExtraction, storedContentMemory] = await Promise.all([
                     getSupermemoryApiKey(),
-                    isSupermemoryEnabled()
+                    isSupermemoryEnabled(),
+                    isAutoExtractionEnabled(),
+                    isContentMemoryEnabled(),
                 ]);
 
                 if (storedKey) {
@@ -38,6 +73,8 @@ export const SupermemorySettings: React.FC = () => {
                     setStatus(validateSupermemoryApiKeyFormat(storedKey) ? 'connected' : 'invalid');
                 }
                 setEnabled(storedEnabled);
+                setAutoExtraction(storedAutoExtraction);
+                setContentMemory(storedContentMemory);
             } catch (err) {
                 log.error('Failed to load Supermemory settings', err);
             }
@@ -107,10 +144,58 @@ export const SupermemorySettings: React.FC = () => {
         try {
             await setSupermemoryEnabled(checked);
             log.info('Supermemory enabled state changed', { enabled: checked });
+            
+            // Disable auto-extraction and content memory if Supermemory is disabled
+            if (!checked) {
+                if (autoExtraction) {
+                    setAutoExtraction(false);
+                    await setAutoExtractionEnabled(false);
+                }
+                if (contentMemory) {
+                    setContentMemory(false);
+                    await setContentMemoryEnabled(false);
+                }
+            }
         } catch (err) {
             log.error('Failed to update Supermemory enabled state', err);
             // Revert on error
             setEnabled(!checked);
+        }
+    };
+
+    const handleAutoExtractionChange = async (checked: boolean) => {
+        // Can only enable if Supermemory is enabled and connected
+        if (checked && (!enabled || status !== 'connected')) {
+            return;
+        }
+
+        const previousValue = autoExtraction;
+        setAutoExtraction(checked);
+        try {
+            await setAutoExtractionEnabled(checked);
+            log.info('Auto-extraction enabled state changed', { enabled: checked });
+        } catch (err) {
+            log.error('Failed to update auto-extraction enabled state', err);
+            // Revert on error
+            setAutoExtraction(previousValue);
+        }
+    };
+
+    const handleContentMemoryChange = async (checked: boolean) => {
+        // Can only enable if Supermemory is enabled and connected
+        if (checked && (!enabled || status !== 'connected')) {
+            return;
+        }
+
+        const previousValue = contentMemory;
+        setContentMemory(checked);
+        try {
+            await setContentMemoryEnabled(checked);
+            log.info('Content memory enabled state changed', { enabled: checked });
+        } catch (err) {
+            log.error('Failed to update content memory enabled state', err);
+            // Revert on error
+            setContentMemory(previousValue);
         }
     };
 
@@ -186,6 +271,130 @@ export const SupermemorySettings: React.FC = () => {
                         />
                     </div>
                 </div>
+
+                {/* Auto-Extraction Toggle - only show when Supermemory is enabled */}
+                {enabled && status === 'connected' && (
+                    <div className="settings-item">
+                        <div className="settings-item-content">
+                            <div className="settings-item-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Auto-Extract Conversation Insights
+                                <div style={{ position: 'relative', display: 'inline-flex' }}>
+                                    <button
+                                        type="button"
+                                        aria-label="Learn more about auto-extraction"
+                                        onClick={() => setShowTooltip(!showTooltip)}
+                                        onBlur={() => setShowTooltip(false)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '2px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            color: 'var(--text-tertiary)',
+                                        }}
+                                    >
+                                        <HelpCircle size={14} />
+                                    </button>
+                                    {showTooltip && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '100%',
+                                                left: '-190px',
+                                                marginBottom: '8px',
+                                                padding: '12px',
+                                                backgroundColor: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                borderRadius: '8px',
+                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                                                zIndex: 9999,
+                                                width: '280px',
+                                                fontSize: '12px',
+                                                lineHeight: '1.5',
+                                                color: '#e0e0e0',
+                                                whiteSpace: 'pre-line',
+                                            }}
+                                        >
+                                            {AUTO_EXTRACTION_TOOLTIP}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="settings-item-description">
+                                Automatically learn from your conversations
+                            </div>
+                        </div>
+                        <div style={{ transform: 'scale(0.9)' }}>
+                            <Toggle
+                                checked={autoExtraction}
+                                onChange={handleAutoExtractionChange}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* Content Memory Toggle - only show when Supermemory is enabled */}
+                {enabled && status === 'connected' && (
+                    <div className="settings-item">
+                        <div className="settings-item-content">
+                            <div className="settings-item-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Learn from Writing & Reading
+                                <div style={{ position: 'relative', display: 'inline-flex' }}>
+                                    <button
+                                        type="button"
+                                        aria-label="Learn more about content memory"
+                                        onClick={() => setShowContentMemoryTooltip(!showContentMemoryTooltip)}
+                                        onBlur={() => setShowContentMemoryTooltip(false)}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: '2px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            color: 'var(--text-tertiary)',
+                                        }}
+                                    >
+                                        <HelpCircle size={14} />
+                                    </button>
+                                    {showContentMemoryTooltip && (
+                                        <div
+                                            style={{
+                                                position: 'absolute',
+                                                bottom: '100%',
+                                                left: '-190px',
+                                                marginBottom: '8px',
+                                                padding: '12px',
+                                                backgroundColor: '#1a1a2e',
+                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                borderRadius: '8px',
+                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
+                                                zIndex: 9999,
+                                                width: '280px',
+                                                fontSize: '12px',
+                                                lineHeight: '1.5',
+                                                color: '#e0e0e0',
+                                                whiteSpace: 'pre-line',
+                                            }}
+                                        >
+                                            {CONTENT_MEMORY_TOOLTIP}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="settings-item-description">
+                                Build memory from summarizer, writer, and rewriter usage
+                            </div>
+                        </div>
+                        <div style={{ transform: 'scale(0.9)' }}>
+                            <Toggle
+                                checked={contentMemory}
+                                onChange={handleContentMemoryChange}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* API Key Input */}
                 <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>

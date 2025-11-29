@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
-import { fetchTranscriptDirect } from '@/ai/agents/youtubeToNotion/transcript';
+import { fetchTranscriptDirect, processTranscriptForAI } from '@/ai/agents/youtubeToNotion/transcript';
+import type { ProcessedTranscript } from '@/ai/agents/youtubeToNotion/transcript';
 import { YOUTUBE_BADGE_PREFETCH_ENABLED } from '@/constants';
 import type { YouTubeVideoInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
@@ -268,8 +269,30 @@ export const useYouTubeVideoAttachment = ({
                 transcriptEntry = await fetchTranscriptDirect(youtubeVideoInfo.url);
             }
 
-            // Create transcript text file with description
-            const transcriptText = `[YOUTUBE VIDEO TRANSCRIPT]
+            // Create transcript text - use compact format if segments available
+            let transcriptText: string;
+            
+            if (transcriptEntry.segments && transcriptEntry.segments.length > 0) {
+                // Use processed compact format (significantly reduces token usage)
+                const processed = processTranscriptForAI(transcriptEntry);
+                const segmentsJson = JSON.stringify(processed.segments);
+                
+                transcriptText = `[YOUTUBE VIDEO TRANSCRIPT]
+Title: ${processed.title}
+Author: ${processed.author || 'Unknown'}
+Video URL: ${transcriptEntry.videoUrl}
+Duration: ${processed.durationSeconds ? `${Math.floor(processed.durationSeconds / 60)}m ${processed.durationSeconds % 60}s` : 'Unknown'}
+Language: ${processed.language || 'en'}
+
+IMPORTANT: This is a YouTube video transcript. Do NOT use the getYouTubeTranscript tool to fetch the transcript again.
+Answer questions based ONLY on this transcript content provided below.
+Format: Compact segments with {t: text, s: startSeconds}. Reference timestamps when user needs to verify specific parts.
+
+--- SEGMENTS ---
+${segmentsJson}`;
+            } else {
+                // Fallback to full transcript if no segments
+                transcriptText = `[YOUTUBE VIDEO TRANSCRIPT]
 Title: ${transcriptEntry.title || youtubeVideoInfo.title}
 Video URL: ${transcriptEntry.videoUrl}
 Duration: ${transcriptEntry.durationSeconds ? `${Math.floor(transcriptEntry.durationSeconds / 60)}m ${transcriptEntry.durationSeconds % 60}s` : 'Unknown'}
@@ -282,6 +305,7 @@ Answer questions based ONLY on this transcript content provided below.
 ${transcriptEntry.transcript}
 
 --- TRANSCRIPT END ---`;
+            }
 
             // Create a text file with the transcript - use title from active tab (shown in pill)
             const blob = new Blob([transcriptText], { type: 'text/plain' });

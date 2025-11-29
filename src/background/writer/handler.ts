@@ -5,6 +5,7 @@
 
 import { createLogger } from '~logger';
 import { geminiWriter, type WriterOptions } from './geminiWriter';
+import { queueContentMemoryForWriter } from '../supermemory/contentMemory/hooks';
 import type { WriteGenerateRequest } from '@/types';
 
 const log = createLogger('WriterHandler', 'BACKGROUND');
@@ -139,6 +140,21 @@ export async function handleWriteGenerate(
                     done: true,
                 });
                 log.info('Response sent to content script');
+
+                // Queue for memory building (fire and forget)
+                queueContentMemoryForWriter({
+                    prompt,
+                    generatedText: text,
+                    tone: settings?.tone,
+                    pageContext: pageContext ? {
+                        title: pageContext.title || '',
+                        url: pageContext.url || '',
+                        domain: pageContext.domain || '',
+                        platform: pageContext.platform,
+                        fieldType: pageContext.fieldType,
+                    } : undefined,
+                    hasAttachment: !!attachment,
+                }).catch(() => {}); // Fire and forget
             } catch (postError) {
                 log.error('Failed to post message', postError);
             }

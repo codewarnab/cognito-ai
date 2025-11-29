@@ -10,7 +10,8 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { createLogger } from '~logger';
 import { parseError } from '../../../errors';
-import { fetchTranscript } from './utils/transcript';
+import { fetchTranscript, processTranscriptForAI } from './utils/transcript';
+import type { ProcessedTranscript, CompactSegment } from './utils/transcript';
 import {
     getVideoDuration,
     getVideoDescription,
@@ -75,19 +76,8 @@ async function extractVideoTitleFromTab(): Promise<string | undefined> {
 }
 
 /**
- * Transcript segment with timing information
- */
-export interface TranscriptSegment {
-    /** Segment text */
-    text: string;
-    /** Start time in seconds */
-    start: number;
-    /** Duration in seconds */
-    duration: number;
-}
-
-/**
  * Output schema for the YouTube transcript tool
+ * Uses ProcessedTranscript format for AI consumption (reduced token usage)
  */
 export interface YouTubeTranscriptResult {
     videoId: string;
@@ -95,6 +85,9 @@ export interface YouTubeTranscriptResult {
     title?: string;
     duration?: number;
     durationFormatted?: string;
+    /** Processed transcript data optimized for AI (compact segments) */
+    processedTranscript?: ProcessedTranscript;
+    /** Legacy: full transcript text (only if no segments available) */
     transcript?: string;
     transcriptLength?: number;
     description?: string;
@@ -105,10 +98,6 @@ export interface YouTubeTranscriptResult {
     author?: string;
     /** Video thumbnail URL */
     thumbnail?: string;
-    /** Video tags/keywords */
-    tags?: string[];
-    /** Timestamped transcript segments */
-    segments?: TranscriptSegment[];
     /** Detected transcript language */
     language?: string;
 }
@@ -193,14 +182,30 @@ Use this when users:
                     response.title = tabTitle || transcriptData.title;
                 }
 
-                response.transcript = transcriptData.transcript;
-                response.transcriptLength = transcriptData.transcript.length;
+                response.author = transcriptData.author;
+                response.thumbnail = transcriptData.thumbnail;
+                response.language = transcriptData.language;
 
-                if (transcriptData.duration) {
+                // Use processed format if segments available (reduces token usage significantly)
+                if (transcriptData.segments && transcriptData.segments.length > 0) {
+                    response.processedTranscript = processTranscriptForAI(transcriptData);
+                    response.transcriptLength = transcriptData.transcript.length;
+                    log.info('📦 Using processed transcript format', {
+                        segmentsCount: response.processedTranscript.segments.length,
+                        originalLength: transcriptData.transcript.length
+                    });
+                } else {
+                    // Fallback to full transcript if no segments
+                    response.transcript = transcriptData.transcript;
+                    response.transcriptLength = transcriptData.transcript.length;
+                }
+
+                if (transcriptData.durationSeconds) {
+                    response.duration = transcriptData.durationSeconds;
+                    response.durationFormatted = formatDuration(response.duration);
+                } else if (transcriptData.duration) {
                     response.duration = transcriptData.duration * 60; // Convert to seconds
-                    response.durationFormatted = formatDuration(
-                        response.duration
-                    );
+                    response.durationFormatted = formatDuration(response.duration);
                 }
             } else {
                 // No transcript - try to get duration separately

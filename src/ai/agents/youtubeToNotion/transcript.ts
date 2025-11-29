@@ -28,7 +28,7 @@
 
 import { TRANSCRIPT_API_URL } from "@/constants";
 import { createLogger } from '~logger';
-import type { TranscriptEntry, TranscriptSegment } from "./transcriptCache";
+import type { TranscriptEntry } from "./transcriptCache";
 
 const log = createLogger("TranscriptFetch");
 
