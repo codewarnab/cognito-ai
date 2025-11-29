@@ -302,6 +302,146 @@
 }
 
 /* ========================================
+   YouTube Badge Shimmer & Enhancements
+   ======================================== */
+
+.youtube-video-suggestion {
+    /* YouTube red gradient */
+    background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+    box-shadow: 0 2px 6px rgba(204, 0, 0, 0.4);
+}
+
+.youtube-video-suggestion .local-pdf-suggestion-button {
+    color: #ffffff;
+}
+
+.youtube-video-suggestion .local-pdf-suggestion-close {
+    color: #ffffff;
+}
+
+.youtube-badge-shimmer-container {
+    display: flex;
+    align-items: center;
+    min-width: 80px;
+    height: 14px;
+}
+
+.youtube-badge-shimmer {
+    display: block;
+    width: 80px;
+    height: 12px;
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        rgba(255, 255, 255, 0.15) 100%
+    );
+    background-size: 200% 100%;
+    border-radius: 4px;
+    animation: shimmerSlide 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmerSlide {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.youtube-badge-duration {
+    margin-left: 6px;
+    padding: 1px 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* YouTube Badge Thumbnail */
+.youtube-badge-thumbnail {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 20px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.youtube-badge-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ========================================
+   YouTube Attachment Thumbnail & Styling
+   ======================================== */
+
+.file-attachment-youtube {
+    border: 1px solid rgba(255, 0, 0, 0.2);
+}
+
+.file-attachment-youtube .file-attachment-document {
+    gap: 8px;
+}
+
+.youtube-attachment-thumbnail {
+    width: 32px;
+    height: 24px;
+    border-radius: 3px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.youtube-attachment-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.youtube-attachment-icon {
+    color: #ff0000;
+}
+
+.youtube-attachment-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 1px;
+}
+
+.youtube-attachment-info .file-attachment-name {
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.youtube-attachment-label {
+    font-size: 9px;
+    color: #ff0000;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+/* Screen reader only utility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========================================
    Research Progress Indicator
    ======================================== */
 

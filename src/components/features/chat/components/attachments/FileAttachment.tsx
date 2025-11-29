@@ -28,6 +28,10 @@ interface FileAttachmentProps {
 
 export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRemove }) => {
     const [showPreview, setShowPreview] = useState(false);
+    const [thumbnailError, setThumbnailError] = useState(false);
+
+    const isYouTube = attachment.meta?.source === 'youtube';
+    const hasThumbnail = isYouTube && attachment.meta?.thumbnailUrl && !thumbnailError;
 
     const truncateName = (name: string, maxLength: number = 15) => {
         if (name.length <= maxLength) return name;
@@ -43,6 +47,10 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
         }
     };
 
+    const handleThumbnailError = () => {
+        setThumbnailError(true);
+    };
+
     // Handle ESC key to close preview
     useEffect(() => {
         if (!showPreview) return;
@@ -56,6 +64,46 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [showPreview]);
+
+    // Render YouTube attachment with thumbnail
+    if (isYouTube) {
+        return (
+            <div className="file-attachment file-attachment-youtube">
+                <div className="file-attachment-document">
+                    {hasThumbnail ? (
+                        <div className="youtube-attachment-thumbnail">
+                            <img
+                                src={attachment.meta!.thumbnailUrl}
+                                alt="Video thumbnail"
+                                onError={handleThumbnailError}
+                            />
+                        </div>
+                    ) : (
+                        <div className="file-attachment-icon youtube-attachment-icon">
+                            <YoutubeIcon size={20} />
+                        </div>
+                    )}
+                    <div className="youtube-attachment-info">
+                        <span className="file-attachment-name" title={attachment.file.name}>
+                            {truncateName(attachment.file.name, 18)}
+                        </span>
+                        <span className="youtube-attachment-label">YouTube</span>
+                    </div>
+                    <button
+                        type="button"
+                        className="file-attachment-remove"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(attachment.id);
+                        }}
+                        aria-label="Remove YouTube transcript attachment"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -77,7 +125,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                                 e.stopPropagation();
                                 onRemove(attachment.id);
                             }}
-                            title="Remove attachment"
+                            aria-label="Remove attachment"
                         >
                             <X size={14} />
                         </button>
@@ -97,7 +145,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                                 e.stopPropagation();
                                 onRemove(attachment.id);
                             }}
-                            title="Remove attachment"
+                            aria-label="Remove attachment"
                         >
                             <X size={14} />
                         </button>

@@ -93,6 +93,10 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   // Supermemory (Cloud Memory)
   'addMemory',
   'searchMemories',
+
+  // Web Search (requires API key, filtered by search mode)
+  'webSearch',
+  'retrieve',
 ];
 
 /**

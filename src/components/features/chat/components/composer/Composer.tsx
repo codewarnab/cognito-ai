@@ -6,6 +6,7 @@ import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
 import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
+import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 
@@ -44,7 +45,7 @@ export interface ComposerProps {
     isDragging: boolean;
     openFilePicker: () => void;
     handleRemoveAttachment: (id: string) => void;
-    processFiles: (files: File[]) => Promise<void>;
+    processFiles: (files: File[] | ProcessFileOptions[]) => Promise<void>;
 
     // Tab attachments
     tabAttachments: TabAttachmentData[];
@@ -131,11 +132,12 @@ export const Composer: React.FC<ComposerProps> = ({
     // Modal states
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
+    const [showAddYouTubeVideoModal, setShowAddYouTubeVideoModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
 
     // Derived state
     const isLocalMode = modelState.mode === 'local';
-    const { isSearchMode, hasApiKey: hasSearchApiKey } = useSearchMode();
+    const { isSearchMode, hasApiKey: hasSearchApiKey, isLoading: isSearchLoading } = useSearchMode();
     const isSearchActive = isSearchMode && hasSearchApiKey;
 
     // Custom hooks
@@ -144,6 +146,15 @@ export const Composer: React.FC<ComposerProps> = ({
 
     // Voice FAB visibility management
     useVoiceFabVisibility(showAttachmentDropdown, attachments.length, tabAttachments.length);
+
+    // Debug logging for search mode state
+    log.info('🎨 Composer render - search mode state', {
+        isSearchMode,
+        hasSearchApiKey,
+        isSearchActive,
+        isSearchLoading,
+        isLocalMode
+    });
 
     log.debug('Composer render', {
         isLoading,
@@ -246,10 +257,14 @@ export const Composer: React.FC<ComposerProps> = ({
                     openFilePicker={openFilePicker}
                     handleScreenshotClick={handleScreenshotClick}
                     handleAddTabAttachments={handleAddTabAttachments}
+                    processFiles={processFiles}
+                    onError={onError}
                     showAttachmentDropdown={showAttachmentDropdown}
                     setShowAttachmentDropdown={setShowAttachmentDropdown}
                     showAddTabsModal={showAddTabsModal}
                     setShowAddTabsModal={setShowAddTabsModal}
+                    showAddYouTubeVideoModal={showAddYouTubeVideoModal}
+                    setShowAddYouTubeVideoModal={setShowAddYouTubeVideoModal}
                     textareaRef={textareaRef}
                 />
             </div>

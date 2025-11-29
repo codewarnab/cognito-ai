@@ -1,0 +1,108 @@
+/* Related Questions Styles */
+.related-questions {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.related-questions__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+}
+
+.related-questions__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.related-questions__item {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text-secondary, #4b5563);
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+}
+
+.related-questions__item:hover {
+    background-color: var(--bg-hover, #f3f4f6);
+    color: var(--text-primary, #111827);
+}
+
+.related-questions__item:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.related-questions__icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--text-tertiary, #9ca3af);
+    transition: color 150ms;
+}
+
+.related-questions__item:hover .related-questions__icon {
+    color: var(--color-blue-500, #3b82f6);
+}
+
+.related-questions__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Skeleton loading */
+.related-questions__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.related-questions__skeleton-item {
+    height: 24px;
+    border-radius: 4px;
+    background-color: var(--bg-skeleton, #f3f4f6);
+    animation: related-questions-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes related-questions-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .related-questions {
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .related-questions__header {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+    
+    .related-questions__item {
+        color: var(--text-secondary-dark, #d1d5db);
+    }
+    
+    .related-questions__item:hover {
+        background-color: var(--bg-hover-dark, #1f2937);
+        color: var(--text-primary-dark, #ffffff);
+    }
+    
+    .related-questions__skeleton-item {
+        background-color: var(--bg-skeleton-dark, #1f2937);
+    }
+}

@@ -1,0 +1,53 @@
+/* Search Controls Styles */
+.search-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Search Mode Toggle Animation */
+.search-toggle-enter {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.search-toggle-enter-active {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 150ms ease-out, transform 150ms ease-out;
+}
+
+/* Search Depth Dropdown Animation */
+.search-depth-dropdown-enter {
+    opacity: 0;
+    transform: translateY(4px);
+}
+
+.search-depth-dropdown-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 100ms ease-out, transform 100ms ease-out;
+}
+
+.search-depth-dropdown-exit {
+    opacity: 1;
+}
+
+.search-depth-dropdown-exit-active {
+    opacity: 0;
+    transition: opacity 75ms ease-in;
+}
+
+/* Globe icon pulse when active */
+@keyframes searchActivePulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.search-active-indicator {
+    animation: searchActivePulse 2s ease-in-out infinite;
+}

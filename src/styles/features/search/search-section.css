@@ -1,0 +1,136 @@
+/* Search Section Styles */
+.search-section {
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-surface);
+    overflow: hidden;
+}
+
+/* Header button */
+.search-section__header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color 150ms;
+}
+
+.search-section__header:hover {
+    background-color: var(--color-surface-hover);
+}
+
+/* Icon container */
+.search-section__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.search-section__icon--loading svg {
+    animation: searchSectionSpin 1s linear infinite;
+}
+
+@keyframes searchSectionSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Query text */
+.search-section__query {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Result count badge */
+.search-section__badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border-radius: 9999px;
+}
+
+/* Chevron */
+.search-section__chevron {
+    flex-shrink: 0;
+    color: var(--color-text-secondary);
+    transition: transform 200ms;
+}
+
+.search-section__chevron--open {
+    transform: rotate(180deg);
+}
+
+/* Content */
+.search-section__content {
+    border-top: 1px solid var(--color-border);
+}
+
+.search-section__content-inner {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Sources label */
+.search-section__sources-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+
+/* No results message */
+.search-section__no-results {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    text-align: center;
+    padding: 16px 0;
+}
+
+/* Loading skeleton */
+.search-section__skeleton {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.search-section__skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.search-section__skeleton-item {
+    height: 64px;
+    border-radius: 8px;
+    background-color: var(--color-surface-hover);
+    animation: searchSkeletonPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes searchSkeletonPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
