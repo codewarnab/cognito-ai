@@ -40,6 +40,15 @@ This command will:
 - Build the extension in development mode
 - Watch for file changes
 
+#### First-time Assets Setup
+
+```bash
+pnpm dev:setup
+```
+
+Run once to copy offscreen/audio assets required by the extension.
+If you skip this, some assets may be missing on first run.
+
 #### Load the Extension in Chrome
 
 1. Open Google Chrome
@@ -49,6 +58,14 @@ This command will:
 5. Select the `build/chrome-mv3-dev` directory from the project root
 
 The extension should now be loaded and ready for development!
+
+#### Type Checking
+
+```bash
+pnpm type:check
+```
+
+Run before commits to ensure the project passes TypeScript checks.
 
 ### 4. Making Changes
 

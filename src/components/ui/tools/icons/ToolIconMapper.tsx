@@ -39,6 +39,7 @@ import { YouTubeNotionIcon } from '@assets/icons/ui/youtubeplusnotion';
 import { CameraIcon } from '@assets/icons/chat/camera';
 import { CodeExecuteIcon } from '@assets/icons/chat/code-execute';
 import { SupermemoryIcon } from '@assets/icons/chat/supermemory';
+import { TavilyIcon } from './TavilyIcon';
 
 const log = createLogger('ToolIconMapper');
 
@@ -149,6 +150,11 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     // Supermemory tools
     addMemory: SupermemoryIcon,
     searchMemories: SupermemoryIcon,
+
+    // Search Tools (Tavily)
+    webSearch: TavilyIcon,
+    deepWebSearch: TavilyIcon,
+    retrieve: ScanTextIcon,
 };
 
 /**
