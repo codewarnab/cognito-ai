@@ -11,7 +11,7 @@ import { ThreadListSidePanel } from "@/components/features/threads";
 import { ReminderPanel } from "@/components/features/reminders";
 import { SettingsPage } from "@/components/features/settings/SettingsPage";
 import { OnboardingScreen } from "@/components/features/onboarding";
-import { AudioLinesIcon } from "@/components/shared/icons";
+// import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
 import { VoiceRecordingPill } from "@/components/shared/inputs";
 import { ContextWarning } from "@/components/features/chat/context/ContextWarning";
@@ -328,7 +328,7 @@ function AIChatContent() {
         setShowProviderSetup,
         mode,
         setMode,
-        handleModeChange,
+        // handleModeChange,
         handleKeyPress,
         handleContinue,
     } = useSidepanelUiState({
@@ -523,7 +523,7 @@ function AIChatContent() {
                             />
 
                             {/* Voice Mode FAB - Only in text mode */}
-                            {!isImagePreviewOpen && (
+                            {/* {!isImagePreviewOpen && (
                                 <motion.button
                                     className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
                                     onClick={() => handleModeChange('voice')}
@@ -541,7 +541,7 @@ function AIChatContent() {
                                 >
                                     <AudioLinesIcon size={20} />
                                 </motion.button>
-                            )}
+                            )} */}
                         </>
                     ) : (
                         <VoiceModeUI

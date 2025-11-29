@@ -29,6 +29,7 @@ export async function executeStreamText(params: {
     threadId?: string;
     onError?: (error: Error) => void;
     prepareStep?: (context: any) => Promise<any>;
+    activeTools?: string[];
 }) {
     const {
         model,
@@ -45,12 +46,19 @@ export async function executeStreamText(params: {
         threadId,
         onError,
         prepareStep,
+        activeTools,
     } = params;
 
     try {
         // Get list of available tool names for error feedback
         const availableToolNames = Object.keys(tools);
-        log.info('🔧 Available tools for this session:', { count: availableToolNames.length, tools: availableToolNames });
+        log.info('🔧 Available tools for this session:', { 
+            count: availableToolNames.length, 
+            tools: availableToolNames,
+            activeToolsParam: activeTools,
+            webSearchAvailable: 'webSearch' in tools,
+            retrieveAvailable: 'retrieve' in tools,
+        });
 
         // Create tools with abort signal binding AND error feedback handling
         const abortableTools = abortSignal ? (() => {
@@ -126,6 +134,7 @@ export async function executeStreamText(params: {
             system: enhancedPrompt,
             ...(abortSignal && { abortSignal }),
             ...(prepareStep && { prepareStep }),
+            ...(activeTools && { activeTools }),
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools

@@ -6,6 +6,7 @@ import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
 import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
+import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 
 export interface ComposerContextValue {
     // Input state
@@ -35,7 +36,7 @@ export interface ComposerContextValue {
     isDragging: boolean;
     openFilePicker: () => void;
     handleRemoveAttachment: (id: string) => void;
-    processFiles: (files: File[]) => Promise<void>;
+    processFiles: (files: File[] | ProcessFileOptions[]) => Promise<void>;
 
     // Tab attachments
     tabAttachments: TabAttachmentData[];

@@ -6,8 +6,11 @@ import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Tooltip } from '@/components/ui/primitives';
 import { Wrench } from 'lucide-react';
 import { HIDE_LOCAL_MODE } from '@/constants';
+import { createLogger } from '~logger';
 import type { AIMode, ModelState } from '../../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
+
+const log = createLogger('ComposerToolbar', 'AI_CHAT');
 
 interface ComposerToolbarProps {
     modelState: ModelState;
@@ -51,6 +54,15 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     activeWorkflow,
     isSearchActive
 }) => {
+    // Debug logging for tools display
+    log.info('🔧 ComposerToolbar render', {
+        isSearchActive,
+        totalEnabledCount,
+        mcpToolsCount,
+        activeWorkflow: activeWorkflow?.name || null,
+        toolsDisplay: isSearchActive ? '2 (Search)' : `${totalEnabledCount}`
+    });
+
     return (
         <div className="copilot-composer-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {!HIDE_LOCAL_MODE && (

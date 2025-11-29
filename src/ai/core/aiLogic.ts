@@ -98,6 +98,8 @@ export async function streamAIResponse(params: {
   let tools: Record<string, any>;
   let systemPrompt: string;
   let provider: 'local' | 'google' | 'vertex' = 'local'; // Track provider for error handling
+  let initialActiveTools: string[] | undefined; // For dynamic mode switching via prepareStep
+  let isSearchModeActive = false; // Track initial search mode state for prepareStep comparison
 
   try {
     const stream = createUIMessageStream({
@@ -153,7 +155,16 @@ export async function streamAIResponse(params: {
               // Check if web search mode is active
               const searchSettings = await getSearchSettings();
               const hasSearchKey = await hasApiKeyForProvider(searchSettings.defaultProvider);
-              const isSearchModeActive = searchSettings.enabled && hasSearchKey && !workflowConfig;
+              isSearchModeActive = searchSettings.enabled && hasSearchKey && !workflowConfig;
+
+              // DEBUG: Log search mode determination
+              log.info('🔍 DEBUG - Search mode check:', {
+                searchSettingsEnabled: searchSettings.enabled,
+                hasSearchApiKey: hasSearchKey,
+                isWorkflow: !!workflowConfig,
+                isSearchModeActive,
+                searchProvider: searchSettings.defaultProvider,
+              });
 
               // Determine which system prompt to use
               let usePrompt: string;
@@ -184,16 +195,41 @@ export async function streamAIResponse(params: {
 
               model = remoteSetup.model;
               
-              // SEARCH MODE: Filter tools to ONLY search tools
+              // Pass ALL tools to streamText - activeTools will control availability
+              // This allows prepareStep to dynamically switch modes mid-conversation
+              tools = remoteSetup.tools;
+              
+              // Set initial activeTools based on current mode
+              // prepareStep will update this if mode changes mid-conversation
               if (isSearchModeActive) {
-                tools = filterToolsObjectBySearchMode(remoteSetup.tools, true);
-                log.info('🔍 SEARCH MODE - Filtered to search-only tools:', {
-                  available: Object.keys(tools),
-                  totalFiltered: Object.keys(remoteSetup.tools).length - Object.keys(tools).length
+                initialActiveTools = ['webSearch', 'retrieve'];
+                
+                // DEBUG: Verify search tools are in the tools object
+                const webSearchInTools = 'webSearch' in tools;
+                const retrieveInTools = 'retrieve' in tools;
+                
+                log.info('🔍 SEARCH MODE - Initial active tools:', {
+                  active: initialActiveTools,
+                  totalAvailable: Object.keys(tools).length,
+                  webSearchInTools,
+                  retrieveInTools,
+                  allToolNames: Object.keys(tools),
                 });
+                
+                if (!webSearchInTools || !retrieveInTools) {
+                  log.error('❌ CRITICAL: Search tools missing from tools object!', {
+                    webSearchInTools,
+                    retrieveInTools,
+                    message: 'Search mode is active but search tools are not available'
+                  });
+                }
               } else {
-                // Normal mode: Remove search tools (they're only for search mode)
-                tools = filterToolsObjectBySearchMode(remoteSetup.tools, false);
+                // Normal mode: All tools except search tools
+                initialActiveTools = Object.keys(tools).filter(t => t !== 'webSearch' && t !== 'retrieve');
+                log.info('🔧 AGENT MODE - Initial active tools:', {
+                  activeCount: initialActiveTools.length,
+                  excluded: ['webSearch', 'retrieve']
+                });
               }
               
               systemPrompt = remoteSetup.systemPrompt;
@@ -291,21 +327,68 @@ export async function streamAIResponse(params: {
               workflowId,
               threadId,
               onError,
+              activeTools: initialActiveTools,
               prepareStep: async ({ stepNumber }) => {
-                log.info(`?? Step ${stepNumber}: Preparing website-aware tools and prompt`);
+                log.info(`🔄 Step ${stepNumber}: Preparing step with dynamic mode detection`);
+
+                // Re-check search mode settings (may have changed mid-conversation)
+                const currentSearchSettings = await getSearchSettings();
+                const currentHasSearchKey = await hasApiKeyForProvider(currentSearchSettings.defaultProvider);
+                const currentSearchModeActive = currentSearchSettings.enabled && currentHasSearchKey && !workflowConfig;
+
+                // Re-check tools mode (chat vs agent)
+                const currentToolsMode = await getToolsMode();
+
+                // Determine if mode changed from initial setup
+                const modeChanged = currentSearchModeActive !== isSearchModeActive;
+                const toolsModeChanged = !currentSearchModeActive && !isSearchModeActive && 
+                  ((currentToolsMode === 'chat') !== (enhancedPrompt === chatModeSystemPrompt));
+
+                let stepPrompt: string | undefined;
+                let stepActiveTools: string[] | undefined;
+
+                if (modeChanged || toolsModeChanged) {
+                  log.info(`🔄 Mode changed mid-conversation:`, {
+                    searchMode: { was: isSearchModeActive, now: currentSearchModeActive },
+                    toolsMode: currentToolsMode,
+                    modeChanged,
+                    toolsModeChanged
+                  });
+
+                  // Update system prompt based on new mode
+                  if (currentSearchModeActive) {
+                    stepPrompt = getWebSearchSystemPrompt();
+                    stepActiveTools = ['webSearch', 'retrieve'];
+                    log.info('🔍 Switched to SEARCH MODE');
+                  } else {
+                    stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
+                      ? chatModeSystemPrompt
+                      : remoteSystemPrompt;
+                    // In non-search mode, exclude search tools
+                    stepActiveTools = Object.keys(tools).filter(t => t !== 'webSearch' && t !== 'retrieve');
+                    log.info(`📝 Switched to ${currentToolsMode.toUpperCase()} MODE`);
+                  }
+                }
 
                 // Get current website configuration
                 // Returns null if only base config exists (no website-specific behavior)
                 const currentWebsite = await getCurrentWebsite();
 
-                if (!currentWebsite) {
-                  // No specific website detected - use all tools with base prompt
-                  // This is the expected behavior when only base config exists
-                  log.info(`No website-specific configuration, using all tools`);
-                  return {};
+                if (!currentWebsite && !stepPrompt) {
+                  // No specific website detected and no mode change - use defaults
+                  log.info(`No website-specific configuration, using current tools`);
+                  return stepActiveTools ? { activeTools: stepActiveTools } : {};
                 }
 
-                log.info(`?? Detected website: ${currentWebsite.websiteName}`, {
+                if (!currentWebsite) {
+                  // Mode changed but no website config
+                  return {
+                    ...(stepPrompt && { system: stepPrompt }),
+                    ...(stepActiveTools && { activeTools: stepActiveTools }),
+                  };
+                }
+
+                log.info(`🌐 Detected website: ${currentWebsite.websiteName}`, {
                   id: currentWebsite.websiteId,
                   url: currentWebsite.currentUrl,
                   toolCount: currentWebsite.allowedTools.length
@@ -313,21 +396,29 @@ export async function streamAIResponse(params: {
 
                 // Filter tools based on website
                 const websiteTools = getWebsiteTools(tools, currentWebsite);
+                const websiteToolNames = Object.keys(websiteTools);
 
                 // Augment system prompt with website-specific docs
                 const augmentedPrompt = augmentSystemPrompt(
-                  enhancedPrompt,
+                  stepPrompt || enhancedPrompt,
                   currentWebsite
                 );
 
-                log.info(`?? Step ${stepNumber}: Website-aware configuration applied`, {
+                // Combine website tools with mode-based filtering
+                // If mode changed, intersect with stepActiveTools; otherwise use website tools
+                const finalActiveTools = stepActiveTools
+                  ? websiteToolNames.filter(t => stepActiveTools.includes(t))
+                  : websiteToolNames;
+
+                log.info(`🔄 Step ${stepNumber}: Website-aware configuration applied`, {
                   website: currentWebsite.websiteName,
-                  activeTools: currentWebsite.allowedTools,
-                  promptAugmented: !!currentWebsite.promptAddition
+                  activeTools: finalActiveTools,
+                  promptAugmented: !!currentWebsite.promptAddition,
+                  modeChanged: !!stepActiveTools
                 });
 
                 return {
-                  tools: websiteTools,
+                  activeTools: finalActiveTools,
                   system: augmentedPrompt,
                 };
               },

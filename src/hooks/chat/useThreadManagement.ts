@@ -13,6 +13,7 @@ import type { UIMessage } from 'ai';
 import type { ContextWarningState } from '../../types/sidepanel';
 import type { AppUsage } from '@/ai/types/usage';
 import { clearAllDismissals } from '@/utils/settings';
+import { maybeQueueForExtraction } from '@/utils/supermemory/extractionTrigger';
 
 const log = createLogger('useThreadManagement');
 
@@ -106,6 +107,12 @@ export function useThreadManagement({
 
     const handleNewThread = useCallback(async () => {
         try {
+            // Queue current thread for extraction before creating new one
+            if (currentThreadId) {
+                // Fire and forget - don't await to avoid blocking UI
+                maybeQueueForExtraction(currentThreadId).catch(() => {});
+            }
+
             const thread = await createThread();
             setCurrentThreadId(thread.id);
             setMessages?.([]);
@@ -121,9 +128,15 @@ export function useThreadManagement({
         } catch (error) {
             log.error("Failed to create new thread", error);
         }
-    }, [setMessages, setContextWarning, resetUsage, setUsage]);
+    }, [currentThreadId, setMessages, setContextWarning, resetUsage, setUsage]);
 
     const handleThreadSelect = useCallback(async (threadId: string) => {
+        // Queue current thread for extraction before switching
+        if (currentThreadId && currentThreadId !== threadId) {
+            // Fire and forget - don't await to avoid blocking UI
+            maybeQueueForExtraction(currentThreadId).catch(() => {});
+        }
+
         log.info("🔄 Switching to thread", { threadId });
         setCurrentThreadId(threadId);
         setContextWarning(null);
@@ -133,7 +146,7 @@ export function useThreadManagement({
         clearAllDismissals();
 
         await setLastActiveThreadId(threadId);
-    }, [setContextWarning, setUsage]);
+    }, [currentThreadId, setContextWarning, setUsage]);
 
     const handleClearChat = useCallback(async () => {
         if (!currentThreadId) return;

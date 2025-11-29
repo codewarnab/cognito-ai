@@ -4,8 +4,10 @@ import { SendIcon, StopIcon } from '@/components/shared/icons';
 import { PlusIcon, type PlusIconHandle } from '@assets/icons/ui/plus';
 import { AttachmentDropdown } from '../../attachments/AttachmentDropdown';
 import { AddTabsModal } from '../../modals/AddTabsModal';
+import { AddYouTubeVideoModal } from '../../modals/AddYouTubeVideoModal';
 import type { FileAttachmentData } from '../../attachments/FileAttachment';
 import type { TabAttachmentData } from '../../attachments/TabAttachment';
+import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 
 interface ComposerActionsProps {
     input: string;
@@ -22,14 +24,22 @@ interface ComposerActionsProps {
     openFilePicker: () => void;
     handleScreenshotClick: () => Promise<void>;
     handleAddTabAttachments: (tabs: TabAttachmentData[]) => void;
+    processFiles: (files: ProcessFileOptions[]) => Promise<void>;
+    onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
     // Modal states
     showAttachmentDropdown: boolean;
     setShowAttachmentDropdown: (show: boolean) => void;
     showAddTabsModal: boolean;
     setShowAddTabsModal: (show: boolean) => void;
+    showAddYouTubeVideoModal: boolean;
+    setShowAddYouTubeVideoModal: (show: boolean) => void;
     // Refs
     textareaRef: React.RefObject<HTMLTextAreaElement>;
 }
+
+import { createLogger } from '~logger';
+
+const log = createLogger('ComposerActions', 'AI_CHAT');
 
 /**
  * Right side action buttons: plus icon for attachments, voice/send/stop buttons.
@@ -38,7 +48,7 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
     input,
     setInput,
     isLoading,
-    isRecording,
+    // isRecording,
     onRecordingChange,
     voiceInputRef,
     onStop,
@@ -48,13 +58,24 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
     openFilePicker,
     handleScreenshotClick,
     handleAddTabAttachments,
+    processFiles,
+    onError,
     showAttachmentDropdown,
     setShowAttachmentDropdown,
     showAddTabsModal,
     setShowAddTabsModal,
+    showAddYouTubeVideoModal,
+    setShowAddYouTubeVideoModal,
     textareaRef
 }) => {
     const plusIconRef = useRef<PlusIconHandle>(null);
+
+    // Debug logging for attachment button visibility
+    log.info('🔘 ComposerActions render', {
+        isSearchActive,
+        isLocalMode,
+        showPlusButton: !isSearchActive
+    });
 
     const handleAddTabs = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
         handleAddTabAttachments(tabs);
@@ -95,6 +116,7 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
                     onFileClick={openFilePicker}
                     onScreenshotClick={handleScreenshotClick}
                     onAddTabsClick={() => setShowAddTabsModal(true)}
+                    onAddYouTubeVideoClick={() => setShowAddYouTubeVideoModal(true)}
                     onClose={() => setShowAttachmentDropdown(false)}
                     isLocalMode={isLocalMode}
                 />
@@ -105,6 +127,14 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
                 isOpen={showAddTabsModal}
                 onClose={() => setShowAddTabsModal(false)}
                 onAddTabs={handleAddTabs}
+            />
+
+            {/* Add YouTube Video Modal */}
+            <AddYouTubeVideoModal
+                isOpen={showAddYouTubeVideoModal}
+                onClose={() => setShowAddYouTubeVideoModal(false)}
+                processFiles={processFiles}
+                onError={onError}
             />
 
             {/* Voice Input OR Send Button OR Stop Button - only one shows at a time */}

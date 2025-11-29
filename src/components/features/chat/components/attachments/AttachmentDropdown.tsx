@@ -2,11 +2,13 @@ import React, { useRef, useEffect } from 'react';
 import { PaperclipIcon } from '@/components/shared/icons';
 import { CameraIcon } from '@assets/icons/chat/camera';
 import { TabsIcon } from '@assets/icons/chat/tabs';
+import { YouTubeSimpleIcon } from '@assets/icons/chat/youtube-simple';
 
 interface AttachmentDropdownProps {
     onFileClick: () => void;
     onScreenshotClick: () => void;
     onAddTabsClick: () => void;
+    onAddYouTubeVideoClick: () => void;
     onClose: () => void;
     isLocalMode: boolean;
 }
@@ -21,6 +23,7 @@ export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
     onFileClick,
     onScreenshotClick,
     onAddTabsClick,
+    onAddYouTubeVideoClick,
     onClose,
     isLocalMode,
 }) => {
@@ -41,6 +44,7 @@ export const AttachmentDropdown: React.FC<AttachmentDropdownProps> = ({
         { label: 'File', icon: PaperclipIcon, onClick: onFileClick },
         { label: 'Screenshot', icon: CameraIcon, onClick: onScreenshotClick },
         { label: 'Add tabs', icon: TabsIcon, onClick: onAddTabsClick },
+        { label: 'Add YouTube', icon: YouTubeSimpleIcon, onClick: onAddYouTubeVideoClick },
     ];
 
     const buttonStyle: React.CSSProperties = {

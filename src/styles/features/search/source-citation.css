@@ -1,0 +1,113 @@
+/* Source Citation Styles */
+.source-citation {
+    display: inline-block;
+    position: relative;
+}
+
+.source-citation__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 500;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--color-blue-600, #2563eb);
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 100ms;
+    vertical-align: super;
+    margin-top: -4px;
+}
+
+.source-citation__trigger:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+.source-citation__trigger:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* Tooltip */
+.source-citation__tooltip {
+    position: absolute;
+    z-index: 50;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 4px;
+    width: 200px;
+    padding: 8px;
+    background-color: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    pointer-events: none;
+}
+
+.source-citation__tooltip-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.source-citation__favicon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border-radius: 2px;
+}
+
+.source-citation__info {
+    overflow: hidden;
+}
+
+.source-citation__title {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary, #111827);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.source-citation__url {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--text-secondary, #6b7280);
+}
+
+.source-citation__url span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    .source-citation__trigger {
+        color: var(--color-blue-400, #60a5fa);
+    }
+    
+    .source-citation__tooltip {
+        background-color: var(--bg-primary-dark, #1f2937);
+        border-color: var(--border-color-dark, #374151);
+    }
+    
+    .source-citation__title {
+        color: var(--text-primary-dark, #f3f4f6);
+    }
+    
+    .source-citation__url {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+}
