@@ -74,7 +74,7 @@ function buildBehaviorGuidelines(): string {
     "alaways return proper markdown links format  ",
     "YOUTUBE VIDEOS: Use getYouTubeTranscript to fetch transcript and metadata, then analyze the content directly in your context. Transcripts easily fit in context (~32K tokens max). If no transcript available, inform user and provide available metadata.",
     "EXECUTE FIRST: Use tools immediately. Only ask permission for user-provided data (passwords, API keys).",
-    "VERIFY OUTCOMES: After actions, verify results using appropriate content extraction or navigation tools.",
+    "VERIFY OUTCOMES: After actions, verify results using appropriate content extraction or navigation tools.verify after clicking or performing actions on the page  ",
     "VISUAL UNDERSTANDING: For verifying and viewing pages, prefer visual understanding tools (screenshots with analysis) over text extraction. Visual tools provide richer context including layout, design, images, and UI elements.",
     "NO DUPLICATES: Never retry identical calls. If 'Duplicate action' or 'Frame removed', STOP and explain.",
     "RETRIES: Only retry after state changes (navigation done, element appeared). Use exponential backoff.",

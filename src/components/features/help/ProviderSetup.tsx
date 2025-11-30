@@ -452,7 +452,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     )}
 
                     {/* Model Selector */}
-                    <div className="provider-setup-section">
+                    {/* <div className="provider-setup-section">
                         <label htmlFor="model-selector" className="provider-setup-label">
                             Default Model
                         </label>
@@ -466,7 +466,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                             <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                             <option value="gemini-3-pro-preview">Gemini  3.0 Pro </option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Help Text */}
                     <div className="provider-setup-help">
