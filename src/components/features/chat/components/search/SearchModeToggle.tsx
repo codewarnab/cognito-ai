@@ -51,7 +51,7 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
     const tooltipContent = disabled && disabledReason
         ? disabledReason
         : !hasApiKey
-            ? 'Add API key in Settings to enable web search'
+            ? 'Add tavily API key in Settings to enable web search'
             : isEnabled
                 ? 'Web search enabled - AI can search the internet'
                 : 'Click to enable web search';
