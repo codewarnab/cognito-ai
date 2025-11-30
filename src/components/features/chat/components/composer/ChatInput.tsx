@@ -10,6 +10,7 @@ import type { LocalPdfInfo } from '@/hooks/browser';
 import { useFileAttachments, useLocalPdfAttachment, useYouTubeVideoAttachment } from '@/hooks/attachments';
 import { useYouTubeVideoDetection } from '@/hooks/browser';
 import { useWorkflowMode } from '@/hooks/workflows';
+import { useSearchMode } from '@/hooks/useSearchMode';
 import { useChatInputValidation } from '@/hooks/chat';
 
 interface ChatInputProps {
@@ -126,6 +127,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         messages,
         onError,
     });
+
+    // Get search mode control to auto-disable search when workflow is selected
+    const { isSearchMode, toggleSearchMode } = useSearchMode();
+
+    // Auto-disable search mode when a workflow is activated
+    useEffect(() => {
+        if (activeWorkflow && isSearchMode) {
+            // Workflow activated while search is on - turn off search
+            toggleSearchMode();
+        }
+    }, [activeWorkflow]); // Only trigger when activeWorkflow changes
 
     // Handle send with attachments and workflow
     const handleSend = async () => {

@@ -124,7 +124,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             </div>
 
             {/* Search Controls - Toggle and Depth Selector */}
-            <SearchControls />
+            <SearchControls activeWorkflow={activeWorkflow} />
 
             {/* Model Selector - Gemini icon with model popover */}
             <ModelSelectorPopover />

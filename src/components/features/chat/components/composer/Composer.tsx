@@ -137,7 +137,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
     // Derived state
     const isLocalMode = modelState.mode === 'local';
-    const { isSearchMode, hasApiKey: hasSearchApiKey, isLoading: isSearchLoading } = useSearchMode();
+    const { isSearchMode, hasApiKey: hasSearchApiKey, isLoading: isSearchLoading, searchDepth } = useSearchMode();
     const isSearchActive = isSearchMode && hasSearchApiKey;
 
     // Custom hooks
@@ -218,6 +218,8 @@ export const Composer: React.FC<ComposerProps> = ({
                 showSlashDropdown={showSlashDropdown}
                 handleSlashCommandDetection={handleSlashCommandDetection}
                 composerRef={composerRef}
+                isSearchActive={isSearchActive}
+                searchDepth={searchDepth}
             />
 
             {/* Bottom section with toolbar (left) and actions (right) */}
