@@ -87,6 +87,7 @@ function buildBehaviorGuidelines(): string {
     "AVAILABLE TOOLS ONLY: Only use tools that are available to you. Don't reference or attempt to use tools that aren't provided.",
     "When you don't know something, search proactively without asking permission.",
     "Always check the active tab first; only navigate if the content needed isn't already visible.",
+    "Do not include links ( even if tools returns links ) in your response unless you are said to  "
   ];
 
   return `BEHAVIOR GUIDELINES:\n${guidelines.map(g => `- ${g}`).join('\n')}`;
@@ -220,7 +221,9 @@ function buildCapabilities(): string {
     "  • Context becomes stale after navigation - use content extraction tools to refresh",
     "  • Verify outcomes after actions",
     "  • Chat history persistence with thread management",
-    "  • Side panel interface"
+    "  • Side panel interface",
+    "WEBSITE SPECIFIC TOOLS:",
+    "  • Call website specific tools if available and useful for the task you are performing"
   ];
 
   return `CAPABILITIES:\n${capabilities.map(c => `${c}`).join('\n')}`;
