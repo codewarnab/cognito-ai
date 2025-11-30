@@ -6,6 +6,7 @@
 
 import { createLogger } from '~logger';
 import { handleMcpMessage } from './mcpHandler';
+import { handleWebMCPMessage, isWebMCPMessage } from './webmcpHandler';
 import { handleFileMessage } from './fileHandler';
 import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
@@ -24,6 +25,18 @@ const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 export function initializeMessageRouter(): void {
     chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
         backgroundLog.info(' Received message:', message.type || message.action, message);
+
+        // Handle GET_CURRENT_TAB_ID request from content scripts
+        if (message.type === 'GET_CURRENT_TAB_ID') {
+            sendResponse({ tabId: sender.tab?.id });
+            return false; // Synchronous response
+        }
+
+        // Route WebMCP messages (before MCP to avoid conflicts)
+        if (isWebMCPMessage(message)) {
+            handleWebMCPMessage(message, sender, sendResponse);
+            return true; // Will respond asynchronously
+        }
 
         // Route MCP messages
         if (message.type?.startsWith('mcp/')) {

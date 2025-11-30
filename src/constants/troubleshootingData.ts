@@ -216,6 +216,19 @@ const allTroubleshootingData: TroubleshootingItem[] = [
             'We are actively working on fixing this issue to support follow-up questions within the same chat',
         ],
     },
+    {
+        id: '14',
+        issue: 'Web MCP tools not showing',
+        causes: [
+            'Web MCP support is limited to specific websites',
+            'Page needs a refresh to load tools',
+        ],
+        solutions: [
+            'Hit hard refresh on the page to reload tools',
+            'Note that very few websites have Web MCP support currently',
+            'Example of a supported website: https://www.codewarnab.in/',
+        ],
+    },
 ];
 
 // Filter out local mode related issues when HIDE_LOCAL_MODE is true

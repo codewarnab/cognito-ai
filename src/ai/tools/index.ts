@@ -39,5 +39,11 @@ export {
 } from './searchToolFilter';
 export type { SearchToolName } from './searchToolFilter';
 
+// WebMCP tools
+export {
+    convertWebMCPToolsToAITools,
+    getWebMCPToolsFromBackground
+} from './webmcpTools';
+
 // Tool UI components
 export * from './components';

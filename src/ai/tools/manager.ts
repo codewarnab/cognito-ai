@@ -7,6 +7,7 @@ import { createLogger } from '~logger';
 import { getToolsForMode } from './registry';
 import { getAllTools } from './registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
+import { getWebMCPToolsFromBackground } from './webmcpTools';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
 import type { WorkflowDefinition } from '../../workflows/types';
@@ -107,7 +108,7 @@ export async function setupRemoteTools(
   });
 
   // Get MCP tools from background service worker (not in workflow mode)
-  let mcpTools = {};
+  let mcpTools: Record<string, unknown> = {};
   if (!workflowConfig) {
     try {
       const mcpManager = await getMCPToolsFromBackground();
@@ -118,6 +119,24 @@ export async function setupRemoteTools(
       });
     } catch (error) {
       log.warn('⚠️ MCP tools unavailable:', error);
+    }
+  }
+
+  // Get WebMCP tools from active tab (not in workflow mode)
+  let webmcpTools: Record<string, unknown> = {};
+  if (!workflowConfig) {
+    try {
+      const webmcpResult = await getWebMCPToolsFromBackground();
+      webmcpTools = webmcpResult.tools;
+      if (Object.keys(webmcpTools).length > 0) {
+        log.info('🌐 WebMCP tools loaded:', {
+          count: Object.keys(webmcpTools).length,
+          names: Object.keys(webmcpTools),
+          domain: webmcpResult.domain
+        });
+      }
+    } catch (error) {
+      log.debug('WebMCP tools unavailable:', error);
     }
   }
 
@@ -132,11 +151,12 @@ export async function setupRemoteTools(
   });
 
   // Combine all tools
-  const tools = { ...extensionTools, ...agentTools, ...mcpTools };
+  const tools = { ...extensionTools, ...agentTools, ...mcpTools, ...webmcpTools };
   log.info('🔧 Total tools available:', {
     count: Object.keys(tools).length,
     extension: Object.keys(extensionTools).length,
     mcp: Object.keys(mcpTools).length,
+    webmcp: Object.keys(webmcpTools).length,
     agents: Object.keys(agentTools).length,
     workflowMode: !!workflowConfig
   });

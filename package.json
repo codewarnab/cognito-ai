@@ -20,6 +20,7 @@
     "@ai-sdk/react": "^2.0.100",
     "@built-in-ai/core": "3.0.0-beta.0",
     "@google/genai": "^1.30.0",
+    "@mcp-b/transports": "^1.1.1",
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@plasmohq/storage": "^1.15.0",
     "@radix-ui/react-collapsible": "^1.1.12",
