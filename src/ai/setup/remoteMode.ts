@@ -76,17 +76,18 @@ export async function setupRemoteMode(
     // Filter extension tools based on enabledTools and workflow
     let extensionTools: Record<string, any>;
     if (workflowConfig) {
-        // Workflow mode: Only allowed tools that are also enabled
+        // Workflow mode: Use ALL allowed tools from workflow (ignore user's enabledTools filter)
+        // Workflows have specific tool requirements that must be met
         extensionTools = Object.fromEntries(
             Object.entries(allExtensionTools).filter(([name]) =>
-                workflowConfig.allowedTools.includes(name) && enabledTools.includes(name)
+                workflowConfig.allowedTools.includes(name)
             )
         );
         log.info('🔧 Filtered tools for workflow:', {
             workflow: workflowConfig.name,
-            allowed: workflowConfig.allowedTools,
-            filtered: Object.keys(extensionTools),
-            enabledCount: enabledTools.length
+            allowedByWorkflow: workflowConfig.allowedTools,
+            actuallyAvailable: Object.keys(extensionTools),
+            registeredCount: Object.keys(allExtensionTools).length
         });
     } else {
         // Normal mode: All enabled tools except workflow-only

@@ -37,9 +37,9 @@ interface ComposerActionsProps {
     textareaRef: React.RefObject<HTMLTextAreaElement>;
 }
 
-import { createLogger } from '~logger';
+// import { createLogger } from '~logger';  
 
-const log = createLogger('ComposerActions', 'AI_CHAT');
+// const log = createLogger('ComposerActions', 'AI_CHAT');
 
 /**
  * Right side action buttons: plus icon for attachments, voice/send/stop buttons.
@@ -71,11 +71,11 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
     const plusIconRef = useRef<PlusIconHandle>(null);
 
     // Debug logging for attachment button visibility
-    log.info('🔘 ComposerActions render', {
-        isSearchActive,
-        isLocalMode,
-        showPlusButton: !isSearchActive
-    });
+    // log.info('🔘 ComposerActions render', {
+    //     isSearchActive,
+    //     isLocalMode,
+    //     showPlusButton: !isSearchActive
+    // });
 
     const handleAddTabs = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
         handleAddTabAttachments(tabs);

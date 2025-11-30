@@ -85,85 +85,43 @@ export const RETRIEVE_API_URL =
     'https://youtube-transcript-generator-five.vercel.app/retrieve' as const;
 
 /**
- * Logging Configuration
- * Control which features should output logs to console
- */
-export const LOG_CONFIG = {
-    // MCP Related Logs
-    MCP_CLIENT: true,           // MCP client initialization, connections
-    MCP_TOOLS: true,            // MCP tool listing, registration
-    MCP_EXECUTION: true,        // MCP tool execution
-    MCP_AUTH: true,             // MCP OAuth flows
-    MCP_SSE: false,             // Detailed SSE transport logs (verbose)
-
-    // Tool Related Logs
-    TOOLS_REGISTRY: true,       // Tool registration, discovery
-    TOOLS_EXECUTION: true,      // Tool execution (extension tools)
-    TOOLS_VALIDATION: false,    // Tool schema validation (verbose)
-    TOOLS_INTEGRATION: true,    // Tool integration tests
-
-    // AI Related Logs
-    AI_CHAT: true,              // Chat completions, streaming
-    AI_PROMPTS: true,           // Prompt generation, system instructions
-    AI_VOICE: true,             // Voice mode AI (Gemini Live)
-    AI_WEBSITE_DETECTION: false, // Website-specific prompts (verbose)
-
-    // Voice Related Logs
-    VOICE_RECORDING: false,     // Speech recognition, audio capture (verbose)
-    VOICE_CLIENT: true,         // Gemini Live client initialization
-    VOICE_UI: false,            // Voice mode UI state changes (verbose)
-    VOICE_AUDIO: false,         // Audio processing, orb visualization (verbose)
-
-    // Memory System Logs
-    MEMORY_OPERATIONS: true,    // Memory save, retrieve, delete
-    MEMORY_SUGGESTIONS: false,  // Memory suggestion generation (verbose)
-
-    // Background & Storage Logs
-    BACKGROUND: true,           // Background script operations
-    STORAGE: false,             // Storage operations (verbose)
-
-    // Utility & Helper Logs
-    UTILS: false,               // General utility functions (verbose)
-    NOTIFICATIONS: true,        // Notification system
-    CREDENTIALS: true,          // Provider credentials management
-
-    // Search Related Logs
-    SEARCH: true,               // Web search operations
-    SETTINGS: true,             // Settings management
-
-    // Debug & Development
-    DEBUG: false,               // Debug panels, test tools
-    PERFORMANCE: false,         // Performance metrics (verbose)
-
-    // Special Categories
-    ERRORS_ONLY: false,         // When true, ONLY show errors (overrides all above)
-    SHOW_ALL: true,            // When true, show ALL logs (overrides all above)
-} as const;
-
-export type LogCategory = keyof typeof LOG_CONFIG;
-
-/**
  * Logging Presets - Quick configurations for common scenarios
  * 
- * To use a preset, replace the LOG_CONFIG export with:
- * export const LOG_CONFIG = LOG_PRESETS.DEVELOPMENT;
+ * To use a preset, update the LOG_CONFIG export at the end of this section
  */
 export const LOG_PRESETS = {
     // Development - Show most logs except very verbose ones
     DEVELOPMENT: {
-        ...LOG_CONFIG,
+        MCP_CLIENT: true,
+        MCP_TOOLS: true,
+        MCP_EXECUTION: true,
+        MCP_AUTH: true,
         MCP_SSE: false,
+        TOOLS_REGISTRY: true,
+        TOOLS_EXECUTION: true,
         TOOLS_VALIDATION: false,
+        TOOLS_INTEGRATION: true,
+        AI_CHAT: true,
+        AI_PROMPTS: true,
+        AI_VOICE: true,
+        AI_WEBSITE_DETECTION: false,
         VOICE_RECORDING: false,
+        VOICE_CLIENT: true,
         VOICE_UI: false,
         VOICE_AUDIO: false,
+        MEMORY_OPERATIONS: true,
+        MEMORY_SUGGESTIONS: false,
+        BACKGROUND: true,
         STORAGE: false,
         UTILS: false,
-        AI_WEBSITE_DETECTION: false,
-        MEMORY_SUGGESTIONS: false,
-        PERFORMANCE: false,
+        NOTIFICATIONS: true,
+        CREDENTIALS: true,
         SEARCH: true,
         SETTINGS: true,
+        DEBUG: false,
+        PERFORMANCE: false,
+        ERRORS_ONLY: false,
+        SHOW_ALL: false,
     },
 
     // Debugging MCP Issues
@@ -367,9 +325,76 @@ export const LOG_PRESETS = {
         SEARCH: true,
         SETTINGS: true,
         ERRORS_ONLY: false,
-        SHOW_ALL: true,
+    },
+
+    // Debugging Workflow Issues (for /research, /youtube-to-notion, etc.)
+    DEBUG_WORKFLOW: {
+        // Disable all UI/Component logs
+        MCP_CLIENT: false,
+        MCP_TOOLS: false,
+        MCP_EXECUTION: false,
+        MCP_AUTH: false,
+        MCP_SSE: false,
+        TOOLS_REGISTRY: false,
+        TOOLS_EXECUTION: false,
+        TOOLS_VALIDATION: false,
+        TOOLS_INTEGRATION: false,
+
+        // Enable AI flow logs (critical for workflow)
+        AI_CHAT: true,              // aiLogic.ts, useAIChat.ts
+        AI_PROMPTS: true,           // Prompt selection/generation
+        AI_VOICE: false,
+        AI_WEBSITE_DETECTION: false,
+
+        // Disable voice
+        VOICE_RECORDING: false,
+        VOICE_CLIENT: false,
+        VOICE_UI: false,
+        VOICE_AUDIO: false,
+
+        // Disable memory
+        MEMORY_OPERATIONS: false,
+        MEMORY_SUGGESTIONS: false,
+
+        // Enable background/core logs
+        BACKGROUND: true,           // SimpleFrontendTransport, background operations
+        STORAGE: false,
+
+        // Disable utilities
+        UTILS: false,
+        NOTIFICATIONS: false,
+        CREDENTIALS: false,
+
+        // Disable search/settings
+        SEARCH: false,
+        SETTINGS: false,
+
+        // Debug flags
+        DEBUG: false,
+        PERFORMANCE: false,
+        ERRORS_ONLY: false,
+        SHOW_ALL: false,  // CRITICAL: Set to false to use category filters
     },
 } as const;
+
+/**
+ * Active Logging Configuration
+ * 
+ * CURRENT PRESET: DEBUG_WORKFLOW (for debugging /research workflow issue) 
+ * 
+ * Files that need category tags to be filtered:
+ * - useMessageHandlers.ts (no category) - will show all logs
+ * - SimpleFrontendTransport.ts (no category) - will show all logs  
+ * - remoteMode.ts (AI_CHAT category) - ENABLED
+ * - aiLogic.ts (AI_CHAT category) - ENABLED
+ */
+export const LOG_CONFIG = {
+    ...LOG_PRESETS.DEBUG_WORKFLOW,  // Use workflow debug preset
+    // Override: Set SHOW_ALL to false to respect category filters
+    SHOW_ALL: false,
+} as const;
+
+export type LogCategory = keyof typeof LOG_CONFIG;
 
 /**
  * Hide Local Mode Configuration

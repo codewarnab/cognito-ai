@@ -18,6 +18,10 @@ export interface SearchModeToggleProps {
     hasApiKey: boolean;
     /** Whether the component is in loading state */
     isLoading?: boolean;
+    /** Whether the toggle is disabled (e.g., when a workflow is active) */
+    disabled?: boolean;
+    /** Reason why the toggle is disabled (shown in tooltip) */
+    disabledReason?: string;
     /** Additional CSS classes */
     className?: string;
 }
@@ -27,26 +31,30 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
     onToggle,
     hasApiKey,
     isLoading = false,
+    disabled = false,
+    disabledReason,
     className,
 }) => {
     const handleClick = () => {
-        if (!isLoading && hasApiKey) {
+        if (!isLoading && hasApiKey && !disabled) {
             onToggle();
         }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if ((e.key === 'Enter' || e.key === ' ') && !isLoading && hasApiKey) {
+        if ((e.key === 'Enter' || e.key === ' ') && !isLoading && hasApiKey && !disabled) {
             e.preventDefault();
             onToggle();
         }
     };
 
-    const tooltipContent = !hasApiKey
-        ? 'Add API key in Settings to enable web search'
-        : isEnabled
-          ? 'Web search enabled - AI can search the internet'
-          : 'Click to enable web search';
+    const tooltipContent = disabled && disabledReason
+        ? disabledReason
+        : !hasApiKey
+            ? 'Add API key in Settings to enable web search'
+            : isEnabled
+                ? 'Web search enabled - AI can search the internet'
+                : 'Click to enable web search';
 
     const classNames = [
         'search-mode-toggle',
@@ -63,7 +71,7 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
                 type="button"
                 onClick={handleClick}
                 onKeyDown={handleKeyDown}
-                disabled={isLoading || !hasApiKey}
+                disabled={isLoading || !hasApiKey || disabled}
                 aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
                 aria-pressed={isEnabled}
                 className={classNames}

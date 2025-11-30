@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { MentionInput } from '@/components/shared/inputs';
 import type { FileAttachmentData } from '../../attachments/FileAttachment';
 import type { WorkflowDefinition } from '@/workflows/types';
+import type { SearchDepth } from '@/search/types';
 
 interface ComposerInputProps {
     input: string;
@@ -15,7 +16,32 @@ interface ComposerInputProps {
     showSlashDropdown: boolean;
     handleSlashCommandDetection: (show: boolean, query: string) => void;
     composerRef: React.RefObject<HTMLDivElement>;
+    isSearchActive?: boolean;
+    searchDepth?: SearchDepth;
 }
+
+/**
+ * Returns the appropriate placeholder text based on current mode.
+ */
+const getPlaceholder = (
+    activeWorkflow: WorkflowDefinition | null,
+    attachments: FileAttachmentData[],
+    isSearchActive?: boolean,
+    searchDepth?: SearchDepth
+): string => {
+    if (activeWorkflow) {
+        return `${activeWorkflow.name} mode: Describe what to ${activeWorkflow.id}...`;
+    }
+    if (attachments.length > 0) {
+        return 'Add a message (optional)...';
+    }
+    if (isSearchActive) {
+        return searchDepth === 'advanced'
+            ? 'Deep research the web...'
+            : 'Search the web...';
+    }
+    return 'Ask anything (type @ to mention tabs, / for workflows)';
+};
 
 /**
  * Main input area with MentionInput and animated preview overlay.
@@ -30,7 +56,9 @@ export const ComposerInput: React.FC<ComposerInputProps> = ({
     attachments,
     showSlashDropdown,
     handleSlashCommandDetection,
-    composerRef
+    composerRef,
+    isSearchActive,
+    searchDepth
 }) => {
     return (
         <div className="copilot-composer-primary">
@@ -48,13 +76,7 @@ export const ComposerInput: React.FC<ComposerInputProps> = ({
                         }
                     }}
                     disabled={isLoading}
-                    placeholder={
-                        activeWorkflow
-                            ? `${activeWorkflow.name} mode: Describe what to ${activeWorkflow.id}...`
-                            : attachments.length > 0
-                                ? "Add a message (optional)..."
-                                : "Ask anything (type @ to mention tabs, / for workflows)"
-                    }
+                    placeholder={getPlaceholder(activeWorkflow, attachments, isSearchActive, searchDepth)}
                     autoFocus={true}
                 />
                 {/* Animated Preview Overlay - iMessage style */}

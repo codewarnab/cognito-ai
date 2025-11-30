@@ -9,6 +9,7 @@ import { SearchModeToggle } from './SearchModeToggle';
 import { SearchDepthSelector } from './SearchDepthSelector';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
+import type { WorkflowDefinition } from '@/workflows/types';
 import '@/styles/features/search/search-controls.css';
 
 const log = createLogger('SearchControls', 'SEARCH');
@@ -16,9 +17,11 @@ const log = createLogger('SearchControls', 'SEARCH');
 export interface SearchControlsProps {
     /** Additional CSS classes */
     className?: string;
+    /** Active workflow - disables search toggle when present */
+    activeWorkflow?: WorkflowDefinition | null;
 }
 
-export const SearchControls: React.FC<SearchControlsProps> = ({ className }) => {
+export const SearchControls: React.FC<SearchControlsProps> = ({ className, activeWorkflow }) => {
     const {
         isSearchMode,
         toggleSearchMode,
@@ -33,7 +36,8 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ className }) => 
         isSearchMode,
         hasApiKey,
         isLoading,
-        searchDepth
+        searchDepth,
+        activeWorkflow: activeWorkflow?.name || null
     });
 
     const classNames = ['search-controls', className].filter(Boolean).join(' ');
@@ -45,6 +49,8 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ className }) => 
                 onToggle={toggleSearchMode}
                 hasApiKey={hasApiKey}
                 isLoading={isLoading}
+                disabled={!!activeWorkflow}
+                disabledReason={activeWorkflow ? `Search is disabled in ${activeWorkflow.name} mode` : undefined}
             />
             {/* Only show depth selector when search is enabled */}
             {isSearchMode && hasApiKey && (
