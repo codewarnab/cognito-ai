@@ -20,7 +20,12 @@ const greetings = {
     "Carpe Diem! What's the first task?",
     "Grab your beverage of choice. It's go time.",
     "Good morning! Let's make some progress.",
-    "Feeling fresh? Let's tackle that to-do list."
+    "Feeling fresh? Let's tackle that to-do list.",
+    "Up and at 'em! Let's build something cool.",
+    "Morning! The coffee is brewing, let's get started.",
+    "A fresh day for fresh ideas. What's first?",
+    "Good morning! Let's turn plans into action.",
+    "Sunlight and success. Let's make it happen."
   ],
   afternoon: [
     "Good afternoon! What can I help you with?",
@@ -36,13 +41,18 @@ const greetings = {
     "Need a spark of inspiration this afternoon?",
     "The day is still young. What's the focus?",
     "Afternoon check-in: What are we solving?",
-    "Turning coffee into code. How about you?",
+    "Turning coffee into productivity. How about you?",
     "Let's finish the day strong. What's up?",
     "Good afternoon! Let's crush some goals.",
     "Mid-day motivation coming your way!",
     "Staying focused? Let me know what you need.",
     "Good afternoon! Let's keep the flow state alive.",
-    "Time to tackle the afternoon tasks."
+    "Time to tackle the afternoon tasks.",
+    "Afternoon! Let's keep the creative juices flowing.",
+    "Good afternoon! Time to crush those goals.",
+    "Refueling for the second half. What's the mission?",
+    "Afternoon vibes. Let's make magic happen.",
+    "Sun's high, spirits high. What are we doing?"
   ],
   evening: [
     "Good evening! Ready to get things done?",
@@ -63,8 +73,13 @@ const greetings = {
     "Good evening! Let's tie up some loose ends.",
     "Reflecting on the day, or planning for tomorrow?",
     "Evening inspiration strikes! What is it?",
-    "Good evening! Let's code into the sunset.",
-    "Hope you had a good day. Let's continue."
+    "Good evening! Let's work into the sunset.",
+    "Hope you had a good day. Let's continue.",
+    "Good evening! Let's wind down with some wins.",
+    "Evening! The perfect time for deep work.",
+    "Stars are coming out. Let's shine.",
+    "Good evening! Let's make every keystroke count.",
+    "Twilight focus. What's on your mind?"
   ],
   night: [
     "Burning the midnight oil? Let's make it count! 🌙",
@@ -84,7 +99,12 @@ const greetings = {
     "Psst... it's late. But I'm ready if you are.",
     "Moonlight productivity. What's the task?",
     "Powered by caffeine and determination. Let's go.",
-    "still working while the world dreams."
+    "still working while the world dreams.",
+    "Late night thoughts? Let's capture them.",
+    "The world sleeps, but we build. What's next?",
+    "Midnight oil burning bright. Let's go.",
+    "Quiet hours, loud results. What's the plan?",
+    "Into the night we go. Ready for anything."
   ]
 };
 
