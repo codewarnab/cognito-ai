@@ -17,10 +17,104 @@ const markApiKeyValid = markGoogleApiKeyValid;
 const log = createLogger('StreamCallbacks', 'AI_CHAT');
 
 /**
- * Create onStepFinish callback for streamText
+ * Tracks empty response occurrences for feedback loop
  */
-export function createOnStepFinishCallback(writer: any) {
+interface EmptyResponseTracker {
+    consecutiveEmptyCount: number;
+    lastEmptyTimestamp: number;
+}
+
+const emptyResponseTrackers = new Map<string, EmptyResponseTracker>();
+
+/**
+ * Create onStepFinish callback for streamText
+ * Includes feedback loop for empty responses (model returns STOP with no content)
+ */
+export function createOnStepFinishCallback(writer: any, sessionId?: string) {
+    const trackerId = sessionId || 'default-' + Date.now();
+    
+    // Initialize tracker for this session
+    if (!emptyResponseTrackers.has(trackerId)) {
+        emptyResponseTrackers.set(trackerId, {
+            consecutiveEmptyCount: 0,
+            lastEmptyTimestamp: 0
+        });
+    }
+
     return ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }: any) => {
+        const tracker = emptyResponseTrackers.get(trackerId)!;
+        
+        // Detect empty response: STOP finish reason with no text and no tool calls
+        const hasText = text && text.trim().length > 0;
+        const hasToolCalls = toolCalls && toolCalls.length > 0;
+        const isEmptyResponse = finishReason === 'stop' && !hasText && !hasToolCalls;
+
+        if (isEmptyResponse) {
+            tracker.consecutiveEmptyCount++;
+            tracker.lastEmptyTimestamp = Date.now();
+
+            log.warn('⚠️ Empty response detected - model returned STOP with no content', {
+                consecutiveCount: tracker.consecutiveEmptyCount,
+                finishReason,
+                hasText,
+                hasToolCalls,
+                usage: usage ? {
+                    promptTokens: usage.promptTokens,
+                    totalTokens: usage.totalTokens,
+                    cachedTokens: usage.cachedInputTokens
+                } : 'none'
+            });
+
+            // Write feedback to stream based on consecutive empty count
+            if (tracker.consecutiveEmptyCount === 1) {
+                // First empty response - gentle nudge
+                writer.write({
+                    type: 'text-delta',
+                    id: 'empty-response-feedback-' + generateId(),
+                    delta: '\n\n*Processing your request...*\n\n',
+                });
+            } else if (tracker.consecutiveEmptyCount === 2) {
+                // Second empty response - more explicit feedback
+                writer.write({
+                    type: 'text-delta',
+                    id: 'empty-response-feedback-' + generateId(),
+                    delta: '\n\n *The model returned an empty response. Attempting to continue...*\n\n',
+                });
+            } else if (tracker.consecutiveEmptyCount >= 3) {
+                // Multiple empty responses - notify user
+                log.error('🔴 Multiple consecutive empty responses detected', {
+                    count: tracker.consecutiveEmptyCount
+                });
+
+                writer.write({
+                    type: 'text-delta',
+                    id: 'empty-response-error-' + generateId(),
+                    delta: '\n\n **The model is having trouble generating a response.** This can happen when:\n' +
+                        '- The context is too complex\n' +
+                        '- The request needs clarification\n' +
+                        '- There\'s a temporary service issue\n\n' +
+                        'Please try rephrasing your request or starting a new conversation.\n\n',
+                });
+
+                // Send status for UI to potentially show r button
+                writer.write({
+                    type: 'data-status',
+                    id: 'empty-response-status-' + generateId(),
+                    data: {
+                        status: 'empty-response',
+                        consecutiveCount: tracker.consecutiveEmptyCount,
+                        timestamp: Date.now()
+                    },
+                    transient: false,
+                });
+            }
+        } else {
+            // Reset tracker on successful response
+            if (hasText || hasToolCalls) {
+                tracker.consecutiveEmptyCount = 0;
+            }
+        }
+
         // Check for malformed function calls or errors
         if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {
             log.error('⚠️ Step finished with error', {
@@ -108,7 +202,8 @@ export function createOnFinishCallback(
     onUsageUpdate?: (usage: AppUsage) => void,
     workflowId?: string,
     threadId?: string,
-    stepCount?: number
+    stepCount?: number,
+    sessionId?: string
 ) {
     return async ({ text, finishReason, usage, steps }: any) => {
         log.info('🏁 Stream finished:', {
@@ -119,6 +214,10 @@ export function createOnFinishCallback(
             workflowMode: !!workflowId,
             threadId: threadId || 'unknown'
         });
+
+        // Clean up empty response tracker for this session
+        const trackerId = sessionId || 'default-' + Date.now();
+        emptyResponseTrackers.delete(trackerId);
 
         // Capture and enhance usage information for remote mode only
         if (effectiveMode === 'remote' && usage) {
