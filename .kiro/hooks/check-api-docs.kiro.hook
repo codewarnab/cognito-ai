@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "API Documentation Checker",
+  "description": "When files in src/ai/core, src/ai/tools, or src/mcp are saved, checks if docs/TECHNICAL_DOCUMENTATION.md needs updates to reflect API changes.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/ai/core/**/*",
+      "src/ai/tools/**/*",
+      "src/mcp/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file in the AI core, tools, or MCP folder was just modified. Please review the changes and compare them against docs/TECHNICAL_DOCUMENTATION.md to determine if the documentation needs updates. Look for: new or modified exports, changed function signatures, new types/interfaces, deprecated APIs, or architectural changes. If updates are needed, suggest the specific documentation changes required."
+  }
+}

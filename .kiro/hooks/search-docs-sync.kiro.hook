@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Search Docs Sync",
+  "description": "When files in src/search folder are saved, verifies that docs/WEB_SEARCH_INTEGRATION.md accurately reflects the current search provider implementations.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/search/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file in src/search was modified. Please review the changes and compare them against docs/WEB_SEARCH_INTEGRATION.md. Check if the documentation accurately reflects:\n1. Current search provider implementations (e.g., Tavily provider in src/search/providers/)\n2. Search types and interfaces defined in src/search/types.ts and src/search/schema.ts\n3. Error handling patterns in src/search/errors.ts\n4. Caching mechanisms in src/search/cache.ts\n5. Any new providers or removed providers\n\nIf the documentation is outdated or missing information about the current implementation, suggest specific updates to docs/WEB_SEARCH_INTEGRATION.md to keep it in sync."
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "TypeScript Changelog Logger",
+  "description": "Automatically appends a changelog entry to CHANGELOG.md when any TypeScript or TSX file in the src folder is saved, including the file path, a brief summary of the modification, and timestamp, grouped by date.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A TypeScript/TSX file was just saved. Please analyze the changes made to this file and append a new entry to CHANGELOG.md. The entry should include:\n1. The file path that was modified\n2. A brief plain English summary of what changed\n3. The current timestamp\n\nFormat the entry under today's date header (## YYYY-MM-DD). If today's date header already exists, add the entry under it. If not, create a new date header at the top of the changelog. Each entry should be a bullet point with the timestamp, file path, and description."
+  }
+}

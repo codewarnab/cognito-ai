@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "name": "Sync Tool Descriptions",
+  "description": "When files in src/ai/tools or src/actions are saved, checks if the tool descriptions in src/constants/toolDescriptions.ts are still accurate and suggests updates if the implementation changed.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/ai/tools/**/*",
+      "src/actions/**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file in the tools or actions folder was just modified. Please:\n\n1. Read the modified file to understand what the tool/action does\n2. Read src/constants/toolDescriptions.ts to see the current descriptions\n3. Compare the implementation with the documented description\n4. If the description is outdated or inaccurate based on the implementation changes, suggest specific updates to toolDescriptions.ts to keep them in sync\n\nFocus on: tool names, parameter descriptions, functionality descriptions, and any behavioral changes that should be reflected in the descriptions."
+  }
+}
