@@ -213,6 +213,14 @@
     color: var(--text-secondary, #9ca3af);
 }
 
+.tools-popover-toggle-btn.some-on {
+    color: var(--color-warning, #f59e0b);
+}
+
+.tools-popover-toggle-btn.some-on:hover {
+    background-color: rgba(245, 158, 11, 0.1);
+}
+
 /* Tools List */
 .tools-popover-tools {
     padding: 2px 0 4px 20px;
@@ -422,6 +430,97 @@
 }
 
 .tools-popover-mcp-count {
+    opacity: 0.7;
+    font-size: 9px;
+}
+
+/* WebMCP Section */
+.tools-popover-webmcp-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.tools-popover-webmcp-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-tertiary, #6b7280);
+}
+
+.tools-popover-webmcp-header svg {
+    color: var(--color-success, #10b981);
+}
+
+.tools-popover-webmcp-loading {
+    font-size: 9px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.7;
+}
+
+.tools-popover-webmcp-domain {
+    margin-left: auto;
+    font-weight: 400;
+    font-size: 9px;
+    color: var(--text-tertiary, #6b7280);
+    text-transform: none;
+    letter-spacing: normal;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tools-popover-webmcp-name {
+    color: var(--color-success, #10b981) !important;
+}
+
+.tools-popover-webmcp-icon {
+    color: var(--color-success, #10b981);
+    flex-shrink: 0;
+}
+
+.tools-popover-webmcp-icon.hidden {
+    display: none;
+}
+
+.tools-popover-webmcp-favicon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    border-radius: 2px;
+    object-fit: contain;
+}
+
+.tools-popover-divider {
+    height: 1px;
+    background-color: var(--border-color, rgba(255, 255, 255, 0.08));
+    margin: 8px 0;
+}
+
+.tools-popover-webmcp-empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-tertiary, #6b7280);
+}
+
+.tools-popover-tool-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.tools-popover-webmcp-count {
     opacity: 0.7;
     font-size: 9px;
 }

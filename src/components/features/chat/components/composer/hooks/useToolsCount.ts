@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
 import { getEnabledToolsOverride } from '@/utils/settings';
+import { useWebMCPTools } from '@/hooks/webmcp';
 import { createLogger } from '~logger';
 
 const log = createLogger('useToolsCount', 'AI_CHAT');
@@ -8,6 +9,7 @@ const log = createLogger('useToolsCount', 'AI_CHAT');
 interface ToolsCountState {
     enabledToolsCount: number;
     mcpToolsCount: number;
+    webMcpToolsCount: number;
     totalEnabledCount: number;
     isTooManyTools: boolean;
     loadToolsCount: () => Promise<void>;
@@ -17,7 +19,7 @@ interface ToolsCountState {
 
 /**
  * Hook to manage tools count state and loading logic.
- * Calculates enabled tools from storage and MCP servers.
+ * Calculates enabled tools from storage, MCP servers, and WebMCP tools.
  */
 export const useToolsCount = (): ToolsCountState => {
     // Calculate initial tool count synchronously to avoid showing 0 on first render
@@ -35,7 +37,10 @@ export const useToolsCount = (): ToolsCountState => {
     });
     const [mcpToolsCount, setMcpToolsCount] = useState(0);
 
-    const totalEnabledCount = enabledToolsCount + mcpToolsCount;
+    // Get WebMCP tools count from the hook
+    const { enabledCount: webMcpToolsCount } = useWebMCPTools();
+
+    const totalEnabledCount = enabledToolsCount + mcpToolsCount + webMcpToolsCount;
     const isTooManyTools = totalEnabledCount > 40;
 
     const loadToolsCount = useCallback(async () => {
@@ -98,6 +103,7 @@ export const useToolsCount = (): ToolsCountState => {
     return {
         enabledToolsCount,
         mcpToolsCount,
+        webMcpToolsCount,
         totalEnabledCount,
         isTooManyTools,
         loadToolsCount,

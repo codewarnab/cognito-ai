@@ -1,6 +1,6 @@
 import React from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
-import { ToolsModal } from '../../modals/ToolsModal';
+import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Tooltip } from '@/components/ui/primitives';
@@ -20,8 +20,8 @@ interface ComposerToolbarProps {
     onToggleModeDropdown: (show: boolean) => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
     // Tools state
-    enabledToolsCount: number;
     mcpToolsCount: number;
+    webMcpToolsCount: number;
     totalEnabledCount: number;
     isTooManyTools: boolean;
     showToolsModal: boolean;
@@ -43,8 +43,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     showModeDropdown,
     onToggleModeDropdown,
     onError,
-    enabledToolsCount,
     mcpToolsCount,
+    webMcpToolsCount,
     totalEnabledCount,
     isTooManyTools,
     showToolsModal,
@@ -61,6 +61,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         isSearchActive,
         totalEnabledCount,
         mcpToolsCount,
+        webMcpToolsCount,
         searchToolsCount,
         activeWorkflow: activeWorkflow?.name || null,
         toolsDisplay: isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}`
@@ -101,7 +102,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     >
                         <Wrench size={14} />
                         <span className="composer-tools-count">
-                            {isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
+                            {isSearchActive 
+                                ? `${searchToolsCount} (Search)` 
+                                : `${totalEnabledCount}${webMcpToolsCount > 0 ? ` (${webMcpToolsCount} Web)` : ''}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
                         </span>
                     </button>
                 </Tooltip>

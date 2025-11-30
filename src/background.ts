@@ -24,6 +24,7 @@ import { initializeMessageRouter, initializeSummarizerPortListener, initializeWr
 import { initializeRewriterContextMenu, initializeAskerContextMenu } from './background/contextMenu';
 import { recoverExtractionQueue } from './background/supermemory/extraction/startup';
 import { recoverContentMemoryQueue } from './background/supermemory/contentMemory/startup';
+import { initializeWebMCPManager } from './background/webmcp/manager';
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
 
@@ -52,6 +53,7 @@ initializeNotificationListeners();
 initializeOmnibox();
 initializeRewriterContextMenu();
 initializeAskerContextMenu();
+initializeWebMCPManager();
 
 // ============================================================================
 // Action Handlers

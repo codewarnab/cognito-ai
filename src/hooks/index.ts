@@ -36,3 +36,6 @@ export { useSearchMode } from './useSearchMode';
 export type { UseSearchModeResult } from './useSearchMode';
 export { useSearchModeWithAI } from './useSearchModeWithAI';
 export type { UseSearchModeWithAIResult } from './useSearchModeWithAI';
+
+// WebMCP hooks
+export * from './webmcp';

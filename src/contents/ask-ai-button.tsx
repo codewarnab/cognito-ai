@@ -40,6 +40,7 @@ const AskAIButton = () => {
     const [isCompactMode, setIsCompactMode] = useState(false);
     const [savedPosition, setSavedPosition] = useState<Position | null>(null);
     const [isReady, setIsReady] = useState(false); // Track if position is loaded
+    const [mcpToolsDetected, setMcpToolsDetected] = useState(false); // MCP tools highlight
     const buttonRef = useRef<HTMLDivElement>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
     const hasDragged = useRef(false);
@@ -94,13 +95,19 @@ const AskAIButton = () => {
         })();
     }, []);
 
-    // Listen for sidebar state changes
+    // Listen for sidebar state changes and MCP tool detection
     useEffect(() => {
         const handleMessage = (message: any) => {
             if (message.action === "SIDEBAR_OPENED") {
                 setIsVisible(false);
             } else if (message.action === "SIDEBAR_CLOSED") {
                 setIsVisible(true);
+            } else if (message.type === "webmcp/tools/register" && message.tools?.length > 0) {
+                // MCP tools detected - show highlight briefly
+                setMcpToolsDetected(true);
+                setTimeout(() => {
+                    setMcpToolsDetected(false);
+                }, 2000); // Highlight for 2 seconds
             }
         };
 

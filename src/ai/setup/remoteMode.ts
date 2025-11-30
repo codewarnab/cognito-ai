@@ -10,6 +10,7 @@ import { supermemoryTools } from '@supermemory/tools/ai-sdk';
 import { getAllTools } from '../tools/registryUtils';
 import { enabledTools } from '../tools/enabledTools';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
+import { getWebMCPToolsFromBackground } from '../tools/webmcpTools';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
 import { initializeModel } from '../core/modelFactory';
@@ -139,6 +140,26 @@ export async function setupRemoteMode(
         }
     }
 
+    // Get WebMCP tools from active tab (not in workflow mode)
+    let webmcpTools: Record<string, any> = {};
+    if (!workflowConfig) {
+        try {
+            const webmcpResult = await getWebMCPToolsFromBackground();
+            webmcpTools = webmcpResult.tools;
+            if (Object.keys(webmcpTools).length > 0) {
+                log.info('🌐 WebMCP tools loaded:', {
+                    count: Object.keys(webmcpTools).length,
+                    names: Object.keys(webmcpTools),
+                    domain: webmcpResult.domain
+                });
+            } else {
+                log.debug('🌐 No WebMCP tools available on active tab');
+            }
+        } catch (error) {
+            log.debug('🌐 WebMCP tools unavailable:', error);
+        }
+    }
+
     // Add agent tools (not in workflow mode unless allowed, and only if enabled)
     let agentTools: Record<string, any> = {};
     if (!workflowConfig) {
@@ -192,12 +213,13 @@ export async function setupRemoteMode(
     }
 
     // Combine all tools
-    const tools = { ...extensionTools, ...mcpTools, ...agentTools, ...smTools };
+    const tools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools, ...smTools };
 
     log.info('🔧 All tools loaded:', {
         count: Object.keys(tools).length,
         extension: Object.keys(extensionTools).length,
         mcp: Object.keys(mcpTools).length,
+        webmcp: Object.keys(webmcpTools).length,
         agents: Object.keys(agentTools).length,
         supermemory: Object.keys(smTools).length,
         workflowMode: !!workflowConfig,
