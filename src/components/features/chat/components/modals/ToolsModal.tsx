@@ -4,7 +4,7 @@ import { createLogger } from '~logger';
 import { DEFAULT_ENABLED_TOOLS } from '@/ai/tools/enabledTools';
 import { getEnabledToolsOverride, setEnabledToolsOverride, getToolsMode, setToolsMode } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
-import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS, WORKFLOW_ONLY_TOOLS } from '@/constants/toolDescriptions';
+import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS, WORKFLOW_ONLY_TOOLS, WEB_SEARCH_ONLY_TOOLS } from '@/constants/toolDescriptions';
 import { isSupermemoryReady } from '@/utils/supermemory';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -95,9 +95,12 @@ export const ToolsModal: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onCou
     const [mcpDisabledTools, setMcpDisabledTools] = useState<Record<string, string[]>>({});
     const [mcpLoading, setMcpLoading] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
-    // Filter out workflow-only tools from display
+    // Filter out workflow-only tools and web search tools from display
+    // Web search tools are automatically available when web search mode is enabled
     const allTools = useMemo(() =>
-        DEFAULT_ENABLED_TOOLS.filter(t => !WORKFLOW_ONLY_TOOLS.includes(t)),
+        DEFAULT_ENABLED_TOOLS.filter(t =>
+            !WORKFLOW_ONLY_TOOLS.includes(t) && !WEB_SEARCH_ONLY_TOOLS.includes(t)
+        ),
         []);
 
     // Helper to check if current tools match a preset

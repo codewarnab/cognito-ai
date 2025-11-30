@@ -83,3 +83,10 @@ export const SUPERMEMORY_TOOLS: string[] = ['addMemory', 'searchMemories'];
  * and should not be manually toggled by users in normal mode
  */
 export const WORKFLOW_ONLY_TOOLS: string[] = ['generatePDF', 'getReportTemplate'];
+
+/**
+ * Web search tools that are hidden from the ToolsModal
+ * These tools are automatically enabled when web search mode is active
+ * and should not be manually toggled by users
+ */
+export const WEB_SEARCH_ONLY_TOOLS: string[] = ['webSearch', 'retrieve', 'deepWebSearch'];
