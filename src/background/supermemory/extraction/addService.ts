@@ -116,6 +116,11 @@ export async function addFactsBatch(
   for (let i = 0; i < facts.length; i++) {
     const fact = facts[i];
 
+    // Skip if fact is undefined (TypeScript array access safety)
+    if (!fact) {
+      continue;
+    }
+
     try {
       const result = await addFactToSupermemory(fact, apiKey, userId, threadId);
       succeeded++;
