@@ -78,6 +78,17 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         ],
     },
 
+    // AI Empty Response Error
+    [ErrorType.AI_EMPTY_RESPONSE]: {
+        userMessage: 'The model returned an empty response. Attempting to get a proper response...',
+        technicalTemplate: 'AI model returned empty response (STOP with no content). Attempt: {attemptCount}',
+        suggestions: [
+            'The system will automatically request a response from the AI',
+            'If this continues, try rephrasing your question',
+            'Starting a new conversation may help',
+        ],
+    },
+
     // Vertex AI Specific Errors
     [ErrorType.API_VERTEX_PERMISSION_DENIED]: {
         userMessage: 'Service account lacks permissions. Check IAM roles in Google Cloud Console.',

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '@/components/shared/inputs';
 import { ToolPartRenderer } from '@/ai/tools/components';
@@ -11,6 +11,7 @@ import { CopyButton } from '../buttons/CopyButton';
 import { getFileIcon } from '@/utils/files';
 import { StreamdownRenderer } from './StreamdownRenderer';
 import { XIcon } from '@assets/icons/chat/x';
+import { useInlineCodeEnhancer } from '@/hooks/useInlineCodeEnhancer';
 
 // Error Boundary for Markdown rendering (kept as safety net)
 class MarkdownErrorBoundary extends React.Component<
@@ -165,6 +166,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 }) => {
     const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
+    // Ref for the messages container - used for inline code enhancement
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+    // Enhance inline code elements with click-to-copy and URL opening
+    useInlineCodeEnhancer(messagesContainerRef, isLoading);
+
     // Listen for custom events from screenshot tool
     useEffect(() => {
         const handleOpenImagePreview = (event: CustomEvent) => {
@@ -202,7 +209,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     }, [messages, isLoading]);
 
     return (
-        <div className="copilot-messages">{messages.length === 0 ? (
+        <div className="copilot-messages" ref={messagesContainerRef}>{messages.length === 0 ? (
             <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
         ) : (
             <AnimatePresence>

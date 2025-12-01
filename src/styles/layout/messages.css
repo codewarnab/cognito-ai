@@ -231,11 +231,49 @@
     transform: translateY(0);
 }
 
+/* ----------------------------------------
+   Link-specific styling for inline code
+   URLs get special visual treatment
+   ---------------------------------------- */
+.inline-code-link {
+    color: rgb(37, 99, 235) !important;
+    /* Blue text */
+    background: transparent !important;
+    /* No background */
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+    padding: 0 !important;
+}
+
+/* Dark mode link colors */
+@media (prefers-color-scheme: dark) {
+    .inline-code-link {
+        color: rgb(96, 165, 250) !important;
+        background: transparent !important;
+    }
+}
+
+/* Link hover state */
+.inline-code-link:hover {
+    text-decoration-style: solid !important;
+    color: rgb(29, 78, 216) !important;
+    background: transparent !important;
+    transform: translateY(0) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .inline-code-link:hover {
+        color: rgb(147, 197, 253) !important;
+        background: transparent !important;
+    }
+}
+
 .inline-code-tooltip {
     position: absolute;
     bottom: calc(100% + 8px);
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(4px);
     padding: 6px 10px;
     background-color: var(--bg-tertiary, #1a2637);
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
@@ -247,6 +285,8 @@
     pointer-events: none;
     z-index: 9999;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: opacity 0.15s ease-out, transform 0.15s ease-out;
 }
 
 .inline-code-tooltip-success {
