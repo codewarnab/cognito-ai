@@ -20,6 +20,8 @@ import { getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter
 import {
   APIError,
   NetworkError,
+  EmptyResponseError,
+  isEmptyResponseError,
 } from '../../errors/errorTypes';
 import { type AppUsage, getContextLimits } from '../types/usage';
 import { executeStreamText } from '../stream/streamExecutor';
@@ -527,6 +529,31 @@ export async function streamAIResponse(params: {
                   });
 
                   // Return feedback message instead of error - AI SDK will continue and retry
+                  return feedback;
+                }
+
+                // Check if this is an empty response error (feedback loop)
+                // EmptyResponseError is thrown when the model returns STOP with no content
+                if (isEmptyResponseError(error) ||
+                  errorMessage.includes('empty response') ||
+                  errorName === 'EmptyResponseError') {
+
+                  const emptyError = error as EmptyResponseError;
+                  const attemptCount = emptyError?.consecutiveCount || 1;
+
+                  log.warn('🔄 EMPTY RESPONSE - Providing feedback to AI:', { attemptCount });
+
+                  // Get feedback message based on attempt count
+                  const feedback = emptyError?.getFeedbackMessage?.() ||
+                    `Your previous response was empty. Please provide a complete response to the user's request. ` +
+                    `Make sure to either answer with text or use an appropriate tool.`;
+
+                  log.info('📝 Sending empty response feedback to AI:', {
+                    attemptCount,
+                    feedbackLength: feedback.length
+                  });
+
+                  // Return feedback message - AI SDK will include this as context for retry
                   return feedback;
                 }
 

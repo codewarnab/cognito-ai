@@ -15,6 +15,9 @@ export enum ErrorType {
     API_INVALID_REQUEST = 'API_INVALID_REQUEST',
     API_SERVER_ERROR = 'API_SERVER_ERROR',
 
+    // Empty Response Error (AI returned STOP with no content)
+    AI_EMPTY_RESPONSE = 'AI_EMPTY_RESPONSE',
+
     // Vertex AI Specific Errors
     API_VERTEX_PERMISSION_DENIED = 'API_VERTEX_PERMISSION_DENIED',
     API_VERTEX_MODEL_ACCESS_REQUIRED = 'API_VERTEX_MODEL_ACCESS_REQUIRED',
@@ -634,6 +637,59 @@ export class ExternalServiceError extends BaseAppError {
             serviceName,
         });
     }
+}
+
+/**
+ * Error thrown when AI returns empty response (STOP with no content)
+ * Used to trigger the feedback loop in onError callback
+ * 
+ * This error is retryable - the AI SDK will catch it and include
+ * the feedback message in the next request to the model.
+ */
+export class EmptyResponseError extends Error {
+    public readonly consecutiveCount: number;
+    public readonly isRetryable: boolean = true;
+    public readonly errorCode: ErrorType = ErrorType.AI_EMPTY_RESPONSE;
+
+    constructor(consecutiveCount: number) {
+        super(`Model returned empty response (attempt ${consecutiveCount})`);
+        this.name = 'EmptyResponseError';
+        this.consecutiveCount = consecutiveCount;
+
+        // Maintains proper stack trace
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, this.constructor);
+        }
+    }
+
+    /**
+     * Get feedback message based on attempt count
+     * This message will be sent back to the AI to help it recover
+     */
+    getFeedbackMessage(): string {
+        if (this.consecutiveCount === 1) {
+            return `Your previous response was empty. Please provide a complete response to the user's request. ` +
+                `Make sure to either:\n` +
+                `1. Answer the user's question with text, OR\n` +
+                `2. Use an appropriate tool to help answer their question\n\n` +
+                `Do not return an empty response.`;
+        } else if (this.consecutiveCount === 2) {
+            return `Your response was empty again. The user is waiting for an answer. ` +
+                `Please carefully read the conversation and provide a helpful response. ` +
+                `If you're unsure what to do, ask the user for clarification.`;
+        } else {
+            return `Multiple empty responses detected. Please provide ANY response - ` +
+                `even if it's just to say you need more information or clarification from the user.`;
+        }
+    }
+}
+
+/**
+ * Type guard to check if error is an EmptyResponseError
+ */
+export function isEmptyResponseError(error: unknown): error is EmptyResponseError {
+    return error instanceof EmptyResponseError ||
+        (error instanceof Error && error.name === 'EmptyResponseError');
 }
 
 /**

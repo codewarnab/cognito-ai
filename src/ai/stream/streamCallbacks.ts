@@ -5,7 +5,7 @@
 
 import { generateId } from 'ai';
 import { createLogger } from '~logger';
-import { APIError } from '../../errors/errorTypes';
+import { APIError, EmptyResponseError } from '../../errors/errorTypes';
 import { extractMalformedCallInfo } from '../errors/handlers';
 import { type AppUsage, getContextLimits } from '../types/usage';
 import { workflowSessionManager } from '../../workflows/sessionManager';
@@ -32,7 +32,7 @@ const emptyResponseTrackers = new Map<string, EmptyResponseTracker>();
  */
 export function createOnStepFinishCallback(writer: any, sessionId?: string) {
     const trackerId = sessionId || 'default-' + Date.now();
-    
+
     // Initialize tracker for this session
     if (!emptyResponseTrackers.has(trackerId)) {
         emptyResponseTrackers.set(trackerId, {
@@ -43,7 +43,7 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
 
     return ({ text, toolCalls, toolResults, finishReason, usage, warnings, response }: any) => {
         const tracker = emptyResponseTrackers.get(trackerId)!;
-        
+
         // Detect empty response: STOP finish reason with no text and no tool calls
         const hasText = text && text.trim().length > 0;
         const hasToolCalls = toolCalls && toolCalls.length > 0;
@@ -65,57 +65,47 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
                 } : 'none'
             });
 
-            // Write feedback to stream based on consecutive empty count
-            if (tracker.consecutiveEmptyCount === 1) {
-                // First empty response - gentle nudge
-                writer.write({
-                    type: 'text-delta',
-                    id: 'empty-response-feedback-' + generateId(),
-                    delta: '\n\n*Processing your request...*\n\n',
+            // Throw EmptyResponseError for first 3 attempts to trigger feedback loop
+            // The onError callback will catch this and provide feedback to the AI
+            if (tracker.consecutiveEmptyCount <= 3) {
+                log.info('🔄 Throwing EmptyResponseError to trigger feedback loop', {
+                    consecutiveCount: tracker.consecutiveEmptyCount
                 });
-            } else if (tracker.consecutiveEmptyCount === 2) {
-                // Second empty response - more explicit feedback
-                writer.write({
-                    type: 'text-delta',
-                    id: 'empty-response-feedback-' + generateId(),
-                    delta: '\n\n *The model returned an empty response. Attempting to continue...*\n\n',
-                });
-            } else if (tracker.consecutiveEmptyCount >= 3) {
-                // Multiple empty responses - notify user
-                log.error('🔴 Multiple consecutive empty responses detected', {
-                    count: tracker.consecutiveEmptyCount
-                });
-
-                writer.write({
-                    type: 'text-delta',
-                    id: 'empty-response-error-' + generateId(),
-                    delta: '\n\n **The model is having trouble generating a response.** This can happen when:\n' +
-                        '- The context is too complex\n' +
-                        '- The request needs clarification\n' +
-                        '- There\'s a temporary service issue\n\n' +
-                        'Please try rephrasing your request or starting a new conversation.\n\n',
-                });
-
-                // Send status for UI to potentially show r button
-                writer.write({
-                    type: 'data-status',
-                    id: 'empty-response-status-' + generateId(),
-                    data: {
-                        status: 'empty-response',
-                        consecutiveCount: tracker.consecutiveEmptyCount,
-                        timestamp: Date.now()
-                    },
-                    transient: false,
-                });
+                throw new EmptyResponseError(tracker.consecutiveEmptyCount);
             }
+
+            // After 3 attempts, notify user gracefully instead of continuing to retry
+            log.error('🔴 Multiple consecutive empty responses detected - max retries reached', {
+                count: tracker.consecutiveEmptyCount
+            });
+
+            writer.write({
+                type: 'text-delta',
+                id: 'empty-response-error-' + generateId(),
+                delta: '\n\n **The model is having trouble generating a response.** This can happen when:\n' +
+                    '- The context is too complex\n' +
+                    '- The request needs clarification\n' +
+                    '- There\'s a temporary service issue\n\n' +
+                    'Please try rephrasing your request or starting a new conversation.\n\n',
+            });
+
+            // Send status for UI to potentially show retry button
+            writer.write({
+                type: 'data-status',
+                id: 'empty-response-status-' + generateId(),
+                data: {
+                    status: 'empty-response',
+                    consecutiveCount: tracker.consecutiveEmptyCount,
+                    timestamp: Date.now()
+                },
+                transient: false,
+            });
         } else {
             // Reset tracker on successful response
             if (hasText || hasToolCalls) {
                 tracker.consecutiveEmptyCount = 0;
             }
-        }
-
-        // Check for malformed function calls or errors
+        }        // Check for malformed function calls or errors
         if (finishReason === 'error' || finishReason === 'other' || finishReason === 'unknown') {
             log.error('⚠️ Step finished with error', {
                 finishReason,
@@ -154,7 +144,7 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
             );
 
             // Write error to stream
-            const errorMarkdown = `\n\n⚠️ **${malformedError.userMessage}**\n\n${malformedError.technicalDetails}\n\n`;
+            const errorMarkdown = `\n\n**${malformedError.userMessage}**\n\n${malformedError.technicalDetails}\n\n`;
             writer.write({
                 type: 'text-delta',
                 id: 'malformed-error-' + generateId(),
