@@ -16,7 +16,7 @@ import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
-import {  getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
+import { getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import {
   APIError,
   NetworkError,
@@ -168,7 +168,7 @@ export async function streamAIResponse(params: {
 
               // Determine which system prompt to use
               let usePrompt: string;
-              
+
               if (isSearchModeActive) {
                 // SEARCH MODE: Use dedicated web search prompt (REPLACES normal prompt)
                 usePrompt = getWebSearchSystemPrompt();
@@ -179,7 +179,7 @@ export async function streamAIResponse(params: {
                 usePrompt = (toolsMode === 'chat' && !workflowConfig)
                   ? chatModeSystemPrompt
                   : remoteSystemPrompt;
-                
+
                 log.info('📝 System prompt selection:', {
                   toolsMode,
                   isWorkflow: !!workflowConfig,
@@ -194,21 +194,21 @@ export async function streamAIResponse(params: {
               );
 
               model = remoteSetup.model;
-              
+
               // Pass ALL tools to streamText - activeTools will control availability
               // This allows prepareStep to dynamically switch modes mid-conversation
               tools = remoteSetup.tools;
-              
+
               // Set initial activeTools based on current mode
               // prepareStep will update this if mode changes mid-conversation
               if (isSearchModeActive) {
                 initialActiveTools = getSearchOnlyTools();
-                
+
                 // DEBUG: Verify search tools are in the tools object
                 const webSearchInTools = 'webSearch' in tools;
                 const retrieveInTools = 'retrieve' in tools;
                 const deepWebSearchInTools = 'deepWebSearch' in tools;
-                
+
                 log.info('🔍 SEARCH MODE - Initial active tools:', {
                   active: initialActiveTools,
                   totalAvailable: Object.keys(tools).length,
@@ -217,7 +217,7 @@ export async function streamAIResponse(params: {
                   deepWebSearchInTools,
                   allToolNames: Object.keys(tools),
                 });
-                
+
                 if (!webSearchInTools || !retrieveInTools || !deepWebSearchInTools) {
                   log.error('❌ CRITICAL: Search tools missing from tools object!', {
                     webSearchInTools,
@@ -234,7 +234,7 @@ export async function streamAIResponse(params: {
                   excluded: SEARCH_TOOL_NAMES
                 });
               }
-              
+
               systemPrompt = remoteSetup.systemPrompt;
               provider = remoteSetup.provider; // 'google' or 'vertex'
             }
@@ -344,7 +344,7 @@ export async function streamAIResponse(params: {
 
                 // Determine if mode changed from initial setup
                 const modeChanged = currentSearchModeActive !== isSearchModeActive;
-                const toolsModeChanged = !currentSearchModeActive && !isSearchModeActive && 
+                const toolsModeChanged = !currentSearchModeActive && !isSearchModeActive &&
                   ((currentToolsMode === 'chat') !== (enhancedPrompt === chatModeSystemPrompt));
 
                 let stepPrompt: string | undefined;
@@ -479,6 +479,54 @@ export async function streamAIResponse(params: {
                   log.info('📝 Sending tool-not-found feedback to AI:', { attemptedTool, availableToolsCount: availableTools.length });
 
                   // Return feedback message instead of error - AI SDK will include this as context
+                  return feedback;
+                }
+
+                // Check if this is an invalid tool arguments error (Zod validation failed)
+                // Pattern: "Invalid input for tool <toolName>: Type validation failed..."
+                if (errorMessage.includes('Invalid input for tool') ||
+                  errorMessage.includes('Type validation failed') ||
+                  errorMessage.includes('invalid_type')) {
+
+                  log.warn('🔧 INVALID TOOL ARGUMENTS - Providing feedback to AI:', { errorMessage });
+
+                  // Extract tool name from error message (e.g., "Invalid input for tool webmcp_xxx_recent_posts:")
+                  const toolNameMatch = errorMessage.match(/Invalid input for tool ([^:]+):/);
+                  const attemptedTool = toolNameMatch ? toolNameMatch[1].trim() : 'unknown';
+
+                  // Try to extract the validation details from the error
+                  // Parse the JSON error details if present
+                  let validationDetails = '';
+                  try {
+                    const jsonMatch = errorMessage.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                      const errors = JSON.parse(jsonMatch[0]);
+                      if (Array.isArray(errors)) {
+                        validationDetails = errors.map((err: any) =>
+                          `- Parameter "${err.path?.join('.')}" : expected ${err.expected}, received ${err.received || 'invalid value'}`
+                        ).join('\n');
+                      }
+                    }
+                  } catch {
+                    // If parsing fails, use the raw error message
+                    validationDetails = errorMessage;
+                  }
+
+                  // Create helpful feedback message
+                  const feedback = `Invalid arguments for tool "${attemptedTool}".\n\n` +
+                    `**Validation errors:**\n${validationDetails || 'Check parameter types'}\n\n` +
+                    `Please fix the parameter types and try again. Make sure:\n` +
+                    `- String parameters are quoted strings (e.g., "5" not 5)\n` +
+                    `- Number parameters are unquoted numbers (e.g., 5 not "5")\n` +
+                    `- Boolean parameters are true/false (not "true"/"false")\n` +
+                    `- Array parameters are proper arrays (e.g., ["a", "b"])`;
+
+                  log.info('📝 Sending invalid-arguments feedback to AI:', {
+                    attemptedTool,
+                    validationDetails
+                  });
+
+                  // Return feedback message instead of error - AI SDK will continue and retry
                   return feedback;
                 }
 

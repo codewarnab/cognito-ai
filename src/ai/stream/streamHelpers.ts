@@ -150,3 +150,37 @@ export function createToolNotFoundFeedback(
     (error ? `\n\nTechnical details: ${error}` : '');
 }
 
+/**
+ * Create error feedback for invalid tool arguments (Zod validation failures)
+ * Returns a message that helps the AI understand what parameter types are expected
+ */
+export function createInvalidToolArgumentsFeedback(
+  attemptedTool: string,
+  errorMessage: string
+): string {
+  // Try to extract and format the validation details
+  let validationDetails = '';
+  try {
+    const jsonMatch = errorMessage.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      const errors = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(errors)) {
+        validationDetails = errors.map((err: any) =>
+          `- Parameter "${err.path?.join('.')}" : expected ${err.expected}, received ${err.received || 'invalid value'}`
+        ).join('\n');
+      }
+    }
+  } catch {
+    // If parsing fails, use a generic message
+    validationDetails = 'Check parameter types against the tool schema';
+  }
+
+  return `ERROR: Invalid arguments for tool "${attemptedTool}".\n\n` +
+    `Validation errors:\n${validationDetails || 'Parameter type mismatch'}\n\n` +
+    `Please fix the parameter types and try again. Common fixes:\n` +
+    `- String parameters must be quoted strings (e.g., "5" not 5)\n` +
+    `- Number parameters must be unquoted numbers (e.g., 5 not "5")\n` +
+    `- Boolean parameters must be true/false (not "true"/"false")\n` +
+    `- Array parameters must be proper arrays (e.g., ["a", "b"])`;
+}
+
