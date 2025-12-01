@@ -46,9 +46,9 @@ export class SimpleFrontendTransport {
   async sendMessages(params: {
     trigger: 'submit-message' | 'regenerate-message';
     chatId: string;
-    messageId: string;
+    messageId: string | undefined;
     messages: UIMessage[];
-    abortSignal: AbortSignal;
+    abortSignal: AbortSignal | undefined;
     id?: string;
   }): Promise<ReadableStream> {
     const { chatId, messages, abortSignal, trigger, id, messageId } = params;
@@ -129,29 +129,19 @@ export class SimpleFrontendTransport {
         let messageText = '';
 
         try {
-          if (typeof lastUserMessage.content === 'string') {
-            messageText = lastUserMessage.content;
-          } else if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
+          if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
             // Get text from parts array with proper null checks
             const textPart = lastUserMessage.parts.find((p: any) => p?.type === 'text');
-            if (textPart) {
-              if ('content' in textPart && typeof textPart.content === 'string') {
-                messageText = textPart.content;
-              } else if ('text' in textPart && typeof textPart.text === 'string') {
-                messageText = textPart.text;
-              }
+            if (textPart && 'text' in textPart && typeof textPart.text === 'string') {
+              messageText = textPart.text;
             }
-          } else if ('text' in lastUserMessage && typeof (lastUserMessage as any).text === 'string') {
-            messageText = (lastUserMessage as any).text;
           }
         } catch (error) {
           log.error('Error extracting message text', {
             error: error instanceof Error ? error.message : String(error),
             errorStack: error instanceof Error ? error.stack : undefined,
             messageStructure: {
-              hasContent: 'content' in lastUserMessage,
               hasParts: 'parts' in lastUserMessage,
-              hasText: 'text' in lastUserMessage,
               partsLength: lastUserMessage.parts?.length
             }
           });
@@ -160,9 +150,8 @@ export class SimpleFrontendTransport {
 
         log.info('🔍 Checking message for workflow command', {
           messageText,
-          hasContent: !!lastUserMessage.content,
           hasParts: !!lastUserMessage.parts,
-          hasText: !!(lastUserMessage as any).text
+          partsLength: lastUserMessage.parts?.length
         });
 
         // Check if it's a workflow command
@@ -201,22 +190,12 @@ export class SimpleFrontendTransport {
                         return part;
                       }
 
-                      if ('content' in part && typeof part.content === 'string') {
-                        return { ...part, content: cleanedQuery };
-                      } else if ('text' in part && typeof part.text === 'string') {
+                      if ('text' in part && typeof part.text === 'string') {
                         return { ...part, text: cleanedQuery };
                       }
 
                       return part;
                     });
-                  }
-
-                  // Also update content and text if they exist
-                  if (typeof lastUserMessage.content === 'string') {
-                    (lastUserMessage as any).content = cleanedQuery;
-                  }
-                  if ('text' in lastUserMessage && typeof (lastUserMessage as any).text === 'string') {
-                    (lastUserMessage as any).text = cleanedQuery;
                   }
 
                   log.info('📝 Cleaned message for workflow', {
