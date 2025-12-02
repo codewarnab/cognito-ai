@@ -9,68 +9,37 @@
  */
 
 import type { WorkflowDefinition } from '../types';
+import {
+   getResearchWorkflowSettings,
+   DEFAULT_RESEARCH_WORKFLOW_SETTINGS,
+   type ResearchWorkflowSettings
+} from '@/utils/settings/researchWorkflowSettings';
 
-// Configuration - Adjust these values to customize the workflow
-const MINIMUM_SOURCES = 5; // Minimum number of sources to visit before completing research
-const STEP_COUNT = 20; // Maximum number of steps allowed for research
+/**
+ * Generate dynamic examples based on minimum sources count
+ */
+function generateRanksArray(minimumSources: number): string {
+   return Array.from({ length: minimumSources }, (_, i) => i + 1).join(', ');
+}
 
-// Generate dynamic examples based on MINIMUM_SOURCES
-const ranksArray = Array.from({ length: MINIMUM_SOURCES }, (_, i) => i + 1).join(', ');
-const tabIdExamples = Array.from({ length: MINIMUM_SOURCES }, (_, i) => `   → switchTabs({tabId: ${101 + i}}) → readPageContent()`).join('\n');
+function generateTabIdExamples(minimumSources: number): string {
+   return Array.from({ length: minimumSources }, (_, i) => `   → switchTabs({tabId: ${101 + i}}) → readPageContent()`).join('\n');
+}
 
-export const researchWorkflow: WorkflowDefinition = {
-   id: 'research',
-   name: 'Research',
-   description: 'Deep research with ideas and implementation plan',
-   icon: 'search', // Use 'search' identifier for SearchIcon component
-   color: '#1e3a8a', // Dark blue to match extension theme
-   stepCount: STEP_COUNT, // Allow more steps for comprehensive research
-   // Enhanced tool set for comprehensive research
-   allowedTools: [
-      // Navigation
-      'navigateTo',
-      'switchTabs',
-      'getActiveTab',
-      'openTab',
-      'getAllTabs',
+/**
+ * Generate the system prompt with configurable minimum sources
+ */
+function generateSystemPrompt(minimumSources: number): string {
+   const ranksArray = generateRanksArray(minimumSources);
+   const tabIdExamples = generateTabIdExamples(minimumSources);
 
-      // Content extraction
-      'readPageContent',
-      'extractText',
-      'getSearchResults',
+   return `You are a Research Workflow Agent specialized in deep research and planning.
 
-      // Search
-      'chromeSearch',
-      'searchHistory',
-      'openSearchResult',
-
-      // Interaction (for search bars, links, navigation)
-      'clickByText',
-      'typeInField',
-      'pressKey',
-      'scrollPage',
-
-      // Memory (save research findings)
-      'saveMemory',
-      'getMemory',
-      'listMemories',
-
-      // Tab management (organize research tabs)
-      'applyTabGroups',
-      'organizeTabsByContext',
-
-      // Report generation
-      'getReportTemplate',
-      'generatePDF',
-   ],
-
-   systemPrompt: `You are a Research Workflow Agent specialized in deep research and planning.
-
- CRITICAL: Visit and analyze AT LEAST ${MINIMUM_SOURCES} DIFFERENT sources before completing research.
+ CRITICAL: Visit and analyze AT LEAST ${minimumSources} DIFFERENT sources before completing research.
 
 WORKFLOW OBJECTIVE:
 1. Understand the research topic from user query
-2. Search and open multiple authoritative sources (minimum ${MINIMUM_SOURCES})
+2. Search and open multiple authoritative sources (minimum ${minimumSources})
 3. Thoroughly read and extract information from each source
 4. Synthesize findings into key insights (comparing and contrasting sources)
 5. Generate creative ideas and approaches
@@ -117,7 +86,7 @@ TOOL USAGE PLAYBOOK FOR RESEARCH:
    
    Step 4: Open multiple relevant sources at once (EFFICIENT!)
    → openSearchResult({ranks: [${ranksArray}]})
-   → This opens ${MINIMUM_SOURCES} tabs, returns: {tabs: [{rank: 1, tabId: 101, url: '...', title: '...'}, ...]}
+   → This opens ${minimumSources} tabs, returns: {tabs: [{rank: 1, tabId: 101, url: '...', title: '...'}, ...]}
    
    Step 5: Read each tab one by one
 ${tabIdExamples}
@@ -154,7 +123,7 @@ CRITICAL RULES:
  DO NOT call openSearchResult unless on google.com/search or bing.com/search
  DO NOT call switchTabs without url or tabId parameter
  DO NOT skip readPageContent after switching tabs
- DO NOT stop before visiting ${MINIMUM_SOURCES}+ sources
+ DO NOT stop before visiting ${minimumSources}+ sources
  ALWAYS verify current page with getActiveTab before using page-specific tools
  ALWAYS call readPageContent after switchTabs to get updated context
  ALWAYS use openSearchResult({ranks: [${ranksArray}]}) to open multiple tabs efficiently
@@ -187,7 +156,7 @@ If getReportTemplate is not available or returns an error, use this fallback str
 [7-10 bullet points of important discoveries, each with specific details]
 
 ## Sources Visited
-[List ALL URLs visited (minimum ${MINIMUM_SOURCES}) with:]
+[List ALL URLs visited (minimum ${minimumSources}) with:]
 1. **[Source Name]** - [URL]
    - What you learned: [2-3 sentences]
    - Credibility: [High/Medium] - [Why]
@@ -243,7 +212,7 @@ WORKFLOW EXECUTION SEQUENCE:
    - Tool returns customized template with sections appropriate for that type
    - Use the template structure to guide what information to gather
 2. Navigate to Google → Get search results
-3. Open ${MINIMUM_SOURCES}+ relevant sources with openSearchResult
+3. Open ${minimumSources}+ relevant sources with openSearchResult
 4. Switch to each tab and read content thoroughly
 5. Extract and synthesize key information from all sources **following template structure**
 6. Show BRIEF 2-3 sentence summary in chat
@@ -311,5 +280,72 @@ WORKFLOW COMPLETION:
 - Auto-generating PDF
 - Asking about Markdown version
 
-Remember: Be thorough, insightful, and create actionable deliverables. Keep chat responses concise.`
-};
+Remember: Be thorough, insightful, and create actionable deliverables. Keep chat responses concise.`;
+}
+
+/**
+ * Create a research workflow definition with custom settings
+ */
+export function createResearchWorkflow(settings: ResearchWorkflowSettings): WorkflowDefinition {
+   return {
+      id: 'research',
+      name: 'Research',
+      description: 'Deep research with ideas and implementation plan',
+      icon: 'search',
+      color: '#1e3a8a',
+      stepCount: settings.stepCount,
+      allowedTools: [
+         // Navigation
+         'navigateTo',
+         'switchTabs',
+         'getActiveTab',
+         'openTab',
+         'getAllTabs',
+
+         // Content extraction
+         'readPageContent',
+         'extractText',
+         'getSearchResults',
+
+         // Search
+         'chromeSearch',
+         'searchHistory',
+         'openSearchResult',
+
+         // Interaction (for search bars, links, navigation)
+         'clickByText',
+         'typeInField',
+         'pressKey',
+         'scrollPage',
+
+         // Memory (save research findings)
+         'saveMemory',
+         'getMemory',
+         'listMemories',
+
+         // Tab management (organize research tabs)
+         'applyTabGroups',
+         'organizeTabsByContext',
+
+         // Report generation
+         'getReportTemplate',
+         'generatePDF',
+      ],
+      systemPrompt: generateSystemPrompt(settings.minimumSources),
+   };
+}
+
+/**
+ * Get the research workflow with settings from storage
+ * Use this async function when you need the workflow with user-configured settings
+ */
+export async function getResearchWorkflowWithSettings(): Promise<WorkflowDefinition> {
+   const settings = await getResearchWorkflowSettings();
+   return createResearchWorkflow(settings);
+}
+
+/**
+ * Default research workflow with default settings (for initial registration)
+ * This is exported for backward compatibility
+ */
+export const researchWorkflow: WorkflowDefinition = createResearchWorkflow(DEFAULT_RESEARCH_WORKFLOW_SETTINGS);
