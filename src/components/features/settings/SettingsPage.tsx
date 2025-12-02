@@ -11,6 +11,7 @@ import { TTSAndDataSettings } from '@/components/features/settings/components/TT
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
 import { SupermemorySettings } from '@/components/features/settings/components/SupermemorySettings';
 import { SearchSettingsSection } from '@/components/features/settings/components/SearchSettingsSection';
+import { ResearchWorkflowSettings } from '@/components/features/settings/components/ResearchWorkflowSettings';
 import { hasAnyProviderConfigured } from '@/utils/credentials';
 import './SettingsPage.css';
 
@@ -65,6 +66,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <VoiceSettings />
         <TTSAndDataSettings />
         <SearchSettingsSection />
+        <ResearchWorkflowSettings />
         <AskAiButtonSettings />
         <TextSummarizerSettings />
         <TextRewriterSettings />

@@ -8,3 +8,4 @@ export * from './textSummarizerSettings';
 export * from './writeCommandSettings';
 export * from './rewriteSettings';
 export * from './searchSettings';
+export * from './researchWorkflowSettings';
