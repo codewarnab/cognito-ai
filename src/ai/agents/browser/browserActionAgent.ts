@@ -235,6 +235,15 @@ async function executeBrowserTask(taskDescription: string, abortSignal?: AbortSi
                             hasResult: !!toolResult
                         });
 
+                        // For screenshot results, remove the UI-only display image
+                        // The 'screenshot' field already contains the compressed version for AI
+                        // The 'screenshotDisplay' field is for UI display only
+                        if (toolName === 'takeScreenshot' && toolResult?.screenshotDisplay) {
+                            const { screenshotDisplay, ...restOfResult } = toolResult;
+                            toolResult = restOfResult;
+                            log.info('📸 Screenshot optimized for AI - removed UI-only display image');
+                        }
+
                         log.info(`✅ Tool ${toolName} completed successfully`, {
                             resultType: typeof toolResult,
                             resultPreview: JSON.stringify(toolResult).substring(0, 200) + '...'

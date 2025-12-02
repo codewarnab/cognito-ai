@@ -228,6 +228,14 @@ export class GeminiLiveToolHandler {
         const truncated = { ...result };
         let wasTruncated = false;
 
+        // Handle screenshot tool specifically - remove the UI-only display image
+        // The 'screenshot' field already contains the compressed version for AI
+        // The 'screenshotDisplay' field is for UI display only and should not be sent to AI
+        if (toolName === 'takeScreenshot' && truncated.screenshotDisplay) {
+            delete truncated.screenshotDisplay;
+            log.info('📸 Screenshot optimized for AI - removed UI-only display image');
+        }
+
         // Handle readPageContent specifically
         if (toolName === 'readPageContent' && truncated.content && typeof truncated.content === 'string') {
             const originalLength = truncated.content.length;

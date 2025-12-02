@@ -128,10 +128,11 @@ PRECONDITIONS:
 
 WORKFLOW:
 1. Verify tab is accessible and visible
-2. Capture current viewport as PNG image
-3. Compress image based on quality setting for AI analysis
-4. Return high-quality image for display, compressed version for AI
-5. Use visual info to decide next actions (click, type, read, etc.)
+2. Wait for page to finish loading if still in progress (auto-waits up to 10s)
+3. Capture current viewport as PNG image
+4. Compress image based on quality setting for AI analysis
+5. Return high-quality image for display, compressed version for AI
+6. Use visual info to decide next actions (click, type, read, etc.)
 
 LIMITATIONS:
 - Only captures visible viewport (not full page scroll)
@@ -279,13 +280,42 @@ EXAMPLE:
                         };
                     }
 
-                    // Step 4: Check if tab is loading
+                    // Step 4: Wait for page to finish loading if needed
                     if (tab.status === 'loading') {
-                        log.warn('Tab is still loading', { url: tab.url });
-                        // Don't fail, but warn - we can still try to capture
+                        log.info('Tab is still loading, waiting for page to complete...', { url: tab.url });
+
+                        try {
+                            // Wait for the page to finish loading using content script
+                            await chrome.scripting.executeScript({
+                                target: { tabId: tab.id! },
+                                func: () => {
+                                    return new Promise<void>((resolve) => {
+                                        if (document.readyState === 'complete') {
+                                            resolve();
+                                        } else {
+                                            const onLoad = () => {
+                                                resolve();
+                                            };
+                                            window.addEventListener('load', onLoad, { once: true });
+                                            // Fallback timeout to avoid hanging indefinitely
+                                            setTimeout(() => {
+                                                window.removeEventListener('load', onLoad);
+                                                resolve();
+                                            }, 10000);
+                                        }
+                                    });
+                                }
+                            });
+                            log.info('Page finished loading, proceeding with screenshot');
+                        } catch (waitError) {
+                            // If we can't inject script to wait (e.g., restricted page), just proceed
+                            log.warn('Could not wait for page load, proceeding anyway', {
+                                error: (waitError as Error).message
+                            });
+                        }
                     }
 
-                    // Step 5: Capture screenshot
+                    // Step 5: Capture screenshot (after page load)
                     let dataUrl: string;
                     try {
                         dataUrl = await chrome.tabs.captureVisibleTab(
@@ -349,7 +379,7 @@ EXAMPLE:
                         };
                     }
 
-                    // Step 6: Compress screenshot for AI processing
+                    // Step 7: Compress screenshot for AI processing
                     let screenshotForAI = dataUrl;
                     let compressionInfo: { originalSizeKB: number; compressedSizeKB: number; compressionRatio: string } | null = null;
 
@@ -369,7 +399,7 @@ EXAMPLE:
                         // Fall back to original image if compression fails
                     }
 
-                    // Step 7: Get additional metadata
+                    // Step 8: Get additional metadata
                     const viewport = {
                         width: tab.width || null,
                         height: tab.height || null
@@ -384,10 +414,12 @@ EXAMPLE:
                         viewport
                     });
 
+                    // IMPORTANT: Only send compressed screenshot to AI to reduce token usage
+                    // Full quality PNG is stored in screenshotDisplay for UI rendering
                     return {
                         success: true,
-                        screenshot: dataUrl, // Full quality PNG for UI display
-                        screenshotForAI: screenshotForAI, // Compressed JPEG for AI analysis
+                        screenshot: screenshotForAI, // Compressed JPEG for AI analysis (sent to model)
+                        screenshotDisplay: dataUrl, // Full quality PNG for UI display only (not sent to AI)
                         quality,
                         compressionApplied: compressionInfo !== null,
                         compressionInfo,
@@ -429,7 +461,9 @@ EXAMPLE:
             {
                 renderInput: () => null, // Hide input section
                 renderOutput: (output: any) => {
-                    if (!output?.screenshot) {
+                    // Use screenshotDisplay (full quality) for UI, fall back to screenshot (compressed)
+                    const displayImage = output?.screenshotDisplay || output?.screenshot;
+                    if (!displayImage) {
                         return null;
                     }
 
@@ -450,7 +484,7 @@ EXAMPLE:
                                 </div>
                             )}
                             <img
-                                src={output.screenshot}
+                                src={displayImage}
                                 alt={output.title || 'Screenshot'}
                                 className="tool-screenshot-image"
                                 style={{
@@ -464,7 +498,7 @@ EXAMPLE:
                                     // Dispatch custom event to open image preview modal
                                     const event = new CustomEvent('openImagePreview', {
                                         detail: {
-                                            url: output.screenshot,
+                                            url: displayImage,
                                             name: output.title || 'Screenshot'
                                         }
                                     });
