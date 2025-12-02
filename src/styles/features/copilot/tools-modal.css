@@ -249,6 +249,14 @@
     max-width: 180px;
 }
 
+/* Search Highlight */
+.tools-popover-highlight {
+    background-color: rgba(59, 130, 246, 0.4);
+    color: var(--text-primary, white);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
 /* Small toggle for tools */
 .tools-popover-toggle {
     transform: scale(0.65);

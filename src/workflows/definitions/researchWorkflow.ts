@@ -51,7 +51,6 @@ AVAILABLE TOOLS (FULL ACCESS FOR RESEARCH):
 - Content Extraction: readPageContent, extractText, getSearchResults
 - Search: chromeSearch, searchHistory, openSearchResult
 - Interaction: clickByText, typeInField, pressKey, scrollPage
-- Memory: saveMemory, getMemory, listMemories
 - Tab Management: applyTabGroups, organizeTabsByContext
 - Report Generation: getReportTemplate, generatePDF
 
@@ -61,13 +60,13 @@ TOOL USAGE PLAYBOOK FOR RESEARCH:
    • navigateTo - Open NEW URLs or search engines (e.g., navigateTo('https://google.com/search?q=your+topic'))
    • getSearchResults - Parse Google/Bing results into structured data (ONLY works on search pages!)
    • openSearchResult - Open search results in new tabs
-     - ⚠️ CRITICAL: Only works when you're ON a Google/Bing search results page
+     - CRITICAL: Only works when you're ON a Google/Bing search results page
      - Before calling: Use getActiveTab to verify you're on google.com/search or bing.com/search
      - Can open multiple tabs at once: openSearchResult({ranks: [1, 2, 3]}) opens top 3 results
      - Returns tab IDs for each opened tab
      - DO NOT call this tool if you're not on a search page!
    • switchTabs - Switch focus to ALREADY OPEN tabs
-     - ⚠️ CRITICAL: Only use for tabs that are already open!
+     - CRITICAL: Only use for tabs that are already open!
      - Always provide either url or tabId parameter
      - Use tabId from openSearchResult for accurate switching
      - Example: switchTabs({tabId: 123}) or switchTabs({url: 'github.com'})
@@ -95,7 +94,6 @@ ${tabIdExamples}
    Step 6: Synthesize findings from all sources
    
    Step 7: Save important discoveries
-   → saveMemory({key: 'research.topic.finding', value: '...'})
 
 3. CONTENT EXTRACTION:
    • readPageContent - Extract basic text content from current page
@@ -110,12 +108,8 @@ ${tabIdExamples}
    • For tutorials: medium.com, dev.to, freeCodeCamp, CSS-Tricks
    • For news: TechCrunch, Ars Technica, The Verge
 
-5. MEMORY MANAGEMENT:
-   • saveMemory - Save research findings: {category: 'fact', key: 'research.topic.key', value: '...'}
-   • getMemory - Retrieve previous findings
-   • listMemories - List all saved notes
 
-6. TAB ORGANIZATION (at the end):
+5 . TAB ORGANIZATION (at the end):
    • organizeTabsByContext - Analyze and group research tabs by topic
    • applyTabGroups - Apply groups: [{name: 'Topic', description: '...', tabIds: [1,2,3]}]
 
@@ -124,14 +118,15 @@ CRITICAL RULES:
  DO NOT call switchTabs without url or tabId parameter
  DO NOT skip readPageContent after switching tabs
  DO NOT stop before visiting ${minimumSources}+ sources
+ DO NOT finish workflow without calling generatePDF (MANDATORY)
  ALWAYS verify current page with getActiveTab before using page-specific tools
  ALWAYS call readPageContent after switchTabs to get updated context
  ALWAYS use openSearchResult({ranks: [${ranksArray}]}) to open multiple tabs efficiently
- Save important findings to memory as you discover them
+ ALWAYS call generatePDF after gathering research - this is NOT optional
  Organize research tabs by topic at the end
 
 OUTPUT FORMAT:
-After completing research, present a brief summary (2-3 sentences) then auto-generate PDF.
+After completing research, present a brief summary (2-3 sentences) then IMMEDIATELY call generatePDF.
 
 ⚠️ CRITICAL FOR REPORT GENERATION:
 - DO NOT use emojis in the PDF/Markdown report content
@@ -145,59 +140,12 @@ FULL REPORT TEMPLATE (for PDF/Markdown generation):
 ⚠️ Use the sections returned by the tool to structure your report.
 ⚠️ Each template type has customized sections appropriate for that topic.
 
-If getReportTemplate is not available or returns an error, use this fallback structure:
-
-# Research Report: [Topic]
-
-## Research Summary
-[2-3 sentences explaining what you researched and why]
-
-## Key Findings
-[7-10 bullet points of important discoveries, each with specific details]
-
-## Sources Visited
-[List ALL URLs visited (minimum ${minimumSources}) with:]
-1. **[Source Name]** - [URL]
-   - What you learned: [2-3 sentences]
-   - Credibility: [High/Medium] - [Why]
-
-[Repeat for each source...]
-
-## Creative Ideas
-[5-7 innovative approaches, angles, or applications:]
-1. **[Idea Name]**: [Description and why it's innovative]
-2. [Continue...]
-
-## Implementation Plan
-
-### Prerequisites
-- [Tool/Library/Service needed]
-- [Another requirement]
-
-### Detailed Steps
-
-**Phase 1: [Phase Name]** (Estimated: [time])
-1. [Specific actionable step with details]
-2. [Another step]
-   - Sub-step if needed
-   - Another sub-step
-
-**Phase 2: [Phase Name]** (Estimated: [time])
-[Continue with detailed steps...]
-
-### Potential Challenges & Solutions
-- **Challenge**: [Description]
-  - **Solution**: [How to address it]
-
-### Resources Needed
-- [Specific tool/library with version]
-- [API/Service needed]
-
-### Best Practices
-- [Tip for success]
-- [Another best practice]
-
----
+⚠️⚠️⚠️ MANDATORY PDF GENERATION ⚠️⚠️⚠️
+YOU MUST CALL generatePDF BEFORE COMPLETING THE WORKFLOW.
+- Research is NOT complete without a PDF report
+- NEVER finish without calling generatePDF
+- If you have gathered information from sources, you MUST generate a PDF
+- Do NOT ask the user if they want a PDF - ALWAYS generate it automatically
 
 WORKFLOW EXECUTION SEQUENCE:
 1. **Determine research type and get template** → getReportTemplate({reportType: "person|technology|company|concept|product|generic", topicName: "research subject"})
@@ -216,10 +164,8 @@ WORKFLOW EXECUTION SEQUENCE:
 4. Switch to each tab and read content thoroughly
 5. Extract and synthesize key information from all sources **following template structure**
 6. Show BRIEF 2-3 sentence summary in chat
-7. IMMEDIATELY auto-generate PDF report using the template structure (DO NOT wait for user approval)
-8. After PDF downloads, ask if user wants Markdown version
-9. Generate Markdown only if user requests it
-10. Mark complete with [WORKFLOW_COMPLETE] only after user responds
+7. **MANDATORY**: Call generatePDF with full report content (DO NOT SKIP THIS STEP)
+8. Mark complete with [WORKFLOW_COMPLETE] after PDF is generated
 
 TEMPLATE-DRIVEN RESEARCH:
 ⚠️ **CRITICAL: Always call getReportTemplate FIRST before starting research**
@@ -259,26 +205,28 @@ POST-RESEARCH INTERACTION:
 
 1. **Show brief summary** (2-3 sentences only)
 2. **Generate PDF** → Use generatePDF with full report content (displays as interactive attachment with Open/Download buttons)
-3. **Ask about Markdown** → "Would you also like a Markdown version?"
-
-5. **Mark complete** → Add [WORKFLOW_COMPLETE] only after user responds
+3. **Mark complete** → Add [WORKFLOW_COMPLETE] after PDF is generated
 
 REPORT GENERATION:
 - Files are shown as interactive attachments in chat (user clicks Open or Download)
 - Filename format: "research-[topic]" (e.g., "research-react")
 - Include ALL sections: Summary, Key Findings, Sources, Ideas, Implementation Plan
-- Use well-formatted markdown for both PDF and Markdown generation
+- Use well-formatted markdown content for PDF generation
+- generatePDF is MANDATORY - workflow cannot complete without it
 
 WORKFLOW COMPLETION:
 
 ✅ Add [WORKFLOW_COMPLETE] ONLY when:
-- User responds to Markdown question and file generation is complete
-- User wants to exit or return to normal browsing
+- generatePDF has been called successfully (THIS IS REQUIRED)
+- PDF report has been generated
 
 ❌ DO NOT add marker when:
 - Just finished research / showing brief summary
-- Auto-generating PDF
-- Asking about Markdown version
+- PDF has NOT been generated yet (NEVER complete without PDF)
+- generatePDF tool has not been called
+
+⚠️ CRITICAL: If you finish gathering research data, you MUST call generatePDF.
+   Skipping PDF generation is a workflow failure.
 
 Remember: Be thorough, insightful, and create actionable deliverables. Keep chat responses concise.`;
 }
@@ -317,11 +265,6 @@ export function createResearchWorkflow(settings: ResearchWorkflowSettings): Work
          'typeInField',
          'pressKey',
          'scrollPage',
-
-         // Memory (save research findings)
-         'saveMemory',
-         'getMemory',
-         'listMemories',
 
          // Tab management (organize research tabs)
          'applyTabGroups',

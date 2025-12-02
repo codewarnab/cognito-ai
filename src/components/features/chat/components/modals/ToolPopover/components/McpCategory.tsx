@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import { HighlightedText } from '../utils/highlightText';
 import type { McpCategoryProps } from '../types';
 
 export const McpCategory: React.FC<McpCategoryProps> = ({
@@ -10,6 +11,7 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
     tools,
     disabledTools,
     isExpanded,
+    searchQuery,
     onToggleCategory,
     onToggleTool,
     onToggleCategoryAll,
@@ -65,9 +67,12 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
                                         key={tool.name}
                                         className="tools-popover-tool"
                                     >
-                                        <span className="tools-popover-tool-name" title={tool.description}>
-                                            {tool.name}
-                                        </span>
+                                        <HighlightedText
+                                            text={tool.name}
+                                            searchQuery={searchQuery}
+                                            className="tools-popover-tool-name"
+                                            title={tool.description}
+                                        />
                                         <Toggle
                                             checked={enabled}
                                             onChange={(checked) => onToggleTool(serverId, tool.name, checked)}

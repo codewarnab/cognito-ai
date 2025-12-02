@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, ChevronRight, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import { HighlightedText } from '../utils/highlightText';
 import type { WebMcpSectionProps } from '../types';
 
 export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
@@ -10,6 +11,7 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
     isLoading,
     enabledCount,
     isExpanded,
+    searchQuery,
     onToggleCategory,
     onToggleTool,
     onToggleCategoryAll,
@@ -99,12 +101,12 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
                                                         size={12}
                                                         className={`tools-popover-webmcp-icon ${tool.favicon ? 'hidden' : ''}`}
                                                     />
-                                                    <span
+                                                    <HighlightedText
+                                                        text={displayName}
+                                                        searchQuery={searchQuery}
                                                         className="tools-popover-tool-name"
                                                         title={tool.description || displayName}
-                                                    >
-                                                        {displayName}
-                                                    </span>
+                                                    />
                                                 </div>
                                                 <Toggle
                                                     checked={enabled}

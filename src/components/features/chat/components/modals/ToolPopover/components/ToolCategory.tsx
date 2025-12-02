@@ -5,6 +5,7 @@ import { Toggle } from '@/components/shared/inputs/Toggle';
 import { SUPERMEMORY_TOOLS } from '@/constants/toolDescriptions';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
 import { SupermemoryGatedIcon } from './SupermemoryGatedIcon';
+import { HighlightedText } from '../utils/highlightText';
 import type { ToolCategoryProps } from '../types';
 
 export const ToolCategory: React.FC<ToolCategoryProps> = ({
@@ -14,6 +15,7 @@ export const ToolCategory: React.FC<ToolCategoryProps> = ({
     isExpanded,
     supermemoryConfigured,
     showSupermemoryTooltip,
+    searchQuery,
     onToggleCategory,
     onToggleTool,
     onToggleCategoryAll,
@@ -77,9 +79,12 @@ export const ToolCategory: React.FC<ToolCategoryProps> = ({
                                             {isSupermemoryTool && (
                                                 <Supermemory style={{ width: 14, height: 14, flexShrink: 0 }} />
                                             )}
-                                            <span className="tools-popover-tool-name" title={tool}>
-                                                {tool}
-                                            </span>
+                                            <HighlightedText
+                                                text={tool}
+                                                searchQuery={searchQuery}
+                                                className="tools-popover-tool-name"
+                                                title={tool}
+                                            />
                                             {isGated && (
                                                 <SupermemoryGatedIcon
                                                     showTooltip={showTooltip}

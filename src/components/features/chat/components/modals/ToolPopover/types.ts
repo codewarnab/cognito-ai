@@ -21,6 +21,7 @@ export interface ToolCategoryProps {
     isExpanded: boolean;
     supermemoryConfigured: boolean;
     showSupermemoryTooltip: string | null;
+    searchQuery?: string;
     onToggleCategory: (category: string) => void;
     onToggleTool: (tool: string, checked: boolean) => void;
     onToggleCategoryAll: (e: React.MouseEvent, category: string, tools: string[]) => void;
@@ -33,6 +34,7 @@ export interface McpCategoryProps {
     tools: McpToolWithServer[];
     disabledTools: string[];
     isExpanded: boolean;
+    searchQuery?: string;
     onToggleCategory: (category: string) => void;
     onToggleTool: (serverId: string, toolName: string, checked: boolean) => void;
     onToggleCategoryAll: (e: React.MouseEvent, serverId: string, tools: McpToolWithServer[]) => void;
@@ -52,6 +54,7 @@ export interface WebMcpSectionProps {
     isLoading: boolean;
     enabledCount: number;
     isExpanded: boolean;
+    searchQuery?: string;
     onToggleCategory: (category: string) => void;
     onToggleTool: (toolName: string, checked: boolean) => void;
     onToggleCategoryAll: (e: React.MouseEvent) => void;
