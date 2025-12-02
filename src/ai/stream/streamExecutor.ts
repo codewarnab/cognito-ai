@@ -52,14 +52,37 @@ export async function executeStreamText(params: {
     try {
         // Get list of available tool names for error feedback
         const availableToolNames = Object.keys(tools);
-        log.info('🔧 Available tools for this session:', { 
-            count: availableToolNames.length, 
+        log.info('🔧 Available tools for this session:', {
+            count: availableToolNames.length,
             tools: availableToolNames,
             activeToolsParam: activeTools,
             webSearchAvailable: 'webSearch' in tools,
             retrieveAvailable: 'retrieve' in tools,
             deepWebSearchAvailable: 'deepWebSearch' in tools,
         });
+
+        /**
+         * Process tool result to optimize payload sent to AI
+         * Removes UI-only fields that shouldn't be sent to the model
+         */
+        const processToolResultForAI = (toolName: string, result: any): any => {
+            if (!result || typeof result !== 'object') {
+                return result;
+            }
+
+            // For screenshot tool: remove screenshotDisplay (full quality PNG for UI only)
+            // The 'screenshot' field already contains the compressed version for AI
+            if (toolName === 'takeScreenshot' && result.screenshotDisplay) {
+                const { screenshotDisplay, ...resultForAI } = result;
+                log.info('📸 Screenshot optimized for AI - removed UI-only display image', {
+                    compressedSizeKB: result.compressionInfo?.compressedSizeKB,
+                    removedSizeKB: result.compressionInfo?.originalSizeKB,
+                });
+                return resultForAI;
+            }
+
+            return result;
+        };
 
         // Create tools with abort signal binding AND error feedback handling
         const abortableTools = abortSignal ? (() => {
@@ -76,7 +99,8 @@ export async function executeStreamText(params: {
                         try {
                             // Call original execute with abort signal
                             const result = await tool.execute(args, abortSignal);
-                            return result;
+                            // Process result to remove UI-only fields before sending to AI
+                            return processToolResultForAI(name, result);
                         } catch (toolError) {
                             // Log tool execution error
                             log.error(`❌ Tool "${name}" execution failed:`, {
@@ -106,7 +130,8 @@ export async function executeStreamText(params: {
                     execute: async (args: any) => {
                         try {
                             const result = await tool.execute(args);
-                            return result;
+                            // Process result to remove UI-only fields before sending to AI
+                            return processToolResultForAI(name, result);
                         } catch (toolError) {
                             // Log tool execution error
                             log.error(`❌ Tool "${name}" execution failed:`, {
