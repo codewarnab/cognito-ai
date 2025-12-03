@@ -1,0 +1,381 @@
+/* Logger Panel Styles */
+.logger-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+.logger-panel-header {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    gap: var(--spacing-md);
+}
+
+.logger-panel-back-button {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background-color 0.2s;
+}
+
+.logger-panel-back-button:hover {
+    color: var(--text-primary);
+    background-color: var(--glass-bg-hover);
+}
+
+.logger-panel-title-container {
+    flex: 1;
+}
+
+.logger-panel-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.logger-panel-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 2px 0 0 0;
+}
+
+.logger-panel-reset-button {
+    padding: 6px 12px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logger-panel-reset-button:hover {
+    background-color: var(--glass-bg-hover);
+    border-color: var(--border-color-hover);
+}
+
+.logger-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.logger-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.logger-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.logger-panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+.logger-panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Loading State */
+.logger-panel-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+/* Presets Section */
+.logger-panel-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.logger-panel-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.logger-panel-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.logger-panel-preset-button {
+    padding: 6px 12px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logger-panel-preset-button:hover {
+    background-color: var(--glass-bg-hover);
+    border-color: var(--border-color-hover);
+    color: var(--text-primary);
+}
+
+.logger-panel-preset-button.active {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    color: white;
+}
+
+.logger-panel-preset-button.custom {
+    background-color: var(--bg-quaternary);
+    border-color: var(--color-warning);
+    color: var(--color-warning);
+    cursor: default;
+}
+
+/* Warning Banner */
+.logger-panel-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background-color: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    border-radius: var(--radius-md);
+    color: var(--color-warning);
+    font-size: 12px;
+}
+
+.logger-panel-warning-icon {
+    flex-shrink: 0;
+}
+
+/* Category Groups */
+.logger-panel-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logger-panel-group {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.logger-panel-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background-color 0.2s;
+}
+
+.logger-panel-group-header:hover {
+    background-color: var(--glass-bg);
+}
+
+.logger-panel-group-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logger-panel-group-chevron {
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.logger-panel-group-chevron.expanded {
+    transform: rotate(180deg);
+}
+
+.logger-panel-group-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.logger-panel-group-count {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-left: 4px;
+}
+
+.logger-panel-group-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.logger-panel-group-toggle-all {
+    padding: 4px 8px;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.logger-panel-group-toggle-all:hover {
+    background-color: var(--glass-bg-hover);
+    color: var(--text-primary);
+}
+
+.logger-panel-group-toggle-all:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.logger-panel-group-content {
+    border-top: 1px solid var(--border-color);
+}
+
+.logger-panel-category-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s;
+}
+
+.logger-panel-category-item:last-child {
+    border-bottom: none;
+}
+
+.logger-panel-category-item:hover {
+    background-color: var(--glass-bg);
+}
+
+.logger-panel-category-item.disabled {
+    opacity: 0.5;
+}
+
+.logger-panel-category-name {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.logger-panel-category-item.disabled .logger-panel-category-name {
+    color: var(--text-tertiary);
+}
+
+/* Toggle Switch Styles */
+.logger-toggle-wrapper {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.logger-toggle-wrapper.disabled {
+    cursor: not-allowed;
+}
+
+.logger-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.logger-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background-color: var(--bg-quaternary);
+    border-radius: 10px;
+    transition: background-color 0.2s;
+}
+
+.logger-toggle-input:checked + .logger-toggle-switch {
+    background-color: var(--color-secondary);
+}
+
+.logger-toggle-input:disabled + .logger-toggle-switch {
+    opacity: 0.5;
+}
+
+.logger-toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.logger-toggle-input:checked + .logger-toggle-switch .logger-toggle-slider {
+    transform: translateX(16px);
+}
+
+/* Special Controls Section */
+.logger-panel-special-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logger-panel-special-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.logger-panel-special-item.active {
+    border-color: var(--color-warning);
+    background-color: rgba(255, 152, 0, 0.05);
+}
+
+.logger-panel-special-content {
+    flex: 1;
+}
+
+.logger-panel-special-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.logger-panel-special-description {
+    font-size: 12px;
+    color: var(--text-secondary);
+}

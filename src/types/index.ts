@@ -45,4 +45,7 @@ export * from './askCommand';
 // Keep existing sidepanel types
 export * from './sidepanel';
 
+// Logger types
+export * from './logger';
+
 // assets.d.ts contains ambient module declarations and doesn't need to be re-exported

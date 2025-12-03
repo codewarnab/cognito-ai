@@ -96,20 +96,41 @@ EXAMPLE: analyzeDom(selector='canvas', depth=3, includeHidden=false, includeEven
 
 
 
+                            // Helper: Escape special characters in CSS selector
+                            function escapeCSSSelector(str: string): string {
+                                // Escape special CSS selector characters: !"#$%&'()*+,./:;<=>?@[\]^`{|}~
+                                return str.replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
+                            }
+
+                            // Helper: Check if a class name is safe for CSS selector (no special chars)
+                            function isSafeClassName(className: string): boolean {
+                                // Check if class contains characters that need escaping
+                                return !/[!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~]/.test(className);
+                            }
+
                             // Helper: Generate unique CSS selector for element
                             function getElementSelector(element: Element): string {
                                 if (element.id) {
-                                    return `#${element.id}`;
+                                    // Escape special characters in ID
+                                    return `#${escapeCSSSelector(element.id)}`;
                                 }
 
-                                const classes = Array.from(element.classList).filter(c => c && !c.startsWith('ai-'));
+                                // Filter classes: exclude ai- prefixed and classes with special characters
+                                const classes = Array.from(element.classList).filter(c =>
+                                    c && !c.startsWith('ai-') && isSafeClassName(c)
+                                );
+
                                 if (classes.length > 0) {
                                     const classSelector = `.${classes.join('.')}`;
-                                    // Check if unique
-                                    if (document.querySelectorAll(classSelector).length === 1) {
-                                        return classSelector;
+                                    // Check if unique - wrap in try-catch in case selector is still invalid
+                                    try {
+                                        if (document.querySelectorAll(classSelector).length === 1) {
+                                            return classSelector;
+                                        }
+                                        return `${element.tagName.toLowerCase()}${classSelector}`;
+                                    } catch {
+                                        // Selector failed, fall through to nth-child
                                     }
-                                    return `${element.tagName.toLowerCase()}${classSelector}`;
                                 }
 
                                 // Fallback to nth-child

@@ -14,7 +14,7 @@
 import './polyfills/process';
 
 import { openSidePanelForTab, openSidePanel } from './background/sidepanelUtils';
-import { createLogger } from '~logger';
+import { createLogger, LoggerConfigManager } from '~logger';
 import { initializeOAuthRedirectURI } from './background/mcp/auth';
 import { initializeLifecycleEventListeners } from './background/lifecycle';
 import { initializeAlarmListeners } from './background/alarms';
@@ -25,6 +25,12 @@ import { initializeRewriterContextMenu, initializeAskerContextMenu } from './bac
 import { recoverExtractionQueue } from './background/supermemory/extraction/startup';
 import { recoverContentMemoryQueue } from './background/supermemory/contentMemory/startup';
 import { initializeWebMCPManager } from './background/webmcp/manager';
+
+// Initialize LoggerConfigManager early to load dynamic config from storage
+// This ensures logging respects user preferences before any logs are emitted
+LoggerConfigManager.initialize().catch(err => {
+  console.error('[Background] Failed to initialize LoggerConfigManager:', err);
+});
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
 
