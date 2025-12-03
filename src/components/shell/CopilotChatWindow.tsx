@@ -29,16 +29,17 @@ interface CopilotChatWindowProps {
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
     onProviderSetupClick?: () => void;
+    onLoggerPanelClick?: () => void;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
     voiceInputRef?: React.RefObject<VoiceInputHandle>;
-    onContinue?: () => void; // Callback for continue button
-    usage?: AppUsage | null; // Token usage tracking
-    localPdfInfo?: LocalPdfInfo | null; // Local PDF detection info
-    threadId?: string | null; // Current thread ID for brain button
+    onContinue?: () => void;
+    usage?: AppUsage | null;
+    localPdfInfo?: LocalPdfInfo | null;
+    threadId?: string | null;
 }
 
 export function CopilotChatWindow({
@@ -56,6 +57,7 @@ export function CopilotChatWindow({
     onTroubleshootingClick,
     onFeaturesClick,
     onProviderSetupClick,
+    onLoggerPanelClick,
     onStop,
     pendingMessageId,
     nextMessageId,
@@ -63,9 +65,9 @@ export function CopilotChatWindow({
     onRecordingChange,
     voiceInputRef,
     onContinue,
-    usage, // Token usage tracking
-    localPdfInfo, // Local PDF detection info
-    threadId, // Current thread ID for brain button
+    usage,
+    localPdfInfo,
+    threadId,
 }: CopilotChatWindowProps) {
     // Lazy initialization: compute initial state synchronously
     const [modelState, setModelState] = useState<ModelState>(() => {
@@ -216,6 +218,7 @@ export function CopilotChatWindow({
                 onTroubleshootingClick={onTroubleshootingClick}
                 onFeaturesClick={onFeaturesClick}
                 onProviderSetupClick={onProviderSetupClick}
+                onLoggerPanelClick={onLoggerPanelClick}
                 isLoading={isLoading}
                 needsProviderSetup={needsProviderSetup}
             />

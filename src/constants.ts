@@ -380,23 +380,21 @@ export const LOG_PRESETS = {
 } as const;
 
 /**
- * Active Logging Configuration
+ * @deprecated LOG_CONFIG is deprecated. Logger configuration is now dynamic
+ * and managed via the Logger Panel UI with persistence to chrome.storage.local.
  * 
- * CURRENT PRESET: DEBUG_WORKFLOW (for debugging /research workflow issue) 
+ * The LoggerConfigManager in src/logger.ts handles dynamic configuration.
+ * Use LOG_PRESETS for preset definitions and LogCategory from src/types/logger.ts.
  * 
- * Files that need category tags to be filtered:
- * - useMessageHandlers.ts (no category) - will show all logs
- * - SimpleFrontendTransport.ts (no category) - will show all logs  
- * - remoteMode.ts (AI_CHAT category) - ENABLED
- * - aiLogic.ts (AI_CHAT category) - ENABLED
+ * Deprecated: December 2024
+ * Removal target: February 2025
  */
 export const LOG_CONFIG = {
-    ...LOG_PRESETS.DEBUG_WORKFLOW,  // Use workflow debug preset
-    // Override: Set SHOW_ALL to false to respect category filters
-    SHOW_ALL: false,
+    ...LOG_PRESETS.DEVELOPMENT,
 } as const;
 
-export type LogCategory = keyof typeof LOG_CONFIG;
+// Re-export LogCategory from types for backward compatibility
+export type { LogCategory } from '@/types/logger';
 
 /**
  * Hide Local Mode Configuration

@@ -10,6 +10,7 @@ import { ToolUIProvider } from "./ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
 import { ReminderPanel } from "@/components/features/reminders";
 import { SettingsPage } from "@/components/features/settings/SettingsPage";
+import { LoggerPanel } from "@/components/features/settings/LoggerPanel";
 import { OnboardingScreen } from "@/components/features/onboarding";
 // import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
@@ -326,6 +327,8 @@ function AIChatContent() {
         setShowFeatures,
         showProviderSetup,
         setShowProviderSetup,
+        showLoggerPanel,
+        setShowLoggerPanel,
         mode,
         setMode,
         // handleModeChange,
@@ -422,6 +425,11 @@ function AIChatContent() {
         );
     }
 
+    // Render Logger Panel (dev mode only)
+    if (showLoggerPanel) {
+        return <LoggerPanel onBack={() => setShowLoggerPanel(false)} />;
+    }
+
     // Show onboarding screen if enabled
     if (showOnboarding) {
         log.info('Rendering onboarding screen', { showOnboarding });
@@ -500,6 +508,7 @@ function AIChatContent() {
                                 onTroubleshootingClick={() => setShowTroubleshooting(true)}
                                 onFeaturesClick={() => setShowFeatures(true)}
                                 onProviderSetupClick={() => setShowProviderSetup(true)}
+                                onLoggerPanelClick={() => setShowLoggerPanel(true)}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}

@@ -1,5 +1,6 @@
 // Lightweight logger with levels and prefix; respects NODE_ENV
-import { LOG_CONFIG, type LogCategory } from '@/constants';
+import { LOG_PRESETS } from '@/constants';
+import type { LogCategory } from '@/types/logger';
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -15,19 +16,120 @@ function getEnvLevel(): LogLevel {
   return env === "production" ? "info" : "debug";
 }
 
+// ============================================================================
+// LoggerConfigManager - Dynamic Configuration Singleton
+// ============================================================================
+
+type LoggerConfig = Record<LogCategory, boolean>;
+
 /**
- * Check if a log category is enabled based on configuration
+ * Singleton manager for dynamic logger configuration.
+ * Maintains an in-memory cache and subscribes to storage changes for live updates.
+ */
+class LoggerConfigManagerClass {
+  private config: LoggerConfig;
+  private initialized = false;
+  private initPromise: Promise<void> | null = null;
+
+  constructor() {
+    // Start with DEVELOPMENT preset as default
+    this.config = { ...LOG_PRESETS.DEVELOPMENT } as LoggerConfig;
+  }
+
+  /**
+   * Initialize the manager by loading config from storage.
+   * Safe to call multiple times - will only initialize once.
+   */
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    // Prevent multiple concurrent initializations
+    if (this.initPromise) {
+      return this.initPromise;
+    }
+
+    this.initPromise = this._doInitialize();
+    return this.initPromise;
+  }
+
+  private async _doInitialize(): Promise<void> {
+    try {
+      // Load config from storage
+      const result = await chrome.storage.local.get('logger_config');
+      const stored = result?.['logger_config'] as LoggerConfig | undefined;
+      
+      if (stored) {
+        // Merge with default to ensure all categories exist
+        this.config = {
+          ...LOG_PRESETS.DEVELOPMENT,
+          ...stored,
+        } as LoggerConfig;
+      }
+
+      // Subscribe to storage changes for live updates
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes['logger_config']) {
+          const newConfig = changes['logger_config'].newValue as LoggerConfig | undefined;
+          if (newConfig) {
+            this.config = {
+              ...LOG_PRESETS.DEVELOPMENT,
+              ...newConfig,
+            } as LoggerConfig;
+          }
+        }
+      });
+
+      this.initialized = true;
+    } catch (error) {
+      // Fallback to default preset on error
+      console.error('[LoggerConfigManager] Failed to initialize:', error);
+      this.config = { ...LOG_PRESETS.DEVELOPMENT } as LoggerConfig;
+      this.initialized = true;
+    }
+  }
+
+  /**
+   * Check if a category is enabled in the current configuration.
+   */
+  isCategoryEnabled(category?: LogCategory): boolean {
+    // Special overrides
+    if (this.config.SHOW_ALL) return true;
+    if (this.config.ERRORS_ONLY) return false;
+
+    // If no category specified, default to enabled
+    if (!category) return true;
+
+    // Check category-specific setting
+    return this.config[category] ?? true;
+  }
+
+  /**
+   * Check if ERRORS_ONLY mode is active
+   */
+  isErrorsOnlyMode(): boolean {
+    return this.config.ERRORS_ONLY;
+  }
+
+  /**
+   * Get the current configuration (for debugging)
+   */
+  getConfig(): LoggerConfig {
+    return { ...this.config };
+  }
+}
+
+// Export singleton instance
+export const LoggerConfigManager = new LoggerConfigManagerClass();
+
+// ============================================================================
+// Logger Implementation
+// ============================================================================
+
+/**
+ * Check if a log category is enabled based on dynamic configuration
  */
 function isCategoryEnabled(category?: LogCategory): boolean {
-  // Special overrides
-  if (LOG_CONFIG.SHOW_ALL) return true;
-  if (LOG_CONFIG.ERRORS_ONLY) return false; // Will be handled per-level
-
-  // If no category specified, default to enabled
-  if (!category) return true;
-
-  // Check category-specific setting
-  return LOG_CONFIG[category] ?? true;
+  return LoggerConfigManager.isCategoryEnabled(category);
 }
 
 /**
@@ -98,7 +200,7 @@ export function createLogger(
     error: (msg: unknown, ...args: unknown[]) => {
       // ALWAYS show errors unless ERRORS_ONLY is specifically false
       // AND category is disabled
-      const shouldShow = LOG_CONFIG.ERRORS_ONLY ? true :
+      const shouldShow = LoggerConfigManager.isErrorsOnlyMode() ? true :
         (isEnabled("error") && (isCategoryEnabled(category) || true));
       if (shouldShow) {
         console.error(...format(prefix, "error", msg, args));
@@ -108,5 +210,3 @@ export function createLogger(
 }
 
 export const logger = createLogger("App");
-
-

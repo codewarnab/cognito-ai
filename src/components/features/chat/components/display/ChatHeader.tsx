@@ -11,9 +11,9 @@ interface ChatHeaderProps {
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
     onProviderSetupClick?: () => void;
+    onLoggerPanelClick?: () => void;
     isLoading?: boolean;
     needsProviderSetup?: boolean;
-    // onApiKeySaved?: () => void;
 }
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -25,6 +25,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onTroubleshootingClick,
     onFeaturesClick,
     onProviderSetupClick,
+    onLoggerPanelClick,
     isLoading,
     needsProviderSetup,
 }) => {
@@ -156,6 +157,17 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 >
                                     Features
                                 </button>
+                                {process.env.NODE_ENV === 'development' && (
+                                    <button
+                                        className="copilot-header-menu-item"
+                                        onClick={() => {
+                                            setShowHeaderMenu(false);
+                                            onLoggerPanelClick?.();
+                                        }}
+                                    >
+                                        Logger Panel
+                                    </button>
+                                )}
                                 <button
                                     className={`copilot-header-menu-item ${needsProviderSetup ? 'copilot-header-menu-item--glow' : ''}`}
                                     onClick={() => {

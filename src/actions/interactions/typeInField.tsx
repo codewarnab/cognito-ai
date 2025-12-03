@@ -19,7 +19,7 @@ export function useTypeInFieldTool() {
 
         registerTool({
             name: "typeInField",
-            description: `Type text into input fields using natural language descriptions. Handles shadow DOM, iframes, and all input types. USE FOR: Forms, search boxes, text areas, any text input (email, password, comments, etc.) PRECONDITIONS: Page has input/textarea/contentEditable elements. If target specified, field must be findable. If omitted, an input must be focused. PROCESS: Finds input by description (placeholder/label/aria-label/nearby text/position) → scrolls into view → highlights → focuses → clears if requested → types instantly → presses Enter if requested → triggers input/change events (React/Vue compatible) VERIFICATION: use takeScreenshot tool to verify text was entered correctly.(Optional but recommended) LIMITATIONS: Cannot type into disabled/readonly fields. May fail on custom widgets (fallback: clickByText + pressKey). Types instantly (may trigger anti-bot). Cannot type special key combinations (use pressKey). EXAMPLE: typeInField(text="React hooks tutorial", target="search box", pressEnter=true)`,
+            description: `Type text into input fields using natural language descriptions. Handles shadow DOM, iframes, and all input types. USE FOR: Forms, search boxes, text areas, any text input (email, password, comments, etc.) PRECONDITIONS: Page has input/textarea/contentEditable elements. If target specified, field must be findable. If omitted, an input must be focused. PROCESS: Finds input by description (placeholder/label/aria-label/nearby text/position) → scrolls into view → highlights → focuses → clears if requested → types instantly → presses Enter if requested → triggers input/change events (React/Vue compatible) VERIFICATION: use takeScreenshot tool to verify text was entered correctly.(Optional but recommended) LIMITATIONS: Can bypass disabled/readonly fields (will indicate in response when bypassed). May fail on custom widgets (fallback: clickByText + pressKey). Types instantly (may trigger anti-bot). Cannot type special key combinations (use pressKey). EXAMPLE: typeInField(text="React hooks tutorial", target="search box", pressEnter=true)`,
             parameters: z.object({
                 text: z.string().describe('Text to type into the field. Can be any string (letters, numbers, symbols). Will be inserted instantly. Examples: "john@example.com", "React hooks tutorial", "Hello world!"'),
                 target: z.string().optional().describe('Natural language description of the input field to find. Examples: "search box", "email field", "password input", "comment box", "first input", "username field". Searches by placeholder, label, aria-label, nearby text, name, id. If omitted, types into currently focused element.'),
@@ -325,6 +325,25 @@ export function useTypeInFieldTool() {
                                             }
                                         }
 
+                                        // Check if field is disabled or readonly
+                                        let bypassedRestriction = false;
+                                        let restrictionType: string | null = null;
+
+                                        if (targetElement instanceof HTMLInputElement || targetElement instanceof HTMLTextAreaElement) {
+                                            if (targetElement.disabled) {
+                                                bypassedRestriction = true;
+                                                restrictionType = 'disabled';
+                                                // Temporarily enable the field
+                                                targetElement.disabled = false;
+                                            }
+                                            if (targetElement.readOnly) {
+                                                bypassedRestriction = true;
+                                                restrictionType = restrictionType ? `${restrictionType} and readonly` : 'readonly';
+                                                // Temporarily remove readonly
+                                                targetElement.readOnly = false;
+                                            }
+                                        }
+
                                         // Scroll into view and highlight
                                         scrollIntoView(targetElement);
                                         highlightElement(targetElement, 800);
@@ -359,11 +378,17 @@ export function useTypeInFieldTool() {
                                             className: targetElement.className,
                                         };
 
+                                        const bypassWarning = bypassedRestriction
+                                            ? `Note: Field was ${restrictionType} - restriction was bypassed to complete the action.`
+                                            : '';
+
                                         resolve({
                                             success: true,
                                             typed: txt.length,
                                             target: elementInfo,
-                                            message: `Successfully typed ${txt.length} characters${enter ? ' and pressed Enter' : ''}`
+                                            bypassedRestriction,
+                                            restrictionType: restrictionType || undefined,
+                                            message: `Successfully typed ${txt.length} characters${enter ? ' and pressed Enter' : ''}${bypassWarning ? ` ${bypassWarning}` : ''}`
                                         });
 
                                     } catch (error) {
@@ -386,9 +411,15 @@ export function useTypeInFieldTool() {
                         typed?: number;
                         target?: object;
                         message?: string;
+                        bypassedRestriction?: boolean;
+                        restrictionType?: string;
                     } | undefined;
                     if (result?.success) {
-                        log.info("✅ Text typed successfully", result);
+                        if (result.bypassedRestriction) {
+                            log.warn("⚠️ Text typed with bypassed restriction", { restrictionType: result.restrictionType, ...result });
+                        } else {
+                            log.info("✅ Text typed successfully", result);
+                        }
                     } else {
                         log.warn("❌ Typing failed", result);
                     }

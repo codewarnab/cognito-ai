@@ -22,6 +22,8 @@ export interface SidepanelUiStateReturn {
     setShowFeatures: (value: boolean) => void;
     showProviderSetup: boolean;
     setShowProviderSetup: (value: boolean) => void;
+    showLoggerPanel: boolean;
+    setShowLoggerPanel: (value: boolean) => void;
     mode: ChatMode;
     setMode: (mode: ChatMode) => void;
 
@@ -54,6 +56,7 @@ export function useSidepanelUiState({
     const [showTroubleshooting, setShowTroubleshooting] = useState(false);
     const [showFeatures, setShowFeatures] = useState(false);
     const [showProviderSetup, setShowProviderSetup] = useState(false);
+    const [showLoggerPanel, setShowLoggerPanel] = useState(false);
     const [mode, setMode] = useState<ChatMode>('text');
 
     // Handle mode change with cleanup
@@ -104,6 +107,8 @@ export function useSidepanelUiState({
         setShowFeatures,
         showProviderSetup,
         setShowProviderSetup,
+        showLoggerPanel,
+        setShowLoggerPanel,
         mode,
         setMode,
         handleModeChange,
