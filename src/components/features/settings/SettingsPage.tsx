@@ -63,7 +63,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
 
       {/* Content */}
       <div className="settings-content">
-        <VoiceSettings />
+        {/* <VoiceSettings /> */}
         <TTSAndDataSettings />
         <SearchSettingsSection />
         <ResearchWorkflowSettings />
