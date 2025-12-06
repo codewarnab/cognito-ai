@@ -1,0 +1,114 @@
+/* Collapsible User Message Styles */
+
+.user-message-collapsible-wrapper {
+  position: relative;
+}
+
+.user-message-measure {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  width: 100%;
+  z-index: -1;
+}
+
+.user-message-collapsible {
+  position: relative;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: max-height;
+}
+
+.user-message-collapsible.collapsed {
+  max-height: var(--collapsed-height, 150px);
+}
+
+.user-message-collapsible.expanded {
+  max-height: var(--full-height, none);
+}
+
+/* Fade gradient overlay - matches user bubble background #3b82f6 */
+.user-message-fade-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(
+    to bottom,
+    rgba(59, 130, 246, 0) 0%,
+    rgba(59, 130, 246, 0.6) 35%,
+    rgba(59, 130, 246, 0.9) 65%,
+    #3b82f6 100%
+  );
+  pointer-events: none;
+  border-bottom-left-radius: 16px;
+}
+
+/* Expand/Collapse button - positioned right, inside bubble */
+.user-message-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 5px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+  float: right;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.user-message-expand-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.user-message-expand-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.user-message-expand-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* Icon container with rotation animation */
+.user-message-expand-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-message-expand-btn.expanded .user-message-expand-btn-icon {
+  transform: rotate(180deg);
+}
+
+/* Clear float after button */
+.copilot-message-bubble-user .user-message-collapsible-wrapper::after {
+  content: '';
+  display: table;
+  clear: both;
+}
+
+/* Ensure smooth animation performance */
+.user-message-collapsible,
+.user-message-fade-overlay,
+.user-message-expand-btn-icon {
+  backface-visibility: hidden;
+}

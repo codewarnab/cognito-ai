@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '@/components/shared/inputs';
 import { ToolPartRenderer } from '@/ai/tools/components';
+import { CollapsibleUserMessage } from './CollapsibleUserMessage';
 import type { Message } from '../../types';
 import { getMessageContent, hasToolCalls, hasAttachments } from '../../utils';
 import { EmptyState } from '../states/EmptyState';
@@ -260,20 +261,26 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         }
 
                                                         const isCurrentlyStreaming = isLoading && index === messages.length - 1;
-                                                        return (
-                                                            <div key={`text-${partIndex}`} className="copilot-message-content">
-                                                                {message.role === 'assistant' ? (
+                                                        
+                                                        if (message.role === 'assistant') {
+                                                            return (
+                                                                <div key={`text-${partIndex}`} className="copilot-message-content">
                                                                     <div className="markdown-content">
                                                                         <SafeMarkdown isStreaming={isCurrentlyStreaming}>
                                                                             {part.text}
                                                                         </SafeMarkdown>
                                                                     </div>
-                                                                ) : (
-                                                                    <div className="user-message-with-mentions">
-                                                                        {renderTextWithMentions(part.text)}
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        
+                                                        {/* User message - CollapsibleUserMessage handles its own wrapper */}
+                                                        return (
+                                                            <CollapsibleUserMessage
+                                                                key={`text-${partIndex}`}
+                                                                text={part.text}
+                                                                renderContent={(text) => renderTextWithMentions(text)}
+                                                            />
                                                         );
                                                     }
 

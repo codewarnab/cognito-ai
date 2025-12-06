@@ -15,6 +15,7 @@
 @import './styles/features/threads/index.css';
 @import './styles/features/mentions/index.css';
 @import './styles/features/search/index.css';
+@import './styles/features/copilot/collapsible-message.css';
 
 /* Mode Toggle Wrapper */
 .mode-toggle-wrapper {
