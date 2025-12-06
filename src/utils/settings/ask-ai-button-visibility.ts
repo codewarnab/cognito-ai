@@ -41,14 +41,27 @@ export async function getVisibilitySettings(): Promise<VisibilitySettings> {
             STORAGE_KEYS.PERMANENTLY_HIDDEN,
         ]);
 
-        const sessionResult = await chrome.storage.session.get([
-            STORAGE_KEYS.HIDDEN_FOR_SESSION,
-        ]);
+        // chrome.storage.session is not available in content scripts; guard the call so we still
+        // return persisted hidden domains even when session storage cannot be read.
+        let hiddenForSession = false;
+        if (chrome.storage?.session?.get) {
+            try {
+                const sessionResult = await chrome.storage.session.get([
+                    STORAGE_KEYS.HIDDEN_FOR_SESSION,
+                ]);
+                hiddenForSession = Boolean(sessionResult[STORAGE_KEYS.HIDDEN_FOR_SESSION]);
+            } catch (sessionError) {
+                console.warn('[AskAI Visibility] Session visibility read failed, defaulting to false', sessionError);
+            }
+        }
+
+        const hiddenDomainsRaw = result[STORAGE_KEYS.HIDDEN_DOMAINS];
+        const hiddenDomains = Array.isArray(hiddenDomainsRaw) ? hiddenDomainsRaw : [];
 
         return {
-            hiddenDomains: result[STORAGE_KEYS.HIDDEN_DOMAINS] || [],
-            permanentlyHidden: result[STORAGE_KEYS.PERMANENTLY_HIDDEN] || false,
-            hiddenForSession: sessionResult[STORAGE_KEYS.HIDDEN_FOR_SESSION] || false,
+            hiddenDomains,
+            permanentlyHidden: Boolean(result[STORAGE_KEYS.PERMANENTLY_HIDDEN]),
+            hiddenForSession,
         };
     } catch (error) {
         console.error('[AskAI Visibility] Error getting visibility settings:', error);
