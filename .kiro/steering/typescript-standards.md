@@ -16,10 +16,10 @@
   - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
   - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
-  - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
-  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
-  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
-  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@ai/core/modelSetup';`)
+  - `@components` → `./src/components` (e.g., `import { Button } from '@/components';`)
+  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@/components/ui/Button';`)
+  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@/ai';`)
+  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@/ai/core/modelSetup';`)
 
 ## Imports
 - **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
@@ -29,8 +29,8 @@
 - Examples:
   - ✅ `import { createLogger } from '~logger';`
   - ✅ `import { handleAPIError } from '@/utils/apiErrorHandler';`
-  - ✅ `import { Button } from '@components/ui/Button';`
-  - ✅ `import { ModelSetup } from '@ai/core/modelSetup';`
+  - ✅ `import { Button } from '@/components/ui/Button';`
+  - ✅ `import { ModelSetup } from '@/ai/core/modelSetup';`
   - ❌ `import { createLogger } from '../../logger';`
   - ❌ `import { handleAPIError } from '../utils/apiErrorHandler';`
   - ❌ `import { Button } from '../../../components/ui/Button';`
