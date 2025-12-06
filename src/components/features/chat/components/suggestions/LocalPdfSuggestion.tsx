@@ -3,8 +3,6 @@
  * 
  * Displays a suggestion badge when a local PDF file is detected in the active tab.
  * Allows users to quickly attach the PDF with one click.
- * 
- * Phase 2: Suggestion Badge UI Component
  */
 
 import React, { useEffect } from 'react';

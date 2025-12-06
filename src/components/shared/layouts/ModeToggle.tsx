@@ -1,7 +1,7 @@
 /**
  * ModeToggle - Component for switching between text and voice chat modes
  * 
- * Phase 7 Implementation:
+ * Features:
  * - Toggle between text and voice modes
  * - Visual indication of active mode
  * - Disabled state during recording

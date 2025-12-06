@@ -11,7 +11,7 @@ export {
     type SearchMemoriesResponse
 } from './searchService';
 
-// Function calling exports (Phase 6 - AI-driven memory search)
+// Function calling exports for AI-driven memory search
 export {
     MEMORY_SEARCH_FUNCTION,
     parseMemorySearchParams,

@@ -111,7 +111,7 @@ export async function handleRewriteRequest(
             instruction,
             enableUrlContext: enableUrlContext ?? false,
             enableGoogleSearch: enableGoogleSearch ?? false,
-            // Phase 6: Pass to rewriter for AI-driven function calling
+            // Pass to rewriter for AI-driven function calling
             enableSupermemorySearch: enableSupermemorySearch ?? false,
         };
 

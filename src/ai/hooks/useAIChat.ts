@@ -257,7 +257,7 @@ export function useAIChat(options: UseAIChatOptions) {
     }
   }, [chat.messages, threadId]);
 
-  // Phase 5: Explicit reset method for context usage
+  // Explicit reset method for context usage
   const resetUsage = useCallback(() => {
     log.info('🔄 Explicitly resetting usage', { threadId });
     setCurrentUsage(null);

@@ -1,6 +1,5 @@
 /**
  * Extraction Queue Manager
- * Phase 5 of the auto-memory-extraction implementation
  *
  * Manages the queue of threads pending extraction and their metadata.
  * Uses chrome.storage.local for persistence across browser restarts.

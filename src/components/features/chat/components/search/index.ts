@@ -2,7 +2,7 @@
  * Search Components Barrel Export
  */
 
-// Search mode controls (Phase 3)
+// Search mode controls
 export { SearchModeToggle } from './SearchModeToggle';
 export type { SearchModeToggleProps } from './SearchModeToggle';
 
@@ -12,7 +12,7 @@ export type { SearchDepthSelectorProps } from './SearchDepthSelector';
 export { SearchControls } from './SearchControls';
 export type { SearchControlsProps } from './SearchControls';
 
-// Search results display (Phase 4)
+// Search results display
 export { SearchSection } from './SearchSection';
 export type { SearchSectionProps } from './SearchSection';
 
@@ -25,7 +25,7 @@ export type { SearchResultsImageSectionProps } from './SearchResultsImageSection
 export { RetrieveSection } from './RetrieveSection';
 export type { RetrieveSectionProps } from './RetrieveSection';
 
-// Answer enhancement (Phase 7)
+// Answer enhancement
 export { SourceCitation } from './SourceCitation';
 export type { SourceCitationProps, CitationSource } from './SourceCitation';
 
@@ -35,7 +35,7 @@ export type { CitationListProps } from './CitationList';
 export { RelatedQuestions } from './RelatedQuestions';
 export type { RelatedQuestionsProps, RelatedQuestion } from './RelatedQuestions';
 
-// Inline citations (Phase 8)
+// Inline citations
 export { InlineCitation } from './InlineCitation';
 export type { InlineCitationProps } from './InlineCitation';
 

@@ -3,7 +3,7 @@
  * 
  * This module fetches YouTube video transcripts from the transcript API.
  * If transcript is unavailable, it returns an error message instead of
- * falling back to video analysis (per Phase 3 decision - transcript only).
+ * falling back to video analysis.
  * 
  * API Response Contract (v2 - Supadata):
  * - Endpoint: POST TRANSCRIPT_API_URL with { url: youtubeUrl, lang?: string }

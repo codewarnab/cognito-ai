@@ -1,5 +1,5 @@
 /**
- * Answer Writer Agent (Phase 3)
+ * Answer Writer Agent
  * Generates detailed answers for individual questions using full transcript
  * Uses Gemini structured output for guaranteed JSON parsing
  * 

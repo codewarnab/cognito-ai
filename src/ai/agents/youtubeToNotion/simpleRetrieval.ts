@@ -1,6 +1,5 @@
 /**
  * Simple Retrieval Utility
- * Phase 3 of YouTube to Notion Multi-Phase Refactor
  * 
  * NOTE: This is a BACKUP utility. By default, we use FULL transcript with every answer generation
  * because Gemini 2.5 Flash has a 2M token context limit.

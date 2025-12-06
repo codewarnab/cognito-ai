@@ -1,7 +1,7 @@
 /**
  * Tool Integration Test for Gemini Live API
  * 
- * Tests Phase 8 implementation:
+ * Tests:
  * - Extension tool retrieval
  * - MCP tool filtering
  * - Tool conversion to Live API format

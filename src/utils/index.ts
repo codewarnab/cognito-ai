@@ -4,8 +4,8 @@
  * This file provides re-exports from organized subfolders to maintain
  * backward compatibility with existing imports.
  *
- * After Phase 5 migration is complete, external consumers should update
- * to import from specific subfolders (e.g., import { cn } from '@/utils/ui').
+ * External consumers should import from specific subfolders
+ * (e.g., import { cn } from '@/utils/ui').
  */
 
 // =============================================================================

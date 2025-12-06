@@ -1,6 +1,5 @@
 /**
  * Type definitions for auto-memory extraction feature
- * Phase 2 of the auto-memory-extraction implementation
  */
 
 import type { ChatMessage } from '~/types/database/schema';

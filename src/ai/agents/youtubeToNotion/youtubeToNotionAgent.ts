@@ -1,13 +1,13 @@
 /**
- * YouTube to Notion Agent (Phase 5 - Multi-Phase Orchestrator)
+ * YouTube to Notion Agent - Multi-Phase Orchestrator
  * Parent sub-agent that orchestrates video-to-notes conversion
  * 
- * This agent implements the complete multi-phase pipeline:
- * 1. Fetch transcript with cache (Phase 1)
+ * This agent implements the complete pipeline:
+ * 1. Fetch transcript with cache
  * 2. Detect video type and select template
- * 3. Plan questions (Phase 2)
- * 4. Create main Notion page (Phase 4)
- * 5. Generate answers and create child pages sequentially (Phase 3 + 4)
+ * 3. Plan questions
+ * 4. Create main Notion page
+ * 5. Generate answers and create child pages sequentially
  * 6. Cleanup cache and return results
  */
 
@@ -30,13 +30,14 @@ const log = createLogger('YouTubeToNotionAgent');
 const MIN_CONTENT_LENGTH = 1000;
 
 /**
- * Execute YouTube to Notion Agent - Multi-Phase Pipeline
+ * Execute YouTube to Notion Agent - Multi-Step Pipeline
  * 
- * Phase 1: Fetch transcript and cache
- * Phase 2: Detect video type and plan questions
- * Phase 3: Create main Notion page
- * Phase 4: Generate answers and create child pages sequentially
- * Phase 5: Cleanup and return results
+ * Steps:
+ * 1. Fetch transcript and cache
+ * 2. Detect video type and plan questions
+ * 3. Create main Notion page
+ * 4. Generate answers and create child pages sequentially
+ * 5. Cleanup and return results
  */
 export async function executeYouTubeToNotionAgent(
     input: YouTubeToNotionInput
@@ -47,12 +48,12 @@ export async function executeYouTubeToNotionAgent(
         hasParentPageId: !!input.parentPageId
     });
 
-    // PHASE 1: Transcript Fetch & Cache
+    // Transcript Fetch & Cache
     return await withTranscriptCache(
         input.youtubeUrl,
         // Fetcher function - always refetch at start of workflow
         async () => {
-            log.info('📝 Phase 1: Fetching transcript from API');
+            log.info('📝 Fetching transcript from API');
 
             // Progress: Start transcript fetching
             const transcriptStepId = progressStore.add({
@@ -87,8 +88,8 @@ export async function executeYouTubeToNotionAgent(
                 const transcript = entry.transcript;
                 const videoTitle = entry.title || input.videoTitle;
 
-                // PHASE 2: Detect video type and template
-                log.info('🎯 Phase 2: Detecting video type');
+                // Detect video type and template
+                log.info('🎯 Detecting video type');
 
                 let videoType: VideoType;
                 let detectionConfidence = 0;
@@ -136,8 +137,8 @@ export async function executeYouTubeToNotionAgent(
                     reasoning: detectionReasoning
                 });
 
-                // PHASE 3: Plan questions
-                log.info('🧠 Phase 3: Planning questions');
+                // Plan questions
+                log.info('🧠 Planning questions');
                 const questions = await planQuestions({
                     transcript,
                     videoTitle,
@@ -162,8 +163,8 @@ export async function executeYouTubeToNotionAgent(
                     titles: questions.map(q => q.title)
                 });
 
-                // PHASE 4: Create main Notion page
-                log.info('📄 Phase 4: Creating main Notion page');
+                // Create main Notion page
+                log.info('📄 Creating main Notion page');
                 const mainPageTitle = `${videoTitle} Notes [Cognito AI]`;
                 const main = await createMainPage({
                     title: mainPageTitle,
@@ -185,8 +186,8 @@ export async function executeYouTubeToNotionAgent(
                     pageUrl: main.pageUrl
                 });
 
-                // PHASE 5: Generate answers and create child pages sequentially
-                log.info(`✍️ Phase 5: Generating ${questions.length} answers and creating child pages`);
+                // Generate answers and create child pages sequentially
+                log.info(`✍️ Generating ${questions.length} answers and creating child pages`);
 
                 const createdTitles = new Set<string>();
                 const childPageUrls: string[] = [];
@@ -288,7 +289,7 @@ export async function executeYouTubeToNotionAgent(
                     }
                 }
 
-                // PHASE 6: Finalize and return
+                // Finalize and return
                 const totalPages = created + 1; // +1 for main page
                 log.info(`🎉 Workflow complete: ${totalPages} pages created`);
 

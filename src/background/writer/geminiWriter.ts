@@ -35,7 +35,7 @@ export interface WriterOptions {
     // Gemini Tool options
     enableUrlContext?: boolean;    // Enable URL fetching/analysis tool
     enableGoogleSearch?: boolean;  // Enable Google Search grounding tool
-    // Supermemory integration - Phase 6: AI-driven function calling
+    // Supermemory integration - AI-driven function calling
     enableSupermemorySearch?: boolean; // Enable AI to decide when to search memories
     // Attachment support - multimodal content
     attachment?: {

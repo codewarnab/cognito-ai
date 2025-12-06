@@ -3,8 +3,6 @@
  * 
  * Tracks which PDF files the user has dismissed from the suggestion badge
  * to avoid showing the same suggestion repeatedly in a session.
- * 
- * Phase 2: Dismissible State
  */
 
 import { createLogger } from '~logger';

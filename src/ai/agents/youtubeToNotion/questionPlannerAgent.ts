@@ -1,6 +1,5 @@
 /**
  * Question Planner Agent
- * Phase 2 of YouTube to Notion Multi-Phase Refactor
  * 
  * This agent:
  * - Uses Gemini 2.5 Flash with structured output mode for guaranteed JSON parsing

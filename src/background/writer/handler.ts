@@ -106,7 +106,7 @@ export async function handleWriteGenerate(
         // Pass Gemini tool settings
         enableUrlContext: settings?.enableUrlContext ?? false,
         enableGoogleSearch: settings?.enableGoogleSearch ?? false,
-        // Phase 6: AI-driven memory search via function calling
+        // AI-driven memory search via function calling
         enableSupermemorySearch: settings?.enableSupermemorySearch ?? false,
         // Attachment support - multimodal content
         attachment,

@@ -48,7 +48,7 @@ export interface RewriterOptions {
     instruction?: string;
     enableUrlContext?: boolean;
     enableGoogleSearch?: boolean;
-    // Phase 6: AI-driven memory search via function calling
+    // AI-driven memory search via function calling
     enableSupermemorySearch?: boolean;
 }
 

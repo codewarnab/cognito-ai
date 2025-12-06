@@ -1,7 +1,7 @@
 /**
  * VoiceControls - Control buttons for voice mode
  * 
- * Phase 6 Implementation:
+ * Features:
  * - Start/Stop/Reset buttons with proper states
  * - Visual feedback for recording state
  * - Disabled state handling

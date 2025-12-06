@@ -1,7 +1,6 @@
 /**
  * Error Handler for Gemini Live API
- * Phase 9: Comprehensive error handling and edge cases
- * Phase 3 Enhancement: Integration with centralized error system
+ * Comprehensive error handling integrated with centralized error system
  * 
  * Handles:
  * 1. Microphone permission denied

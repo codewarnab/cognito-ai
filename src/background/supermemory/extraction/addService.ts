@@ -1,6 +1,5 @@
 /**
  * Supermemory Add Service
- * Phase 4 of the auto-memory-extraction implementation
  *
  * Handles adding extracted facts to Supermemory via their API.
  * Includes rate limiting to avoid API throttling.

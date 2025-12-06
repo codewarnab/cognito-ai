@@ -1,6 +1,5 @@
 /**
  * Extraction Queue Processor
- * Phase 5 of the auto-memory-extraction implementation
  *
  * Processes pending extractions from the queue.
  * Called by the alarm handler to run in the background.

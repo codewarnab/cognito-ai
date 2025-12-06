@@ -1,6 +1,5 @@
 /**
  * Extraction Trigger Utility
- * Phase 6 of the auto-memory-extraction implementation
  *
  * Checks if a thread should be queued for extraction and sends
  * a message to the background script to queue it.

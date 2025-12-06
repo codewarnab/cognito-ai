@@ -19,7 +19,7 @@ export const useLocalPdfAttachment = ({
     const [isAttachingLocalPdf, setIsAttachingLocalPdf] = useState(false);
     const [dismissedPdfPath, setDismissedPdfPath] = useState<string | null>(null);
 
-    // Handle attaching local PDF (Phase 4 - Integration Complete)
+    // Handle attaching local PDF
     const handleAttachLocalPdf = useCallback(async () => {
         if (!localPdfInfo) return;
 
