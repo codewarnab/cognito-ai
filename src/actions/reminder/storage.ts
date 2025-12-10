@@ -103,3 +103,28 @@ export async function findReminder(identifier: string): Promise<Reminder | null>
     );
 }
 
+/**
+ * Update an existing reminder
+ */
+export async function updateReminder(
+    id: string,
+    updates: Partial<Omit<Reminder, 'id' | 'createdAt'>>
+): Promise<Reminder> {
+    const reminders = await getAllReminders();
+    const existing = reminders[id];
+
+    if (!existing) {
+        throw new Error(`Reminder with id ${id} not found`);
+    }
+
+    const updated: Reminder = {
+        ...existing,
+        ...updates,
+        id: existing.id, // Preserve ID
+        createdAt: existing.createdAt // Preserve creation time
+    };
+
+    await saveReminder(updated);
+    return updated;
+}
+

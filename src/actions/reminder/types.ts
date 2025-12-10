@@ -1,3 +1,5 @@
+export type RepeatFrequency = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 export interface Reminder {
     id: string;
     title: string;
@@ -6,6 +8,8 @@ export interface Reminder {
     createdAt: number;
     generatedTitle?: string;
     generatedDescription?: string;
+    repeat?: RepeatFrequency;
+    isPaused?: boolean;
 }
 
 export interface PendingConfirmation {

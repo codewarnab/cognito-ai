@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { X, Trash2, Calendar } from 'lucide-react';
 import { ClockIcon } from '../../../../assets/icons/chat/clock';
 import { getActiveReminders, deleteReminder } from '../../../actions/reminder/storage';
+import { updateReminderWithAlarm } from '../../../actions/reminder/utils';
 import type { Reminder } from '../../../actions/reminder/types';
 import { createLogger } from '~logger';
+import { EditReminderDialog } from './EditReminderDialog';
+import { SquarePenIcon } from '../../shared/icons/SquarePenIcon';
 
 const log = createLogger('ReminderPanel');
 
@@ -15,6 +18,8 @@ interface ReminderPanelProps {
 export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose }) => {
     const [reminders, setReminders] = useState<Reminder[]>([]);
     const [loading, setLoading] = useState(true);
+    const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     // Load reminders when panel opens
     useEffect(() => {
@@ -51,6 +56,48 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
         } catch (error) {
             log.error('Failed to delete reminder', error);
         }
+    };
+
+    const handleEditClick = (reminder: Reminder) => {
+        setEditingReminder(reminder);
+        setIsEditDialogOpen(true);
+    };
+
+    const handleSaveEdit = async (updatedReminder: Reminder) => {
+        try {
+            if (!editingReminder) return;
+
+            // Use the utility function to update reminder and reschedule alarm
+            await updateReminderWithAlarm(
+                updatedReminder.id,
+                editingReminder,
+                {
+                    title: updatedReminder.title,
+                    generatedTitle: updatedReminder.generatedTitle,
+                    generatedDescription: updatedReminder.generatedDescription,
+                    when: updatedReminder.when,
+                    repeat: updatedReminder.repeat,
+                    isPaused: updatedReminder.isPaused,
+                }
+            );
+
+            log.info('Updated reminder successfully', { id: updatedReminder.id });
+
+            // Reload the list
+            await loadReminders();
+
+            // Close dialog
+            setIsEditDialogOpen(false);
+            setEditingReminder(null);
+        } catch (error) {
+            log.error('Failed to update reminder', error);
+        }
+    };
+
+    const handleDeleteFromDialog = async (id: string) => {
+        await handleDeleteReminder(id);
+        setIsEditDialogOpen(false);
+        setEditingReminder(null);
     };
 
     const formatDateTime = (timestamp: number) => {
@@ -148,13 +195,36 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                                             <span>{formatDateTime(reminder.when)}</span>
                                         </div>
                                     </div>
+
+                                    {/* Edit button positioned at right bottom */}
+                                    <button
+                                        className="reminder-panel-edit-btn"
+                                        onClick={() => handleEditClick(reminder)}
+                                        title="Edit reminder"
+                                        aria-label="Edit reminder"
+                                    >
+                                        <SquarePenIcon size={16} />
+                                    </button>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Edit Reminder Dialog */}
+            {editingReminder && (
+                <EditReminderDialog
+                    isOpen={isEditDialogOpen}
+                    reminder={editingReminder}
+                    onSave={handleSaveEdit}
+                    onDelete={handleDeleteFromDialog}
+                    onCancel={() => {
+                        setIsEditDialogOpen(false);
+                        setEditingReminder(null);
+                    }}
+                />
+            )}
         </>
     );
 };
-
