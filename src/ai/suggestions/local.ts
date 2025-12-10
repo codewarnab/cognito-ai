@@ -14,20 +14,20 @@ export type Suggestion = {
     action: string;
 };
 
-// JSON Schema for suggestion output format
+// JSON Schema for suggestion output format - 3 pills with progressive lengths
 const SUGGESTION_SCHEMA = {
     type: "object",
     properties: {
         suggestions: {
             type: "array",
-            minItems: 2,
-            maxItems: 2,
+            minItems: 3,
+            maxItems: 3,
             items: {
                 type: "object",
                 properties: {
                     title: {
                         type: "string",
-                        description: "Short action title (3-7 words)"
+                        description: "Action title - progressively longer (first: 2-3 words, second: 3-4 words, third: 4-6 words)"
                     },
                     action: {
                         type: "string",
@@ -83,7 +83,8 @@ async function createSuggestionSession() {
             temperature: 0.8, // More creative for suggestions
             topK: 40,
             systemInstruction: `You are a browser AI assistant that generates contextual suggestions.
-Generate exactly 2 diverse, actionable suggestions based on the current page context.
+Generate exactly 3 diverse, actionable suggestions based on the current page context.
+IMPORTANT: Titles must be progressively longer - first is shortest (2-3 words), second is medium (3-4 words), third is longest (4-6 words).
 Return ONLY valid JSON matching the required schema.`,
         });
 
@@ -155,20 +156,23 @@ ${capabilities.map(c => `- ${c}`).join('\n')}
         prompt += `Current Page: No specific page context available (may be on a restricted page)\n`;
     }
 
-    prompt += `\nGenerate 2 diverse, actionable suggestions that are relevant to this page and context.
+    prompt += `\nGenerate exactly 3 actionable suggestions that are relevant to this page and context.
+
+CRITICAL - Title lengths must be progressively longer:
+1. First suggestion: SHORTEST title (2-3 words only), e.g. "Check emails" or "Search tabs"
+2. Second suggestion: MEDIUM title (3-4 words), e.g. "Find recent GitHub visits"
+3. Third suggestion: LONGEST title (4-6 words), e.g. "Set reminder for tomorrow meeting"
+
 Each suggestion should:
 - Be specific and actionable
 - Relate to the current page or browser context
 - Use natural language (how a user would actually ask)
 - Vary in type (navigation, organization, search, interaction, reminders, etc.)
 
-Examples of good suggestions:
-- "Search for React tutorials and organize my tabs"
-- "Find my recent GitHub visits from this morning"
-- "Set a reminder for my meeting tomorrow at 2pm"
-- "Search my history for that article I read yesterday"
-- "Group all my documentation tabs together"
-- "Navigate to Gmail and check my inbox"
+Examples:
+1. "Open Gmail" (2 words)
+2. "Find my bookmarks" (3 words)  
+3. "Search history for yesterday's article" (5 words)
 
 Make the suggestions contextual to the current page when possible.
 
@@ -250,8 +254,8 @@ export async function generateLocalContextualSuggestions(
                 return null;
             }
 
-            // Take up to 2 suggestions
-            const suggestions = parsed.suggestions.slice(0, 2);
+            // Take up to 3 suggestions
+            const suggestions = parsed.suggestions.slice(0, 3);
 
             if (suggestions.length === 0) {
                 log.warn('No suggestions in result');

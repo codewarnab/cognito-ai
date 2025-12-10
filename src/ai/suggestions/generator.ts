@@ -18,10 +18,10 @@ const log = createLogger('SuggestionGenerator');
 const suggestionSchema = z.object({
     suggestions: z.array(
         z.object({
-            title: z.string().describe('Short action title (3-5 words)'),
+            title: z.string().describe('Action title - progressively longer (first: 2-3 words, second: 3-4 words, third: 4-6 words)'),
             action: z.string().describe('Full action text for user to send'),
         })
-    ).length(2).describe('Exactly 2 contextual action suggestions'),
+    ).length(3).describe('Exactly 3 contextual action suggestions with progressively longer titles'),
 });
 
 export type Suggestion = {
@@ -64,7 +64,7 @@ export async function generateContextualSuggestions(
             // Generate suggestions with retry logic
             const result = await generateWithRetry(model, prompt);
 
-            if (!result?.suggestions || result.suggestions.length !== 2) {
+            if (!result?.suggestions || result.suggestions.length !== 3) {
                 log.warn('Invalid suggestions result:', result);
                 // Fallback to local if remote fails (but skip if HIDE_LOCAL_MODE is enabled)
                 if (!HIDE_LOCAL_MODE) {
@@ -157,7 +157,13 @@ ${capabilities.map(c => `- ${c}`).join('\n')}
         prompt += `Current Page: No specific page context available (may be on a restricted page)\n`;
     }
 
-    prompt += `\nGenerate 2 diverse, actionable suggestions that are relevant to this page and context.
+    prompt += `\nGenerate exactly 3 diverse, actionable suggestions that are relevant to this page and context.
+
+CRITICAL - Title lengths must be progressively longer:
+1. First suggestion: SHORTEST title (2-3 words only), e.g. "Check emails" or "Search tabs"
+2. Second suggestion: MEDIUM title (3-4 words), e.g. "Find recent GitHub visits"
+3. Third suggestion: LONGEST title (4-6 words), e.g. "Set reminder for tomorrow meeting"
+
 Each suggestion should:
 - Be specific and actionable
 - Relate to the current page or browser context

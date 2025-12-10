@@ -25,13 +25,18 @@ interface SuggestedActionsProps {
 }
 
 // Fallback suggestions (static) - only shown when generation fails
+// Titles are progressively longer: 2-3 words, 3-4 words, 4-6 words
 const FALLBACK_SUGGESTIONS = [
     {
-        title: 'Find my recent GitHub visits',
+        title: 'Search tabs',
+        action: 'Search my open tabs',
+    },
+    {
+        title: 'Find recent visits',
         action: 'Find my recent GitHub visits from this morning',
     },
     {
-        title: 'Set a reminder for',
+        title: 'Set reminder for tomorrow',
         action: 'Set a reminder for my meeting tomorrow at 2pm',
     },
 ];
@@ -136,7 +141,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                         <div className="suggested-actions-loading-state">
                             <div className="loading-shimmer">Generating suggestions...</div>
                             <div className="suggested-actions-grid">
-                                {[1, 2].map((i) => (
+                                {[1, 2, 3].map((i) => (
                                     <div key={`skeleton-${i}`} className="suggested-action-skeleton">
                                         <div className="skeleton-shimmer"></div>
                                     </div>
@@ -156,27 +161,9 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                                 >
                                     <button
                                         onClick={() => handleSuggestionClick(suggestedAction.action)}
-                                        className="suggested-action-button"
-                                        style={{
-                                            overflow: 'hidden',
-                                            maxWidth: '100%',
-                                            padding: '8px 12px',
-                                            whiteSpace: 'normal'
-                                        }}
+                                        className={`suggested-action-button suggested-action-pill-${index + 1}`}
                                     >
-                                        <TextMorph
-                                            className="suggested-action-title"
-                                            style={{
-                                                display: 'inline',
-                                                width: '100%',
-                                                fontSize: '0.875rem',
-                                                lineHeight: '1.4',
-                                                overflowWrap: 'break-word',
-                                                wordBreak: 'normal',
-                                                hyphens: 'auto',
-                                                textAlign: 'left'
-                                            }}
-                                        >
+                                        <TextMorph className="suggested-action-title">
                                             {suggestedAction.title}
                                         </TextMorph>
                                     </button>
