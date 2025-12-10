@@ -510,3 +510,30 @@
     width: 100%;
     justify-content: center;
 }
+
+/* Social Links */
+.settings-social-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 0 0.5rem;
+    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+}
+
+.settings-social-link {
+    color: var(--text-tertiary);
+    transition: color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.settings-social-link:hover {
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}

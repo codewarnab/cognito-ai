@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { VoiceSettings } from '@/components/features/settings/components/VoiceSettings';
 import { AskAiButtonSettings } from '@/components/features/settings/components/AskAiButtonSettings';
 import { TextSummarizerSettings } from '@/components/features/settings/components/TextSummarizerSettings';
 import { TextRewriterSettings } from '@/components/features/settings/components/TextRewriterSettings';
@@ -12,6 +11,7 @@ import { MaxToolCallSettings } from '@/components/features/settings/components/M
 import { SupermemorySettings } from '@/components/features/settings/components/SupermemorySettings';
 import { SearchSettingsSection } from '@/components/features/settings/components/SearchSettingsSection';
 import { ResearchWorkflowSettings } from '@/components/features/settings/components/ResearchWorkflowSettings';
+import { SocialLinks } from '@/components/features/settings/components/SocialLinks';
 import { hasAnyProviderConfigured } from '@/utils/credentials';
 import './SettingsPage.css';
 
@@ -75,6 +75,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         {/* <EnabledToolsSettings /> */}
         <MaxToolCallSettings />
         <SupermemorySettings />
+
+        {/* Social Links */}
+        <SocialLinks />
       </div>
     </div>
   );
