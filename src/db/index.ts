@@ -18,6 +18,33 @@ import type {
 import type { AppUsage } from '~/types/ai/usage';
 
 // ============================================================================
+// Report Section Interface (For Incremental Report Building)
+// ============================================================================
+
+export interface ReportSection {
+    id: string;              // Unique ID: 'section_1', 'section_2', etc.
+    sessionId: string;       // Research session identifier
+    sectionName: string;     // e.g., "Overview", "Key Features", "Pricing"
+    content: string;         // Section content (markdown)
+    order: number;           // Section order for final compilation
+    createdAt: number;       // Timestamp
+}
+
+export interface ResearchSource {
+    sourceId: string;
+    sessionId: string;
+    url: string;
+    title: string;
+    content: string;         // Full content (stored in DB, not context)
+    contentLength: number;
+    futureUseGuideline?: string;
+    savedAt: number;
+    expiresAt?: number;      // Optional TTL
+}
+
+
+
+// ============================================================================
 // Type Definitions (Re-exported from ~/types/database)
 // ============================================================================
 
@@ -60,6 +87,10 @@ export class AppDB extends Dexie {
     settings!: Table<SettingRecord, string>;
     chatMessages!: Table<ChatMessage, string>;
     chatThreads!: Table<ChatThread, string>;
+    reportSections!: Table<ReportSection, string>;
+    researchSources!: Table<ResearchSource, string>;
+
+
 
     constructor() {
         super('ChatDB');
@@ -116,8 +147,27 @@ export class AppDB extends Dexie {
             chatThreads: 'id, createdAt, updatedAt'
         });
         // No data migration needed - new fields are optional
+
+        // Version 6: Add report sections for incremental building
+        this.version(6).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp, sequenceNumber',
+            chatThreads: 'id, createdAt, updatedAt',
+            reportSections: 'id, sessionId, order'
+        });
+
+        // Version 7: Add research sources for context offloading
+        this.version(7).stores({
+            settings: 'key',
+            chatMessages: 'id, threadId, timestamp, sequenceNumber',
+            chatThreads: 'id, createdAt, updatedAt',
+            reportSections: 'id, sessionId, order',
+            researchSources: 'sourceId, sessionId, expiresAt'
+        });
     }
 }
+
+
 
 // ============================================================================
 // Database Instance
@@ -558,4 +608,161 @@ export async function saveChatMessageWithUsage(
 // Exports
 // ============================================================================
 
+
+// ============================================================================
+// Report Sections API (For Incremental Report Building)
+// ============================================================================
+
+let reportSectionCounter = 0;
+
+/**
+ * Reset section counter (call when new session starts)
+ */
+export function resetReportSectionCounter(): void {
+    reportSectionCounter = 0;
+}
+
+/**
+ * Append a section to the report buffer
+ */
+export async function appendReportSection(params: {
+    sessionId: string;
+    sectionName: string;
+    content: string;
+}): Promise<{ sectionId: string; order: number }> {
+    reportSectionCounter++;
+    const sectionId = `section_${reportSectionCounter}`;
+
+    await db.reportSections.put({
+        id: sectionId,
+        sessionId: params.sessionId,
+        sectionName: params.sectionName,
+        content: params.content,
+        order: reportSectionCounter,
+        createdAt: Date.now(),
+    });
+
+    return { sectionId, order: reportSectionCounter };
+}
+
+/**
+ * Get all report sections for a session (ordered)
+ */
+export async function getReportSections(sessionId: string): Promise<ReportSection[]> {
+    const sections = await db.reportSections
+        .where('sessionId')
+        .equals(sessionId)
+        .toArray();
+
+    return sections.sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Clear report sections for a session
+ */
+export async function clearReportSections(sessionId: string): Promise<void> {
+    await db.reportSections
+        .where('sessionId')
+        .equals(sessionId)
+        .delete();
+    reportSectionCounter = 0;
+}
+
+/**
+ * Compile all sections into final report content
+ */
+export async function compileReportContent(sessionId: string): Promise<string> {
+    const sections = await getReportSections(sessionId);
+
+    if (sections.length === 0) {
+        return '';
+    }
+
+    return sections
+        .map(s => `## ${s.sectionName}\n\n${s.content}`)
+        .join('\n\n---\n\n');
+}
+
+// ============================================================================
+// Research Sources API (Context Offloading)
+// ============================================================================
+
+/**
+ * Save a research source to IndexedDB
+ */
+export async function saveResearchSource(source: ResearchSource): Promise<void> {
+    await db.researchSources.put(source);
+}
+
+/**
+ * Get a specific research source by ID
+ */
+export async function getResearchSource(sourceId: string): Promise<ResearchSource | undefined> {
+    return await db.researchSources.get(sourceId);
+}
+
+/**
+ * List all research sources for a session (metadata only)
+ * Note: Dexie doesn't natively support partial select, so we fetch all and map
+ * But keeping the interface clean for potential future optimization
+ */
+export async function listResearchSources(sessionId: string): Promise<ResearchSource[]> {
+    return await db.researchSources
+        .where('sessionId')
+        .equals(sessionId)
+        .toArray();
+}
+
+/**
+ * Update metadata for a research source
+ */
+export async function updateResearchSourceMetadata(
+    sourceId: string,
+    metadata: { futureUseGuideline?: string }
+): Promise<void> {
+    await db.researchSources.update(sourceId, metadata);
+}
+
+/**
+ * Read full content of a research source (alias for getResearchSource)
+ * Used by readResearchMemory tool
+ */
+export async function readResearchMemory(sourceId: string): Promise<ResearchSource | undefined> {
+    return await getResearchSource(sourceId);
+}
+
+/**
+ * Add metadata to a research source (alias for updateResearchSourceMetadata)
+ * Used by addMemoryMetadata tool
+ */
+export async function addResearchMetadata(params: {
+    sourceId: string;
+    futureUseGuideline: string;
+}): Promise<void> {
+    await updateResearchSourceMetadata(params.sourceId, {
+        futureUseGuideline: params.futureUseGuideline
+    });
+}
+
+
+
+// ============================================================================
+// Research Session Management
+
+// ============================================================================
+
+let currentResearchSessionId: string | null = null;
+
+export function initResearchSession(): string {
+    currentResearchSessionId = crypto.randomUUID();
+    resetReportSectionCounter();
+    return currentResearchSessionId;
+}
+
+export function getCurrentResearchSessionId(): string | null {
+    return currentResearchSessionId;
+}
+
 export default db;
+
+

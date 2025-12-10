@@ -12,7 +12,7 @@ import { ReminderPanel } from "@/components/features/reminders";
 import { SettingsPage } from "@/components/features/settings/SettingsPage";
 import { LoggerPanel } from "@/components/features/settings/LoggerPanel";
 import { OnboardingScreen } from "@/components/features/onboarding";
-// import { AudioLinesIcon } from "@/components/shared/icons";
+import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
 import { VoiceRecordingPill } from "@/components/shared/inputs";
 import { ContextWarning } from "@/components/features/chat/context/ContextWarning";
@@ -91,7 +91,7 @@ function AIChatContent() {
     const voiceInputRef = useRef<VoiceInputHandle>(null);
 
     // Custom hooks for separated concerns
-    const apiKey = useApiKey();
+    // const apiKey = useApiKey();
 
     // Detect active tab for local PDF auto-attach feature
     const activeTabDetection = useActiveTabDetection();
@@ -331,7 +331,7 @@ function AIChatContent() {
         setShowLoggerPanel,
         mode,
         setMode,
-        // handleModeChange,
+        handleModeChange,
         handleKeyPress,
         handleContinue,
     } = useSidepanelUiState({
@@ -533,7 +533,7 @@ function AIChatContent() {
                             />
 
                             {/* Voice Mode FAB - Only in text mode */}
-                            {/* {!isImagePreviewOpen && (
+                            {!isImagePreviewOpen && (
                                 <motion.button
                                     className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
                                     onClick={() => handleModeChange('voice')}
@@ -551,13 +551,11 @@ function AIChatContent() {
                                 >
                                     <AudioLinesIcon size={20} />
                                 </motion.button>
-                            )} */}
+                            )}
                         </>
                     ) : (
                         <VoiceModeUI
                             onBack={() => setMode('text')}
-                            apiKey={apiKey}
-                            systemInstruction="You are an intelligent AI assistant integrated into a Chrome browser extension. Help users with browser navigation, web page interaction, information retrieval, and task management. Be conversational, friendly, and helpful. Keep responses concise since this is a voice conversation."
                         />
                     )}
                 </motion.div>

@@ -3,8 +3,7 @@
  * Exports all agent implementations (browser, youtube, pdf, notion, youtubeToNotion, search)
  */
 
-// Browser agent
-export * from './browser';
+
 
 // YouTube agent
 export * from './youtube';

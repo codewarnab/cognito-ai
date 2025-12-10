@@ -47,3 +47,6 @@ todo.txt
 TODO.md
 .vscode/settings.json
 test-mcp-discovery.js
+.shadow/
+chrome-ai-backend/elevenlabs-proxy/node_modules/
+watcher.ps1

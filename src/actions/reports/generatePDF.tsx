@@ -10,8 +10,11 @@ import { jsPDF } from 'jspdf';
 import { registerTool } from '@/ai/tools';
 import { useToolUI } from '@/ai/tools/components';
 import { createLogger } from '~logger';
+import { compileReportContent, getCurrentResearchSessionId } from '@/db';
+
 
 const log = createLogger('Tool-GeneratePDF');
+
 
 /**
  * Clean and sanitize text for PDF rendering
@@ -260,26 +263,63 @@ export function useGeneratePDFTool() {
             name: 'generatePDF',
             description: 'Generate a PDF file and display it as an interactive attachment in chat with Open/Download buttons. Uses jsPDF library for reliable PDF generation.',
             parameters: z.object({
-                content: z.string().describe('The content to save in the PDF (markdown format supported: headers, bold text, paragraphs)'),
+                content: z.string().optional().describe('The content to save in the PDF (markdown format supported: headers, bold text, paragraphs). Optional if using compileFromBuffer.'),
                 filename: z.string()
                     .describe('The filename for the PDF file (without extension). Example: "research-report-2025"')
                     .optional()
                     .default('report'),
+                compileFromBuffer: z.boolean().optional().describe('If true, compile content from report sections buffer instead of using content parameter'),
             }),
-            execute: async ({ content, filename }) => {
+            execute: async ({ content, filename, compileFromBuffer }) => {
                 try {
+                    let finalContent = content;
+
+                    // If compileFromBuffer is true, get content from IndexedDB sections
+                    if (compileFromBuffer) {
+                        const sessionId = getCurrentResearchSessionId();
+                        if (!sessionId) {
+                            return {
+                                success: false,
+                                error: 'No active research session for compilation'
+                            };
+                        }
+
+                        finalContent = await compileReportContent(sessionId);
+
+                        if (!finalContent || finalContent.trim().length === 0) {
+                            return {
+                                success: false,
+                                error: 'No report sections found. Call appendToReport() to add sections first.'
+                            };
+                        }
+
+                        log.info('Compiled report from buffer', {
+                            sessionId,
+                            contentLength: finalContent.length
+                        });
+                    }
+
+                    if (!finalContent) {
+                        return {
+                            success: false,
+                            error: 'No content provided. Either pass content directly or use compileFromBuffer: true'
+                        };
+                    }
+
                     const actualFilename = filename ?? 'report';
                     log.info('TOOL CALL: generatePDF', {
                         filenameLength: actualFilename.length,
-                        contentLength: content.length
+                        contentLength: finalContent.length
                     });
+
 
                     // Ensure filename doesn't have extension
                     const cleanFilename = actualFilename.replace(/\.pdf$/i, '');
                     const fullFilename = `${cleanFilename}.pdf`;
 
                     // Generate PDF blob
-                    const pdfBlob = generatePDF(content);
+                    const pdfBlob = generatePDF(finalContent);
+
 
                     // Create a blob URL for chat display (no auto-download)
                     const chatUrl = URL.createObjectURL(pdfBlob);

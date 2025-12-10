@@ -177,7 +177,25 @@ export class SimpleFrontendTransport {
                 workflowId = workflowCmd.workflowId;
 
                 // START WORKFLOW SESSION - This will persist across tool calls
-                workflowSessionManager.startSession(chatId, workflow);
+                const sessionId = workflowSessionManager.startSession(chatId, workflow);
+
+                // Initialise research context if this is the research workflow
+                if (workflowCmd.workflowId === 'research') {
+                  // Import dynamically to avoid circular dependencies
+                  const { startResearchContext } = await import('@/workflows/researchContext');
+
+                  // The query IS the user request in slash command mode
+                  startResearchContext({
+                    threadId: chatId,
+                    userRequest: workflowCmd.query
+                  });
+
+                  log.info('🚀 Research context initialized with user request', {
+                    req: workflowCmd.query,
+                    sessionId: sessionId
+                  });
+                }
+
 
                 // Strip the workflow command from the message, keep only the query
                 const cleanedQuery = workflowCmd.query;
