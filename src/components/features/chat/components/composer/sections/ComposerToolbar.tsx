@@ -32,6 +32,9 @@ interface ComposerToolbarProps {
     // Workflow/search state
     activeWorkflow: WorkflowDefinition | null;
     isSearchActive: boolean;
+    // Model selector state
+    isModelSelectorOpen?: boolean;
+    setIsModelSelectorOpen?: (isOpen: boolean) => void;
 }
 
 /**
@@ -53,7 +56,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     setEnabledToolsCount,
     setMcpToolsCount,
     activeWorkflow,
-    isSearchActive
+    isSearchActive,
+    isModelSelectorOpen,
+    setIsModelSelectorOpen
 }) => {
     // Debug logging for tools display
     const searchToolsCount = SEARCH_TOOL_NAMES.length;
@@ -102,8 +107,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     >
                         <Wrench size={14} />
                         <span className="composer-tools-count">
-                            {isSearchActive 
-                                ? `${searchToolsCount} (Search)` 
+                            {isSearchActive
+                                ? `${searchToolsCount} (Search)`
                                 : `${totalEnabledCount}${webMcpToolsCount > 0 ? ` (${webMcpToolsCount} Web)` : ''}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
                         </span>
                     </button>
@@ -130,7 +135,10 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             <SearchControls activeWorkflow={activeWorkflow} />
 
             {/* Model Selector - Gemini icon with model popover */}
-            <ModelSelectorPopover />
+            <ModelSelectorPopover
+                isOpen={isModelSelectorOpen}
+                onOpenChange={setIsModelSelectorOpen}
+            />
         </div>
     );
 };

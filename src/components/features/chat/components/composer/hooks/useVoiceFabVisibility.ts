@@ -7,7 +7,9 @@ import { useEffect } from 'react';
 export const useVoiceFabVisibility = (
     showAttachmentDropdown: boolean,
     attachmentsCount: number,
-    tabAttachmentsCount: number
+    tabAttachmentsCount: number,
+    isModelSelectorOpen: boolean = false,
+    isRecording: boolean = false
 ): void => {
     useEffect(() => {
         const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
@@ -16,7 +18,9 @@ export const useVoiceFabVisibility = (
             // - Attachment dropdown is open
             // - Any file attachments exist (including YouTube transcripts)
             // - Any tab attachments exist
-            const shouldHide = showAttachmentDropdown || attachmentsCount > 0 || tabAttachmentsCount > 0;
+            // - Model model selector is open
+            // - Recording is in progress
+            const shouldHide = showAttachmentDropdown || attachmentsCount > 0 || tabAttachmentsCount > 0 || isModelSelectorOpen || isRecording;
 
             if (shouldHide) {
                 voiceFab.style.visibility = 'hidden';
@@ -24,6 +28,6 @@ export const useVoiceFabVisibility = (
                 voiceFab.style.visibility = '';
             }
         }
-    }, [showAttachmentDropdown, attachmentsCount, tabAttachmentsCount]);
+    }, [showAttachmentDropdown, attachmentsCount, tabAttachmentsCount, isModelSelectorOpen, isRecording]);
 };
 

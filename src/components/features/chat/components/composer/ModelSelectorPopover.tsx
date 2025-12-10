@@ -41,10 +41,19 @@ const MODEL_OPTIONS: ModelOption[] = [
 
 interface ModelSelectorPopoverProps {
     className?: string;
+    isOpen?: boolean;
+    onOpenChange?: (isOpen: boolean) => void;
 }
 
-export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({ className }) => {
-    const [isOpen, setIsOpen] = useState(false);
+export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
+    className,
+    isOpen: controlledIsOpen,
+    onOpenChange
+}) => {
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+    const isOpen = controlledIsOpen ?? internalIsOpen;
+    const setIsOpen = onOpenChange ?? setInternalIsOpen;
+
     const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-2.5-flash');
     const [isLoading, setIsLoading] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);

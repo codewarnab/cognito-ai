@@ -134,6 +134,7 @@ export const Composer: React.FC<ComposerProps> = ({
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showAddYouTubeVideoModal, setShowAddYouTubeVideoModal] = useState(false);
     const [showToolsModal, setShowToolsModal] = useState(false);
+    const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
     // Derived state
     const isLocalMode = modelState.mode === 'local';
@@ -145,7 +146,7 @@ export const Composer: React.FC<ComposerProps> = ({
     const { handleScreenshotClick } = useScreenshotCapture(processFiles);
 
     // Voice FAB visibility management
-    useVoiceFabVisibility(showAttachmentDropdown, attachments.length, tabAttachments.length);
+    useVoiceFabVisibility(showAttachmentDropdown, attachments.length, tabAttachments.length, isModelSelectorOpen, isRecording);
 
     // Debug logging for search mode state
     log.info('🎨 Composer render - search mode state', {
@@ -242,6 +243,8 @@ export const Composer: React.FC<ComposerProps> = ({
                     setMcpToolsCount={toolsState.setMcpToolsCount}
                     activeWorkflow={activeWorkflow}
                     isSearchActive={isSearchActive}
+                    isModelSelectorOpen={isModelSelectorOpen}
+                    setIsModelSelectorOpen={setIsModelSelectorOpen}
                 />
 
                 {/* Right actions: attachments, voice/send/stop */}
