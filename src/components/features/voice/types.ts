@@ -2,7 +2,15 @@
  * Type definitions for Voice Mode components
  */
 
-import type { VoiceModeStatus } from '@/ai/geminiLive/types';
+// Status types for voice mode
+export type VoiceModeStatus =
+    | 'Ready'
+    | 'Initializing...'
+    | 'Listening...'
+    | 'Processing...'
+    | 'Speaking...'
+    | 'Error'
+    | 'Retrying...';
 
 export interface VoiceModeUIProps {
     onBack?: () => void;

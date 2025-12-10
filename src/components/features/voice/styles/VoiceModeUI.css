@@ -73,6 +73,35 @@
     flex-shrink: 0;
 }
 
+
+/* Settings Button */
+.voice-mode-settings-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(74, 144, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(74, 144, 255, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.voice-mode-settings-button:hover {
+    background: rgba(74, 144, 255, 0.2);
+    border-color: rgba(74, 144, 255, 0.5);
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 144, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.voice-mode-settings-button:active {
+    transform: translateY(0);
+}
+
 /* Main Content - Orb Area */
 .voice-mode-content {
     flex: 1;
