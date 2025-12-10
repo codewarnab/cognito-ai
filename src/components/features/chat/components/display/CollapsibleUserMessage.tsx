@@ -31,7 +31,7 @@ export const CollapsibleUserMessage: React.FC<CollapsibleUserMessageProps> = ({
       // Measure the actual scrollHeight of the content
       const height = element.scrollHeight;
       setMeasuredHeight(height);
-      
+
       // Only collapse if height exceeds threshold AND text is long enough
       const shouldCollapse = height > maxCollapsedHeight && text.length >= minTextLengthForCollapse;
       setNeedsCollapse(shouldCollapse);
@@ -65,8 +65,8 @@ export const CollapsibleUserMessage: React.FC<CollapsibleUserMessageProps> = ({
   // Always render the full structure, but only apply collapse styles when needed
   // This ensures we can measure the content properly
   return (
-    <div 
-      className={`copilot-message-content ${needsCollapse ? 'user-message-collapsible-wrapper' : ''}`} 
+    <div
+      className={`copilot-message-content ${needsCollapse ? 'user-message-collapsible-wrapper' : ''}`}
       ref={wrapperRef}
     >
       <div

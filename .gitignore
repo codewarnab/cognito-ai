@@ -37,7 +37,7 @@ dist/
 keys.json
 
 # typescript
-.tsbuildinfo
+*.tsbuildinfo
 
 # project files
 VIDEO_SCRIPT.md
@@ -50,3 +50,4 @@ test-mcp-discovery.js
 .shadow/
 chrome-ai-backend/elevenlabs-proxy/node_modules/
 watcher.ps1
+tsconfig.tsbuildinfo

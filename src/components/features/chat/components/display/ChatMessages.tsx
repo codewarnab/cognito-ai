@@ -9,6 +9,7 @@ import { EmptyState } from '../states/EmptyState';
 import { LoadingIndicator } from '../feedback/LoadingIndicator';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
+import { UserMessageCopyButton } from '../buttons/UserMessageCopyButton';
 import { getFileIcon } from '@/utils/files';
 import { StreamdownRenderer } from './StreamdownRenderer';
 import { XIcon } from '@assets/icons/chat/x';
@@ -240,7 +241,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 transition={{ type: 'easeOut', duration: 0.2 }}
                                 initial={isPendingMessage ? { opacity: 0 } : undefined}
                                 animate={isPendingMessage ? { opacity: 1 } : undefined}
-                                className={`copilot-message copilot-message-${message.role}`}
+                                className={`copilot-message copilot-message-${message.role} ${message.role === 'user' ? 'user-message-outer-container' : ''}`}
                             >
                                 <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
                                     {/* Render parts in their actual order - text and tools interleaved */}
@@ -261,7 +262,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         }
 
                                                         const isCurrentlyStreaming = isLoading && index === messages.length - 1;
-                                                        
+
                                                         if (message.role === 'assistant') {
                                                             return (
                                                                 <div key={`text-${partIndex}`} className="copilot-message-content">
@@ -273,8 +274,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                 </div>
                                                             );
                                                         }
-                                                        
-                                                        {/* User message - CollapsibleUserMessage handles its own wrapper */}
+
+                                                        {/* User message - CollapsibleUserMessage handles its own wrapper */ }
                                                         return (
                                                             <CollapsibleUserMessage
                                                                 key={`text-${partIndex}`}
@@ -426,6 +427,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                         );
                                     })()}
                                 </div>
+                                {/* Copy button for user messages - positioned to the left of bubble via CSS order */}
+                                {message.role === 'user' && extractMessageText(message) && (
+                                    <div className="user-message-copy-wrapper">
+                                        <UserMessageCopyButton content={extractMessageText(message)} />
+                                    </div>
+                                )}
                             </motion.div>
                         );
                     })}
