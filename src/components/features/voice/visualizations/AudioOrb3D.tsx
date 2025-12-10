@@ -122,8 +122,8 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
 
         // FXAA (anti-aliasing)
         const fxaaPass = new ShaderPass(FXAAShader);
-        fxaaPass.material.uniforms['resolution'].value.x = 1 / (container.clientWidth * renderer.getPixelRatio());
-        fxaaPass.material.uniforms['resolution'].value.y = 1 / (container.clientHeight * renderer.getPixelRatio());
+        fxaaPass.material.uniforms['resolution']!.value.x = 1 / (container.clientWidth * renderer.getPixelRatio());
+        fxaaPass.material.uniforms['resolution']!.value.y = 1 / (container.clientHeight * renderer.getPixelRatio());
         composer.addPass(fxaaPass);
 
         // Audio analysers
@@ -168,10 +168,10 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
 
             // Update sphere shader uniforms
             if (sphere.material instanceof THREE.ShaderMaterial) {
-                sphere.material.uniforms.time.value = time;
+                sphere.material.uniforms.time!.value = time;
 
                 if (inputAnalyser) {
-                    sphere.material.uniforms.inputData.value.set(
+                    sphere.material.uniforms.inputData!.value.set(
                         inputAnalyser.data[0],
                         inputAnalyser.data[1],
                         inputAnalyser.data[2],
@@ -180,7 +180,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
                 }
 
                 if (outputAnalyser) {
-                    sphere.material.uniforms.outputData.value.set(
+                    sphere.material.uniforms.outputData!.value.set(
                         outputAnalyser.data[0],
                         outputAnalyser.data[1],
                         outputAnalyser.data[2],
@@ -196,7 +196,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
 
             // Update backdrop shader uniforms
             if (backdrop.material instanceof THREE.ShaderMaterial) {
-                backdrop.material.uniforms.time.value = time;
+                backdrop.material.uniforms.time!.value = time;
             }
 
             // Rotate camera based on audio
@@ -228,12 +228,12 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
             composer.setSize(width, height);
 
             // Update FXAA resolution
-            fxaaPass.material.uniforms['resolution'].value.x = 1 / (width * renderer.getPixelRatio());
-            fxaaPass.material.uniforms['resolution'].value.y = 1 / (height * renderer.getPixelRatio());
+            fxaaPass.material.uniforms['resolution']!.value.x = 1 / (width * renderer.getPixelRatio());
+            fxaaPass.material.uniforms['resolution']!.value.y = 1 / (height * renderer.getPixelRatio());
 
             // Update backdrop aspect ratio
             if (backdrop.material instanceof THREE.ShaderMaterial) {
-                backdrop.material.uniforms.aspectRatio.value = width / height;
+                backdrop.material.uniforms.aspectRatio!.value = width / height;
             }
         };
 
@@ -267,7 +267,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
     useEffect(() => {
         const { sphere } = sceneRef.current;
         if (sphere && sphere.material instanceof THREE.ShaderMaterial) {
-            sphere.material.uniforms.color.value.set(color);
+            sphere.material.uniforms.color!.value.set(color);
         }
     }, [color]);
 
