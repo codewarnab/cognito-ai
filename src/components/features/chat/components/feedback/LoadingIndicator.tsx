@@ -5,8 +5,11 @@ const THINKING_MESSAGES = [
     'Thinking...',
     'Still thinking...',
     'Processing your request...',
+    'Analyzing the details...',
     'Almost there...',
     'Working on it...',
+    'Just a moment longer...',
+    'Putting it all together...',
 ];
 
 const MESSAGE_DELAY = 4; // 4 seconds between each message
@@ -30,8 +33,8 @@ export const LoadingIndicator: React.FC = () => {
                             transition={{
                                 duration: MESSAGE_DELAY,
                                 delay: index * MESSAGE_DELAY,
-                                times: index === 0 
-                                    ? [0, 0.9, 0.9, 0.9, 1] 
+                                times: index === 0
+                                    ? [0, 0.9, 0.9, 0.9, 1]
                                     : index === THINKING_MESSAGES.length - 1
                                         ? [0, 0, 0.1, 1, 1]
                                         : [0, 0, 0.1, 0.9, 1],
