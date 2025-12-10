@@ -20,14 +20,15 @@
 
 Cognito is an intelligent browser agent that brings the power of AI directly into your Chrome browser:
 
-- **AI-Powered Assistance**: Integrated with Google's Generative AI and other AI models
-- **Privacy-First**: Your data stays in your browser
+- **AI-Powered Assistance**: Integrated with Google's Generative AI (Gemini 2.5) and Vercel AI SDK
+- **Privacy-First**: Your data stays in your browser with local memory (Dexie.js)
+- **Voice Mode**: Real-time voice interaction powered by ElevenLabs
+- **Research Workflow**: Agentic workflow for deep web research and report generation
 - **Smart Actions**: Automate browser tasks with AI-driven workflows
 - **Side Panel Chat**: Quick access to AI chat with `Ctrl+Shift+H` (or `Cmd+Shift+H` on Mac)
-- **Memory System**: Remembers context across sessions
-- **Model Context Protocol**: Extensible AI capabilities
-- **Beautiful UI**: Modern interface built with React and Tailwind CSS
-- **Fast & Efficient**: Optimized performance with local AI processing
+- **Model Context Protocol**: Extensible AI capabilities connecting to local and remote tools
+- **Beautiful UI**: Modern interface with enhanced visuals, glassmorphism, and animations
+- **Fast & Efficient**: Optimized performance with local caching and split-execution strategies
 
 ## Installation
 
@@ -45,11 +46,12 @@ See [SETUP.md](./SETUP.md) for detailed development setup instructions.
 
 ### Basic Features
 
-1. **AI Chat**: Ask questions and get intelligent responses
+1. **AI Chat**: Ask questions and get intelligent responses via text or voice
 2. **Web Automation**: Automate repetitive browser tasks
-3. **Content Analysis**: Analyze web pages and extract information
-4. **Memory Management**: Save and retrieve important information
-5. **Tab Management**: Organize and manage your browser tabs efficiently
+3. **Research Agent**: Perform deep research on topics with automated browsing and citation
+4. **Content Analysis**: Analyze web pages and extract information
+5. **Memory Management**: Save and retrieve important information
+6. **Tab Management**: Organize and manage your browser tabs efficiently
 
 ## Development
 
@@ -186,7 +188,8 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 ## Acknowledgments
 
 - Built with [Plasmo](https://www.plasmo.com/)
-- Powered by [Google Generative AI](https://ai.google.dev/)
+- Powered by [Google Generative AI](https://ai.google.dev/) & [Vercel AI SDK](https://sdk.vercel.ai/docs)
+- Voice by [ElevenLabs](https://elevenlabs.io/)
 - UI components from [Radix UI](https://www.radix-ui.com/)
 - Icons from [Lucide](https://lucide.dev/)
 
