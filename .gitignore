@@ -1,53 +1,75 @@
-
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
-/node_modules
-/.pnp
+# ===================
+# Dependencies
+# ===================
+node_modules/
+.pnp
 .pnp.js
+
+# ===================
+# Build outputs
+# ===================
 build/
-# testing
-/coverage
+out/
+dist/
+.next/
 
-#cache
-.turboto
+# ===================
+# Plasmo (Chrome Extension)
+# ===================
+.plasmo/
 
-# misc
-.DS_Store
-*.pem
+# ===================
+# Cloudflare Workers
+# ===================
+.wrangler/
 
-# debug
+# ===================
+# Turborepo
+# ===================
+.turbo/
+
+# ===================
+# TypeScript
+# ===================
+*.tsbuildinfo
+
+# ===================
+# Testing
+# ===================
+coverage/
+
+# ===================
+# Environment & secrets
+# ===================
+.env*
+keys.json
+
+# ===================
+# Logs
+# ===================
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# local env files
-.env*
-CHANGELOG.md
+# ===================
+# OS & IDE
+# ===================
+.DS_Store
+*.pem
+.vscode/settings.json
 
-out/
-# build/
-dist/
-
-# plasmo - https://www.plasmo.com
-.plasmo
-
-# bpp - http://bpp.browser.market/
-keys.json
-
-# typescript
-*.tsbuildinfo
-
-# project files
+# ===================
+# Project-specific (not for version control)
+# ===================
 VIDEO_SCRIPT.md
 promotion.md
-FEATURES.md
 todo.txt
 TODO.md
-.vscode/settings.json
 test-mcp-discovery.js
 .shadow/
-chrome-ai-backend/elevenlabs-proxy/node_modules/
 watcher.ps1
-tsconfig.tsbuildinfo
+CHANGELOG.md
+

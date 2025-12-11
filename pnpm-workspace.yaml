@@ -1,3 +1,9 @@
+# Workspace packages
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Only build these native dependencies when explicitly needed
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@scarf/scarf'
