@@ -4,15 +4,32 @@
  * Patch vfile imports to use browser versions
  * This is a workaround for Plasmo/Parcel build issues with subpath imports
  * See: https://github.com/remarkjs/react-markdown/issues/864
+ * 
+ * Note: In a pnpm monorepo, packages are hoisted to the root node_modules.
+ * This script searches from the monorepo root.
  */
 
 const fs = require('fs');
 const path = require('path');
 
+// Find monorepo root (where pnpm-workspace.yaml is)
+function findMonorepoRoot(startDir) {
+    let dir = startDir;
+    while (dir !== path.dirname(dir)) {
+        if (fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) {
+            return dir;
+        }
+        dir = path.dirname(dir);
+    }
+    return startDir; // Fallback to current directory
+}
+
+const monorepoRoot = findMonorepoRoot(process.cwd());
+
 const vfilePaths = [
     'node_modules/.pnpm/vfile@6.0.3/node_modules/vfile/lib/index.js',
     'node_modules/.pnpm/vfile@5.3.7/node_modules/vfile/lib/index.js'
-];
+].map(p => path.join(monorepoRoot, p));
 
 const patches = [
     {
@@ -43,18 +60,17 @@ const patches = [
     }
 ];
 
-console.log('🔧 Patching vfile imports for browser compatibility...\n');
+console.log('🔧 Patching vfile imports for browser compatibility...');
+console.log(`   Monorepo root: ${monorepoRoot}\n`);
 
-vfilePaths.forEach((filePath, index) => {
-    const fullPath = path.join(process.cwd(), filePath);
-
+vfilePaths.forEach((fullPath, index) => {
     if (!patches[index]) {
-        console.warn(`⚠️  No patch defined for ${filePath} at index ${index}`);
+        console.warn(`⚠️  No patch defined for path at index ${index}`);
         return;
     }
 
     if (!fs.existsSync(fullPath)) {
-        console.log(`⏭️  Skipping ${filePath} (not found)`);
+        console.log(`⏭️  Skipping ${path.basename(path.dirname(path.dirname(fullPath)))} (not found)`);
         return;
     }
 
@@ -72,12 +88,12 @@ vfilePaths.forEach((filePath, index) => {
 
         if (modified) {
             fs.writeFileSync(fullPath, content, 'utf8');
-            console.log(`✅ Patched ${filePath}`);
+            console.log(`✅ Patched ${path.basename(path.dirname(path.dirname(fullPath)))}`);
         } else {
-            console.log(`✓  ${filePath} already patched`);
+            console.log(`✓  ${path.basename(path.dirname(path.dirname(fullPath)))} already patched`);
         }
     } catch (error) {
-        console.error(`❌ Error patching ${filePath}:`, error.message);
+        console.error(`❌ Error patching ${fullPath}:`, error.message);
     }
 });
 
