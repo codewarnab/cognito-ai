@@ -1,0 +1,63 @@
+---
+title: Contribution Guide
+description: How to contribute to Cognito AI using our standards and workflows.
+---
+
+Thank you for your interest in contributing to **Cognito AI**! We welcome contributions from the community. Please follow these guidelines to ensure a smooth collaboration process.
+
+## Pull Request Process
+
+1.  **Fork and Clone**: Fork the repository and clone it locally.
+2.  **Create a Branch**: Create a new branch for your feature or fix.
+    ```bash
+    git checkout -b feat/my-new-feature
+    ```
+3.  **Make Changes**: Implement your changes, adhering to the coding standards.
+4.  **Test**: Run relevant tests and ensuring the project builds.
+5.  **Commit**: Commit your changes using [Conventional Commits](#commit-message-conventions).
+6.  **Push**: Push your branch to your fork.
+7.  **Open PR**: Open a Pull Request against the `main` branch of the `cognito-ai` repository.
+
+## Branch Naming
+
+We follow a specific naming convention for branches to keep our history clean and organized:
+
+-   `feat/description`: For new features (e.g., `feat/add-dark-mode`)
+-   `fix/description`: For bug fixes (e.g., `fix/memory-leak`)
+-   `docs/description`: For documentation changes (e.g., `docs/update-readme`)
+-   `chore/description`: For maintenance tasks (e.g., `chore/upgrade-dependencies`)
+-   `refactor/description`: For code refactoring without behavior changes
+
+## Commit Message Conventions
+
+We use [Conventional Commits](https://www.conventionalcommits.org/) to structure our commit messages. This allows us to automatically generate changelogs and version releases.
+
+**Format:**
+```text
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+-   `feat`: A new feature
+-   `fix`: A bug fix
+-   `docs`: Documentation only changes
+-   `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+-   `refactor`: A code change that neither fixes a bug nor adds a feature
+-   `perf`: A code change that improves performance
+-   `test`: Adding missing tests or correcting existing tests
+-   `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation
+
+**Examples:**
+```text
+feat(extension): add new sidebar component
+fix(backend-cloudflare): resolve cors issue
+docs: update contribution guide
+```
+
+## Code Review
+
+All Pull Requests require review by at least one maintainer. We may ask for changes or clarifications before merging. Please be patient and responsive to feedback.

@@ -1,0 +1,67 @@
+---
+title: Development Workflow
+description: How to set up and run the project locally.
+---
+
+This guide covers the commands and workflows for developing `cognito-ai` locally.
+
+## Prerequisites
+
+-   **Node.js**: v18 or higher (LTS recommended)
+-   **pnpm**: v8 or higher (we use pnpm workspaces)
+-   **Git**: For version control
+
+## Initial Setup
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/codewarnab-group/cognito-ai.git
+    cd cognito-ai
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    pnpm install
+    ```
+    This command installs dependencies for the root and all workspaces (`apps/*` and `packages/*`).
+
+## Development Commands
+
+We use `pnpm` to run scripts across the monorepo.
+
+### Start All Services
+To run the Extension, Documentation, and Backends in parallel:
+```bash
+pnpm dev:all
+```
+
+### Specific Packages
+
+| Package | Path | Command | Description |
+| :--- | :--- | :--- | :--- |
+| **Extension** | `apps/extension` | `pnpm dev` | Starts the Chrome Extension dev server (Plasmo) |
+| **Docs** | `apps/docs` | `pnpm dev:docs` | Starts the Documentation site (Next.js) |
+| **Backend (CF)** | `packages/backend-cloudflare` | `pnpm --filter @cognito/backend-cloudflare dev` | Starts the Cloudflare Worker locally |
+
+### Building for Production
+
+To build all packages:
+```bash
+pnpm build
+```
+
+To build only the extension:
+```bash
+pnpm build:extension
+```
+
+The output for the extension will be in `apps/extension/build/chrome-mv3-prod`.
+
+## Monorepo Structure
+
+We use a pnpm workspace structure:
+
+-   `apps/`: Applications (Extension, Docs)
+-   `packages/`: Shared packages and backend services
+
+Dependencies between packages can be managed using `pnpm`. For example, if the extension needs a type definition from a backend package, it can be added to `apps/extension/package.json`.

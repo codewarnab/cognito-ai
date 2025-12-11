@@ -1,0 +1,59 @@
+---
+title: Reliability & Security
+description: Error handling, logging, security, and performance.
+---
+
+## Error Handling
+- Use standardized error types and helpers:
+  - API/Gemini errors: `src/ai/errors/handlers.ts:92`, `src/ai/errors/handlers.ts:257`.
+  - Browser/Chrome API errors: `src/errors/errorTypes.ts:535`.
+  - Stream write helpers: `src/ai/core/aiLogic.ts:422`.
+- Provide user-facing messages via `apiErrorHandler` toast mapping (`src/utils/apiErrorHandler.ts:113`).
+- **CRITICAL**: Never use empty catch blocks; always log errors with context for debugging. Use logger's `warn()` or `error()` methods with descriptive messages.
+- Prefer `unknown` over `any` for function parameters that will be validated; type `any` bypasses compile-time safety.
+- **CRITICAL**: Validate API response structure before accessing properties; check for `null` or non-object responses to prevent runtime errors.
+- **CRITICAL**: Always use `APIError` instead of generic `Error` for consistency across the codebase; include statusCode, retryable flag, userMessage, technicalDetails, and errorCode from ErrorType enum.
+- **CRITICAL**: Wrap initialization logic in try-catch blocks; ensure all async initialization functions handle errors gracefully and provide meaningful error context.
+- **CRITICAL**: Define proper TypeScript interfaces for callback parameters instead of `any`; validate objects have required methods before calling them to prevent runtime errors.
+- **CRITICAL**: Wrap all external I/O operations (writer.write, API calls) in try-catch blocks; log failures with context but continue execution where possible.
+- **CRITICAL**: Always null-check error objects before accessing properties (use `error?.message || 'Unknown error'`) to avoid secondary crashes in error handlers.
+- **CRITICAL**: Remove debug logging statements that output raw error objects; these may contain sensitive information (tokens, credentials, stack traces); log only sanitized error messages or specific safe properties.
+
+## Logger Usage
+- Initialize a module-scoped logger and reuse it:
+  - `const log = createLogger('FeatureName');` or with context `createLogger('FeatureName', 'CONTEXT')` (`src/ai/core/modelSetup.ts:36`).
+- Levels: use `debug` for verbose state, `info` for normal operation, `warn` for recoverable issues, `error` for failures.
+- Do not include API keys or secrets in logs; sanitize error objects.
+
+## Security
+- Never embed secrets in code or logs.
+- Validate user inputs and tool parameters.
+- Respect Chrome MV3 permissions and protected pages; handle injection failures gracefully (`src/errors/errorTypes.ts:535`).
+- **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` to prevent regex injection and runtime errors.
+- **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`) to prevent exposure in logs, browser history, and proxy servers.
+
+## Performance and UX
+- Avoid heavy operations on the UI thread; use offscreen where applicable (`public/offscreen.js:1`).
+- Throttle/batch UI updates during streaming and downloads (`public/offscreen.js:46`).
+- **CRITICAL**: Always use `Math.floor()` for numeric calculations that should produce integer values (durations, counts, indices) to avoid fractional output.
+- Extract duplicate constants (regex patterns, enums, magic values) to single source of truth; follow DRY principle to improve maintainability.
+
+## Async Return Values and Promises
+- **CRITICAL**: Never use `setTimeout` with a return statement expecting the outer function to receive the delayed value.
+- Return values inside `setTimeout` callbacks are discarded; the outer function returns immediately.
+- Use Promises for async operations: wrap `setTimeout` in `new Promise((resolve) => ...)` and `await` or return the Promise.
+- For delayed computations, always resolve/reject the Promise with the computed value.
+- **CRITICAL**: Add timeout guards to all Promises that interact with external systems (DOM, APIs, user input); use `Promise.race()` with timeout to prevent indefinite hangs; always ensure every Promise branch calls resolve/reject.
+
+## Aggregate Calculations
+- **CRITICAL**: When logging or tracking totals from nested collections (`Map<K, Set<V>>`), calculate actual sum of all nested sizes; don't use outer collection size as proxy for total items.
+- Use `Array.from(map.values()).reduce((sum, set) => sum + set.size, 0)` pattern.
+
+## Async Storage Error Handling
+- **CRITICAL**: Wrap all storage persistence calls (setItem, setVoiceName, etc.) in try-catch blocks; on failure, revert UI state and notify user to prevent silent data loss.
+- Always store previous state before async updates; use it to rollback on persistence failure.
+
+## API Integration Best Practices
+- Validate enum/union types against official API documentation before hardcoding values; invalid values cause runtime errors.
+- When APIs support multiple valid values (voice names, model IDs, etc.), maintain complete lists in type definitions.
+- Monitor API deprecation notices and update hardcoded identifiers before deprecation dates; add comments with expiration dates for preview/beta endpoints.

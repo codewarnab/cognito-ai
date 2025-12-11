@@ -1,0 +1,54 @@
+---
+title: Extension & Browser
+description: Chrome extension specific patterns and DOM interactions.
+---
+
+## Browser Tools and Workflows
+- Register tools through provided hooks/components; follow existing patterns for parameters and execution.
+- Keep tool descriptions actionable and include preconditions/limitations (`src/actions/memory/deleteMemory.tsx:18`, `src/actions/memory/getMemory.tsx:18`).
+- Remove unimplemented features from tool schemas; don't expose parameters that always return errors. Either implement the feature or remove the parameter entirely.
+- Use Zod's built-in validators (`.min()`, `.max()`, `.int()`) for parameter validation instead of manual runtime checks when possible.
+- **CRITICAL**: Test assertions must throw errors or use assertion libraries when expectations fail; logging-only "tests" provide false confidence and don't catch regressions.
+- **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions; count only enabled tools and exclude disabled/workflow-only tools to ensure accurate counts match actual available tools.
+
+## Storage and Data
+- Use `@plasmohq/storage` for extension storage; avoid direct `localStorage` (`src/memory/store.ts:12`).
+- Maintain indices for efficient queries; update index on CRUD (`src/memory/store.ts:37`, `src/memory/store.ts:68`).
+
+## Canvas and DOM Element Lifecycle
+- **CRITICAL**: Always clean up injected DOM elements (canvas, style tags) when tools unregister or components unmount.
+- Track active animations with counters or flags; implement cleanup when animation count reaches zero.
+- Schedule idle cleanup (e.g., 3 seconds after last animation) to remove canvas elements and event listeners.
+- Store references to event listeners for proper removal; use named functions instead of anonymous functions.
+- Never let DOM elements persist indefinitely without a cleanup strategy.
+
+## Event Listener Management
+- **CRITICAL**: Always remove event listeners in cleanup functions; memory leaks accumulate across content script reloads.
+- Store named handler references to enable proper removal: `window.removeEventListener('resize', handler)` requires the same function reference used in `addEventListener`.
+- Guard against duplicate listener registration: check if handler already exists before adding.
+- For content scripts: use `(window as any).__handlerName` to persist handler references across function calls.
+- Remove listeners when: component unmounts, tool unregisters, canvas is destroyed, or page unloads.
+- **CRITICAL**: Event listeners on success paths must be cleaned up; always remove abort/signal listeners before returning from async functions, even when operations succeed, to prevent accumulation across multiple calls.
+
+## Event Listener Lifecycle
+- **CRITICAL**: Store event listener function references in outer scope for proper cleanup in both success and error paths; creating new functions in cleanup prevents removeEventListener from working.
+- **CRITICAL**: Use named function variables (not inline arrows) for event listeners that need removal; same reference must be passed to both addEventListener and removeEventListener.
+
+## Third-Party DOM Selector Robustness
+- For DOM queries dependent on third-party page structure (SERP extraction, site-specific scraping), implement fallback selector arrays.
+- Try selectors in order of reliability: specific class names → generic containers → ARIA attributes → broad fallbacks.
+- Log warnings when primary selectors fail and fallbacks are used: `console.warn('[Context] Selector X failed, trying fallback Y')`.
+- Log when extraction yields fewer results than expected to aid debugging.
+- Wrap selector queries in try-catch to handle malformed selectors or DOM exceptions gracefully.
+- **CRITICAL**: Use relative/child selectors (e.g., `element.querySelector('#child')`) instead of nested absolute selectors that redundantly repeat parent IDs; nested absolute selectors are logically impossible and will always fail.
+
+## DOM Reference Lifecycle
+- **CRITICAL**: Re-query DOM elements in cleanup functions instead of capturing references once; elements can be recreated/replaced during component lifecycle causing stale references.
+- Use `document.querySelector()` both in effect setup and cleanup to operate on current DOM state.
+
+## Async Message Handling
+- **CRITICAL**: Wrap async switch/case statements in try-catch blocks to ensure response callbacks always execute; unhandled throws leave callers hanging indefinitely.
+- **CRITICAL**: Define typed interfaces for message payloads with type guards; avoid `any` parameters that bypass TypeScript safety.
+- Use spread operator `...array` instead of `.apply(null, Array.from())` for better TypeScript compatibility and readability.
+- **CRITICAL**: Check `chrome.runtime.lastError` in all Chrome API callbacks (storage, notifications); silent failures cause state inconsistencies.
+- Use utility functions consistently across similar operations (e.g., `clearNotification()` instead of direct `chrome.notifications.clear()`).

@@ -1,0 +1,105 @@
+---
+title: Adding Tools
+description: Learn how to add new tools to the Cognito AI extension.
+---
+
+This guide walks you through the process of adding a new tool to the extension, including registering it, adding a formatter for friendly UI output, and assigning an icon.
+
+## Overview
+
+Tools in Cognito AI allow the agent to perform specific actions, such as interacting with the browser, managing memory, or fetching data. Adding a tool involves three main steps:
+1.  **Defining the Tool Logic**: Writing the function that performs the action.
+2.  **Registering the Tool**: Making it available to the AI model.
+3.  **Adding UI Components**: Defining how the tool looks in the chat interface (formatter and icon).
+
+## Step 1: Define the Tool
+
+First, implement your tool logic. Tool implementations are typically located in `apps/extension/src/ai/tools/`.
+
+```typescript
+// apps/extension/src/ai/tools/myNewTool.ts
+
+import { Tool } from "./types";
+
+export const myNewTool: Tool = {
+  name: "myNewTool",
+  description: "Description of what the tool does",
+  parameters: {
+    type: "object",
+    properties: {
+      param1: { type: "string", description: "Description of param1" },
+    },
+    required: ["param1"],
+  },
+  execute: async ({ param1 }) => {
+    // Tool logic here
+    return { success: true, result: "Tool executed successfully" };
+  },
+};
+```
+
+## Step 2: Register the Tool
+
+Register your new tool in `apps/extension/src/ai/tools/registry.ts` to make it available to the agent. Add it to the appropriate category list (e.g., `BASIC_TOOLS`, `INTERACTION_TOOLS`, or `AGENT_TOOLS`).
+
+```typescript
+// apps/extension/src/ai/tools/registry.ts
+
+export const BASIC_TOOLS = [
+  // ... existing tools
+  'myNewTool', // Add your tool name here
+];
+```
+
+## Step 3: Add a Formatter
+
+Formatters determine how the tool execution is displayed in the chat UI. They translate technical tool calls into human-readable text.
+
+1.  Create or update a formatter file in `apps/extension/src/components/ui/tools/formatters/formatters/`.
+2.  Register the formatter in `apps/extension/src/components/ui/tools/formatters/registry.ts`.
+
+```typescript
+// apps/extension/src/components/ui/tools/formatters/myNewToolFormatter.ts
+
+import type { ActionFormatter } from '../types';
+
+export const myNewToolFormatter: ActionFormatter = ({ state, input, output }) => {
+  if (state === 'loading') {
+    return { action: 'Running my new tool...' };
+  }
+  if (state === 'success') {
+    return { action: 'Tool finished', description: output.result };
+  }
+  return { action: 'Tool failed' };
+};
+```
+
+Then register it:
+
+```typescript
+// apps/extension/src/components/ui/tools/formatters/registry.ts
+
+import { myNewToolFormatter } from './formatters/myNewToolFormatter';
+
+export const formatters: Record<string, ActionFormatter> = {
+  // ... existing formatters
+  myNewTool: myNewToolFormatter,
+};
+```
+
+## Step 4: Add an Icon
+
+Finally, assign an icon to your tool in `apps/extension/src/components/ui/tools/icons/ToolIconMapper.tsx`.
+
+```typescript
+// apps/extension/src/components/ui/tools/icons/ToolIconMapper.tsx
+
+import { MyIcon } from '@assets/icons/chat/my-icon'; // Import your icon
+
+export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
+  // ... existing icons
+  myNewTool: MyIcon,
+};
+```
+
+If you don't assign a specific icon, the extension will attempt to find a match or fall back to a default icon.

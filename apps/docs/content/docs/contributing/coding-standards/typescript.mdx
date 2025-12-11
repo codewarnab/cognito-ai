@@ -1,0 +1,48 @@
+---
+title: TypeScript & Modules
+description: Type safety, imports, and module structure.
+---
+
+## Imports and Modules
+- **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
+- **CRITICAL**: Reference the canonical import guide at `.cursor/rules/coding-standards.mdc` for complete import patterns.
+- Always use path aliases configured in `tsconfig.json`:
+  - Logger: `import { createLogger } from '~logger';` (not `import { createLogger } from '../../logger';`)
+  - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';` (not `import { handleAPIError } from '../utils/apiErrorHandler';`)
+  - Components: `import { Button } from '@/components/ui/Button';` (not `import { Button } from '../../components/ui/Button';`)
+  - Constants: `import { API_ENDPOINTS } from '@/constants/api';` (not `import { API_ENDPOINTS } from '../constants/api';`)
+  - AI: `import { ModelSetup } from '@/ai/core/modelSetup';` (not `import { ModelSetup } from '../../ai/core/modelSetup';`)
+  - Assets: `import icon from '@assets/icon.png';` (not `import icon from '../../assets/icon.png';`)
+- Group and sort imports consistently; rely on the Prettier sort-imports plugin.
+- Prefer named exports; avoid default exports for shared utilities.
+- **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks.
+- **CRITICAL**: Remove duplicate imports of the same identifier; consolidate into single import statement.
+
+### Examples
+- Logger import:
+  ```ts
+  import { createLogger } from '~logger';
+  const log = createLogger('SettingsPage');
+  log.info('Loaded');
+  ```
+- Utils import:
+  ```ts
+  import { handleAPIError } from '@/utils/apiErrorHandler';
+  try { /* ... */ } catch (err) { const toast = handleAPIError(err as Error); }
+  ```
+
+## TypeScript Type Safety
+- **CRITICAL**: Maintain type consistency across related interfaces; if external APIs return a type (e.g., `string`), use that type consistently throughout the codebase rather than converting arbitrarily.
+- Prefer `unknown` over `any` for generic parameters, callbacks, and unvalidated data; `unknown` forces type checking before use.
+- When defining configuration interfaces, ensure all properties used in default/constant objects are declared in the interface.
+- Validate external data types (API responses, user input) and use type guards before accessing properties.
+- **CRITICAL**: Never use `& any` in type definitions; it defeats all type checking and allows arbitrary properties; define explicit interfaces with all required and optional properties declared.
+- **CRITICAL**: All destructured variables must be declared in the function's type signature; never extract properties that aren't part of the defined parameter type.
+
+## Type Safety and Message Structures
+- **CRITICAL**: Define specific interfaces for complex data structures (e.g., MessagePart) instead of using `any[]`; use `unknown[]` with type guards if structure varies.
+- For message/event handlers, define typed interfaces with required properties instead of `any` parameters.
+
+## Type Safety with Third-Party APIs
+- **CRITICAL**: Define proper TypeScript interfaces for third-party object properties instead of using `as any`; create interface definitions for external libraries' internal objects when accessing undocumented properties.
+- **CRITICAL**: When accessing internal/private properties of library objects, document the dependency and create typed interfaces to maintain type safety across casts.

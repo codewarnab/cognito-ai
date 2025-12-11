@@ -1,0 +1,9 @@
+{
+    "title": "Content Features",
+    "pages": [
+        "index",
+        "writer",
+        "rewriter",
+        "summarizer"
+    ]
+}

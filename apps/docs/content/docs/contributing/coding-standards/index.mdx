@@ -1,0 +1,37 @@
+---
+title: Coding Standards
+description: Core principles, TypeScript configuration, and best practices for the Cognito AI codebase.
+---
+
+## Core Principles
+- Use TypeScript with strict type checking enabled (`tsconfig.json:33-61`).
+- Prefer `const` over `let`; avoid `var` (see contributing guidelines).
+- Keep modules small and single-responsibility; co-locate related hooks/components.
+- Do not log secrets, API keys, or personally identifiable information.
+
+## TypeScript Configuration
+- Strictness: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess` (`tsconfig.json:46-61`).
+- Module resolution: `moduleResolution: bundler`, `resolveJsonModule: true` (`tsconfig.json:64-65`).
+- **CRITICAL**: Always use path aliases instead of relative paths; see canonical source at `.cursor/rules/coding-standards.mdc` for the complete import guide.
+- Path aliases (configured in `tsconfig.json`):
+  - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
+  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';` or `import { Button } from '@/components/ui/Button';`)
+  - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
+  - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
+
+## Formatting and Checks
+- Use Prettier for formatting and the sort-imports plugin.
+- Run type checks before pushing: `pnpm type:check` (`package.json:13`).
+- **CRITICAL**: Keep comments and documentation in sync with code; update comments immediately when implementation changes to prevent confusion and maintenance issues.
+- Maintain consistent trailing commas in object literals and arrays; follow established codebase patterns for readability.
+- Avoid double semicolons and other syntax redundancies; use single semicolon at statement ends.
+- **CRITICAL**: All CSS numeric values with units must include the unit identifier (px, %, em, etc.); unitless values are invalid except for specific properties like line-height, z-index, or opacity.
+
+## Build Scripts and Node.js Utilities
+- Always validate array bounds before accessing elements; add defensive checks with clear warning messages.
+- Wrap file I/O operations (`fs.copyFileSync`, `fs.writeFileSync`, etc.) in try-catch blocks; log errors with full context and exit with non-zero status code on failure.
+- Use `String.replaceAll()` or global regex when replacing all occurrences; `String.replace()` only replaces the first match.
+- Implement concurrency guards for async operations that shouldn't run simultaneously; check flags before starting and clear them in finally blocks.
+- Calculate progress percentages correctly: use `(loaded / total) * 100`, not raw byte manipulation; provide fallbacks when totals are unavailable.
+- Remove commented-out code from source files; rely on git history for recovery if needed.
+- **CRITICAL**: When modifying HTTP headers in fetch operations, create new Headers objects to avoid mutating the original RequestInit; use `new Headers()` constructor which handles both Headers instances and plain objects correctly.
