@@ -10,7 +10,7 @@ import { LoadingIndicator } from '../feedback/LoadingIndicator';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
 import { UserMessageCopyButton } from '../buttons/UserMessageCopyButton';
-import { getFileIcon } from '@/utils/files';
+import { getFileIcon, truncateFileName } from '@/utils/files';
 import { StreamdownRenderer } from './StreamdownRenderer';
 import { XIcon } from '@assets/icons/chat/x';
 import { useInlineCodeEnhancer } from '@/hooks/useInlineCodeEnhancer';
@@ -315,7 +315,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                                 {getFileIcon(firstFile.name || 'file', 24)}
                                                                             </div>
                                                                             <span className="file-attachment-name" title={firstFile.name}>
-                                                                                {firstFile.name || 'Document'}
+                                                                                {truncateFileName(firstFile.name)}
                                                                             </span>
                                                                         </div>
                                                                     )}

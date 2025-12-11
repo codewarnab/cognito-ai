@@ -3,6 +3,7 @@
  * Minimal inline chip for attached file in writer overlay
  */
 import type { WriteAttachment } from '@/types';
+import { truncateFileName } from '@/utils/files';
 
 interface WriterAttachmentPreviewProps {
     attachment: WriteAttachment;
@@ -31,13 +32,7 @@ const FileIcon = () => (
     </svg>
 );
 
-function truncateName(name: string, maxLength = 16): string {
-    if (name.length <= maxLength) return name;
-    const ext = name.split('.').pop() || '';
-    const base = name.substring(0, name.lastIndexOf('.'));
-    const truncated = base.substring(0, maxLength - ext.length - 3);
-    return `${truncated}...${ext}`;
-}
+
 
 export function WriterAttachmentPreview({
     attachment,
@@ -52,7 +47,7 @@ export function WriterAttachmentPreview({
                 {isImage ? <ImageIcon /> : <FileIcon />}
             </span>
             <span className="writer-attachment-chip-name" title={attachment.file.name}>
-                {truncateName(attachment.file.name)}
+                {truncateFileName(attachment.file.name, 16)}
             </span>
             <button
                 type="button"

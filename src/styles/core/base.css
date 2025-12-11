@@ -1,5 +1,27 @@
 /* Base styles and resets */
 
+/* ===========================================
+   TEXT SELECTION STYLING OPTIONS
+   Uncomment ONE option at a time to test
+   =========================================== */
+
+
+
+
+
+/*  Cyan/Teal (Fresh & Modern) - ACTIVE selection text colour  */
+::selection {
+    background: rgba(34, 211, 238, 0.3);
+    color: #ffffff;
+}
+
+::-moz-selection {
+    background: rgba(34, 211, 238, 0.3);
+    color: #ffffff;
+}    
+
+
+
 /* Reset */
 * {
     margin: 0;

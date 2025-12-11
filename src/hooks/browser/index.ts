@@ -17,3 +17,6 @@ export { useTabContext } from './useTabContext';
 
 export { useYouTubeVideoDetection } from './useYouTubeVideoDetection';
 export type { YouTubeVideoInfo, YouTubeVideoDetection } from './useYouTubeVideoDetection';
+
+export { useSelectedTextDetection } from './useSelectedTextDetection';
+export type { SelectedTextInfo, SelectedTextDetection } from './useSelectedTextDetection';

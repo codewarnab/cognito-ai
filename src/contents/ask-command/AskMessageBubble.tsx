@@ -2,10 +2,11 @@
  * Ask Message Bubble Component
  * Displays individual messages in the conversation
  */
-import React, { useState, useCallback } from 'react';
+import  { useState, useCallback } from 'react';
 import type { AskMessage } from '@/types';
 import { formatFileSize } from './askAttachmentUtils';
 import { MarkdownRenderer } from '@/contents/shared/MarkdownRenderer';
+import { truncateFileName } from '@/utils/files';
 
 // Icons
 const CopyIcon = () => (
@@ -84,7 +85,7 @@ export function AskMessageBubble({ message, isStreaming, streamingContent }: Ask
             {message.attachment && (
                 <div className="ask-message-attachment">
                     <PaperclipIcon />
-                    <span className="ask-message-attachment-name">{message.attachment.fileName}</span>
+                    <span className="ask-message-attachment-name">{truncateFileName(message.attachment.fileName)}</span>
                     <span className="ask-message-attachment-size">
                         ({formatFileSize(message.attachment.fileSize)})
                     </span>

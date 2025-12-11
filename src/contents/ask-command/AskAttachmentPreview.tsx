@@ -2,10 +2,9 @@
  * Ask Attachment Preview Component
  * Shows preview of attached file before sending
  */
-import React from 'react';
 import type { AskAttachment } from '@/types';
 import { formatFileSize } from './askAttachmentUtils';
-import { getFileIcon } from '@/utils/files/fileIconMapper';
+import { getFileIcon, truncateFileName } from '@/utils/files';
 
 // Icons
 const CloseIcon = () => (
@@ -38,7 +37,7 @@ export function AskAttachmentPreview({ attachment, onRemove, disabled }: AskAtta
             )}
             <div className="ask-attachment-info">
                 <span className="ask-attachment-name" title={attachment.file.name}>
-                    {attachment.file.name}
+                    {truncateFileName(attachment.file.name)}
                 </span>
                 <span className="ask-attachment-size">{formatFileSize(attachment.file.size)}</span>
             </div>

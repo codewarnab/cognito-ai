@@ -319,6 +319,34 @@
     color: #ffffff;
 }
 
+/* ========================================
+   Selected Text Suggestion Badge
+   ======================================== */
+
+.selected-text-suggestion {
+    /* Purple/violet gradient to differentiate from PDF (green) and YouTube (red) */
+    background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%);
+    box-shadow: 0 2px 6px rgba(124, 58, 237, 0.4);
+}
+
+.selected-text-suggestion .local-pdf-suggestion-button {
+    color: #ffffff;
+}
+
+.selected-text-suggestion .local-pdf-suggestion-close {
+    color: #ffffff;
+}
+
+.selected-text-badge-length {
+    margin-left: 6px;
+    padding: 1px 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
 .youtube-badge-shimmer-container {
     display: flex;
     align-items: center;
@@ -330,12 +358,10 @@
     display: block;
     width: 80px;
     height: 12px;
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.35) 50%,
-        rgba(255, 255, 255, 0.15) 100%
-    );
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.35) 50%,
+            rgba(255, 255, 255, 0.15) 100%);
     background-size: 200% 100%;
     border-radius: 4px;
     animation: shimmerSlide 1.5s ease-in-out infinite;
@@ -345,6 +371,7 @@
     0% {
         background-position: 200% 0;
     }
+
     100% {
         background-position: -200% 0;
     }

@@ -1,3 +1,4 @@
+// make sure tips are short concise to the point 
 export const TIPS = [
     "I can search and extract information from any webpage",
     "I work best when you give me clear, specific instructions",
@@ -8,9 +9,9 @@ export const TIPS = [
     "I can analyze YouTube videos for you",
     "You can send messages to Cognito by typing 'ai' in the address bar",
     "Set keyboard shortcuts at chrome://extensions/shortcuts for quick access",
-    "Customize which AI tools are enabled in Settings → Enabled Tools",
+    // "Customize which AI tools are enabled in Settings → Enabled Tools",
     "Toggle suggested actions on/off in Settings ",
-    "Choose between Gemini TTS or Web Native TTS in Settings",
+    "Choose between elevanlabs , Gemini TTS or Web Native TTS in Settings",
     "Delete all chat history anytime from Settings ",
     "Control Ask AI button visibility per domain in Settings",
     "Enable Supermemory in Settings to let me remember things about you across conversations",
@@ -26,6 +27,7 @@ export const TIPS = [
     "Toggle preset buttons in Text Rewriter for quick rewrites",
     "Set minimum text length for Summarizer and Rewriter tools",
     "Include page context, selection, or visible content in /ask",
-    "Add YouTube videos by clicking on the attachment icon"
+    "Add YouTube videos by clicking on the attachment icon",
+    "Select text on any page to quickly add it as an attachment"
 ];
 
