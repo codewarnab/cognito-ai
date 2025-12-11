@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { getFileIcon } from '@/utils/files';
+import { getFileIcon, truncateFileName } from '@/utils/files';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 
 /** Metadata for special attachment sources (e.g., YouTube transcripts) */
@@ -33,13 +33,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
     const isYouTube = attachment.meta?.source === 'youtube';
     const hasThumbnail = isYouTube && attachment.meta?.thumbnailUrl && !thumbnailError;
 
-    const truncateName = (name: string, maxLength: number = 15) => {
-        if (name.length <= maxLength) return name;
-        const ext = name.split('.').pop();
-        const nameWithoutExt = name.substring(0, name.lastIndexOf('.'));
-        const truncated = nameWithoutExt.substring(0, maxLength - 3 - (ext?.length || 0));
-        return `${truncated}...${ext}`;
-    };
+
 
     const handleTogglePreview = () => {
         if (attachment.type === 'image') {
@@ -85,7 +79,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                     )}
                     <div className="youtube-attachment-info">
                         <span className="file-attachment-name" title={attachment.file.name}>
-                            {truncateName(attachment.file.name, 18)}
+                            {truncateFileName(attachment.file.name, 18)}
                         </span>
                         <span className="youtube-attachment-label">YouTube</span>
                     </div>
@@ -116,7 +110,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                     <div className="file-attachment-image">
                         <img src={attachment.preview} alt={attachment.file.name} />
                         <span className="file-attachment-name" title={attachment.file.name}>
-                            {truncateName(attachment.file.name, 20)}
+                            {truncateFileName(attachment.file.name, 20)}
                         </span>
                         <button
                             type="button"
@@ -136,7 +130,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                             {getFileIcon(attachment.file.name, 20)}
                         </div>
                         <span className="file-attachment-name" title={attachment.file.name}>
-                            {truncateName(attachment.file.name)}
+                            {truncateFileName(attachment.file.name)}
                         </span>
                         <button
                             type="button"

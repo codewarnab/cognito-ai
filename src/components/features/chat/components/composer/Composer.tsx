@@ -4,7 +4,7 @@ import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
-import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
+import type { LocalPdfInfo, YouTubeVideoInfo, SelectedTextInfo } from '@/hooks/browser';
 import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
 import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 import { useSearchMode } from '@/hooks/useSearchMode';
@@ -76,6 +76,13 @@ export interface ComposerProps {
     handleDismissYouTubeVideo: () => void;
     videoMetadata?: YouTubeVideoMetadata | null;
 
+    // Selected Text
+    selectedTextInfo?: SelectedTextInfo | null;
+    shouldShowSelectedTextSuggestion: boolean;
+    isAttachingSelectedText: boolean;
+    handleAttachSelectedText: () => void;
+    handleDismissSelectedText: () => void;
+
     // Mode dropdown
     showModeDropdown: boolean;
     onToggleModeDropdown: (show: boolean) => void;
@@ -124,6 +131,11 @@ export const Composer: React.FC<ComposerProps> = ({
     handleAttachYouTubeVideo,
     handleDismissYouTubeVideo,
     videoMetadata,
+    selectedTextInfo,
+    shouldShowSelectedTextSuggestion,
+    isAttachingSelectedText,
+    handleAttachSelectedText,
+    handleDismissSelectedText,
     showModeDropdown,
     onToggleModeDropdown,
     composerRef,
@@ -172,7 +184,7 @@ export const Composer: React.FC<ComposerProps> = ({
             {/* Drag overlay */}
             <DragOverlay isDragging={isDragging} />
 
-            {/* Suggestions area: Local PDF and YouTube video */}
+            {/* Suggestions area: Local PDF, YouTube video, and Selected Text */}
             <SuggestionsArea
                 localPdfInfo={localPdfInfo}
                 shouldShowLocalPdfSuggestion={shouldShowLocalPdfSuggestion}
@@ -186,6 +198,11 @@ export const Composer: React.FC<ComposerProps> = ({
                 handleAttachYouTubeVideo={handleAttachYouTubeVideo}
                 handleDismissYouTubeVideo={handleDismissYouTubeVideo}
                 videoMetadata={videoMetadata}
+                selectedTextInfo={selectedTextInfo}
+                shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
+                isAttachingSelectedText={isAttachingSelectedText}
+                handleAttachSelectedText={handleAttachSelectedText}
+                handleDismissSelectedText={handleDismissSelectedText}
             />
 
             {/* Workflow section: badge and slash command dropdown */}

@@ -8,7 +8,7 @@ import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
 import { useFileAttachments, useLocalPdfAttachment, useYouTubeVideoAttachment } from '@/hooks/attachments';
-import { useYouTubeVideoDetection } from '@/hooks/browser';
+import { useYouTubeVideoDetection, useSelectedTextDetection } from '@/hooks/browser';
 import { useWorkflowMode } from '@/hooks/workflows';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { useChatInputValidation } from '@/hooks/chat';
@@ -113,6 +113,68 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         processFiles,
     });
 
+    // Selected text detection and attachment
+    const { hasSelectedText, selectedTextInfo, clearSelection } = useSelectedTextDetection();
+    const [isSelectedTextDismissed, setIsSelectedTextDismissed] = useState(false);
+    const [isAttachingSelectedText, setIsAttachingSelectedText] = useState(false);
+    // Track attached text content to avoid showing duplicate suggestions
+    const [attachedTextContent, setAttachedTextContent] = useState<Set<string>>(new Set());
+
+    // Reset dismissed state when selected text changes
+    useEffect(() => {
+        if (selectedTextInfo?.text) {
+            setIsSelectedTextDismissed(false);
+        }
+    }, [selectedTextInfo?.text]);
+
+    // Check if current selected text is already attached
+    const isTextAlreadyAttached = selectedTextInfo?.text
+        ? attachedTextContent.has(selectedTextInfo.text)
+        : false;
+
+    const shouldShowSelectedTextSuggestion = hasSelectedText && !isSelectedTextDismissed && !isTextAlreadyAttached;
+
+    const handleAttachSelectedText = async () => {
+        if (!selectedTextInfo) return;
+
+        setIsAttachingSelectedText(true);
+        try {
+            // Create text content with source attribution at the end
+            const sourceAttribution = [
+                '',
+                '---',
+                '📋 User Copied Text',
+                `This text was copied by the user from a webpage.`,
+                '',
+                `📄 Source: ${selectedTextInfo.pageTitle}`,
+                `🔗 URL: ${selectedTextInfo.pageUrl}`,
+            ].join('\n');
+
+            const textWithSource = selectedTextInfo.text + '\n' + sourceAttribution;
+
+            // Create a text file from the selected text with source info
+            const blob = new Blob([textWithSource], { type: 'text/plain' });
+            const filename = `selected-text-${Date.now()}.txt`;
+            const file = new File([blob], filename, { type: 'text/plain' });
+
+            await processFiles([file]);
+
+            // Track this text content as attached
+            setAttachedTextContent(prev => new Set(prev).add(selectedTextInfo.text));
+            clearSelection();
+            setIsSelectedTextDismissed(true);
+        } catch (error) {
+            onError?.('Failed to add selected text', 'error');
+        } finally {
+            setIsAttachingSelectedText(false);
+        }
+    };
+
+    const handleDismissSelectedText = () => {
+        setIsSelectedTextDismissed(true);
+    };
+
+
     const {
         activeWorkflow,
         showSlashDropdown,
@@ -208,6 +270,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 onSuggestionClick={handleSuggestionClick}
                 tabAttachments={tabAttachments}
                 shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
+                shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
             />
 
             <form
@@ -270,6 +333,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     handleAttachYouTubeVideo={handleAttachYouTubeVideo}
                     handleDismissYouTubeVideo={handleDismissYouTubeVideo}
                     videoMetadata={videoMetadata}
+                    selectedTextInfo={selectedTextInfo}
+                    shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
+                    isAttachingSelectedText={isAttachingSelectedText}
+                    handleAttachSelectedText={handleAttachSelectedText}
+                    handleDismissSelectedText={handleDismissSelectedText}
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={setShowModeDropdown}
                     composerRef={composerRef}

@@ -1,7 +1,8 @@
 import React from 'react';
 import { LocalPdfSuggestion } from '../../suggestions/LocalPdfSuggestion';
 import { YouTubeVideoSuggestion, type YouTubeBadgeLoadingState } from '../../suggestions/YouTubeVideoSuggestion';
-import type { LocalPdfInfo, YouTubeVideoInfo } from '@/hooks/browser';
+import { SelectedTextSuggestion } from '../../suggestions/SelectedTextSuggestion';
+import type { LocalPdfInfo, YouTubeVideoInfo, SelectedTextInfo } from '@/hooks/browser';
 import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
 
 interface SuggestionsAreaProps {
@@ -20,6 +21,12 @@ interface SuggestionsAreaProps {
     handleDismissYouTubeVideo: () => void;
     /** Video metadata from API (thumbnail, author, duration) */
     videoMetadata?: YouTubeVideoMetadata | null;
+    // Selected Text
+    selectedTextInfo?: SelectedTextInfo | null;
+    shouldShowSelectedTextSuggestion: boolean;
+    isAttachingSelectedText: boolean;
+    handleAttachSelectedText: () => void;
+    handleDismissSelectedText: () => void;
 }
 
 /**
@@ -37,7 +44,8 @@ function deriveYouTubeLoadingState(
 }
 
 /**
- * Area displaying contextual suggestions for local PDFs and YouTube videos.
+ * Area displaying contextual suggestions for local PDFs, YouTube videos, and selected text.
+ * Selected text suggestion takes priority and hides other suggestions when visible.
  */
 export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
     localPdfInfo,
@@ -52,6 +60,11 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
     handleAttachYouTubeVideo,
     handleDismissYouTubeVideo,
     videoMetadata,
+    selectedTextInfo,
+    shouldShowSelectedTextSuggestion,
+    isAttachingSelectedText,
+    handleAttachSelectedText,
+    handleDismissSelectedText,
 }) => {
     const youtubeLoadingState = deriveYouTubeLoadingState(
         isAttachingVideo,
@@ -59,10 +72,26 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
         videoMetadata?.isPrefetched ?? false
     );
 
+    // When selected text suggestion is shown, hide other suggestions
+    const showSelectedText = shouldShowSelectedTextSuggestion && selectedTextInfo;
+    const showLocalPdf = !showSelectedText && shouldShowLocalPdfSuggestion && localPdfInfo;
+    const showYouTube = !showSelectedText && shouldShowYouTubeVideoSuggestion && youtubeVideoInfo;
+
     return (
         <>
-            {/* Local PDF Suggestion - shows when local PDF is detected */}
-            {shouldShowLocalPdfSuggestion && localPdfInfo && (
+            {/* Selected Text Suggestion - takes priority over other suggestions */}
+            {showSelectedText && (
+                <SelectedTextSuggestion
+                    textPreview={selectedTextInfo.text}
+                    textLength={selectedTextInfo.text.length}
+                    onAttach={handleAttachSelectedText}
+                    onDismiss={handleDismissSelectedText}
+                    isLoading={isAttachingSelectedText}
+                />
+            )}
+
+            {/* Local PDF Suggestion - shows when local PDF is detected and no selected text */}
+            {showLocalPdf && (
                 <LocalPdfSuggestion
                     filename={localPdfInfo.filename}
                     onAttach={handleAttachLocalPdf}
@@ -71,8 +100,8 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
                 />
             )}
 
-            {/* YouTube Video Suggestion - shows when YouTube video is detected */}
-            {shouldShowYouTubeVideoSuggestion && youtubeVideoInfo && (
+            {/* YouTube Video Suggestion - shows when YouTube video is detected and no selected text */}
+            {showYouTube && (
                 <YouTubeVideoSuggestion
                     key={youtubeVideoInfo.videoId}
                     videoTitle={youtubeVideoInfo.title}
@@ -88,4 +117,3 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
         </>
     );
 };
-

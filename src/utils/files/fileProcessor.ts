@@ -264,3 +264,31 @@ export function formatFileSize(bytes: number): string {
     return (bytes / 1024 / 1024).toFixed(1) + ' MB';
 }
 
+/**
+ * Truncate file name while preserving the extension
+ * @param name - File name to truncate
+ * @param maxLength - Maximum length of the truncated name (default: 15)
+ * @returns Truncated file name with extension preserved
+ */
+export function truncateFileName(name: string, maxLength: number = 15): string {
+    if (!name || name.length <= maxLength) return name || 'Document';
+
+    const lastDotIndex = name.lastIndexOf('.');
+    if (lastDotIndex === -1) {
+        // No extension - just truncate
+        return name.substring(0, maxLength - 3) + '...';
+    }
+
+    const ext = name.substring(lastDotIndex);
+    const nameWithoutExt = name.substring(0, lastDotIndex);
+    const availableLength = maxLength - 3 - ext.length; // 3 for "..."
+
+    if (availableLength <= 0) {
+        // Extension is too long, just truncate the whole thing
+        return name.substring(0, maxLength - 3) + '...';
+    }
+
+    const truncated = nameWithoutExt.substring(0, availableLength);
+    return `${truncated}...${ext}`;
+}
+
