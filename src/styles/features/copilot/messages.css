@@ -113,7 +113,7 @@
 .copilot-message-bubble {
     border-radius: 12px;
     padding: 10px 14px;
-    max-width: 80%;
+    max-width: 90%;
     font-size: 16px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -258,7 +258,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 10001;
+    z-index: 9999;
     transition: background 0.2s ease;
     color: white;
 }
@@ -275,19 +275,30 @@
     max-width: 90vw;
     max-height: 90vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: default;
+    gap: 12px;
 }
 
 .message-image-preview-container img {
     max-width: 100%;
-    max-height: 90vh;
+    max-height: calc(90vh - 40px);
     width: auto;
     height: auto;
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
     object-fit: contain;
+}
+
+.message-image-preview-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
 }
 
 .message-file-image {

@@ -163,6 +163,7 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                     >
                         <X size={20} />
                     </button>
+                    <p>Press esc to close the preview</p>
                 </div>
             )}
         </>

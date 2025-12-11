@@ -194,6 +194,18 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
         window.dispatchEvent(event);
     }, [previewImage]);
 
+    // ESC key handler for image preview
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && previewImage) {
+                setPreviewImage(null);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [previewImage]);
+
     // Check if the last message has continue-available status
     const showContinueButton = useMemo(() => {
         if (isLoading || messages.length === 0) return false;
@@ -490,6 +502,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             onClick={(e) => e.stopPropagation()}
                         >
                             <img src={previewImage.url} alt={previewImage.name} />
+                            <div className="message-image-preview-hint">Press ESC to close</div>
                         </motion.div>
                     </motion.div>
                 )}
