@@ -1,0 +1,56 @@
+---
+alwaysApply: true
+---
+# Cognito AI Monorepo - Coding Standards
+
+## Monorepo Structure
+
+This is a **pnpm monorepo** with the following packages:
+
+| Package | Path | Tech Stack |
+|---------|------|------------|
+| `@cognito/extension` | `apps/extension/` | Plasmo, React, TypeScript |
+| `@cognito/docs` | `apps/docs/` | Next.js, Fumadocs |
+| `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers, TypeScript |
+| `@cognito/backend-vercel` | `packages/backend-vercel/` | Express.js, Node.js |
+
+## Package-Specific Rules
+
+When working in a specific package, refer to that package's AI editor configs:
+- **Extension**: `apps/extension/.cursor/rules/coding-standards.mdc`
+- **Backend Cloudflare**: `packages/backend-cloudflare/.cursor/rules/cloudflare.mdc`
+- **Backend Vercel**: `packages/backend-vercel/.cursor/rules/vercel.mdc`
+
+## General Monorepo Conventions
+
+### Commands
+```bash
+# Always use pnpm (never npm or yarn)
+pnpm install
+
+# Package-specific commands use --filter
+pnpm --filter @cognito/extension dev
+pnpm --filter @cognito/backend-cloudflare deploy
+
+# Add dependencies to specific package
+pnpm --filter @cognito/extension add react-query
+```
+
+### Imports Across Packages
+- Use workspace protocol for internal dependencies: `"@cognito/shared": "workspace:*"`
+- Never use relative imports across package boundaries
+
+### Git Commits
+Follow Conventional Commits with package scope:
+- `feat(extension): description`
+- `fix(backend-cloudflare): description`
+- `chore: monorepo-wide changes`
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `pnpm-workspace.yaml` | Workspace definitions |
+| `package.json` (root) | Monorepo scripts |
+| `MONOREPO.md` | Architecture & migration guides |
+| `AGENTS.md` | AI agent navigation |
