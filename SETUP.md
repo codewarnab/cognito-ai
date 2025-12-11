@@ -43,7 +43,7 @@ This command will:
 #### First-time Assets Setup
 
 ```bash
-pnpm dev:setup
+pnpm --filter @cognito/extension dev:setup
 ```
 
 Run once to copy offscreen/audio assets required by the extension.
@@ -55,7 +55,7 @@ If you skip this, some assets may be missing on first run.
 2. Navigate to `chrome://extensions/`
 3. Enable **Developer mode** (toggle in the top-right corner)
 4. Click **Load unpacked**
-5. Select the `build/chrome-mv3-dev` directory from the project root
+5. Select the `apps/extension/build/chrome-mv3-dev` directory from the project root
 
 The extension should now be loaded and ready for development!
 
@@ -69,10 +69,10 @@ Run before commits to ensure the project passes TypeScript checks.
 
 ### 4. Making Changes
 
-- **Sidepanel**: Edit `src/sidepanel.tsx`
-- **Options Page**: Edit `src/options.tsx`
-- **Background Script**: Edit `src/background.ts`
-- **Content Scripts**: Edit files in `src/content/` or `src/contents/`
+- **Sidepanel**: Edit `apps/extension/src/sidepanel.tsx`
+- **Options Page**: Edit `apps/extension/src/options.tsx`
+- **Background Script**: Edit `apps/extension/src/background.ts`
+- **Content Scripts**: Edit files in `apps/extension/src/content/` or `apps/extension/src/contents/`
 
 The extension will auto-reload when you make changes to the source files.
 
@@ -84,17 +84,17 @@ To create a production build:
 pnpm build
 ```
 
-The production-ready extension will be available in the `build/chrome-mv3-prod` directory.
+The production-ready extension will be available in the `apps/extension/build/chrome-mv3-prod` directory.
 
 ## Deploy the YouTube Transcript API (Vercel)
 
-This project includes a small API for fetching YouTube transcripts located in `youtube-transcript-generator/`. Deploying it to Vercel is the quickest way to get a stable endpoint.
+This project includes a small API for fetching YouTube transcripts located in `packages/backend-vercel`. Deploying it to Vercel is the quickest way to get a stable endpoint.
 
 ### Steps (Windows PowerShell)
 
 ```powershell
 # 1) Go to the API folder
-cd .\youtube-transcript-generator
+cd packages/backend-vercel
 
 # 2) (Optional) Install Vercel CLI if you don't have it
 npm install -g vercel
@@ -113,13 +113,13 @@ Notes:
 
 ### Point the extension to your deployment
 
-Edit `src/constants.ts` and set `TRANSCRIPT_API_URL` to your deployed URL with the endpoint path:
+Edit `apps/extension/src/constants.ts` and set `TRANSCRIPT_API_URL` to your deployed URL with the endpoint path:
 
 ```
 https://YOUR-VERCEL-URL/simple-transcript
 ```
 
-Example change in `src/constants.ts`:
+Example change in `apps/extension/src/constants.ts`:
 - From: the default hosted URL
 - To: `https://your-app-name.vercel.app/simple-transcript`
 
@@ -141,39 +141,34 @@ Once updated, rebuild the extension (dev or prod) and reload it in Chrome.
 ## Project Structure
 
 ```
-chrome-ai/
-├── src/                    # Source code
-│   ├── sidepanel.tsx      # Main sidepanel UI
-│   ├── background.ts      # Background service worker
-│   ├── options.tsx        # Options page
-│   ├── components/        # React components
-│   ├── ai/                # AI integration
-│   ├── actions/           # Browser actions
-│   └── ...
-├── public/                # Static assets
-├── build/                 # Build output (gitignored)
-└── assets/                # Icons and images
+cognito-ai/
+├── apps/
+│   ├── extension/          # Chrome Extension (Plasmo)
+│   │   ├── src/            # Extension source code
+│   │   ├── assets/         # Icons and images
+│   │   └── build/          # Build output
+│   └── docs/               # Documentation site
+├── packages/
+│   ├── backend-cloudflare/ # ElevenLabs proxy
+│   └── backend-vercel/     # YouTube transcript API
+└── package.json            # Root configuration
 ```
 
 ## Environment Variables
 
-Create a `.env` file in the root directory if you need to configure environment-specific variables:
-
-```env
-# Add your environment variables here
-```
+Create a `.env` file in the root or specific package directories if you need to configure environment-specific variables.
 
 ## Troubleshooting
 
 ### Extension Not Loading
 
 - Make sure you've run `pnpm dev` first
-- Check that the `build/chrome-mv3-dev` directory exists
+- Check that the `apps/extension/build/chrome-mv3-dev` directory exists
 - Try disabling and re-enabling the extension in Chrome
 
 ### Build Errors
 
-- Clear the build cache: `rm -rf build/ .plasmo/`
+- Clear the build cache: `rm -rf apps/extension/build/ apps/extension/.plasmo/`
 - Reinstall dependencies: `pnpm install`
 - Restart the development server: `pnpm dev`
 

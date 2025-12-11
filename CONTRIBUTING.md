@@ -88,13 +88,16 @@ git checkout -b fix/bug-description
 ### 4. Test Your Changes
 
 ```bash
-# Start development server
+# Start development server (runs only the extension)
 pnpm dev
 
-# Build for production
+# Start all packages in development mode
+pnpm dev:all
+
+# Build for production (all packages)
 pnpm build
 
-# Type check
+# Type check (all packages)
 pnpm type:check
 ```
 
@@ -147,7 +150,7 @@ git push origin feature/my-new-feature
 ### Imports & Path Aliases
 
 - Avoid deep relative paths like `../../..` in imports
-- Use path aliases defined in `tsconfig.json`:
+- Use path aliases defined in `tsconfig.json` (specifically for `apps/extension`):
   - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper'`)
   - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler'`, `@/components/...`, `@/ai/...`)
   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png'`)
@@ -193,6 +196,15 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 
 <footer>
 ```
+
+### Scopes
+
+Since this is a monorepo, please specify the scope of the change:
+- `extension`
+- `docs`
+- `backend-cloudflare`
+- `backend-vercel`
+- `repo` (for root level changes)
 
 ### Types
 
