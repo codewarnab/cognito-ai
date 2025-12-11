@@ -55,7 +55,7 @@ See [SETUP.md](./SETUP.md) for detailed development setup instructions.
 
 ## Development
 
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+This is a **pnpm monorepo** containing the Chrome extension, documentation site, and backend services.
 
 ### Prerequisites
 
@@ -66,23 +66,29 @@ This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with
 ### Quick Start
 
 ```bash
-# Install dependencies
+# Install all dependencies
 pnpm install
 
-# Start development server
+# Start extension development server
 pnpm dev
 
-# Build for production
+# Start docs development server
+pnpm dev:docs
+
+# Start all packages in parallel
+pnpm dev:all
+
+# Build all packages
 pnpm build
 
-# Package the extension
-pnpm package
+# Build extension only
+pnpm build:extension
 ```
 
 ### Development Build
 
 1. Run `pnpm dev`
-2. Load the extension from `build/chrome-mv3-dev` in Chrome
+2. Load the extension from `apps/extension/build/chrome-mv3-dev` in Chrome
 3. Make changes - the extension will auto-reload
 
 ### Production Build
@@ -91,35 +97,22 @@ pnpm package
 pnpm build
 ```
 
-The production bundle will be in `build/chrome-mv3-prod/`.
+The production bundle will be in `apps/extension/build/chrome-mv3-prod/`.
 
-### Getting Started
-
-First, run the development server:
+### Package-Specific Commands
 
 ```bash
-pnpm dev
-# or
-npm run dev
+# Work with specific packages
+pnpm --filter @cognito/extension dev
+pnpm --filter @cognito/docs dev
+pnpm --filter @cognito/backend-cloudflare deploy
+
+# Add dependencies to specific package
+pnpm --filter @cognito/extension add react-query
+
+# Add dev dependencies to root
+pnpm add -D -w typescript-eslint
 ```
-
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
-
-You can start editing the sidepanel by modifying `src/sidepanel.tsx`. It should auto-update as you make changes. The main UI components are located in `src/components/`, and you can customize the background service worker in `src/background.ts`.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-### Making Production Build
-
-Run the following:
-
-```bash
-pnpm build
-# or
-npm run build
-```
-
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
 
 ### Submit to the Webstores
 
@@ -128,20 +121,26 @@ The easiest way to deploy your Plasmo extension is to use the built-in [bpp](htt
 ### Project Structure
 
 ```
-chrome-ai/
-├── src/
-│   ├── sidepanel.tsx       # Main UI
-│   ├── background.ts       # Service worker
-│   ├── options.tsx         # Options page
-│   ├── ai/                 # AI integration
-│   ├── actions/            # Browser actions
-│   ├── components/         # React components
-│   ├── mcp/                # Model Context Protocol
-│   ├── memory/             # Memory system
-│   └── workflows/          # Automation workflows
-├── public/                 # Static assets
-├── assets/                 # Icons and graphics
-└── build/                  # Build output
+cognito-ai/
+├── apps/
+│   ├── extension/              # @cognito/extension - Chrome Extension (Plasmo)
+│   │   ├── src/
+│   │   │   ├── sidepanel.tsx   # Main UI
+│   │   │   ├── background.ts   # Service worker
+│   │   │   ├── options.tsx     # Options page
+│   │   │   ├── ai/             # AI integration
+│   │   │   ├── actions/        # Browser actions
+│   │   │   ├── components/     # React components
+│   │   │   ├── mcp/            # Model Context Protocol
+│   │   │   ├── memory/         # Memory system
+│   │   │   └── workflows/      # Automation workflows
+│   │   ├── assets/             # Icons and graphics
+│   │   └── build/              # Build output
+│   └── docs/                   # @cognito/docs - Documentation site (Next.js + Fumadocs)
+├── packages/
+│   ├── backend-cloudflare/     # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
+│   └── backend-vercel/         # @cognito/backend-vercel - YouTube transcript API (Express)
+└── [root config files]         # pnpm-workspace.yaml, turbo.json, etc.
 ```
 
 ## Configuration
@@ -177,7 +176,9 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 ## Documentation
 
 - [Setup Guide](./SETUP.md) - Detailed setup instructions
+- [Monorepo Guide](./MONOREPO.md) - Architecture, deployment, and migration guides
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
+- [AI Agents Guide](./AGENTS.md) - Navigation guide for AI coding assistants
 - [Plasmo Documentation](https://docs.plasmo.com/) - Framework documentation
 - [Chrome Extension Docs](https://developer.chrome.com/docs/extensions/) - Chrome API reference
 
