@@ -38,10 +38,10 @@ export interface UseSearchModeWithAIResult {
  */
 export function useSearchModeWithAI(registeredToolNames: string[]): UseSearchModeWithAIResult {
     const searchMode = useSearchMode();
-    
+
     // Determine if search is effectively active
     const isSearchActive = searchMode.isSearchMode && searchMode.hasApiKey;
-    
+
     // Memoize AI config to avoid recreating on every render
     const aiConfig = useMemo(() => {
         return createSearchAgentConfig(
@@ -62,4 +62,3 @@ export function useSearchModeWithAI(registeredToolNames: string[]): UseSearchMod
     };
 }
 
-export default useSearchModeWithAI;

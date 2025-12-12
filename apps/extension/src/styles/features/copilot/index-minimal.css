@@ -1,0 +1,26 @@
+/**
+ * Minimal Copilot Styles - Only essential CSS that doesn't conflict with Tailwind
+ * Layout and spacing are handled by Tailwind utilities
+ */
+
+/* Only import files that don't override Tailwind layout utilities */
+@import './base.css';
+/* Core copilot window structure */
+@import './input.css';
+/* Composer input styles */
+@import './modes.css';
+/* Mode selector styles */
+@import './attachments.css';
+/* File attachment styles */
+@import './suggestions.css';
+/* Suggested actions */
+@import './voice.css';
+/* Voice recording UI */
+@import './markdown.css';
+/* Markdown rendering (non-layout) */
+@import './streamdown-overrides.css';
+/* Streamdown customization */
+@import './scrollbar.css';
+/* Custom scrollbar */
+@import './animations.css';
+/* Animations only */

@@ -203,7 +203,7 @@ export async function downloadSummarizer(
 
     // Handle different availability states
     // Summarizer uses: 'unavailable' | 'downloadable' | 'downloading' | 'available'
-    if (availability === 'unavailable') {
+    if ((availability as string) === 'unavailable') {
         throw new Error('Summarizer is not available on this device');
     }
 

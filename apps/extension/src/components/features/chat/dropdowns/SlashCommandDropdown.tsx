@@ -119,8 +119,8 @@ export function SlashCommandDropdown({
     // Show message when in local mode
     if (mode === 'local') {
         return (
-            <div className="slash-command-dropdown" style={position}>
-                <div className="slash-command-empty">
+            <div className="absolute bottom-[calc(100%+8px)] left-0 right-0 max-h-[240px] bg-[#1e293b] border border-[#334155] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.3)] overflow-hidden z-[1000] origin-bottom-center animate-in slide-in-from-bottom-[8px] fade-in zoom-in-[0.93] duration-150" style={position}>
+                <div className="p-4 text-center text-[#64748b] text-xs">
                     Workflows are not available in Local mode.
                     <br />
                     <span style={{ fontSize: '0.9em', opacity: 0.8 }}>
@@ -133,8 +133,8 @@ export function SlashCommandDropdown({
 
     if (filteredWorkflows.length === 0) {
         return (
-            <div className="slash-command-dropdown" style={position}>
-                <div className="slash-command-empty">
+            <div className="absolute bottom-[calc(100%+8px)] left-0 right-0 max-h-[240px] bg-[#1e293b] border border-[#334155] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.3)] overflow-hidden z-[1000] origin-bottom-center animate-in slide-in-from-bottom-[8px] fade-in zoom-in-[0.93] duration-150" style={position}>
+                <div className="p-4 text-center text-[#64748b] text-xs">
                     {searchQuery
                         ? `No workflows matching "${searchQuery}"`
                         : 'No workflows available'}
@@ -144,14 +144,14 @@ export function SlashCommandDropdown({
     }
 
     return (
-        <div className="slash-command-dropdown" style={position}>
-            <div className="slash-command-list" ref={listRef}>
+        <div className="absolute bottom-[calc(100%+8px)] left-0 right-0 max-h-[240px] bg-[#1e293b] border border-[#334155] rounded-md shadow-[0_4px_12px_rgba(0,0,0,0.3)] overflow-hidden z-[1000] origin-bottom-center animate-in slide-in-from-bottom-[8px] fade-in zoom-in-[0.93] duration-150" style={position}>
+            <div className="max-h-[240px] overflow-y-auto container-scrollbar" ref={listRef}>
                 {filteredWorkflows.map((workflow, index) => (
                     <button
                         key={workflow.id}
                         ref={index === selectedIndex ? selectedItemRef : null}
-                        className={`slash-command-item ${index === selectedIndex ? 'selected' : ''
-                            } ${workflow.comingSoon ? 'coming-soon' : ''}`}
+                        className={`flex items-center gap-2.5 px-3 py-2 border-none border-l-2 border-transparent bg-[#1e293b] text-[#e2e8f0] cursor-pointer text-left w-full transition-all duration-120 hover:bg-[#334155] hover:border-l-[#60a5fa] ${index === selectedIndex ? '!bg-[#1e3a5f] !border-l-[#60a5fa]' : ''
+                            } ${workflow.comingSoon ? 'opacity-60 cursor-not-allowed hover:!bg-[#1e293b] hover:!border-l-transparent' : ''}`}
                         onClick={() => !workflow.comingSoon && onSelectWorkflow(workflow)}
                         onMouseEnter={() => setSelectedIndex(index)}
                         style={
@@ -160,15 +160,15 @@ export function SlashCommandDropdown({
                                 : {}
                         }
                     >
-                        <div className="slash-command-icon">{renderWorkflowIcon(workflow.icon)}</div>
-                        <div className="slash-command-info">
-                            <div className="slash-command-name">
+                        <div className="text-[18px] shrink-0 w-6 h-6 flex items-center justify-center text-[#60a5fa]">{renderWorkflowIcon(workflow.icon)}</div>
+                        <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-[#f1f5f9] mb-0.5 font-mono flex items-center gap-1.5">
                                 /{workflow.id} - {workflow.name}
                                 {workflow.comingSoon && (
-                                    <span className="coming-soon-badge">Coming Soon</span>
+                                    <span className="inline-flex items-center px-1.5 py-0.5 bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] rounded text-[9px] font-semibold text-[#fbbf24] uppercase tracking-wider font-sans">Coming Soon</span>
                                 )}
                             </div>
-                            <div className="slash-command-description">
+                            <div className="text-[11px] text-[#94a3b8] overflow-hidden text-ellipsis whitespace-nowrap">
                                 {workflow.description}
                             </div>
                         </div>

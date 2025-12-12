@@ -196,7 +196,7 @@ export function CopilotChatWindow({
     };
 
     return (
-        <div className="copilot-chat-window">
+        <div className="flex flex-col h-screen w-full m-0 p-0 bg-[#0a0e1a] text-[#e4e6eb] fixed inset-0">
             {/* Model Download Progress Toasts */}
             <ModelDownloadToastContainer />
 

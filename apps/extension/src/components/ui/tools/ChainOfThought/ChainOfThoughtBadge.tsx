@@ -19,7 +19,13 @@ export const ChainOfThoughtBadge = memo(({
 }: ChainOfThoughtBadgeProps) => {
     return (
         <span
-            className={`chain-of-thought-badge badge-${variant} ${className}`}
+            className={`inline-flex items-center gap-1 px-2 py-[2px] rounded-[var(--radius-sm)] text-[11px] font-medium leading-[1.5] mt-1
+                ${variant === 'default' ? 'bg-transparent text-[var(--text-primary)] border border-[var(--border-color)]' : ''}
+                ${variant === 'secondary' ? 'bg-transparent text-[var(--text-secondary)] border border-[var(--border-color)]' : ''}
+                ${variant === 'success' ? 'bg-[rgba(76,175,80,0.15)] text-[var(--color-success)] border border-[var(--color-success)]' : ''}
+                ${variant === 'error' ? 'bg-[rgba(244,67,54,0.15)] text-[var(--color-error)] border border-[var(--color-error)]' : ''}
+                ${variant === 'info' ? 'bg-[rgba(18,100,255,0.15)] text-[var(--blue-stride)] border border-[var(--blue-stride)]' : ''}
+                ${className}`}
             {...props}
         >
             {children}

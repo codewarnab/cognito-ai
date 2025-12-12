@@ -56,9 +56,9 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
     const [thumbnailError, setThumbnailError] = React.useState(false);
 
     // Derive effective loading state from props (support legacy isLoading prop)
-    const effectiveLoadingState: YouTubeBadgeLoadingState = 
+    const effectiveLoadingState: YouTubeBadgeLoadingState =
         loadingState ?? (isLoading ? 'fetching' : 'idle');
-    
+
     const isFetching = effectiveLoadingState === 'fetching';
     const hasThumbnail = thumbnailUrl && !thumbnailError;
 
@@ -92,36 +92,37 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
         : videoTitle;
 
     return (
-        <div 
-            className="local-pdf-suggestion youtube-video-suggestion"
+        <div
+            className="absolute bottom-[calc(100%+6px)] left-3 flex items-center gap-1 bg-gradient-to-br from-[#cc0000] to-[#ff0000] rounded-[10px] shadow-[0_2px_6px_rgba(204,0,0,0.4)] animate-in slide-in-from-bottom-2 fade-in duration-200 z-[100] overflow-hidden opacity-50 transition-opacity hover:opacity-100"
             role="region"
             aria-label="YouTube video suggestion"
         >
             <button
-                className="local-pdf-suggestion-button"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-transparent border-none text-white cursor-pointer text-[11px] font-medium transition-colors duration-150 rounded-l-[10px] hover:bg-white/10 active:bg-white/15 disabled:cursor-default disabled:opacity-80"
                 onClick={onAttach}
                 disabled={isFetching}
                 title={`Attach transcript for: ${videoTitle}`}
                 aria-busy={isFetching}
             >
                 {hasThumbnail ? (
-                    <span className="youtube-badge-thumbnail">
+                    <span className="flex items-center justify-center w-[28px] h-[20px] rounded-[3px] overflow-hidden shrink-0">
                         <img
                             src={thumbnailUrl}
                             alt=""
+                            className="w-full h-full object-cover"
                             onError={handleThumbnailError}
                         />
                     </span>
                 ) : (
-                    <span className="local-pdf-suggestion-icon">
+                    <span className="text-[14px] flex items-center justify-center">
                         <YoutubeIcon size={16} />
                     </span>
                 )}
-                
+
                 {isFetching ? (
-                    <span className="youtube-badge-shimmer-container">
-                        <span 
-                            className="youtube-badge-shimmer" 
+                    <span className="flex items-center min-w-[80px] h-[14px]">
+                        <span
+                            className="block w-[80px] h-[12px] bg-white/30 rounded animate-pulse"
                             aria-hidden="true"
                         />
                         <span className="sr-only" aria-live="polite">
@@ -129,10 +130,10 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
                         </span>
                     </span>
                 ) : (
-                    <span className="local-pdf-suggestion-text">
+                    <span className="font-semibold tracking-[0.01em] whitespace-nowrap overflow-hidden text-ellipsis max-w-[400px]">
                         {displayTitle}
                         {durationSeconds !== undefined && (
-                            <span className="youtube-badge-duration">
+                            <span className="ml-1.5 px-1 py-px bg-black/25 rounded-[3px] text-[10px] font-medium opacity-90">
                                 {formatDuration(durationSeconds)}
                             </span>
                         )}
@@ -143,7 +144,7 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
             {!isFetching && (
                 <button
                     type="button"
-                    className="local-pdf-suggestion-close"
+                    className="bg-white/15 border-none text-white w-4 h-4 rounded-full flex items-center justify-center cursor-pointer text-sm leading-none transition-colors duration-150 p-0 mr-1.5 shrink-0 hover:bg-white/25 active:bg-white/35"
                     onClick={onDismiss}
                     title="Dismiss suggestion"
                     aria-label="Dismiss YouTube video attachment suggestion"

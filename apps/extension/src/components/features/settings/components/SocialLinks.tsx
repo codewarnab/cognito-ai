@@ -29,7 +29,7 @@ const socialLinks: SocialLink[] = [
 
 export const SocialLinks: React.FC = () => {
     return (
-        <div className="settings-social-links">
+        <div className="flex justify-center items-center gap-5 pt-5 pb-2 mt-auto border-t border-[var(--border-color)]">
             {socialLinks.map((link) => (
                 <a
                     key={link.href}
@@ -37,7 +37,7 @@ export const SocialLinks: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     title={link.title}
-                    className="settings-social-link"
+                    className="text-[var(--text-tertiary)] transition-all p-2 rounded-lg no-underline flex items-center justify-center hover:text-[var(--text-primary)] hover:-translate-y-0.5"
                 >
                     {link.icon}
                 </a>

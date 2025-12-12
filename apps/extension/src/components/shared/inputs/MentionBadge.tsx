@@ -25,7 +25,10 @@ export function MentionBadge({ type, display, id, faviconUrl, fullTitle }: Menti
     };
     return (
         <span
-            className={`mention-badge mention-badge-${type}`}
+            className={`inline-flex items-center gap-1 px-2.5 py-[3px] rounded-full text-[13px] font-medium border mx-0.5 transition-all duration-200 align-middle leading-snug hover:-translate-y-px hover:shadow-sm ${type === 'tab'
+                    ? 'bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9] hover:bg-[#c8e6c9] dark:bg-[#1b5e20] dark:text-[#c8e6c9] dark:border-[#2e7d32] dark:hover:bg-[#2e7d32]'
+                    : 'bg-[#fff3e0] text-[#ef6c00] border-[#ffe0b2] hover:bg-[#ffe0b2] dark:bg-[#e65100] dark:text-[#ffe0b2] dark:border-[#ef6c00] dark:hover:bg-[#ef6c00]'
+                }`}
             onClick={handleClick}
             title={type === 'tab' ? `Switch to tab: ${fullTitle || display}` : `Tool: ${display}`}
             style={{ cursor: type === 'tab' ? 'pointer' : 'default' }}
@@ -34,15 +37,15 @@ export function MentionBadge({ type, display, id, faviconUrl, fullTitle }: Menti
                 <img
                     src={faviconUrl}
                     alt=""
-                    className="mention-badge-favicon"
+                    className="w-3.5 h-3.5 object-contain rounded-[2px] shrink-0"
                     onError={(e) => {
                         // Hide image if it fails to load
                         e.currentTarget.style.display = 'none';
                     }}
                 />
             )}
-            {type === 'tab' && !faviconUrl && <span className="mention-badge-icon">🌐</span>}
-            <span className="mention-badge-text">
+            {type === 'tab' && !faviconUrl && <span className="text-xs leading-none shrink-0">🌐</span>}
+            <span className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]">
                 {type === 'tab' ? '@' : '#'}{display}
             </span>
         </span>

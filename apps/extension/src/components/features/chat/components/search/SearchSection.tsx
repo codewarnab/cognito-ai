@@ -9,7 +9,6 @@ import { ChevronDown, Search, Check, Loader2 } from 'lucide-react';
 import type { SearchResults as SearchResultsType } from '@/search/types';
 import { SearchResults } from './SearchResults';
 import { SearchResultsImageSection } from './SearchResultsImageSection';
-import '@/styles/features/search/search-section.css';
 
 /** Tool invocation state for search operations */
 interface SearchToolInvocation {
@@ -36,10 +35,13 @@ interface SearchToolArgs {
  * Loading skeleton for search results.
  */
 const SearchSkeleton: React.FC = () => (
-    <div className="search-section__skeleton">
-        <div className="search-section__skeleton-grid">
+    <div className="p-3 flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
             {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="search-section__skeleton-item" />
+                <div
+                    key={i}
+                    className="h-16 rounded-lg bg-[var(--color-surface-hover)] animate-pulse"
+                />
             ))}
         </div>
     </div>
@@ -51,40 +53,30 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
     onOpenChange,
 }) => {
     const isLoading = tool.state === 'call';
-    const searchResults: SearchResultsType | undefined = 
+    const searchResults: SearchResultsType | undefined =
         tool.state === 'result' ? tool.result : undefined;
-    
+
     const args = tool.args as SearchToolArgs;
     const query = args?.query || '';
     const includeDomains = args?.include_domains;
-    
-    const headerText = includeDomains?.length 
+
+    const headerText = includeDomains?.length
         ? `${query} [${includeDomains.join(', ')}]`
         : query;
-    
+
     const resultCount = searchResults?.results?.length || 0;
     const hasImages = (searchResults?.images?.length || 0) > 0;
 
-    const iconClasses = [
-        'search-section__icon',
-        isLoading && 'search-section__icon--loading',
-    ].filter(Boolean).join(' ');
-    
-    const chevronClasses = [
-        'search-section__chevron',
-        isOpen && 'search-section__chevron--open',
-    ].filter(Boolean).join(' ');
-
     return (
-        <div className="search-section">
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] overflow-hidden">
             <button
                 type="button"
                 onClick={() => onOpenChange(!isOpen)}
                 aria-expanded={isOpen}
                 aria-label={`Search results for ${query}`}
-                className="search-section__header"
+                className="w-full flex items-center gap-2 p-3 text-left bg-transparent border-0 cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-hover)]"
             >
-                <div className={iconClasses}>
+                <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-500 ${isLoading ? 'animate-spin' : ''}`}>
                     {isLoading ? (
                         <Loader2 size={14} />
                     ) : (
@@ -92,44 +84,47 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
                     )}
                 </div>
 
-                <span className="search-section__query">
+                <span className="flex-1 min-w-0 text-sm text-[var(--color-text)] overflow-hidden text-ellipsis whitespace-nowrap">
                     {headerText || 'Searching...'}
                 </span>
 
                 {!isLoading && resultCount > 0 && (
-                    <span className="search-section__badge">
+                    <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-green-500/10 text-green-500 rounded-full">
                         <Check size={10} />
                         {resultCount} results
                     </span>
                 )}
 
-                <ChevronDown size={16} className={chevronClasses} />
+                <ChevronDown
+                    size={16}
+                    className={`flex-shrink-0 text-[var(--color-text-secondary)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                />
             </button>
 
             {isOpen && (
-                <div className="search-section__content">
+                <div className="border-t border-[var(--color-border)]">
                     {isLoading ? (
                         <SearchSkeleton />
                     ) : searchResults ? (
-                        <div className="search-section__content-inner">
+                        <div className="p-3 flex flex-col gap-3">
                             {hasImages && (
                                 <SearchResultsImageSection
                                     images={searchResults.images}
                                     query={query}
                                 />
                             )}
-                            
+
                             {resultCount > 0 && (
                                 <div>
-                                    <div className="search-section__sources-label">
+                                    <div className="text-xs font-medium text-[var(--color-text-secondary)] mb-2">
                                         Sources
                                     </div>
                                     <SearchResults results={searchResults.results} />
                                 </div>
                             )}
-                            
+
                             {resultCount === 0 && !hasImages && (
-                                <div className="search-section__no-results">
+                                <div className="text-sm text-[var(--color-text-secondary)] text-center py-4">
                                     No results found for "{query}"
                                 </div>
                             )}

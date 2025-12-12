@@ -17,7 +17,7 @@ import { RetryManager, RetryPresets } from '../../errors/retryManager';
 import { buildUserMessage } from '../../errors/errorMessages';
 
 const log = createLogger('MCP-Client', 'MCP_CLIENT');
-const toolsLog = createLogger('MCP-Tools', 'MCP_TOOLS');
+
 
 export interface KeyValuePair {
   key: string;
@@ -160,7 +160,7 @@ export async function initializeMCPClients(
         });
 
         // Dynamically determine transport type based on URL suffix
-        let mcpClient;
+        let mcpClient: any;
         const url = mcpServer.url;
 
         if (url.endsWith('/sse')) {

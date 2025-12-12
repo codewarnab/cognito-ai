@@ -73,13 +73,13 @@ export const AskAiButtonSettings: React.FC = () => {
     const handleAddDomain = async () => {
         let input = newHiddenDomain.trim();
         if (!input) return;
-        
+
         try {
             // If user didn't include protocol, add it for URL parsing
             if (!input.startsWith('http://') && !input.startsWith('https://')) {
                 input = `https://${input}`;
             }
-            
+
             // Use hideForCurrentPage which will extract the hostname properly
             await hideForCurrentPage(input);
             const vis = await getVisibilitySettings();
@@ -91,18 +91,18 @@ export const AskAiButtonSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <Eye size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     Ask AI Button
                 </h2>
             </div>
-            <div className="settings-card">
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Show Globally</div>
-                        <div className="settings-item-description">Display the Ask AI button on all pages</div>
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Show Globally</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Display the Ask AI button on all pages</div>
                     </div>
                     <Toggle
                         checked={!askAiVisibility.permanentlyHidden}
@@ -110,10 +110,10 @@ export const AskAiButtonSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Hide for Session</div>
-                        <div className="settings-item-description">Temporarily hide the button for this browser session</div>
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Hide for Session</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Temporarily hide the button for this browser session</div>
                     </div>
                     <Toggle
                         checked={askAiVisibility.hiddenForSession}
@@ -122,25 +122,14 @@ export const AskAiButtonSettings: React.FC = () => {
                     />
                 </div>
 
-                <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                <div className="block p-0">
                     <button
-                        className="settings-item-header-button"
+                        className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                         onClick={() => setIsHiddenDomainsOpen(!isHiddenDomainsOpen)}
-                        style={{
-                            width: '100%',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '12px',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'inherit'
-                        }}
                     >
-                        <div style={{ textAlign: 'left' }}>
-                            <div className="settings-item-title">Hidden Domains</div>
-                            <div className="settings-item-description">
+                        <div className="text-left">
+                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Hidden Domains</div>
+                            <div className="text-xs text-[var(--text-secondary)]">
                                 {askAiVisibility.hiddenDomains.length} domain{askAiVisibility.hiddenDomains.length !== 1 ? 's' : ''} hidden
                             </div>
                         </div>
@@ -148,15 +137,15 @@ export const AskAiButtonSettings: React.FC = () => {
                     </button>
 
                     {isHiddenDomainsOpen && (
-                        <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
+                        <div className="p-3 border-t border-[var(--border-color)]">
                             {askAiVisibility.hiddenDomains.length > 0 ? (
                                 <>
-                                    <div className="hidden-domains-list">
+                                    <div className="flex flex-col gap-px bg-[var(--border-color)] rounded-lg overflow-hidden mt-2">
                                         {askAiVisibility.hiddenDomains.map((domain) => (
-                                            <div key={domain} className="hidden-domain-item">
-                                                <span className="hidden-domain-name">{domain}</span>
+                                            <div key={domain} className="flex items-center justify-between px-3 py-2.5 bg-[var(--bg-tertiary)]">
+                                                <span className="text-[13px] text-[var(--text-primary)]">{domain}</span>
                                                 <button
-                                                    className="hidden-domain-remove"
+                                                    className="bg-transparent border-none text-[var(--text-secondary)] cursor-pointer p-1 rounded flex items-center justify-center hover:text-red-500 hover:bg-red-500/10"
                                                     onClick={() => handleRemoveDomain(domain)}
                                                     title="Remove from hidden"
                                                 >
@@ -165,34 +154,34 @@ export const AskAiButtonSettings: React.FC = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-                                        <div className="settings-input-group" style={{ flex: 1 }}>
+                                    <div className="mt-3 flex gap-2">
+                                        <div className="flex gap-2 flex-1">
                                             <input
-                                                className="settings-input"
+                                                className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
                                                 value={newHiddenDomain}
                                                 onChange={(e) => setNewHiddenDomain(e.target.value)}
                                                 placeholder="example.com"
                                                 onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
                                             />
-                                            <button onClick={handleAddDomain} className="settings-button primary">
+                                            <button onClick={handleAddDomain} className="px-3 py-1.5 bg-[var(--color-secondary)] border border-[var(--color-secondary)] rounded-lg text-white text-[13px] font-medium cursor-pointer transition-all hover:opacity-90">
                                                 <Plus size={16} />
                                             </button>
                                         </div>
-                                        <button onClick={handleClearDomains} className="settings-button danger">
+                                        <button onClick={handleClearDomains} className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-red-500/30 rounded-lg text-red-500 text-[13px] font-medium cursor-pointer transition-all hover:bg-red-500/10">
                                             Clear All
                                         </button>
                                     </div>
                                 </>
                             ) : (
-                                <div className="settings-input-group">
+                                <div className="flex gap-2">
                                     <input
-                                        className="settings-input"
+                                        className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={newHiddenDomain}
                                         onChange={(e) => setNewHiddenDomain(e.target.value)}
                                         placeholder="example.com"
                                         onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
                                     />
-                                    <button onClick={handleAddDomain} className="settings-button primary">
+                                    <button onClick={handleAddDomain} className="px-3 py-1.5 bg-[var(--color-secondary)] border border-[var(--color-secondary)] rounded-lg text-white text-[13px] font-medium cursor-pointer transition-all hover:opacity-90">
                                         <Plus size={16} />
                                     </button>
                                 </div>

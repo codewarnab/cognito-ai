@@ -33,7 +33,7 @@ export * from './workflows';
 
 // Search hooks
 
-export { useSearchModeWithAI ,UseSearchModeWithAIResult  } from './useSearchModeWithAI';
+// export { useSearchModeWithAI ,UseSearchModeWithAIResult  } from './useSearchModeWithAI';
 
 // WebMCP hooks
 export * from './webmcp';

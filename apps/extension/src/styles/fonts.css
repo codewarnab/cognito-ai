@@ -8,7 +8,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('chrome-extension://__MSG_@@extension_id__/assets/fonts/Inter-Regular.ttf') format('truetype');
+  src: url('../assets/fonts/Inter-Regular.ttf') format('truetype');
 }
 
 @font-face {
@@ -16,7 +16,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('chrome-extension://__MSG_@@extension_id__/assets/fonts/Inter-Medium.ttf') format('truetype');
+  src: url('../assets/fonts/Inter-Medium.ttf') format('truetype');
 }
 
 @font-face {
@@ -24,5 +24,5 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('chrome-extension://__MSG_@@extension_id__/assets/fonts/Inter-SemiBold.ttf') format('truetype');
+  src: url('../assets/fonts/Inter-SemiBold.ttf') format('truetype');
 }

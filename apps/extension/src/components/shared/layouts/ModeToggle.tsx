@@ -8,7 +8,6 @@
  */
 
 import React from 'react';
-import './ModeToggle.css';
 
 export type ChatMode = 'text' | 'voice';
 
@@ -24,13 +23,31 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
     disabled = false
 }) => {
     return (
-        <div className="mode-toggle">
+        <div className="flex gap-1 p-1 bg-white/5 rounded-lg backdrop-blur-[10px] border border-white/10">
             <button
-                className={`mode-toggle-button ${mode === 'text' ? 'active' : ''}`}
+                className={`flex items-center gap-1.5 px-4 py-2 bg-transparent border-none rounded-md text-sm font-medium cursor-pointer transition-all duration-200 relative ${mode === 'text'
+                        ? 'text-white bg-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.2)]'
+                        : 'text-white/60 hover:text-white/90 hover:bg-white/10 active:scale-[0.98]'
+                    } disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:w-4 [&_svg]:h-4 [&_svg]:transition-all [&_svg]:duration-200 max-[480px]:[&_span]:hidden max-[480px]:px-3`}
                 onClick={() => onModeChange('text')}
                 disabled={disabled}
                 aria-label="Text Mode"
                 title="Switch to Text Mode"
+                style={mode === 'text' ? {
+                    '::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '6px',
+                        padding: '1px',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.4))',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        maskComposite: 'exclude',
+                        pointerEvents: 'none'
+                    }
+                } as React.CSSProperties : undefined}
             >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
@@ -44,11 +61,29 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
             </button>
 
             <button
-                className={`mode-toggle-button ${mode === 'voice' ? 'active' : ''}`}
+                className={`flex items-center gap-1.5 px-4 py-2 bg-transparent border-none rounded-md text-sm font-medium cursor-pointer transition-all duration-200 relative ${mode === 'voice'
+                        ? 'text-white bg-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.2)]'
+                        : 'text-white/60 hover:text-white/90 hover:bg-white/10 active:scale-[0.98]'
+                    } disabled:opacity-40 disabled:cursor-not-allowed [&_svg]:w-4 [&_svg]:h-4 [&_svg]:transition-all [&_svg]:duration-200 max-[480px]:[&_span]:hidden max-[480px]:px-3`}
                 onClick={() => onModeChange('voice')}
                 disabled={disabled}
                 aria-label="Voice Mode"
                 title="Switch to Voice Mode"
+                style={mode === 'voice' ? {
+                    '::before': {
+                        content: '""',
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '6px',
+                        padding: '1px',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(168, 85, 247, 0.4))',
+                        WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        WebkitMaskComposite: 'xor',
+                        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                        maskComposite: 'exclude',
+                        pointerEvents: 'none'
+                    }
+                } as React.CSSProperties : undefined}
             >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path

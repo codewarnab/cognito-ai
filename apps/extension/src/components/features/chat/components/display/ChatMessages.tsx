@@ -223,7 +223,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     }, [messages, isLoading]);
 
     return (
-        <div className="copilot-messages" ref={messagesContainerRef}>{messages.length === 0 ? (
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-6 flex flex-col gap-6 bg-[#0a0e1a] min-h-0" ref={messagesContainerRef}>{messages.length === 0 ? (
             <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
         ) : (
             <AnimatePresence>
@@ -253,16 +253,21 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 transition={{ type: 'easeOut', duration: 0.2 }}
                                 initial={isPendingMessage ? { opacity: 0 } : undefined}
                                 animate={isPendingMessage ? { opacity: 1 } : undefined}
-                                className={`copilot-message copilot-message-${message.role} ${message.role === 'user' ? 'user-message-outer-container' : ''}`}
+                                className={`flex gap-3 max-w-full group ${message.role === 'user' ? 'justify-end items-start gap-3 ml-auto' : 'justify-start items-start'}`}
                             >
-                                <div className={`copilot-message-bubble copilot-message-bubble-${message.role} ${hasToolCalls(message) ? 'copilot-message-bubble-no-bg' : ''}`}>
+                                <div className={`rounded-xl px-4 py-3 max-w-[90%] text-base leading-relaxed break-words ${message.role === 'user'
+                                    ? 'bg-blue-500 text-white ml-auto shadow-[0_2px_8px_var(--message-user-shadow)] rounded-br-none'
+                                    : hasToolCalls(message)
+                                        ? 'bg-transparent !p-0'
+                                        : 'bg-transparent !text-[var(--text-primary)] !border-none !shadow-none !p-0 !rounded-none !max-w-full !text-base'
+                                    }`}>
                                     {/* Render parts in their actual order - text and tools interleaved */}
                                     {message.parts && message.parts.length > 0 && (() => {
                                         // Merge tool-call and tool-result parts to avoid duplicate rendering
                                         const mergedParts = mergeToolParts(message.parts);
 
                                         return (
-                                            <div className="message-parts">
+                                            <div className="flex flex-col gap-2">
                                                 {mergedParts.map((part: any, partIndex: number) => {
                                                     // Render text parts (but skip tab attachment text parts)
                                                     if (part.type === 'text' && part.text) {
@@ -277,7 +282,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
                                                         if (message.role === 'assistant') {
                                                             return (
-                                                                <div key={`text-${partIndex}`} className="copilot-message-content">
+                                                                <div key={`text-${partIndex}`} className="whitespace-pre-wrap break-words">
                                                                     <div className="markdown-content">
                                                                         <SafeMarkdown isStreaming={isCurrentlyStreaming}>
                                                                             {part.text}
@@ -312,28 +317,28 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         const isImage = firstFile.mediaType?.startsWith('image/');
 
                                                         return (
-                                                            <div key={`file-group-${partIndex}`} className="message-file-attachments-group">
-                                                                <div className="message-file-attachment">
+                                                            <div key={`file-group-${partIndex}`} className="relative inline-block my-2">
+                                                                <div className="inline-block">
                                                                     {isImage ? (
                                                                         <div
-                                                                            className="message-file-image"
+                                                                            className="relative w-[75px] h-[75px] rounded-[10px] overflow-hidden bg-[rgba(30,40,60,0.6)] border-[1.5px] border-[rgba(100,120,150,0.3)] p-[3px] shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-all duration-200 cursor-pointer hover:scale-105 hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)]"
                                                                             onClick={() => setPreviewImage({ url: firstFile.url, name: firstFile.name || 'Image' })}
                                                                         >
-                                                                            <img src={firstFile.url} alt={firstFile.name || 'Attached image'} />
+                                                                            <img src={firstFile.url} alt={firstFile.name || 'Attached image'} className="w-full h-full object-cover block rounded-md cursor-pointer" />
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="message-file-document">
-                                                                            <div className="file-attachment-icon">
+                                                                        <div className="inline-flex items-center gap-2.5 px-3.5 py-2.5 min-w-[130px] max-w-[220px] bg-[rgba(35,45,65,0.7)] rounded-[10px] border-[1.5px] border-[rgba(100,120,150,0.3)] shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[rgba(45,55,75,0.8)] hover:border-[rgba(120,140,170,0.5)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] hover:-translate-y-px">
+                                                                            <div className="text-[22px] flex-shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                                                                                 {getFileIcon(firstFile.name || 'file', 24)}
                                                                             </div>
-                                                                            <span className="file-attachment-name" title={firstFile.name}>
+                                                                            <span className="text-[13px] text-white/90 whitespace-nowrap overflow-hidden text-ellipsis flex-1 font-medium" title={firstFile.name}>
                                                                                 {truncateFileName(firstFile.name)}
                                                                             </span>
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                                 {remainingCount > 0 && (
-                                                                    <div className="message-file-attachment-overlay">
+                                                                    <div className="absolute -top-1.5 -right-1.5 bg-blue-500/95 text-white text-[11px] font-bold px-2 py-1 rounded-xl border-2 border-[rgba(30,40,60,0.9)] shadow-[0_2px_8px_rgba(0,0,0,0.4)] z-[2] min-w-[24px] text-center">
                                                                         +{remainingCount}
                                                                     </div>
                                                                 )}
@@ -355,35 +360,35 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         const remainingCount = totalTabs - 1;
 
                                                         return (
-                                                            <div key={`tab-group-${partIndex}`} className="message-tab-attachments-group">
-                                                                <div className="message-tab-attachment">
-                                                                    <div className="tab-attachment-icon">
+                                                            <div key={`tab-group-${partIndex}`} className="relative inline-block my-2">
+                                                                <div className="flex items-center gap-3 px-3.5 py-3 bg-blue-500/8 border border-blue-500/25 rounded-lg transition-all duration-200 relative z-[1] hover:bg-blue-500/12 hover:border-blue-500/40">
+                                                                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
                                                                         {firstTab.favicon ? (
                                                                             <img
                                                                                 src={firstTab.favicon}
                                                                                 alt=""
-                                                                                className="tab-favicon"
+                                                                                className="w-5 h-5 rounded object-contain"
                                                                             />
                                                                         ) : (
-                                                                            <div className="tab-favicon-placeholder">🌐</div>
+                                                                            <div className="w-5 h-5 flex items-center justify-center text-base opacity-70">🌐</div>
                                                                         )}
                                                                     </div>
-                                                                    <div className="tab-attachment-info">
-                                                                        <div className="tab-attachment-title" title={firstTab.title}>
+                                                                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                                                                        <div className="text-[13px] font-semibold text-white/95 whitespace-nowrap overflow-hidden text-ellipsis" title={firstTab.title}>
                                                                             {firstTab.title}
                                                                         </div>
-                                                                        <div className="tab-attachment-url" title={firstTab.url}>
+                                                                        <div className="text-[11px] text-white/60 whitespace-nowrap overflow-hidden text-ellipsis" title={firstTab.url}>
                                                                             {firstTab.url}
                                                                         </div>
                                                                         {firstTab.error && (
-                                                                            <div className="tab-attachment-error">
+                                                                            <div className="text-[11px] text-[rgba(255,150,50,0.9)] font-medium mt-0.5">
                                                                                 ⚠️ {firstTab.error}
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                                 {remainingCount > 0 && (
-                                                                    <div className="message-tab-attachment-overlay">
+                                                                    <div className="absolute -top-1.5 -right-1.5 bg-blue-500/95 text-white text-[11px] font-bold px-2 py-1 rounded-xl border-2 border-[rgba(30,40,60,0.9)] shadow-[0_2px_8px_rgba(0,0,0,0.4)] z-[2] min-w-[24px] text-center">
                                                                         +{remainingCount}
                                                                     </div>
                                                                 )}
@@ -399,7 +404,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         part.type === 'dynamic-tool'
                                                     ) {
                                                         return (
-                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="message-tools">
+                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="mt-4 flex flex-col gap-2">
                                                                 <ToolPartRenderer
                                                                     part={part}
                                                                     messageId={message.id || `msg-${index}`}
@@ -441,7 +446,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 </div>
                                 {/* Copy button for user messages - positioned to the left of bubble via CSS order */}
                                 {message.role === 'user' && extractMessageText(message) && (
-                                    <div className="user-message-copy-wrapper">
+                                    <div className="flex items-center opacity-0 transition-opacity duration-150 flex-shrink-0 pt-2 order-[-1] group-hover:opacity-100">
                                         <UserMessageCopyButton content={extractMessageText(message)} />
                                     </div>
                                 )}
@@ -480,29 +485,29 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             <AnimatePresence>
                 {previewImage && (
                     <motion.div
-                        className="message-image-preview-overlay"
+                        className="fixed inset-0 bg-black/90 z-[10000] flex items-center justify-center p-10 cursor-pointer"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setPreviewImage(null)}
                     >
                         <button
-                            className="message-image-preview-close"
+                            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-gray-500/50 border-none flex items-center justify-center cursor-pointer z-[9999] transition-colors duration-200 text-white hover:bg-gray-500/70 active:bg-gray-500/80"
                             onClick={() => setPreviewImage(null)}
                             aria-label="Close preview"
                         >
                             <XIcon size={20} />
                         </button>
                         <motion.div
-                            className="message-image-preview-container"
+                            className="max-w-[90vw] max-h-[90vh] flex flex-col items-center justify-center cursor-default gap-3"
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.8, opacity: 0 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <img src={previewImage.url} alt={previewImage.name} />
-                            <div className="message-image-preview-hint">Press ESC to close</div>
+                            <img src={previewImage.url} alt={previewImage.name} className="max-w-full max-h-[calc(90vh-40px)] w-auto h-auto rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] object-contain" />
+                            <div className="text-[13px] text-white/50 text-center px-3 py-1 bg-white/8 rounded-md">Press ESC to close</div>
                         </motion.div>
                     </motion.div>
                 )}

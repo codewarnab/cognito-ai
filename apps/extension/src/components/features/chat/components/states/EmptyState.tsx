@@ -40,7 +40,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
 
     return (
         <div
-            className="copilot-empty-state flex flex-col items-start justify-start h-full w-full"
+            className="flex flex-col items-start justify-start h-full w-full"
             style={{ padding: '10px 0px' }}
         >
             <h1

@@ -14,6 +14,8 @@
 import { createLogger } from '~logger';
 import { z } from 'zod';
 import { registerToolServer } from '@/utils/mcp';
+// Import debugRegistry directly from the store to avoid cycle or simply because it is available
+import { debugRegistry } from '@/utils/mcp/toolMetadataStore';
 
 const log = createLogger('MCP-Proxy', 'MCP_EXECUTION');
 
@@ -120,7 +122,6 @@ export async function getMCPToolsFromBackground(): Promise<{
 
         // Debug: Log the registry for troubleshooting
         if (registeredToolNames.length > 0) {
-            const { debugRegistry } = await import('@/utils/mcp/toolMetadataStore');
             debugRegistry();
         }
 

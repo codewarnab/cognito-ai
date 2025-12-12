@@ -19,21 +19,25 @@ import App from './App';
 // These are imported from src/styles/ directory
 import '../../styles/features/copilot/index.css';
 import '../../styles/features/mcp/index.css';
-import '../../styles/features/mentions/index.css';
-import '../../styles/features/threads/index.css';
-import '../../styles/features/reminders/index.css';
-import '../../styles/features/workflows/index.css';
-import '../../styles/components/voice-recording-pill.css';
+
+
+
+
+
 import '../../styles/features/onboarding/index.css';
 
-import '../../styles/components/continue-button.css';
-import '../../styles/components/context-indicator.css';
-import '../../styles/components/context-warning.css';
-import '../../styles/components/streaming-warning.css';
-import '../../styles/components/error-toast.css';
 
-// Main sidepanel styles (from src/sidepanel.css)
-import '../../sidepanel.css';
+
+// Core Styles (Moved from sidepanel.css)
+import '../../styles/fonts.css';
+import '../../styles/core/variables.css';
+import '../../styles/core/animations.css';
+
+// Feature Styles (To be migrated later, keeping for now)
+
+
+// Main sidepanel styles (Migrated to inline/tailwind)
+// import '../../sidepanel.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

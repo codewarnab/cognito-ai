@@ -50,7 +50,7 @@ export default defineConfig({
                     'os',
                     'tty',
                     'zlib',
-                    'vm',
+                    'zlib',
                 ],
             }),
         ],
@@ -67,7 +67,16 @@ export default defineConfig({
                 // Custom fs polyfill with promises export (required by fetch-blob via node-fetch)
                 'fs': resolve(__dirname, 'src/polyfills/fs.ts'),
                 'node:fs': resolve(__dirname, 'src/polyfills/fs.ts'),
-            },
+                // Stubs for other Node.js modules to prevent build errors
+                'child_process': resolve(__dirname, 'src/polyfills/child_process.ts'),
+                'node:child_process': resolve(__dirname, 'src/polyfills/child_process.ts'),
+                'tls': resolve(__dirname, 'src/polyfills/tls.ts'),
+                'node:tls': resolve(__dirname, 'src/polyfills/tls.ts'),
+                'worker_threads': resolve(__dirname, 'src/polyfills/worker_threads.ts'),
+                'node:worker_threads': resolve(__dirname, 'src/polyfills/worker_threads.ts'),
+                'vm': resolve(__dirname, 'src/polyfills/vm.ts'),
+                'node:vm': resolve(__dirname, 'src/polyfills/vm.ts'),
+            },  
         },
         // Exclude problematic dependencies from optimization
         optimizeDeps: {
@@ -80,6 +89,7 @@ export default defineConfig({
             commonjsOptions: {
                 transformMixedEsModules: true,
             },
+            chunkSizeWarningLimit: 1000, // Increase chunk size limit to avoid warnings
         },
     }),
 

@@ -19,7 +19,7 @@ export const StreamingWarningDialog: React.FC<StreamingWarningDialogProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="streaming-warning-overlay"
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm"
                     onClick={onClose}
                 >
                     <motion.div
@@ -27,25 +27,25 @@ export const StreamingWarningDialog: React.FC<StreamingWarningDialogProps> = ({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ duration: 0.2 }}
-                        className="streaming-warning-dialog"
+                        className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-6 max-w-md mx-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="streaming-warning-content">
-                            <h3 className="streaming-warning-title">Message Being Streamed</h3>
-                            <p className="streaming-warning-message">
+                        <div className="mb-4">
+                            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Message Being Streamed</h3>
+                            <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
                                 Starting a new thread while a message is being streamed will interrupt the current response.
                             </p>
                         </div>
 
-                        <div className="streaming-warning-actions">
+                        <div className="flex gap-3 justify-end">
                             <button
-                                className="streaming-warning-button streaming-warning-button-secondary"
+                                className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] bg-transparent border border-[var(--border-color)] rounded-lg hover:bg-white/5 hover:text-[var(--text-primary)] transition-all duration-200"
                                 onClick={onClose}
                             >
                                 Cancel
                             </button>
                             <button
-                                className="streaming-warning-button streaming-warning-button-primary"
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-red-500 rounded-lg hover:bg-red-600 transition-all duration-200"
                                 onClick={onContinue}
                             >
                                 Continue Anyway
@@ -57,3 +57,4 @@ export const StreamingWarningDialog: React.FC<StreamingWarningDialogProps> = ({
         </AnimatePresence>
     );
 };
+

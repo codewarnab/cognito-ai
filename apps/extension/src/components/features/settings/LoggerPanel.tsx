@@ -4,7 +4,6 @@ import { useLoggerConfig } from '@/hooks/settings/useLoggerConfig';
 import type { LogCategory, LoggerPresetName } from '@/types/logger';
 import { LOGGER_CATEGORY_GROUPS } from '@/types/logger';
 import { createLogger } from '~logger';
-import './LoggerPanel.css';
 
 const log = createLogger('LoggerPanel', 'SETTINGS');
 
@@ -47,18 +46,23 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   ariaLabel,
 }) => {
   return (
-    <label className={`logger-toggle-wrapper ${disabled ? 'disabled' : ''}`}>
+    <label className={`inline-flex items-center cursor-pointer ${disabled ? 'cursor-not-allowed' : ''}`}>
       <input
         type="checkbox"
-        className="logger-toggle-input"
+        className="absolute opacity-0 w-0 h-0 peer"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
         aria-checked={checked}
         aria-label={ariaLabel}
       />
-      <span className="logger-toggle-switch" aria-hidden="true">
-        <span className="logger-toggle-slider" />
+      <span
+        className={`relative w-9 h-5 rounded-[10px] transition-colors duration-200 ${checked ? 'bg-[var(--color-secondary)]' : 'bg-[var(--bg-quaternary)]'} ${disabled ? 'opacity-50' : ''}`}
+        aria-hidden="true"
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform duration-200 ${checked ? 'translate-x-4' : ''}`}
+        />
       </span>
     </label>
   );
@@ -111,29 +115,29 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({
   );
 
   return (
-    <div className="logger-panel-group">
+    <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-hidden">
       <button
         type="button"
-        className="logger-panel-group-header"
+        className="flex items-center justify-between p-3 w-full cursor-pointer bg-transparent border-none text-[var(--text-primary)] transition-colors duration-200 hover:bg-[var(--glass-bg)]"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
-        <div className="logger-panel-group-header-left">
+        <div className="flex items-center gap-2">
           <ChevronDown
             size={16}
-            className={`logger-panel-group-chevron ${isExpanded ? 'expanded' : ''}`}
+            className={`text-[var(--text-secondary)] transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
           />
-          <span className="logger-panel-group-name">
+          <span className="text-sm font-medium">
             {GROUP_LABELS[groupName]}
-            <span className="logger-panel-group-count">
+            <span className="text-xs text-[var(--text-tertiary)] ml-1">
               ({enabledCount}/{categories.length})
             </span>
           </span>
         </div>
-        <div className="logger-panel-group-actions">
+        <div className="flex gap-1">
           <button
             type="button"
-            className="logger-panel-group-toggle-all"
+            className="py-1 px-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleEnableAll}
             disabled={isOverridden || enabledCount === categories.length}
             aria-label={`Enable all ${GROUP_LABELS[groupName]} categories`}
@@ -142,7 +146,7 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({
           </button>
           <button
             type="button"
-            className="logger-panel-group-toggle-all"
+            className="py-1 px-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleDisableAll}
             disabled={isOverridden || enabledCount === 0}
             aria-label={`Disable all ${GROUP_LABELS[groupName]} categories`}
@@ -152,13 +156,13 @@ const CategoryGroup: React.FC<CategoryGroupProps> = ({
         </div>
       </button>
       {isExpanded && (
-        <div className="logger-panel-group-content">
+        <div className="border-t border-[var(--border-color)]">
           {categories.map((category) => (
             <div
               key={category}
-              className={`logger-panel-category-item ${isOverridden ? 'disabled' : ''}`}
+              className={`flex items-center justify-between py-2.5 px-3 border-b border-[var(--border-color)] last:border-b-0 transition-colors duration-200 hover:bg-[var(--glass-bg)] ${isOverridden ? 'opacity-50' : ''}`}
             >
-              <span className="logger-panel-category-name">{category}</span>
+              <span className={`text-[13px] ${isOverridden ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>{category}</span>
               <ToggleSwitch
                 checked={config[category]}
                 onChange={(enabled) => onToggleCategory(category, enabled)}
@@ -237,43 +241,43 @@ export const LoggerPanel: React.FC<LoggerPanelProps> = ({ onBack }) => {
 
   if (isLoading || !config) {
     return (
-      <div className="logger-panel">
-        <div className="logger-panel-header">
+      <div className="flex flex-col h-full bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden">
+        <div className="flex items-center p-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] gap-4">
           <button
             type="button"
-            className="logger-panel-back-button"
+            className="bg-transparent border-none text-[var(--text-secondary)] cursor-pointer p-1 rounded flex items-center justify-center transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
             onClick={onBack}
             aria-label="Go back"
           >
             <ArrowLeft size={20} />
           </button>
-          <div className="logger-panel-title-container">
-            <h1 className="logger-panel-title">Logger Panel</h1>
+          <div className="flex-1">
+            <h1 className="text-lg font-semibold m-0 text-[var(--text-primary)]">Logger Panel</h1>
           </div>
         </div>
-        <div className="logger-panel-loading">Loading configuration...</div>
+        <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">Loading configuration...</div>
       </div>
     );
   }
 
   return (
-    <div className="logger-panel">
-      <div className="logger-panel-header">
+    <div className="flex flex-col h-full bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden">
+      <div className="flex items-center p-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] gap-4">
         <button
           type="button"
-          className="logger-panel-back-button"
+          className="bg-transparent border-none text-[var(--text-secondary)] cursor-pointer p-1 rounded flex items-center justify-center transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
           onClick={onBack}
           aria-label="Go back"
         >
           <ArrowLeft size={20} />
         </button>
-        <div className="logger-panel-title-container">
-          <h1 className="logger-panel-title">Logger Panel</h1>
-          <p className="logger-panel-subtitle">Configure logging categories</p>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold m-0 text-[var(--text-primary)]">Logger Panel</h1>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-0.5 m-0">Configure logging categories</p>
         </div>
         <button
           type="button"
-          className="logger-panel-reset-button"
+          className="py-1.5 px-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-xs font-medium cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:border-[var(--border-color-hover)]"
           onClick={handleReset}
           aria-label="Reset to defaults"
         >
@@ -281,49 +285,52 @@ export const LoggerPanel: React.FC<LoggerPanelProps> = ({ onBack }) => {
         </button>
       </div>
 
-      <div className="logger-panel-content">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/15 hover:scrollbar-thumb-white/25">
         {/* Quick Presets */}
-        <div className="logger-panel-section">
-          <h2 className="logger-panel-section-title">Quick Presets</h2>
-          <div className="logger-panel-presets">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[13px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide m-0">Quick Presets</h2>
+          <div className="flex flex-wrap gap-2">
             {PRESET_NAMES.map((preset) => (
               <button
                 key={preset}
                 type="button"
-                className={`logger-panel-preset-button ${activePreset === preset ? 'active' : ''}`}
+                className={`py-1.5 px-3 border rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${activePreset === preset
+                    ? 'bg-[var(--color-secondary)] border-[var(--color-secondary)] text-white'
+                    : 'bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--glass-bg-hover)] hover:border-[var(--border-color-hover)] hover:text-[var(--text-primary)]'
+                  }`}
                 onClick={() => handlePresetClick(preset)}
               >
                 {preset.replace(/_/g, ' ')}
               </button>
             ))}
             {!activePreset && (
-              <span className="logger-panel-preset-button custom">CUSTOM</span>
+              <span className="py-1.5 px-3 bg-[var(--bg-quaternary)] border border-[var(--color-warning)] rounded-lg text-xs font-medium text-[var(--color-warning)] cursor-default">CUSTOM</span>
             )}
           </div>
         </div>
 
         {/* Override Warnings */}
         {isShowAllActive && (
-          <div className="logger-panel-warning">
-            <AlertTriangle size={16} className="logger-panel-warning-icon" />
+          <div className="flex items-center gap-2 py-2.5 px-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-[var(--color-warning)] text-xs">
+            <AlertTriangle size={16} className="shrink-0" />
             <span>SHOW_ALL is enabled — all categories are logged regardless of individual settings</span>
           </div>
         )}
         {isErrorsOnlyActive && !isShowAllActive && (
-          <div className="logger-panel-warning">
-            <AlertTriangle size={16} className="logger-panel-warning-icon" />
+          <div className="flex items-center gap-2 py-2.5 px-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-[var(--color-warning)] text-xs">
+            <AlertTriangle size={16} className="shrink-0" />
             <span>ERRORS_ONLY is enabled — only error-level logs will appear</span>
           </div>
         )}
 
         {/* Special Controls */}
-        <div className="logger-panel-section">
-          <h2 className="logger-panel-section-title">Override Controls</h2>
-          <div className="logger-panel-special-controls">
-            <div className={`logger-panel-special-item ${isShowAllActive ? 'active' : ''}`}>
-              <div className="logger-panel-special-content">
-                <div className="logger-panel-special-title">SHOW_ALL</div>
-                <div className="logger-panel-special-description">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[13px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide m-0">Override Controls</h2>
+          <div className="flex flex-col gap-2">
+            <div className={`flex items-center justify-between p-3 bg-[var(--bg-secondary)] border rounded-xl ${isShowAllActive ? 'border-[var(--color-warning)] bg-amber-500/5' : 'border-[var(--border-color)]'}`}>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">SHOW_ALL</div>
+                <div className="text-xs text-[var(--text-secondary)]">
                   Override all category settings and show all logs
                 </div>
               </div>
@@ -333,10 +340,10 @@ export const LoggerPanel: React.FC<LoggerPanelProps> = ({ onBack }) => {
                 ariaLabel="Toggle SHOW_ALL mode"
               />
             </div>
-            <div className={`logger-panel-special-item ${isErrorsOnlyActive ? 'active' : ''}`}>
-              <div className="logger-panel-special-content">
-                <div className="logger-panel-special-title">ERRORS_ONLY</div>
-                <div className="logger-panel-special-description">
+            <div className={`flex items-center justify-between p-3 bg-[var(--bg-secondary)] border rounded-xl ${isErrorsOnlyActive ? 'border-[var(--color-warning)] bg-amber-500/5' : 'border-[var(--border-color)]'}`}>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">ERRORS_ONLY</div>
+                <div className="text-xs text-[var(--text-secondary)]">
                   Only show error-level logs regardless of categories
                 </div>
               </div>
@@ -350,9 +357,9 @@ export const LoggerPanel: React.FC<LoggerPanelProps> = ({ onBack }) => {
         </div>
 
         {/* Category Groups */}
-        <div className="logger-panel-section">
-          <h2 className="logger-panel-section-title">Category Controls</h2>
-          <div className="logger-panel-groups">
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[13px] font-semibold text-[var(--text-secondary)] uppercase tracking-wide m-0">Category Controls</h2>
+          <div className="flex flex-col gap-2">
             {(Object.keys(LOGGER_CATEGORY_GROUPS) as Array<keyof typeof LOGGER_CATEGORY_GROUPS>)
               .filter((groupName) => groupName !== 'Debug')
               .map((groupName) => (

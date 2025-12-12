@@ -27,7 +27,7 @@ function renderWorkflowIcon(icon: string) {
 export function WorkflowBadge({ workflow, onClose }: WorkflowBadgeProps) {
     return (
         <div
-            className="workflow-badge"
+            className="absolute bottom-[calc(100%+6px)] left-3 flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-br from-[#1e3a8a] to-[#1e40af] text-[#e0e7ff] rounded-[10px] text-[11px] font-medium shadow-[0_2px_6px_rgba(30,58,138,0.4)] animate-in slide-in-from-bottom-2 fade-in duration-200 z-[100]"
             style={
                 workflow.color
                     ? {
@@ -36,10 +36,10 @@ export function WorkflowBadge({ workflow, onClose }: WorkflowBadgeProps) {
                     : {}
             }
         >
-            <span className="workflow-badge-icon">{renderWorkflowIcon(workflow.icon)}</span>
-            <span className="workflow-badge-name">{workflow.name} Mode</span>
+            <span className="text-[14px] flex items-center justify-center">{renderWorkflowIcon(workflow.icon)}</span>
+            <span className="font-semibold tracking-[0.01em]">{workflow.name} Mode</span>
             <button
-                className="workflow-badge-close"
+                className="bg-white/15 border-none text-[#e0e7ff] w-4 h-4 rounded-full flex items-center justify-center cursor-pointer text-sm leading-none transition-colors duration-150 p-0 ml-0.5 hover:bg-white/25 active:bg-white/35"
                 onClick={onClose}
                 title="Clear workflow mode"
                 aria-label="Clear workflow mode"

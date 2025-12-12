@@ -66,18 +66,17 @@ export const CollapsibleUserMessage: React.FC<CollapsibleUserMessageProps> = ({
   // This ensures we can measure the content properly
   return (
     <div
-      className={`copilot-message-content ${needsCollapse ? 'user-message-collapsible-wrapper' : ''}`}
+      className={`whitespace-pre-wrap break-words ${needsCollapse ? 'relative' : ''}`}
       ref={wrapperRef}
     >
       <div
         ref={contentRef}
-        className={needsCollapse ? `user-message-collapsible ${isExpanded ? 'expanded' : 'collapsed'}` : undefined}
+        className={needsCollapse ? `relative overflow-hidden transition-[max-height] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[max-height]` : undefined}
         style={needsCollapse ? {
-          '--collapsed-height': `${maxCollapsedHeight}px`,
-          '--full-height': `${measuredHeight}px`,
+          maxHeight: isExpanded ? `${measuredHeight}px` : `${maxCollapsedHeight}px`,
         } as React.CSSProperties : undefined}
       >
-        <div className="user-message-with-mentions">
+        <div>
           {renderContent(text)}
         </div>
 
@@ -86,7 +85,10 @@ export const CollapsibleUserMessage: React.FC<CollapsibleUserMessageProps> = ({
           <AnimatePresence>
             {!isExpanded && (
               <motion.div
-                className="user-message-fade-overlay"
+                className="absolute bottom-0 left-0 right-0 h-[60px] bg-gradient-to-b from-blue-500/0 via-blue-500/60 to-blue-500 pointer-events-none rounded-bl-2xl"
+                style={{
+                  backgroundImage: 'linear-gradient(to bottom, rgba(59, 130, 246, 0) 0%, rgba(59, 130, 246, 0.6) 35%, rgba(59, 130, 246, 0.9) 65%, #3b82f6 100%)'
+                }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -101,17 +103,19 @@ export const CollapsibleUserMessage: React.FC<CollapsibleUserMessageProps> = ({
       {needsCollapse && (
         <button
           type="button"
-          className={`user-message-expand-btn ${isExpanded ? 'expanded' : ''}`}
+          className={`inline-flex items-center justify-center gap-1.5 mt-2.5 px-3.5 py-1.5 bg-white/15 border border-white/20 rounded-[14px] text-white text-xs font-medium cursor-pointer transition-all duration-200 float-right backdrop-blur-sm hover:bg-white/[0.22] hover:border-white/[0.32] hover:-translate-y-px hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)] active:translate-y-0 active:shadow-none focus-visible:outline-2 focus-visible:outline-white/60 focus-visible:outline-offset-2`}
           onClick={handleToggle}
           aria-expanded={isExpanded}
           aria-label={isExpanded ? 'Show less content' : 'Show more content'}
         >
           <span>{isExpanded ? 'Show less' : 'Show more'}</span>
-          <span className="user-message-expand-btn-icon">
+          <span className={`flex items-center justify-center transition-transform duration-[250ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'rotate-180' : ''}`} style={{ backfaceVisibility: 'hidden' }}>
             <ChevronDownIcon size={12} />
           </span>
         </button>
       )}
+      {/* Clear float after button */}
+      {needsCollapse && <div className="clear-both table" />}
     </div>
   );
 };

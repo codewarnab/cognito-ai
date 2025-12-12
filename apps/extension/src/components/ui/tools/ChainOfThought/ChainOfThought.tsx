@@ -50,7 +50,7 @@ export const ChainOfThought = memo(({
 
     return (
         <ChainOfThoughtContext.Provider value={chainOfThoughtContext}>
-            <div className={`chain-of-thought ${className}`} {...props}>
+            <div className={`my-[2px] ${className}`} {...props}>
                 {children}
             </div>
         </ChainOfThoughtContext.Provider>

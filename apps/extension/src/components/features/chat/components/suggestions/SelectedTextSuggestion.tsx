@@ -55,22 +55,22 @@ export const SelectedTextSuggestion: React.FC<SelectedTextSuggestionProps> = ({
 
     return (
         <div
-            className="local-pdf-suggestion selected-text-suggestion"
+            className="absolute bottom-[calc(100%+6px)] left-3 flex items-center gap-1 bg-gradient-to-br from-[#7c3aed] to-[#8b5cf6] rounded-[10px] shadow-[0_2px_6px_rgba(124,58,237,0.4)] animate-in slide-in-from-bottom-2 fade-in duration-200 z-[100] overflow-hidden opacity-50 transition-opacity hover:opacity-100"
             role="region"
             aria-label="Selected text suggestion"
         >
             <button
-                className="local-pdf-suggestion-button"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-transparent border-none text-white cursor-pointer text-[11px] font-medium transition-colors duration-150 rounded-l-[10px] hover:bg-white/10 active:bg-white/15 disabled:cursor-default disabled:opacity-80"
                 onClick={onAttach}
                 disabled={isLoading}
                 title={`Add selected text (${lengthLabel})`}
             >
-                <span className="local-pdf-suggestion-icon">
+                <span className="text-[14px] flex items-center justify-center">
                     <TypeIcon size={14} />
                 </span>
-                <span className="local-pdf-suggestion-text">
+                <span className="font-semibold tracking-[0.01em] whitespace-nowrap overflow-hidden text-ellipsis max-w-[400px]">
                     {isLoading ? 'Adding...' : `Add: "${displayText}"`}
-                    <span className="selected-text-badge-length">
+                    <span className="ml-1.5 px-1 py-px bg-black/20 rounded-[3px] text-[10px] font-medium opacity-90">
                         {lengthLabel}
                     </span>
                 </span>
@@ -79,7 +79,7 @@ export const SelectedTextSuggestion: React.FC<SelectedTextSuggestionProps> = ({
             {!isLoading && (
                 <button
                     type="button"
-                    className="local-pdf-suggestion-close"
+                    className="bg-white/15 border-none text-white w-4 h-4 rounded-full flex items-center justify-center cursor-pointer text-sm leading-none transition-colors duration-150 p-0 mr-1.5 shrink-0 hover:bg-white/25 active:bg-white/35"
                     onClick={onDismiss}
                     title="Dismiss suggestion"
                     aria-label="Dismiss selected text suggestion"

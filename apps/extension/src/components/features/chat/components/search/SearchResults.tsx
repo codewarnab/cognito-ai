@@ -7,7 +7,6 @@
 import React, { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { SearchResultItem } from '@/search/types';
-import '@/styles/features/search/search-results.css';
 
 export interface SearchResultsProps {
     /** Array of search results */
@@ -36,7 +35,7 @@ function getDomain(url: string): string {
 function getShortDomain(url: string): string {
     const domain = getDomain(url);
     const parts = domain.split('.');
-    return parts.length > 1 ? parts[0] : domain;
+    return parts.length > 1 ? (parts[0] ?? domain) : domain;
 }
 
 /**
@@ -65,7 +64,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     const displayedResults = displayMode === 'grid' && !showAll
         ? results.slice(0, initialCount)
         : results;
-    
+
     const hiddenCount = results.length - initialCount;
 
     const handleFaviconError = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -74,35 +73,35 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
     if (displayMode === 'list') {
         return (
-            <div className="search-results__list">
+            <div className="flex flex-col gap-2">
                 {displayedResults.map((result, index) => (
                     <a
                         key={`${result.url}-${index}`}
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="search-result-card search-result-card--list"
+                        className="flex items-start gap-2 p-2 rounded-lg border border-[var(--color-border)] no-underline transition-colors duration-150 hover:bg-[var(--color-surface-hover)]"
                     >
                         <img
                             src={getFaviconUrl(result.url)}
                             alt=""
-                            className="search-result-card__favicon"
+                            className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-sm"
                             onError={handleFaviconError}
                         />
-                        <div className="search-result-card__content">
-                            <div className="search-result-card__title">
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[var(--color-text)] line-clamp-1">
                                 {result.title || getDomain(result.url)}
                             </div>
-                            <div className="search-result-card__snippet">
+                            <div className="text-xs text-[var(--color-text-secondary)] line-clamp-2 mt-0.5">
                                 {result.content}
                             </div>
-                            <div className="search-result-card__meta">
+                            <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--color-text-tertiary)]">
                                 <span>{getDomain(result.url)}</span>
                                 <span>•</span>
                                 <span>{index + 1}</span>
                             </div>
                         </div>
-                        <ExternalLink size={12} className="search-result-card__external-link" />
+                        <ExternalLink size={12} className="flex-shrink-0 opacity-0 text-[var(--color-text-tertiary)] mt-0.5 transition-opacity duration-150 group-hover:opacity-100" />
                     </a>
                 ))}
             </div>
@@ -110,27 +109,27 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
     }
 
     return (
-        <div className="search-results">
-            <div className="search-results__grid">
+        <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
                 {displayedResults.map((result, index) => (
                     <a
                         key={`${result.url}-${index}`}
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="search-result-card search-result-card--grid"
+                        className="block p-2 rounded-lg border border-[var(--color-border)] no-underline transition-colors duration-150 hover:bg-[var(--color-surface-hover)]"
                     >
-                        <div className="search-result-card__title">
+                        <div className="text-xs text-[var(--color-text)] line-clamp-2 min-h-[32px]">
                             {result.title || result.content}
                         </div>
-                        <div className="search-result-card__meta">
+                        <div className="flex items-center gap-1.5 mt-2">
                             <img
                                 src={getFaviconUrl(result.url)}
                                 alt=""
-                                className="search-result-card__favicon"
+                                className="flex-shrink-0 w-3 h-3 rounded-sm"
                                 onError={handleFaviconError}
                             />
-                            <span className="search-result-card__domain">
+                            <span className="text-[10px] text-[var(--color-text-secondary)] overflow-hidden text-ellipsis whitespace-nowrap">
                                 {getShortDomain(result.url)} • {index + 1}
                             </span>
                         </div>
@@ -141,7 +140,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                     <button
                         type="button"
                         onClick={() => setShowAll(true)}
-                        className="search-results__view-more"
+                        className="flex items-center justify-center p-2 rounded-lg border border-[var(--color-border)] bg-transparent text-xs text-[var(--color-text-secondary)] cursor-pointer transition-colors duration-150 hover:bg-[var(--color-surface-hover)]"
                     >
                         View {hiddenCount} more
                     </button>

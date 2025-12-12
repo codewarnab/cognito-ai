@@ -21,8 +21,8 @@ import type { VoiceInputHandle } from "./audio/VoiceInput";
 import { WindowVisibilityProvider } from "./contexts/WindowVisibilityContext";
 import { DocumentProvider } from "./contexts/documentContext";
 
-// Styles
-import "./styles/features/copilot/index.css";
+// Styles - Only essential CSS that doesn't conflict with Tailwind
+import "./styles/features/copilot/index-minimal.css"; // Minimal version without layout overrides
 import "./styles/features/mcp/index.css";
 import "./styles/features/mentions/index.css";
 import "./styles/features/threads/index.css";

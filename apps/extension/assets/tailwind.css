@@ -111,11 +111,42 @@
 }
 
 @layer base {
-    * {
-        @apply border-border outline-ring/50;
+
+    ::selection {
+        background: rgba(34, 211, 238, 0.3);
+        color: #ffffff;
     }
 
+    ::-moz-selection {
+        background: rgba(34, 211, 238, 0.3);
+        color: #ffffff;
+    }
+
+    * {
+        @apply border-border outline-ring/50;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html,
     body {
         @apply bg-background text-foreground;
+        margin: 0;
+        padding: 0;
+        background: #0a0e1a;
+        color: #e4e6eb;
+        height: 100%;
+        overflow: hidden;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
     }
 }

@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import '@/styles/features/search/related-questions.css';
 
 export interface RelatedQuestion {
     /** The follow-up question text */
@@ -40,20 +39,20 @@ export const RelatedQuestions: React.FC<RelatedQuestionsProps> = ({
 }) => {
     if (questions.length === 0 && !isLoading) return null;
 
-    const containerClasses = ['related-questions', className].filter(Boolean).join(' ');
+    const containerClasses = ['mt-4 pt-3 border-t border-[var(--border-color)]', className].filter(Boolean).join(' ');
 
     if (isLoading) {
         return (
             <div className={containerClasses}>
-                <div className="related-questions__header">
+                <div className="flex items-center gap-1.5 mb-2 text-xs text-[var(--text-secondary)]">
                     <Sparkles size={12} />
                     <span>Related</span>
                 </div>
-                <div className="related-questions__skeleton">
+                <div className="flex flex-col gap-2">
                     {SKELETON_WIDTHS.map((width, i) => (
                         <div
                             key={i}
-                            className="related-questions__skeleton-item"
+                            className="h-6 rounded bg-white/5 animate-pulse"
                             style={{ width: `${width}%` }}
                         />
                     ))}
@@ -77,12 +76,12 @@ export const RelatedQuestions: React.FC<RelatedQuestionsProps> = ({
 
     return (
         <div className={containerClasses}>
-            <div className="related-questions__header">
+            <div className="flex items-center gap-1.5 mb-2 text-xs text-[var(--text-secondary)]">
                 <Sparkles size={12} />
                 <span>Related</span>
             </div>
-            
-            <div className="related-questions__list">
+
+            <div className="flex flex-col gap-1">
                 {validQuestions.map((question, index) => (
                     <button
                         key={question.id || index}
@@ -90,10 +89,10 @@ export const RelatedQuestions: React.FC<RelatedQuestionsProps> = ({
                         onClick={() => onSelect(question.query)}
                         onKeyDown={(e) => handleKeyDown(e, question.query)}
                         aria-label={`Ask: ${question.query}`}
-                        className="related-questions__item"
+                        className="w-full flex items-start gap-2 p-2 text-left text-sm text-[var(--text-secondary)] bg-transparent border-none rounded-lg cursor-pointer transition-all duration-150 hover:bg-white/5 hover:text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/30 group"
                     >
-                        <ArrowRight size={14} className="related-questions__icon" />
-                        <span className="related-questions__text">{question.query}</span>
+                        <ArrowRight size={14} className="shrink-0 mt-0.5 text-[var(--text-tertiary)] transition-colors duration-150 group-hover:text-blue-500" />
+                        <span className="line-clamp-2">{question.query}</span>
                     </button>
                 ))}
             </div>

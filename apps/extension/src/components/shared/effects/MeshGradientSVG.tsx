@@ -1,6 +1,5 @@
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import '../../../styles/components/mesh-gradient.css'
 
 interface MeshGradientSVGProps {
     size?: number
@@ -39,7 +38,7 @@ export function MeshGradientSVG({ size = 400 }: MeshGradientSVGProps) {
 
     return (
         <motion.div
-            className="mesh-gradient-container"
+            className="relative mx-auto rounded-lg"
             style={{ width: size, height: size }}
             animate={{
                 y: [0, -8, 0],
@@ -50,7 +49,7 @@ export function MeshGradientSVG({ size = 400 }: MeshGradientSVGProps) {
                 ease: "easeInOut",
             }}
         >
-            <svg xmlns="http://www.w3.org/2000/svg" width="231" height="289" viewBox="0 0 231 289" className="mesh-gradient-svg" style={{ maxWidth: '180px', maxHeight: '230px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="231" height="289" viewBox="0 0 231 289" className="mesh-gradient-svg w-full h-auto" style={{ maxWidth: '180px', maxHeight: '230px' }}>
                 <defs>
                     <clipPath id="shapeClip">
                         <path d="M230.809 115.385V249.411C230.809 269.923 214.985 287.282 194.495 288.411C184.544 288.949 175.364 285.718 168.26 280C159.746 273.154 147.769 273.461 139.178 280.23C132.638 285.384 124.381 288.462 115.379 288.462C106.377 288.462 98.1451 285.384 91.6055 280.23C82.912 273.385 70.9353 273.385 62.2415 280.23C55.7532 285.334 47.598 288.411 38.7246 288.462C17.4132 288.615 0 270.667 0 249.359V115.385C0 51.6667 51.6756 0 115.404 0C179.134 0 230.809 51.6667 230.809 115.385Z" />

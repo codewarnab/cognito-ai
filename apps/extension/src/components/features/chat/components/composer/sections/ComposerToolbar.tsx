@@ -73,7 +73,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     });
 
     return (
-        <div className="copilot-composer-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="flex items-center shrink-0" style={{ gap: '8px' }}>
             {!HIDE_LOCAL_MODE && (
                 <ModeSelector
                     modelState={modelState}

@@ -179,7 +179,15 @@ export const Composer: React.FC<ComposerProps> = ({
     return (
         <div
             ref={composerRef}
-            className={`copilot-composer ${isRecording ? 'recording-blur' : ''} ${isDragging ? 'dragging' : ''}`}
+            className={`
+                flex flex-col overflow-visible relative
+                bg-[var(--bg-quaternary)] border border-[var(--border-color)] rounded-[var(--radius-lg)]
+                shadow-[var(--shadow-dark)] p-[var(--spacing-sm)]
+                transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                focus-within:border-[var(--border-color-focus)] focus-within:bg-[var(--bg-quinary)] focus-within:shadow-[var(--shadow-glow)]
+                ${isRecording ? 'blur-[2px] pointer-events-none' : ''}
+                ${isDragging ? 'border-[rgba(99,102,241,0.5)] bg-[rgba(99,102,241,0.05)]' : ''}
+            `}
         >
             {/* Drag overlay */}
             <DragOverlay isDragging={isDragging} />
@@ -241,7 +249,7 @@ export const Composer: React.FC<ComposerProps> = ({
             />
 
             {/* Bottom section with toolbar (left) and actions (right) */}
-            <div className="copilot-composer-bottom">
+            <div className="flex items-end justify-between gap-3">
                 {/* Left toolbar: mode selector, tools, search, model */}
                 <ComposerToolbar
                     modelState={modelState}

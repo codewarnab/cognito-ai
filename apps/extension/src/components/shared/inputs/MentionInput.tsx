@@ -152,7 +152,7 @@ export function MentionInput({
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className="copilot-input mention-input"
+                className="flex-1 bg-transparent border-none text-white outline-none resize-none text-sm font-normal leading-[1.4] tracking-[0.3px] w-full placeholder:text-white/35 placeholder:font-normal disabled:opacity-50 disabled:cursor-not-allowed scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/15 hover:scrollbar-thumb-white/25"
                 disabled={disabled}
                 autoFocus={autoFocus}
                 rows={1}

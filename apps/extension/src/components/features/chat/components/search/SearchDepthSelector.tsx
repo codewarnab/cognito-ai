@@ -7,7 +7,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Zap, Search } from 'lucide-react';
 import type { SearchDepth } from '@/search/types';
-import '@/styles/features/search/search-depth-selector.css';
 
 export interface SearchDepthSelectorProps {
     /** Current search depth */
@@ -51,7 +50,7 @@ export const SearchDepthSelector: React.FC<SearchDepthSelectorProps> = ({
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const currentOption = DEPTH_OPTIONS.find(opt => opt.value === value) || DEPTH_OPTIONS[0];
+    const currentOption = DEPTH_OPTIONS.find(opt => opt.value === value) ?? DEPTH_OPTIONS[0]!;
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -84,11 +83,7 @@ export const SearchDepthSelector: React.FC<SearchDepthSelectorProps> = ({
         }
     };
 
-    const containerClasses = ['search-depth-selector', className].filter(Boolean).join(' ');
-    const chevronClasses = [
-        'search-depth-selector__chevron',
-        isOpen && 'search-depth-selector__chevron--open',
-    ].filter(Boolean).join(' ');
+    const containerClasses = ['relative', className].filter(Boolean).join(' ');
 
     return (
         <div ref={containerRef} className={containerClasses}>
@@ -101,43 +96,36 @@ export const SearchDepthSelector: React.FC<SearchDepthSelectorProps> = ({
                 aria-label={`Search depth: ${currentOption.label}`}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
-                className="search-depth-selector__trigger"
+                className="inline-flex items-center gap-1 py-0.5 px-1.5 rounded text-xs text-[var(--text-secondary)] bg-transparent border-none cursor-pointer transition-all duration-150 hover:bg-[var(--color-surface)] focus:outline-none focus:ring-1 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 {currentOption.icon}
-                <span className="search-depth-selector__trigger-label">{currentOption.label}</span>
-                <ChevronDown size={10} className={chevronClasses} />
+                <span className="hidden min-[400px]:inline">{currentOption.label}</span>
+                <ChevronDown size={10} className={`transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown menu */}
             {isOpen && (
-                <div role="listbox" className="search-depth-selector__dropdown">
-                    {DEPTH_OPTIONS.map((option) => {
-                        const optionClasses = [
-                            'search-depth-selector__option',
-                            option.value === value && 'search-depth-selector__option--selected',
-                        ].filter(Boolean).join(' ');
-
-                        return (
-                            <button
-                                key={option.value}
-                                type="button"
-                                role="option"
-                                aria-selected={option.value === value}
-                                onClick={() => handleSelect(option.value)}
-                                className={optionClasses}
-                            >
-                                <span className="search-depth-selector__option-icon">{option.icon}</span>
-                                <div>
-                                    <div className="search-depth-selector__option-label">
-                                        {option.label}
-                                    </div>
-                                    <div className="search-depth-selector__option-description">
-                                        {option.description}
-                                    </div>
+                <div role="listbox" className="absolute bottom-full left-0 mb-1 min-w-[200px] bg-[#1a1a1a] border border-[var(--border-color)] rounded-lg shadow-[0_10px_15px_-3px_rgba(0,0,0,0.3),0_4px_6px_-2px_rgba(0,0,0,0.2)] py-1 z-50">
+                    {DEPTH_OPTIONS.map((option) => (
+                        <button
+                            key={option.value}
+                            type="button"
+                            role="option"
+                            aria-selected={option.value === value}
+                            onClick={() => handleSelect(option.value)}
+                            className={`w-full text-left py-1.5 px-3 flex items-start gap-2 bg-transparent border-none cursor-pointer transition-colors duration-100 text-[var(--text-primary)] hover:bg-[var(--color-surface)] ${option.value === value ? 'bg-[var(--color-surface)]' : ''}`}
+                        >
+                            <span className="mt-0.5 text-[var(--text-secondary)]">{option.icon}</span>
+                            <div>
+                                <div className="text-xs font-medium text-[var(--text-primary)]">
+                                    {option.label}
                                 </div>
-                            </button>
-                        );
-                    })}
+                                <div className="text-[10px] text-[var(--text-secondary)] whitespace-nowrap">
+                                    {option.description}
+                                </div>
+                            </div>
+                        </button>
+                    ))}
                 </div>
             )}
         </div>

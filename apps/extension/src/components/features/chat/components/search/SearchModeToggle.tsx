@@ -7,7 +7,6 @@
 import React from 'react';
 import { Globe } from 'lucide-react';
 import { Tooltip } from '@/components/ui/primitives/tooltip';
-import '@/styles/features/search/search-mode-toggle.css';
 
 export interface SearchModeToggleProps {
     /** Whether search mode is enabled */
@@ -56,14 +55,17 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
                 ? 'Web search enabled - AI can search the internet'
                 : 'Click to enable web search';
 
-    const classNames = [
-        'search-mode-toggle',
-        isLoading && 'search-mode-toggle--loading',
-        isEnabled && hasApiKey && 'search-mode-toggle--enabled',
-        !hasApiKey && 'search-mode-toggle--disabled',
-        !isEnabled && hasApiKey && 'search-mode-toggle--inactive',
-        className,
-    ].filter(Boolean).join(' ');
+    const baseClasses = 'inline-flex items-center justify-center gap-1 py-1 px-2 rounded-full text-xs font-medium transition-all duration-150 border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed';
+
+    const stateClasses = !hasApiKey
+        ? 'opacity-40 text-[var(--text-tertiary)] border-[var(--border-color)]'
+        : isEnabled && hasApiKey
+            ? 'bg-blue-500/15 text-blue-400 border-blue-500/30 hover:bg-blue-500/25'
+            : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--color-surface)] hover:text-[var(--text-primary)]';
+
+    const loadingClasses = isLoading ? 'animate-pulse' : '';
+
+    const classNames = [baseClasses, stateClasses, loadingClasses, className].filter(Boolean).join(' ');
 
     return (
         <Tooltip content={tooltipContent} position="top">
@@ -76,8 +78,8 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
                 aria-pressed={isEnabled}
                 className={classNames}
             >
-                <Globe size={14} className="search-mode-toggle__icon" />
-                <span className="search-mode-toggle__label">Search</span>
+                <Globe size={14} className={`transition-colors duration-150 ${isEnabled && hasApiKey ? 'text-blue-500' : ''}`} />
+                <span className="hidden min-[400px]:inline">Search</span>
             </button>
         </Tooltip>
     );

@@ -9,6 +9,7 @@
 import { createLogger } from '~logger';
 import { getAllTools } from '@/ai/tools/registryUtils';
 import { getEnabledTools } from './settings';
+import * as youtubeAgent from '@/ai/agents/youtube';
 
 const log = createLogger('ElevenLabs-ClientTools');
 
@@ -282,8 +283,9 @@ export function buildClientTools(): Record<
       }
       // Use YouTube utility functions directly
       try {
-        const { fetchTranscript, extractVideoId, getVideoDescription, formatDuration } =
-          await import('@/ai/agents/youtube');
+        // const { fetchTranscript, extractVideoId, getVideoDescription, formatDuration } = await import('@/ai/agents/youtube');
+        // Using static imports from top level (need to add them)
+        const { fetchTranscript, extractVideoId, getVideoDescription, formatDuration } = youtubeAgent;
 
         const youtubeUrl = params.youtubeUrl as string | undefined;
         const includeDescription = (params.includeDescription as boolean) ?? true;

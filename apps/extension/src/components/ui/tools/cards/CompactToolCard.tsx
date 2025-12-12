@@ -110,18 +110,21 @@ export function CompactToolCard({
 
     return (
         <div
-            className={`compact-tool-card ${isExpanded ? 'expanded' : ''}`}
+            className={`rounded-none py-[6px] my-[2px] border-none bg-transparent cursor-pointer inline-block max-w-fit 
+                transition-[transform,opacity,max-width] duration-[400ms] ease-out
+                ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+                ${isExpanded ? 'max-w-full block' : ''}`}
             data-mounted={mounted}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <div
-                className="compact-tool-header"
+                className="flex items-center justify-between select-none"
                 onClick={handleToggle}
             >
                 {/* Left: Icon + Tool Name */}
-                <div className="compact-tool-main">
-                    <div className={`compact-tool-icon ${isHovered ? 'hovered' : ''}`}>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className={`flex items-center justify-center shrink-0 transition-opacity duration-200 text-[var(--text-secondary)] ${isHovered ? 'opacity-80' : ''}`}>
                         {/* Use UploadIcon when customIcon is 'upload', otherwise use default tool icon */}
                         {formattedAction.customIcon === 'upload' ? (
                             <UploadIcon ref={uploadIconRef} size={16} />
@@ -129,16 +132,16 @@ export function CompactToolCard({
                             <ToolIcon ref={toolIconRef} size={16} />
                         )}
                     </div>
-                    <div className="compact-tool-name">
-                        <span className="compact-tool-action">{formattedAction.action}</span>
+                    <div className="text-[14px] font-normal text-[var(--text-primary)] leading-[1.4] flex flex-col gap-[2px]">
+                        <span className="text-[14px] text-[var(--text-primary)] leading-none">{formattedAction.action}</span>
                         {formattedAction.description && (
-                            <span className="compact-tool-description">{formattedAction.description}</span>
+                            <span className="text-[12px] text-[var(--text-tertiary)] opacity-60">{formattedAction.description}</span>
                         )}
                     </div>
                 </div>
 
                 {/* Right: Status Icon + Chevron */}
-                <div className="compact-tool-status">
+                <div className="flex items-center gap-1 shrink-0 ml-2">
                     {/* Loading icon - only visible when loading */}
                     <div style={{ display: state === 'loading' ? 'flex' : 'none', alignItems: 'center' }}>
                         <LoadingCheckIcon ref={loadingCheckRef} size={16} />
@@ -151,7 +154,7 @@ export function CompactToolCard({
 
                     {/* Error icon - only visible when error */}
                     {state === 'error' && (
-                        <div className="compact-tool-error-icon">✕</div>
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center bg-[var(--color-error)] text-white text-[10px] font-bold shrink-0">✕</div>
                     )}
 
                     {isHovered && (
@@ -166,7 +169,7 @@ export function CompactToolCard({
 
             {/* File Attachment - Always visible when available */}
             {output?.fileData && state === 'success' && (
-                <div className="compact-tool-file-attachment">
+                <div className="mt-3 pl-0 animate-in slide-in-from-top-1 fade-in duration-300">
                     <ToolFileAttachment
                         fileData={output.fileData as ToolFileAttachmentData}
                         messageId={messageId}
@@ -176,19 +179,19 @@ export function CompactToolCard({
 
             {/* Accordion Content */}
             {isExpanded && (
-                <div className="compact-tool-content">
+                <div className="mt-2 pt-2 pl-6 border-t border-white/5 w-full animate-in slide-in-from-top-1 fade-in duration-200">
                     {/* Hide INPUT/OUTPUT for successful PDF generation */}
                     {!(toolName === 'generatePDF' && state === 'success') && (
                         <>
                             {input && (
-                                <div className="compact-tool-section">
-                                    <div className="compact-tool-label">Input:</div>
+                                <div className="mb-[var(--spacing-sm)] last:mb-0">
+                                    <div className="text-[11px] font-semibold text-[var(--text-secondary)] mb-[var(--spacing-xs)] uppercase tracking-[0.5px]">Input:</div>
                                     {customRenderers?.renderInput ? (
-                                        <div className="compact-tool-custom">
+                                        <div className="bg-transparent rounded-[var(--radius-sm)] text-[13px] leading-[1.5]">
                                             {customRenderers.renderInput(input)}
                                         </div>
                                     ) : (
-                                        <pre className="compact-tool-code">
+                                        <pre className="bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-[var(--radius-sm)] p-[6px] px-[var(--spacing-sm)] text-[12px] font-mono overflow-x-auto max-h-[150px] overflow-y-auto whitespace-pre-wrap break-words text-[var(--text-primary)] leading-[1.5]">
                                             {formatContent(input)}
                                         </pre>
                                     )}
@@ -196,14 +199,14 @@ export function CompactToolCard({
                             )}
 
                             {output && state === 'success' && (
-                                <div className="compact-tool-section">
-                                    <div className="compact-tool-label">Output:</div>
+                                <div className="mb-[var(--spacing-sm)] last:mb-0">
+                                    <div className="text-[11px] font-semibold text-[var(--text-secondary)] mb-[var(--spacing-xs)] uppercase tracking-[0.5px]">Output:</div>
                                     {customRenderers?.renderOutput ? (
-                                        <div className="compact-tool-custom">
+                                        <div className="bg-transparent rounded-[var(--radius-sm)] text-[13px] leading-[1.5]">
                                             {customRenderers.renderOutput(output)}
                                         </div>
                                     ) : (
-                                        <pre className="compact-tool-code">
+                                        <pre className="bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-[var(--radius-sm)] p-[6px] px-[var(--spacing-sm)] text-[12px] font-mono overflow-x-auto max-h-[150px] overflow-y-auto whitespace-pre-wrap break-words text-[var(--text-primary)] leading-[1.5]">
                                             {formatContent(output)}
                                         </pre>
                                     )}
@@ -213,9 +216,9 @@ export function CompactToolCard({
                     )}
 
                     {errorText && state === 'error' && (
-                        <div className="compact-tool-section error">
-                            <div className="compact-tool-label">Error:</div>
-                            <div className="compact-tool-error-text">
+                        <div className="mb-[var(--spacing-sm)] last:mb-0">
+                            <div className="text-[11px] font-semibold text-[var(--text-secondary)] mb-[var(--spacing-xs)] uppercase tracking-[0.5px]">Error:</div>
+                            <div className="text-[var(--color-error)] bg-[rgba(244,67,54,0.1)] border border-[var(--color-error)] rounded-[var(--radius-sm)] p-[6px] px-[var(--spacing-sm)] text-[12px] leading-[1.4]">
                                 {formatContent(errorText)}
                             </div>
                         </div>

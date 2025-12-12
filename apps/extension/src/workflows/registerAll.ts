@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react';
 import { registerWorkflow } from './registry';
-import { getResearchWorkflowWithSettings } from './definitions/researchWorkflow';
+import { getResearchWorkflowWithSettings, researchWorkflow } from './definitions/researchWorkflow';
 import { youtubeToNotionWorkflow } from './definitions/youtubeToNotionWorkflow';
 import { createLogger } from '~logger';
 
@@ -30,7 +30,7 @@ export function useRegisterAllWorkflows() {
             } catch (err) {
                 log.error('Failed to load research workflow settings, using defaults', err);
                 // Import default and register it as fallback
-                const { researchWorkflow } = await import('./definitions/researchWorkflow');
+                // const { researchWorkflow } = await import('./definitions/researchWorkflow');
                 registerWorkflow(researchWorkflow);
             }
 

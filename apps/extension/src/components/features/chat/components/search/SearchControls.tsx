@@ -10,7 +10,6 @@ import { SearchDepthSelector } from './SearchDepthSelector';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 import type { WorkflowDefinition } from '@/workflows/types';
-import '@/styles/features/search/search-controls.css';
 
 const log = createLogger('SearchControls', 'SEARCH');
 
@@ -40,7 +39,7 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ className, activ
         activeWorkflow: activeWorkflow?.name || null
     });
 
-    const classNames = ['search-controls', className].filter(Boolean).join(' ');
+    const classNames = ['flex items-center gap-1', className].filter(Boolean).join(' ');
 
     return (
         <div className={classNames}>

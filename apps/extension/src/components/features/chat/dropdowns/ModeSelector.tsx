@@ -57,12 +57,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     };
 
     return (
-        <div className="copilot-composer-options">
+        <div className="relative">
             {!showModeDropdown ? (
                 <div className="mode-selector-inline">
                     <button
                         type="button"
-                        className="copilot-mode-inline-button"
+                        className="inline-flex items-center gap-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] px-3 py-1.5 rounded-[var(--radius-sm)] cursor-pointer text-xs font-medium transition-all duration-200 whitespace-nowrap hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)] hover:text-[var(--text-primary)] active:bg-white/10"
                         onClick={() => onToggleDropdown(true)}
                         title="Change AI mode"
                         onMouseEnter={() => {
@@ -89,12 +89,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     </button>
                 </div>
             ) : (
-                <div className="copilot-mode-expanded">
+                <div className="flex gap-0.5 animate-[expandModeSelector_0.15s_ease-out]">
                     {mode === 'local' ? (
                         <>
                             <button
                                 type="button"
-                                className="copilot-mode-expanded-option active"
+                                className="inline-flex items-center gap-1.5 bg-[rgba(74,111,165,0.3)] border border-[var(--button-primary-bg)] text-[var(--text-primary)] px-3 py-1.5 rounded-[var(--radius-sm)] cursor-pointer text-xs font-medium transition-all duration-200 whitespace-nowrap hover:bg-[var(--glass-bg-hover)] [&_svg]:shrink-0"
                                 onClick={() => onToggleDropdown(false)}
                                 onMouseEnter={() => laptopIconDropdownActiveRef.current?.startAnimation()}
                                 onMouseLeave={() => laptopIconDropdownActiveRef.current?.stopAnimation()}
@@ -104,7 +104,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                             </button>
                             <button
                                 type="button"
-                                className="copilot-mode-expanded-option"
+                                className="inline-flex items-center gap-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] px-3 py-1.5 rounded-[var(--radius-sm)] cursor-pointer text-xs font-medium transition-all duration-200 whitespace-nowrap hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)] hover:text-[var(--text-primary)] active:bg-white/10 [&_svg]:shrink-0"
                                 onClick={() => handleModeSwitch('remote')}
                                 onMouseEnter={() => cloudCogDropdownInactiveRef.current?.startAnimation()}
                                 onMouseLeave={() => cloudCogDropdownInactiveRef.current?.stopAnimation()}
@@ -117,7 +117,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                         <>
                             <button
                                 type="button"
-                                className="copilot-mode-expanded-option active"
+                                className="inline-flex items-center gap-1.5 bg-[rgba(74,111,165,0.3)] border border-[var(--button-primary-bg)] text-[var(--text-primary)] px-3 py-1.5 rounded-[var(--radius-sm)] cursor-pointer text-xs font-medium transition-all duration-200 whitespace-nowrap hover:bg-[var(--glass-bg-hover)] [&_svg]:shrink-0"
                                 onClick={() => onToggleDropdown(false)}
                                 onMouseEnter={() => cloudCogDropdownActiveRef.current?.startAnimation()}
                                 onMouseLeave={() => cloudCogDropdownActiveRef.current?.stopAnimation()}
@@ -127,7 +127,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                             </button>
                             <button
                                 type="button"
-                                className="copilot-mode-expanded-option"
+                                className="inline-flex items-center gap-1.5 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-secondary)] px-3 py-1.5 rounded-[var(--radius-sm)] cursor-pointer text-xs font-medium transition-all duration-200 whitespace-nowrap hover:bg-[var(--glass-bg-hover)] hover:border-[var(--glass-border-hover)] hover:text-[var(--text-primary)] active:bg-white/10 [&_svg]:shrink-0"
                                 onClick={() => handleModeSwitch('local')}
                                 onMouseEnter={() => laptopIconDropdownInactiveRef.current?.startAnimation()}
                                 onMouseLeave={() => laptopIconDropdownInactiveRef.current?.stopAnimation()}

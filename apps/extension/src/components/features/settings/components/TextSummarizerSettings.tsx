@@ -54,19 +54,19 @@ export const TextSummarizerSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <FileText size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     Text Summarizer
                 </h2>
             </div>
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Enable/Disable Toggle */}
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Show on Text Selection</div>
-                        <div className="settings-item-description">Display summarize button when selecting text on pages</div>
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Show on Text Selection</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Display summarize button when selecting text on pages</div>
                     </div>
                     <Toggle
                         checked={settings.enabled}
@@ -76,25 +76,14 @@ export const TextSummarizerSettings: React.FC = () => {
 
                 {/* Options Accordion - only show when enabled */}
                 {settings.enabled && (
-                    <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                    <div className="block p-0">
                         <button
-                            className="settings-item-header-button"
+                            className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                             onClick={() => setIsOptionsOpen(!isOptionsOpen)}
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                padding: '12px',
-                                background: 'none',
-                                border: 'none',
-                                cursor: 'pointer',
-                                color: 'inherit'
-                            }}
                         >
-                            <div style={{ textAlign: 'left' }}>
-                                <div className="settings-item-title">Summary Options</div>
-                                <div className="settings-item-description">
+                            <div className="text-left">
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Summary Options</div>
+                                <div className="text-xs text-[var(--text-secondary)]">
                                     {getSummaryTypeLabel(settings.summaryType)} • {capitalizeFirst(settings.summaryLength)}
                                 </div>
                             </div>
@@ -102,12 +91,12 @@ export const TextSummarizerSettings: React.FC = () => {
                         </button>
 
                         {isOptionsOpen && (
-                            <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
+                            <div className="p-3 border-t border-[var(--border-color)]">
                                 {/* Minimum Text Length */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Minimum Text Length</div>
+                                <div className="mb-3">
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Minimum Text Length</div>
                                     <select
-                                        className="settings-select"
+                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={settings.minTextLength}
                                         onChange={(e) => handleSettingChange('minTextLength', Number(e.target.value))}
                                     >
@@ -120,10 +109,10 @@ export const TextSummarizerSettings: React.FC = () => {
                                 </div>
 
                                 {/* Summary Type */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Summary Type</div>
+                                <div className="mb-3">
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Summary Type</div>
                                     <select
-                                        className="settings-select"
+                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={settings.summaryType}
                                         onChange={(e) => handleSettingChange('summaryType', e.target.value as Settings['summaryType'])}
                                     >
@@ -136,9 +125,9 @@ export const TextSummarizerSettings: React.FC = () => {
 
                                 {/* Summary Length */}
                                 <div>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Summary Length</div>
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Summary Length</div>
                                     <select
-                                        className="settings-select"
+                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={settings.summaryLength}
                                         onChange={(e) => handleSettingChange('summaryLength', e.target.value as Settings['summaryLength'])}
                                     >

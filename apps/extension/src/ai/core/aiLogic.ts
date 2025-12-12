@@ -412,7 +412,7 @@ export async function streamAIResponse(params: {
                 // Combine website tools with mode-based filtering
                 // If mode changed, intersect with stepActiveTools; otherwise use website tools
                 const finalActiveTools = stepActiveTools
-                  ? websiteToolNames.filter(t => stepActiveTools.includes(t))
+                  ? websiteToolNames.filter(t => stepActiveTools!.includes(t))
                   : websiteToolNames;
 
                 log.info(`🔄 Step ${stepNumber}: Website-aware configuration applied`, {

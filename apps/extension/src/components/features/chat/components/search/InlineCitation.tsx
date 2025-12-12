@@ -7,7 +7,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ExternalLink } from 'lucide-react';
 import type { CitationSource } from '@/utils/citations';
 import { getFaviconUrl, getDomainFromUrl } from '@/utils/citations';
-import '@/styles/features/search/inline-citation.css';
 
 export interface InlineCitationProps {
     /** Citation source data */
@@ -101,18 +100,16 @@ export const InlineCitation: React.FC<InlineCitationProps> = ({ source, classNam
         }
     };
 
-    const containerClasses = ['inline-citation', className].filter(Boolean).join(' ');
-    const tooltipClasses = [
-        'inline-citation__tooltip',
-        `inline-citation__tooltip--${tooltipPosition}`,
-    ].join(' ');
-
     const faviconUrl = source.favicon || getFaviconUrl(source.url);
     const domain = getDomainFromUrl(source.url);
 
+    const tooltipPositionClasses = tooltipPosition === 'above'
+        ? 'bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2'
+        : 'top-[calc(100%+8px)] left-1/2 -translate-x-1/2';
+
     return (
         <span
-            className={containerClasses}
+            className={`inline relative ${className || ''}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
@@ -124,7 +121,7 @@ export const InlineCitation: React.FC<InlineCitationProps> = ({ source, classNam
                 onFocus={handleMouseEnter}
                 onBlur={handleMouseLeave}
                 aria-label={`Source ${source.number}: ${source.title}`}
-                className="inline-citation__trigger"
+                className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-[5px] mx-px text-[11px] font-semibold leading-none text-blue-600 bg-blue-500/10 border-0 rounded-[9px] cursor-pointer transition-all duration-150 align-middle font-inherit hover:bg-blue-500/20 hover:text-blue-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500/30 active:scale-[0.98]"
             >
                 {source.number}
             </button>
@@ -133,32 +130,32 @@ export const InlineCitation: React.FC<InlineCitationProps> = ({ source, classNam
                 <div
                     ref={tooltipRef}
                     role="tooltip"
-                    className={tooltipClasses}
+                    className={`absolute z-[100] w-[280px] pointer-events-auto ${tooltipPositionClasses}`}
                     onMouseEnter={handleMouseEnter}
                     onMouseLeave={handleMouseLeave}
                 >
-                    <div className="inline-citation__card">
-                        <div className="inline-citation__header">
+                    <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden animate-[citation-fade-in_150ms_ease]">
+                        <div className="flex items-start gap-2.5 p-3">
                             <img
                                 src={faviconUrl}
                                 alt=""
-                                className="inline-citation__favicon"
+                                className="flex-shrink-0 w-5 h-5 rounded mt-0.5"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).style.display = 'none';
                                 }}
                             />
-                            <div className="inline-citation__meta">
-                                <div className="inline-citation__title">
+                            <div className="flex-1 min-w-0 overflow-hidden">
+                                <div className="text-[13px] font-medium text-[var(--text-primary)] leading-[1.4] line-clamp-2">
                                     {source.title}
                                 </div>
-                                <div className="inline-citation__domain">
+                                <div className="flex items-center gap-1 mt-1 text-[11px] text-[var(--text-tertiary)]">
                                     <ExternalLink size={10} />
-                                    <span>{domain}</span>
+                                    <span className="overflow-hidden text-ellipsis whitespace-nowrap">{domain}</span>
                                 </div>
                             </div>
                         </div>
                         {source.snippet && (
-                            <div className="inline-citation__snippet">
+                            <div className="px-3 pb-3 pt-2.5 -mt-0.5 text-xs leading-[1.5] text-[var(--text-secondary)] border-t border-[var(--border-color-light,#f3f4f6)]">
                                 {source.snippet.length > 150
                                     ? `${source.snippet.substring(0, 150)}...`
                                     : source.snippet}

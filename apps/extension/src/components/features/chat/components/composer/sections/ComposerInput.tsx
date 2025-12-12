@@ -61,7 +61,7 @@ export const ComposerInput: React.FC<ComposerInputProps> = ({
     searchDepth
 }) => {
     return (
-        <div className="copilot-composer-primary">
+        <div className="flex items-start gap-2 flex-1 overflow-hidden min-h-[44px] relative">
             <div style={{ position: 'relative', width: '100%' }}>
                 <MentionInput
                     value={input}
@@ -85,14 +85,14 @@ export const ComposerInput: React.FC<ComposerInputProps> = ({
                         <motion.div
                             key="input-preview"
                             layout="position"
-                            className="copilot-textarea-preview-wrapper"
+                            className="pointer-events-none absolute top-0 left-0 -z-10 flex min-h-[24px] w-full items-center overflow-hidden break-words pt-[10px] pl-2"
                             layoutId={`message-${nextMessageId}`}
                             transition={{ type: 'easeOut', duration: 0.2 }}
                             initial={{ opacity: 0.6, zIndex: -1 }}
                             animate={{ opacity: 0.6, zIndex: -1 }}
                             exit={{ opacity: 1, zIndex: 1 }}
                         >
-                            <div className="copilot-textarea-preview-content">
+                            <div className="text-white/50 text-sm font-normal leading-[1.4] tracking-[0.3px] break-words whitespace-pre-wrap" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}>
                                 {input}
                             </div>
                         </motion.div>

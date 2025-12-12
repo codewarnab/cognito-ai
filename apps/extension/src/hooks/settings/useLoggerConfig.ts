@@ -9,10 +9,10 @@ import type { LogCategory, LoggerConfig, LoggerPresetName } from '@/types/logger
 import { LOGGER_CONFIG_KEY } from '@/types/logger';
 import {
   getLoggerConfig,
-  setLoggerConfig,
   updateLoggerCategory,
   applyLoggerPreset,
   matchesPreset,
+  resetLoggerConfig,
 } from '@/utils/settings/loggerConfig';
 
 interface UseLoggerConfigReturn {
@@ -99,7 +99,7 @@ export function useLoggerConfig(): UseLoggerConfigReturn {
 
   const reset = useCallback(async () => {
     try {
-      const { resetLoggerConfig } = await import('@/utils/settings/loggerConfig');
+      // const { resetLoggerConfig } = await import('@/utils/settings/loggerConfig');
       const updated = await resetLoggerConfig();
       setConfig(updated);
     } catch (error) {

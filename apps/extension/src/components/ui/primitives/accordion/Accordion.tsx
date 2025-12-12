@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDownIcon } from 'lucide-react';
-import './Accordion.css';
 
 interface AccordionProps {
     type?: 'single' | 'multiple';
@@ -62,7 +61,7 @@ export function Accordion({ type = 'single', children, defaultValue }: Accordion
 
     return (
         <AccordionContext.Provider value={{ type, openItems, toggleItem }}>
-            <div className="accordion" data-slot="accordion">
+            <div className="w-full" data-slot="accordion">
                 {children}
             </div>
         </AccordionContext.Provider>
@@ -77,7 +76,7 @@ export function AccordionItem({ value, children }: AccordionItemProps) {
 
     return (
         <AccordionItemContext.Provider value={{ value, isOpen }}>
-            <div className="accordion-item" data-slot="accordion-item">
+            <div className="border-b border-[var(--border-color)] last:border-b-0" data-slot="accordion-item">
                 {children}
             </div>
         </AccordionItemContext.Provider>
@@ -97,9 +96,9 @@ export function AccordionTrigger({ children }: AccordionTriggerProps) {
     };
 
     return (
-        <div className="accordion-header">
+        <div className="flex">
             <button
-                className="accordion-trigger"
+                className="flex flex-1 items-start justify-between gap-4 py-4 bg-transparent border-none rounded-md text-[var(--text-primary)] text-sm font-medium text-left cursor-pointer outline-none transition-all duration-200 hover:underline focus-visible:outline-2 focus-visible:outline-[var(--color-primary)] focus-visible:outline-offset-2 focus-visible:shadow-[0_0_0_3px_rgba(198,254,30,0.1)] disabled:pointer-events-none disabled:opacity-50"
                 data-slot="accordion-trigger"
                 data-state={itemContext.isOpen ? 'open' : 'closed'}
                 onClick={handleClick}
@@ -107,7 +106,8 @@ export function AccordionTrigger({ children }: AccordionTriggerProps) {
             >
                 {children}
                 <ChevronDownIcon
-                    className="accordion-chevron"
+                    className={`flex-shrink-0 text-[var(--text-tertiary)] transition-transform duration-200 ${itemContext.isOpen ? 'rotate-180 -translate-y-0.5' : 'translate-y-0.5'
+                        }`}
                     size={16}
                 />
             </button>
@@ -132,14 +132,14 @@ export function AccordionContent({ children }: AccordionContentProps) {
 
     return (
         <div
-            className="accordion-content"
+            className="overflow-hidden text-sm transition-[height] duration-200"
             data-slot="accordion-content"
             data-state={itemContext.isOpen ? 'open' : 'closed'}
             style={{
                 height: itemContext.isOpen ? `${height}px` : '0px',
             }}
         >
-            <div className="accordion-content-inner" ref={contentRef}>
+            <div className="pt-0 pb-4 text-[var(--text-secondary)] leading-relaxed" ref={contentRef}>
                 {children}
             </div>
         </div>

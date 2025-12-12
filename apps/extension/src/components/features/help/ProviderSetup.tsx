@@ -14,7 +14,6 @@ import {
 import type { AIProvider, VertexCredentials } from '@/utils/credentials';
 import { getModelConfig, setModelConfig } from '@/utils/ai';
 import type { RemoteModelType } from '../../features/chat/types';
-import './ProviderSetup.css';
 
 const log = createLogger('ProviderSetup');
 // TODO(@ui): when we add more than a couple of providers, update ProviderSetup to use a searchable combo-box instead of simple radio buttons so the selection stays manageable.
@@ -245,21 +244,34 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
         }
     };
 
+    // Notification style classes based on type
+    const getNotificationClasses = (type: 'success' | 'error' | 'info') => {
+        const base = "py-3.5 px-4 rounded-[10px] text-sm border flex items-center gap-2.5 mb-6 backdrop-blur-[10px]";
+        switch (type) {
+            case 'success':
+                return `${base} bg-green-500/[0.08] border-green-500/20 text-green-500`;
+            case 'error':
+                return `${base} bg-red-500/[0.08] border-red-500/20 text-red-500`;
+            case 'info':
+                return `${base} bg-[#4a6fa5]/[0.08] border-[#4a6fa5]/20 text-[#4a6fa5]`;
+        }
+    };
+
     return (
-        <div className="provider-setup-container">
+        <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden">
             {/* Header */}
-            <div className="provider-setup-header">
-                <div className="provider-setup-header-content">
+            <div className="sticky top-0 z-10 bg-[var(--bg-primary)] border-b border-white/[0.06] py-4 px-6 max-[640px]:p-4">
+                <div className="flex items-center gap-4">
                     <button
-                        className="provider-setup-back-button"
+                        className="flex items-center justify-center w-8 h-8 rounded-lg bg-transparent border-none text-white/50 cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/5 hover:text-white/90"
                         onClick={onBack}
                         aria-label="Go back"
                     >
                         <ArrowLeft size={20} />
                     </button>
-                    <div className="provider-setup-header-text">
-                        <h1 className="provider-setup-title">AI Provider Setup</h1>
-                        <p className="provider-setup-subtitle">
+                    <div className="flex-1">
+                        <h1 className="text-xl font-semibold text-white/95 m-0 leading-tight tracking-[-0.01em] max-[640px]:text-lg">AI Provider Setup</h1>
+                        <p className="text-sm text-white/40 mt-1 mb-0 leading-normal font-normal">
                             Configure your api keys
                         </p>
                     </div>
@@ -267,11 +279,11 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
             </div>
 
             {/* Content */}
-            <div className="provider-setup-content">
+            <div className="flex-1 overflow-y-auto py-8 px-6 max-w-[600px] mx-auto w-full max-[640px]:py-6 max-[640px]:px-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
                 {/* Notification */}
                 {notification && (
-                    <div className={`provider-setup-notification provider-setup-notification-${notification.type}`}>
-                        <span className="provider-setup-notification-icon">
+                    <div className={getNotificationClasses(notification.type)}>
+                        <span className="text-base shrink-0">
                             {notification.type === 'success' ? '✓' : notification.type === 'error' ? '✕' : 'ℹ'}
                         </span>
                         <span>{notification.message}</span>
@@ -280,12 +292,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
 
                 {/* Info banner when both providers are configured */}
                 {bothProvidersConfigured && !notification && (
-                    <div className="provider-setup-info-banner">
-                        <span className="provider-setup-info-icon">ℹ</span>
-                        <div className="provider-setup-info-content">
+                    <div className="py-3.5 px-4 rounded-[10px] text-[13px] border border-purple-500/20 bg-purple-500/[0.08] text-purple-500 flex items-start gap-2.5 mb-6 backdrop-blur-[10px]">
+                        <span className="text-base mt-0.5 shrink-0">ℹ</span>
+                        <div className="flex-1 leading-relaxed">
                             <strong>Both providers configured!</strong>
                             <br />
-                            <span className="provider-setup-info-text">
+                            <span className="text-xs opacity-90">
                                 By default, Vertex AI will be used when both are available.
                                 Select a provider below to manually override this preference.
                             </span>
@@ -293,40 +305,42 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     </div>
                 )}
 
-                <div className="provider-setup-form">
+                <div className="flex flex-col gap-8">
                     {/* Provider Selection */}
-                    <div className="provider-setup-section">
-                        <label className="provider-setup-label">AI Provider</label>
-                        <div className="provider-setup-options">
+                    <div className="flex flex-col gap-2.5">
+                        <label className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">AI Provider</label>
+                        <div className="flex flex-col gap-3.5">
                             {/* Google AI Option */}
-                            <label className={`provider-setup-option ${provider === 'google' ? 'provider-setup-option-selected' : ''}`}>
+                            <label className={`flex items-start p-4.5 border-[1.5px] rounded-[10px] cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'google' ? 'border-[#4a6fa5] bg-[#4a6fa5]/[0.08]' : 'border-white/[0.08]'}`}>
                                 <input
                                     type="radio"
                                     value="google"
                                     checked={provider === 'google'}
                                     onChange={() => setProvider('google')}
+                                    className="mt-1 mr-3 cursor-pointer shrink-0"
                                 />
-                                <div className="provider-setup-option-content">
-                                    <div className="provider-setup-option-title">Google Generative AI</div>
-                                    <div className="provider-setup-option-description">
+                                <div className="flex-1">
+                                    <div className="font-medium text-white/90 mb-1 text-[15px]">Google Generative AI</div>
+                                    <div className="text-[13px] text-white/45 leading-normal">
                                         Use AI Studio API key (Free tier available)
                                     </div>
                                 </div>
                             </label>
 
                             {/* Vertex AI Option */}
-                            <label className={`provider-setup-option ${provider === 'vertex' ? 'provider-setup-option-selected' : ''}`}>
+                            <label className={`flex items-start p-4.5 border-[1.5px] rounded-[10px] cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'vertex' ? 'border-[#4a6fa5] bg-[#4a6fa5]/[0.08]' : 'border-white/[0.08]'}`}>
                                 <input
                                     type="radio"
                                     value="vertex"
                                     checked={provider === 'vertex'}
                                     onChange={() => setProvider('vertex')}
+                                    className="mt-1 mr-3 cursor-pointer shrink-0"
                                 />
-                                <div className="provider-setup-option-content">
-                                    <div className="provider-setup-option-title">
+                                <div className="flex-1">
+                                    <div className="font-medium text-white/90 mb-1 text-[15px]">
                                         Google Vertex AI
                                     </div>
-                                    <div className="provider-setup-option-description">
+                                    <div className="text-[13px] text-white/45 leading-normal">
                                         Use service account credentials from Google Cloud
                                     </div>
                                 </div>
@@ -338,11 +352,11 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     {provider === 'google' ? (
                         <>
                             {/* Google API Key Input */}
-                            <div className="provider-setup-section">
-                                <label htmlFor="google-api-key" className="provider-setup-label">
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="google-api-key" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     API Key
                                 </label>
-                                <div className="provider-setup-input-wrapper">
+                                <div className="relative">
                                     <input
                                         id="google-api-key"
                                         type={showGoogleKey ? 'text' : 'password'}
@@ -350,12 +364,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                         onChange={(e) => setGoogleApiKeyState(e.target.value)}
                                         placeholder="Enter your Google AI Studio API key"
                                         disabled={isLoading || isSaving}
-                                        className="provider-setup-input"
+                                        className="w-full py-3.5 px-3.5 pr-16 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowGoogleKey(!showGoogleKey)}
-                                        className="provider-setup-toggle-button"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
                                     >
                                         {showGoogleKey ? 'Hide' : 'Show'}
                                     </button>
@@ -365,8 +379,8 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     ) : (
                         <>
                             {/* Vertex AI Fields */}
-                            <div className="provider-setup-section">
-                                <label htmlFor="vertex-project-id" className="provider-setup-label">
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="vertex-project-id" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     Project ID *
                                 </label>
                                 <input
@@ -376,12 +390,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexProjectId(e.target.value)}
                                     placeholder="my-project-123"
                                     disabled={isLoading || isSaving}
-                                    className="provider-setup-input"
+                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
 
-                            <div className="provider-setup-section">
-                                <label htmlFor="vertex-location" className="provider-setup-label">
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="vertex-location" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     Location *
                                 </label>
                                 <input
@@ -391,12 +405,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexLocation(e.target.value)}
                                     placeholder="us-central1"
                                     disabled={isLoading || isSaving}
-                                    className="provider-setup-input"
+                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
 
-                            <div className="provider-setup-section">
-                                <label htmlFor="vertex-client-email" className="provider-setup-label">
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="vertex-client-email" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     Client Email *
                                 </label>
                                 <input
@@ -406,15 +420,15 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexClientEmail(e.target.value)}
                                     placeholder="service-account@project.iam.gserviceaccount.com"
                                     disabled={isLoading || isSaving}
-                                    className="provider-setup-input"
+                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
 
-                            <div className="provider-setup-section">
-                                <label htmlFor="vertex-private-key" className="provider-setup-label">
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="vertex-private-key" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     Private Key *
                                 </label>
-                                <div className="provider-setup-input-wrapper">
+                                <div className="relative">
                                     <textarea
                                         id="vertex-private-key"
                                         value={vertexPrivateKey}
@@ -422,21 +436,21 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                         placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
                                         disabled={isLoading || isSaving}
                                         rows={showVertexKey ? 8 : 4}
-                                        className={`provider-setup-textarea ${!showVertexKey ? 'provider-setup-textarea-blurred' : ''}`}
+                                        className={`w-full py-3.5 px-3.5 pr-16 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed font-mono text-xs resize-y ${!showVertexKey ? 'blur-[4px]' : ''}`}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowVertexKey(!showVertexKey)}
-                                        className="provider-setup-toggle-button provider-setup-toggle-button-top"
+                                        className="absolute right-2 top-2 text-xs text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
                                     >
                                         {showVertexKey ? 'Hide' : 'Show'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="provider-setup-section">
-                                <label htmlFor="vertex-private-key-id" className="provider-setup-label">
-                                    Private Key ID <span className="provider-setup-label-optional">(optional)</span>
+                            <div className="flex flex-col gap-2.5">
+                                <label htmlFor="vertex-private-key-id" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
+                                    Private Key ID <span className="text-[var(--text-tertiary)] font-normal">(optional)</span>
                                 </label>
                                 <input
                                     id="vertex-private-key-id"
@@ -445,59 +459,42 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexPrivateKeyId(e.target.value)}
                                     placeholder="abc123def456..."
                                     disabled={isLoading || isSaving}
-                                    className="provider-setup-input"
+                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </>
                     )}
 
-                    {/* Model Selector */}
-                    {/* <div className="provider-setup-section">
-                        <label htmlFor="model-selector" className="provider-setup-label">
-                            Default Model
-                        </label>
-                        <select
-                            id="model-selector"
-                            value={selectedModel}
-                            onChange={(e) => handleModelChange(e.target.value as RemoteModelType)}
-                            className="provider-setup-select"
-                        >
-                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                            <option value="gemini-3-pro-preview">Gemini  3.0 Pro </option>
-                        </select>
-                    </div> */}
-
                     {/* Help Text */}
-                    <div className="provider-setup-help">
+                    <div className="p-4 bg-white/[0.02] rounded-[10px] text-[13px] border border-white/[0.06] leading-relaxed">
                         {provider === 'google' ? (
                             <>
-                                <p className="provider-setup-help-title">
+                                <p className="m-0 mb-2.5 text-white/70">
                                     <strong>How to get a Google AI API key:</strong>
                                 </p>
-                                <ol className="provider-setup-help-list">
-                                    <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Google AI Studio</a></li>
-                                    <li>Sign in with your Google account</li>
-                                    <li>Click "Create API Key" or "Get API Key"</li>
-                                    <li>Copy the generated key and paste it above</li>
+                                <ol className="m-0 pl-5 text-white/50">
+                                    <li className="mb-1">Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google AI Studio</a></li>
+                                    <li className="mb-1">Sign in with your Google account</li>
+                                    <li className="mb-1">Click "Create API Key" or "Get API Key"</li>
+                                    <li className="mb-1">Copy the generated key and paste it above</li>
                                 </ol>
-                                <p className="provider-setup-help-note">
+                                <p className="mt-2 mb-0 text-[var(--text-tertiary)] text-xs">
                                     <em>The free tier includes generous quotas for personal use.</em>
                                 </p>
                             </>
                         ) : (
                             <>
-                                <p className="provider-setup-help-title">
+                                <p className="m-0 mb-2.5 text-white/70">
                                     <strong>How to get Vertex AI credentials:</strong>
                                 </p>
-                                <ol className="provider-setup-help-list">
-                                    <li>Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer">Google Cloud Console</a></li>
-                                    <li>Navigate to "IAM & Admin" → "Service Accounts"</li>
-                                    <li>Create a new service account with "Vertex AI User" role</li>
-                                    <li>Create a JSON key and download it</li>
-                                    <li>Copy values from the JSON file to the fields above</li>
+                                <ol className="m-0 pl-5 text-white/50">
+                                    <li className="mb-1">Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google Cloud Console</a></li>
+                                    <li className="mb-1">Navigate to "IAM & Admin" → "Service Accounts"</li>
+                                    <li className="mb-1">Create a new service account with "Vertex AI User" role</li>
+                                    <li className="mb-1">Create a JSON key and download it</li>
+                                    <li className="mb-1">Copy values from the JSON file to the fields above</li>
                                 </ol>
-                                <p className="provider-setup-help-note">
+                                <p className="mt-2 mb-0 text-[var(--text-tertiary)] text-xs">
                                     <em>Ensure your GCP project has the Vertex AI API enabled.</em>
                                 </p>
                             </>
@@ -505,12 +502,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="provider-setup-actions">
+                    <div className="flex gap-3.5 justify-end pt-4 max-[640px]:flex-col">
                         {hasCurrentProviderConfig() && !notification && (
                             <button
                                 onClick={handleRemove}
                                 disabled={isSaving}
-                                className="provider-setup-button provider-setup-button-remove"
+                                className="py-3 px-6 rounded-[10px] text-sm font-medium border-none cursor-pointer transition-all duration-200 border-[1.5px] border-red-500/30 bg-transparent text-red-500/85 hover:bg-red-500/[0.08] hover:border-red-500/50 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed max-[640px]:w-full"
                             >
                                 Remove
                             </button>
@@ -518,7 +515,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                         <button
                             onClick={handleSave}
                             disabled={isSaving}
-                            className="provider-setup-button provider-setup-button-primary"
+                            className="py-3 px-6 rounded-[10px] text-sm font-medium border-none cursor-pointer transition-all duration-200 bg-[#4a6fa5] text-white hover:bg-[#5a7fb5] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(74,111,165,0.3)] disabled:opacity-40 disabled:cursor-not-allowed max-[640px]:w-full"
                         >
                             {isSaving ? 'Saving...' : 'Save Configuration'}
                         </button>
@@ -528,4 +525,3 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
         </div>
     );
 };
-

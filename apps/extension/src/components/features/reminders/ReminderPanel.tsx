@@ -134,7 +134,7 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
             <div className="thread-sidepanel-backdrop" onClick={onClose} />
 
             {/* Side Panel */}
-            <div className="thread-sidepanel reminder-panel">
+            <div className="thread-sidepanel flex flex-col h-full bg-[#0a0e1a] text-white">
                 {/* Header */}
                 <div className="thread-sidepanel-header">
                     <div className="thread-sidepanel-header-content">
@@ -153,29 +153,29 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                 {/* Content */}
                 <div className="thread-sidepanel-content">
                     {loading ? (
-                        <div className="reminder-panel-loading">
-                            <div className="spinner" />
-                            <p>Loading reminders...</p>
+                        <div className="flex flex-col items-center justify-center py-[60px] px-6 gap-5 text-white/60">
+                            <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+                            <p className="text-sm text-white/60 font-normal m-0 font-sans">Loading reminders...</p>
                         </div>
                     ) : reminders.length === 0 ? (
-                        <div className="reminder-panel-empty">
-                            <ClockIcon size={56} />
-                            <p>No active reminders</p>
-                            <span className="reminder-panel-empty-hint">
+                        <div className="flex flex-col items-center justify-center py-20 px-8 gap-4 text-center">
+                            <ClockIcon size={56} className="text-white/30 mb-2" />
+                            <p className="text-sm font-normal my-2 text-white font-sans">No active reminders</p>
+                            <span className="text-[13px] text-white/60 leading-relaxed max-w-[280px] font-sans font-normal">
                                 Ask the AI assistant to create a reminder and it will appear here
                             </span>
                         </div>
                     ) : (
-                        <div className="reminder-panel-list">
+                        <div className="flex flex-col gap-2 p-4">
                             {reminders.map((reminder) => (
-                                <div key={reminder.id} className="reminder-panel-item">
-                                    <div className="reminder-panel-item-content">
-                                        <div className="reminder-panel-item-header">
-                                            <h3 className="reminder-panel-item-title">
+                                <div key={reminder.id} className="bg-[#1e2332]/80 border border-white/[0.08] rounded-xl px-4 pt-[14px] pb-10 transition-all duration-200 relative overflow-visible hover:bg-[#232837]/90 hover:border-white/[0.12]">
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                                            <h3 className="text-[13px] font-semibold text-white m-0 flex-1 leading-snug tracking-[-0.01em] font-sans">
                                                 {reminder.generatedTitle || reminder.title}
                                             </h3>
                                             <button
-                                                className="reminder-panel-delete-btn"
+                                                className="bg-transparent border-none px-1.5 py-0.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-[#ff4444]"
                                                 onClick={() => handleDeleteReminder(reminder.id)}
                                                 title="Delete reminder"
                                                 aria-label="Delete reminder"
@@ -185,12 +185,12 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                                         </div>
 
                                         {reminder.generatedDescription && (
-                                            <p className="reminder-panel-item-description">
+                                            <p className="text-[13px] text-white/80 m-0 mb-2 leading-snug font-sans font-normal">
                                                 {reminder.generatedDescription}
                                             </p>
                                         )}
 
-                                        <div className="reminder-panel-item-time">
+                                        <div className="inline-flex items-center gap-1.5 text-[11px] text-white/50 font-normal py-0.5 w-fit font-sans">
                                             <Calendar size={14} />
                                             <span>{formatDateTime(reminder.when)}</span>
                                         </div>
@@ -198,7 +198,7 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
 
                                     {/* Edit button positioned at right bottom */}
                                     <button
-                                        className="reminder-panel-edit-btn"
+                                        className="absolute bottom-[14px] right-4 bg-transparent border-none p-1.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center hover:bg-white/10 hover:text-white"
                                         onClick={() => handleEditClick(reminder)}
                                         title="Edit reminder"
                                         aria-label="Edit reminder"

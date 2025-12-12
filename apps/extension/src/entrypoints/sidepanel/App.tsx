@@ -531,7 +531,13 @@ function AIChatContent() {
                             {/* Voice Mode FAB - Only in text mode */}
                             {!isImagePreviewOpen && (
                                 <motion.button
-                                    className={`voice-mode-fab ${messages.length > 0 ? 'has-messages' : ''}`}
+                                    className={`fixed bottom-[120px] right-4 w-[44px] h-11 rounded-full 
+                                        bg-white/5 border border-white/10 text-white/60 
+                                        cursor-pointer z-[998] flex items-center justify-center 
+                                        backdrop-blur-[10px] transition-all duration-200 ease-out
+                                        hover:bg-white/10 hover:text-white/90 hover:border-white/20
+                                        active:scale-97
+                                        ${messages.length > 0 ? 'opacity-20 hover:opacity-100' : ''}`}
                                     onClick={() => handleModeChange('voice')}
                                     initial={{ scale: 0.93, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}

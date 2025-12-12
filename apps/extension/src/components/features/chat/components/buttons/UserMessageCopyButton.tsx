@@ -30,7 +30,7 @@ export const UserMessageCopyButton: React.FC<UserMessageCopyButtonProps> = ({ co
 
     return (
         <button
-            className="user-message-copy-button"
+            className="flex items-center justify-center w-6 h-6 p-0 bg-transparent border-none text-white/40 cursor-pointer transition-all duration-150 rounded hover:text-white/80 hover:bg-white/10 active:scale-90"
             onClick={handleCopy}
             title={copied ? 'Copied!' : 'Copy message'}
             aria-label={copied ? 'Copied!' : 'Copy message'}

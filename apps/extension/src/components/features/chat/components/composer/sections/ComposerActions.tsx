@@ -74,7 +74,7 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
     };
 
     return (
-        <div className="copilot-composer-actions" style={{ position: 'relative' }}>
+        <div className="flex items-center gap-1.5 shrink-0" style={{ position: 'relative' }}>
             {/* Plus Icon - Attachment Options - Hidden in search mode */}
             {!isSearchActive && (
                 <button
@@ -188,7 +188,7 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
                         setInput(finalText);
                         textareaRef.current?.focus();
                     }}
-                    className="copilot-voice-input"
+                    className="relative"
                 />
             )}
         </div>

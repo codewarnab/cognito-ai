@@ -5,7 +5,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
-import '@/styles/features/search/source-citation.css';
 
 export interface CitationSource {
     /** Citation number (1, 2, 3...) */
@@ -63,11 +62,11 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
     useEffect(() => {
         if (showTooltip && tooltipRef.current && triggerRef.current) {
             const tooltip = tooltipRef.current;
-            
+
             tooltip.style.left = '50%';
             tooltip.style.right = 'auto';
             tooltip.style.transform = 'translateX(-50%)';
-            
+
             const tooltipRect = tooltip.getBoundingClientRect();
             if (tooltipRect.right > window.innerWidth - 10) {
                 tooltip.style.left = 'auto';
@@ -91,10 +90,8 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
         }
     };
 
-    const containerClasses = ['source-citation', className].filter(Boolean).join(' ');
-
     return (
-        <span className={containerClasses}>
+        <span className={`inline-block relative ${className || ''}`}>
             <button
                 ref={triggerRef}
                 type="button"
@@ -105,29 +102,33 @@ export const SourceCitation: React.FC<SourceCitationProps> = ({ source, classNam
                 onFocus={() => setShowTooltip(true)}
                 onBlur={() => setShowTooltip(false)}
                 aria-label={`Source ${source.number}: ${source.title}`}
-                className="source-citation__trigger"
+                className="inline-flex items-center justify-center min-w-4 h-4 px-1 text-[10px] font-medium bg-blue-500/10 text-blue-600 rounded-sm border-0 cursor-pointer transition-colors duration-100 align-super -mt-1 hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             >
                 {source.number}
             </button>
 
             {showTooltip && (
-                <div ref={tooltipRef} role="tooltip" className="source-citation__tooltip">
-                    <div className="source-citation__tooltip-content">
+                <div
+                    ref={tooltipRef}
+                    role="tooltip"
+                    className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-1 w-[200px] p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg shadow-lg pointer-events-none"
+                >
+                    <div className="flex items-start gap-2">
                         <img
                             src={source.favicon || getFaviconUrl(source.url)}
                             alt=""
-                            className="source-citation__favicon"
+                            className="flex-shrink-0 w-4 h-4 mt-0.5 rounded-sm"
                             onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                             }}
                         />
-                        <div className="source-citation__info">
-                            <div className="source-citation__title">
+                        <div className="overflow-hidden">
+                            <div className="text-xs font-medium text-[var(--text-primary)] line-clamp-2">
                                 {source.title}
                             </div>
-                            <div className="source-citation__url">
+                            <div className="flex items-center gap-1 mt-1 text-[10px] text-[var(--text-secondary)]">
                                 <ExternalLink size={10} />
-                                <span>{getDomain(source.url)}</span>
+                                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{getDomain(source.url)}</span>
                             </div>
                         </div>
                     </div>

@@ -77,10 +77,10 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
     if (!usage?.totalTokens) return null;
 
     return (
-        <div className={cn("context-indicator", className)}>
+        <div className={cn("relative flex items-center justify-center z-[100] shrink-0 w-7 h-7", className)}>
             {/* Circular Progress - Always Visible */}
             <button
-                className="context-button"
+                className="bg-transparent border-none cursor-pointer p-0 rounded-full transition-colors duration-200 flex items-center justify-center outline-none w-7 h-7 hover:bg-black/5 dark:hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 onClick={() => setShowDetails(!showDetails)}
                 onMouseEnter={() => setShowDetails(true)}
                 onMouseLeave={() => setShowDetails(false)}
@@ -91,7 +91,7 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
                     value={percent}
                     gaugePrimaryColor={colors.primary}
                     gaugeSecondaryColor={colors.secondary}
-                    className="context-progress-compact"
+                    className="w-6 h-6 text-[8px]"
                     showPercentage={false}
                 />
             </button>
@@ -99,21 +99,21 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
             {/* Details Dropdown - Show on hover/click */}
             {showDetails && (
                 <div
-                    className="context-details"
+                    className="absolute bottom-[calc(100%+8px)] right-0 min-w-[260px] bg-white dark:bg-gray-800 rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_0_1px_rgba(255,255,255,0.1)] p-3 z-[9999] animate-in slide-in-from-bottom-2 fade-in duration-200"
                     onMouseEnter={() => setShowDetails(true)}
                     onMouseLeave={() => setShowDetails(false)}
                 >
-                    <div className="context-header">
-                        <span className="context-percent">{percent}%</span>
-                        <span className="token-count">
+                    <div className="flex justify-between items-center mb-2 text-sm gap-3">
+                        <span className="font-semibold text-gray-900 dark:text-gray-50 text-base">{percent}%</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
                             {usage.totalTokens?.toLocaleString()} / {usage.context?.totalMax?.toLocaleString()} tokens
                         </span>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="progress-bar">
+                    <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mb-3 relative">
                         <div
-                            className="progress-fill"
+                            className="h-full rounded transition-all duration-1000"
                             style={{
                                 width: `${percent}%`,
                                 backgroundColor: colors.primary
@@ -122,39 +122,48 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
                     </div>
 
                     {/* Token Breakdown */}
-                    <div className="token-breakdown">
+                    <div className="flex flex-col gap-1.5">
                         {usage.cachedInputTokens && usage.cachedInputTokens > 0 && (
-                            <div className="token-row">
-                                <span className="token-label">Cache Hits</span>
-                                <span className="token-value">{usage.cachedInputTokens.toLocaleString()}</span>
+                            <div className="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300">
+                                <span className="text-gray-500 dark:text-gray-400 font-normal">Cache Hits</span>
+                                <span className="font-mono font-medium text-gray-900 dark:text-gray-50">{usage.cachedInputTokens.toLocaleString()}</span>
                             </div>
                         )}
-                        <div className="token-row">
-                            <span className="token-label">Input</span>
-                            <span className="token-value">{usage.inputTokens?.toLocaleString() || 0}</span>
+                        <div className="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300">
+                            <span className="text-gray-500 dark:text-gray-400 font-normal">Input</span>
+                            <span className="font-mono font-medium text-gray-900 dark:text-gray-50">{usage.inputTokens?.toLocaleString() || 0}</span>
                         </div>
-                        <div className="token-row">
-                            <span className="token-label">Output</span>
-                            <span className="token-value">{usage.outputTokens?.toLocaleString() || 0}</span>
+                        <div className="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300">
+                            <span className="text-gray-500 dark:text-gray-400 font-normal">Output</span>
+                            <span className="font-mono font-medium text-gray-900 dark:text-gray-50">{usage.outputTokens?.toLocaleString() || 0}</span>
                         </div>
                         {usage.reasoningTokens && usage.reasoningTokens > 0 && (
-                            <div className="token-row">
-                                <span className="token-label">Reasoning</span>
-                                <span className="token-value">{usage.reasoningTokens.toLocaleString()}</span>
+                            <div className="flex justify-between items-center text-xs text-gray-700 dark:text-gray-300">
+                                <span className="text-gray-500 dark:text-gray-400 font-normal">Reasoning</span>
+                                <span className="font-mono font-medium text-gray-900 dark:text-gray-50">{usage.reasoningTokens.toLocaleString()}</span>
                             </div>
                         )}
                     </div>
 
                     {/* Model Info (if available) */}
                     {usage.modelId && (
-                        <div className="model-info">
-                            <span className="model-label">Model:</span>
-                            <span className="model-name">{usage.modelId}</span>
+                        <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center text-[11px]">
+                            <span className="text-gray-500 dark:text-gray-400">Model:</span>
+                            <span className="font-mono text-gray-700 dark:text-gray-300 font-medium">{usage.modelId}</span>
                         </div>
                     )}
+
+                    {/* Arrow pointer */}
+                    <div
+                        className="absolute top-full right-3 w-0 h-0"
+                        style={{
+                            borderLeft: '8px solid transparent',
+                            borderRight: '8px solid transparent',
+                            borderTop: '8px solid white'
+                        }}
+                    />
                 </div>
             )}
         </div>
     );
 }
-

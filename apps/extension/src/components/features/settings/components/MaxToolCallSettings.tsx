@@ -40,45 +40,31 @@ export const MaxToolCallSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <Settings size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     AI Configuration
                 </h2>
             </div>
-            <div className="settings-card">
-                <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '16px' }}>
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
+                <div className="flex flex-col items-start gap-4 p-3">
                     <div>
-                        <div className="settings-item-title">Maximum Tool Call Limit</div>
-                        <div className="settings-item-description">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Maximum Tool Call Limit</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             Maximum number of steps the AI can take in a single response (1-50). Higher values allow more complex multi-step operations but may increase response time.
                         </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="flex items-center gap-3">
                         <input
                             type="text"
-                            className="settings-input"
+                            className="w-20 px-3 py-2 text-sm border border-[var(--border-color)] rounded-md bg-[var(--bg-tertiary)] text-[var(--text-primary)] text-center focus:outline-none focus:border-[var(--color-secondary)]"
                             value={maxLimit}
                             onChange={handleLimitChange}
                             min={1}
                             max={50}
-                            style={{
-                                width: '80px',
-                                padding: '8px 12px',
-                                fontSize: '14px',
-                                border: '1px solid var(--border-color)',
-                                borderRadius: '6px',
-                                backgroundColor: 'var(--input-bg)',
-                                color: 'var(--text-primary)',
-                                textAlign: 'center',
-                            }}
                         />
-                        <span style={{
-                            fontSize: '14px',
-                            color: 'var(--text-secondary)',
-                            minWidth: '60px',
-                        }}>
+                        <span className="text-sm text-[var(--text-secondary)] min-w-[60px]">
                             {maxLimit} steps
                         </span>
                     </div>

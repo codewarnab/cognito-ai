@@ -13,7 +13,6 @@ import { SearchSettingsSection } from '@/components/features/settings/components
 import { ResearchWorkflowSettings } from '@/components/features/settings/components/ResearchWorkflowSettings';
 import { SocialLinks } from '@/components/features/settings/components/SocialLinks';
 import { hasAnyProviderConfigured } from '@/utils/credentials';
-import './SettingsPage.css';
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -32,13 +31,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
   }, []);
 
   return (
-    <div className="settings-page">
+    <div className="flex flex-col h-full bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden">
       {/* API Key Setup Link */}
       {needsProviderSetup && onProviderSetupClick && (
-        <div className="settings-api-key-hint">
+        <div className="px-4 py-2 text-[11px] text-[var(--text-tertiary)] text-center bg-[var(--bg-secondary)] border-b border-[var(--border-color)]">
           Looking for configuring API keys?{' '}
           <button
-            className="settings-api-key-link"
+            className="bg-transparent border-none text-blue-300/90 cursor-pointer text-[11px] p-0 underline underline-offset-2 hover:text-blue-200"
             onClick={onProviderSetupClick}
           >
             Click here
@@ -47,22 +46,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
       )}
 
       {/* Header */}
-      <div className="settings-header">
+      <div className="flex items-center p-4 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] gap-4">
         <button
-          className="settings-back-button"
+          className="bg-transparent border-none text-[var(--text-secondary)] cursor-pointer p-1 rounded-sm flex items-center justify-center transition-colors hover:text-[var(--text-primary)] hover:bg-white/5"
           onClick={onBack}
           aria-label="Go back"
         >
           <ArrowLeft size={20} />
         </button>
-        <div className="settings-title-container">
-          <h1 className="settings-title">Settings</h1>
-          <p className="settings-subtitle">Manage tools, voice, TTS, and data</p>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold m-0 text-[var(--text-primary)]">Settings</h1>
+          <p className="text-[13px] text-[var(--text-secondary)] mt-0.5 m-0">Manage tools, voice, TTS, and data</p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="settings-content">
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/15 hover:scrollbar-thumb-white/25">
         {/* <VoiceSettings /> */}
         <TTSAndDataSettings />
         <SearchSettingsSection />

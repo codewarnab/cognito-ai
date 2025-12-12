@@ -7,7 +7,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import type { SearchResultImage } from '@/search/types';
-import '@/styles/features/search/search-images.css';
 
 export interface SearchResultsImageSectionProps {
     /** Array of image results */
@@ -81,28 +80,29 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
 
     return (
         <>
-            <div className="search-images__grid">
+            <div className="grid grid-cols-4 gap-1">
                 {previewImages.map((image, index) => (
                     <button
                         key={`${image.url}-${index}`}
                         type="button"
                         onClick={() => setSelectedIndex(index)}
                         aria-label={`View image ${index + 1}${image.description ? `: ${image.description}` : ''}`}
-                        className="search-images__item"
+                        className="relative aspect-square rounded overflow-hidden bg-transparent border-0 p-0 cursor-pointer transition-opacity duration-150 hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-500 group"
                     >
                         <img
                             src={image.url}
                             alt={image.description || `Search result ${index + 1} for ${query}`}
                             loading="lazy"
                             onError={handleImageError}
+                            className="w-full h-full object-cover"
                         />
-                        
-                        <div className="search-images__zoom-overlay">
-                            <ZoomIn size={16} />
+
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                            <ZoomIn size={16} className="text-white" />
                         </div>
 
                         {index === maxPreview - 1 && remainingCount > 0 && (
-                            <div className="search-images__more-overlay">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm font-medium">
                                 +{remainingCount}
                             </div>
                         )}
@@ -115,14 +115,14 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                     role="dialog"
                     aria-modal="true"
                     aria-label="Image viewer"
-                    className="search-images__lightbox"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
                     onClick={closeLightbox}
                 >
                     <button
                         type="button"
                         onClick={closeLightbox}
                         aria-label="Close image viewer"
-                        className="search-images__lightbox-close"
+                        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-black/50 text-white border-0 cursor-pointer transition-colors duration-150 hover:bg-black/70"
                     >
                         <X size={20} />
                     </button>
@@ -132,14 +132,14 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                             type="button"
                             onClick={(e) => { e.stopPropagation(); goToPrev(); }}
                             aria-label="Previous image"
-                            className="search-images__lightbox-nav search-images__lightbox-nav--prev"
+                            className="absolute left-4 z-10 p-2 rounded-full bg-black/50 text-white border-0 cursor-pointer transition-colors duration-150 hover:bg-black/70"
                         >
                             <ChevronLeft size={24} />
                         </button>
                     )}
 
                     <div
-                        className="search-images__lightbox-content"
+                        className="max-w-[90vw] max-h-[80vh]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {(() => {
@@ -150,16 +150,17 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                                     <img
                                         src={currentImage.url}
                                         alt={currentImage.description || `Image ${selectedIndex + 1}`}
+                                        className="max-w-full max-h-[80vh] object-contain"
                                     />
                                     {currentImage.description && (
-                                        <div className="search-images__lightbox-description">
+                                        <div className="mt-2 text-center text-sm text-white/80">
                                             {currentImage.description}
                                         </div>
                                     )}
                                 </>
                             );
                         })()}
-                        <div className="search-images__lightbox-counter">
+                        <div className="mt-2 text-center text-xs text-white/60">
                             {selectedIndex + 1} / {normalizedImages.length}
                         </div>
                     </div>
@@ -169,7 +170,7 @@ export const SearchResultsImageSection: React.FC<SearchResultsImageSectionProps>
                             type="button"
                             onClick={(e) => { e.stopPropagation(); goToNext(); }}
                             aria-label="Next image"
-                            className="search-images__lightbox-nav search-images__lightbox-nav--next"
+                            className="absolute right-4 z-10 p-2 rounded-full bg-black/50 text-white border-0 cursor-pointer transition-colors duration-150 hover:bg-black/70"
                         >
                             <ChevronRight size={24} />
                         </button>

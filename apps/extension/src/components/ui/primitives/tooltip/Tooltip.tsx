@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import './tooltip.css';
+import { cn } from '@/utils/ui';
 
 export interface TooltipProps {
     /** The content to display in the tooltip */
@@ -37,7 +37,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
     const showTooltip = () => {
         if (disabled || !content) return;
-        
+
         timeoutRef.current = window.setTimeout(() => {
             setIsVisible(true);
         }, delay);
@@ -108,7 +108,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         <>
             <div
                 ref={triggerRef}
-                className="tooltip-trigger"
+                className="inline-flex"
                 onMouseEnter={showTooltip}
                 onMouseLeave={hideTooltip}
                 onFocus={showTooltip}
@@ -119,7 +119,15 @@ export const Tooltip: React.FC<TooltipProps> = ({
             {isVisible && (
                 <div
                     ref={tooltipRef}
-                    className={`tooltip tooltip--${position} ${className || ''}`}
+                    className={cn(
+                        "fixed z-[9999] px-2.5 py-1.5 rounded-md",
+                        "bg-[var(--bg-tertiary)] border border-[var(--border-color)]",
+                        "text-xs text-[var(--text-primary)]",
+                        "shadow-lg backdrop-blur-sm",
+                        "animate-in fade-in-0 zoom-in-95 duration-150",
+                        "pointer-events-none whitespace-nowrap",
+                        className
+                    )}
                     style={{ top: coords.top, left: coords.left }}
                     role="tooltip"
                 >
@@ -131,3 +139,4 @@ export const Tooltip: React.FC<TooltipProps> = ({
 };
 
 export default Tooltip;
+

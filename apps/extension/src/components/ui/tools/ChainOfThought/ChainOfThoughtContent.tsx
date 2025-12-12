@@ -20,7 +20,7 @@ export const ChainOfThoughtContent = memo(({
     return (
         <Collapsible.Root open={isOpen}>
             <Collapsible.Content
-                className={`chain-of-thought-content ${className}`}
+                className={`mt-1 pl-0 ml-0 overflow-hidden data-[state=open]:animate-in data-[state=open]:slide-in-from-top-1 data-[state=open]:fade-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top-1 data-[state=closed]:fade-out duration-200 ease-out ${className}`}
                 {...props}
             >
                 {children}

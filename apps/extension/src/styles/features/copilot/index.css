@@ -9,7 +9,6 @@
 /* Import all modular CSS files */
 @import './base.css';
 @import './notifications.css';
-@import './messages.css';
 @import './input.css';
 @import './modes.css';
 @import './attachments.css';

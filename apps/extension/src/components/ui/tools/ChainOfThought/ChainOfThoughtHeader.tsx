@@ -22,14 +22,14 @@ export const ChainOfThoughtHeader = memo(({
     return (
         <Collapsible.Root onOpenChange={setIsOpen} open={isOpen}>
             <Collapsible.Trigger
-                className={`chain-of-thought-header ${className}`}
+                className={`flex w-full items-center gap-2 py-[6px] border-none bg-transparent text-[var(--text-secondary)] text-[14px] cursor-pointer transition-colors duration-200 ease-out select-none hover:text-[var(--text-primary)] ${className}`}
                 {...props}
             >
-                <span className="chain-of-thought-header-icon"><YouTubeNotionIcon style={{ width: '24px', height: '24px' }} /></span>
-                <span className="chain-of-thought-header-content">
+                <span className="shrink-0 flex items-center justify-center"><YouTubeNotionIcon style={{ width: '24px', height: '24px' }} /></span>
+                <span className="flex-1 text-left font-normal">
                     {children ?? 'Chain of Thought'}
                 </span>
-                <ChevronDown className={`chain-of-thought-chevron ${isOpen ? 'open' : ''}`} size={16} />
+                <ChevronDown className={`shrink-0 transition-transform duration-200 ease-out text-[var(--text-tertiary)] ${isOpen ? 'rotate-180' : ''}`} size={16} />
             </Collapsible.Trigger>
         </Collapsible.Root>
     );
