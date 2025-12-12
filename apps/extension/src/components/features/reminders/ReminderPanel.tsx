@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, Trash2, Calendar } from 'lucide-react';
 import { ClockIcon } from '../../../../assets/icons/chat/clock';
 import { getActiveReminders, deleteReminder } from '../../../actions/reminder/storage';
@@ -129,88 +130,105 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
     if (!isOpen) return null;
 
     return (
-        <>
-            {/* Backdrop */}
-            <div className="thread-sidepanel-backdrop" onClick={onClose} />
-
-            {/* Side Panel */}
-            <div className="thread-sidepanel flex flex-col h-full bg-[#0a0e1a] text-white">
-                {/* Header */}
-                <div className="thread-sidepanel-header">
-                    <div className="thread-sidepanel-header-content">
-                        <ClockIcon size={18} style={{ flexShrink: 0 }} />
-                        <h2 className="thread-sidepanel-title">Reminders</h2>
-                    </div>
-                    <button
-                        className="thread-sidepanel-close"
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div
+                        className="fixed inset-0 bg-black/50 z-[1000] backdrop-blur-[4px]"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
                         onClick={onClose}
-                        aria-label="Close reminders panel"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
+                    />
 
-                {/* Content */}
-                <div className="thread-sidepanel-content">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-[60px] px-6 gap-5 text-white/60">
-                            <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
-                            <p className="text-sm text-white/60 font-normal m-0 font-sans">Loading reminders...</p>
+                    {/* Side Panel */}
+                    <motion.div
+                        className="fixed inset-y-0 left-0 w-[320px] max-w-[320px] min-w-[320px] bg-[#0a0e1a] border-r border-white/[0.08] z-[1001] flex flex-col shadow-[-4px_0_20px_rgba(0,0,0,0.3)] md:w-[60%] md:max-w-[350px] md:min-w-[280px] sm:!w-screen sm:!max-w-[100vw] sm:!min-w-[100vw]"
+                        initial={{ x: '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    >
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-[20px_20px_16px] border-b border-white/[0.08] bg-[#0a0e1a]">
+                            <div className="flex items-center gap-2.5">
+                                <ClockIcon size={18} className="shrink-0 text-white" />
+                                <h2 className="m-0 text-xl font-semibold text-white leading-[1.2]">Reminders</h2>
+                            </div>
+                            <button
+                                className="flex items-center justify-center p-2 bg-transparent border-none text-[#888] cursor-pointer rounded-md transition-all duration-200 hover:bg-white/5 hover:text-white"
+                                onClick={onClose}
+                                aria-label="Close reminders panel"
+                            >
+                                <X size={20} />
+                            </button>
                         </div>
-                    ) : reminders.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 px-8 gap-4 text-center">
-                            <ClockIcon size={56} className="text-white/30 mb-2" />
-                            <p className="text-sm font-normal my-2 text-white font-sans">No active reminders</p>
-                            <span className="text-[13px] text-white/60 leading-relaxed max-w-[280px] font-sans font-normal">
-                                Ask the AI assistant to create a reminder and it will appear here
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-2 p-4">
-                            {reminders.map((reminder) => (
-                                <div key={reminder.id} className="bg-[#1e2332]/80 border border-white/[0.08] rounded-xl px-4 pt-[14px] pb-10 transition-all duration-200 relative overflow-visible hover:bg-[#232837]/90 hover:border-white/[0.12]">
-                                    <div className="flex flex-col gap-3">
-                                        <div className="flex items-start justify-between gap-3 mb-1.5">
-                                            <h3 className="text-[13px] font-semibold text-white m-0 flex-1 leading-snug tracking-[-0.01em] font-sans">
-                                                {reminder.generatedTitle || reminder.title}
-                                            </h3>
+
+                        {/* Content */}
+                        <div className="flex-1 overflow-y-auto p-0">
+                            {loading ? (
+                                <div className="flex flex-col items-center justify-center py-[60px] px-6 gap-5 text-white/60">
+                                    <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+                                    <p className="text-sm text-white/60 font-normal m-0 font-sans">Loading reminders...</p>
+                                </div>
+                            ) : reminders.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 px-8 gap-4 text-center">
+                                    <ClockIcon size={56} className="text-white/30 mb-2" />
+                                    <p className="text-sm font-normal my-2 text-white font-sans">No active reminders</p>
+                                    <span className="text-[13px] text-white/60 leading-relaxed max-w-[280px] font-sans font-normal">
+                                        Ask the AI assistant to create a reminder and it will appear here
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col gap-2 p-4">
+                                    {reminders.map((reminder) => (
+                                        <div key={reminder.id} className="bg-[#1e2332]/80 border border-white/[0.08] rounded-xl px-4 pt-[14px] pb-10 transition-all duration-200 relative overflow-visible hover:bg-[#232837]/90 hover:border-white/[0.12]">
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-start justify-between gap-3 mb-1.5">
+                                                    <h3 className="text-[13px] font-semibold text-white m-0 flex-1 leading-snug tracking-[-0.01em] font-sans">
+                                                        {reminder.generatedTitle || reminder.title}
+                                                    </h3>
+                                                    <button
+                                                        className="bg-transparent border-none px-1.5 py-0.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-[#ff4444]"
+                                                        onClick={() => handleDeleteReminder(reminder.id)}
+                                                        title="Delete reminder"
+                                                        aria-label="Delete reminder"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
+
+                                                {reminder.generatedDescription && (
+                                                    <p className="text-[13px] text-white/80 m-0 mb-2 leading-snug font-sans font-normal">
+                                                        {reminder.generatedDescription}
+                                                    </p>
+                                                )}
+
+                                                <div className="inline-flex items-center gap-1.5 text-[11px] text-white/50 font-normal py-0.5 w-fit font-sans">
+                                                    <Calendar size={14} />
+                                                    <span>{formatDateTime(reminder.when)}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Edit button positioned at right bottom */}
                                             <button
-                                                className="bg-transparent border-none px-1.5 py-0.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center shrink-0 hover:bg-red-500/10 hover:text-[#ff4444]"
-                                                onClick={() => handleDeleteReminder(reminder.id)}
-                                                title="Delete reminder"
-                                                aria-label="Delete reminder"
+                                                className="absolute bottom-[14px] right-4 bg-transparent border-none p-1.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center hover:bg-white/10 hover:text-white"
+                                                onClick={() => handleEditClick(reminder)}
+                                                title="Edit reminder"
+                                                aria-label="Edit reminder"
                                             >
-                                                <Trash2 size={16} />
+                                                <SquarePenIcon size={16} />
                                             </button>
                                         </div>
-
-                                        {reminder.generatedDescription && (
-                                            <p className="text-[13px] text-white/80 m-0 mb-2 leading-snug font-sans font-normal">
-                                                {reminder.generatedDescription}
-                                            </p>
-                                        )}
-
-                                        <div className="inline-flex items-center gap-1.5 text-[11px] text-white/50 font-normal py-0.5 w-fit font-sans">
-                                            <Calendar size={14} />
-                                            <span>{formatDateTime(reminder.when)}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Edit button positioned at right bottom */}
-                                    <button
-                                        className="absolute bottom-[14px] right-4 bg-transparent border-none p-1.5 cursor-pointer text-white/40 rounded transition-all duration-200 flex items-center justify-center hover:bg-white/10 hover:text-white"
-                                        onClick={() => handleEditClick(reminder)}
-                                        title="Edit reminder"
-                                        aria-label="Edit reminder"
-                                    >
-                                        <SquarePenIcon size={16} />
-                                    </button>
+                                    ))}
                                 </div>
-                            ))}
+                            )}
                         </div>
-                    )}
-                </div>
-            </div>
+                    </motion.div>
+                </>
+            )}
 
             {/* Edit Reminder Dialog */}
             {editingReminder && (
@@ -225,6 +243,6 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                     }}
                 />
             )}
-        </>
+        </AnimatePresence>
     );
 };

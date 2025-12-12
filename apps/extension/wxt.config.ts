@@ -76,20 +76,35 @@ export default defineConfig({
                 'node:worker_threads': resolve(__dirname, 'src/polyfills/worker_threads.ts'),
                 'vm': resolve(__dirname, 'src/polyfills/vm.ts'),
                 'node:vm': resolve(__dirname, 'src/polyfills/vm.ts'),
-            },  
+            },
         },
         // Exclude problematic dependencies from optimization
         optimizeDeps: {
             esbuildOptions: {
                 target: 'esnext',
+                // Better tree-shaking
+                treeShaking: true,
             },
+            // Exclude heavy deps that don't need pre-bundling
+            exclude: ['three', 'ogl'],
         },
+        // Disable source maps in production for smaller bundles
+        sourcemap: process.env.NODE_ENV === 'development' ? 'inline' : false,
         build: {
             target: 'esnext',
             commonjsOptions: {
                 transformMixedEsModules: true,
             },
-            chunkSizeWarningLimit: 1000, // Increase chunk size limit to avoid warnings
+            chunkSizeWarningLimit: 1000,
+            minify: 'esbuild', // Use esbuild for faster minification
+            rollupOptions: {
+                output: {
+                    // Explicitly set manualChunks to undefined to prevent conflicts with
+                    // inlineDynamicImports used by WXT for content scripts.
+                    // This overrides any manualChunks set by plugins like @tailwindcss/vite.
+                    manualChunks: undefined,
+                },
+            },
         },
     }),
 

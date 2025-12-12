@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
 import { useAskCommandDetection } from '@/contents/ask-command/useAskCommandDetection';
@@ -23,7 +22,7 @@ interface AppProps {
     ctx: any;
 }
 
-export default function App({ ctx: _ctx }: AppProps) {
+export default function AskCommandApp({ ctx: _ctx }: AppProps) {
     const { isAskMode, overlayPosition, setIsAskMode, isEnabled } = useAskCommandDetection();
 
     const { captureContext } = usePageContextCapture();
@@ -87,9 +86,6 @@ export default function App({ ctx: _ctx }: AppProps) {
         // Use browser namespace if available, otherwise chrome
         const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
         runtime.onMessage.addListener(handleMessage);
-
-        // Also use ctx for cleanup if possible, but React useEffect checks unmount
-        // ctx.onInvalidated is global for the script, not component specific here.
 
         return () => {
             runtime.onMessage.removeListener(handleMessage);

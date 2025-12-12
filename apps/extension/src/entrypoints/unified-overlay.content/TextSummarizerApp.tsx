@@ -9,7 +9,7 @@ interface AppProps {
     ctx: any;
 }
 
-const TextSummarizerContent = ({ ctx: _ctx }: AppProps) => {
+export default function TextSummarizerApp({ ctx: _ctx }: AppProps) {
     const { selection, setSelection, resetSelection, isEnabled } = useTextSelection();
     const { summary, isLoading, isStreaming, error, summarize, resetSummary } = useSummarizer();
     const [showPopup, setShowPopup] = useState(false);
@@ -61,6 +61,4 @@ const TextSummarizerContent = ({ ctx: _ctx }: AppProps) => {
             )}
         </>
     );
-};
-
-export default TextSummarizerContent;
+}

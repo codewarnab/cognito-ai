@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useEffect } from 'react';
 import { browser } from 'wxt/browser';
 import { useRewriter } from '@/contents/text-rewriter/useRewriter';
@@ -21,7 +20,7 @@ interface AppProps {
     ctx: any;
 }
 
-const TextRewriterContent = ({ ctx: _ctx }: AppProps) => {
+export default function TextRewriterApp({ ctx: _ctx }: AppProps) {
     const { rewrittenText, isProcessing, error, rewrite, replaceSelection, reset } = useRewriter();
     const [showTooltip, setShowTooltip] = useState(false);
     const [isEnabled, setIsEnabled] = useState(true);
@@ -157,5 +156,3 @@ const TextRewriterContent = ({ ctx: _ctx }: AppProps) => {
         />
     );
 }
-
-export default TextRewriterContent;

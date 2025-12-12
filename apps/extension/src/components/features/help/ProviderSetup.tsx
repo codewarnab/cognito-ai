@@ -99,25 +99,6 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
         }
     };
 
-    const handleModelChange = async (newModel: RemoteModelType) => {
-        setSelectedModel(newModel);
-        try {
-            await setModelConfig({ remoteModel: newModel });
-            log.info('Model configuration saved automatically', { model: newModel });
-            setNotification({
-                type: 'success',
-                message: `Model changed to ${newModel}`
-            });
-            setTimeout(() => setNotification(null), 3000);
-        } catch (error) {
-            log.error('Failed to save model config', error);
-            setNotification({
-                type: 'error',
-                message: 'Failed to save model selection'
-            });
-        }
-    };
-
     const validateFields = (): { valid: boolean; error?: string } => {
         if (provider === 'google') {
             if (!googleApiKey.trim()) {
@@ -184,23 +165,19 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
 
             setNotification({
                 type: 'success',
-                message: `${provider === 'google' ? 'Google AI' : 'Vertex AI'} configuration saved successfully!`
+                message: `${provider === 'google' ? 'Google AI' : 'Vertex AI'} configuration saved!`
             });
 
             // Notify parent that config was saved
             if (onConfigSaved) {
                 onConfigSaved();
             }
-
-            // Scroll to top to show success message
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) {
             log.error('Failed to save provider configuration', error);
             setNotification({
                 type: 'error',
                 message: error instanceof Error ? error.message : 'Failed to save configuration. Please try again.'
             });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         } finally {
             setIsSaving(false);
         }
@@ -225,12 +202,10 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                 log.info('Vertex credentials removed');
             }
 
-            setNotification({ type: 'success', message: 'Configuration removed successfully' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setNotification({ type: 'success', message: 'Configuration removed' });
         } catch (error) {
             log.error('Failed to remove configuration', error);
             setNotification({ type: 'error', message: 'Failed to remove configuration. Please try again.' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         } finally {
             setIsSaving(false);
         }
@@ -244,24 +219,22 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
         }
     };
 
-    // Notification style classes based on type
-    const getNotificationClasses = (type: 'success' | 'error' | 'info') => {
-        const base = "py-3.5 px-4 rounded-[10px] text-sm border flex items-center gap-2.5 mb-6 backdrop-blur-[10px]";
-        switch (type) {
-            case 'success':
-                return `${base} bg-green-500/[0.08] border-green-500/20 text-green-500`;
-            case 'error':
-                return `${base} bg-red-500/[0.08] border-red-500/20 text-red-500`;
-            case 'info':
-                return `${base} bg-[#4a6fa5]/[0.08] border-[#4a6fa5]/20 text-[#4a6fa5]`;
+    // Auto-dismiss notification after 3 seconds for success messages
+    useEffect(() => {
+        if (notification?.type === 'success') {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 3000);
+            return () => clearTimeout(timer);
         }
-    };
+        return undefined;
+    }, [notification]);
 
     return (
-        <div className="flex flex-col h-screen bg-[var(--bg-primary)] overflow-hidden">
-            {/* Header */}
-            <div className="sticky top-0 z-10 bg-[var(--bg-primary)] border-b border-white/[0.06] py-4 px-6 max-[640px]:p-4">
-                <div className="flex items-center gap-4">
+        <div className="flex flex-col h-screen bg-(--bg-primary) overflow-hidden">
+            {/* Header with integrated actions */}
+            <div className="sticky top-0 z-10 bg-(--bg-primary) border-b border-white/[0.06] py-3 px-6 max-[640px]:px-4">
+                <div className="flex items-center gap-3">
                     <button
                         className="flex items-center justify-center w-8 h-8 rounded-lg bg-transparent border-none text-white/50 cursor-pointer transition-all duration-200 shrink-0 hover:bg-white/5 hover:text-white/90"
                         onClick={onBack}
@@ -269,80 +242,98 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     >
                         <ArrowLeft size={20} />
                     </button>
-                    <div className="flex-1">
-                        <h1 className="text-xl font-semibold text-white/95 m-0 leading-tight tracking-[-0.01em] max-[640px]:text-lg">AI Provider Setup</h1>
-                        <p className="text-sm text-white/40 mt-1 mb-0 leading-normal font-normal">
-                            Configure your api keys
-                        </p>
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-lg font-semibold text-white/95 m-0 leading-tight tracking-[-0.01em]">AI Provider Setup</h1>
+                    </div>
+                    {/* Action buttons in header */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        {hasCurrentProviderConfig() && (
+                            <button
+                                onClick={handleRemove}
+                                disabled={isSaving}
+                                className="py-2 px-3.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 border border-red-500/30 bg-transparent text-red-500/85 hover:bg-red-500/[0.08] hover:border-red-500/50 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                                Remove
+                            </button>
+                        )}
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            className="py-2 px-4 rounded-lg text-xs font-medium border-none cursor-pointer transition-all duration-200 bg-[#4a6fa5] text-white hover:bg-[#5a7fb5] disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {isSaving ? 'Saving...' : 'Save'}
+                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto py-8 px-6 max-w-[600px] mx-auto w-full max-[640px]:py-6 max-[640px]:px-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20">
-                {/* Notification */}
-                {notification && (
-                    <div className={getNotificationClasses(notification.type)}>
-                        <span className="text-base shrink-0">
+            {/* Inline notification - fixed position below header */}
+            {notification && (
+                <div className="px-6 max-[640px]:px-4 pt-3 max-w-[600px] mx-auto w-full">
+                    <div className={`py-2.5 px-3.5 rounded-lg text-sm border flex items-center gap-2 backdrop-blur-[10px] animate-in fade-in slide-in-from-top-2 duration-200 ${notification.type === 'success'
+                        ? 'bg-green-500/8 border-green-500/20 text-green-500'
+                        : notification.type === 'error'
+                            ? 'bg-red-500/8 border-red-500/20 text-red-500'
+                            : 'bg-[#4a6fa5]/8 border-[#4a6fa5]/20 text-[#4a6fa5]'
+                        }`}>
+                        <span className="text-sm shrink-0">
                             {notification.type === 'success' ? '✓' : notification.type === 'error' ? '✕' : 'ℹ'}
                         </span>
-                        <span>{notification.message}</span>
+                        <span className="flex-1 text-[13px]">{notification.message}</span>
+                        <button
+                            onClick={() => setNotification(null)}
+                            className="text-current opacity-60 hover:opacity-100 bg-transparent border-none cursor-pointer p-0.5 text-sm"
+                        >
+                            ✕
+                        </button>
                     </div>
-                )}
+                </div>
+            )}
 
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto py-5 px-6 max-w-[600px] mx-auto w-full max-[640px]:py-4 max-[640px]:px-4 [&::-webkit-scrollbar]:w-[5px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.12] [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
                 {/* Info banner when both providers are configured */}
-                {bothProvidersConfigured && !notification && (
-                    <div className="py-3.5 px-4 rounded-[10px] text-[13px] border border-purple-500/20 bg-purple-500/[0.08] text-purple-500 flex items-start gap-2.5 mb-6 backdrop-blur-[10px]">
-                        <span className="text-base mt-0.5 shrink-0">ℹ</span>
+                {bothProvidersConfigured && (
+                    <div className="py-3 px-3.5 rounded-lg text-[13px] border border-purple-500/20 bg-purple-500/[0.08] text-purple-500 flex items-start gap-2.5 mb-5 backdrop-blur-[10px]">
+                        <span className="text-sm mt-0.5 shrink-0">ℹ</span>
                         <div className="flex-1 leading-relaxed">
-                            <strong>Both providers configured!</strong>
-                            <br />
-                            <span className="text-xs opacity-90">
-                                By default, Vertex AI will be used when both are available.
-                                Select a provider below to manually override this preference.
-                            </span>
+                            <strong>Both providers configured!</strong> Vertex AI is used by default.
                         </div>
                     </div>
                 )}
 
-                <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-5">
                     {/* Provider Selection */}
-                    <div className="flex flex-col gap-2.5">
+                    <div className="flex flex-col gap-2">
                         <label className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">AI Provider</label>
-                        <div className="flex flex-col gap-3.5">
+                        <div className="flex gap-2.5">
                             {/* Google AI Option */}
-                            <label className={`flex items-start p-4.5 border-[1.5px] rounded-[10px] cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'google' ? 'border-[#4a6fa5] bg-[#4a6fa5]/[0.08]' : 'border-white/[0.08]'}`}>
+                            <label className={`flex-1 flex items-center p-3.5 border-[1.5px] rounded-lg cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'google' ? 'border-[#4a6fa5] bg-[#4a6fa5]/8' : 'border-white/[0.08]'}`}>
                                 <input
                                     type="radio"
                                     value="google"
                                     checked={provider === 'google'}
                                     onChange={() => setProvider('google')}
-                                    className="mt-1 mr-3 cursor-pointer shrink-0"
+                                    className="mr-2.5 cursor-pointer shrink-0"
                                 />
-                                <div className="flex-1">
-                                    <div className="font-medium text-white/90 mb-1 text-[15px]">Google Generative AI</div>
-                                    <div className="text-[13px] text-white/45 leading-normal">
-                                        Use AI Studio API key (Free tier available)
-                                    </div>
+                                <div>
+                                    <div className="font-medium text-white/90 text-[14px]">Google AI</div>
+                                    <div className="text-[11px] text-white/45">Free tier available</div>
                                 </div>
                             </label>
 
                             {/* Vertex AI Option */}
-                            <label className={`flex items-start p-4.5 border-[1.5px] rounded-[10px] cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'vertex' ? 'border-[#4a6fa5] bg-[#4a6fa5]/[0.08]' : 'border-white/[0.08]'}`}>
+                            <label className={`flex-1 flex items-center p-3.5 border-[1.5px] rounded-lg cursor-pointer bg-white/[0.02] transition-all duration-200 hover:bg-white/[0.04] hover:border-white/[0.12] ${provider === 'vertex' ? 'border-[#4a6fa5] bg-[#4a6fa5]/8' : 'border-white/[0.08]'}`}>
                                 <input
                                     type="radio"
                                     value="vertex"
                                     checked={provider === 'vertex'}
                                     onChange={() => setProvider('vertex')}
-                                    className="mt-1 mr-3 cursor-pointer shrink-0"
+                                    className="mr-2.5 cursor-pointer shrink-0"
                                 />
-                                <div className="flex-1">
-                                    <div className="font-medium text-white/90 mb-1 text-[15px]">
-                                        Google Vertex AI
-                                    </div>
-                                    <div className="text-[13px] text-white/45 leading-normal">
-                                        Use service account credentials from Google Cloud
-                                    </div>
+                                <div>
+                                    <div className="font-medium text-white/90 text-[14px]">Vertex AI</div>
+                                    <div className="text-[11px] text-white/45">Service account</div>
                                 </div>
                             </label>
                         </div>
@@ -352,7 +343,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     {provider === 'google' ? (
                         <>
                             {/* Google API Key Input */}
-                            <div className="flex flex-col gap-2.5">
+                            <div className="flex flex-col gap-2">
                                 <label htmlFor="google-api-key" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
                                     API Key
                                 </label>
@@ -364,12 +355,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                         onChange={(e) => setGoogleApiKeyState(e.target.value)}
                                         placeholder="Enter your Google AI Studio API key"
                                         disabled={isLoading || isSaving}
-                                        className="w-full py-3.5 px-3.5 pr-16 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full py-3 px-3.5 pr-16 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowGoogleKey(!showGoogleKey)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-(--text-tertiary) bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-(--text-primary) hover:bg-(--glass-bg-hover)"
                                     >
                                         {showGoogleKey ? 'Hide' : 'Show'}
                                     </button>
@@ -379,38 +370,40 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                     ) : (
                         <>
                             {/* Vertex AI Fields */}
-                            <div className="flex flex-col gap-2.5">
-                                <label htmlFor="vertex-project-id" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
-                                    Project ID *
-                                </label>
-                                <input
-                                    id="vertex-project-id"
-                                    type="text"
-                                    value={vertexProjectId}
-                                    onChange={(e) => setVertexProjectId(e.target.value)}
-                                    placeholder="my-project-123"
-                                    disabled={isLoading || isSaving}
-                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
+                            <div className="grid grid-cols-2 gap-3 max-[640px]:grid-cols-1">
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="vertex-project-id" className="block text-[12px] font-medium text-white/60">
+                                        Project ID *
+                                    </label>
+                                    <input
+                                        id="vertex-project-id"
+                                        type="text"
+                                        value={vertexProjectId}
+                                        onChange={(e) => setVertexProjectId(e.target.value)}
+                                        placeholder="my-project-123"
+                                        disabled={isLoading || isSaving}
+                                        className="w-full py-2.5 px-3 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1.5">
+                                    <label htmlFor="vertex-location" className="block text-[12px] font-medium text-white/60">
+                                        Location *
+                                    </label>
+                                    <input
+                                        id="vertex-location"
+                                        type="text"
+                                        value={vertexLocation}
+                                        onChange={(e) => setVertexLocation(e.target.value)}
+                                        placeholder="us-central1"
+                                        disabled={isLoading || isSaving}
+                                        className="w-full py-2.5 px-3 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="flex flex-col gap-2.5">
-                                <label htmlFor="vertex-location" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
-                                    Location *
-                                </label>
-                                <input
-                                    id="vertex-location"
-                                    type="text"
-                                    value={vertexLocation}
-                                    onChange={(e) => setVertexLocation(e.target.value)}
-                                    placeholder="us-central1"
-                                    disabled={isLoading || isSaving}
-                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
-                                />
-                            </div>
-
-                            <div className="flex flex-col gap-2.5">
-                                <label htmlFor="vertex-client-email" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="vertex-client-email" className="block text-[12px] font-medium text-white/60">
                                     Client Email *
                                 </label>
                                 <input
@@ -420,12 +413,12 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexClientEmail(e.target.value)}
                                     placeholder="service-account@project.iam.gserviceaccount.com"
                                     disabled={isLoading || isSaving}
-                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full py-2.5 px-3 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
 
-                            <div className="flex flex-col gap-2.5">
-                                <label htmlFor="vertex-private-key" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="vertex-private-key" className="block text-[12px] font-medium text-white/60">
                                     Private Key *
                                 </label>
                                 <div className="relative">
@@ -435,22 +428,22 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                         onChange={(e) => setVertexPrivateKey(e.target.value)}
                                         placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
                                         disabled={isLoading || isSaving}
-                                        rows={showVertexKey ? 8 : 4}
-                                        className={`w-full py-3.5 px-3.5 pr-16 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed font-mono text-xs resize-y ${!showVertexKey ? 'blur-[4px]' : ''}`}
+                                        rows={showVertexKey ? 6 : 3}
+                                        className={`w-full py-2.5 px-3 pr-14 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed font-mono text-xs resize-y ${!showVertexKey ? 'blur-[4px]' : ''}`}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowVertexKey(!showVertexKey)}
-                                        className="absolute right-2 top-2 text-xs text-[var(--text-tertiary)] bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)]"
+                                        className="absolute right-2 top-2 text-xs text-(--text-tertiary) bg-transparent border-none cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:text-(--text-primary) hover:bg-(--glass-bg-hover)"
                                     >
                                         {showVertexKey ? 'Hide' : 'Show'}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-2.5">
-                                <label htmlFor="vertex-private-key-id" className="block text-[13px] font-medium text-white/60 tracking-[0.01em]">
-                                    Private Key ID <span className="text-[var(--text-tertiary)] font-normal">(optional)</span>
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="vertex-private-key-id" className="block text-[12px] font-medium text-white/60">
+                                    Private Key ID <span className="text-(--text-tertiary) font-normal text-[11px]">(optional)</span>
                                 </label>
                                 <input
                                     id="vertex-private-key-id"
@@ -459,67 +452,47 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
                                     onChange={(e) => setVertexPrivateKeyId(e.target.value)}
                                     placeholder="abc123def456..."
                                     disabled={isLoading || isSaving}
-                                    className="w-full py-3.5 px-3.5 rounded-[10px] border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full py-2.5 px-3 rounded-lg border-[1.5px] border-white/[0.08] text-sm bg-white/[0.02] text-white/90 transition-all duration-200 focus:outline-none focus:border-[#4a6fa5]/50 focus:bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed"
                                 />
                             </div>
                         </>
                     )}
 
-                    {/* Help Text */}
-                    <div className="p-4 bg-white/[0.02] rounded-[10px] text-[13px] border border-white/[0.06] leading-relaxed">
-                        {provider === 'google' ? (
-                            <>
-                                <p className="m-0 mb-2.5 text-white/70">
-                                    <strong>How to get a Google AI API key:</strong>
-                                </p>
-                                <ol className="m-0 pl-5 text-white/50">
-                                    <li className="mb-1">Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google AI Studio</a></li>
-                                    <li className="mb-1">Sign in with your Google account</li>
-                                    <li className="mb-1">Click "Create API Key" or "Get API Key"</li>
-                                    <li className="mb-1">Copy the generated key and paste it above</li>
-                                </ol>
-                                <p className="mt-2 mb-0 text-[var(--text-tertiary)] text-xs">
-                                    <em>The free tier includes generous quotas for personal use.</em>
-                                </p>
-                            </>
-                        ) : (
-                            <>
-                                <p className="m-0 mb-2.5 text-white/70">
-                                    <strong>How to get Vertex AI credentials:</strong>
-                                </p>
-                                <ol className="m-0 pl-5 text-white/50">
-                                    <li className="mb-1">Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google Cloud Console</a></li>
-                                    <li className="mb-1">Navigate to "IAM & Admin" → "Service Accounts"</li>
-                                    <li className="mb-1">Create a new service account with "Vertex AI User" role</li>
-                                    <li className="mb-1">Create a JSON key and download it</li>
-                                    <li className="mb-1">Copy values from the JSON file to the fields above</li>
-                                </ol>
-                                <p className="mt-2 mb-0 text-[var(--text-tertiary)] text-xs">
-                                    <em>Ensure your GCP project has the Vertex AI API enabled.</em>
-                                </p>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3.5 justify-end pt-4 max-[640px]:flex-col">
-                        {hasCurrentProviderConfig() && !notification && (
-                            <button
-                                onClick={handleRemove}
-                                disabled={isSaving}
-                                className="py-3 px-6 rounded-[10px] text-sm font-medium border-none cursor-pointer transition-all duration-200 border-[1.5px] border-red-500/30 bg-transparent text-red-500/85 hover:bg-red-500/[0.08] hover:border-red-500/50 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed max-[640px]:w-full"
-                            >
-                                Remove
-                            </button>
-                        )}
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            className="py-3 px-6 rounded-[10px] text-sm font-medium border-none cursor-pointer transition-all duration-200 bg-[#4a6fa5] text-white hover:bg-[#5a7fb5] hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(74,111,165,0.3)] disabled:opacity-40 disabled:cursor-not-allowed max-[640px]:w-full"
-                        >
-                            {isSaving ? 'Saving...' : 'Save Configuration'}
-                        </button>
-                    </div>
+                    {/* Help Text - Collapsible */}
+                    <details className="group">
+                        <summary className="py-2.5 px-3.5 bg-white/[0.02] rounded-lg text-[13px] border border-white/[0.06] cursor-pointer list-none flex items-center gap-2 text-white/60 hover:bg-white/[0.04] transition-all">
+                            <span className="text-[11px] transition-transform group-open:rotate-90">▶</span>
+                            <span>How to get {provider === 'google' ? 'API key' : 'credentials'}</span>
+                        </summary>
+                        <div className="mt-2 p-3.5 bg-white/[0.02] rounded-lg text-[13px] border border-white/[0.06] leading-relaxed">
+                            {provider === 'google' ? (
+                                <>
+                                    <ol className="m-0 pl-4 text-white/50 space-y-1">
+                                        <li>Visit <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google AI Studio</a></li>
+                                        <li>Sign in with your Google account</li>
+                                        <li>Click "Create API Key" or "Get API Key"</li>
+                                        <li>Copy and paste the key above</li>
+                                    </ol>
+                                    <p className="mt-2 mb-0 text-(--text-tertiary) text-xs">
+                                        <em>The free tier includes generous quotas for personal use.</em>
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <ol className="m-0 pl-4 text-white/50 space-y-1">
+                                        <li>Go to <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer" className="text-[#1264FF] underline">Google Cloud Console</a></li>
+                                        <li>Navigate to "IAM & Admin" → "Service Accounts"</li>
+                                        <li>Create a service account with "Vertex AI User" role</li>
+                                        <li>Create a JSON key and download it</li>
+                                        <li>Copy values from the JSON file above</li>
+                                    </ol>
+                                    <p className="mt-2 mb-0 text-(--text-tertiary) text-xs">
+                                        <em>Ensure Vertex AI API is enabled in your project.</em>
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    </details>
                 </div>
             </div>
         </div>

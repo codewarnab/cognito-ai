@@ -1,0 +1,28 @@
+/* ============================================
+   Unified Overlay - Combined Content Script Styles
+   
+   Combines all feature CSS into one file to share
+   common styles and reduce CSS duplication.
+   ============================================ */
+
+/* Tailwind base for content scripts */
+@import '@assets/tailwind.css';
+
+/* Shared markdown styles */
+@import '../../styles/features/shared-markdown.css';
+
+/* Feature-specific styles (local copies) */
+@import './ask-command.css';
+@import './text-rewriter.css';
+@import './text-summarizer.css';
+
+/* Unified container reset */
+.cognito-overlay-root {
+    /* Ensure features don't interfere with each other */
+    position: relative;
+    pointer-events: none;
+}
+
+.cognito-overlay-root>* {
+    pointer-events: auto;
+}

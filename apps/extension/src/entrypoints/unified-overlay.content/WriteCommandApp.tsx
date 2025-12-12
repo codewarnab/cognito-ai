@@ -1,4 +1,8 @@
-
+/**
+ * Write Command App - Unified Overlay Version
+ * 
+ * Handles AI-powered text generation for text fields.
+ */
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { browser } from 'wxt/browser';
 import { useWriteCommandDetection } from '@/contents/write-command/useWriteCommandDetection';
@@ -12,11 +16,11 @@ import { createLogger } from '~logger';
 
 const log = createLogger('WriteCommand');
 
-interface AppProps {
+interface WriteCommandAppProps {
     ctx: any;
 }
 
-const WriteCommandContent = ({ ctx: _ctx }: AppProps) => {
+const WriteCommandContent = ({ ctx: _ctx }: WriteCommandAppProps) => {
     const {
         isWriterMode,
         targetElement,
@@ -43,9 +47,6 @@ const WriteCommandContent = ({ ctx: _ctx }: AppProps) => {
     // Cleanup on unmount or page navigation only
     useEffect(() => {
         // Handle page navigation (beforeunload)
-        // Use ctx.addEventListener for auto-cleanup if using WXT patterns, but window works too.
-        // ctx listener is persistent for the script execution, React useEffect is for component lifecycle.
-        // Since we want component cleanup, stick to window.addEventListener in useEffect.
         const handleBeforeUnload = () => {
             if (activePortRef.current) {
                 log.debug('Cleaning up active port on navigation');

@@ -47,10 +47,20 @@ const MenuItem: React.FC<{
         textShadow: glow ? '0 0 8px rgba(147, 197, 253, 0.6)' : 'none',
     };
 
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+        // Use setTimeout to ensure the menu closes first and the state update happens on next tick
+        setTimeout(() => {
+            onClick();
+        }, 0);
+    };
+
     return (
         <button
             style={baseStyle}
-            onClick={onClick}
+            onClick={handleClick}
+            onMouseDown={(e) => e.stopPropagation()}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
@@ -100,7 +110,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     }, [showHeaderMenu]);
 
     return (
-        <div className="absolute top-0 left-0 right-0 z-50 pt-2 px-3 bg-[#0a0e1a]/80 backdrop-blur-md flex-shrink-0 min-h-[32px]">
+        <div className="absolute top-0 left-0 right-0 z-50 pt-2 px-3 bg-[#0a0e1a]/80 backdrop-blur-md shrink-0 min-h-[32px]">
             <div className="flex items-center justify-between gap-2 w-full">
                 {/* Sidebar toggle */}
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -117,7 +127,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </div>
 
                 {/* Action Buttons: Plus, Tools, Kebab (right-aligned) */}
-                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                <div className="flex items-center gap-1 shrink-0 ml-auto">
                     {/* New Thread (Plus) */}
                     {onNewThreadClick && (
                         <button
@@ -165,7 +175,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
                         {showHeaderMenu && (
                             <div
-                                className="absolute top-9 right-2 min-w-[200px] rounded-[10px] p-[6px] z-[2000]"
+                                className="absolute top-9 right-2 min-w-[200px] rounded-[10px] p-[6px] z-2000"
                                 style={{
                                     background: 'rgba(13, 13, 13, 0.98)',
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
