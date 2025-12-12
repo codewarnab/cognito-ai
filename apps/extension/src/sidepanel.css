@@ -3,7 +3,6 @@
 @import './styles/fonts.css';
 @import './styles/core/variables.css';
 @import './styles/core/base.css';
-@import './styles/layout/header.css';
 @import './styles/layout/tabs.css';
 @import './styles/layout/buttons.css';
 @import './styles/layout/status.css';

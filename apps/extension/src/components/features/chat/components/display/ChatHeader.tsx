@@ -26,13 +26,39 @@ const headerButtonClasses = `
     focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500/50 focus-visible:outline-offset-2
 `;
 
-// Menu item styles
-const menuItemBaseClasses = `
-    w-full text-left py-2.5 px-3
-    bg-transparent border-none
-    text-white/90 rounded-lg cursor-pointer text-sm
-    hover:bg-white/[0.08]
-`;
+// MenuItem component with hover state handling
+const MenuItem: React.FC<{
+    onClick: () => void;
+    children: React.ReactNode;
+    glow?: boolean;
+}> = ({ onClick, children, glow }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const baseStyle: React.CSSProperties = {
+        width: '100%',
+        textAlign: 'left',
+        padding: '8px 12px',
+        background: isHovered ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+        border: 'none',
+        color: glow ? 'rgba(147, 197, 253, 1)' : 'rgba(255, 255, 255, 0.9)',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        textShadow: glow ? '0 0 8px rgba(147, 197, 253, 0.6)' : 'none',
+    };
+
+    return (
+        <button
+            style={baseStyle}
+            onClick={onClick}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {children}
+        </button>
+    );
+};
+
 
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onSettingsClick,
@@ -74,7 +100,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     }, [showHeaderMenu]);
 
     return (
-        <div className="py-3 px-4 bg-transparent flex-shrink-0 min-h-[60px]">
+        <div className="py-3 mx-6 bg-transparent flex-shrink-0 min-h-fit">
             <div className="flex items-center justify-between gap-2 w-full">
                 {/* Sidebar toggle */}
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -139,73 +165,64 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
 
                         {showHeaderMenu && (
                             <div
-                                className="absolute top-9 right-0 min-w-[200px] rounded-[10px] p-1.5 z-[2000]"
+                                className="absolute top-9 right-2 min-w-[200px] rounded-[10px] p-[6px] z-[2000]"
                                 style={{
                                     background: 'rgba(13, 13, 13, 0.98)',
                                     border: '1px solid rgba(255, 255, 255, 0.12)',
                                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
                                 }}
                             >
-                                <button
-                                    className={menuItemBaseClasses}
+                                <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onGeneralSettingsClick?.();
                                     }}
                                 >
                                     Settings
-                                </button>
-                                <button
-                                    className={menuItemBaseClasses}
+                                </MenuItem>
+                                <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onRemindersClick?.();
                                     }}
                                 >
                                     Reminders
-                                </button>
-                                <button
-                                    className={menuItemBaseClasses}
+                                </MenuItem>
+                                <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onTroubleshootingClick?.();
                                     }}
                                 >
                                     Troubleshooting
-                                </button>
-                                <button
-                                    className={menuItemBaseClasses}
+                                </MenuItem>
+                                <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onFeaturesClick?.();
                                     }}
                                 >
                                     Features
-                                </button>
+                                </MenuItem>
                                 {process.env.NODE_ENV === 'development' && (
-                                    <button
-                                        className={menuItemBaseClasses}
+                                    <MenuItem
                                         onClick={() => {
                                             setShowHeaderMenu(false);
                                             onLoggerPanelClick?.();
                                         }}
                                     >
                                         Logger Panel
-                                    </button>
+                                    </MenuItem>
                                 )}
-                                <button
-                                    className={menuItemBaseClasses}
+                                <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onProviderSetupClick?.();
                                     }}
-                                    style={needsProviderSetup ? {
-                                        color: 'rgba(147, 197, 253, 1)',
-                                        textShadow: '0 0 8px rgba(147, 197, 253, 0.6)',
-                                    } : undefined}
+                                    glow={needsProviderSetup}
                                 >
                                     AI Provider Setup
-                                </button>
+                                </MenuItem>
                             </div>
                         )}
                     </div>

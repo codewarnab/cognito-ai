@@ -26,7 +26,6 @@ import '../../styles/features/workflows/index.css';
 import '../../styles/components/voice-recording-pill.css';
 import '../../styles/features/onboarding/index.css';
 
-import '../../styles/components/model-download-toast.css';
 import '../../styles/components/continue-button.css';
 import '../../styles/components/context-indicator.css';
 import '../../styles/components/context-warning.css';

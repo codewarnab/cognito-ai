@@ -184,7 +184,7 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
 
     return (
         <div
-            className="fixed top-4 right-4 z-[10000] flex flex-col gap-2 pointer-events-none max-sm:right-2 max-sm:top-2 max-sm:left-2"
+            className="fixed top-5 right-4 z-[10000] flex flex-col gap-2 pointer-events-none max-sm:right-2 max-sm:top-2 max-sm:left-2 "
         >
             <style>{`
                 @keyframes shake {

@@ -37,9 +37,7 @@ interface ComposerActionsProps {
     textareaRef: React.RefObject<HTMLTextAreaElement>;
 }
 
-// import { createLogger } from '~logger';  
 
-// const log = createLogger('ComposerActions', 'AI_CHAT');
 
 /**
  * Right side action buttons: plus icon for attachments, voice/send/stop buttons.
@@ -70,13 +68,6 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
 }) => {
     const plusIconRef = useRef<PlusIconHandle>(null);
 
-    // Debug logging for attachment button visibility
-    // log.info('🔘 ComposerActions render', {
-    //     isSearchActive,
-    //     isLocalMode,
-    //     showPlusButton: !isSearchActive
-    // });
-
     const handleAddTabs = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
         handleAddTabAttachments(tabs);
         setShowAttachmentDropdown(false);
@@ -88,7 +79,16 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
             {!isSearchActive && (
                 <button
                     type="button"
-                    className={`copilot-action-button ${isLocalMode ? 'disabled' : ''}`}
+                    className={`
+                        bg-transparent border-none cursor-pointer p-2 rounded-full
+                        transition-all duration-200 ease-in-out
+                        flex items-center justify-center
+                        w-9 h-9 min-w-[36px] flex-shrink-0
+                        ${isLocalMode
+                            ? 'opacity-45 cursor-not-allowed text-white/40'
+                            : 'text-white/50 hover:bg-white/10 hover:text-white/85 active:bg-white/12'
+                        }
+                    `}
                     title={isLocalMode ? 'Switch to Cloud mode to use attachments' : 'Attach file or screenshot'}
                     tabIndex={-1}
                     aria-disabled={isLocalMode}
@@ -143,7 +143,15 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
                 <button
                     type="button"
                     onClick={onStop}
-                    className="copilot-stop-button-sm"
+                    className="
+                        bg-[#4a6fa5] text-white border-none rounded-full p-2 cursor-pointer
+                        flex items-center justify-center
+                        w-9 h-9 min-w-[36px]
+                        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                        font-semibold
+                        hover:bg-[#5a7fb5] hover:scale-110
+                        active:scale-95
+                    "
                     title="Stop generation"
                 >
                     <StopIcon size={16} />
@@ -152,7 +160,17 @@ export const ComposerActions: React.FC<ComposerActionsProps> = ({
                 // Show send button when there's input or attachments
                 <button
                     type="submit"
-                    className="copilot-send-button-sm"
+                    className="
+                        border-none rounded-full p-2 cursor-pointer
+                        flex items-center justify-center
+                        w-9 h-9 min-w-[36px]
+                        transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+                        font-semibold
+                        bg-[#4a6fa5] text-white
+                        hover:bg-[#4a6fa5] hover:scale-110
+                        active:scale-95
+                        disabled:opacity-100 disabled:pointer-events-none disabled:text-white/40
+                    "
                     title="Send message (Enter)"
                     disabled={(!input.trim() && attachments.length === 0) || isLoading}
                 >
