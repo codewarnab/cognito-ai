@@ -21,29 +21,69 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
     const allOn = catEnabledCount === totalCount;
     const allOff = catEnabledCount === 0;
     const statusLabel = allOn ? 'All on' : allOff ? 'All off' : 'Some on';
-    const statusClass = allOn ? 'all-on' : allOff ? 'all-off' : 'some-on';
     const categoryKey = `mcp-${serverId}`;
 
+    const getToggleBtnStyle = (): React.CSSProperties => {
+        if (allOn) {
+            return { color: 'var(--color-primary, #3b82f6)' };
+        }
+        if (allOff) {
+            return { color: 'var(--text-tertiary, #6b7280)' };
+        }
+        return { color: 'var(--color-warning, #f59e0b)' };
+    };
+
     return (
-        <div className="tools-popover-category">
+        <div style={{ marginBottom: '2px' }}>
             <div
                 onClick={() => onToggleCategory(categoryKey)}
-                className="tools-popover-category-header"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '6px 8px',
+                    cursor: 'pointer',
+                    borderRadius: '6px',
+                    transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-                <div className="tools-popover-category-left">
-                    {isExpanded ?
-                        <ChevronDown size={12} className="tools-popover-chevron" /> :
-                        <ChevronRight size={12} className="tools-popover-chevron" />
-                    }
-                    <span className="tools-popover-category-name tools-popover-mcp-name">{serverName}</span>
-                    <span className={`tools-popover-category-count ${catEnabledCount < totalCount ? 'partial' : ''}`}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {isExpanded ? (
+                        <ChevronDown size={12} style={{ color: 'var(--text-tertiary, #6b7280)', flexShrink: 0 }} />
+                    ) : (
+                        <ChevronRight size={12} style={{ color: 'var(--text-tertiary, #6b7280)', flexShrink: 0 }} />
+                    )}
+                    <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-primary, #3b82f6)' }}>
+                        {serverName}
+                    </span>
+                    <span
+                        style={{
+                            fontSize: '10px',
+                            color: catEnabledCount < totalCount
+                                ? 'var(--color-warning, #f59e0b)'
+                                : 'var(--text-tertiary, #6b7280)',
+                        }}
+                    >
                         ({catEnabledCount}/{totalCount})
                     </span>
                 </div>
                 <button
                     type="button"
                     onClick={(e) => onToggleCategoryAll(e, serverId, tools)}
-                    className={`tools-popover-toggle-btn ${statusClass}`}
+                    style={{
+                        fontSize: '9px',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                        border: 'none',
+                        background: 'none',
+                        flexShrink: 0,
+                        ...getToggleBtnStyle(),
+                    }}
                 >
                     {statusLabel}
                 </button>
@@ -56,27 +96,44 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="overflow-hidden"
+                        style={{ overflow: 'hidden' }}
                     >
-                        <div className="tools-popover-tools">
+                        <div style={{ padding: '2px 0 4px 20px' }}>
                             {tools.map((tool) => {
                                 const enabled = !disabledTools.includes(tool.name);
 
                                 return (
                                     <div
                                         key={tool.name}
-                                        className="tools-popover-tool"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            transition: 'background-color 0.15s',
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                     >
                                         <HighlightedText
                                             text={tool.name}
                                             searchQuery={searchQuery}
-                                            className="tools-popover-tool-name"
+                                            style={{
+                                                fontSize: '11px',
+                                                fontFamily: 'ui-monospace, monospace',
+                                                color: 'var(--text-secondary, #9ca3af)',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                maxWidth: '180px',
+                                            }}
                                             title={tool.description}
                                         />
                                         <Toggle
                                             checked={enabled}
                                             onChange={(checked) => onToggleTool(serverId, tool.name, checked)}
-                                            className="tools-popover-toggle"
+                                            style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
                                         />
                                     </div>
                                 );

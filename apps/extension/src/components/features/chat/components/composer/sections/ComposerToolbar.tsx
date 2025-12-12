@@ -100,16 +100,30 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 >
                     <button
                         type="button"
-                        className={`composer-tools-button ${activeWorkflow || isSearchActive ? 'disabled' : ''} ${isTooManyTools && !isSearchActive ? 'warning' : ''}`}
                         onClick={() => !activeWorkflow && !isSearchActive && setShowToolsModal(!showToolsModal)}
                         disabled={!!activeWorkflow || isSearchActive}
                         aria-label={isSearchActive ? "Tools locked in search mode" : "Manage enabled tools"}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            border: 'none',
+                            background: 'transparent',
+                            color: isTooManyTools && !isSearchActive
+                                ? 'var(--color-warning, #f59e0b)'
+                                : 'var(--text-tertiary, #6b7280)',
+                            cursor: activeWorkflow || isSearchActive ? 'not-allowed' : 'pointer',
+                            opacity: activeWorkflow || isSearchActive ? 0.5 : 1,
+                            transition: 'color 0.15s, opacity 0.15s',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                        }}
                     >
                         <Wrench size={14} />
-                        <span className="composer-tools-count">
-                            {isSearchActive
-                                ? `${searchToolsCount} (Search)`
-                                : `${totalEnabledCount}${webMcpToolsCount > 0 ? ` (${webMcpToolsCount} Web)` : ''}${mcpToolsCount > 0 ? ` (${mcpToolsCount} MCP)` : ''}`}
+                        <span style={{ fontSize: '10px', fontWeight: 400 }}>
+                            {isSearchActive ? searchToolsCount : totalEnabledCount}
                         </span>
                     </button>
                 </Tooltip>

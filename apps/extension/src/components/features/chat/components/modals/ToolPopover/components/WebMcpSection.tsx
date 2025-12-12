@@ -25,42 +25,104 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
     const allOn = enabledCount === totalCount;
     const allOff = enabledCount === 0;
     const statusLabel = allOn ? 'All on' : allOff ? 'All off' : 'Some on';
-    const statusClass = allOn ? 'all-on' : allOff ? 'all-off' : 'some-on';
+
+    const getToggleBtnStyle = (): React.CSSProperties => {
+        if (allOn) {
+            return { color: 'var(--color-primary, #3b82f6)' };
+        }
+        if (allOff) {
+            return { color: 'var(--text-tertiary, #6b7280)' };
+        }
+        return { color: 'var(--color-warning, #f59e0b)' };
+    };
 
     return (
-        <div className="tools-popover-webmcp-section">
-            <div className="tools-popover-webmcp-header">
-                <Globe size={12} />
+        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 8px 6px',
+                fontSize: '10px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                color: 'var(--text-tertiary, #6b7280)',
+            }}>
+                <Globe size={12} style={{ color: 'var(--color-success, #10b981)' }} />
                 <span>Website Tools</span>
-                {isLoading && <span className="tools-popover-webmcp-loading">Discovering...</span>}
+                {isLoading && (
+                    <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
+                        Discovering...
+                    </span>
+                )}
                 {!isLoading && tools.length > 0 && domain && (
-                    <span className="tools-popover-webmcp-domain">{domain}</span>
+                    <span style={{
+                        marginLeft: 'auto',
+                        fontWeight: 400,
+                        fontSize: '9px',
+                        color: 'var(--text-tertiary, #6b7280)',
+                        textTransform: 'none',
+                        letterSpacing: 'normal',
+                        maxWidth: '120px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}>
+                        {domain}
+                    </span>
                 )}
             </div>
 
             {tools.length > 0 && (
-                <div className="tools-popover-category">
+                <div style={{ marginBottom: '2px' }}>
                     <div
                         onClick={() => onToggleCategory('webmcp-active')}
-                        className="tools-popover-category-header"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 8px',
+                            cursor: 'pointer',
+                            borderRadius: '6px',
+                            transition: 'background-color 0.15s',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
-                        <div className="tools-popover-category-left">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             {isExpanded ? (
-                                <ChevronDown size={12} className="tools-popover-chevron" />
+                                <ChevronDown size={12} style={{ color: 'var(--text-tertiary, #6b7280)', flexShrink: 0 }} />
                             ) : (
-                                <ChevronRight size={12} className="tools-popover-chevron" />
+                                <ChevronRight size={12} style={{ color: 'var(--text-tertiary, #6b7280)', flexShrink: 0 }} />
                             )}
-                            <span className="tools-popover-category-name tools-popover-webmcp-name">
+                            <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-success, #10b981)' }}>
                                 Active Tab
                             </span>
-                            <span className={`tools-popover-category-count ${enabledCount < totalCount ? 'partial' : ''}`}>
+                            <span style={{
+                                fontSize: '10px',
+                                color: enabledCount < totalCount
+                                    ? 'var(--color-warning, #f59e0b)'
+                                    : 'var(--text-tertiary, #6b7280)',
+                            }}>
                                 ({enabledCount}/{totalCount})
                             </span>
                         </div>
                         <button
                             type="button"
                             onClick={onToggleCategoryAll}
-                            className={`tools-popover-toggle-btn ${statusClass}`}
+                            style={{
+                                fontSize: '9px',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                                border: 'none',
+                                background: 'none',
+                                flexShrink: 0,
+                                ...getToggleBtnStyle(),
+                            }}
                         >
                             {statusLabel}
                         </button>
@@ -73,9 +135,9 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
                                 transition={{ duration: 0.15 }}
-                                className="overflow-hidden"
+                                style={{ overflow: 'hidden' }}
                             >
-                                <div className="tools-popover-tools">
+                                <div style={{ padding: '2px 0 4px 20px' }}>
                                     {tools.map((tool) => {
                                         const enabled = !disabledTools.includes(tool.name);
                                         const displayName = tool.originalName || tool.name;
@@ -83,14 +145,23 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
                                         return (
                                             <div
                                                 key={tool.name}
-                                                className="tools-popover-tool"
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    transition: 'background-color 0.15s',
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                             >
-                                                <div className="tools-popover-tool-info">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: 0 }}>
                                                     {tool.favicon ? (
                                                         <img
                                                             src={tool.favicon}
                                                             alt=""
-                                                            className="tools-popover-webmcp-favicon"
+                                                            style={{ width: '12px', height: '12px', flexShrink: 0, borderRadius: '2px', objectFit: 'contain' }}
                                                             onError={(e) => {
                                                                 e.currentTarget.style.display = 'none';
                                                                 e.currentTarget.nextElementSibling?.classList.remove('hidden');
@@ -99,19 +170,28 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
                                                     ) : null}
                                                     <Globe
                                                         size={12}
-                                                        className={`tools-popover-webmcp-icon ${tool.favicon ? 'hidden' : ''}`}
+                                                        className={tool.favicon ? 'hidden' : ''}
+                                                        style={{ color: 'var(--color-success, #10b981)', flexShrink: 0 }}
                                                     />
                                                     <HighlightedText
                                                         text={displayName}
                                                         searchQuery={searchQuery}
-                                                        className="tools-popover-tool-name"
+                                                        style={{
+                                                            fontSize: '11px',
+                                                            fontFamily: 'ui-monospace, monospace',
+                                                            color: 'var(--text-secondary, #9ca3af)',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            maxWidth: '180px',
+                                                        }}
                                                         title={tool.description || displayName}
                                                     />
                                                 </div>
                                                 <Toggle
                                                     checked={enabled}
                                                     onChange={(checked) => onToggleTool(tool.name, checked)}
-                                                    className="tools-popover-toggle"
+                                                    style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
                                                 />
                                             </div>
                                         );
@@ -124,7 +204,7 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
             )}
 
             {!isLoading && tools.length === 0 && (
-                <div className="tools-popover-webmcp-empty">
+                <div style={{ padding: '12px', textAlign: 'center', fontSize: '11px', color: 'var(--text-tertiary, #6b7280)' }}>
                     No WebMCP tools on this page
                 </div>
             )}

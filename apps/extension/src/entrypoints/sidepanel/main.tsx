@@ -5,6 +5,9 @@
  * Migrated from src/sidepanel.tsx auto-detection pattern.
  */
 
+// Tailwind CSS - must be imported first for proper cascade
+import '@assets/tailwind.css';
+
 // Polyfill import - relative from src/entrypoints/sidepanel/ to src/polyfills/
 import '../../polyfills/process';
 

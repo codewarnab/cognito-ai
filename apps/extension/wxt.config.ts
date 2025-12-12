@@ -1,5 +1,6 @@
 import { defineConfig } from 'wxt';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
 import { resolve } from 'path';
 
@@ -22,10 +23,11 @@ export default defineConfig({
         '~logger': resolve(__dirname, 'src/logger'),
     },
 
-    // React support via Vite with Node.js polyfills
+    // React support via Vite with Node.js polyfills and Tailwind CSS
     vite: () => ({
         plugins: [
             react(),
+            tailwindcss(),
             nodePolyfills({
                 // Enable polyfills for node: protocol imports
                 protocolImports: true,

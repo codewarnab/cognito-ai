@@ -1,3 +1,6 @@
+// Tailwind CSS - must be imported first for proper cascade
+import '@assets/tailwind.css';
+
 import '../../polyfills/process';
 import { useState } from 'react';
 import ReactDOM from 'react-dom/client';

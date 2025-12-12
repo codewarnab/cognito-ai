@@ -33,7 +33,7 @@ export const buildHighlightHtml = (text: string, searchQuery: string): string =>
     const pattern = new RegExp(`(${escapeRegExp(query)})`, 'gi');
     return safeText.replace(
         pattern,
-        '<mark class="tools-popover-highlight">$1</mark>'
+        '<mark class="bg-blue-500/40 text-white rounded-sm px-0.5">$1</mark>'
     );
 };
 
@@ -44,11 +44,12 @@ export const HighlightedText: React.FC<{
     text: string;
     searchQuery?: string;
     className?: string;
+    style?: React.CSSProperties;
     title?: string;
-}> = ({ text, searchQuery, className, title }) => {
+}> = ({ text, searchQuery, className, style, title }) => {
     if (!searchQuery || !searchQuery.trim()) {
         return (
-            <span className={className} title={title}>
+            <span className={className} style={style} title={title}>
                 {text}
             </span>
         );
@@ -57,6 +58,7 @@ export const HighlightedText: React.FC<{
     return (
         <span
             className={className}
+            style={style}
             title={title}
             dangerouslySetInnerHTML={{
                 __html: buildHighlightHtml(text, searchQuery)

@@ -63,9 +63,36 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="tools-popover"
+                    style={{
+                        position: 'absolute',
+                        bottom: 'calc(100% + 8px)',
+                        left: 0,
+                        width: '280px',
+                        maxHeight: '340px',
+                        backgroundColor: 'var(--bg-secondary, #0f1420)',
+                        border: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                        borderRadius: '10px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        zIndex: 100,
+                    }}
                 >
-                    <div className="tools-popover-arrow" />
+                    {/* Arrow */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            bottom: '-6px',
+                            left: '20px',
+                            width: '12px',
+                            height: '12px',
+                            backgroundColor: 'var(--bg-secondary, #0f1420)',
+                            borderRight: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                            borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                            transform: 'rotate(45deg)',
+                        }}
+                    />
 
                     <SearchBar
                         value={toolSearchQuery}
@@ -78,7 +105,15 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         onModeChange={handleModeChange}
                     />
 
-                    <div className="tools-popover-content">
+                    <div
+                        style={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            padding: '4px',
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'var(--border-color) transparent',
+                        }}
+                    >
                         {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
                             <WebMcpSection
                                 tools={filteredWebMCPTools}
@@ -94,7 +129,11 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         )}
 
                         {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
-                            <div className="tools-popover-divider" />
+                            <div style={{
+                                height: '1px',
+                                backgroundColor: 'var(--border-color, rgba(255, 255, 255, 0.08))',
+                                margin: '8px 0',
+                            }} />
                         )}
 
                         {Object.entries(groupedTools).map(([category, tools]) => (
@@ -115,17 +154,40 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         ))}
 
                         {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
-                            <div className="tools-popover-empty">
+                            <div style={{
+                                padding: '16px',
+                                textAlign: 'center',
+                                color: 'var(--text-tertiary, #6b7280)',
+                                fontSize: '11px',
+                            }}>
                                 No tools found
                             </div>
                         )}
 
                         {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
-                            <div className="tools-popover-mcp-section">
-                                <div className="tools-popover-mcp-header">
+                            <div style={{
+                                marginTop: '8px',
+                                paddingTop: '8px',
+                                borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '4px 8px 6px',
+                                    fontSize: '10px',
+                                    fontWeight: 600,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px',
+                                    color: 'var(--text-tertiary, #6b7280)',
+                                }}>
                                     <Server size={12} />
                                     <span>MCP Servers</span>
-                                    {mcpLoading && <span className="tools-popover-mcp-loading">Loading...</span>}
+                                    {mcpLoading && (
+                                        <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
+                                            Loading...
+                                        </span>
+                                    )}
                                 </div>
                                 {Object.entries(mcpServerGroups).map(([serverId, { name, tools: serverTools }]) => (
                                     <McpCategory
