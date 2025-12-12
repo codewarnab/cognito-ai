@@ -16,6 +16,24 @@ interface ChatHeaderProps {
     needsProviderSetup?: boolean;
 }
 
+// Header button styles
+const headerButtonClasses = `
+    p-1.5 bg-transparent border-none cursor-pointer
+    text-white/70 transition-all duration-200 ease-out
+    flex items-center justify-center
+    min-w-8 h-8 rounded-md
+    hover:bg-white/10 hover:text-white/90 hover:-translate-y-px
+    focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-500/50 focus-visible:outline-offset-2
+`;
+
+// Menu item styles
+const menuItemBaseClasses = `
+    w-full text-left py-2.5 px-3
+    bg-transparent border-none
+    text-white/90 rounded-lg cursor-pointer text-sm
+    hover:bg-white/[0.08]
+`;
+
 export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onSettingsClick,
     onGeneralSettingsClick,
@@ -56,13 +74,13 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     }, [showHeaderMenu]);
 
     return (
-        <div className="copilot-header">
-            <div className="copilot-header-content">
+        <div className="py-3 px-4 bg-transparent flex-shrink-0 min-h-[60px]">
+            <div className="flex items-center justify-between gap-2 w-full">
                 {/* Sidebar toggle */}
-                <div className="copilot-header-left">
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     {onThreadsClick && (
                         <button
-                            className="copilot-header-button"
+                            className={headerButtonClasses}
                             onClick={onThreadsClick}
                             title="Open chat history"
                             aria-label="Open chat history"
@@ -73,11 +91,11 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 </div>
 
                 {/* Action Buttons: Plus, Tools, Kebab (right-aligned) */}
-                <div className="copilot-header-actions">
+                <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
                     {/* New Thread (Plus) */}
                     {onNewThreadClick && (
                         <button
-                            className="copilot-header-button"
+                            className={headerButtonClasses}
                             onClick={() => {
                                 // Show warning if message is being streamed
                                 if (isLoading) {
@@ -96,7 +114,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     {/* Tools / Settings (Wrench) */}
                     {onSettingsClick && (
                         <button
-                            className="copilot-header-button"
+                            className={headerButtonClasses}
                             onClick={onSettingsClick}
                             title="MCP Server Settings"
                             aria-label="Open MCP settings"
@@ -106,9 +124,9 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     )}
 
                     {/* Kebab Menu (Three dots) */}
-                    <div className="copilot-header-menu-wrapper" ref={menuRef}>
+                    <div className="relative ml-auto" ref={menuRef}>
                         <button
-                            className="copilot-header-button"
+                            className={headerButtonClasses}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setShowHeaderMenu((v) => !v);
@@ -120,9 +138,16 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                         </button>
 
                         {showHeaderMenu && (
-                            <div className="copilot-header-menu">
+                            <div
+                                className="absolute top-9 right-0 min-w-[200px] rounded-[10px] p-1.5 z-[2000]"
+                                style={{
+                                    background: 'rgba(13, 13, 13, 0.98)',
+                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                                }}
+                            >
                                 <button
-                                    className="copilot-header-menu-item"
+                                    className={menuItemBaseClasses}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onGeneralSettingsClick?.();
@@ -131,7 +156,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     Settings
                                 </button>
                                 <button
-                                    className="copilot-header-menu-item"
+                                    className={menuItemBaseClasses}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onRemindersClick?.();
@@ -140,7 +165,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     Reminders
                                 </button>
                                 <button
-                                    className="copilot-header-menu-item"
+                                    className={menuItemBaseClasses}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onTroubleshootingClick?.();
@@ -149,7 +174,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     Troubleshooting
                                 </button>
                                 <button
-                                    className="copilot-header-menu-item"
+                                    className={menuItemBaseClasses}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onFeaturesClick?.();
@@ -159,7 +184,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 </button>
                                 {process.env.NODE_ENV === 'development' && (
                                     <button
-                                        className="copilot-header-menu-item"
+                                        className={menuItemBaseClasses}
                                         onClick={() => {
                                             setShowHeaderMenu(false);
                                             onLoggerPanelClick?.();
@@ -169,11 +194,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     </button>
                                 )}
                                 <button
-                                    className={`copilot-header-menu-item ${needsProviderSetup ? 'copilot-header-menu-item--glow' : ''}`}
+                                    className={menuItemBaseClasses}
                                     onClick={() => {
                                         setShowHeaderMenu(false);
                                         onProviderSetupClick?.();
                                     }}
+                                    style={needsProviderSetup ? {
+                                        color: 'rgba(147, 197, 253, 1)',
+                                        textShadow: '0 0 8px rgba(147, 197, 253, 0.6)',
+                                    } : undefined}
                                 >
                                     AI Provider Setup
                                 </button>
