@@ -39,69 +39,47 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
     }, []);
 
     return (
-        <div className="copilot-empty-state" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-start',
-            padding: '10px 0px',
-            height: '100%',
-            width: '100%',
-        }}>
-            <h1 style={{
-                fontSize: '1.38rem',
-                fontWeight: 600,
-                lineHeight: 1.2,
-                marginBottom: '8px',
-                color: 'var(--text-primary)',
-                textAlign: 'left',
-                width: '100%',
-                maxWidth: '100%',
-                whiteSpace: 'pre-line',
-            }}>
+        <div
+            className="copilot-empty-state flex flex-col items-start justify-start h-full w-full"
+            style={{ padding: '10px 0px' }}
+        >
+            <h1
+                className="font-semibold leading-tight mb-2 text-left w-full max-w-full whitespace-pre-line"
+                style={{
+                    fontSize: '1.38rem',
+                    color: 'var(--text-primary)',
+                }}
+            >
                 {greeting}
             </h1>
 
             {currentTip && (
-                <div style={{
-                    fontSize: '0.95rem',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.5,
-                    marginBottom: '20px',
-                    textAlign: 'left',
-                    width: '100%',
-                }}>
+                <div
+                    className="leading-normal mb-5 text-left w-full"
+                    style={{
+                        fontSize: '0.95rem',
+                        color: 'var(--text-secondary)',
+                    }}
+                >
                     Tip: {currentTip}
                 </div>
             )}
 
             {isLocalMode && onConfigureApiKey && (
-                <div style={{
-                    padding: '12px 16px',
-                    fontSize: '0.875rem',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: 'rgba(255, 152, 0, 0.08)',
-                    border: '1px solid rgba(255, 152, 0, 0.2)',
-                    borderRadius: '8px',
-                }}>
-                    <span style={{ fontSize: '14px' }}>⚠️</span>
+                <div
+                    className="flex flex-wrap items-center gap-1.5 px-4 py-3 text-sm rounded-lg"
+                    style={{
+                        color: 'var(--text-secondary)',
+                        backgroundColor: 'rgba(255, 152, 0, 0.08)',
+                        border: '1px solid rgba(255, 152, 0, 0.2)',
+                    }}
+                >
+                    <span className="text-sm">⚠️</span>
                     <span>Local mode has limited functionality.</span>
                     <button
                         onClick={onConfigureApiKey}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#4a6fa5',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                            padding: '0',
-                            fontSize: 'inherit',
-                            fontWeight: 500,
-                        }}
+                        className="bg-transparent border-none cursor-pointer underline p-0 text-[inherit] font-medium hover:opacity-80"
+                        style={{ color: '#4a6fa5' }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.color = '#5a7fb5';
                         }}
