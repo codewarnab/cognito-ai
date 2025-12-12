@@ -179,7 +179,7 @@
 
 .markdown-content [data-streamdown-li],
 .markdown-content [data-streamdown="list-item"] {
-    margin: 0.15em 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
     display: list-item !important;
 }
@@ -196,8 +196,19 @@
 .markdown-content ul.list-disc>li {
     display: list-item !important;
     padding-left: 0.25em !important;
-    padding-top: 0.1em !important;
-    padding-bottom: 0.1em !important;
+    margin-top: 0.1em !important;
+    margin-bottom: 0.1em !important;
+    line-height: 1.5 !important;
+}
+
+/* Force paragraphs inside lists to be inline and compact */
+.markdown-content [data-streamdown-li] p,
+.markdown-content [data-streamdown-li]>p,
+.markdown-content [data-streamdown="list-item"] p,
+.markdown-content [data-streamdown="list-item"]>p {
+    display: inline !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Nested lists - tighter spacing */
