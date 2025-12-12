@@ -27,7 +27,7 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
 }) => {
     // Hide voice-mode-fab when showing PDF suggestion
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             voiceFab.style.visibility = 'hidden';
         }

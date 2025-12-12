@@ -30,13 +30,13 @@ export const SelectedTextSuggestion: React.FC<SelectedTextSuggestionProps> = ({
 }) => {
     // Hide voice-mode-fab when showing selected text suggestion
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             voiceFab.style.visibility = 'hidden';
         }
         return () => {
             // Re-query to avoid stale reference
-            const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+            const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
             if (voiceFab) {
                 voiceFab.style.visibility = '';
             }

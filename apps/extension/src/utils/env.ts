@@ -1,12 +1,7 @@
 /**
- * Environment Variable Compatibility Layer
+ * Environment Variable Module
  * 
- * This module provides a unified way to access environment variables
- * during the Plasmo to WXT migration. It checks WXT variables first,
- * then falls back to Plasmo variables, then to default values.
- * 
- * After migration is complete (Phase 12), this can be simplified to
- * only use import.meta.env.WXT_* variables.
+ * Provides centralized access to WXT environment variables with defaults.
  * 
  * NOTE: API keys for AI providers (Gemini, Vertex) are NOT environment
  * variables. They are stored in chrome.storage.local via the credentials

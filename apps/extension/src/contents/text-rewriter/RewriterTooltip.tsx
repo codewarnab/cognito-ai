@@ -189,7 +189,7 @@ export function RewriterTooltip({
             // Don't close if processing
             if (isProcessing) return;
 
-            // Use composedPath() to traverse Shadow DOM boundaries (Plasmo renders in shadow DOM)
+            // Use composedPath() to traverse Shadow DOM boundaries (content scripts render in shadow DOM)
             const path = e.composedPath();
 
             const isInsideTooltip = path.some((el) => {

@@ -8,8 +8,7 @@ import { ENV } from '@/utils/env';
 
 const log = createLogger('ElevenLabs-API');
 
-// Configuration - update with your deployed Worker URL
-// Uses ENV compatibility layer for Plasmo/WXT migration
+// Worker URL from environment variables (with fallback to default)
 const WORKER_BASE_URL = ENV.ELEVENLABS_WORKER_URL;
 
 // Timeout for API requests (10 seconds)

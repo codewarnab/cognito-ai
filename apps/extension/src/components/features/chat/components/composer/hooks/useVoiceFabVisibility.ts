@@ -12,7 +12,7 @@ export const useVoiceFabVisibility = (
     isRecording: boolean = false
 ): void => {
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             // Hide FAB when:
             // - Attachment dropdown is open

@@ -547,6 +547,7 @@ function AIChatContent() {
                                         damping: 20,
                                         delay: 0.1
                                     }}
+                                    id="voice-mode-fab"
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.97 }}
                                     title="Switch to Voice Mode"
@@ -568,7 +569,6 @@ function AIChatContent() {
 
 /**
  * Main App component for WXT sidepanel
- * Replaces the default export SidePanel from Plasmo
  */
 function App() {
     return (

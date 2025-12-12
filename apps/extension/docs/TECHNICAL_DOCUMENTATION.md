@@ -53,9 +53,9 @@
 - MCP server catalog: static configs and enablement (`src/constants/mcpServers.tsx:261`, `src/mcp/state.ts:62`).
 
 ### Technology Stack
-- TypeScript, React, Plasmo MV3 (`package.json:1`, `package.json:42`).
+- TypeScript, React, WXT MV3 (`package.json`, `wxt.config.ts`).
 - AI SDK (`ai` v5), `@ai-sdk/google`, `@google/genai`, local `@built-in-ai/core` (`package.json:33`, `src/ai/core/modelSetup.ts:6`).
-- Storage: `@plasmohq/storage`, IndexedDB/Dexie (`src/memory/store.ts:12`).
+- Storage: IndexedDB/Dexie (`src/memory/store.ts`), Chrome storage APIs.
 - UI: Radix UI, framer-motion, lucide-react (`package.json:27`, `package.json:37`, `package.json:40`).
 - Chrome APIs: `sidePanel`, `tabs`, `tabGroups`, `alarms`, `history`, `notifications`, `omnibox`, `offscreen` (`package.json:84`, `build/chrome-mv3-prod/manifest.json:1`).
 - MCP: `@modelcontextprotocol/sdk` (`package.json:23`).

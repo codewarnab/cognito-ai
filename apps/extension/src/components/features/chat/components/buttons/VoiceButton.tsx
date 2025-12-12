@@ -13,10 +13,10 @@ interface VoiceButtonProps {
     onPlayingStateChange?: (isPlaying: boolean) => void;
 }
 
-export const VoiceButton: React.FC<VoiceButtonProps> = ({ 
-    content, 
+export const VoiceButton: React.FC<VoiceButtonProps> = ({
+    content,
     onAudioBufferChange,
-    onPlayingStateChange 
+    onPlayingStateChange
 }) => {
     const [isReading, setIsReading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -65,7 +65,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 
     const fallbackToSpeechSynthesis = () => {
         if (!content) return;
-        
+
         const utterance = new SpeechSynthesisUtterance(content);
 
         utterance.onstart = () => {
@@ -113,13 +113,13 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
             // Use Gemini TTS
             try {
                 setIsGenerating(true);
-                
+
                 // Show tooltip briefly
                 setShowTooltip(true);
                 tooltipTimeoutRef.current = setTimeout(() => {
                     setShowTooltip(false);
                 }, 1000);
-                
+
                 // Get API key
                 const apiKey = await getGoogleApiKey();
                 if (!apiKey) {
@@ -133,7 +133,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
                 // Generate speech using Gemini TTS
                 const buffer = await generateSpeech(content, apiKey);
                 setAudioBuffer(buffer);
-                
+
                 // Play the audio
                 const audio = playAudioBuffer(buffer);
                 audioRef.current = audio;
@@ -172,11 +172,11 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
     return (
         <div style={{ position: 'relative', display: 'inline-block' }}>
             <button
-                className={`copy-message-button ${isGenerating ? 'generating-audio' : ''}`}
+                className={isGenerating ? 'generating-audio' : ''}
                 onClick={handleVoiceToggle}
                 title={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
                 aria-label={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
-                style={{ marginLeft: '8px' }}
+                style={{ marginLeft: '8px', cursor: isGenerating ? 'not-allowed' : 'pointer' }}
                 disabled={isGenerating}
             >
                 <motion.div
@@ -191,9 +191,9 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
                     } : {}}
                 >
                     {isReading ? (
-                        <AudioLinesIcon ref={audioIconRef} size={18} />
+                        <AudioLinesIcon ref={audioIconRef} size={14} />
                     ) : (
-                        <AnimatedVolumeIcon size={18} />
+                        <AnimatedVolumeIcon size={14} />
                     )}
                 </motion.div>
             </button>

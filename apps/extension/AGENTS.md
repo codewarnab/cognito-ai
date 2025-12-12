@@ -4,7 +4,7 @@ This document helps AI coding assistants understand the Chrome extension.
 
 ## Overview
 
-**Cognito** is a privacy-first, AI-powered Chrome extension built with [Plasmo](https://docs.plasmo.com/). It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
+**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/). It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
 
 ## Key Features
 
@@ -20,8 +20,10 @@ This document helps AI coding assistants understand the Chrome extension.
 ```text
 apps/extension/
 ├── src/
-│   ├── sidepanel.tsx       # Main UI entry point (React)
-│   ├── background.ts       # Background Service Worker
+│   ├── entrypoints/        # WXT entrypoints
+│   │   ├── sidepanel/      # Main side panel React app
+│   │   ├── background/     # Background Service Worker
+│   │   └── contents/       # Content scripts
 │   ├── actions/            # Browser automation actions
 │   ├── ai/                 # AI model integration & prompts
 │   │   ├── core/           # Core AI logic (modelSetup, aiLogic)
@@ -40,7 +42,7 @@ apps/extension/
 ├── docs/                   # Technical documentation
 ├── assets/                 # Icons, images
 ├── public/                 # Static files (offscreen.js, etc.)
-└── scripts/                # Build scripts
+└── wxt.config.ts           # WXT configuration
 ```
 
 ## AI Editor Configs
@@ -49,6 +51,7 @@ This extension has detailed coding standards in:
 - `.cursor/rules/coding-standards.mdc` - Comprehensive coding standards
 - `.kiro/steering/` - Topic-specific Kiro steering files
 - `.trae/rules/project_rules.md` - Trae project rules
+- `TAILWIND_MIGRATION_GUIDE.md` - Tailwind CSS styling standards
 
 ## Development
 
@@ -67,16 +70,16 @@ pnpm build
 
 ```env
 # apps/extension/.env
-PLASMO_PUBLIC_GOOGLE_AI_API_KEY=your_gemini_api_key
+WXT_ELEVENLABS_WORKER_URL=https://your-worker.workers.dev
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `sidepanel.tsx` | Main React entry point |
-| `background.ts` | Service worker, MCP, message handling |
-| `package.json` | Manifest config (permissions, commands) |
+| `src/entrypoints/sidepanel/` | Main React entry point |
+| `src/entrypoints/background/` | Service worker, MCP, message handling |
+| `wxt.config.ts` | WXT and manifest configuration |
 | `tsconfig.json` | TypeScript config with path aliases |
 
 ## Path Aliases
@@ -98,7 +101,7 @@ import { Button } from '../../../components/ui/Button';
 ## Testing the Extension
 
 1. Build: `pnpm build:extension`
-2. Load `apps/extension/build/chrome-mv3-dev` as unpacked extension in Chrome
+2. Load `.output/chrome-mv3` as unpacked extension in Chrome
 3. Open side panel with `Ctrl+Shift+H`
 
 ## External Dependencies

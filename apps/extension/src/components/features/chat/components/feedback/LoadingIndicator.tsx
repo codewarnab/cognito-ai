@@ -2,14 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const THINKING_MESSAGES = [
-    'Thinking',
-    'Still thinking',
-    'Processing',
-    'Analyzing',
-    'Almost there',
-    'Working on it',
-    'Just a moment longer',
-    'Putting it all together',
+    'Thinking...',
+    'Still thinking...',
+    'Processing...',
+    'Analyzing...',
+    'Almost there...',
+    'Working on it...',
+    'Just a moment longer...',
+    'Putting it all together...',
 ];
 
 const MESSAGE_INTERVAL = 5000;
@@ -33,14 +33,15 @@ export const LoadingIndicator: React.FC = () => {
         >
             <div className="bg-transparent !text-[var(--text-primary)] !border-none !shadow-none !p-0 !rounded-none !max-w-full !text-base">
                 <span
-                    className="text-base font-medium bg-clip-text text-transparent bg-gradient-to-r from-white/40 via-white/90 to-white/40 bg-[length:200%_100%] animate-[shimmer_2s_linear_infinite]"
+                    className="text-base font-medium bg-clip-text text-transparent bg-[length:200%_100%]"
                     style={{
                         backgroundImage: 'linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.4) 40%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.4) 60%, rgba(255, 255, 255, 0.4) 100%)',
+                        animation: 'shimmer 2s linear infinite',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent'
                     }}
                 >
-                    {THINKING_MESSAGES[messageIndex]}<span className="animate-pulse">...</span>
+                    {THINKING_MESSAGES[messageIndex]}
                 </span>
             </div>
         </motion.div>

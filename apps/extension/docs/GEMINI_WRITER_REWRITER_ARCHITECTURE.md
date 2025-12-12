@@ -743,13 +743,12 @@ src/
 │   ├── writeCommand.ts           # Writer type definitions
 │   └── rewriteCommand.ts         # Rewriter type definitions
 │
-├── utils/settings/
-│   ├── writeCommandSettings.ts   # Writer settings storage
-│   └── rewriteSettings.ts        # Rewriter settings storage
-│
-└── styles/features/
-    ├── write-command.css         # Writer styles
-    └── text-rewriter.css         # Rewriter styles
+└── utils/settings/
+    ├── writeCommandSettings.ts   # Writer settings storage
+    └── rewriteSettings.ts        # Rewriter settings storage
+
+# Note: Component styles use Tailwind CSS classes inline.
+# See TAILWIND_MIGRATION_GUIDE.md for styling standards.
 ```
 
 ---
@@ -809,7 +808,7 @@ src/
 │  │                                    WEB PAGE (any URL)                                          │ │
 │  │                                                                                                │ │
 │  │   ┌─────────────────────────────────────────────────────────────────────────────────────────┐ │ │
-│  │   │                              PLASMO SHADOW DOM                                           │ │ │
+│  │   │                              WXT SHADOW DOM                                             │ │ │
 │  │   │                                                                                          │ │ │
 │  │   │   ┌─────────────────────────────┐      ┌─────────────────────────────┐                  │ │ │
 │  │   │   │      WRITER OVERLAY         │      │     REWRITER TOOLTIP        │                  │ │ │

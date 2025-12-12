@@ -53,7 +53,6 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     return (
         <div style={{ position: 'relative', display: 'inline-block' }}>
             <motion.button
-                className="copy-message-button"
                 onClick={handleDownload}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
@@ -67,8 +66,9 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
                     stiffness: 200,
                     damping: 15
                 }}
+                style={{ cursor: 'pointer' }}
             >
-                <DownloadIcon ref={iconRef} size={18} />
+                <DownloadIcon ref={iconRef} size={14} />
             </motion.button>
             <AnimatePresence>
                 {showTooltip && (

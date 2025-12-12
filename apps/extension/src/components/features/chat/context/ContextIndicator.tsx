@@ -28,7 +28,7 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
 
     // Hide voice-mode-fab when showing details
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             if (showDetails) {
                 voiceFab.style.visibility = 'hidden';

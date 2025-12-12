@@ -100,7 +100,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     }, [showHeaderMenu]);
 
     return (
-        <div className="py-3 mx-6 bg-transparent flex-shrink-0 min-h-fit">
+        <div className="absolute top-0 left-0 right-0 z-50 pt-2 px-3 bg-[#0a0e1a]/80 backdrop-blur-md flex-shrink-0 min-h-[32px]">
             <div className="flex items-center justify-between gap-2 w-full">
                 {/* Sidebar toggle */}
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">

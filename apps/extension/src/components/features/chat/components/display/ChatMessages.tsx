@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import '@/styles/components/chat-scrollbar.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { renderTextWithMentions } from '@/components/shared/inputs';
 import { ToolPartRenderer } from '@/ai/tools/components';
@@ -223,7 +224,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     }, [messages, isLoading]);
 
     return (
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-6 flex flex-col gap-6 bg-[#0a0e1a] min-h-0" ref={messagesContainerRef}>{messages.length === 0 ? (
+        <div className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden pr-1 pl-4 pb-6 pt-16 flex flex-col gap-2 bg-[#0a0e1a] min-h-0" ref={messagesContainerRef}>{messages.length === 0 ? (
             <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
         ) : (
             <AnimatePresence>
@@ -253,7 +254,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 transition={{ type: 'easeOut', duration: 0.2 }}
                                 initial={isPendingMessage ? { opacity: 0 } : undefined}
                                 animate={isPendingMessage ? { opacity: 1 } : undefined}
-                                className={`flex gap-3 max-w-full group ${message.role === 'user' ? 'justify-end items-start gap-3 ml-auto' : 'justify-start items-start'}`}
+                                className={`flex gap-3 max-w-full group ${message.role === 'user' ? 'justify-end items-start gap-3 ml-auto pr-1' : 'justify-start items-start pr-2'}`}
                             >
                                 <div className={`rounded-xl px-4 py-3 max-w-[90%] text-base leading-relaxed break-words ${message.role === 'user'
                                     ? 'bg-blue-500 text-white ml-auto shadow-[0_2px_8px_var(--message-user-shadow)] rounded-br-none'
@@ -267,7 +268,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                         const mergedParts = mergeToolParts(message.parts);
 
                                         return (
-                                            <div className="flex flex-col gap-2">
+                                            <div className="flex flex-col gap-0">
                                                 {mergedParts.map((part: any, partIndex: number) => {
                                                     // Render text parts (but skip tab attachment text parts)
                                                     if (part.type === 'text' && part.text) {
@@ -404,7 +405,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         part.type === 'dynamic-tool'
                                                     ) {
                                                         return (
-                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="mt-4 flex flex-col gap-2">
+                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="mt-1 flex flex-col gap-0">
                                                                 <ToolPartRenderer
                                                                     part={part}
                                                                     messageId={message.id || `msg-${index}`}

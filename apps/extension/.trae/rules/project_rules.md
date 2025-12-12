@@ -164,6 +164,17 @@
 - Avoid double semicolons and other syntax redundancies; use single semicolon at statement ends.
 - **CRITICAL**: All CSS numeric values with units must include the unit identifier (px, %, em, etc.); unitless values are invalid except for specific properties like line-height, z-index, or opacity.
 
+## Tailwind CSS Styling
+- **CRITICAL**: Use Tailwind CSS utility classes for all component styling; avoid raw CSS files for new components.
+- **CRITICAL**: Follow spacing standards in `TAILWIND_MIGRATION_GUIDE.md`; use `px-6`/`py-6` (24px) for main containers, not `px-4`/`py-4`.
+- Use CSS variables from `styles/core/variables.css` for colors and custom values.
+- Keep these files as raw CSS (do NOT migrate to Tailwind):
+  - `styles/core/variables.css` - CSS custom properties
+  - `styles/core/animations.css` - @keyframes definitions
+  - `styles/fonts.css` - @font-face declarations
+  - Voice orb components (`VoicePoweredOrb.css`, `AudioOrb3D.css`, `VoiceModeUI.css`)
+- Content script styles remain in their respective CSS files when Shadow DOM isolation is needed.
+
 ## TypeScript Type Safety
 - **CRITICAL**: Maintain type consistency across related interfaces; if external APIs return a type (e.g., `string`), use that type consistently throughout the codebase rather than converting arbitrarily.
 - Prefer `unknown` over `any` for generic parameters, callbacks, and unvalidated data; `unknown` forces type checking before use.

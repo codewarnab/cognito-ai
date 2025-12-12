@@ -76,13 +76,13 @@ async function saveAnalyzedMessageData(
   try {
     const storage = await chrome.storage.local.get(ANALYZED_MESSAGES_STORAGE_KEY);
     const analyzedMessages = (storage[ANALYZED_MESSAGES_STORAGE_KEY] || {}) as AnalyzedMessagesMap;
-    
+
     // Add new entry
     analyzedMessages[messageHash] = {
       facts,
       analyzedAt: Date.now(),
     };
-    
+
     // Trim to max size by removing oldest entries
     const entries = Object.entries(analyzedMessages);
     if (entries.length > MAX_ANALYZED_MESSAGES) {
@@ -90,7 +90,7 @@ async function saveAnalyzedMessageData(
       const toRemove = entries.slice(0, entries.length - MAX_ANALYZED_MESSAGES);
       toRemove.forEach(([key]) => delete analyzedMessages[key]);
     }
-    
+
     await chrome.storage.local.set({ [ANALYZED_MESSAGES_STORAGE_KEY]: analyzedMessages });
     log.debug('Saved analyzed message data', { messageHash, factsCount: facts.length });
   } catch (error) {
@@ -152,7 +152,7 @@ async function analyzeAndExtractFacts(
   aiResponse: string
 ): Promise<ExtractedFact[]> {
   const { model, provider, modelName } = await initializeModel('gemini-2.5-flash', 'remote');
-  
+
   log.info('Extracting facts with AI', { provider, modelName });
 
   const prompt = buildExtractionPrompt(userMessage, aiResponse);
@@ -193,20 +193,20 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
   useEffect(() => {
     const checkAnalyzedStatus = async () => {
       if (!content) return;
-      
+
       messageHash.current = generateMessageHash(content, threadId);
       const data = await getAnalyzedMessageData(messageHash.current);
-      
+
       if (data) {
         setSavedFacts(data.facts);
         setState('analyzed');
-        log.debug('Message already analyzed', { 
-          messageHash: messageHash.current, 
-          factsCount: data.facts.length 
+        log.debug('Message already analyzed', {
+          messageHash: messageHash.current,
+          factsCount: data.facts.length
         });
       }
     };
-    
+
     checkAnalyzedStatus();
   }, [content, threadId]);
 
@@ -329,7 +329,7 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
     if (state === 'no-facts') return 'No memorable facts found';
     if (state === 'error') return 'Failed to save. Try again.';
     if (isSupermemoryConfigured === false) return 'Configure Supermemory in settings';
-    
+
     // Show saved facts for analyzed messages
     if (state === 'analyzed' && savedFacts.length > 0) {
       return (
@@ -347,9 +347,9 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
         </div>
       );
     }
-    
+
     if (state === 'analyzed') return 'Already analyzed (no facts)';
-    
+
     return 'Analyze and save to memory';
   };
 
@@ -381,13 +381,13 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
     <div style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
-        className={`copy-message-button ${state === 'analyzing' ? 'brain-analyzing' : ''} ${isAnalyzedState ? 'brain-analyzed' : ''}`}
+        className={`${state === 'analyzing' ? 'brain-analyzing' : ''} ${isAnalyzedState ? 'brain-analyzed' : ''}`.trim()}
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         disabled={isDisabled}
         aria-label={getAriaLabel()}
-        style={{ marginLeft: '8px' }}
+        style={{ marginLeft: '8px', cursor: isDisabled ? 'not-allowed' : 'pointer' }}
       >
         <AnimatePresence mode="wait">
           {state === 'success' || state === 'no-facts' ? (
@@ -398,7 +398,7 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             >
-              <Check size={18} style={{ color: '#22c55e' }} />
+              <Check size={14} style={{ color: '#22c55e' }} />
             </motion.div>
           ) : state === 'error' ? (
             <motion.div
@@ -408,7 +408,7 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
             >
-              <AlertCircle size={18} style={{ color: '#ef4444' }} />
+              <AlertCircle size={14} style={{ color: '#ef4444' }} />
             </motion.div>
           ) : state === 'analyzed' ? (
             <motion.div
@@ -417,7 +417,7 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
               animate={{ scale: 1 }}
             >
               <Brain
-                size={18}
+                size={14}
                 style={{ color: '#22c55e' }}
               />
             </motion.div>
@@ -431,7 +431,7 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
               className={state === 'analyzing' ? 'brain-shimmer' : ''}
             >
               <Brain
-                size={18}
+                size={14}
                 style={{
                   opacity: isSupermemoryConfigured === false ? 0.4 : 1,
                 }}
@@ -448,6 +448,24 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -5, scale: 0.9 }}
             transition={{ duration: 0.2 }}
+            style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              marginBottom: '6px',
+              whiteSpace: 'nowrap',
+              zIndex: 1000,
+              pointerEvents: 'none',
+              background: 'rgba(30, 30, 40, 0.95)',
+              backdropFilter: 'blur(8px)',
+              padding: '6px 10px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              color: '#e0e0e0',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
           >
             {state === 'analyzing' ? (
               <span className="brain-tooltip-shimmer">{getTooltipContent()}</span>

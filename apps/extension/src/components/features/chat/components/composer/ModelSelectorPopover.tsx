@@ -159,28 +159,28 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.96 }}
                         transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute bottom-[calc(100%+8px)] left-[calc(50%-4px)] -translate-x-1/2 min-w-[220px] bg-[var(--bg-secondary,#0f172a)] border border-[var(--border-color,rgba(255,255,255,0.1))] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-[1000] overflow-hidden"
+                        className="absolute bottom-[calc(100%+8px)] left-0 min-w-[220px] bg-[var(--bg-secondary,#0f172a)] border border-[var(--border-color,rgba(255,255,255,0.1))] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] z-[1000] overflow-hidden"
                         role="listbox"
                         aria-label="Select AI model"
                     >
-                        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 rotate-45 w-3 h-3 bg-[var(--bg-secondary,#0f172a)] border-r border-b border-[var(--border-color,rgba(255,255,255,0.1))]" />
-                        <div className="px-3 pt-2.5 pb-2 border-b border-[var(--border-color,rgba(255,255,255,0.08))]">
-                            <span className="text-[11px] font-semibold text-[var(--text-tertiary,#6b7280)] uppercase tracking-[0.5px]">Select Model</span>
+                        <div className="absolute -bottom-1.5 left-4 rotate-45 w-3 h-3 bg-[var(--bg-secondary,#0f172a)] border-r border-b border-[var(--border-color,rgba(255,255,255,0.1))]" />
+                        <div className="px-3 pt-2 pb-1.5 border-b border-[var(--border-color,rgba(255,255,255,0.08))]">
+                            <span className="text-[10px] font-semibold text-[var(--text-tertiary,#6b7280)] uppercase tracking-[0.5px]">Select Model</span>
                         </div>
-                        <div className="p-1.5">
+                        <div className="p-1">
                             {MODEL_OPTIONS.map((model) => (
                                 <button
                                     key={model.id}
                                     type="button"
-                                    className={`flex items-center justify-between w-full px-3 py-2.5 bg-transparent border-0 rounded-lg cursor-pointer transition-colors duration-150 text-left hover:bg-[var(--bg-tertiary,rgba(255,255,255,0.05))] focus-visible:outline-2 focus-visible:outline-[var(--color-primary,#3b82f6)] focus-visible:-outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${selectedModel === model.id ? 'bg-blue-500/10' : ''}`}
+                                    className={`flex items-center justify-between w-full px-2.5 py-2 bg-transparent border-0 rounded-lg cursor-pointer transition-colors duration-150 text-left hover:bg-[var(--bg-tertiary,rgba(255,255,255,0.05))] focus-visible:outline-2 focus-visible:outline-[var(--color-primary,#3b82f6)] focus-visible:-outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${selectedModel === model.id ? 'bg-blue-500/10' : ''}`}
                                     onClick={() => handleModelChange(model.id)}
                                     disabled={isLoading}
                                     role="option"
                                     aria-selected={selectedModel === model.id}
                                 >
-                                    <div className="flex flex-col gap-0.5">
+                                    <div className="flex flex-col gap-0">
                                         <span className="text-[13px] font-medium text-[var(--text-primary,#ffffff)]">{model.name}</span>
-                                        <span className="text-[11px] text-[var(--text-tertiary,#6b7280)]">{model.description}</span>
+                                        <span className="text-[10px] text-[var(--text-tertiary,#6b7280)]">{model.description}</span>
                                     </div>
                                     {selectedModel === model.id && (
                                         <Check size={14} className="text-[var(--color-primary,#3b82f6)] flex-shrink-0" />

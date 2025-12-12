@@ -7,7 +7,7 @@ Todos updated: 1 items
 # Cognito Chrome AI Extension — Detailed Technical Report
 
 **Executive Summary**
-- The extension implements a modern MV3 side panel with AI chat, MCP OAuth, and rich context tools. It uses React 18, Plasmo, TypeScript, Dexie (IndexedDB), Radix UI, and AI SDK v5.
+- The extension implements a modern MV3 side panel with AI chat, MCP OAuth, and rich context tools. It uses React 18, WXT, TypeScript, Dexie (IndexedDB), Radix UI, and AI SDK v5.
 - Strengths: robust error typing and messaging, comprehensive retry utilities, sound notification handling, usage tracking, and PDF caching.
 - Key gaps: logging is globally verbose in production, network calls lack timeouts, permissions are broad, and secondary panels are not lazy-loaded.
 - Priorities: enforce environment-driven logging presets, add fetch timeouts, tighten manifest permissions/CSP, apply retry manager to external calls, and lazy-load ancillary UI.
@@ -63,7 +63,7 @@ Todos updated: 1 items
 - Tighten CSP to remove `'wasm-unsafe-eval'` if not strictly required.
 
 **Build & Scripts**
-- Plasmo-based dev and build with postinstall patches; typecheck scripts present (`package.json:7–15`).
+- WXT-based dev and build with postinstall patches; typecheck scripts present (`package.json`).
 - No lint script configured; Prettier and sorted-imports plugin installed.
 
 **Testing & CI**

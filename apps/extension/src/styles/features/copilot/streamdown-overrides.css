@@ -11,71 +11,98 @@
     line-height: 1.5;
 }
 
+/* Override Streamdown's default space-y-4 which adds too much gap */
+.markdown-content .streamdown-content {
+    --tw-space-y-reverse: 0 !important;
+}
+
+.markdown-content .streamdown-content>*+* {
+    margin-top: 0.5em !important;
+}
+
 /* ============================================
-   CODE BLOCKS - Match existing .code-block-wrapper
+   CODE BLOCKS - Compact styling for sidebar
+   Using correct Streamdown selectors
    ============================================ */
 
-/* Code block container */
-.markdown-content [data-streamdown-pre] {
-    position: relative;
-    margin: 1em 0;
-    border-radius: var(--radius-md, 8px);
-    overflow: hidden;
-    background: #1e1e1e;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+/* Code block container - the outer wrapper */
+.markdown-content [data-streamdown="code-block"] {
+    margin: 0.4em 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    /* Let Shiki theme control background */
+    border: 1px solid rgba(99, 110, 123, 0.3) !important;
 }
 
-/* Pre element inside code block */
-.markdown-content [data-streamdown-pre] pre {
-    margin: 0;
-    padding: 1rem;
-    overflow-x: auto;
-    background: #1e1e1e !important;
+/* Code block header - language label and buttons */
+.markdown-content [data-streamdown="code-block-header"] {
+    padding: 0.35rem 0.625rem !important;
+    border-bottom: 1px solid rgba(99, 110, 123, 0.2) !important;
 }
 
-/* Code inside pre */
-.markdown-content [data-streamdown-pre] code {
-    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
-    font-size: 0.875rem;
-    line-height: 1.6;
-    color: #d4d4d4;
+.markdown-content [data-streamdown="code-block-header"] span {
+    font-size: 0.7rem !important;
+}
+
+/* Code block body - the pre element */
+.markdown-content [data-streamdown="code-block-body"],
+.markdown-content [data-streamdown="code-block"] pre {
+    margin: 0 !important;
+    padding: 0.5rem 0.625rem !important;
+    overflow-x: auto !important;
+    border: none !important;
+    font-size: 0.7rem !important;
+    /* Let Shiki theme control background */
+}
+
+/* Code inside pre - compact sizing */
+.markdown-content [data-streamdown="code-block"] code,
+.markdown-content [data-streamdown="code-block-body"] code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+    font-size: 0.7rem !important;
+    line-height: 1.4 !important;
     background: transparent !important;
-    padding: 0 !important;
 }
 
-/* Streamdown copy button styling - match existing .code-block-copy-btn */
-.markdown-content [data-streamdown-pre] button {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s ease-out;
-    font-weight: 500;
+/* Override inline styles on code spans */
+.markdown-content [data-streamdown="code-block"] code span,
+.markdown-content [data-streamdown="code-block-body"] code span {
+    background: transparent !important;
+    background-color: transparent !important;
 }
 
-.markdown-content [data-streamdown-pre] button:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+/* Line numbers - make them smaller */
+.markdown-content [data-streamdown="code-block"] code span.block::before {
+    font-size: 0.65rem !important;
+    width: 1.5rem !important;
+    margin-right: 0.5rem !important;
 }
 
-.markdown-content [data-streamdown-pre] button:active {
-    transform: scale(0.95);
+/* Header buttons */
+.markdown-content [data-streamdown="code-block-header"] button,
+.markdown-content [data-streamdown="code-block-download-button"],
+.markdown-content [data-streamdown="code-block-copy-button"] {
+    color: #8b949e !important;
+    transition: color 0.15s ease !important;
+}
+
+.markdown-content [data-streamdown="code-block-header"] button:hover {
+    color: #c9d1d9 !important;
 }
 
 /* ============================================
-   INLINE CODE - Match existing styling
+   INLINE CODE - Subtle dark pill styling
    ============================================ */
 
-.markdown-content [data-streamdown-code]:not([data-streamdown-pre] [data-streamdown-code]) {
-    border-radius: 0.25rem;
-    background: rgb(39 39 42);
-    padding: 0.1rem 0.3rem;
-    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace;
-    font-size: 0.875rem;
-    color: rgb(228 228 231);
+.markdown-content [data-streamdown-code]:not([data-streamdown-pre] [data-streamdown-code]),
+.markdown-content code:not([data-streamdown-pre] code):not(pre code) {
+    border-radius: 4px;
+    background: #1f2937 !important;
+    padding: 0.15rem 0.4rem !important;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace !important;
+    font-size: 0.75rem !important;
+    color: #93c5fd !important;
+    border: 1px solid rgba(99, 110, 123, 0.2);
 }
 
 /* ============================================
@@ -133,14 +160,52 @@
    LISTS
    ============================================ */
 
+/* Target both old and new Streamdown attribute formats */
 .markdown-content [data-streamdown-ul],
-.markdown-content [data-streamdown-ol] {
-    margin: 0.5em 0;
-    padding-left: 1.5em;
+.markdown-content [data-streamdown="unordered-list"] {
+    margin: 0.25em 0 !important;
+    padding-left: 1.5em !important;
+    list-style-type: disc !important;
+    list-style-position: outside !important;
 }
 
-.markdown-content [data-streamdown-li] {
-    margin: 0.25em 0;
+.markdown-content [data-streamdown-ol],
+.markdown-content [data-streamdown="ordered-list"] {
+    margin: 0.25em 0 !important;
+    padding-left: 1.5em !important;
+    list-style-type: decimal !important;
+    list-style-position: outside !important;
+}
+
+.markdown-content [data-streamdown-li],
+.markdown-content [data-streamdown="list-item"] {
+    margin: 0.15em 0 !important;
+    padding: 0 !important;
+    display: list-item !important;
+}
+
+/* Ensure bullets show - override any Tailwind classes */
+.markdown-content ul[data-streamdown="unordered-list"],
+.markdown-content ul.list-disc {
+    list-style-type: disc !important;
+    list-style-position: outside !important;
+    padding-left: 1.5em !important;
+}
+
+.markdown-content ul[data-streamdown="unordered-list"]>li,
+.markdown-content ul.list-disc>li {
+    display: list-item !important;
+    padding-left: 0.25em !important;
+    padding-top: 0.1em !important;
+    padding-bottom: 0.1em !important;
+}
+
+/* Nested lists - tighter spacing */
+.markdown-content [data-streamdown-li] [data-streamdown-ul],
+.markdown-content [data-streamdown-li] [data-streamdown-ol],
+.markdown-content [data-streamdown="list-item"] [data-streamdown="unordered-list"],
+.markdown-content [data-streamdown="list-item"] [data-streamdown="ordered-list"] {
+    margin: 0.1em 0 !important;
 }
 
 /* ============================================
@@ -193,6 +258,7 @@
    ============================================ */
 
 @media (prefers-color-scheme: light) {
+
     /* Inline code */
     .markdown-content [data-streamdown-code]:not([data-streamdown-pre] [data-streamdown-code]) {
         background: rgb(229 231 235);

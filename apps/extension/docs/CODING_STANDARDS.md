@@ -85,7 +85,7 @@
 - **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions; count only enabled tools and exclude disabled/workflow-only tools to ensure accurate counts match actual available tools.
 
 ## Storage and Data
-- Use `@plasmohq/storage` for extension storage; avoid direct `localStorage` (`src/memory/store.ts:12`).
+- Use Chrome storage APIs (`chrome.storage.local`) for extension storage; avoid direct `localStorage` (`src/memory/store.ts`).
 - Maintain indices for efficient queries; update index on CRUD (`src/memory/store.ts:37`, `src/memory/store.ts:68`).
 
 ## Performance and UX

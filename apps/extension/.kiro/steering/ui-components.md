@@ -16,11 +16,13 @@ fileMatchPattern: "**/components/**/*.{ts,tsx}"
 - Add keyboard support to clickable non-button elements
 - All icon-only buttons must have `aria-label` attributes
 
-## Styling
+## Styling (Tailwind CSS)
+- Use Tailwind CSS utility classes for all component styling
+- Follow spacing standards in `TAILWIND_MIGRATION_GUIDE.md`
 - Always append units to numeric displays (%, px, ms)
-- All CSS numeric values must include unit identifier
 - Maintain consistent trailing commas in object literals
-- Avoid double semicolons and syntax redundancies
+- Use CSS variables from `styles/core/variables.css` for custom properties
+- Keep complex animations in raw CSS files (see migration guide for exceptions)
 
 ## Comments
 - Never use inline `//` comments inside JSX attributes; use `{/* */}`

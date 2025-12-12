@@ -53,18 +53,18 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
     return (
         <div className="copy-message-button-wrapper">
             <button
-                className="copy-message-button"
                 onClick={handleCopy}
                 title={copied ? 'Copied!' : 'Copy message'}
                 aria-label={copied ? 'Copied!' : 'Copy message'}
+                style={{ cursor: 'pointer' }}
             >
                 <AnimatePresence mode="wait">
                     {copied ? (
                         <motion.svg
                             key="check"
                             xmlns="http://www.w3.org/2000/svg"
-                            width={18}
-                            height={18}
+                            width={14}
+                            height={14}
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"
@@ -94,7 +94,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
                                 damping: 15
                             }}
                         >
-                            <CopyIcon ref={iconRef} size={18} />
+                            <CopyIcon ref={iconRef} size={14} />
                         </motion.div>
                     )}
                 </AnimatePresence>

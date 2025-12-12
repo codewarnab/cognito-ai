@@ -243,7 +243,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // Hide voice-mode-fab when there's text in input
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             voiceFab.style.visibility = input.trim() ? 'hidden' : '';
         }

@@ -116,7 +116,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
 
     // Hide voice FAB when popover is open
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             voiceFab.style.visibility = isOpen ? 'hidden' : '';
         }

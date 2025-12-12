@@ -7,6 +7,7 @@ import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '@/audio/VoiceInput';
 import { getModelConfig, setModelConfig, clearConversationStartMode } from '@/utils/ai';
 import { hasGoogleApiKey, hasAnyProviderConfigured } from '@/utils/credentials';
+import { HIDE_LOCAL_MODE } from '@/constants';
 import type { Message, AIMode, RemoteModelType, ModelState } from '@/components/features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
@@ -228,7 +229,7 @@ export function CopilotChatWindow({
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
                 pendingMessageId={pendingMessageId}
-                isLocalMode={modelState.mode === 'local'}
+                isLocalMode={!HIDE_LOCAL_MODE && modelState.mode === 'local'}
                 onConfigureApiKey={handleOpenApiKeyDialog}
                 onContinue={onContinue}
                 threadId={threadId}

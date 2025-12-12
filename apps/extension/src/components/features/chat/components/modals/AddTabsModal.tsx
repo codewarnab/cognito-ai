@@ -81,7 +81,7 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
 
     // Hide voice-mode-fab when modal is open
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             if (isOpen) {
                 voiceFab.style.visibility = 'hidden';

@@ -23,14 +23,8 @@ interface YouTubeVideoSuggestionProps {
     loadingState?: YouTubeBadgeLoadingState;
     /** Video thumbnail URL (optional, from API) */
     thumbnailUrl?: string;
-    /** Channel/author name (optional, from API) */
-    author?: string;
     /** Video duration in seconds (optional, from API) */
     durationSeconds?: number;
-    /** Whether transcript is already prefetched/cached */
-    isPrefetched?: boolean;
-    /** @deprecated Use loadingState instead */
-    isLoading?: boolean;
 }
 
 /**
@@ -46,31 +40,24 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
     videoTitle,
     onAttach,
     onDismiss,
-    loadingState,
+    loadingState = 'idle',
     thumbnailUrl,
-    author,
     durationSeconds,
-    isPrefetched = false,
-    isLoading = false,
 }) => {
     const [thumbnailError, setThumbnailError] = React.useState(false);
 
-    // Derive effective loading state from props (support legacy isLoading prop)
-    const effectiveLoadingState: YouTubeBadgeLoadingState =
-        loadingState ?? (isLoading ? 'fetching' : 'idle');
-
-    const isFetching = effectiveLoadingState === 'fetching';
+    const isFetching = loadingState === 'fetching';
     const hasThumbnail = thumbnailUrl && !thumbnailError;
 
     // Hide voice-mode-fab when showing YouTube suggestion
     useEffect(() => {
-        const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
         if (voiceFab) {
             voiceFab.style.visibility = 'hidden';
         }
         return () => {
             // Re-query to avoid stale reference
-            const voiceFab = document.querySelector('.voice-mode-fab') as HTMLElement;
+            const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
             if (voiceFab) {
                 voiceFab.style.visibility = '';
             }
