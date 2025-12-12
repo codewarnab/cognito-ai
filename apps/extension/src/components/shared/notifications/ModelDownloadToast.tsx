@@ -41,20 +41,44 @@ export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className={`model-download-toast ${isComplete ? 'complete' : ''} ${isError ? 'error' : ''}`}
+                    className="min-w-[300px] max-w-[400px] pointer-events-auto rounded-xl py-3 px-4"
+                    style={{
+                        background: 'rgba(251, 191, 36, 0.15)',
+                        border: '1px solid rgba(251, 191, 36, 0.4)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(10px)',
+                    }}
                 >
-                    <div className="model-download-toast-content">
-                        <div className="model-download-toast-icon">
+                    <div className="flex items-center gap-3">
+                        <div
+                            className="shrink-0 flex items-center justify-center"
+                            style={{ color: '#fbbf24' }}
+                        >
                             {isError ? (
-                                <AlertCircle size={20} className="icon-error" />
+                                <AlertCircle
+                                    size={20}
+                                    style={{ animation: 'shake 0.5s ease-out' }}
+                                />
                             ) : isComplete ? (
-                                <CheckCircle size={20} className="icon-success" />
+                                <CheckCircle
+                                    size={20}
+                                    style={{ animation: 'scale-in 0.3s ease-out' }}
+                                />
                             ) : (
-                                <Download size={20} className="icon-downloading" />
+                                <Download
+                                    size={20}
+                                    style={{ animation: 'download-bounce 1.5s ease-in-out infinite' }}
+                                />
                             )}
                         </div>
-                        <div className="model-download-toast-info">
-                            <div className="model-download-toast-title">
+                        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                            <div
+                                className="font-semibold text-sm"
+                                style={{
+                                    color: '#fbbf24',
+                                    letterSpacing: '-0.01em',
+                                }}
+                            >
                                 {isError
                                     ? `${modelName} Download Failed`
                                     : isComplete
@@ -62,19 +86,42 @@ export const ModelDownloadToast: React.FC<ModelDownloadToastProps> = ({
                                         : `Downloading ${modelName}`}
                             </div>
                             {isError && errorMessage && (
-                                <div className="model-download-toast-error-message">
+                                <div
+                                    className="text-[11px] leading-relaxed mt-0.5"
+                                    style={{ color: 'rgba(251, 191, 36, 0.95)' }}
+                                >
                                     {errorMessage}
                                 </div>
                             )}
                             {!isComplete && !isError && (
                                 <>
-                                    <div className="model-download-toast-progress-bar">
+                                    <div
+                                        className="w-full h-1.5 rounded-sm overflow-hidden relative"
+                                        style={{ background: 'rgba(251, 191, 36, 0.2)' }}
+                                    >
                                         <div
-                                            className="model-download-toast-progress-fill"
-                                            style={{ width: `${progress}%` }}
-                                        />
+                                            className="h-full rounded-sm relative overflow-hidden transition-[width] duration-300 ease-out"
+                                            style={{
+                                                width: `${progress}%`,
+                                                background: 'linear-gradient(90deg, rgba(251, 191, 36, 0.8), rgba(251, 191, 36, 1))',
+                                            }}
+                                        >
+                                            <div
+                                                className="absolute inset-0"
+                                                style={{
+                                                    background: 'linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.3), transparent)',
+                                                    animation: 'shimmer 1.5s infinite',
+                                                }}
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="model-download-toast-percentage">
+                                    <div
+                                        className="text-xs font-medium"
+                                        style={{
+                                            color: 'rgba(251, 191, 36, 0.9)',
+                                            fontVariantNumeric: 'tabular-nums',
+                                        }}
+                                    >
                                         {progress}%
                                     </div>
                                 </>
@@ -136,7 +183,29 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
     }, []);
 
     return (
-        <div className="model-download-toast-container">
+        <div
+            className="fixed top-4 right-4 z-[10000] flex flex-col gap-2 pointer-events-none max-sm:right-2 max-sm:top-2 max-sm:left-2"
+        >
+            <style>{`
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-4px); }
+                    75% { transform: translateX(4px); }
+                }
+                @keyframes download-bounce {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-4px); }
+                }
+                @keyframes scale-in {
+                    0% { transform: scale(0); }
+                    50% { transform: scale(1.1); }
+                    100% { transform: scale(1); }
+                }
+                @keyframes shimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
+            `}</style>
             {downloads.language && (
                 <ModelDownloadToast
                     model="language"
