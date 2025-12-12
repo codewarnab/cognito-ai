@@ -52,19 +52,19 @@ export const AskCommandSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <MessageCircleQuestion size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     Ask Command
                 </h2>
             </div>
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Enable/Disable Toggle */}
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Enable /ask Command</div>
-                        <div className="settings-item-description">Type /ask in any text field to ask AI questions</div>
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Enable /ask Command</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Type /ask in any text field to ask AI questions</div>
                     </div>
                     <Toggle
                         checked={settings.enabled}
@@ -74,10 +74,10 @@ export const AskCommandSettings: React.FC = () => {
 
                 {/* Options Accordion - only show when enabled */}
                 {settings.enabled && (
-                    <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                    <div className="block p-0" style={{ display: 'block', padding: 0 }}>
                         <button
                             type="button"
-                            className="settings-item-header-button"
+                            className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                             onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                             style={{
                                 width: '100%',
@@ -92,8 +92,8 @@ export const AskCommandSettings: React.FC = () => {
                             }}
                         >
                             <div style={{ textAlign: 'left' }}>
-                                <div className="settings-item-title">Ask Options</div>
-                                <div className="settings-item-description">
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Ask Options</div>
+                                <div className="text-xs text-[var(--text-secondary)]">
                                     Context: {getContextSummary()} • Max tokens: {settings.maxOutputTokens}
                                 </div>
                             </div>
@@ -104,15 +104,15 @@ export const AskCommandSettings: React.FC = () => {
                             <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
                                 {/* Context Settings Section */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    <div className="text-[12px] font-medium text-[var(--text-primary)] opacity-70 mb-2 uppercase tracking-wide" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                         Context Options
                                     </div>
 
                                     {/* Include Page Context */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Include Page Context</div>
-                                            <div className="settings-item-description">Send page title, URL, and domain with questions</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Include Page Context</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Send page title, URL, and domain with questions</div>
                                         </div>
                                         <Toggle
                                             checked={settings.includePageContext}
@@ -121,10 +121,10 @@ export const AskCommandSettings: React.FC = () => {
                                     </div>
 
                                     {/* Include Selected Text */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Include Selected Text</div>
-                                            <div className="settings-item-description">Use highlighted text on the page as context</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Include Selected Text</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Use highlighted text on the page as context</div>
                                         </div>
                                         <Toggle
                                             checked={settings.includeSelectedText}
@@ -133,10 +133,10 @@ export const AskCommandSettings: React.FC = () => {
                                     </div>
 
                                     {/* Include Visible Content */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Include Page Content</div>
-                                            <div className="settings-item-description">Extract visible page text to help answer questions</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Include Page Content</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Extract visible page text to help answer questions</div>
                                         </div>
                                         <Toggle
                                             checked={settings.includeVisibleContent}
@@ -147,9 +147,9 @@ export const AskCommandSettings: React.FC = () => {
 
                                 {/* Max Output Tokens */}
                                 <div style={{ marginBottom: '16px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Max Output Length</div>
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Max Output Length</div>
                                     <select
-                                        className="settings-select"
+                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={settings.maxOutputTokens}
                                         onChange={(e) => handleSettingChange('maxOutputTokens', Number(e.target.value))}
                                     >
@@ -162,15 +162,15 @@ export const AskCommandSettings: React.FC = () => {
 
                                 {/* Gemini Tools Section */}
                                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    <div className="text-[12px] font-medium text-[var(--text-primary)] opacity-70 mb-2 uppercase tracking-wide" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                         Gemini Tools
                                     </div>
 
                                     {/* Google Search Tool */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Google Search</div>
-                                            <div className="settings-item-description">Enable real-time web search for up-to-date information</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Google Search</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Enable real-time web search for up-to-date information</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableGoogleSearch}
@@ -179,10 +179,10 @@ export const AskCommandSettings: React.FC = () => {
                                     </div>
 
                                     {/* URL Context Tool */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">URL Context</div>
-                                            <div className="settings-item-description">Fetch and analyze content from URLs mentioned in prompts</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">URL Context</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Fetch and analyze content from URLs mentioned in prompts</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableUrlContext}
@@ -191,10 +191,10 @@ export const AskCommandSettings: React.FC = () => {
                                     </div>
 
                                     {/* Supermemory Search Tool */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Memory Search</div>
-                                            <div className="settings-item-description">Search your Supermemory knowledge base for answers</div>
+                                    <div className="flex items-center justify-between" style={{ padding: 0, border: 'none' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Memory Search</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Search your Supermemory knowledge base for answers</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableSupermemorySearch}

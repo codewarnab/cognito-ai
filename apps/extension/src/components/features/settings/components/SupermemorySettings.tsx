@@ -144,7 +144,7 @@ export const SupermemorySettings: React.FC = () => {
         try {
             await setSupermemoryEnabled(checked);
             log.info('Supermemory enabled state changed', { enabled: checked });
-            
+
             // Disable auto-extraction and content memory if Supermemory is disabled
             if (!checked) {
                 if (autoExtraction) {
@@ -244,9 +244,9 @@ export const SupermemorySettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <span style={{ display: 'inline-flex', marginRight: 8, verticalAlign: 'text-bottom', color: 'var(--text-primary)' }}>
                         <Supermemory />
                     </span>
@@ -254,12 +254,12 @@ export const SupermemorySettings: React.FC = () => {
                 </h2>
             </div>
 
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Enable Toggle */}
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Enable Persistent Memory</div>
-                        <div className="settings-item-description">
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Enable Persistent Memory</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             Let Cognito remember information across conversations
                         </div>
                     </div>
@@ -274,9 +274,9 @@ export const SupermemorySettings: React.FC = () => {
 
                 {/* Auto-Extraction Toggle - only show when Supermemory is enabled */}
                 {enabled && status === 'connected' && (
-                    <div className="settings-item">
-                        <div className="settings-item-content">
-                            <div className="settings-item-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                        <div className="flex-1 mr-4">
+                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 Auto-Extract Conversation Insights
                                 <div style={{ position: 'relative', display: 'inline-flex' }}>
                                     <button
@@ -321,7 +321,7 @@ export const SupermemorySettings: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="settings-item-description">
+                            <div className="text-xs text-[var(--text-secondary)]">
                                 Automatically learn from your conversations
                             </div>
                         </div>
@@ -336,9 +336,9 @@ export const SupermemorySettings: React.FC = () => {
 
                 {/* Content Memory Toggle - only show when Supermemory is enabled */}
                 {enabled && status === 'connected' && (
-                    <div className="settings-item">
-                        <div className="settings-item-content">
-                            <div className="settings-item-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                        <div className="flex-1 mr-4">
+                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 Learn from Writing & Reading
                                 <div style={{ position: 'relative', display: 'inline-flex' }}>
                                     <button
@@ -383,7 +383,7 @@ export const SupermemorySettings: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="settings-item-description">
+                            <div className="text-xs text-[var(--text-secondary)]">
                                 Build memory from summarizer, writer, and rewriter usage
                             </div>
                         </div>
@@ -397,10 +397,10 @@ export const SupermemorySettings: React.FC = () => {
                 )}
 
                 {/* API Key Input */}
-                <div className="settings-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
-                    <div className="settings-item-content" style={{ width: '100%' }}>
-                        <div className="settings-item-title">API Key</div>
-                        <div className="settings-item-description">
+                <div className="flex flex-col items-start gap-2 p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                    <div className="w-full mr-0 mb-1" style={{ width: '100%' }}>
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">API Key</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             Required for cloud-based memory persistence
                         </div>
                     </div>
@@ -414,7 +414,7 @@ export const SupermemorySettings: React.FC = () => {
                         <div style={{ position: 'relative', flex: 1 }}>
                             <input
                                 type={showApiKey ? 'text' : 'password'}
-                                className="settings-input"
+                                className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
                                 value={apiKey}
                                 onChange={handleApiKeyChange}
                                 onBlur={handleApiKeyBlur}

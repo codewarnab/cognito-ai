@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
 import { getEnabledToolsOverride } from '@/utils/settings';
 import { useWebMCPTools } from '@/hooks/webmcp';
+import { WORKFLOW_ONLY_TOOLS, WEB_SEARCH_ONLY_TOOLS } from '@/constants/toolDescriptions';
 import { createLogger } from '~logger';
 
 const log = createLogger('useToolsCount', 'AI_CHAT');
@@ -25,11 +26,16 @@ export const useToolsCount = (): ToolsCountState => {
     // Calculate initial tool count synchronously to avoid showing 0 on first render
     const [enabledToolsCount, setEnabledToolsCount] = useState(() => {
         const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-        const filteredTools = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t));
+        const filteredTools = DEFAULT_ENABLED_TOOLS.filter(t =>
+            !disabledByDefaultSet.has(t) &&
+            !WORKFLOW_ONLY_TOOLS.includes(t) &&
+            !WEB_SEARCH_ONLY_TOOLS.includes(t)
+        );
         const count = filteredTools.length;
         log.info('🔧 Initial tool count:', {
             defaultTotal: DEFAULT_ENABLED_TOOLS.length,
             disabledByDefault: TOOLS_DISABLED_BY_DEFAULT.length,
+            hiddenTools: WORKFLOW_ONLY_TOOLS.length + WEB_SEARCH_ONLY_TOOLS.length,
             calculated: count,
             sample: filteredTools.slice(0, 5)
         });
@@ -50,7 +56,11 @@ export const useToolsCount = (): ToolsCountState => {
                 setEnabledToolsCount(override.length);
             } else {
                 const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-                const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
+                const count = DEFAULT_ENABLED_TOOLS.filter(t =>
+                    !disabledByDefaultSet.has(t) &&
+                    !WORKFLOW_ONLY_TOOLS.includes(t) &&
+                    !WEB_SEARCH_ONLY_TOOLS.includes(t)
+                ).length;
                 setEnabledToolsCount(count);
             }
 
@@ -81,7 +91,11 @@ export const useToolsCount = (): ToolsCountState => {
             }
         } catch {
             const disabledByDefaultSet = new Set(TOOLS_DISABLED_BY_DEFAULT);
-            const count = DEFAULT_ENABLED_TOOLS.filter(t => !disabledByDefaultSet.has(t)).length;
+            const count = DEFAULT_ENABLED_TOOLS.filter(t =>
+                !disabledByDefaultSet.has(t) &&
+                !WORKFLOW_ONLY_TOOLS.includes(t) &&
+                !WEB_SEARCH_ONLY_TOOLS.includes(t)
+            ).length;
             setEnabledToolsCount(count);
         }
     }, []);

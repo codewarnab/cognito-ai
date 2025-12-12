@@ -43,18 +43,18 @@ export const ResearchWorkflowSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <Search size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     Research Workflow
                 </h2>
             </div>
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Options Accordion */}
-                <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                <div className="block p-0" style={{ display: 'block', padding: 0 }}>
                     <button
-                        className="settings-item-header-button"
+                        className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                         onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                         style={{
                             width: '100%',
@@ -69,8 +69,8 @@ export const ResearchWorkflowSettings: React.FC = () => {
                         }}
                     >
                         <div style={{ textAlign: 'left' }}>
-                            <div className="settings-item-title">Research Configuration</div>
-                            <div className="settings-item-description">
+                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Research Configuration</div>
+                            <div className="text-xs text-[var(--text-secondary)]">
                                 Min {settings.minimumSources} sources • Max {settings.stepCount} steps
                             </div>
                         </div>
@@ -81,12 +81,12 @@ export const ResearchWorkflowSettings: React.FC = () => {
                         <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
                             {/* Minimum Sources */}
                             <div style={{ marginBottom: '12px' }}>
-                                <div className="settings-item-title" style={{ marginBottom: '6px' }}>Minimum Sources</div>
-                                <div className="settings-item-description" style={{ marginBottom: '8px' }}>
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Minimum Sources</div>
+                                <div className="text-xs text-[var(--text-secondary)]" style={{ marginBottom: '8px' }}>
                                     Number of sources the AI must visit before completing research
                                 </div>
                                 <select
-                                    className="settings-select"
+                                    className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                     value={settings.minimumSources}
                                     onChange={(e) => handleSettingChange('minimumSources', Number(e.target.value))}
                                 >
@@ -100,12 +100,12 @@ export const ResearchWorkflowSettings: React.FC = () => {
 
                             {/* Step Count */}
                             <div>
-                                <div className="settings-item-title" style={{ marginBottom: '6px' }}>Maximum Steps</div>
-                                <div className="settings-item-description" style={{ marginBottom: '8px' }}>
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Maximum Steps</div>
+                                <div className="text-xs text-[var(--text-secondary)]" style={{ marginBottom: '8px' }}>
                                     Maximum number of AI actions allowed during research
                                 </div>
                                 <select
-                                    className="settings-select"
+                                    className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                     value={settings.stepCount}
                                     onChange={(e) => handleSettingChange('stepCount', Number(e.target.value))}
                                 >

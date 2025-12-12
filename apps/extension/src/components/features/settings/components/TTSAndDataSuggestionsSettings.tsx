@@ -119,19 +119,19 @@ export const TTSAndDataSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <MessageSquare size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     TTS & Data , Suggestions
                 </h2>
             </div>
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Suggestions Toggle */}
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Show Suggested Actions</div>
-                        <div className="settings-item-description">
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Show Suggested Actions</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             Display AI-generated action suggestions when starting a new chat
                         </div>
                     </div>
@@ -142,16 +142,16 @@ export const TTSAndDataSettings: React.FC = () => {
                 </div>
 
                 {/* TTS Provider Selection */}
-                <div className="settings-item tts-settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Text-to-Speech Provider</div>
-                        <div className="settings-item-description">
+                <div className="flex flex-col items-start gap-3 p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="w-full mr-0 mb-1">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Text-to-Speech Provider</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             {TTS_OPTIONS.find(opt => opt.value === ttsProvider)?.description}
                         </div>
                     </div>
-                    <div className="tts-select-wrapper">
+                    <div className="relative w-full">
                         <select
-                            className="settings-select tts-select"
+                            className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg py-2.5 pl-3 pr-8 text-[var(--text-primary)] text-sm font-medium cursor-pointer focus:outline-none focus:border-[var(--color-secondary)] hover:border-[var(--text-secondary)] transition-all"
                             value={ttsProvider}
                             onChange={handleTTSProviderChange}
                         >
@@ -159,30 +159,30 @@ export const TTSAndDataSettings: React.FC = () => {
                                 <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                         </select>
-                        <ChevronDown size={14} className="tts-select-arrow" />
+                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]" />
                     </div>
                 </div>
 
                 {/* Delete All Chats */}
-                <div className="settings-item delete-chats-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Delete All Chats</div>
-                        <div className="settings-item-description">
+                <div className="flex flex-col items-start gap-3 p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="w-full mr-0">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Delete All Chats</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
                             Permanently remove all chat history and conversations
                             {storageSize && ` (${storageSize})`}
                         </div>
                     </div>
                     {showDeleteConfirm ? (
-                        <div className="delete-chats-actions">
+                        <div className="flex gap-2 items-center w-full">
                             <button
-                                className="settings-button"
+                                className="flex-1 flex items-center justify-center whitespace-nowrap px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-[13px] font-medium cursor-pointer transition-all hover:bg-white/10 hover:border-white/20"
                                 onClick={handleCancelDelete}
                                 disabled={isDeleting}
                             >
                                 Cancel
                             </button>
                             <button
-                                className="settings-button danger"
+                                className="flex-1 flex items-center justify-center whitespace-nowrap px-3 py-1.5 bg-[var(--bg-tertiary)] border border-red-500/30 rounded-lg text-red-500 text-[13px] font-medium cursor-pointer transition-all hover:bg-red-500/10"
                                 onClick={handleDeleteAllChats}
                                 disabled={isDeleting}
                             >
@@ -192,7 +192,7 @@ export const TTSAndDataSettings: React.FC = () => {
                         </div>
                     ) : (
                         <button
-                            className="settings-button danger delete-all-btn"
+                            className="w-full justify-center px-3 py-1.5 bg-[var(--bg-tertiary)] border border-red-500/30 rounded-lg text-red-500 text-[13px] font-medium cursor-pointer transition-all hover:bg-red-500/10 flex items-center"
                             onClick={handleDeleteAllChats}
                             disabled={!hasChats}
                         >

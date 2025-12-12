@@ -40,19 +40,19 @@ export const TextRewriterSettings: React.FC = () => {
     };
 
     return (
-        <div className="settings-section">
-            <div className="settings-section-header">
-                <h2 className="settings-section-title">
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
                     <RefreshCw size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: 'text-bottom' }} />
                     Text Rewriter
                 </h2>
             </div>
-            <div className="settings-card">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
                 {/* Enable/Disable Toggle */}
-                <div className="settings-item">
-                    <div className="settings-item-content">
-                        <div className="settings-item-title">Show on Text Selection</div>
-                        <div className="settings-item-description">Display rewrite tooltip when selecting text on pages</div>
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Show on Text Selection</div>
+                        <div className="text-xs text-[var(--text-secondary)]">Display rewrite tooltip when selecting text on pages</div>
                     </div>
                     <Toggle
                         checked={settings.enabled}
@@ -62,9 +62,9 @@ export const TextRewriterSettings: React.FC = () => {
 
                 {/* Options Accordion - only show when enabled */}
                 {settings.enabled && (
-                    <div className="settings-item" style={{ display: 'block', padding: 0 }}>
+                    <div className="block p-0" style={{ display: 'block', padding: 0 }}>
                         <button
-                            className="settings-item-header-button"
+                            className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                             onClick={() => setIsOptionsOpen(!isOptionsOpen)}
                             style={{
                                 width: '100%',
@@ -79,8 +79,8 @@ export const TextRewriterSettings: React.FC = () => {
                             }}
                         >
                             <div style={{ textAlign: 'left' }}>
-                                <div className="settings-item-title">Rewrite Options</div>
-                                <div className="settings-item-description">
+                                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Rewrite Options</div>
+                                <div className="text-xs text-[var(--text-secondary)]">
                                     Presets: {settings.showPresets ? 'on' : 'off'} • Min: {settings.minSelectionLength} chars
                                 </div>
                             </div>
@@ -90,10 +90,10 @@ export const TextRewriterSettings: React.FC = () => {
                         {isOptionsOpen && (
                             <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
                                 {/* Show Presets */}
-                                <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                    <div className="settings-item-content">
-                                        <div className="settings-item-title">Show Preset Buttons</div>
-                                        <div className="settings-item-description">Display quick rewrite options (Shorter, Professional, etc.)</div>
+                                <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                    <div className="flex-1 mr-4">
+                                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Show Preset Buttons</div>
+                                        <div className="text-xs text-[var(--text-secondary)]">Display quick rewrite options (Shorter, Professional, etc.)</div>
                                     </div>
                                     <Toggle
                                         checked={settings.showPresets}
@@ -103,9 +103,9 @@ export const TextRewriterSettings: React.FC = () => {
 
                                 {/* Minimum Selection Length */}
                                 <div style={{ marginBottom: '12px' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '6px' }}>Minimum Selection Length</div>
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Minimum Selection Length</div>
                                     <select
-                                        className="settings-select"
+                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
                                         value={settings.minSelectionLength}
                                         onChange={(e) => handleSettingChange('minSelectionLength', Number(e.target.value))}
                                     >
@@ -119,15 +119,15 @@ export const TextRewriterSettings: React.FC = () => {
 
                                 {/* Gemini Tools Section */}
                                 <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-                                    <div className="settings-item-title" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    <div className="text-[12px] font-medium text-[var(--text-primary)] opacity-70 mb-2 uppercase tracking-wide" style={{ marginBottom: '8px', opacity: 0.7, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                                         Gemini Tools
                                     </div>
 
                                     {/* Google Search Tool */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">Google Search</div>
-                                            <div className="settings-item-description">Enable real-time web search for up-to-date rewrites</div>
+                                    <div className="flex items-center justify-between mb-3" style={{ padding: 0, border: 'none', marginBottom: '12px' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Google Search</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Enable real-time web search for up-to-date rewrites</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableGoogleSearch}
@@ -136,10 +136,10 @@ export const TextRewriterSettings: React.FC = () => {
                                     </div>
 
                                     {/* URL Context Tool */}
-                                    <div className="settings-item" style={{ padding: 0, border: 'none' }}>
-                                        <div className="settings-item-content">
-                                            <div className="settings-item-title">URL Context</div>
-                                            <div className="settings-item-description">Fetch and analyze content from URLs in the selected text</div>
+                                    <div className="flex items-center justify-between" style={{ padding: 0, border: 'none' }}>
+                                        <div className="flex-1 mr-4">
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">URL Context</div>
+                                            <div className="text-xs text-[var(--text-secondary)]">Fetch and analyze content from URLs in the selected text</div>
                                         </div>
                                         <Toggle
                                             checked={settings.enableUrlContext}
