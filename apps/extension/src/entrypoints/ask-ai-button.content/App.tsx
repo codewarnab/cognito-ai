@@ -1,8 +1,8 @@
-import type { PlasmoCSConfig } from "plasmo";
+
 import { useEffect, useState, useRef } from "react";
-import cssText from "data-text:~/styles/ask-ai-button.css";
+import { browser } from 'wxt/browser';
 import { SparklesIcon } from "@assets/icons/ui/star";
-import { TrashZone, getStyle as getTrashZoneStyle } from "@/components/ui/trash-zone";
+import { TrashZone } from "@/components/ui/trash-zone";
 import { EyeOff, Clock, XCircle } from "lucide-react";
 import {
     shouldShowButton,
@@ -10,18 +10,6 @@ import {
     hideForSession,
     hideForever,
 } from "@/utils/settings";
-
-export const config: PlasmoCSConfig = {
-    matches: ["<all_urls>"],
-    all_frames: false,
-};
-
-export const getStyle = () => {
-    const style = document.createElement("style");
-    const trashZoneStyle = getTrashZoneStyle();
-    style.textContent = cssText + "\n" + trashZoneStyle.textContent;
-    return style;
-};
 
 interface Position {
     x: number;
@@ -40,7 +28,6 @@ const AskAIButton = () => {
     const [isCompactMode, setIsCompactMode] = useState(false);
     const [savedPosition, setSavedPosition] = useState<Position | null>(null);
     const [isReady, setIsReady] = useState(false); // Track if position is loaded
-    const [mcpToolsDetected, setMcpToolsDetected] = useState(false); // MCP tools highlight
     const buttonRef = useRef<HTMLDivElement>(null);
     const dragOffset = useRef({ x: 0, y: 0 });
     const hasDragged = useRef(false);
@@ -103,68 +90,59 @@ const AskAIButton = () => {
             } else if (message.action === "SIDEBAR_CLOSED") {
                 setIsVisible(true);
             } else if (message.type === "webmcp/tools/register" && message.tools?.length > 0) {
-                // MCP tools detected - show highlight briefly
-                setMcpToolsDetected(true);
-                setTimeout(() => {
-                    setMcpToolsDetected(false);
-                }, 2000); // Highlight for 2 seconds
+                // MCP tools detected - potential logic here
             }
         };
 
-        chrome.runtime.onMessage.addListener(handleMessage);
-        return () => chrome.runtime.onMessage.removeListener(handleMessage);
+        const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
+        runtime.onMessage.addListener(handleMessage);
+
+        return () => {
+            runtime.onMessage.removeListener(handleMessage);
+        };
     }, []);
 
-    // Listen for fullscreen changes
+    // Listen for fullscreen changes handled in separate useEffect below
+
+
+    // However, for document listeners inside a React component, use standard add/removeEventListener
     useEffect(() => {
         const handleFullscreenChange = () => {
             const isFullscreen = !!(document.fullscreenElement ||
                 (document as any).webkitFullscreenElement);
-
+            /* ... same logic ... */
             if (isFullscreen) {
-                // Entering fullscreen - save current position and enable compact mode
-                console.log('[AskAI] Entering fullscreen - activating compact mode', { currentPosition: position });
                 setSavedPosition(position);
                 setIsCompactMode(true);
-
-                // Move to top-right corner in compact mode
-                const newPos = {
-                    x: window.innerWidth - 80,
-                    y: 20
-                };
+                const newPos = { x: window.innerWidth - 80, y: 20 };
                 setPosition(newPos);
                 currentPositionRef.current = newPos;
             } else {
-                // Exiting fullscreen - restore previous position and disable compact mode
-                console.log('[AskAI] Exiting fullscreen - restoring normal mode', { savedPosition });
                 setIsCompactMode(false);
-
-                // Restore saved position (or null to use default CSS position)
                 if (savedPosition === null) {
-                    // If there was no custom position, clear it to use default bottom-right from CSS
                     setPosition(null);
                     currentPositionRef.current = null;
                 } else {
-                    // Restore the saved position
                     setPosition(savedPosition);
                     currentPositionRef.current = savedPosition;
                 }
-
-                // Clear saved position after restoring
                 setSavedPosition(null);
             }
         };
 
+        const doc = document as any;
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        if (doc.webkitFullscreenElement !== undefined) {
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        }
 
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
-            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            if (doc.webkitFullscreenElement !== undefined) {
+                document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+            }
         };
     }, [position, savedPosition]);
-
-
 
     // Handle button click - open sidebar
     const handleClick = () => {
@@ -175,8 +153,6 @@ const AskAIButton = () => {
         console.log("[AskAI] Button clicked, sending OPEN_SIDEBAR message");
         chrome.runtime.sendMessage({ action: "OPEN_SIDEBAR" });
     };
-
-
 
     // Handle menu option selection
     const handleMenuSelect = async (action: 'page' | 'session' | 'forever') => {
@@ -445,8 +421,6 @@ const AskAIButton = () => {
                     {!isCompactMode && <span className="ask-ai-text">Ask AI</span>}
                 </div>
             )}
-
-
 
             {/* Trash Zone - only show when dragging and menu is not shown */}
             {showTrashZone && !showMenu && (

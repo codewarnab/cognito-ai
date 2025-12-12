@@ -5,11 +5,11 @@
     "description": "super powerful and private ",
     "author": "dev@codewarnab.in",
     "scripts": {
-        "dev": "plasmo dev",
-        "dev:setup": "node scripts/copy-offscreen.js",
-        "build": "plasmo build && node scripts/copy-offscreen.js",
-        "package": "plasmo package",
-        "postinstall": "node scripts/patch-vfile.js && node scripts/patch-math-intrinsics.js && node scripts/patch-streamdown.js",
+        "dev": "wxt",
+        "build": "wxt build",
+        "zip": "wxt zip",
+        "package": "wxt zip",
+        "postinstall": "wxt prepare && node scripts/patch-vfile.js && node scripts/patch-math-intrinsics.js && node scripts/patch-streamdown.js",
         "type:check": "tsc --noEmit",
         "type:watch": "tsc --noEmit --watch"
     },
@@ -23,7 +23,6 @@
         "@google/genai": "^1.30.0",
         "@mcp-b/transports": "^1.1.1",
         "@modelcontextprotocol/sdk": "^1.23.0",
-        "@plasmohq/storage": "^1.15.0",
         "@radix-ui/react-collapsible": "^1.1.12",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-popover": "^1.1.15",
@@ -42,7 +41,6 @@
         "jspdf": "^3.0.4",
         "lucide-react": "^0.546.0",
         "ogl": "^1.0.11",
-        "plasmo": "0.90.5",
         "react": "18.2.0",
         "react-dom": "18.2.0",
         "react-markdown": "^10.1.0",
@@ -61,22 +59,22 @@
         "@types/react": "18.2.48",
         "@types/react-dom": "18.2.18",
         "@types/three": "^0.181.0",
-        "autoprefixer": "^10.4.22",
+        "@vitejs/plugin-react": "^5.1.2",
         "browserify-zlib": "^0.2.0",
         "events-polyfill": "^2.1.2",
         "https-browserify": "^1.0.0",
         "jsdom": "^27.2.0",
         "patch-package": "^8.0.1",
         "path-browserify": "^1.0.0",
-        "postcss": "^8.5.6",
         "prettier": "3.2.4",
         "process": "^0.11.10",
         "stream-browserify": "^3.0.0",
         "stream-http": "^3.1.0",
-        "tailwindcss": "^4.1.17",
         "typescript": "5.3.3",
         "url": "^0.11.0",
-        "util": "^0.12.5"
+        "util": "^0.12.5",
+        "vite-plugin-node-polyfills": "^0.24.0",
+        "wxt": "^0.20.11"
     },
     "alias": {
         "node:events": "events-polyfill",
@@ -86,68 +84,5 @@
         "node:util": "util/",
         "util": "util/",
         "google-logging-utils": "./src/polyfills/google-logging-utils.ts"
-    },
-    "manifest": {
-        "content_security_policy": {
-            "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
-        },
-        "permissions": [
-            "storage",
-            "unlimitedStorage",
-            "tabs",
-            "tabGroups",
-            "sidePanel",
-            "alarms",
-            "scripting",
-            "activeTab",
-            "webNavigation",
-            "identity",
-            "notifications",
-            "offscreen",
-            "cookies",
-            "history",
-            "search",
-            "bookmarks",
-            "omnibox",
-            "clipboardWrite",
-            "contextMenus"
-        ],
-        "optional_permissions": [
-            "tabCapture",
-            "desktopCapture"
-        ],
-        "host_permissions": [
-            "https://youtube-transcript-generator-five.vercel.app/*",
-            "<all_urls>"
-        ],
-        "commands": {
-            "_execute_side_panel": {
-                "suggested_key": {
-                    "default": "Ctrl+Shift+H",
-                    "mac": "Command+Shift+H"
-                },
-                "description": "Open AI Chat side panel"
-            }
-        },
-        "web_accessible_resources": [
-            {
-                "resources": [
-                    "sweep1.mp3",
-                    "assets/fonts/Inter-Regular.ttf",
-                    "assets/fonts/Inter-Medium.ttf",
-                    "assets/fonts/Inter-SemiBold.ttf",
-                    "assets/elevenlabs/*.js"
-                ],
-                "matches": [
-                    "<all_urls>"
-                ]
-            }
-        ],
-        "side_panel": {
-            "default_path": "sidepanel.html"
-        },
-        "omnibox": {
-            "keyword": "ai"
-        }
     }
 }

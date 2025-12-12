@@ -1,33 +1,13 @@
-/**
- * Text Rewriter Content Script
- * Plasmo content script that enables text rewriting via context menu
- *
- * Usage: Select text on any webpage → Right-click → "Rewrite with Cognito AI" → Rewriter tooltip appears
- */
-import type { PlasmoCSConfig } from 'plasmo';
-import { useCallback, useState, useEffect } from 'react';
-import cssText from 'data-text:~/styles/features/text-rewriter.css';
 
-import { useRewriter } from './text-rewriter/useRewriter';
-import { RewriterTooltip } from './text-rewriter/RewriterTooltip';
+import { useCallback, useState, useEffect } from 'react';
+import { browser } from 'wxt/browser';
+import { useRewriter } from '@/contents/text-rewriter/useRewriter';
+import { RewriterTooltip } from '@/contents/text-rewriter/RewriterTooltip';
 import type { RewritePreset, RewriteSelectionData } from '@/types';
 import { isRewriteEnabled } from '@/utils/settings/rewriteSettings';
 import { createLogger } from '~logger';
 
 const log = createLogger('TextRewriter');
-
-export const config: PlasmoCSConfig = {
-    matches: ['<all_urls>'],
-    all_frames: false,
-    // Note: chrome://, chrome-extension://, and moz-extension:// URLs are automatically
-    // excluded by the browser - content scripts cannot run on these pages
-};
-
-export const getStyle = () => {
-    const style = document.createElement('style');
-    style.textContent = cssText;
-    return style;
-};
 
 // Message type from background context menu
 interface ShowRewriterMessage {
@@ -37,7 +17,11 @@ interface ShowRewriterMessage {
     };
 }
 
-function TextRewriterContent() {
+interface AppProps {
+    ctx: any;
+}
+
+const TextRewriterContent = ({ ctx: _ctx }: AppProps) => {
     const { rewrittenText, isProcessing, error, rewrite, replaceSelection, reset } = useRewriter();
     const [showTooltip, setShowTooltip] = useState(false);
     const [isEnabled, setIsEnabled] = useState(true);
@@ -99,10 +83,11 @@ function TextRewriterContent() {
             return false;
         };
 
-        chrome.runtime.onMessage.addListener(handleMessage);
+        const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
+        runtime.onMessage.addListener(handleMessage);
 
         return () => {
-            chrome.runtime.onMessage.removeListener(handleMessage);
+            runtime.onMessage.removeListener(handleMessage);
         };
     }, []);
 

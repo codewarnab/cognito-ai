@@ -1,0 +1,17 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Offscreen Summarizer</title>
+    <!-- WXT recognizes this as an unlisted page (no manifest config needed) -->
+    <!-- Include only in Chrome builds -->
+    <meta name="manifest.include" content="['chrome']" />
+  </head>
+  <body>
+    <!-- 
+      Note: offscreen.js stays in public/ and gets copied to dist/ 
+      The relative path here references the file in the output directory 
+    -->
+    <script src="/offscreen.js"></script>
+  </body>
+</html>

@@ -366,6 +366,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
         let rafId: number;
         let program: Program | null = null;
 
+        let resizeHandler: (() => void) | null = null;
         try {
             rendererInstance = new Renderer({
                 alpha: true,
@@ -419,7 +420,7 @@ export const VoicePoweredOrb: FC<VoicePoweredOrbProps> = ({
             const mesh = new Mesh(glContext, { geometry, program });
 
             // Define resize handler in outer scope for proper cleanup
-            let resizeHandler: (() => void) | null = null;
+
             const resize = () => {
                 if (!container || !rendererInstance || !glContext) return;
                 const dpr = window.devicePixelRatio || 1;

@@ -19,6 +19,8 @@ dist/
 # Plasmo (Chrome Extension)
 # ===================
 .plasmo/
+.wxt/
+.wxt
 
 # ===================
 # Cloudflare Workers

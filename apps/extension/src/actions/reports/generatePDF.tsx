@@ -105,7 +105,7 @@ function generatePDF(content: string): Blob {
                 if (!lines[currentLine]) {
                     lines[currentLine] = [];
                 }
-                lines[currentLine].push({ text: part, isBold });
+                lines[currentLine]!.push({ text: part, isBold });
             });
 
             // Render each line with proper formatting

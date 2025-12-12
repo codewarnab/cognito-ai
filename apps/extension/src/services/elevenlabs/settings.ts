@@ -1,19 +1,12 @@
 /**
  * ElevenLabs Voice Settings Storage
- * Manages voice preferences and tool settings using @plasmohq/storage
+ * Manages voice preferences and tool settings using wxt/storage
  */
 
-import { Storage } from '@plasmohq/storage';
+
 import { createLogger } from '~logger';
 
 const log = createLogger('ElevenLabs-Settings');
-const storage = new Storage({ area: 'local' });
-
-const STORAGE_KEYS = {
-  SELECTED_VOICE_ID: 'elevenlabs_voice_id',
-  ENABLED_TOOLS: 'elevenlabs_enabled_tools',
-  VOICE_SETTINGS: 'elevenlabs_voice_settings',
-} as const;
 
 // Default tools that are enabled
 const DEFAULT_ENABLED_TOOLS = [
@@ -56,7 +49,6 @@ export const ALL_TOOLS: ToolInfo[] = [
   { id: 'applyTabGroups', name: 'Tab Groups', description: 'Organize tabs into groups' },
 ];
 
-
 export interface VoiceSettings {
   stability: number;
   similarityBoost: number;
@@ -69,86 +61,60 @@ const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   speed: 1.0,
 };
 
+// Define storage items using WXT storage API
+const voiceIdItem = storage.defineItem<string | null>('local:elevenlabs_voice_id', {
+  fallback: null,
+});
+
+const enabledToolsItem = storage.defineItem<string[]>('local:elevenlabs_enabled_tools', {
+  fallback: DEFAULT_ENABLED_TOOLS,
+});
+
+const voiceSettingsItem = storage.defineItem<VoiceSettings>('local:elevenlabs_voice_settings', {
+  fallback: DEFAULT_VOICE_SETTINGS,
+});
+
 /**
  * Get selected voice ID
  */
 export async function getSelectedVoiceId(): Promise<string | null> {
-  try {
-    const voiceId = await storage.get<string>(STORAGE_KEYS.SELECTED_VOICE_ID);
-    return voiceId || null;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to get selected voice ID', { error: errorMessage });
-    return null;
-  }
+  return await voiceIdItem.getValue();
 }
 
 /**
  * Set selected voice ID
  */
 export async function setSelectedVoiceId(voiceId: string): Promise<void> {
-  try {
-    await storage.set(STORAGE_KEYS.SELECTED_VOICE_ID, voiceId);
-    log.info('Voice ID saved', { voiceId });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to save voice ID', { error: errorMessage });
-    throw new Error(`Failed to save voice ID: ${errorMessage}`);
-  }
+  await voiceIdItem.setValue(voiceId);
+  log.info('Voice ID saved', { voiceId });
 }
 
 /**
  * Get enabled tools list
  */
 export async function getEnabledTools(): Promise<string[]> {
-  try {
-    const tools = await storage.get<string[]>(STORAGE_KEYS.ENABLED_TOOLS);
-    return tools || DEFAULT_ENABLED_TOOLS;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to get enabled tools', { error: errorMessage });
-    return DEFAULT_ENABLED_TOOLS;
-  }
+  return await enabledToolsItem.getValue();
 }
 
 /**
  * Set enabled tools list
  */
 export async function setEnabledTools(tools: string[]): Promise<void> {
-  try {
-    await storage.set(STORAGE_KEYS.ENABLED_TOOLS, tools);
-    log.info('Enabled tools saved', { count: tools.length });
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to save enabled tools', { error: errorMessage });
-    throw new Error(`Failed to save enabled tools: ${errorMessage}`);
-  }
+  await enabledToolsItem.setValue(tools);
+  log.info('Enabled tools saved', { count: tools.length });
 }
 
 /**
  * Get voice settings (stability, similarity, speed)
  */
 export async function getVoiceSettings(): Promise<VoiceSettings> {
-  try {
-    const settings = await storage.get<VoiceSettings>(STORAGE_KEYS.VOICE_SETTINGS);
-    return settings || DEFAULT_VOICE_SETTINGS;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to get voice settings', { error: errorMessage });
-    return DEFAULT_VOICE_SETTINGS;
-  }
+  return await voiceSettingsItem.getValue();
 }
 
 /**
  * Set voice settings
  */
 export async function setVoiceSettings(settings: VoiceSettings): Promise<void> {
-  try {
-    await storage.set(STORAGE_KEYS.VOICE_SETTINGS, settings);
-    log.info('Voice settings saved');
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log.error('Failed to save voice settings', { error: errorMessage });
-    throw new Error(`Failed to save voice settings: ${errorMessage}`);
-  }
+  await voiceSettingsItem.setValue(settings);
+  log.info('Voice settings saved');
 }

@@ -259,7 +259,7 @@ export function AskOverlay({
                 if (el instanceof HTMLElement) {
                     if (el === overlayRef.current) return true;
                     if (el.classList?.contains('ask-overlay')) return true;
-                    if (el.tagName === 'PLASMO-CSUI') return true;
+                    if (el.tagName === 'WXT-SHADOW-ROOT') return true;
                 }
                 return false;
             });

@@ -1,4 +1,3 @@
-'use client';
 
 import type { Transition, Variants } from 'framer-motion';
 import { motion, useAnimation } from 'framer-motion';

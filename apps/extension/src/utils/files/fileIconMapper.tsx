@@ -1,4 +1,3 @@
-"use client";
 
 import type React from "react";
 import { File, Image, Film, Music, Archive } from "lucide-react";

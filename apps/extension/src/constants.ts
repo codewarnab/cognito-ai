@@ -119,6 +119,7 @@ export const LOG_PRESETS = {
         CREDENTIALS: true,
         SEARCH: true,
         SETTINGS: true,
+        WORKFLOW: true,
         DEBUG: false,
         PERFORMANCE: false,
         ERRORS_ONLY: false,
@@ -155,6 +156,7 @@ export const LOG_PRESETS = {
         PERFORMANCE: false,
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -189,6 +191,7 @@ export const LOG_PRESETS = {
         PERFORMANCE: false,
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -223,6 +226,7 @@ export const LOG_PRESETS = {
         PERFORMANCE: false,
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -257,6 +261,7 @@ export const LOG_PRESETS = {
         PERFORMANCE: false,
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: false,
         ERRORS_ONLY: true,
         SHOW_ALL: false,
     },
@@ -291,6 +296,7 @@ export const LOG_PRESETS = {
         PERFORMANCE: false,
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: false,
         ERRORS_ONLY: false,
         SHOW_ALL: false,
     },
@@ -325,7 +331,9 @@ export const LOG_PRESETS = {
         PERFORMANCE: true,
         SEARCH: true,
         SETTINGS: true,
+        WORKFLOW: true,
         ERRORS_ONLY: false,
+        SHOW_ALL: false,
     },
 
     // Debugging Workflow Issues (for /research, /youtube-to-notion, etc.)
@@ -370,6 +378,7 @@ export const LOG_PRESETS = {
         // Disable search/settings
         SEARCH: false,
         SETTINGS: false,
+        WORKFLOW: true,
 
         // Debug flags
         DEBUG: false,

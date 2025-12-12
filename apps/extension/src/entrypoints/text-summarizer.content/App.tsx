@@ -1,26 +1,15 @@
-import type { PlasmoCSConfig } from 'plasmo';
 import { useCallback, useState } from 'react';
-import cssText from 'data-text:~/styles/features/text-summarizer.css';
 
-import { useTextSelection } from './text-summarizer/useTextSelection';
-import { useSummarizer } from './text-summarizer/useSummarizer';
-import { SummarizeButton } from './text-summarizer/SummarizeButton';
-import { SummaryPopup } from './text-summarizer/SummaryPopup';
+import { useTextSelection } from '@/contents/text-summarizer/useTextSelection';
+import { useSummarizer } from '@/contents/text-summarizer/useSummarizer';
+import { SummarizeButton } from '@/contents/text-summarizer/SummarizeButton';
+import { SummaryPopup } from '@/contents/text-summarizer/SummaryPopup';
 
-export const config: PlasmoCSConfig = {
-    matches: ['<all_urls>'],
-    all_frames: false,
-    // Note: chrome://, chrome-extension://, and moz-extension:// URLs are automatically
-    // excluded by the browser - content scripts cannot run on these pages
-};
+interface AppProps {
+    ctx: any;
+}
 
-export const getStyle = () => {
-    const style = document.createElement('style');
-    style.textContent = cssText;
-    return style;
-};
-
-function TextSummarizerContent() {
+const TextSummarizerContent = ({ ctx: _ctx }: AppProps) => {
     const { selection, setSelection, resetSelection, isEnabled } = useTextSelection();
     const { summary, isLoading, isStreaming, error, summarize, resetSummary } = useSummarizer();
     const [showPopup, setShowPopup] = useState(false);
@@ -72,6 +61,6 @@ function TextSummarizerContent() {
             )}
         </>
     );
-}
+};
 
 export default TextSummarizerContent;

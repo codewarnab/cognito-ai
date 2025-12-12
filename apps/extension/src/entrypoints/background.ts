@@ -1,0 +1,142 @@
+/**
+ * MV3 Background Service Worker - Orchestrator
+ * 
+ * This is the main entry point for the background service worker.
+ * It initializes all modules and sets up event listeners.
+ * 
+ * Architecture:
+ * - All MCP logic is in src/background/mcp/
+ * - All message handling is in src/background/messaging/
+ * - All event listeners are in dedicated modules
+ * - This file only orchestrates initialization
+ * 
+ * WXT Migration Notes:
+ * - This file uses defineBackground() wrapper required by WXT
+ * - We keep using chrome.* API since we only target Chrome (MV3)
+ * - chrome.sidePanel is Chrome-specific and doesn't have browser.* equivalent
+ */
+
+import '../polyfills/process';
+
+import { openSidePanelForTab, openSidePanel } from '@/background/sidepanelUtils';
+import { createLogger, LoggerConfigManager } from '~logger';
+import { initializeOAuthRedirectURI } from '@/background/mcp/auth';
+import { initializeLifecycleEventListeners } from '@/background/lifecycle';
+import { initializeAlarmListeners } from '@/background/alarms';
+import { initializeNotificationListeners } from '@/background/notifications';
+import { initializeOmnibox } from '@/background/omnibox';
+import {
+    initializeMessageRouter,
+    initializeSummarizerPortListener,
+    initializeWriterPortListener,
+    initializeRewriterPortListener,
+    initializeAskerPortListener
+} from '@/background/messaging/router';
+import { initializeRewriterContextMenu, initializeAskerContextMenu } from '@/background/contextMenu';
+import { recoverExtractionQueue } from '@/background/supermemory/extraction/startup';
+import { recoverContentMemoryQueue } from '@/background/supermemory/contentMemory/startup';
+import { initializeWebMCPManager } from '@/background/webmcp/manager';
+
+// Initialize LoggerConfigManager early to load dynamic config from storage
+// This ensures logging respects user preferences before any logs are emitted
+LoggerConfigManager.initialize().catch(err => {
+    console.error('[Background] Failed to initialize LoggerConfigManager:', err);
+});
+
+export default defineBackground(() => {
+    const log = createLogger('Background-Orchestrator', 'BACKGROUND');
+
+    log.info('Service Worker loading...');
+
+    // ============================================================================
+    // Core Initialization
+    // ============================================================================
+
+    // Initialize OAuth redirect URI immediately when service worker loads
+    initializeOAuthRedirectURI();
+
+    // ============================================================================
+    // Event Listener Initialization
+    // ============================================================================
+
+    // Initialize all modular event listeners
+    initializeLifecycleEventListeners();
+    initializeMessageRouter();
+    initializeSummarizerPortListener();
+    initializeWriterPortListener();
+    initializeRewriterPortListener();
+    initializeAskerPortListener();
+    initializeAlarmListeners();
+    initializeNotificationListeners();
+    initializeOmnibox();
+    initializeRewriterContextMenu();
+    initializeAskerContextMenu();
+    initializeWebMCPManager();
+
+    // ============================================================================
+    // Action Handlers
+    // ============================================================================
+
+    /**
+     * Action click handler - open side panel
+     * Note: Using chrome.* API as sidePanel is Chrome-specific
+     */
+    if (chrome.action) {
+        chrome.action.onClicked.addListener(async (tab) => {
+            if (chrome.sidePanel && tab.id) {
+                await openSidePanelForTab(tab.id);
+            }
+        });
+    }
+
+    /**
+     * Commands handler - handle keyboard shortcuts
+     * Responds to the _execute_side_panel command (Ctrl+Shift+H / Cmd+Shift+H)
+     * Note: Using chrome.* API as sidePanel is Chrome-specific
+     */
+    if (chrome.commands) {
+        chrome.commands.onCommand.addListener(async (command) => {
+            log.info('Command received:', command);
+
+            if (command === '_execute_side_panel') {
+                try {
+                    const currentWindow = await chrome.windows.getCurrent();
+
+                    if (currentWindow?.id) {
+                        const success = await openSidePanel(currentWindow.id);
+
+                        if (success) {
+                            log.info('Sidepanel opened via keyboard shortcut');
+                        } else {
+                            log.error('Failed to open sidepanel via keyboard shortcut');
+                        }
+                    } else {
+                        log.error('Cannot open sidepanel: no current window');
+                    }
+                } catch (error) {
+                    log.error('Error opening sidepanel via keyboard shortcut:', error);
+                }
+            }
+        });
+    }
+
+    // ============================================================================
+    // Memory Queue Recovery (runs on service worker startup)
+    // ============================================================================
+
+    // Recover any stuck extraction items from previous session
+    recoverExtractionQueue().catch(err => {
+        log.warn('Failed to recover extraction queue:', err);
+    });
+
+    // Recover any stuck content memory items from previous session
+    recoverContentMemoryQueue().catch(err => {
+        log.warn('Failed to recover content memory queue:', err);
+    });
+
+    // ============================================================================
+    // Initialization Complete
+    // ============================================================================
+
+    log.info('Service Worker initialized and all listeners are active');
+});

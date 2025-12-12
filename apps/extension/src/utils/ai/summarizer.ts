@@ -18,7 +18,7 @@ export type SummarizerAvailability = 'readily' | 'after-download' | 'no';
 /**
  * Download progress event
  */
-export interface DownloadProgressEvent {
+export interface ModelDownloadProgressEvent {
     loaded: number;
     total: number;
 }
@@ -34,29 +34,7 @@ export interface SummarizerOptions {
     onDownloadProgress?: (progress: number) => void;
 }
 
-/**
- * Chrome Summarizer API types
- */
-declare global {
-    interface Window {
-        ai?: {
-            summarizer?: {
-                capabilities(): Promise<{ available: 'readily' | 'after-download' | 'no' }>;
-                create(options?: {
-                    type?: string;
-                    format?: string;
-                    length?: string;
-                    sharedContext?: string;
-                    monitor?: (monitor: any) => void;
-                }): Promise<{
-                    summarize(text: string, options?: { context?: string }): Promise<string>;
-                    summarizeStreaming(text: string, options?: { context?: string }): AsyncIterable<string>;
-                    destroy(): void;
-                }>;
-            };
-        };
-    }
-}
+
 
 
 

@@ -1,0 +1,871 @@
+/* ============================================
+   Write Command - Content Script Styles
+   ============================================ */
+
+/* Import shared markdown styles */
+@import '../../styles/features/shared-markdown.css';
+
+/* Writer Overlay Container */
+.writer-overlay {
+    position: fixed;
+    z-index: 2147483647;
+
+    width: 400px;
+    max-width: 90vw;
+    max-height: calc(100vh - 32px);
+
+    display: flex;
+    flex-direction: column;
+
+    background: rgba(25, 25, 25, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: white;
+
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+    animation: writer-overlay-appear 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+
+    overflow: hidden;
+}
+
+@keyframes writer-overlay-appear {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.writer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.writer-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 24px;
+    height: 24px;
+
+    color: rgba(255, 255, 255, 0.4);
+    cursor: grab;
+
+    transition: color 0.15s ease;
+}
+
+.writer-drag-handle:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.writer-drag-handle:active {
+    cursor: grabbing;
+}
+
+.writer-title {
+    flex: 1;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.writer-title-icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin-right: 6px;
+    vertical-align: text-bottom;
+    color: #a78bfa;
+}
+
+.writer-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 28px;
+    height: 28px;
+    padding: 0;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.writer-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.writer-close svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Input Row */
+.writer-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Reduce top padding when attachment is present */
+.writer-input-row--has-attachment {
+    padding-top: 10px;
+}
+
+.writer-input {
+    flex: 1;
+
+    padding: 10px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+
+    color: white;
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+    transition: all 0.15s ease;
+}
+
+.writer-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.writer-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.writer-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.writer-send-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 38px;
+    height: 38px;
+    padding: 0;
+
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 10px;
+
+    color: #c4b5fd;
+    cursor: pointer;
+
+    transition: all 0.15s ease;
+}
+
+.writer-send-button:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+    transform: scale(1.05);
+}
+
+.writer-send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.writer-send-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.writer-send-button svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Tools Row */
+.writer-tools-row {
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Loading State */
+.writer-loading {
+    padding: 0;
+}
+
+/* Skeleton Loading Animation */
+.writer-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    width: 100%;
+}
+
+.writer-skeleton-line {
+    height: 14px;
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.06) 0%,
+            rgba(255, 255, 255, 0.12) 50%,
+            rgba(255, 255, 255, 0.06) 100%);
+    background-size: 200% 100%;
+    border-radius: 6px;
+    animation: writer-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.writer-skeleton-line--full {
+    width: 100%;
+}
+
+.writer-skeleton-line--medium {
+    width: 75%;
+}
+
+.writer-skeleton-line--short {
+    width: 45%;
+}
+
+@keyframes writer-skeleton-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Output Display */
+.writer-output {
+    padding: 16px;
+    max-height: 300px;
+    min-height: 60px;
+    overflow-y: auto;
+    flex-shrink: 1;
+}
+
+.writer-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+.writer-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.writer-output::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+}
+
+/* Legacy plain text output (kept for fallback) */
+.writer-output-text {
+    margin: 0;
+
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Writer-specific markdown overrides */
+.writer-markdown-content {
+    font-size: 14px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Use purple accent for writer links (matches writer theme) */
+.writer-markdown-content a {
+    color: #c4b5fd;
+}
+
+/* Use purple accent for writer blockquotes */
+.writer-markdown-content blockquote {
+    border-left-color: rgba(167, 139, 250, 0.5);
+}
+
+/* Streaming cursor */
+.writer-cursor {
+    display: inline-block;
+    color: #a78bfa;
+    animation: cursor-blink 0.8s infinite;
+}
+
+@keyframes cursor-blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Actions Row */
+.writer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 12px 16px;
+
+    background: rgba(255, 255, 255, 0.02);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.writer-action-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.writer-action-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.writer-action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.writer-action-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+.writer-action-button--primary {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #c4b5fd;
+}
+
+.writer-action-button--primary:hover:not(:disabled) {
+    background: rgba(139, 92, 246, 0.3);
+}
+
+/* Error State */
+.writer-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    margin: 16px;
+    padding: 14px;
+
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+
+    color: #fca5a5;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.writer-error svg {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #f87171;
+}
+
+.writer-error span {
+    flex: 1;
+}
+
+.writer-error-retry {
+    flex-shrink: 0;
+    margin-left: auto;
+    padding: 4px 10px;
+
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.writer-error-retry:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.writer-error-retry:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error Boundary Fallback */
+.writer-error-boundary {
+    width: 320px;
+}
+
+.writer-error-boundary .writer-header {
+    background: rgba(239, 68, 68, 0.1);
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.writer-error-boundary .writer-title {
+    color: #fca5a5;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .writer-overlay,
+    .writer-skeleton-line,
+    .writer-cursor {
+        animation: none !important;
+        transition-duration: 0.1s !important;
+    }
+
+    .writer-skeleton-line {
+        background: rgba(255, 255, 255, 0.08);
+    }
+}
+
+/* Dark mode adjustments - already dark by default */
+
+/* Light mode support (if needed) */
+@media (prefers-color-scheme: light) {
+
+    /* Keep dark theme for overlay regardless of system preference
+       for consistent experience and better contrast */
+    .writer-overlay {
+        background: rgba(25, 25, 25, 0.98);
+    }
+}
+
+/* ============================================
+   Tools Toggle - Inline Settings
+   ============================================ */
+
+.tools-toggle-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tools-toggle-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 6px 10px;
+
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-trigger:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-trigger--active {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.2);
+    color: #a78bfa;
+}
+
+.tools-toggle-trigger--expanded {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+}
+
+.tools-toggle-trigger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-label {
+    flex: 1;
+    text-align: left;
+}
+
+.tools-toggle-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+
+    background: #a78bfa;
+    border-radius: 8px;
+
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.tools-toggle-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-chevron--rotated {
+    transform: rotate(180deg);
+}
+
+.tools-toggle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    padding: 6px;
+
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+}
+
+.tools-toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tools-toggle-item:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tools-toggle-item--active {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.tools-toggle-item:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tools-toggle-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.tools-toggle-item--active .tools-toggle-item-icon {
+    color: #a78bfa;
+}
+
+.tools-toggle-item-label {
+    flex: 1;
+}
+
+.tools-toggle-item-switch {
+    position: relative;
+    width: 28px;
+    height: 16px;
+
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+
+    transition: background 0.15s ease;
+}
+
+.tools-toggle-item-switch--on {
+    background: #a78bfa;
+}
+
+.tools-toggle-item-switch-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+
+    width: 12px;
+    height: 12px;
+
+    background: white;
+    border-radius: 50%;
+
+    transition: transform 0.15s ease;
+}
+
+.tools-toggle-item-switch--on .tools-toggle-item-switch-thumb {
+    transform: translateX(12px);
+}
+
+/* Gated state for unconfigured tools */
+.tools-toggle-item--gated {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.tools-toggle-item--gated:hover {
+    background: transparent;
+}
+
+.tools-toggle-item-warning {
+    margin-left: 4px;
+    color: #f59e0b;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Info icon for tool descriptions */
+.tools-toggle-item-info {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 2px;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: help;
+    transition: color 0.15s ease;
+    position: relative;
+}
+
+.tools-toggle-item-info:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Custom tooltip styling for info icon */
+.tools-toggle-item-info::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    width: max-content;
+    max-width: 200px;
+    padding: 8px 10px;
+    background: rgba(30, 30, 30, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: normal;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 100;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.tools-toggle-item-info:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Arrow for tooltip */
+.tools-toggle-item-info::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 2px);
+    right: 3px;
+    border: 5px solid transparent;
+    border-top-color: rgba(30, 30, 30, 0.98);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 101;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+.tools-toggle-item-info:hover::before {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* ============================================
+   Writer Attachment Styles - Minimal Chip
+   ============================================ */
+
+.writer-attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 6px 3px 8px;
+    margin: 8px 16px 0;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 14px;
+    max-width: fit-content;
+}
+
+.writer-attachment-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #a78bfa;
+    flex-shrink: 0;
+}
+
+.writer-attachment-chip-name {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.writer-attachment-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.writer-attachment-chip-remove:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.writer-attachment-chip-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Attach Button */
+.writer-attach-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.writer-attach-button:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.writer-attach-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.writer-attach-button--active {
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Processing Indicator */
+.writer-processing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Drag Over State */
+.writer-input-row--dragover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.writer-input-row--dragover .writer-input {
+    border-color: rgba(139, 92, 246, 0.5);
+}

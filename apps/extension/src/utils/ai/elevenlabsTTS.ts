@@ -6,13 +6,13 @@
 
 import { createLogger } from '~logger';
 import { getSelectedVoiceId, getVoiceSettings } from '@/services/elevenlabs';
+import { ENV } from '@/utils/env';
 
 const ttsLog = createLogger('ElevenLabsTTS', 'UTILS');
 
 // Configuration - use same base URL as other ElevenLabs services
-const WORKER_BASE_URL =
-  process.env.PLASMO_PUBLIC_ELEVENLABS_WORKER_URL ||
-  'https://elevenlabs-proxy.codewarnab.workers.dev';
+// Uses ENV compatibility layer for migration
+const WORKER_BASE_URL = ENV.ELEVENLABS_WORKER_URL;
 
 // Timeout for TTS API requests (30 seconds - TTS can take time for long texts)
 const API_TIMEOUT_MS = 30000;
@@ -244,7 +244,7 @@ export async function streamElevenLabsSpeech(
       try {
         // MP3 MIME type for MediaSource
         const mimeType = 'audio/mpeg';
-        
+
         if (!MediaSource.isTypeSupported(mimeType)) {
           ttsLog.warn('MediaSource MP3 not supported, falling back to buffered playback');
           // Fallback to non-streaming
@@ -264,12 +264,12 @@ export async function streamElevenLabsSpeech(
         const appendNextChunk = () => {
           if (isAppending || pendingChunks.length === 0) return;
           if (sourceBuffer.updating) return;
-          
+
           isAppending = true;
           const chunk = pendingChunks.shift();
           if (chunk) {
             try {
-              sourceBuffer.appendBuffer(chunk);
+              sourceBuffer.appendBuffer(chunk as any);
             } catch (err) {
               ttsLog.error('Error appending buffer', { error: err instanceof Error ? err.message : 'Unknown' });
               isAppending = false;
@@ -325,7 +325,7 @@ export async function streamElevenLabsSpeech(
               while (pendingChunks.length > 0 || sourceBuffer.updating) {
                 await new Promise(r => setTimeout(r, 50));
               }
-              
+
               // End the stream
               if (mediaSource.readyState === 'open') {
                 try {
@@ -464,8 +464,8 @@ export async function generateElevenLabsSpeech(
       throw new Error('No audio data received from ElevenLabs TTS');
     }
 
-    ttsLog.debug('ElevenLabs speech generation complete', { 
-      byteLength: audioBuffer.byteLength 
+    ttsLog.debug('ElevenLabs speech generation complete', {
+      byteLength: audioBuffer.byteLength
     });
 
     // Cache the generated audio

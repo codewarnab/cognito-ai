@@ -1,7 +1,6 @@
 import type React from "react"
 
 import { motion, useAnimation } from "framer-motion"
-import { useState } from "react"
 
 interface JSXIconProps {
     size?: number
@@ -9,7 +8,6 @@ interface JSXIconProps {
 
 const JSXIcon: React.FC<JSXIconProps> = ({ size = 24 }) => {
     const controls = useAnimation()
-    const [isHovered, setIsHovered] = useState(false)
 
     return (
         <div
@@ -25,12 +23,10 @@ const JSXIcon: React.FC<JSXIconProps> = ({ size = 24 }) => {
                 justifyContent: 'center'
             }}
             onMouseEnter={(e) => {
-                setIsHovered(true)
                 controls.start("animate")
                 e.currentTarget.style.backgroundColor = 'rgba(239, 246, 255, 1)'
             }}
             onMouseLeave={(e) => {
-                setIsHovered(false)
                 controls.start("normal")
                 e.currentTarget.style.backgroundColor = 'transparent'
             }}

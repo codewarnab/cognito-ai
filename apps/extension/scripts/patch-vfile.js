@@ -2,7 +2,7 @@
 
 /**
  * Patch vfile imports to use browser versions
- * This is a workaround for Plasmo/Parcel build issues with subpath imports
+ * This is a workaround for build issues with subpath imports
  * See: https://github.com/remarkjs/react-markdown/issues/864
  * 
  * Note: In a pnpm monorepo, packages are hoisted to the root node_modules.

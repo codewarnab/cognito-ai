@@ -1,39 +1,22 @@
-/**
- * Write Command Content Script
- * Plasmo content script that enables the /write command in any input field
- * 
- * Usage: Type "/write" followed by your prompt in any text field
- * Example: "/write draft an email about the project delay"
- */
-import type { PlasmoCSConfig } from 'plasmo';
-import { useCallback, useState, useEffect, useRef } from 'react';
-import cssText from 'data-text:~/styles/features/write-command.css';
 
-import { useWriteCommandDetection } from './write-command/useWriteCommandDetection';
-import { useTextInsertion } from './write-command/useTextInsertion';
-import { WriterOverlay } from './write-command/WriterOverlay';
-import { WriteCommandErrorBoundary } from './write-command/ErrorBoundary';
-import { getPageContext } from './write-command/platformDetector';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { browser } from 'wxt/browser';
+import { useWriteCommandDetection } from '@/contents/write-command/useWriteCommandDetection';
+import { useTextInsertion } from '@/contents/write-command/useTextInsertion';
+import { WriterOverlay } from '@/contents/write-command/WriterOverlay';
+import { WriteCommandErrorBoundary } from '@/contents/write-command/ErrorBoundary';
+import { getPageContext } from '@/contents/write-command/platformDetector';
 import { getWriteCommandSettings } from '@/utils/settings';
 import type { WriteStreamChunk, WriteError, WriteGenerateRequest, WriteAttachmentPayload } from '@/types';
 import { createLogger } from '~logger';
 
 const log = createLogger('WriteCommand');
 
-export const config: PlasmoCSConfig = {
-    matches: ['<all_urls>'],
-    all_frames: true, // Enable for iframes (Gmail compose, etc.)
-    // Note: chrome://, chrome-extension://, and moz-extension:// URLs are automatically
-    // excluded by the browser - content scripts cannot run on these pages
-};
+interface AppProps {
+    ctx: any;
+}
 
-export const getStyle = () => {
-    const style = document.createElement('style');
-    style.textContent = cssText;
-    return style;
-};
-
-function WriteCommandContent() {
+const WriteCommandContent = ({ ctx: _ctx }: AppProps) => {
     const {
         isWriterMode,
         targetElement,
@@ -48,7 +31,7 @@ function WriteCommandContent() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedText, setGeneratedText] = useState('');
     const [error, setError] = useState<string | null>(null);
-    
+
     // Track whether we have an insertion target (for context menu invocation)
     const [hasInsertionTarget, setHasInsertionTarget] = useState(true);
     const [initialPrompt, setInitialPrompt] = useState<string | undefined>(undefined);
@@ -60,6 +43,9 @@ function WriteCommandContent() {
     // Cleanup on unmount or page navigation only
     useEffect(() => {
         // Handle page navigation (beforeunload)
+        // Use ctx.addEventListener for auto-cleanup if using WXT patterns, but window works too.
+        // ctx listener is persistent for the script execution, React useEffect is for component lifecycle.
+        // Since we want component cleanup, stick to window.addEventListener in useEffect.
         const handleBeforeUnload = () => {
             if (activePortRef.current) {
                 log.debug('Cleaning up active port on navigation');
@@ -104,7 +90,7 @@ function WriteCommandContent() {
 
                 // Set insertion target flag
                 setHasInsertionTarget(message.payload?.hasInsertionTarget ?? false);
-                
+
                 // Set initial prompt if text was selected
                 if (message.payload?.selectedText) {
                     setInitialPrompt(message.payload.selectedText);
@@ -115,7 +101,7 @@ function WriteCommandContent() {
                 // Calculate position near the selection or center of viewport
                 const selection = window.getSelection();
                 let position = { x: window.innerWidth / 2 - 200, y: window.innerHeight / 3 };
-                
+
                 if (selection && selection.rangeCount > 0) {
                     const range = selection.getRangeAt(0);
                     const rect = range.getBoundingClientRect();
@@ -126,7 +112,7 @@ function WriteCommandContent() {
                         };
                     }
                 }
-                
+
                 setContextMenuPosition(position);
                 setIsWriterMode(true);
                 sendResponse({ success: true });
@@ -134,8 +120,12 @@ function WriteCommandContent() {
             return true; // Keep channel open for async response
         };
 
-        chrome.runtime.onMessage.addListener(handleMessage);
-        return () => chrome.runtime.onMessage.removeListener(handleMessage);
+        const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
+        runtime.onMessage.addListener(handleMessage);
+
+        return () => {
+            runtime.onMessage.removeListener(handleMessage);
+        };
     }, [setIsWriterMode]);
 
     // Handle text generation via background service worker
@@ -164,7 +154,8 @@ function WriteCommandContent() {
 
         try {
             // Check if extension context is still valid (important for iframes)
-            if (!chrome.runtime?.id) {
+            const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
+            if (!runtime?.id) {
                 throw new Error('Extension context invalidated. Please refresh the page.');
             }
 
@@ -174,9 +165,8 @@ function WriteCommandContent() {
                 Promise.resolve(getPageContext()),
             ]);
 
-            // Connect to background via port for streaming
-            const port = chrome.runtime.connect({ name: 'write-command' });
-            activePortRef.current = port;
+            const port = runtime.connect({ name: 'write-command' });
+            activePortRef.current = port as any;
 
             // Handle incoming messages
             port.onMessage.addListener((message: WriteStreamChunk | WriteError) => {
@@ -201,7 +191,7 @@ function WriteCommandContent() {
             // Handle disconnection
             port.onDisconnect.addListener(() => {
                 // Check for runtime errors
-                const lastError = chrome.runtime.lastError;
+                const lastError = runtime.lastError;
                 if (lastError) {
                     log.error('Port disconnected with error', { error: lastError.message });
                     // Only show error if we're still generating (not a normal completion)
@@ -303,6 +293,6 @@ function WriteCommandContent() {
             />
         </WriteCommandErrorBoundary>
     );
-}
+};
 
 export default WriteCommandContent;

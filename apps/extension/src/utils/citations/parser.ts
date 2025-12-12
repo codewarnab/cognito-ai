@@ -36,8 +36,8 @@ export function parseCitations(text: string): ParsedCitation[] {
     while ((match = CITATION_PATTERN.exec(text)) !== null) {
         citations.push({
             fullMatch: match[0],
-            label: match[1],
-            url: match[2],
+            label: match[1]!,
+            url: match[2]!,
             startIndex: match.index,
             endIndex: match.index + match[0].length,
         });
@@ -61,8 +61,8 @@ export function parseNumberedCitations(text: string): ParsedCitation[] {
     while ((match = NUMBERED_CITATION_PATTERN.exec(text)) !== null) {
         citations.push({
             fullMatch: match[0],
-            label: match[1],
-            url: match[2],
+            label: match[1]!,
+            url: match[2]!,
             startIndex: match.index,
             endIndex: match.index + match[0].length,
         });

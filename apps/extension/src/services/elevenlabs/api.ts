@@ -4,13 +4,13 @@
  */
 
 import { createLogger } from '~logger';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('ElevenLabs-API');
 
 // Configuration - update with your deployed Worker URL
-const WORKER_BASE_URL =
-  process.env.PLASMO_PUBLIC_ELEVENLABS_WORKER_URL ||
-  'https://elevenlabs-proxy.codewarnab.workers.dev';
+// Uses ENV compatibility layer for Plasmo/WXT migration
+const WORKER_BASE_URL = ENV.ELEVENLABS_WORKER_URL;
 
 // Timeout for API requests (10 seconds)
 const API_TIMEOUT_MS = 10000;

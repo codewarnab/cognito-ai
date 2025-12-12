@@ -5,7 +5,7 @@
 
 export class AudioAnalyser {
     private analyser: AnalyserNode;
-    private dataArray: Uint8Array<ArrayBuffer>;
+    private dataArray: Uint8Array;
     public data: Float32Array;
 
     constructor(audioNode: AudioNode, fftSize: number = 32) {
@@ -28,7 +28,7 @@ export class AudioAnalyser {
      * Call this in animation loop
      */
     update(): void {
-        this.analyser.getByteFrequencyData(this.dataArray);
+        this.analyser.getByteFrequencyData(this.dataArray as any);
 
         // Extract first 4 frequency bins for shader uniforms
         for (let i = 0; i < 4; i++) {

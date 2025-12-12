@@ -11,7 +11,7 @@
  * - Incremental report building via appendToReport tool
  */
 
-import type { CoreMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 import { createLogger } from '~logger';
 import { getResearchWorkflowSettings } from '@/utils/settings/researchWorkflowSettings';
 import { listResearchSources, getCurrentResearchSessionId } from '@/db';
@@ -286,9 +286,9 @@ function getSourceIdsWithMetadata(steps: WorkflowStepResult[]): Set<string> {
  * @returns Object with modified messages and whether changes were made
  */
 function truncateOldPageContent(
-    messages: CoreMessage[],
+    messages: ModelMessage[],
     sourceIdsWithMetadata: Set<string>
-): { messages: CoreMessage[]; hasChanges: boolean } {
+): { messages: ModelMessage[]; hasChanges: boolean } {
     // If no metadata added yet, no truncation needed
     if (sourceIdsWithMetadata.size === 0) {
         return { messages, hasChanges: false };
@@ -450,7 +450,7 @@ export async function researchWorkflowPrepareStep(
         const originalRequest = getOriginalUserRequest();
 
         // Create the NEW message array (complete reset)
-        const synthesisMessages: CoreMessage[] = [
+        const synthesisMessages: ModelMessage[] = [
             {
                 role: 'user',
                 content: generateSynthesisUserMessage(originalRequest),

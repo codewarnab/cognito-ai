@@ -1,36 +1,15 @@
-/**
- * Ask Command Content Script
- * Plasmo content script that enables the /ask command in any input field
- *
- * Usage: Type "/ask" followed by your question in any text field
- * Example: "/ask what does this page say about pricing?"
- *
- * Also supports context menu: Right-click selected text → "Ask Cognito AI about..."
- */
-import type { PlasmoCSConfig } from 'plasmo';
-import { useCallback, useState, useEffect } from 'react';
-import cssText from 'data-text:~/styles/features/ask-command.css';
 
-import { useAskCommandDetection } from './ask-command/useAskCommandDetection';
-import { useAskConversation } from './ask-command/useAskConversation';
-import { usePageContextCapture } from './ask-command/usePageContextCapture';
-import { AskOverlay } from './ask-command/AskOverlay';
-import { AskCommandErrorBoundary } from './ask-command/ErrorBoundary';
+import { useCallback, useState, useEffect } from 'react';
+import { browser } from 'wxt/browser';
+import { useAskCommandDetection } from '@/contents/ask-command/useAskCommandDetection';
+import { useAskConversation } from '@/contents/ask-command/useAskConversation';
+import { usePageContextCapture } from '@/contents/ask-command/usePageContextCapture';
+import { AskOverlay } from '@/contents/ask-command/AskOverlay';
+import { AskCommandErrorBoundary } from '@/contents/ask-command/ErrorBoundary';
 import type { AskPageContext } from '@/types';
 import { createLogger } from '~logger';
 
 const log = createLogger('AskCommand');
-
-export const config: PlasmoCSConfig = {
-    matches: ['<all_urls>'],
-    all_frames: true,
-};
-
-export const getStyle = () => {
-    const style = document.createElement('style');
-    style.textContent = cssText;
-    return style;
-};
 
 // Message type from background context menu
 interface ShowAskerMessage {
@@ -40,12 +19,16 @@ interface ShowAskerMessage {
     };
 }
 
-function AskCommandContent() {
+interface AppProps {
+    ctx: any;
+}
+
+export default function App({ ctx: _ctx }: AppProps) {
     const { isAskMode, overlayPosition, setIsAskMode, isEnabled } = useAskCommandDetection();
 
     const { captureContext } = usePageContextCapture();
     const [pageContext, setPageContext] = useState<AskPageContext | null>(null);
-    
+
     // State for context menu triggered overlay
     const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number } | null>(null);
     const [contextMenuSelectedText, setContextMenuSelectedText] = useState<string | null>(null);
@@ -101,10 +84,15 @@ function AskCommandContent() {
             return false;
         };
 
-        chrome.runtime.onMessage.addListener(handleMessage);
+        // Use browser namespace if available, otherwise chrome
+        const runtime = (typeof browser !== 'undefined' ? browser : chrome).runtime;
+        runtime.onMessage.addListener(handleMessage);
+
+        // Also use ctx for cleanup if possible, but React useEffect checks unmount
+        // ctx.onInvalidated is global for the script, not component specific here.
 
         return () => {
-            chrome.runtime.onMessage.removeListener(handleMessage);
+            runtime.onMessage.removeListener(handleMessage);
         };
     }, [captureContext]);
 
@@ -144,10 +132,10 @@ function AskCommandContent() {
 
     // Determine if overlay should be shown
     const showOverlay = isAskMode || isContextMenuMode;
-    
+
     // Use context menu position if in context menu mode, otherwise use detection position
-    const currentPosition = isContextMenuMode && contextMenuPosition 
-        ? contextMenuPosition 
+    const currentPosition = isContextMenuMode && contextMenuPosition
+        ? contextMenuPosition
         : overlayPosition;
 
     // Initial question for context menu mode
@@ -177,5 +165,3 @@ function AskCommandContent() {
         </AskCommandErrorBoundary>
     );
 }
-
-export default AskCommandContent;

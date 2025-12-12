@@ -79,8 +79,9 @@ export function getMcpServerIcon(serverId?: string): React.ComponentType<any> | 
     const normalizedId = serverId.toLowerCase();
 
     // Check SVG components first
-    if (MCP_SERVER_ICONS[normalizedId]) {
-        return MCP_SERVER_ICONS[normalizedId];
+    const IconComponent = MCP_SERVER_ICONS[normalizedId];
+    if (IconComponent) {
+        return IconComponent;
     }
 
     // Check images - return wrapper component

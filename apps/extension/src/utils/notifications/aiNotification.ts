@@ -14,7 +14,7 @@ const notificationLog = createLogger('Notifications', 'NOTIFICATIONS');
  * Base64 encoded logo for notifications
  * Using base64 to avoid image download failures
  */
-const NOTIFICATION_LOGO_BASE64 = APP_ICON;
+// const NOTIFICATION_LOGO_BASE64 = APP_ICON;
 
 /**
  * Creates a unique notification ID for AI completions

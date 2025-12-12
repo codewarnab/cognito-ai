@@ -2,13 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DeleteIcon } from '@assets/icons/ui/trash';
 import type { DeleteIconHandle } from '@assets/icons/ui/trash';
-import cssText from 'data-text:~/styles/trash-zone.css';
-
-export const getStyle = () => {
-    const style = document.createElement("style");
-    style.textContent = cssText;
-    return style;
-};
+import '@/styles/trash-zone.css';
 
 interface Position {
     x: number;

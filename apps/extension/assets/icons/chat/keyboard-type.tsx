@@ -1,5 +1,3 @@
-'use client';
-
 import { motion, useAnimation } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import type { HTMLAttributes } from 'react';

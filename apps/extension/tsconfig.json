@@ -1,14 +1,19 @@
 {
-  "extends": "plasmo/templates/tsconfig.base",
+  "extends": "./.wxt/tsconfig.json",
   "exclude": [
     "node_modules",
-    "build"
+    "build",
+    "dist"
   ],
   "include": [
-    ".plasmo/index.d.ts",
-    "./**/*.ts",
-    "./**/*.tsx",
-    "src/types/**/*.d.ts"
+    ".wxt/wxt.d.ts",
+    "src/entrypoints/**/*.ts",
+    "src/entrypoints/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/types/**/*.d.ts",
+    "assets/**/*.ts",
+    "assets/**/*.tsx"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
@@ -29,8 +34,6 @@
         "./src/logger"
       ]
     },
-    
-    // Type checking improvements
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -39,20 +42,14 @@
     "strictPropertyInitialization": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
-    
-    // Additional checks
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    
-    // Module resolution
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    
-    // Emit options
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,

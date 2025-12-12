@@ -41,6 +41,7 @@ export type LogCategory =
   | 'NOTIFICATIONS'
   | 'CREDENTIALS'
   | 'SEARCH'
+  | 'WORKFLOW'
   | 'SETTINGS'
   // Debug
   | 'DEBUG'
@@ -80,6 +81,6 @@ export const LOGGER_CATEGORY_GROUPS = {
   AI: ['AI_CHAT', 'AI_PROMPTS', 'AI_VOICE', 'AI_WEBSITE_DETECTION'] as const,
   Voice: ['VOICE_RECORDING', 'VOICE_CLIENT', 'VOICE_UI', 'VOICE_AUDIO'] as const,
   Memory: ['MEMORY_OPERATIONS', 'MEMORY_SUGGESTIONS'] as const,
-  System: ['BACKGROUND', 'STORAGE', 'UTILS', 'NOTIFICATIONS', 'CREDENTIALS', 'SEARCH', 'SETTINGS'] as const,
+  System: ['BACKGROUND', 'STORAGE', 'UTILS', 'NOTIFICATIONS', 'CREDENTIALS', 'SEARCH', 'SETTINGS', 'WORKFLOW'] as const,
   Debug: ['DEBUG', 'PERFORMANCE', 'ERRORS_ONLY', 'SHOW_ALL'] as const,
 } as const;

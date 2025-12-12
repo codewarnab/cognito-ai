@@ -188,7 +188,8 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
                                 // Map results to requested order
                                 for (const rank of requestedRanks) {
                                     if (foundResults[rank]) {
-                                        results.push({ rank, ...foundResults[rank] });
+                                        const item = foundResults[rank]!;
+                                        results.push({ rank, href: item.href, title: item.title });
                                     } else {
                                         results.push(null);
                                     }
@@ -243,7 +244,8 @@ EXAMPLE: ranks=[1,2,3] opens top 3, returns [{rank:1, tabId:123, url:"..."}]`,
                                 // Map results to requested order
                                 for (const rank of requestedRanks) {
                                     if (foundResults[rank]) {
-                                        results.push({ rank, ...foundResults[rank] });
+                                        const item = foundResults[rank]!;
+                                        results.push({ rank, href: item.href, title: item.title });
                                     } else {
                                         results.push(null);
                                     }

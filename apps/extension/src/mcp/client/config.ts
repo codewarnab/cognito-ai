@@ -28,13 +28,13 @@ export const DEFAULT_CONFIG: Required<Omit<SSEClientConfig, 'customHeaders'>> & 
 /**
  * Merge user config with defaults
  */
-export function mergeConfig(config?: Partial<SSEClientConfig>): Required<Omit<SSEClientConfig, 'customHeaders'>> & { customHeaders?: Record<string, string> } {
+export function mergeConfig(config?: Partial<SSEClientConfig>): Required<SSEClientConfig> {
     return {
         reconnectMinDelay: config?.reconnectMinDelay ?? DEFAULT_CONFIG.reconnectMinDelay,
         reconnectMaxDelay: config?.reconnectMaxDelay ?? DEFAULT_CONFIG.reconnectMaxDelay,
         reconnectMultiplier: config?.reconnectMultiplier ?? DEFAULT_CONFIG.reconnectMultiplier,
         maxReconnectAttempts: config?.maxReconnectAttempts ?? DEFAULT_CONFIG.maxReconnectAttempts,
         requestTimeout: config?.requestTimeout ?? DEFAULT_CONFIG.requestTimeout,
-        customHeaders: config?.customHeaders,
+        customHeaders: config?.customHeaders ?? {},
     };
 }

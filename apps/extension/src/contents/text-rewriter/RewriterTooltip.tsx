@@ -196,7 +196,7 @@ export function RewriterTooltip({
                 if (el instanceof HTMLElement) {
                     if (el === tooltipRef.current) return true;
                     if (el.classList?.contains('rewriter-tooltip')) return true;
-                    if (el.tagName === 'PLASMO-CSUI') return true;
+                    if (el.tagName === 'WXT-SHADOW-ROOT') return true;
                 }
                 return false;
             });

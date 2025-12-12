@@ -15,7 +15,7 @@ export async function getLoggerConfig(): Promise<LoggerConfig> {
   try {
     const result = await chrome.storage.local.get(LOGGER_CONFIG_KEY);
     const stored = result?.[LOGGER_CONFIG_KEY] as LoggerConfig | undefined;
-    
+
     if (stored) {
       // Merge with default to ensure all categories exist
       return {
@@ -23,7 +23,7 @@ export async function getLoggerConfig(): Promise<LoggerConfig> {
         ...stored,
       };
     }
-    
+
     return { ...LOG_PRESETS.DEVELOPMENT };
   } catch {
     return { ...LOG_PRESETS.DEVELOPMENT };
@@ -66,7 +66,7 @@ export async function applyLoggerPreset(presetName: LoggerPresetName): Promise<L
   if (!preset) {
     throw new Error(`Unknown preset: ${presetName}`);
   }
-  
+
   const config = { ...preset } as LoggerConfig;
   await setLoggerConfig(config);
   return config;
@@ -85,7 +85,7 @@ export async function resetLoggerConfig(): Promise<LoggerConfig> {
 export function matchesPreset(config: LoggerConfig, presetName: LoggerPresetName): boolean {
   const preset = LOG_PRESETS[presetName];
   if (!preset) return false;
-  
+
   const presetKeys = Object.keys(preset) as LogCategory[];
-  return presetKeys.every((key) => config[key] === preset[key]);
+  return presetKeys.every((key) => config[key] === (preset as any)[key]);
 }

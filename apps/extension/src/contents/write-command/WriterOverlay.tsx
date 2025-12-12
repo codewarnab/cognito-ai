@@ -302,7 +302,7 @@ export function WriterOverlay({
     }, [prompt, attachment, isGenerating, onGenerate, onClose, enableUrlContext, enableGoogleSearch, enableSupermemorySearch, getAttachmentForApi, clearAttachment]);
 
     // Handle click outside - check if click target is part of the overlay
-    // Uses composedPath() to properly traverse Shadow DOM boundaries (Plasmo renders in shadow DOM)
+    // Uses composedPath() to properly traverse Shadow DOM boundaries
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
             // Don't close if we're in the middle of dragging
@@ -311,7 +311,7 @@ export function WriterOverlay({
             const target = e.target as HTMLElement;
 
             // Use composedPath() to traverse through Shadow DOM boundaries
-            // This is critical because Plasmo content scripts render inside a Shadow DOM (plasmo-csui)
+            // This is critical because content scripts render inside a Shadow DOM
             const path = e.composedPath();
 
             // Check if any element in the path is our overlay
@@ -321,8 +321,8 @@ export function WriterOverlay({
                     if (el === overlayRef.current) return true;
                     // Check by class (works inside shadow DOM)
                     if (el.classList?.contains('writer-overlay')) return true;
-                    // Check if it's a plasmo container (shadow host)
-                    if (el.tagName === 'PLASMO-CSUI') return true;
+                    // Check if it's a WXT container (shadow host)
+                    if (el.tagName === 'WXT-SHADOW-ROOT') return true;
                 }
                 return false;
             });

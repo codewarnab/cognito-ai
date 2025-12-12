@@ -204,9 +204,11 @@ export function getToolIcon(toolName: string): React.ComponentType<any> {
     }
 
     // Check local tool mapping
-    if (TOOL_ICON_MAP[toolName]) {
+
+    const LocalIcon = TOOL_ICON_MAP[toolName];
+    if (LocalIcon) {
         log.debug(`  → ✅ Resolved to local tool icon`);
-        return TOOL_ICON_MAP[toolName];
+        return LocalIcon;
     }
 
     // Heuristic check: Does it LOOK like an MCP tool even if not registered?

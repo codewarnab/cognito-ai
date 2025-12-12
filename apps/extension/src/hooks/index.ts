@@ -32,10 +32,8 @@ export * from './ui';
 export * from './workflows';
 
 // Search hooks
-export { useSearchMode } from './useSearchMode';
-export type { UseSearchModeResult } from './useSearchMode';
-export { useSearchModeWithAI } from './useSearchModeWithAI';
-export type { UseSearchModeWithAIResult } from './useSearchModeWithAI';
+
+export { useSearchModeWithAI ,UseSearchModeWithAIResult  } from './useSearchModeWithAI';
 
 // WebMCP hooks
 export * from './webmcp';
