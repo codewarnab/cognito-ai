@@ -233,6 +233,21 @@ export function CopilotChatWindow({
                 onConfigureApiKey={handleOpenApiKeyDialog}
                 onContinue={onContinue}
                 threadId={threadId}
+                onQuoteText={(quotedText) => {
+                    // Prepend quoted text to current input
+                    const newValue = quotedText + input;
+                    setInput(newValue);
+                    // Focus the textarea and position cursor after the quoted text
+                    setTimeout(() => {
+                        const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
+                        if (textarea) {
+                            textarea.focus();
+                            // Position cursor after the quoted text (at the end of the newlines)
+                            const cursorPosition = quotedText.length;
+                            textarea.setSelectionRange(cursorPosition, cursorPosition);
+                        }
+                    }, 0);
+                }}
             />
 
             <ChatInput

@@ -14,4 +14,5 @@
 export { useAIChatMessages } from './useAIChatMessages';
 export { useChatInputValidation } from './useChatInputValidation';
 export { useMessageHandlers } from './useMessageHandlers';
+export { useMessageTextSelection } from './useMessageTextSelection';
 export { useThreadManagement } from './useThreadManagement';

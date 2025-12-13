@@ -152,10 +152,10 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                     {/* Tools / Settings (Wrench) */}
                     {onSettingsClick && (
                         <button
-                        className={headerButtonClasses}
-                        onClick={onSettingsClick}
-                        title="MCP Server Settings"
-                        aria-label="Open MCP settings"
+                            className={headerButtonClasses}
+                            onClick={onSettingsClick}
+                            title="MCP Server Settings"
+                            aria-label="Open MCP settings"
                         >
                             <Wrench size={16} />
                         </button>
@@ -206,6 +206,15 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
+                                        onProviderSetupClick?.();
+                                    }}
+                                    glow={needsProviderSetup}
+                                >
+                                    AI Provider Setup
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        setShowHeaderMenu(false);
                                         onTroubleshootingClick?.();
                                     }}
                                 >
@@ -229,15 +238,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                         Logger Panel
                                     </MenuItem>
                                 )}
-                                <MenuItem
-                                    onClick={() => {
-                                        setShowHeaderMenu(false);
-                                        onProviderSetupClick?.();
-                                    }}
-                                    glow={needsProviderSetup}
-                                >
-                                    AI Provider Setup
-                                </MenuItem>
                             </div>
                         )}
                     </div>
