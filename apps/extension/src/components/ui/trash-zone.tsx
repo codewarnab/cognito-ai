@@ -87,29 +87,20 @@ export const TrashZone: React.FC<TrashZoneProps> = ({
         }
     }, [isButtonNear, isButtonOver]);
 
-    // Get dynamic classes based on state
+    // Get dynamic classes based on state - using CSS classes from style.css
     const getTrashZoneClasses = () => {
-        const baseClasses = 'flex items-center justify-center bg-red-600/10 border-2 border-dashed border-red-600/30 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] pointer-events-none select-none';
-
+        let classes = 'trash-zone';
         if (isButtonOver) {
-            return `${baseClasses} bg-red-600/30 border-red-600/80 -translate-x-1/2 scale-[1.2] shadow-[0_0_50px_rgba(220,38,38,0.6)] animate-pulse`;
+            classes += ' button-over';
+        } else if (isButtonNear) {
+            classes += ' button-near';
         }
-        if (isButtonNear) {
-            return `${baseClasses} bg-red-600/20 border-red-600/50 -translate-x-1/2 scale-110 shadow-[0_0_30px_rgba(220,38,38,0.4)]`;
-        }
-        return baseClasses;
+        return classes;
     };
 
-    // Get icon classes based on state
+    // Get icon classes based on state - using CSS classes from style.css
     const getIconClasses = () => {
-        const baseClasses = 'text-red-600/60 transition-colors duration-300';
-        if (isButtonOver) {
-            return `${baseClasses} text-red-600`;
-        }
-        if (isButtonNear) {
-            return `${baseClasses} text-red-600/80`;
-        }
-        return baseClasses;
+        return 'trash-icon';
     };
 
     return (
@@ -135,7 +126,7 @@ export const TrashZone: React.FC<TrashZoneProps> = ({
                         pointerEvents: 'none', // Don't interfere with drag
                     }}
                 >
-                    <div className="flex items-center justify-center w-full h-full">
+                    <div className="trash-zone-inner">
                         <DeleteIcon
                             ref={trashIconRef}
                             size={TRASH_ZONE_CONFIG.ICON_SIZE}
