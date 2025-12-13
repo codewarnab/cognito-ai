@@ -5,6 +5,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { createLogger } from '~logger';
+import { LRUCache } from '~/utils/cache/LRUCache';
 
 const ttsLog = createLogger('GeminiTTS', 'UTILS');
 
@@ -13,16 +14,21 @@ interface TTSConfig {
     voiceName?: string;
 }
 
-interface CacheEntry {
-    audioBuffer: ArrayBuffer;
-    timestamp: number;
-    textHash: string;
-}
-
-// In-memory cache for generated audio
-const audioCache = new Map<string, CacheEntry>();
 const CACHE_MAX_SIZE = 50; // Maximum number of cached audio entries
 const CACHE_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * LRU Cache for generated audio
+ * - O(1) get, set, and eviction
+ * - Automatic TTL expiration
+ */
+const audioCache = new LRUCache<string, ArrayBuffer>({
+    maxSize: CACHE_MAX_SIZE,
+    ttlMs: CACHE_EXPIRY_MS,
+    onEvict: (key) => {
+        ttsLog.debug(`Audio cache entry evicted: ${key}`);
+    },
+});
 
 /**
  * Generate a simple hash for text and voice to use as cache key
@@ -39,54 +45,16 @@ function hashText(text: string, voiceName: string = 'Aoede'): string {
 }
 
 /**
- * Clean up expired cache entries
- */
-function cleanupCache(): void {
-    const now = Date.now();
-    const entriesToDelete: string[] = [];
-
-    for (const [key, entry] of audioCache.entries()) {
-        if (now - entry.timestamp > CACHE_EXPIRY_MS) {
-            entriesToDelete.push(key);
-        }
-    }
-
-    entriesToDelete.forEach(key => audioCache.delete(key));
-
-    if (entriesToDelete.length > 0) {
-        ttsLog.debug(`Cleaned up ${entriesToDelete.length} expired cache entries`);
-    }
-}
-
-/**
- * Enforce cache size limit using LRU strategy
- */
-function enforceCacheLimit(): void {
-    if (audioCache.size <= CACHE_MAX_SIZE) return;
-
-    // Sort by timestamp (oldest first)
-    const entries = Array.from(audioCache.entries())
-        .sort((a, b) => a[1].timestamp - b[1].timestamp);
-
-    // Remove oldest entries until we're under the limit
-    const toRemove = entries.slice(0, audioCache.size - CACHE_MAX_SIZE);
-    toRemove.forEach(([key]) => audioCache.delete(key));
-
-    ttsLog.debug(`Removed ${toRemove.length} old cache entries to enforce size limit`);
-}
-
-/**
  * Get cached audio if available
+ * Time complexity: O(1)
  */
 function getCachedAudio(text: string, voiceName: string = 'Aoede'): ArrayBuffer | null {
-    cleanupCache();
-
     const hash = hashText(text, voiceName);
-    const entry = audioCache.get(hash);
+    const cachedBuffer = audioCache.get(hash);
 
-    if (entry && Date.now() - entry.timestamp < CACHE_EXPIRY_MS) {
+    if (cachedBuffer) {
         ttsLog.debug(`Cache hit for audio (${voiceName})`);
-        return entry.audioBuffer;
+        return cachedBuffer;
     }
 
     return null;
@@ -94,17 +62,11 @@ function getCachedAudio(text: string, voiceName: string = 'Aoede'): ArrayBuffer 
 
 /**
  * Store audio in cache
+ * Time complexity: O(1)
  */
 function cacheAudio(text: string, voiceName: string, audioBuffer: ArrayBuffer): void {
     const hash = hashText(text, voiceName);
-
-    audioCache.set(hash, {
-        audioBuffer,
-        timestamp: Date.now(),
-        textHash: hash,
-    });
-
-    enforceCacheLimit();
+    audioCache.set(hash, audioBuffer);
     ttsLog.debug(`Cached audio for ${voiceName} (cache size: ${audioCache.size})`);
 }
 

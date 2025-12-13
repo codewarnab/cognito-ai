@@ -1,7 +1,11 @@
 /**
  * Chat Messages API
+ * 
+ * DSA Optimization: Uses compound index [threadId+sequenceNumber] for
+ * O(n) pre-sorted retrieval instead of O(n log n) in-memory sort.
  */
 
+import Dexie from 'dexie';
 import { db } from './database';
 import { updateThreadTimestamp } from './threads';
 import type { ChatMessage } from '~/types/database';
@@ -47,26 +51,26 @@ export async function saveChatMessage(
 /**
  * Load chat history for a specific thread
  * 
+ * Uses compound index [threadId+sequenceNumber] for pre-sorted retrieval.
+ * Time complexity: O(n) - no sorting needed, results come pre-ordered from IndexedDB
+ * 
  * @param threadId - The thread ID to load messages for
- * @returns Array of messages sorted by sequence number or timestamp
+ * @returns Array of messages sorted by sequence number (via compound index)
  * 
  * @remarks
  * Returns messages with complete UIMessage structure including tool calls.
- * Messages are sorted by sequenceNumber if available, otherwise by timestamp.
+ * Messages are retrieved in sorted order using compound index.
  */
 export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
-    const messages = await db.chatMessages
-        .where('threadId')
-        .equals(threadId)
+    // Use compound index for pre-sorted retrieval
+    // This gives us O(n) retrieval instead of O(n log n) post-sort
+    return await db.chatMessages
+        .where('[threadId+sequenceNumber]')
+        .between(
+            [threadId, Dexie.minKey],
+            [threadId, Dexie.maxKey]
+        )
         .toArray();
-
-    // Sort by sequenceNumber first (if available), then by timestamp as fallback
-    return messages.sort((a, b) => {
-        if (a.sequenceNumber !== undefined && b.sequenceNumber !== undefined) {
-            return a.sequenceNumber - b.sequenceNumber;
-        }
-        return a.timestamp - b.timestamp;
-    });
 }
 
 /**

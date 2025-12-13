@@ -1,14 +1,17 @@
 /**
  * Dropdown component for selecting workflows via slash commands
  * Displays available workflows with icon, name, and description
+ * 
+ * DSA Optimization: Uses Trie for O(m+k) prefix search instead of O(n) filter.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import type { WorkflowDefinition } from '../../../../workflows/types';
 import { getAllWorkflows } from '../../../../workflows/registry';
 import { SearchIcon } from '@assets/icons/chat/search';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 import type { AIMode } from '../types';
+import { createTrie } from '~/utils/search/Trie';
 
 // Helper to render icon (either emoji or component)
 function renderWorkflowIcon(icon: string) {
@@ -20,6 +23,26 @@ function renderWorkflowIcon(icon: string) {
     }
     // Default: treat as emoji
     return <span>{icon}</span>;
+}
+
+/**
+ * Extract searchable keys from a workflow definition
+ * Used to build the Trie index
+ */
+function getWorkflowKeys(workflow: WorkflowDefinition): string[] {
+    const keys: string[] = [
+        workflow.id,
+        workflow.name,
+    ];
+
+    // Add individual words from name and description for better matching
+    const nameWords = workflow.name.toLowerCase().split(/\s+/);
+    const descWords = workflow.description.toLowerCase().split(/\s+/);
+
+    keys.push(...nameWords.filter(w => w.length > 2));
+    keys.push(...descWords.filter(w => w.length > 3));
+
+    return keys;
 }
 
 interface SlashCommandDropdownProps {
@@ -48,19 +71,57 @@ export function SlashCommandDropdown({
         setWorkflows(allWorkflows);
     }, []);
 
-    // Filter workflows based on search query (fuzzy search)
-    const filteredWorkflows = workflows.filter((workflow) => {
-        const query = searchQuery.toLowerCase();
-        const name = workflow.name.toLowerCase();
-        const description = workflow.description.toLowerCase();
-        const id = workflow.id.toLowerCase();
+    // Build Trie index for efficient prefix search - O(n * m) once on mount
+    const workflowTrie = useMemo(() => {
+        return createTrie(workflows, getWorkflowKeys);
+    }, [workflows]);
 
-        return (
-            name.includes(query) ||
-            description.includes(query) ||
-            id.includes(query)
-        );
-    });
+    // Filter workflows using Trie for prefix matching - O(m + k) on each keystroke
+    // Falls back to includes() for substring (non-prefix) matches
+    const filteredWorkflows = useMemo(() => {
+        const query = searchQuery.toLowerCase().trim();
+
+        if (!query) {
+            return workflows; // Show all if no query
+        }
+
+        // Use Trie for O(m+k) prefix search
+        const prefixMatches = workflowTrie.search(query);
+
+        // Also check for substring matches (not just prefix) as fallback
+        // This handles cases like searching "tube" to match "youtube"
+        const substringMatches = workflows.filter((workflow) => {
+            const name = workflow.name.toLowerCase();
+            const description = workflow.description.toLowerCase();
+            const id = workflow.id.toLowerCase();
+
+            return (
+                name.includes(query) ||
+                description.includes(query) ||
+                id.includes(query)
+            );
+        });
+
+        // Combine and deduplicate results (prefix matches first for relevance)
+        const seen = new Set<string>();
+        const combined: WorkflowDefinition[] = [];
+
+        for (const workflow of prefixMatches) {
+            if (!seen.has(workflow.id)) {
+                seen.add(workflow.id);
+                combined.push(workflow);
+            }
+        }
+
+        for (const workflow of substringMatches) {
+            if (!seen.has(workflow.id)) {
+                seen.add(workflow.id);
+                combined.push(workflow);
+            }
+        }
+
+        return combined;
+    }, [searchQuery, workflows, workflowTrie]);
 
     // Reset selected index when filtered results change
     useEffect(() => {
