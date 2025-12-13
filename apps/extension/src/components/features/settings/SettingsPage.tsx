@@ -64,13 +64,21 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.12] [&::-webkit-scrollbar-thumb]:rounded-[3px] hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
         {/* <VoiceSettings /> */}
         <SupermemorySettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <SearchSettingsSection />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <MaxToolCallSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <TTSAndDataSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <ResearchWorkflowSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <AskAiButtonSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <TextSummarizerSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <TextRewriterSettings />
+        <hr className="border-0 border-t border-[var(--border-color)] my-0" />
         <WriteCommandSettings />
 
         {/* <EnabledToolsSettings /> */}

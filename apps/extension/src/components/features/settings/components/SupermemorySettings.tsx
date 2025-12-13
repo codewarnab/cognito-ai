@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, ExternalLink, CheckCircle2, AlertCircle, HelpCircle } from 'lucide-react';
 import { createLogger } from '~logger';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/primitives';
 import {
     getSupermemoryApiKey,
     setSupermemoryApiKey,
@@ -55,8 +56,6 @@ export const SupermemorySettings: React.FC = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [autoExtraction, setAutoExtraction] = useState(false);
     const [contentMemory, setContentMemory] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
-    const [showContentMemoryTooltip, setShowContentMemoryTooltip] = useState(false);
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -278,48 +277,24 @@ export const SupermemorySettings: React.FC = () => {
                         <div className="flex-1 mr-4">
                             <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 Auto-Extract Conversation Insights
-                                <div style={{ position: 'relative', display: 'inline-flex' }}>
-                                    <button
-                                        type="button"
-                                        aria-label="Learn more about auto-extraction"
-                                        onClick={() => setShowTooltip(!showTooltip)}
-                                        onBlur={() => setShowTooltip(false)}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '2px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            color: 'var(--text-tertiary)',
-                                        }}
-                                    >
-                                        <HelpCircle size={14} />
-                                    </button>
-                                    {showTooltip && (
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: '100%',
-                                                left: '-190px',
-                                                marginBottom: '8px',
-                                                padding: '12px',
-                                                backgroundColor: '#1a1a2e',
-                                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                                                zIndex: 9999,
-                                                width: '280px',
-                                                fontSize: '12px',
-                                                lineHeight: '1.5',
-                                                color: '#e0e0e0',
-                                                whiteSpace: 'pre-line',
-                                            }}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button
+                                            type="button"
+                                            aria-label="Learn more about auto-extraction"
+                                            className="bg-transparent border-none cursor-pointer p-0.5 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
                                         >
-                                            {AUTO_EXTRACTION_TOOLTIP}
-                                        </div>
-                                    )}
-                                </div>
+                                            <HelpCircle size={14} />
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        side="top"
+                                        align="center"
+                                        className="w-[280px] text-xs leading-relaxed whitespace-pre-line"
+                                    >
+                                        {AUTO_EXTRACTION_TOOLTIP}
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="text-xs text-[var(--text-secondary)]">
                                 Automatically learn from your conversations
@@ -340,48 +315,24 @@ export const SupermemorySettings: React.FC = () => {
                         <div className="flex-1 mr-4">
                             <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 Learn from Writing & Reading
-                                <div style={{ position: 'relative', display: 'inline-flex' }}>
-                                    <button
-                                        type="button"
-                                        aria-label="Learn more about content memory"
-                                        onClick={() => setShowContentMemoryTooltip(!showContentMemoryTooltip)}
-                                        onBlur={() => setShowContentMemoryTooltip(false)}
-                                        style={{
-                                            background: 'none',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            padding: '2px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            color: 'var(--text-tertiary)',
-                                        }}
-                                    >
-                                        <HelpCircle size={14} />
-                                    </button>
-                                    {showContentMemoryTooltip && (
-                                        <div
-                                            style={{
-                                                position: 'absolute',
-                                                bottom: '100%',
-                                                left: '-190px',
-                                                marginBottom: '8px',
-                                                padding: '12px',
-                                                backgroundColor: '#1a1a2e',
-                                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                borderRadius: '8px',
-                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
-                                                zIndex: 9999,
-                                                width: '280px',
-                                                fontSize: '12px',
-                                                lineHeight: '1.5',
-                                                color: '#e0e0e0',
-                                                whiteSpace: 'pre-line',
-                                            }}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <button
+                                            type="button"
+                                            aria-label="Learn more about content memory"
+                                            className="bg-transparent border-none cursor-pointer p-0.5 flex items-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
                                         >
-                                            {CONTENT_MEMORY_TOOLTIP}
-                                        </div>
-                                    )}
-                                </div>
+                                            <HelpCircle size={14} />
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        side="top"
+                                        align="center"
+                                        className="w-[280px] text-xs leading-relaxed whitespace-pre-line"
+                                    >
+                                        {CONTENT_MEMORY_TOOLTIP}
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div className="text-xs text-[var(--text-secondary)]">
                                 Build memory from summarizer, writer, and rewriter usage
