@@ -143,7 +143,6 @@ export function SummaryPopup({
                             <MarkdownRenderer
                                 content={summary}
                                 isStreaming={isStreaming}
-                                cursorClassName="summary-popup__cursor"
                             />
                         </div>
                     </div>

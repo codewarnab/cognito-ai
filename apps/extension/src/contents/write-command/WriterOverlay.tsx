@@ -601,7 +601,6 @@ export function WriterOverlay({
                     <MarkdownRenderer
                         content={generatedText}
                         isStreaming={isGenerating}
-                        cursorClassName="writer-cursor"
                     />
                 </div>
             )}
