@@ -71,3 +71,15 @@ pnpm --filter @cognito/docs build
 - **MCP Implementation:** Check `apps/extension/src/entrypoints/background/` and `apps/extension/src/mcp/` to understand MCP connections.
 - **Permissions:** The manifest configuration in `wxt.config.ts` lists Chrome extension permissions.
 - **Load Extension:** Load `.output/chrome-mv3` as unpacked extension in Chrome.
+
+## Configuration
+
+The extension supports configuration via Environment Variables. Copy `apps/extension/.env.example` to `apps/extension/.env` to customize:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_TRANSCRIPT_API_URL` | YouTube Transcript API Endpoint | Vercel Prod |
+| `WXT_RETRIEVE_API_URL` | URL Retrieval API Endpoint | Vercel Prod |
+| `WXT_HIDE_LOCAL_MODE` | Hide Local LLM features | `true` |
+| `WXT_YOUTUBE_BADGE_PREFETCH` | Auto-prefetch transcripts | `true` |
+| `WXT_LOG_PRESET` | Logging Level | `DEVELOPMENT` |

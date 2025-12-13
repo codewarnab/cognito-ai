@@ -78,11 +78,14 @@ export const TOOLS_WARNING_THRESHOLD = 40 as const;
 /**
  * External API Endpoints
  */
+/**
+ * External API Endpoints
+ */
 export const TRANSCRIPT_API_URL =
-    'https://youtube-transcript-generator-five.vercel.app/simple-transcript' as const;
+    import.meta.env.WXT_TRANSCRIPT_API_URL || 'https://youtube-transcript-generator-five.vercel.app/simple-transcript';
 
 export const RETRIEVE_API_URL =
-    'https://youtube-transcript-generator-five.vercel.app/retrieve' as const;
+    import.meta.env.WXT_RETRIEVE_API_URL || 'https://youtube-transcript-generator-five.vercel.app/retrieve';
 
 /**
  * Logging Presets - Quick configurations for common scenarios
@@ -399,7 +402,8 @@ export const LOG_PRESETS = {
  * Removal target: February 2025
  */
 export const LOG_CONFIG = {
-    ...LOG_PRESETS.DEVELOPMENT,
+    // Check if a valid preset name is provided in env vars, otherwise default to DEVELOPMENT
+    ...(LOG_PRESETS[import.meta.env.WXT_LOG_PRESET as keyof typeof LOG_PRESETS] || LOG_PRESETS.DEVELOPMENT),
 } as const;
 
 // Re-export LogCategory from types for backward compatibility
@@ -410,7 +414,12 @@ export type { LogCategory } from '@/types/logger';
  * When enabled, forces the extension to use remote/cloud mode only.
  * This hides the mode selector UI and requires users to have an API key.
  */
-export const HIDE_LOCAL_MODE = true as const;
+/**
+ * Hide Local Mode Configuration
+ * When enabled, forces the extension to use remote/cloud mode only.
+ * This hides the mode selector UI and requires users to have an API key.
+ */
+export const HIDE_LOCAL_MODE = import.meta.env.WXT_HIDE_LOCAL_MODE !== 'false';
 
 /**
  * YouTube Badge Configuration
@@ -420,7 +429,15 @@ export const HIDE_LOCAL_MODE = true as const;
  * - true: Prefetch transcript immediately when video detected (current behavior)
  * - false: Fetch transcript only when user clicks the badge CTA
  */
-export const YOUTUBE_BADGE_PREFETCH_ENABLED = true as const;
+/**
+ * YouTube Badge Configuration
+ * Controls whether YouTube transcripts are prefetched in the background
+ * when a YouTube video is detected, or fetched on-demand when user clicks the badge.
+ * 
+ * - true: Prefetch transcript immediately when video detected (current behavior)
+ * - false: Fetch transcript only when user clicks the badge CTA
+ */
+export const YOUTUBE_BADGE_PREFETCH_ENABLED = import.meta.env.WXT_YOUTUBE_BADGE_PREFETCH !== 'false';
 
 /**
  * Collapsible User Message Configuration
