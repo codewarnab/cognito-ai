@@ -224,7 +224,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     }, [messages, isLoading]);
 
     return (
-        <div className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden pr-1 pl-4 pb-6 pt-16 flex flex-col gap-2 bg-[#0a0e1a] min-h-0" ref={messagesContainerRef}>{messages.length === 0 ? (
+        <div className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden pr-1 pl-4 pb-6 pt-16 flex flex-col gap-3 bg-[#0a0e1a] min-h-0" ref={messagesContainerRef}>{messages.length === 0 ? (
             <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
         ) : (
             <AnimatePresence>
@@ -405,7 +405,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         part.type === 'dynamic-tool'
                                                     ) {
                                                         return (
-                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="mt-1 flex flex-col gap-0">
+                                                            <div key={part.toolCallId || `tool-${partIndex}`} className="mt-1 flex flex-col gap-1">
                                                                 <ToolPartRenderer
                                                                     part={part}
                                                                     messageId={message.id || `msg-${index}`}
