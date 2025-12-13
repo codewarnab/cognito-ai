@@ -38,7 +38,7 @@ export function MeshGradientSVG({ size = 400 }: MeshGradientSVGProps) {
 
     return (
         <motion.div
-            className="relative mx-auto rounded-lg"
+            className="relative mx-auto rounded-lg flex items-center justify-center"
             style={{ width: size, height: size }}
             animate={{
                 y: [0, -8, 0],

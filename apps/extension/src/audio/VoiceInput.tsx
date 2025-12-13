@@ -145,7 +145,15 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
       {/* Regular microphone button - only visible when not recording */}
       {!isRecording && (
         <button
-          className={`voice-button ${error ? 'error' : ''} ${permissionStatus === 'checking' ? 'checking' : ''}`}
+          className={`
+            bg-transparent border-none cursor-pointer p-2 rounded-full
+            transition-all duration-200 ease-in-out
+            flex items-center justify-center
+            w-9 h-9 min-w-[36px] flex-shrink-0
+            text-white/50 hover:bg-white/10 hover:text-white/85 active:bg-white/12
+            ${error ? 'text-red-400 hover:text-red-300' : ''}
+            ${permissionStatus === 'checking' ? 'opacity-60 cursor-wait' : ''}
+          `}
           onClick={handleToggleRecording}
           aria-label="Start recording"
           title={
@@ -156,38 +164,36 @@ export const VoiceInput = forwardRef<VoiceInputHandle, VoiceInputProps>(({
                 : 'Click to speak'
           }
         >
-          <div className="microphone-icon">
-            {permissionStatus === 'checking' ? (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="spinner"
-              >
-                <circle cx="12" cy="12" r="10" opacity="0.25" />
-                <path d="M12 2a10 10 0 0 1 10 10" opacity="0.75" />
-              </svg>
-            ) : (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="9" y="2" width="6" height="11" rx="3" />
-                <path d="M5 10v2a7 7 0 0 0 14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            )}
-          </div>
+          {permissionStatus === 'checking' ? (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="animate-spin"
+            >
+              <circle cx="12" cy="12" r="10" opacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" opacity="0.75" />
+            </svg>
+          ) : (
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="9" y="2" width="6" height="11" rx="3" />
+              <path d="M5 10v2a7 7 0 0 0 14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+          )}
         </button>
       )}
 

@@ -51,11 +51,12 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     }
 
     return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div className="relative inline-block">
             <motion.button
                 onClick={handleDownload}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
+                className="flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
                 title="Download audio"
                 aria-label="Download audio"
                 initial={{ scale: 0, opacity: 0 }}
@@ -66,14 +67,13 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
                     stiffness: 200,
                     damping: 15
                 }}
-                style={{ cursor: 'pointer' }}
             >
                 <DownloadIcon ref={iconRef} size={14} />
             </motion.button>
             <AnimatePresence>
                 {showTooltip && (
                     <motion.div
-                        className="audio-generating-tooltip"
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-md text-xs text-white/90 bg-black/80 backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap z-50 pointer-events-none"
                         initial={{ opacity: 0, y: 5, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.9 }}

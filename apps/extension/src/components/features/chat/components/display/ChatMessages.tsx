@@ -256,11 +256,11 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                 animate={isPendingMessage ? { opacity: 1 } : undefined}
                                 className={`flex gap-3 max-w-full group ${message.role === 'user' ? 'justify-end items-start gap-3 ml-auto pr-1' : 'justify-start items-start pr-2'}`}
                             >
-                                <div className={`rounded-xl px-3 py-2 max-w-[90%] text-base leading-relaxed break-words ${message.role === 'user'
+                                <div className={`rounded-xl px-3 py-2 max-w-[90%] text-sm leading-relaxed break-words ${message.role === 'user'
                                     ? 'bg-blue-500 text-white ml-auto shadow-[0_2px_8px_var(--message-user-shadow)] rounded-br-none'
                                     : hasToolCalls(message)
                                         ? 'bg-transparent !p-0'
-                                        : 'bg-transparent !text-[var(--text-primary)] !border-none !shadow-none !p-0 !rounded-none !max-w-full !text-base'
+                                        : 'bg-transparent !text-[var(--text-primary)] !border-none !shadow-none !p-0 !rounded-none !max-w-full !text-sm'
                                     }`}>
                                     {/* Render parts in their actual order - text and tools interleaved */}
                                     {message.parts && message.parts.length > 0 && (() => {

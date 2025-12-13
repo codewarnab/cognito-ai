@@ -51,12 +51,12 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
 
 
     return (
-        <div className="copy-message-button-wrapper">
+        <div className="flex items-center gap-0.5">
             <button
                 onClick={handleCopy}
+                className="flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
                 title={copied ? 'Copied!' : 'Copy message'}
                 aria-label={copied ? 'Copied!' : 'Copy message'}
-                style={{ cursor: 'pointer' }}
             >
                 <AnimatePresence mode="wait">
                     {copied ? (

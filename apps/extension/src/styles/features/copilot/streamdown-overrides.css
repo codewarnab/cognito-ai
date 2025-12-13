@@ -6,8 +6,12 @@
  */
 
 /* Base typography - match existing markdown-content */
-.markdown-content [data-streamdown] {
-    font-size: 16px;
+/* Base typography - match existing markdown-content */
+.markdown-content,
+.markdown-content .streamdown-content,
+.markdown-content [data-streamdown],
+.markdown-content [data-streamdown-p] {
+    font-size: 0.895rem !important;
     line-height: 1.5;
 }
 
@@ -15,7 +19,7 @@
 .markdown-content .streamdown-content {
     --tw-space-y-reverse: 0 !important;
 }
-
+    
 .markdown-content .streamdown-content>*+* {
     margin-top: 0.5em !important;
 }

@@ -170,13 +170,12 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
     };
 
     return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div className="relative inline-block">
             <button
-                className={isGenerating ? 'generating-audio' : ''}
+                className={`flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors ${isGenerating ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                 onClick={handleVoiceToggle}
                 title={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
                 aria-label={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
-                style={{ marginLeft: '8px', cursor: isGenerating ? 'not-allowed' : 'pointer' }}
                 disabled={isGenerating}
             >
                 <motion.div
@@ -200,7 +199,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
             <AnimatePresence>
                 {showTooltip && (
                     <motion.div
-                        className="audio-generating-tooltip"
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2.5 py-1.5 rounded-md text-xs text-white/90 bg-black/80 backdrop-blur-md border border-white/10 shadow-lg whitespace-nowrap z-50 pointer-events-none"
                         initial={{ opacity: 0, y: 5, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.9 }}

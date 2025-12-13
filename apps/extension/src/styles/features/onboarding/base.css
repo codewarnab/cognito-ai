@@ -61,20 +61,11 @@
     text-align: center;
     box-sizing: border-box;
     overflow-y: auto;
+    overflow-x: hidden;
     gap: 20px;
 }
 
-.onboarding-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    margin: 40px 0 40px 0;
-}
 
-.onboarding-logo img {
-    border-radius: 12px;
-}
 
 .onboarding-footer {
     display: flex;

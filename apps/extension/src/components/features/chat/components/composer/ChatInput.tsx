@@ -255,7 +255,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     };
 
     return (
-        <div className="px-4 py-2 bg-[rgba(10,14,26,0.85)] backdrop-blur-[20px] shrink-0 relative shadow-[0_-4px_24px_rgba(0,0,0,0.3)] z-10">
+        <div className="px-4 pb-2 bg-[rgba(10,14,26,0.85)] backdrop-blur-[20px] shrink-0 relative shadow-[0_-4px_24px_rgba(0,0,0,0.3)] z-10">
 
 
             {/* Suggested Actions */}
