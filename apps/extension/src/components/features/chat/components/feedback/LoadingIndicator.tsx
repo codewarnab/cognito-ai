@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { TextShimmer } from '@/components/ui/TextShimmer';
 
 const THINKING_MESSAGES = [
     'Thinking...',
@@ -31,19 +32,15 @@ export const LoadingIndicator: React.FC = () => {
             exit={{ opacity: 0, y: -10 }}
             className="flex gap-3 justify-start items-start py-1"
         >
-            <div className="bg-transparent !text-[var(--text-primary)] !border-none !shadow-none !p-0 !rounded-none !max-w-full !text-base">
-                <span
-                    className="text-base font-medium bg-clip-text text-transparent bg-[length:200%_100%]"
-                    style={{
-                        backgroundImage: 'linear-gradient(90deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.4) 40%, rgba(255, 255, 255, 0.9) 50%, rgba(255, 255, 255, 0.4) 60%, rgba(255, 255, 255, 0.4) 100%)',
-                        animation: 'shimmer 2s linear infinite',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}
-                >
-                    {THINKING_MESSAGES[messageIndex]}
-                </span>
-            </div>
+            <TextShimmer
+                key={messageIndex}
+                as="span"
+                className="text-base font-medium [--base-color:#a1a1aa] [--base-gradient-color:#ffffff]"
+                duration={2}
+                spread={2}
+            >
+                {THINKING_MESSAGES[messageIndex] ?? 'Thinking...'}
+            </TextShimmer>
         </motion.div>
     );
 };

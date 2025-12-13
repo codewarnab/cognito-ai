@@ -1,4 +1,5 @@
 import { Streamdown } from 'streamdown';
+import { LinkPreview } from './LinkPreview';
 
 interface StreamdownRendererProps {
   children: string;
@@ -21,23 +22,16 @@ export function StreamdownRenderer({
       mode={isAnimating ? 'streaming' : 'static'}
       isAnimating={isAnimating}
       parseIncompleteMarkdown={isAnimating}
-      // Theme options - uncomment one to try:
-      // shikiTheme={['github-light', 'tokyo-night']}        // Deep blue, vibrant - very popular
-      // shikiTheme={['github-light', 'dracula']}            // Purple/pink accent, classic
-      // shikiTheme={['github-light', 'one-dark-pro']}       // Atom-style, balanced colors
-      // shikiTheme={['github-light', 'nord']}               // Arctic blue, soft pastel
-      // shikiTheme={['github-light', 'ayu-dark']}           // Warm orange/golden accent
-      // shikiTheme={['github-light', 'catppuccin-mocha']}   // Soothing pastel, modern
-      // shikiTheme={['github-light', 'night-owl']}          // Optimized for low-light
-       //shikiTheme={['github-light', 'slack-dark']}         // Clean, minimal
-      // shikiTheme={['github-light', 'github-dark']}        // GitHub native dark
-      shikiTheme={['github-light', 'tokyo-night']}           // CURRENT: Deep blue, vibrant
+      shikiTheme={['github-light', 'tokyo-night']}
       controls={{
         code: true,
         table: true,
         mermaid: true,
       }}
       className="streamdown-content"
+      components={{
+        a: LinkPreview
+      }}
     >
       {children}
     </Streamdown>
