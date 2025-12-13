@@ -109,6 +109,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
             <div
                 ref={triggerRef}
                 className="inline-flex"
+                style={{ pointerEvents: 'auto' }}
                 onMouseEnter={showTooltip}
                 onMouseLeave={hideTooltip}
                 onFocus={showTooltip}

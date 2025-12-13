@@ -19,7 +19,7 @@ export default defineContentScript({
     async main(ctx) {
         const ui = await createShadowRootUi(ctx, {
             name: 'cognito-unified-overlay',
-            position: 'inline',
+            position: 'overlay',
             anchor: 'body',
             mode: 'open',
             onMount: (container) => {

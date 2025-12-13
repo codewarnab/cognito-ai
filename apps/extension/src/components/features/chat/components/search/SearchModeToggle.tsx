@@ -4,9 +4,10 @@
  * Designed for Chrome sidepanel - compact with clear visual feedback.
  */
 
-import React from 'react';
-import { Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { Globe, AlertTriangle } from 'lucide-react';
 import { Tooltip } from '@/components/ui/primitives/tooltip';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/primitives/popover';
 
 export interface SearchModeToggleProps {
     /** Whether search mode is enabled */
@@ -34,6 +35,8 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
     disabledReason,
     className,
 }) => {
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
     const handleClick = () => {
         if (!isLoading && hasApiKey && !disabled) {
             onToggle();
@@ -49,11 +52,9 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
 
     const tooltipContent = disabled && disabledReason
         ? disabledReason
-        : !hasApiKey
-            ? 'Add tavily API key in Settings to enable web search'
-            : isEnabled
-                ? 'Web search enabled - AI can search the internet'
-                : 'Click to enable web search';
+        : isEnabled
+            ? 'Web search enabled - AI can search the internet'
+            : 'Click to enable web search';
 
     const baseClasses = 'inline-flex items-center justify-center gap-1 py-1 px-2 rounded-full text-xs font-medium transition-all duration-150 border cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed';
 
@@ -67,22 +68,63 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
 
     const classNames = [baseClasses, stateClasses, loadingClasses, className].filter(Boolean).join(' ');
 
+    const isButtonDisabled = isLoading || !hasApiKey || disabled;
+
+    const buttonElement = (
+        <button
+            type="button"
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            disabled={isButtonDisabled}
+            aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
+            aria-pressed={isEnabled}
+            className={classNames}
+            style={!hasApiKey ? { pointerEvents: 'none' } : undefined}
+        >
+            <Globe size={14} className={`transition-colors duration-150 ${isEnabled && hasApiKey ? 'text-blue-500' : ''}`} />
+            <span className="hidden min-[400px]:inline">Search</span>
+        </button>
+    );
+
+    // Use Popover for API key warning (more reliable than tooltip)
+    if (!hasApiKey) {
+        return (
+            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <span
+                        className="cursor-not-allowed"
+                        onMouseEnter={() => setIsPopoverOpen(true)}
+                        onMouseLeave={() => setIsPopoverOpen(false)}
+                    >
+                        {buttonElement}
+                    </span>
+                </PopoverTrigger>
+                <PopoverContent
+                    side="top"
+                    sideOffset={8}
+                    className="max-w-[200px] p-2 text-xs"
+                    onPointerDownOutside={(e) => e.preventDefault()}
+                >
+                    <div className="flex items-start gap-2">
+                        <AlertTriangle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-[var(--text-secondary)]">
+                            Add Tavily API key in Settings to enable web search
+                        </span>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        );
+    }
+
+    // Use Tooltip for normal states
     return (
         <Tooltip content={tooltipContent} position="top">
-            <button
-                type="button"
-                onClick={handleClick}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading || !hasApiKey || disabled}
-                aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
-                aria-pressed={isEnabled}
-                className={classNames}
-            >
-                <Globe size={14} className={`transition-colors duration-150 ${isEnabled && hasApiKey ? 'text-blue-500' : ''}`} />
-                <span className="hidden min-[400px]:inline">Search</span>
-            </button>
+            <span className={isButtonDisabled ? 'cursor-not-allowed' : ''}>
+                {buttonElement}
+            </span>
         </Tooltip>
     );
 };
 
 export default SearchModeToggle;
+

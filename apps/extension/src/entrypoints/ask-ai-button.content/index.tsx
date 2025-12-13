@@ -11,7 +11,7 @@ export default defineContentScript({
     async main(ctx) {
         const ui = await createShadowRootUi(ctx, {
             name: 'cognito-ask-ai-button',
-            position: 'inline',
+            position: 'overlay',
             anchor: 'body',
             mode: 'open',
             onMount: (container) => {
