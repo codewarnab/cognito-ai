@@ -112,20 +112,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     description: 'Remove tabs from their groups',
   },
 
-  // History
-  {
-    id: 'searchHistory',
-    name: 'searchHistory',
-    category: 'History Tools',
-    description: 'Search browsing history',
-    parameters: 'query (required), maxResults (optional)',
-  },
-  {
-    id: 'getUrlVisits',
-    name: 'getUrlVisits',
-    category: 'History Tools',
-    description: 'Get visit count and last visit time for URLs',
-  },
+  // History (tools removed - consolidated in search.tsx)
 
   // Reminders
   {

@@ -6,7 +6,7 @@ export const CHAT_MODE_TOOLS: string[] = [
     'getActiveTab',
     'getAllTabs',
     'switchTabs',
-    'searchHistory',
+
     'getYouTubeTranscript',
 ];
 
@@ -36,9 +36,7 @@ export const AGENT_MODE_TOOLS: string[] = [
     'chromeSearch',
     'getSearchResults',
     'openSearchResult',
-    // History
-    'searchHistory',
-    'getUrlVisits',
+    // History (removed - consolidated in search.tsx)
     // Reminders
     'createReminder',
     'listReminders',

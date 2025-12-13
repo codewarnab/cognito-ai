@@ -30,8 +30,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
     chromeSearch: 'Search using Chrome search',
     getSearchResults: 'Get search result listings',
     openSearchResult: 'Open a search result',
-    searchHistory: 'Search browsing history',
-    getUrlVisits: 'Get visit history for URLs',
+
 
     // Reminders
     createReminder: 'Create time-based reminders',
@@ -65,7 +64,7 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Page Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo', 'findSearchBar', 'executeScript'],
     'Page Content': ['takeScreenshot', 'readPageContent', 'extractText', 'analyzeDom'],
     'Search': ['chromeSearch', 'getSearchResults', 'openSearchResult'],
-    'History': ['searchHistory', 'getUrlVisits'],
+    'History': [],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
     'Utilities': ['getYouTubeTranscript'],

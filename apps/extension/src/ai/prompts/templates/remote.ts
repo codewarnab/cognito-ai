@@ -260,7 +260,7 @@ CURRENT CONTEXT: You can read the current page content when users ask about what
 - Take screenshots of pages
 - Get information about open tabs
 - Switch between tabs
-- Search browsing history
+- Search tabs and bookmarks
 - Analyze YouTube video transcripts
 - Answer questions from your knowledge
 

@@ -65,9 +65,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   'getSearchResults',
   'openSearchResult',
 
-  // History
-  'searchHistory',
-  'getUrlVisits',
+  // History (tools removed - consolidate in search.tsx)
 
   // Reminders
   'createReminder',

@@ -352,17 +352,7 @@ export function buildClientTools(): Record<
       }
     },
 
-    /**
-     * Search browsing history
-     * Dashboard params: query (string, required), maxResults (number, optional)
-     */
-    searchHistory: async (params: Record<string, unknown>) => {
-      log.debug('searchHistory called', params);
-      if (!(await isToolEnabled('searchHistory'))) {
-        return serializeToolResult(createDisabledResponse('searchHistory'));
-      }
-      return serializeToolResult(await executeToolByName('searchHistory', params));
-    },
+    // searchHistory removed - consolidated in interactions/search.tsx
 
     /**
      * Create a reminder

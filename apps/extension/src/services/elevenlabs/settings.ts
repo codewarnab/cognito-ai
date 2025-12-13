@@ -42,7 +42,7 @@ export const ALL_TOOLS: ToolInfo[] = [
   { id: 'switchTabs', name: 'Switch Tabs', description: 'Switch between tabs' },
   { id: 'getSearchResults', name: 'Search Results', description: 'Parse search results' },
   { id: 'getYouTubeTranscript', name: 'YouTube', description: 'Analyze YouTube videos' },
-  { id: 'searchHistory', name: 'History', description: 'Search browsing history' },
+
   { id: 'createReminder', name: 'Create Reminder', description: 'Create reminders' },
   { id: 'listReminders', name: 'List Reminders', description: 'List active reminders' },
   { id: 'cancelReminder', name: 'Cancel Reminder', description: 'Cancel reminders' },

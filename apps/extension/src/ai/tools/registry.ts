@@ -49,9 +49,7 @@ export const BASIC_TOOLS = [
   'getSearchResults',
   'openSearchResult',
 
-  // History
-  'searchHistory',
-  'getUrlVisits',
+  // History (tools removed - consolidated in interactions/search.tsx)
 
   // Memory management
   'saveMemory',

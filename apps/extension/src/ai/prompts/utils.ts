@@ -91,7 +91,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
 
                 "  Step 0.5: For questions about PAST BROWSING, use history FIRST before external search",
                 "    - Keywords indicating history search: 'what was that...', 'find that site/page/article...', 'when did I visit...', 'that [thing] I saw/read/looked at...'",
-                "    - Use searchHistory with relevant query: 'that React article' → searchHistory('React')",
+                "    - Use chromeSearch for browsing history: 'that React article' → chromeSearch('React')",
                 "    - Apply time context: 'yesterday' = 24h, 'last week' = 168h, 'recently' = 48h, 'this morning' = 12h",
                 "    - If found in history, you can navigate to it or provide the info directly",
 
@@ -116,11 +116,11 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "  - If user asks 'who is this?', 'what is this?', 'explain this' → use readPageContent to check current page",
                 "  - If current page is a profile/about page/article → use readPageContent to extract info",
                 "  - If user provides context like 'on this page', 'here', 'this person' → use readPageContent to get current context",
-                "  - If user references PAST browsing ('that article I read', 'site I visited', 'page I saw') → use searchHistory to find it",
+                "  - If user references PAST browsing ('that article I read', 'site I visited', 'page I saw') → use chromeSearch to find it",
                 "  - Use time context intelligently: 'yesterday' = last 24h, 'last week' = 7 days (168h), 'recently' = 48h, 'this morning' = 12h, 'today' = current day",
-                "  - Use getActiveTab to see URL/title, then decide: readPageContent for current page OR searchHistory OR search web",
+                "  - Use getActiveTab to see URL/title, then decide: readPageContent for current page OR chromeSearch OR search web",
                 "  - TIME-BASED HISTORY QUERIES: When user asks about specific time periods, NEVER mention lifetime visit counts",
-                "    * 'What did I browse this morning?' → use getRecentHistory(hours=12) or searchHistory with time filters",
+                "    * 'What did I browse this morning?' → use getRecentHistory(hours=12) or chromeSearch with time context",
                 "    * 'Show me yesterday's browsing' → use getRecentHistory(hours=24) with startTime from yesterday",
                 "    * Focus on actual visits within the time period, not total lifetime visits to those sites",
 
@@ -267,7 +267,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
             errorRecovery: [
                 "DON'T KNOW ANSWER: NEVER say 'I cannot answer'. Check current page first, then search if needed.",
                 "CONTEXTUAL QUESTIONS: If user asks 'who is this?' while on LinkedIn/GitHub/Twitter or other profile pages → use readPageContent to get current page details, don't blindly search Google.",
-                "HISTORY NOT FOUND: If searchHistory returns no results, try broader query (fewer keywords) or longer time range before saying 'not found'. Example: if 'React hooks tutorial' finds nothing, try just 'React' with longer timeframe.",
+                "HISTORY NOT FOUND: If chromeSearch returns no results, try broader query (fewer keywords) before saying 'not found'. Example: if 'React hooks tutorial' finds nothing, try just 'React'.",
                 "TIME-BASED HISTORY RESPONSES: When user asks about specific time periods, focus ONLY on visits within that timeframe. Do NOT mention lifetime visit counts. Example: 'Facebook: Visited once this morning' NOT 'Facebook: Visited 8841 times (lifetime)'.",
                 "NAVIGATION RACE ('Frame removed'): STOP retrying; page is navigating. Wait for user's next instruction or re-read page after load.",
                 "DUPLICATE ACTION BLOCKED: Tool was already called recently. STOP; report to user; suggest different approach or wait.",
@@ -291,9 +291,8 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "fillInput",
                 "getSearchResults - Parse Google/Bing search results into structured data (rank, title, href, hostname, snippet)",
                 "openSearchResult - Navigate to a specific search result by rank",
-                "searchHistory - Search browser history by text query with time filters (CRITICAL: use time filters for time-based queries)",
+                "chromeSearch - Search browser history, bookmarks, and open tabs",
                 "getRecentHistory - Get recent browsing history within specific time window (perfect for 'this morning', 'yesterday' queries)",
-                "getUrlVisits - Get detailed visit information for specific URLs",
                 "getYoutubeTranscript - Fetch transcript/captions from active YouTube video with optional language and time limit (only works on youtube.com/watch pages)",
                 "getYouTubeTranscript - Fetch YouTube video transcript and metadata. Returns: videoId, title, duration, transcript (if available), description. Use transcript in your context to answer questions. Parameters: youtubeUrl (full YouTube URL), includeDescription (optional). If hasTranscript is false, inform user and provide available metadata.",
                 "analyzePdfDocument - SPECIALIZED AI AGENT for PDF document analysis. Uses Gemini's native PDF understanding to analyze any PDF document and answer questions about its content. Parameters: pdfUrl (full PDF URL), question (specific question about the document). This agent can understand document content, extract information, provide quotes, and answer complex questions about PDFs. Use this for ANY PDF-related questions or analysis requests.",

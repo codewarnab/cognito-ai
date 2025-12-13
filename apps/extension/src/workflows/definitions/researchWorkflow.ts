@@ -49,7 +49,7 @@ WORKFLOW OBJECTIVE:
 AVAILABLE TOOLS (FULL ACCESS FOR RESEARCH):
 - Navigation: navigateTo, switchTabs, getActiveTab, openTab, getAllTabs
 - Content Extraction: readPageContent, extractText, getSearchResults
-- Search: chromeSearch, searchHistory, openSearchResult
+- Search: chromeSearch, openSearchResult
 - Interaction: clickByText, typeInField, pressKey, scrollPage
 - Tab Management: applyTabGroups, organizeTabsByContext
 - Report Generation: getReportTemplate, generatePDF
@@ -257,7 +257,7 @@ export function createResearchWorkflow(settings: ResearchWorkflowSettings): Work
 
          // Search
          'chromeSearch',
-         'searchHistory',
+
          'openSearchResult',
 
          // Interaction (for search bars, links, navigation)

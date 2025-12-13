@@ -50,7 +50,6 @@ import {
 import {
     getHistoryFormatter,
     getRecentHistoryFormatter,
-    getUrlVisitsFormatter
 } from './formatters/history';
 import {
     getYoutubeTranscriptFormatter
@@ -143,11 +142,9 @@ export const formatters: Record<string, ActionFormatter> = {
     // Reminders
     cancelReminder: cancelReminderFormatter,
 
-    // History
+    // History (tools removed - consolidated in search.tsx)
     getHistory: getHistoryFormatter,
-    searchHistory: getHistoryFormatter,
     getRecentHistory: getRecentHistoryFormatter,
-    getUrlVisits: getUrlVisitsFormatter,
 
     // YouTube
     getYoutubeTranscript: getYoutubeTranscriptFormatter,

@@ -104,10 +104,8 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     deleteMemory: DeleteIcon,
     listMemories: FoldersIcon,
 
-    // History tools
+    // History tools (removed - consolidated in search.tsx)
     getRecentHistory: HistoryIcon,
-    getUrlVisits: HistoryIcon,
-    searchHistory: SearchIcon,
 
     // YouTube tools
     youtube: YoutubeIcon,
