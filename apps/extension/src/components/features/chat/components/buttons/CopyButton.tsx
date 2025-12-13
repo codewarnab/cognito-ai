@@ -109,13 +109,13 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
                 isPlaying={isPlaying}
                 fileName={`message-audio-${Date.now()}.mp3`}
             />
-            {!autoExtractionOn && (
+            {/* {!autoExtractionOn && (
                 <BrainButton
                     content={content}
                     previousMessage={previousMessage}
                     threadId={threadId}
                 />
-            )}
+            )} */}
         </div>
     );
 };
