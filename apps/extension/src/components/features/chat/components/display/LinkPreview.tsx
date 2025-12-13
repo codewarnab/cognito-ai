@@ -227,9 +227,14 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
                 </a>
             </PopoverTrigger>
             <PopoverContent
-                className="w-80 p-0 overflow-hidden bg-background border border-border shadow-xl z-50"
+                className="w-64 p-0 overflow-hidden border shadow-md z-50 rounded-lg"
+                style={{
+                    background: 'var(--bg-secondary)',
+                    borderColor: 'var(--border-color)',
+                }}
+                side="top"
                 align="start"
-                sideOffset={5}
+                sideOffset={4}
                 onMouseEnter={() => {
                     if (hoverTimeout) clearTimeout(hoverTimeout);
                     setOpen(true);
@@ -237,16 +242,14 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
                 onMouseLeave={() => setOpen(false)}
             >
                 {loading ? (
-                    <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
-                        <div className="animate-pulse flex flex-col items-center gap-2">
-                            <Globe className="w-5 h-5 opacity-50" />
-                            <span>Loading preview...</span>
-                        </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
+                        <span className="text-[11px]">Loading...</span>
                     </div>
                 ) : metadata ? (
                     <div className="flex flex-col">
                         {metadata.image && (
-                            <div className="relative w-full h-32 bg-muted overflow-hidden">
+                            <div className="relative w-full h-24 overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
                                 <img
                                     src={metadata.image}
                                     alt={metadata.title || "Preview"}
@@ -257,23 +260,23 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
                                 />
                             </div>
                         )}
-                        <div className="p-3">
-                            <div className="flex items-start gap-2 mb-1">
+                        <div className="p-2">
+                            <div className="flex items-start gap-1.5">
                                 {metadata.favicon ? (
                                     <img
                                         src={metadata.favicon}
                                         alt=""
-                                        className="w-4 h-4 mt-0.5 rounded-sm shrink-0"
-                                        onError={(e) => { (e.target as HTMLImageElement).src = ""; (e.target as HTMLImageElement).className = "hidden"; }}
+                                        className="w-3.5 h-3.5 mt-0.5 rounded-sm shrink-0"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                                     />
                                 ) : (
-                                    siteIcon
+                                    <div className="shrink-0 mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{siteIcon}</div>
                                 )}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm leading-tight text-foreground line-clamp-2">
+                                    <h4 className="text-[11px] font-medium leading-tight line-clamp-2" style={{ color: 'var(--text-primary)' }}>
                                         {metadata.title || hostname}
                                     </h4>
-                                    <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                                    <div className="flex items-center gap-1 mt-0.5 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
                                         <span className="truncate">{metadata.siteName || hostname}</span>
                                         {metadata.publishedTime && (
                                             <>
@@ -288,14 +291,14 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
                             </div>
 
                             {metadata.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mt-2 leading-relaxed">
+                                <p className="text-[10px] line-clamp-2 mt-1 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                                     {metadata.description}
                                 </p>
                             )}
 
-                            <div className="mt-2 pt-2 border-t flex justify-between items-center text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1 hover:text-foreground transition-colors">
-                                    <ExternalLink className="w-3 h-3" />
+                            <div className="mt-1.5 pt-1.5 flex justify-between items-center text-[10px]" style={{ borderTop: '1px solid var(--border-color)', color: 'var(--text-tertiary)' }}>
+                                <span className="flex items-center gap-1">
+                                    <ExternalLink className="w-2.5 h-2.5" />
                                     {hostname}
                                 </span>
                             </div>

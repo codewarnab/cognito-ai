@@ -109,8 +109,15 @@ export function useThreadManagement({
         try {
             // Queue current thread for extraction before creating new one
             if (currentThreadId) {
+                // Check if current thread is already empty
+                const messages = await loadThreadMessages(currentThreadId);
+                if (messages.length === 0) {
+                    log.info("Current thread is already empty, skipping new thread creation");
+                    return;
+                }
+
                 // Fire and forget - don't await to avoid blocking UI
-                maybeQueueForExtraction(currentThreadId).catch(() => {});
+                maybeQueueForExtraction(currentThreadId).catch(() => { });
             }
 
             const thread = await createThread();
@@ -134,7 +141,7 @@ export function useThreadManagement({
         // Queue current thread for extraction before switching
         if (currentThreadId && currentThreadId !== threadId) {
             // Fire and forget - don't await to avoid blocking UI
-            maybeQueueForExtraction(currentThreadId).catch(() => {});
+            maybeQueueForExtraction(currentThreadId).catch(() => { });
         }
 
         log.info("🔄 Switching to thread", { threadId });

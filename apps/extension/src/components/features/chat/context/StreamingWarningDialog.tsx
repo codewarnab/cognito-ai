@@ -41,13 +41,13 @@ export const StreamingWarningDialog = ({
 
                                 <div className="flex gap-3 justify-end">
                                     <button
-                                        className="px-4 py-2 text-sm font-medium text-gray-300 bg-transparent border border-white/10 rounded-lg hover:bg-white/5 hover:text-white transition-all duration-200"
+                                        className="px-4 py-2 text-sm font-medium text-gray-300 bg-transparent border border-white/10 rounded-lg hover:bg-white/5 hover:text-white transition-all duration-200 cursor-pointer"
                                         onClick={onClose}
                                     >
                                         Cancel
                                     </button>
                                     <button
-                                        className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-red-500 rounded-lg hover:bg-red-600 transition-all duration-200"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-red-500 rounded-lg hover:bg-red-600 transition-all duration-200 cursor-pointer"
                                         onClick={onContinue}
                                     >
                                         Continue Anyway

@@ -13,7 +13,7 @@ const THINKING_MESSAGES = [
     'Putting it all together...',
 ];
 
-const MESSAGE_INTERVAL = 5000;
+const MESSAGE_INTERVAL = 6000;
 
 export const LoadingIndicator: React.FC = () => {
     const [messageIndex, setMessageIndex] = React.useState(0);

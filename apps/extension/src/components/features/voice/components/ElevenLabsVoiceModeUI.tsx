@@ -10,7 +10,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Settings2 } from 'lucide-react';
-import { Tooltip } from '@/components/ui/primitives/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { VoicePoweredOrb } from '../visualizations/VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
 import { VoiceModeStatusDisplay } from './VoiceModeStatus';
@@ -140,29 +140,30 @@ export const ElevenLabsVoiceModeUI: React.FC<ElevenLabsVoiceModeUIProps> = ({ on
       {/* Header */}
       <div className="voice-mode-header">
         {onBack && (
-          <Tooltip
-            content={isRecording ? 'Stop voice mode first to exit' : 'Back to Text Mode'}
-            position="bottom"
-            delay={200}
-          >
-            <button
-              className="voice-mode-back-button"
-              onClick={onBack}
-              disabled={isRecording}
-              aria-label={isRecording ? 'Back button disabled - stop voice mode first' : 'Back to Text Mode'}
-              type="button"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <path
-                  d="M12.5 15L7.5 10L12.5 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Back to Text</span>
-            </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="voice-mode-back-button"
+                onClick={onBack}
+                disabled={isRecording}
+                aria-label={isRecording ? 'Back button disabled - stop voice mode first' : 'Back to Text Mode'}
+                type="button"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path
+                    d="M12.5 15L7.5 10L12.5 5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Back to Text</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {isRecording ? 'Stop voice mode first to exit' : 'Back to Text Mode'}
+            </TooltipContent>
           </Tooltip>
         )}
 

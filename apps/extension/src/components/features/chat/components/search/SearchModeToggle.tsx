@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import { Globe, AlertTriangle } from 'lucide-react';
-import { Tooltip } from '@/components/ui/primitives/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/primitives/popover';
 
 export interface SearchModeToggleProps {
@@ -118,10 +118,15 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
 
     // Use Tooltip for normal states
     return (
-        <Tooltip content={tooltipContent} position="top">
-            <span className={isButtonDisabled ? 'cursor-not-allowed' : ''}>
-                {buttonElement}
-            </span>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span className={isButtonDisabled ? 'cursor-not-allowed' : ''}>
+                    {buttonElement}
+                </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+                {tooltipContent}
+            </TooltipContent>
         </Tooltip>
     );
 };
