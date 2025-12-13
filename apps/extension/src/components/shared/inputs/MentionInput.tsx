@@ -3,7 +3,7 @@
  * Supports @TabName syntax for mentioning browser tabs
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { TabMentionDropdown } from './TabMentionDropdown';
 import {
     isMentionTrigger,
@@ -12,6 +12,9 @@ import {
     getCursorPosition
 } from '@/utils/chat';
 import { detectSlashCommand, getSlashSearchQuery } from '@/utils/chat';
+
+const MIN_HEIGHT = 44;
+const MAX_HEIGHT = 160;
 
 interface MentionInputProps {
     value: string;
@@ -37,7 +40,29 @@ export function MentionInput({
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const [textareaHeight, setTextareaHeight] = useState(MIN_HEIGHT);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    // Auto-resize textarea based on content
+    const adjustHeight = useCallback(() => {
+        const textarea = inputRef.current;
+        if (!textarea) return;
+
+        // Reset height to min to get accurate scrollHeight
+        textarea.style.height = `${MIN_HEIGHT}px`;
+
+        // Calculate new height
+        const scrollHeight = textarea.scrollHeight;
+        const newHeight = Math.min(Math.max(scrollHeight, MIN_HEIGHT), MAX_HEIGHT);
+
+        setTextareaHeight(newHeight);
+        textarea.style.height = `${newHeight}px`;
+    }, []);
+
+    // Adjust height when value changes
+    useEffect(() => {
+        adjustHeight();
+    }, [value, adjustHeight]);
 
     // Check for mention trigger on input change
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -152,11 +177,20 @@ export function MentionInput({
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className="flex-1 bg-transparent border-none text-white outline-none resize-none text-sm font-normal leading-[1.4] tracking-[0.3px] w-full placeholder:text-white/35 placeholder:font-normal disabled:opacity-50 disabled:cursor-not-allowed scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/15 hover:scrollbar-thumb-white/25"
+                className="flex-1 bg-transparent border-none text-white outline-none resize-none text-sm font-normal leading-[1.4] tracking-[0.3px] w-full placeholder:text-white/35 placeholder:font-normal disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={disabled}
                 autoFocus={autoFocus}
                 rows={1}
-                style={{ resize: 'none', overflow: 'auto', height: '44px', minHeight: '44px', maxHeight: '44px', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                style={{
+                    resize: 'none',
+                    overflow: textareaHeight >= MAX_HEIGHT ? 'auto' : 'hidden',
+                    height: `${textareaHeight}px`,
+                    minHeight: `${MIN_HEIGHT}px`,
+                    maxHeight: `${MAX_HEIGHT}px`,
+                    // Sleek minimal scrollbar
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(255,255,255,0.15) transparent'
+                }}
             />
 
             {showDropdown && (
