@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CopyIcon, type CopyIconHandle } from '@/components/shared/icons/CopyIcon';
 import { VoiceButton } from './VoiceButton';
 import { DownloadButton } from './DownloadButton';
-import { BrainButton } from './BrainButton';
-import { isAutoExtractionEnabled } from '@/utils/supermemory';
+// import { BrainButton } from './BrainButton';
+// import { isAutoExtractionEnabled } from '@/utils/supermemory';
 
 interface CopyButtonProps {
     content: string;
@@ -16,20 +16,20 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
     const [copied, setCopied] = useState(false);
     const [audioBuffer, setAudioBuffer] = useState<ArrayBuffer | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [autoExtractionOn, setAutoExtractionOn] = useState(false);
+    // const [autoExtractionOn, setAutoExtractionOn] = useState(false);
     const iconRef = useRef<CopyIconHandle>(null);
 
-    useEffect(() => {
-        const checkAutoExtraction = async () => {
-            try {
-                const enabled = await isAutoExtractionEnabled();
-                setAutoExtractionOn(enabled);
-            } catch {
-                setAutoExtractionOn(false);
-            }
-        };
-        checkAutoExtraction();
-    }, []);
+    // useEffect(() => {
+    //     const checkAutoExtraction = async () => {
+    //         try {
+    //             const enabled = await isAutoExtractionEnabled();
+    //             setAutoExtractionOn(enabled);
+    //         } catch {
+    //             setAutoExtractionOn(false);
+    //         }
+    //     };
+    //     checkAutoExtraction();
+    // }, []);
 
     const handleCopy = async () => {
         if (!content) return;

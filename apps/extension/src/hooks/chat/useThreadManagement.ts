@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createLogger } from '~logger';
 import {
     createThread,
+    getAllThreads,
     loadThreadMessages,
     clearThreadMessages,
     getLastActiveThreadId,
@@ -118,6 +119,23 @@ export function useThreadManagement({
 
                 // Fire and forget - don't await to avoid blocking UI
                 maybeQueueForExtraction(currentThreadId).catch(() => { });
+            }
+
+            // Check if there's an existing empty "New Chat" thread we can reuse
+            const allThreads = await getAllThreads();
+            const emptyNewChatThread = await Promise.all(
+                allThreads
+                    .filter(t => t.id !== currentThreadId && t.title === 'New Chat')
+                    .map(async (t) => {
+                        const msgs = await loadThreadMessages(t.id);
+                        return msgs.length === 0 ? t : null;
+                    })
+            ).then(results => results.find(t => t !== null));
+
+            if (emptyNewChatThread) {
+                log.info("Reusing existing empty thread", { threadId: emptyNewChatThread.id });
+                handleThreadSelect(emptyNewChatThread.id);
+                return;
             }
 
             const thread = await createThread();

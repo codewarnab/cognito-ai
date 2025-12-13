@@ -144,8 +144,8 @@ export const SupermemorySettings: React.FC = () => {
             await setSupermemoryEnabled(checked);
             log.info('Supermemory enabled state changed', { enabled: checked });
 
-            // Disable auto-extraction and content memory if Supermemory is disabled
             if (!checked) {
+                // Disable auto-extraction and content memory if Supermemory is disabled
                 if (autoExtraction) {
                     setAutoExtraction(false);
                     await setAutoExtractionEnabled(false);
@@ -153,6 +153,16 @@ export const SupermemorySettings: React.FC = () => {
                 if (contentMemory) {
                     setContentMemory(false);
                     await setContentMemoryEnabled(false);
+                }
+            } else {
+                // Enable toggles by default when memory is enabled
+                if (!autoExtraction) {
+                    setAutoExtraction(true);
+                    await setAutoExtractionEnabled(true);
+                }
+                if (!contentMemory) {
+                    setContentMemory(true);
+                    await setContentMemoryEnabled(true);
                 }
             }
         } catch (err) {
