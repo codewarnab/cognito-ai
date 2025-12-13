@@ -2,6 +2,8 @@
  * Suggestion Generator Service
  * Uses Vercel AI SDK's generateObject (remote) or Chrome's Prompt API (local)
  * to create context-aware suggestions
+ * 
+ * Includes caching to avoid regenerating suggestions for the same page
  */
 
 import { generateObject } from 'ai';
@@ -11,8 +13,31 @@ import type { PageContext } from '@/utils/tabs';
 import { generateLocalContextualSuggestions } from './local';
 import { initializeModel } from '../core/modelFactory';
 import { HIDE_LOCAL_MODE } from '@/constants';
+import { LRUCache } from '~/utils/cache/LRUCache';
 
 const log = createLogger('SuggestionGenerator');
+
+// ============================================================================
+// Suggestions Cache - 10-minute TTL, max 20 pages
+// ============================================================================
+
+const suggestionsCache = new LRUCache<string, Suggestion[]>({
+    maxSize: 20,
+    ttlMs: 10 * 60 * 1000, // 10 minutes
+    onEvict: (key) => {
+        log.debug('Suggestions cache entry evicted', { key });
+    },
+});
+
+/**
+ * Create cache key from page context
+ * Uses URL + title hash for uniqueness
+ */
+function createCacheKey(pageContext: PageContext | null): string {
+    if (!pageContext) return 'no-context';
+    // Use URL and title for cache key
+    return `${pageContext.url}::${pageContext.title}`;
+}
 
 // Zod schema for suggestion array
 const suggestionSchema = z.object({
@@ -31,6 +56,7 @@ export type Suggestion = {
 
 /**
  * Generate contextual suggestions using AI (remote or local)
+ * Uses LRU cache to avoid regenerating for the same page
  * @param pageContext - Current page context
  * @param mode - AI mode ('remote' or 'local'). If 'remote', uses active provider (Vertex or Google AI)
  */
@@ -38,6 +64,14 @@ export async function generateContextualSuggestions(
     pageContext: PageContext | null,
     mode: 'remote' | 'local' = 'remote'
 ): Promise<Suggestion[] | null> {
+    // Check cache first
+    const cacheKey = createCacheKey(pageContext);
+    const cached = suggestionsCache.get(cacheKey);
+    if (cached) {
+        log.info('📦 Suggestions cache hit', { url: pageContext?.url });
+        return cached;
+    }
+
     try {
         // If local mode requested, use local AI (but skip if HIDE_LOCAL_MODE is enabled)
         if (mode === 'local') {
@@ -46,7 +80,12 @@ export async function generateContextualSuggestions(
                 return null;
             }
             log.info('Using local AI for suggestions');
-            return await generateLocalContextualSuggestions(pageContext);
+            const localResult = await generateLocalContextualSuggestions(pageContext);
+            if (localResult) {
+                suggestionsCache.set(cacheKey, localResult);
+                log.debug('📦 Cached local suggestions', { url: pageContext?.url });
+            }
+            return localResult;
         }
 
         // Remote mode: Use active provider (respects user's provider selection)
@@ -76,6 +115,9 @@ export async function generateContextualSuggestions(
             }
 
             log.info('Generated remote suggestions successfully');
+            // Cache successful result
+            suggestionsCache.set(cacheKey, result.suggestions);
+            log.debug('📦 Cached remote suggestions', { url: pageContext?.url });
             return result.suggestions;
 
         } catch (error) {

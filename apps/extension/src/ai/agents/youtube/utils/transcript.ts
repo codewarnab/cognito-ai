@@ -2,12 +2,54 @@ import { createLogger } from '~logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../../errors';
 import { TRANSCRIPT_API_URL } from '@/constants';
 import { withRetry, MAX_RETRIES, INITIAL_RETRY_DELAY } from './retry';
+import { LRUCache } from '~/utils/cache/LRUCache';
 
 const log = createLogger('YouTube-Transcript');
 
 /** Max retries specifically for "no captions" responses (API sometimes returns this incorrectly) */
 const NO_CAPTIONS_MAX_RETRIES = 3;
 const NO_CAPTIONS_RETRY_DELAY = 1500;
+
+// ============================================================================
+// Transcript Cache - 24-hour TTL, max 50 videos
+// ============================================================================
+
+interface CachedTranscript {
+    videoId: string;
+    title: string;
+    duration: number;
+    durationSeconds: number;
+    transcript: string;
+    author?: string;
+    thumbnail?: string;
+    description?: string;
+    tags?: string[];
+    segments?: TranscriptSegment[];
+    language?: string;
+}
+
+const transcriptCache = new LRUCache<string, CachedTranscript>({
+    maxSize: 50,
+    ttlMs: 24 * 60 * 60 * 1000, // 24 hours
+    onEvict: (key) => {
+        log.debug('Transcript cache entry evicted', { videoId: key });
+    },
+});
+
+/**
+ * Extract video ID from YouTube URL
+ */
+function extractVideoIdFromUrl(url: string): string | null {
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/,
+        /^([a-zA-Z0-9_-]{11})$/
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+}
 
 /**
  * Transcript segment with timing information
@@ -88,11 +130,31 @@ export function processTranscriptForAI(data: TranscriptResponse): ProcessedTrans
 
 /**
  * Fetch transcript from the deployed API with retry for intermittent "no captions" errors
+ * Uses LRU cache with 24-hour TTL to avoid redundant API calls
  * @param youtubeUrl - The YouTube video URL
  * @returns Transcript data or undefined if not available
  */
 export async function fetchTranscript(youtubeUrl: string): Promise<TranscriptResponse | undefined> {
-    return fetchTranscriptWithNoCaptionsRetry(youtubeUrl, NO_CAPTIONS_MAX_RETRIES);
+    // Check cache first
+    const videoId = extractVideoIdFromUrl(youtubeUrl);
+    if (videoId) {
+        const cached = transcriptCache.get(videoId);
+        if (cached) {
+            log.info('📦 Transcript cache hit', { videoId });
+            return cached;
+        }
+    }
+
+    // Fetch from API
+    const result = await fetchTranscriptWithNoCaptionsRetry(youtubeUrl, NO_CAPTIONS_MAX_RETRIES);
+
+    // Cache successful result
+    if (result && result.videoId) {
+        transcriptCache.set(result.videoId, result);
+        log.debug('📦 Cached transcript', { videoId: result.videoId });
+    }
+
+    return result;
 }
 
 /**
@@ -156,7 +218,7 @@ async function fetchTranscriptWithNoCaptionsRetry(
         }
 
         const data = await response.json();
-        
+
         // Check for empty transcript in response body (another form of "no captions")
         if (!data.transcript || data.transcript.trim().length === 0) {
             if (noCaptionsRetriesLeft > 0) {

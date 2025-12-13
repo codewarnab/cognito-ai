@@ -1,6 +1,8 @@
 /**
  * Gemini Summarizer Client
  * Handles text summarization using Gemini API with support for both Google AI and Vertex AI providers
+ * 
+ * Includes caching to avoid re-summarizing identical text selections
  */
 
 import {
@@ -12,8 +14,32 @@ import {
 import { GEMINI_MODELS } from '~/constants';
 import { createLogger } from '~logger';
 import { generateVertexAccessToken } from './vertexAuth';
+import { LRUCache } from '~/utils/cache/LRUCache';
 
 const log = createLogger('GeminiSummarizer', 'BACKGROUND');
+
+// ============================================================================
+// Summary Cache - 30-minute TTL, max 30 entries
+// ============================================================================
+
+interface CachedSummary {
+    summary: string;
+    options: SummarizerOptions;
+}
+
+const summaryCache = new LRUCache<string, CachedSummary>({
+    maxSize: 30,
+    ttlMs: 30 * 60 * 1000, // 30 minutes
+});
+
+/**
+ * Create a simple hash of text for cache key
+ * Uses first 100 chars + length + options for uniqueness
+ */
+function createSummaryCacheKey(text: string, options: SummarizerOptions): string {
+    const textHash = `${text.substring(0, 100)}::${text.length}`;
+    return `${textHash}::${options.summaryType}::${options.summaryLength}`;
+}
 
 export interface SummarizerOptions {
     summaryType: 'key-points' | 'tl-dr' | 'headline' | 'teaser';
@@ -217,12 +243,28 @@ Important:
 
     /**
      * Non-streaming summarization (for quick summaries)
+     * Uses cache to avoid re-summarizing identical text
      */
     async summarize(text: string, options: SummarizerOptions): Promise<string> {
+        // Check cache first
+        const cacheKey = createSummaryCacheKey(text, options);
+        const cached = summaryCache.get(cacheKey);
+        if (cached) {
+            log.info('📦 Summary cache hit');
+            return cached.summary;
+        }
+
         let result = '';
         for await (const chunk of this.summarizeStream(text, options)) {
             result += chunk;
         }
+
+        // Cache successful result
+        if (result) {
+            summaryCache.set(cacheKey, { summary: result, options });
+            log.debug('📦 Cached summary');
+        }
+
         return result;
     }
 }
