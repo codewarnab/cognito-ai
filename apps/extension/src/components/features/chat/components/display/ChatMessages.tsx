@@ -283,7 +283,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
                                                         if (message.role === 'assistant') {
                                                             return (
-                                                                <div key={`text-${partIndex}`} className="whitespace-pre-wrap break-words">
+                                                                <div key={`text-${partIndex}`} className="break-words">
                                                                     <div className="markdown-content">
                                                                         <SafeMarkdown isStreaming={isCurrentlyStreaming}>
                                                                             {part.text}
