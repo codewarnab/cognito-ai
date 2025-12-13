@@ -8,6 +8,13 @@ import {
     type WriteCommandSettings as Settings,
 } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('WriteCommandSettings');
 
@@ -93,34 +100,40 @@ export const WriteCommandSettings: React.FC = () => {
 
                         {isOptionsOpen && (
                             <div style={{ padding: '12px', borderTop: '1px solid var(--border-color)' }}>
-                                {/* Default Tone */}
                                 <div style={{ marginBottom: '12px' }}>
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Default Tone</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
+                                    <Select
                                         value={settings.defaultTone}
-                                        onChange={(e) => handleSettingChange('defaultTone', e.target.value as Settings['defaultTone'])}
+                                        onValueChange={(value: Settings['defaultTone']) => handleSettingChange('defaultTone', value)}
                                     >
-                                        <option value="professional">Professional - Clear and business-appropriate</option>
-                                        <option value="casual">Casual - Relaxed and conversational</option>
-                                        <option value="formal">Formal - Structured and official</option>
-                                        <option value="friendly">Friendly - Warm and approachable</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select tone" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="professional" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Professional - Clear and business-appropriate</SelectItem>
+                                            <SelectItem value="casual" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Casual - Relaxed and conversational</SelectItem>
+                                            <SelectItem value="formal" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Formal - Structured and official</SelectItem>
+                                            <SelectItem value="friendly" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Friendly - Warm and approachable</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
-                                {/* Max Output Tokens */}
                                 <div style={{ marginBottom: '12px' }}>
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Max Output Length</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                        value={settings.maxOutputTokens}
-                                        onChange={(e) => handleSettingChange('maxOutputTokens', Number(e.target.value))}
+                                    <Select
+                                        value={String(settings.maxOutputTokens)}
+                                        onValueChange={(value: string) => handleSettingChange('maxOutputTokens', Number(value))}
                                     >
-                                        <option value={256}>Short (~256 tokens)</option>
-                                        <option value={512}>Medium (~512 tokens)</option>
-                                        <option value={1024}>Long (~1024 tokens)</option>
-                                        <option value={2048}>Extended (~2048 tokens)</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select max length" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="256" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Short (~256 tokens)</SelectItem>
+                                            <SelectItem value="512" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Medium (~512 tokens)</SelectItem>
+                                            <SelectItem value="1024" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Long (~1024 tokens)</SelectItem>
+                                            <SelectItem value="2048" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Extended (~2048 tokens)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* Include Page Context */}

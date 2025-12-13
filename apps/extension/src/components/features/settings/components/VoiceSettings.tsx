@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Volume2, ChevronDown } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createLogger } from '~logger';
 import { getVoiceName, setVoiceName } from '@/utils/settings';
@@ -8,6 +8,13 @@ import { generateSpeech, playAudioBuffer } from '@/utils/ai';
 import { useApiKey } from '@/hooks/settings';
 import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
 import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('VoiceSettings');
 
@@ -32,8 +39,7 @@ export const VoiceSettings: React.FC = () => {
         loadVoice();
     }, []);
 
-    const handleVoiceChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value as VoiceName;
+    const handleVoiceChange = async (value: VoiceName) => {
         const previousVoice = voice;
         setVoice(value);
         try {
@@ -118,19 +124,26 @@ export const VoiceSettings: React.FC = () => {
                                 )}
                             </motion.div>
                         </button>
-                        <div className="voice-select-wrapper">
-                            <select
-                                className="settings-select voice-select"
-                                value={voice}
-                                onChange={handleVoiceChange}
-                                disabled={isPlayingVoice || isGeneratingVoice}
-                            >
+                        <Select
+                            value={voice}
+                            onValueChange={handleVoiceChange}
+                            disabled={isPlayingVoice || isGeneratingVoice}
+                        >
+                            <SelectTrigger className="bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)] min-w-[100px]">
+                                <SelectValue placeholder="Select voice" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
                                 {VOICE_OPTIONS.map(v => (
-                                    <option key={v} value={v}>{v}</option>
+                                    <SelectItem
+                                        key={v}
+                                        value={v}
+                                        className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]"
+                                    >
+                                        {v}
+                                    </SelectItem>
                                 ))}
-                            </select>
-                            <ChevronDown size={14} className="voice-select-arrow" />
-                        </div>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
             </div>

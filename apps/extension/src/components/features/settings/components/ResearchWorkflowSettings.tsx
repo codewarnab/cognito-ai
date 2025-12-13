@@ -9,6 +9,13 @@ import {
 } from '@/utils/settings';
 import { registerWorkflow } from '@/workflows/registry';
 import { createResearchWorkflow } from '@/workflows/definitions/researchWorkflow';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('ResearchWorkflowSettings');
 
@@ -85,17 +92,21 @@ export const ResearchWorkflowSettings: React.FC = () => {
                                 <div className="text-xs text-[var(--text-secondary)]" style={{ marginBottom: '8px' }}>
                                     Number of sources the AI must visit before completing research
                                 </div>
-                                <select
-                                    className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                    value={settings.minimumSources}
-                                    onChange={(e) => handleSettingChange('minimumSources', Number(e.target.value))}
+                                <Select
+                                    value={String(settings.minimumSources)}
+                                    onValueChange={(value: string) => handleSettingChange('minimumSources', Number(value))}
                                 >
-                                    <option value={3}>3 sources</option>
-                                    <option value={5}>5 sources (default)</option>
-                                    <option value={7}>7 sources</option>
-                                    <option value={10}>10 sources</option>
-                                    <option value={15}>15 sources</option>
-                                </select>
+                                    <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                        <SelectValue placeholder="Select minimum sources" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                        <SelectItem value="3" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">3 sources</SelectItem>
+                                        <SelectItem value="5" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">5 sources (default)</SelectItem>
+                                        <SelectItem value="7" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">7 sources</SelectItem>
+                                        <SelectItem value="10" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">10 sources</SelectItem>
+                                        <SelectItem value="15" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">15 sources</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {/* Step Count */}
@@ -104,18 +115,22 @@ export const ResearchWorkflowSettings: React.FC = () => {
                                 <div className="text-xs text-[var(--text-secondary)]" style={{ marginBottom: '8px' }}>
                                     Maximum number of AI actions allowed during research
                                 </div>
-                                <select
-                                    className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                    value={settings.stepCount}
-                                    onChange={(e) => handleSettingChange('stepCount', Number(e.target.value))}
+                                <Select
+                                    value={String(settings.stepCount)}
+                                    onValueChange={(value: string) => handleSettingChange('stepCount', Number(value))}
                                 >
-                                    <option value={15}>15 steps</option>
-                                    <option value={20}>20 steps</option>
-                                    <option value={30}>30 steps (default)</option>
-                                    <option value={50}>50 steps</option>
-                                    <option value={75}>75 steps</option>
-                                    <option value={100}>100 steps</option>
-                                </select>
+                                    <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                        <SelectValue placeholder="Select maximum steps" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                        <SelectItem value="15" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">15 steps</SelectItem>
+                                        <SelectItem value="20" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">20 steps</SelectItem>
+                                        <SelectItem value="30" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">30 steps (default)</SelectItem>
+                                        <SelectItem value="50" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">50 steps</SelectItem>
+                                        <SelectItem value="75" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">75 steps</SelectItem>
+                                        <SelectItem value="100" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">100 steps</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     )}

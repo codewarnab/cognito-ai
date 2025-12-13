@@ -8,6 +8,13 @@ import {
     type RewriteSettings as Settings,
 } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('TextRewriterSettings');
 
@@ -104,17 +111,21 @@ export const TextRewriterSettings: React.FC = () => {
                                 {/* Minimum Selection Length */}
                                 <div style={{ marginBottom: '12px' }}>
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5" style={{ marginBottom: '6px' }}>Minimum Selection Length</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                        value={settings.minSelectionLength}
-                                        onChange={(e) => handleSettingChange('minSelectionLength', Number(e.target.value))}
+                                    <Select
+                                        value={String(settings.minSelectionLength)}
+                                        onValueChange={(value: string) => handleSettingChange('minSelectionLength', Number(value))}
                                     >
-                                        <option value={5}>5 characters</option>
-                                        <option value={10}>10 characters</option>
-                                        <option value={20}>20 characters</option>
-                                        <option value={50}>50 characters</option>
-                                        <option value={100}>100 characters</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select minimum length" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="5" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">5 characters</SelectItem>
+                                            <SelectItem value="10" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">10 characters</SelectItem>
+                                            <SelectItem value="20" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">20 characters</SelectItem>
+                                            <SelectItem value="50" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">50 characters</SelectItem>
+                                            <SelectItem value="100" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">100 characters</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* Gemini Tools Section */}

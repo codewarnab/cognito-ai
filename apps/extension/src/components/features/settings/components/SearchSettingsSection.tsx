@@ -20,6 +20,13 @@ import {
     type SearchApiKeys,
 } from '@/utils/settings/searchSettings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('SearchSettingsSection', 'SETTINGS');
 
@@ -217,317 +224,324 @@ export const SearchSettingsSection: React.FC = () => {
         );
     }
 
-return (
-    <div className="flex flex-col gap-3">
-        <div className="flex justify-between items-center mb-1">
-            <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
-                <Globe
-                    size={16}
-                    style={{
-                        display: 'inline',
-                        marginRight: '8px',
-                        verticalAlign: 'text-bottom',
-                    }}
-                />
-                Web Search
-            </h2>
-        </div>
-
-        <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
-            {/* Enable/Disable Toggle */}
-            <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
-                <div className="flex-1 mr-4">
-                    <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Enable Web Search</div>
-                    <div className="text-xs text-[var(--text-secondary)]">
-                        Allow AI to search the web for current information
-                    </div>
-                </div>
-                <Toggle
-                    checked={settings.enabled}
-                    onChange={(checked) => updateSettings({ enabled: checked })}
-                />
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center mb-1">
+                <h2 className="text-[15px] font-semibold text-[var(--text-primary)] m-0 uppercase tracking-wide">
+                    <Globe
+                        size={16}
+                        style={{
+                            display: 'inline',
+                            marginRight: '8px',
+                            verticalAlign: 'text-bottom',
+                        }}
+                    />
+                    Web Search
+                </h2>
             </div>
 
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-visible">
+                {/* Enable/Disable Toggle */}
+                <div className="flex items-center justify-between p-3 border-b border-[var(--border-color)] transition-colors hover:bg-white/5 last:border-b-0">
+                    <div className="flex-1 mr-4">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Enable Web Search</div>
+                        <div className="text-xs text-[var(--text-secondary)]">
+                            Allow AI to search the web for current information
+                        </div>
+                    </div>
+                    <Toggle
+                        checked={settings.enabled}
+                        onChange={(checked) => updateSettings({ enabled: checked })}
+                    />
+                </div>
 
-            {/* Expandable sections only when enabled */}
-            {settings.enabled && (
-                <>
-                    {/* Search Options Accordion */}
-                    <div
-                        className="block p-0"
-                        style={{ display: 'block', padding: 0 }}
-                    >
-                        <button
-                            type="button"
-                            onClick={handleOptionsToggle}
-                            onKeyDown={handleOptionsKeyDown}
-                            aria-expanded={isOptionsOpen}
-                            aria-label="Toggle search options"
-                            className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
+
+                {/* Expandable sections only when enabled */}
+                {settings.enabled && (
+                    <>
+                        {/* Search Options Accordion */}
+                        <div
+                            className="block p-0"
+                            style={{ display: 'block', padding: 0 }}
                         >
-                            <div className="text-left">
-                                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Search Options</div>
-                                <div className="text-xs text-[var(--text-secondary)]">
-                                    {settings.defaultSearchDepth} • {settings.maxResults}{' '}
-                                    results
-                                    {settings.includeImages ? ' • images' : ''}
-                                </div>
-                            </div>
-                            {isOptionsOpen ? (
-                                <ChevronUp size={16} />
-                            ) : (
-                                <ChevronDown size={16} />
-                            )}
-                        </button>
-
-                        {isOptionsOpen && (
-                            <div
-                                style={{
-                                    padding: '12px',
-                                    borderTop: '1px solid var(--border-color)',
-                                }}
+                            <button
+                                type="button"
+                                onClick={handleOptionsToggle}
+                                onKeyDown={handleOptionsKeyDown}
+                                aria-expanded={isOptionsOpen}
+                                aria-label="Toggle search options"
+                                className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                             >
-                                {/* Search Depth */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <label
-                                        className="text-sm font-medium text-[var(--text-primary)] mb-1.5"
-                                        style={{
-                                            display: 'block',
-                                            marginBottom: '6px',
-                                        }}
-                                        htmlFor="search-depth-select"
-                                    >
-                                        Default Search Depth
-                                    </label>
-                                    <select
-                                        id="search-depth-select"
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                        value={settings.defaultSearchDepth}
-                                        onChange={(e) =>
-                                            updateSettings({
-                                                defaultSearchDepth: e.target
-                                                    .value as 'basic' | 'advanced',
-                                            })
-                                        }
-                                        style={{ width: '100%' }}
-                                    >
-                                        <option value="basic">
-                                            Basic - Faster, fewer results
-                                        </option>
-                                        <option value="advanced">
-                                            Advanced - Thorough, more results
-                                        </option>
-                                    </select>
+                                <div className="text-left">
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">Search Options</div>
+                                    <div className="text-xs text-[var(--text-secondary)]">
+                                        {settings.defaultSearchDepth} • {settings.maxResults}{' '}
+                                        results
+                                        {settings.includeImages ? ' • images' : ''}
+                                    </div>
                                 </div>
+                                {isOptionsOpen ? (
+                                    <ChevronUp size={16} />
+                                ) : (
+                                    <ChevronDown size={16} />
+                                )}
+                            </button>
 
-                                {/* Max Results */}
-                                <div style={{ marginBottom: '12px' }}>
-                                    <label
-                                        className="text-sm font-medium text-[var(--text-primary)] mb-1.5"
-                                        style={{
-                                            display: 'block',
-                                            marginBottom: '6px',
-                                        }}
-                                        htmlFor="max-results-select"
-                                    >
-                                        Maximum Results
-                                    </label>
-                                    <select
-                                        id="max-results-select"
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                        value={settings.maxResults}
-                                        onChange={(e) =>
-                                            updateSettings({
-                                                maxResults: Number(e.target.value),
-                                            })
-                                        }
-                                        style={{ width: '100%' }}
-                                    >
-                                        <option value={5}>5 results</option>
-                                        <option value={10}>10 results (recommended)</option>
-                                        <option value={15}>15 results</option>
-                                        <option value={20}>20 results</option>
-                                    </select>
-                                </div>
-
-                                {/* Include Images */}
+                            {isOptionsOpen && (
                                 <div
                                     style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
+                                        padding: '12px',
+                                        borderTop: '1px solid var(--border-color)',
                                     }}
                                 >
-                                    <div>
-                                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
-                                            Include Images
-                                        </div>
-                                        <div className="text-xs text-[var(--text-secondary)]">
-                                            Show image results when available
-                                        </div>
-                                    </div>
-                                    <Toggle
-                                        checked={settings.includeImages}
-                                        onChange={(checked) =>
-                                            updateSettings({ includeImages: checked })
-                                        }
-                                    />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-
-                    {/* API Keys Accordion */}
-                    <div
-                        className="block p-0"
-                        style={{ display: 'block', padding: 0 }}
-                    >
-                        <button
-                            type="button"
-                            onClick={handleApiKeysToggle}
-                            onKeyDown={handleApiKeysKeyDown}
-                            aria-expanded={isApiKeysOpen}
-                            aria-label="Toggle API keys section"
-                            className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
-                        >
-                            <div className="text-left">
-                                <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
-                                    <Key
-                                        size={14}
-                                        style={{
-                                            display: 'inline',
-                                            marginRight: '6px',
-                                            verticalAlign: 'text-bottom',
-                                        }}
-                                    />
-                                    API Key
-                                </div>
-                                <div className="text-xs text-[var(--text-secondary)]">
-                                    {apiKeys.tavily ? 'Configured ✓' : 'Not configured'}
-                                </div>
-                            </div>
-                            {isApiKeysOpen ? (
-                                <ChevronUp size={16} />
-                            ) : (
-                                <ChevronDown size={16} />
-                            )}
-                        </button>
-
-                        {isApiKeysOpen && (
-                            <div
-                                style={{
-                                    padding: '12px',
-                                    borderTop: '1px solid var(--border-color)',
-                                }}
-                            >
-                                {PROVIDERS.map((provider) => (
-                                    <div key={provider.id} style={{ marginBottom: '16px' }}>
-                                        <div
+                                    {/* Search Depth */}
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label
+                                            className="text-sm font-medium text-[var(--text-primary)] mb-1.5"
                                             style={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
+                                                display: 'block',
                                                 marginBottom: '6px',
                                             }}
+                                            htmlFor="search-depth-select"
                                         >
-                                            <label
-                                                className="text-sm font-medium text-[var(--text-primary)] mb-0.5"
-                                                htmlFor={`api-key-${provider.id}`}
-                                            >
-                                                {provider.name} API Key
-                                            </label>
-                                            <a
-                                                href={provider.signupUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    fontSize: '11px',
-                                                    color: 'var(--text-secondary)',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: '4px',
-                                                }}
-                                            >
-                                                Get API key <ExternalLink size={10} />
-                                            </a>
-                                        </div>
-                                        <div
-                                            className="text-xs text-[var(--text-secondary)]"
-                                            style={{ marginBottom: '6px' }}
+                                            Default Search Depth
+                                        </label>
+                                        <Select
+                                            value={settings.defaultSearchDepth}
+                                            onValueChange={(value: 'basic' | 'advanced') =>
+                                                updateSettings({ defaultSearchDepth: value })
+                                            }
                                         >
-                                            {provider.description}
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <input
-                                                id={`api-key-${provider.id}`}
-                                                type="password"
-                                                className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
-                                                placeholder={provider.placeholder}
-                                                value={apiKeys[provider.id] || ''}
-                                                onChange={(e) =>
-                                                    updateApiKey(provider.id, e.target.value)
-                                                }
-                                                style={{ flex: 1 }}
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => testConnection(provider)}
-                                                disabled={isTesting || !apiKeys[provider.id]}
-                                                className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-[13px] font-medium cursor-pointer transition-all hover:bg-white/10 hover:border-white/20"
-                                                aria-label={`Test ${provider.name} API key`}
-                                            >
-                                                {isTesting ? (
-                                                    <Loader2
-                                                        size={12}
-                                                        style={{
-                                                            animation:
-                                                                'spin 1s linear infinite',
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    'Test'
-                                                )}
-                                            </button>
-                                        </div>
+                                            <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                                <SelectValue placeholder="Select search depth" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                                <SelectItem value="basic" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    Basic - Faster, fewer results
+                                                </SelectItem>
+                                                <SelectItem value="advanced" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    Advanced - Thorough, more results
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-                                        {/* Test result display */}
-                                        {testResult && testResult.provider === provider.id && (
+                                    {/* Max Results */}
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <label
+                                            className="text-sm font-medium text-[var(--text-primary)] mb-1.5"
+                                            style={{
+                                                display: 'block',
+                                                marginBottom: '6px',
+                                            }}
+                                            htmlFor="max-results-select"
+                                        >
+                                            Maximum Results
+                                        </label>
+                                        <Select
+                                            value={String(settings.maxResults)}
+                                            onValueChange={(value: string) =>
+                                                updateSettings({ maxResults: Number(value) })
+                                            }
+                                        >
+                                            <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                                <SelectValue placeholder="Select max results" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                                <SelectItem value="5" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    5 results
+                                                </SelectItem>
+                                                <SelectItem value="10" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    10 results (recommended)
+                                                </SelectItem>
+                                                <SelectItem value="15" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    15 results
+                                                </SelectItem>
+                                                <SelectItem value="20" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">
+                                                    20 results
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Include Images */}
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                        }}
+                                    >
+                                        <div>
+                                            <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
+                                                Include Images
+                                            </div>
+                                            <div className="text-xs text-[var(--text-secondary)]">
+                                                Show image results when available
+                                            </div>
+                                        </div>
+                                        <Toggle
+                                            checked={settings.includeImages}
+                                            onChange={(checked) =>
+                                                updateSettings({ includeImages: checked })
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+
+                        {/* API Keys Accordion */}
+                        <div
+                            className="block p-0"
+                            style={{ display: 'block', padding: 0 }}
+                        >
+                            <button
+                                type="button"
+                                onClick={handleApiKeysToggle}
+                                onKeyDown={handleApiKeysKeyDown}
+                                aria-expanded={isApiKeysOpen}
+                                aria-label="Toggle API keys section"
+                                className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
+                            >
+                                <div className="text-left">
+                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
+                                        <Key
+                                            size={14}
+                                            style={{
+                                                display: 'inline',
+                                                marginRight: '6px',
+                                                verticalAlign: 'text-bottom',
+                                            }}
+                                        />
+                                        API Key
+                                    </div>
+                                    <div className="text-xs text-[var(--text-secondary)]">
+                                        {apiKeys.tavily ? 'Configured ✓' : 'Not configured'}
+                                    </div>
+                                </div>
+                                {isApiKeysOpen ? (
+                                    <ChevronUp size={16} />
+                                ) : (
+                                    <ChevronDown size={16} />
+                                )}
+                            </button>
+
+                            {isApiKeysOpen && (
+                                <div
+                                    style={{
+                                        padding: '12px',
+                                        borderTop: '1px solid var(--border-color)',
+                                    }}
+                                >
+                                    {PROVIDERS.map((provider) => (
+                                        <div key={provider.id} style={{ marginBottom: '16px' }}>
                                             <div
                                                 style={{
-                                                    marginTop: '8px',
-                                                    padding: '8px',
-                                                    borderRadius: '6px',
-                                                    fontSize: '12px',
                                                     display: 'flex',
+                                                    justifyContent: 'space-between',
                                                     alignItems: 'center',
-                                                    gap: '6px',
-                                                    background: testResult.success
-                                                        ? 'rgba(34, 197, 94, 0.1)'
-                                                        : 'rgba(239, 68, 68, 0.1)',
-                                                    color: testResult.success
-                                                        ? 'rgb(34, 197, 94)'
-                                                        : 'rgb(239, 68, 68)',
+                                                    marginBottom: '6px',
                                                 }}
                                             >
-                                                {testResult.success ? (
-                                                    <CheckCircle size={14} />
-                                                ) : (
-                                                    <XCircle size={14} />
-                                                )}
-                                                {testResult.message}
+                                                <label
+                                                    className="text-sm font-medium text-[var(--text-primary)] mb-0.5"
+                                                    htmlFor={`api-key-${provider.id}`}
+                                                >
+                                                    {provider.name} API Key
+                                                </label>
+                                                <a
+                                                    href={provider.signupUrl}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        fontSize: '11px',
+                                                        color: 'var(--text-secondary)',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                    }}
+                                                >
+                                                    Get API key <ExternalLink size={10} />
+                                                </a>
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </>
-            )}
+                                            <div
+                                                className="text-xs text-[var(--text-secondary)]"
+                                                style={{ marginBottom: '6px' }}
+                                            >
+                                                {provider.description}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    id={`api-key-${provider.id}`}
+                                                    type="password"
+                                                    className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
+                                                    placeholder={provider.placeholder}
+                                                    value={apiKeys[provider.id] || ''}
+                                                    onChange={(e) =>
+                                                        updateApiKey(provider.id, e.target.value)
+                                                    }
+                                                    style={{ flex: 1 }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => testConnection(provider)}
+                                                    disabled={isTesting || !apiKeys[provider.id]}
+                                                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-[13px] font-medium cursor-pointer transition-all hover:bg-white/10 hover:border-white/20"
+                                                    aria-label={`Test ${provider.name} API key`}
+                                                >
+                                                    {isTesting ? (
+                                                        <Loader2
+                                                            size={12}
+                                                            style={{
+                                                                animation:
+                                                                    'spin 1s linear infinite',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        'Test'
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            {/* Test result display */}
+                                            {testResult && testResult.provider === provider.id && (
+                                                <div
+                                                    style={{
+                                                        marginTop: '8px',
+                                                        padding: '8px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '12px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        background: testResult.success
+                                                            ? 'rgba(34, 197, 94, 0.1)'
+                                                            : 'rgba(239, 68, 68, 0.1)',
+                                                        color: testResult.success
+                                                            ? 'rgb(34, 197, 94)'
+                                                            : 'rgb(239, 68, 68)',
+                                                    }}
+                                                >
+                                                    {testResult.success ? (
+                                                        <CheckCircle size={14} />
+                                                    ) : (
+                                                        <XCircle size={14} />
+                                                    )}
+                                                    {testResult.message}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
 };
 
 export default SearchSettingsSection;

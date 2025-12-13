@@ -8,6 +8,13 @@ import {
     type TextSummarizerSettings as Settings,
 } from '@/utils/settings';
 import { Toggle } from '@/components/shared/inputs/Toggle';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('TextSummarizerSettings');
 
@@ -95,46 +102,58 @@ export const TextSummarizerSettings: React.FC = () => {
                                 {/* Minimum Text Length */}
                                 <div className="mb-3">
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Minimum Text Length</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
-                                        value={settings.minTextLength}
-                                        onChange={(e) => handleSettingChange('minTextLength', Number(e.target.value))}
+                                    <Select
+                                        value={String(settings.minTextLength)}
+                                        onValueChange={(value: string) => handleSettingChange('minTextLength', Number(value))}
                                     >
-                                        <option value={50}>50 characters</option>
-                                        <option value={100}>100 characters</option>
-                                        <option value={200}>200 characters</option>
-                                        <option value={300}>300 characters</option>
-                                        <option value={500}>500 characters</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select minimum length" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="50" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">50 characters</SelectItem>
+                                            <SelectItem value="100" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">100 characters</SelectItem>
+                                            <SelectItem value="200" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">200 characters</SelectItem>
+                                            <SelectItem value="300" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">300 characters</SelectItem>
+                                            <SelectItem value="500" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">500 characters</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* Summary Type */}
                                 <div className="mb-3">
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Summary Type</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
+                                    <Select
                                         value={settings.summaryType}
-                                        onChange={(e) => handleSettingChange('summaryType', e.target.value as Settings['summaryType'])}
+                                        onValueChange={(value: Settings['summaryType']) => handleSettingChange('summaryType', value)}
                                     >
-                                        <option value="tl-dr">TL;DR - Quick summary in 2-3 sentences</option>
-                                        <option value="key-points">Key Points - Bulleted list of main ideas</option>
-                                        <option value="headline">Headline - Single line capture</option>
-                                        <option value="teaser">Teaser - Engaging preview</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select summary type" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="tl-dr" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">TL;DR - Quick summary in 2-3 sentences</SelectItem>
+                                            <SelectItem value="key-points" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Key Points - Bulleted list of main ideas</SelectItem>
+                                            <SelectItem value="headline" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Headline - Single line capture</SelectItem>
+                                            <SelectItem value="teaser" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Teaser - Engaging preview</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
 
                                 {/* Summary Length */}
                                 <div>
                                     <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">Summary Length</div>
-                                    <select
-                                        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg p-2.5 text-[var(--text-primary)] text-sm cursor-pointer focus:outline-none focus:border-[var(--color-secondary)]"
+                                    <Select
                                         value={settings.summaryLength}
-                                        onChange={(e) => handleSettingChange('summaryLength', e.target.value as Settings['summaryLength'])}
+                                        onValueChange={(value: Settings['summaryLength']) => handleSettingChange('summaryLength', value)}
                                     >
-                                        <option value="short">Short (~100 tokens)</option>
-                                        <option value="medium">Medium (~250 tokens)</option>
-                                        <option value="long">Long (~500 tokens)</option>
-                                    </select>
+                                        <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                            <SelectValue placeholder="Select summary length" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                            <SelectItem value="short" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Short (~100 tokens)</SelectItem>
+                                            <SelectItem value="medium" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Medium (~250 tokens)</SelectItem>
+                                            <SelectItem value="long" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">Long (~500 tokens)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
                         )}

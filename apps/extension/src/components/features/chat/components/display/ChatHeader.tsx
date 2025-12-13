@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
+import { ClockIcon } from '@assets/icons/chat/clock';
 import { StreamingWarningDialog } from '../../context/StreamingWarningDialog';
 
 interface ChatHeaderProps {
@@ -147,15 +148,27 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                         </button>
                     )}
 
+
                     {/* Tools / Settings (Wrench) */}
                     {onSettingsClick && (
                         <button
-                            className={headerButtonClasses}
-                            onClick={onSettingsClick}
-                            title="MCP Server Settings"
-                            aria-label="Open MCP settings"
+                        className={headerButtonClasses}
+                        onClick={onSettingsClick}
+                        title="MCP Server Settings"
+                        aria-label="Open MCP settings"
                         >
                             <Wrench size={16} />
+                        </button>
+                    )}
+                    {/* Reminders (Clock) */}
+                    {onRemindersClick && (
+                        <button
+                            className={headerButtonClasses}
+                            onClick={onRemindersClick}
+                            title="Reminders"
+                            aria-label="Open reminders"
+                        >
+                            <ClockIcon size={16} />
                         </button>
                     )}
 
@@ -189,14 +202,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     }}
                                 >
                                     Settings
-                                </MenuItem>
-                                <MenuItem
-                                    onClick={() => {
-                                        setShowHeaderMenu(false);
-                                        onRemindersClick?.();
-                                    }}
-                                >
-                                    Reminders
                                 </MenuItem>
                                 <MenuItem
                                     onClick={() => {

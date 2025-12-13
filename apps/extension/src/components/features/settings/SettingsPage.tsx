@@ -63,8 +63,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.12] [&::-webkit-scrollbar-thumb]:rounded-[3px] hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
         {/* <VoiceSettings /> */}
-        <TTSAndDataSettings />
+        <SupermemorySettings />
         <SearchSettingsSection />
+        <MaxToolCallSettings />
+        <TTSAndDataSettings />
         <ResearchWorkflowSettings />
         <AskAiButtonSettings />
         <TextSummarizerSettings />
@@ -72,8 +74,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <WriteCommandSettings />
 
         {/* <EnabledToolsSettings /> */}
-        <MaxToolCallSettings />
-        <SupermemorySettings />
 
         {/* Social Links */}
         <SocialLinks />

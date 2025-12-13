@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { MessageSquare, Trash2, ChevronDown } from 'lucide-react';
+import { MessageSquare, Trash2 } from 'lucide-react';
 import { createLogger } from '~logger';
 import { getTTSProvider, setTTSProvider, getSuggestionsEnabled, setSuggestionsEnabled } from '@/utils/settings';
 import type { TTSProvider } from '../../../../types/settings';
 import { clearChatHistory, getDBStats } from '../../../../db';
 import { Toggle } from '../../../shared/inputs/Toggle';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/primitives';
 
 const log = createLogger('TTSAndDataSettings');
 
@@ -70,8 +77,7 @@ export const TTSAndDataSettings: React.FC = () => {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     };
 
-    const handleTTSProviderChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = e.target.value as TTSProvider;
+    const handleTTSProviderChange = async (value: TTSProvider) => {
         setTTSProviderState(value);
         try {
             await setTTSProvider(value);
@@ -149,17 +155,26 @@ export const TTSAndDataSettings: React.FC = () => {
                             {TTS_OPTIONS.find(opt => opt.value === ttsProvider)?.description}
                         </div>
                     </div>
-                    <div className="relative w-full">
-                        <select
-                            className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg py-2.5 pl-3 pr-8 text-[var(--text-primary)] text-sm font-medium cursor-pointer focus:outline-none focus:border-[var(--color-secondary)] hover:border-[var(--text-secondary)] transition-all"
+                    <div className="w-full">
+                        <Select
                             value={ttsProvider}
-                            onChange={handleTTSProviderChange}
+                            onValueChange={handleTTSProviderChange}
                         >
-                            {TTS_OPTIONS.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]" />
+                            <SelectTrigger className="w-full bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-primary)]">
+                                <SelectValue placeholder="Select TTS provider" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[var(--bg-tertiary)] border-[var(--border-color)]">
+                                {TTS_OPTIONS.map(opt => (
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                        className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]"
+                                    >
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
