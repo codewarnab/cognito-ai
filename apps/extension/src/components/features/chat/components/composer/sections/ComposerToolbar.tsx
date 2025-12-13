@@ -113,7 +113,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                             background: 'transparent',
                             color: isTooManyTools && !isSearchActive
                                 ? 'var(--color-warning, #f59e0b)'
-                                : 'var(--text-tertiary, #6b7280)',
+                                : activeWorkflow || isSearchActive
+                                    ? 'var(--text-tertiary, #6b7280)'
+                                    : 'var(--text-secondary, #9ca3af)',
                             cursor: activeWorkflow || isSearchActive ? 'not-allowed' : 'pointer',
                             opacity: activeWorkflow || isSearchActive ? 0.5 : 1,
                             transition: 'color 0.15s, opacity 0.15s',

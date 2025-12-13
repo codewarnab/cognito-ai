@@ -4,7 +4,7 @@ import { AskAiButtonSettings } from '@/components/features/settings/components/A
 import { TextSummarizerSettings } from '@/components/features/settings/components/TextSummarizerSettings';
 import { TextRewriterSettings } from '@/components/features/settings/components/TextRewriterSettings';
 import { WriteCommandSettings } from '@/components/features/settings/components/WriteCommandSettings';
-import { AskCommandSettings } from '@/components/features/settings/components/AskCommandSettings';
+
 // import { EnabledToolsSettings } from '@/components/features/settings/components/EnabledToolsSettings';
 import { TTSAndDataSettings } from '@/components/features/settings/components/TTSAndDataSuggestionsSettings';
 import { MaxToolCallSettings } from '@/components/features/settings/components/MaxToolCallSettings';
@@ -70,7 +70,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onBack, onProviderSe
         <TextSummarizerSettings />
         <TextRewriterSettings />
         <WriteCommandSettings />
-        <AskCommandSettings />
+
         {/* <EnabledToolsSettings /> */}
         <MaxToolCallSettings />
         <SupermemorySettings />

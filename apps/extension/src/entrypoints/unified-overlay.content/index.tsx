@@ -1,7 +1,7 @@
 /**
  * Unified Overlay Content Script
  * 
- * Combines ask-command, text-rewriter, and text-summarizer into a single
+ * Combines text-rewriter, text-summarizer, and write-command into a single
  * content script to prevent bundling React and shared dependencies 3x.
  * 
  * Bundle size savings: ~10-15 MB (from ~20MB to ~7MB)

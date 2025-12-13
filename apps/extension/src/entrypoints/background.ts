@@ -29,10 +29,9 @@ import {
     initializeMessageRouter,
     initializeSummarizerPortListener,
     initializeWriterPortListener,
-    initializeRewriterPortListener,
-    initializeAskerPortListener
+    initializeRewriterPortListener
 } from '@/background/messaging/router';
-import { initializeRewriterContextMenu, initializeAskerContextMenu } from '@/background/contextMenu';
+import { initializeRewriterContextMenu } from '@/background/contextMenu';
 import { recoverExtractionQueue } from '@/background/supermemory/extraction/startup';
 import { recoverContentMemoryQueue } from '@/background/supermemory/contentMemory/startup';
 import { initializeWebMCPManager } from '@/background/webmcp/manager';
@@ -65,12 +64,12 @@ export default defineBackground(() => {
     initializeSummarizerPortListener();
     initializeWriterPortListener();
     initializeRewriterPortListener();
-    initializeAskerPortListener();
+
     initializeAlarmListeners();
     initializeNotificationListeners();
     initializeOmnibox();
     initializeRewriterContextMenu();
-    initializeAskerContextMenu();
+
     initializeWebMCPManager();
 
     // ============================================================================

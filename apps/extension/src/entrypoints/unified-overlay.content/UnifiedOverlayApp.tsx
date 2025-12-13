@@ -8,7 +8,6 @@ import { lazy, Suspense, useState, useEffect, type FC } from 'react';
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 
 // Lazy load feature apps - they share React and common dependencies
-const AskCommandApp = lazy(() => import('./AskCommandApp'));
 const TextRewriterApp = lazy(() => import('./TextRewriterApp'));
 const TextSummarizerApp = lazy(() => import('./TextSummarizerApp'));
 const WriteCommandApp = lazy(() => import('./WriteCommandApp'));
@@ -17,12 +16,12 @@ interface UnifiedOverlayAppProps {
     ctx: ContentScriptContext;
 }
 
-type ActiveFeature = 'none' | 'ask' | 'rewriter' | 'summarizer' | 'writer';
+type ActiveFeature = 'none' | 'rewriter' | 'summarizer' | 'writer';
 
 export const UnifiedOverlayApp: FC<UnifiedOverlayAppProps> = ({ ctx }) => {
     // Track which features should be active
     // In a unified approach, all features can coexist but lazy load
-    const [activeFeatures, setActiveFeatures] = useState<Set<ActiveFeature>>(new Set(['ask', 'rewriter', 'summarizer', 'writer']));
+    const [activeFeatures, setActiveFeatures] = useState<Set<ActiveFeature>>(new Set(['rewriter', 'summarizer', 'writer']));
 
     // Listen for feature toggle messages from background if needed
     useEffect(() => {
@@ -47,12 +46,6 @@ export const UnifiedOverlayApp: FC<UnifiedOverlayAppProps> = ({ ctx }) => {
     return (
         <>
             {/* All features render independently within the same Shadow DOM */}
-            {activeFeatures.has('ask') && (
-                <Suspense fallback={null}>
-                    <AskCommandApp ctx={ctx} />
-                </Suspense>
-            )}
-
             {activeFeatures.has('rewriter') && (
                 <Suspense fallback={null}>
                     <TextRewriterApp ctx={ctx} />

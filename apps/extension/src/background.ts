@@ -20,8 +20,8 @@ import { initializeLifecycleEventListeners } from './background/lifecycle';
 import { initializeAlarmListeners } from './background/alarms';
 import { initializeNotificationListeners } from './background/notifications';
 import { initializeOmnibox } from './background/omnibox';
-import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener, initializeRewriterPortListener, initializeAskerPortListener } from './background/messaging/router';
-import { initializeRewriterContextMenu, initializeAskerContextMenu } from './background/contextMenu';
+import { initializeMessageRouter, initializeSummarizerPortListener, initializeWriterPortListener, initializeRewriterPortListener } from './background/messaging/router';
+import { initializeRewriterContextMenu } from './background/contextMenu';
 import { recoverExtractionQueue } from './background/supermemory/extraction/startup';
 import { recoverContentMemoryQueue } from './background/supermemory/contentMemory/startup';
 import { initializeWebMCPManager } from './background/webmcp/manager';
@@ -29,7 +29,7 @@ import { initializeWebMCPManager } from './background/webmcp/manager';
 // Initialize LoggerConfigManager early to load dynamic config from storage
 // This ensures logging respects user preferences before any logs are emitted
 LoggerConfigManager.initialize().catch(err => {
-  console.error('[Background] Failed to initialize LoggerConfigManager:', err);
+    console.error('[Background] Failed to initialize LoggerConfigManager:', err);
 });
 
 const log = createLogger('Background-Orchestrator', 'BACKGROUND');
@@ -53,12 +53,12 @@ initializeMessageRouter();
 initializeSummarizerPortListener();
 initializeWriterPortListener();
 initializeRewriterPortListener();
-initializeAskerPortListener();
+
 initializeAlarmListeners();
 initializeNotificationListeners();
 initializeOmnibox();
 initializeRewriterContextMenu();
-initializeAskerContextMenu();
+
 initializeWebMCPManager();
 
 // ============================================================================
@@ -112,12 +112,12 @@ if (chrome.commands) {
 
 // Recover any stuck extraction items from previous session
 recoverExtractionQueue().catch(err => {
-  log.warn('Failed to recover extraction queue:', err);
+    log.warn('Failed to recover extraction queue:', err);
 });
 
 // Recover any stuck content memory items from previous session
 recoverContentMemoryQueue().catch(err => {
-  log.warn('Failed to recover content memory queue:', err);
+    log.warn('Failed to recover content memory queue:', err);
 });
 
 // ============================================================================

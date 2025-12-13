@@ -12,7 +12,6 @@
 @import '../../styles/features/shared-markdown.css';
 
 /* Feature-specific styles (local copies) */
-@import './ask-command.css';
 @import './text-rewriter.css';
 @import './text-summarizer.css';
 

@@ -17,16 +17,16 @@ export const TIPS = [
     "Enable Supermemory in Settings to let me remember things about you across conversations",
     "Select text on any page to see Summarize and Rewrite options",
     "Type /write in any text field to generate AI content instantly",
-    "Type /ask in any text field to ask questions about the page",
+
     "Configure Tavily API key in Settings for enhanced web search",
     "Adjust max tool calls in Settings to control AI tool usage (max steps)",
     "Set up reminders that trigger at specific times or contexts",
     "Choose basic or advanced search depth in Web Search settings",
-    "Enable Memory Search in /ask to query your Supermemory",
+
     "Customize summary type and length in Text Summarizer settings",
     "Toggle preset buttons in Text Rewriter for quick rewrites",
     "Set minimum text length for Summarizer and Rewriter tools",
-    "Include page context, selection, or visible content in /ask",
+
     "Add YouTube videos by clicking on the attachment icon",
     "Select text on any page to quickly add it as an attachment"
 ];

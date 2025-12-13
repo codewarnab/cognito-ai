@@ -39,9 +39,6 @@ export * from './writeCommand';
 // Rewrite Command types
 export * from './rewriteCommand';
 
-// Ask Command types
-export * from './askCommand';
-
 // Keep existing sidepanel types
 export * from './sidepanel';
 

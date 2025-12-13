@@ -1,7 +1,6 @@
 // Settings & Storage Utilities
 
 export * from './ask-ai-button-visibility';
-export * from './askCommandSettings';
 export * from './localPdfDismissals';
 export * from './loggerConfig';
 export * from './settingsStorage';

@@ -4,7 +4,7 @@
 flowchart TD
     subgraph UI
         Chat["Chat UI / BrainButton"]
-        AskOverlay["Ask / Write / Rewrite Overlays"]
+        Overlays["Write / Rewrite Overlays"]
         Settings["Settings Page"]
     end
 
@@ -24,7 +24,7 @@ flowchart TD
     end
 
     Chat -- "extract facts" --> AddService
-    AskOverlay -- "memory search" --> SearchService
+    Overlays -- "memory search" --> SearchService
     Chat -- "auto-extraction trigger" --> ExtractionQueue
     ExtractionQueue --> ExtractionProcessor
     ExtractionProcessor -- "Gemini extractFacts" --> AddService
@@ -46,7 +46,7 @@ This document explains how **Supermemory** is integrated into the Chrome-AI code
 Supermemory is an external service that stores user-approved memories (facts, preferences, personal context) and offers a semantic search API. In Chrome-AI it is used to:
 
 1. Persist user knowledge across sessions ("Add Memory" flows)
-2. Retrieve relevant memories during AI generation (Writer, Rewriter, Asker)
+2. Retrieve relevant memories during AI generation (Writer, Rewriter)
 3. Perform automatic background extraction from chat threads (Auto-Memory Extraction)
 4. Build long-term **Content Memory** from page interactions (Content Memory subsystem)
 
@@ -82,7 +82,6 @@ src/
 │           ├─ prompts.ts     # templated Gemini prompts for insight extraction
 │           └─ types.ts
 │
-├─ background/asker/  (geminiAsker.ts)
 ├─ background/rewriter/ (geminiRewriter.ts)
 ├─ background/writer/   (geminiWriter.ts)
 └─ ...
@@ -143,7 +142,7 @@ Key points (file: `background/supermemory/extraction/addService.ts`):
 
 ### 4.2 Gemini Function Calling Support
 • `background/supermemory/functionDeclaration.ts` exports `getMemorySearchTool()` – schema for `search_memories` function.
-• `geminiWriter`, `geminiRewriter`, `geminiAsker` can include this tool enabling Gemini to call Supermemory autonomously when **no other built-in tools are active** or when `enableSupermemorySearch` is true.
+• `geminiWriter`, `geminiRewriter` can include this tool enabling Gemini to call Supermemory autonomously when **no other built-in tools are active** or when `enableSupermemorySearch` is true.
 • If built-in tools are active simultaneously, Supermemory search falls back to **pre-search**: we call `searchMemories` from extension, prepend results to user prompt, and pass to Gemini without function calling (Gemini API only allows either tool calling or built-ins, not both).
 
 ---
@@ -206,7 +205,7 @@ This captures **in-page actions** (Writer, Rewriter, Summarizer, etc.) and store
    • Live status indicator: `connected`, `invalid`, `not configured` using `CHECK_SUPERMEMORY_STATUS` background message.
 2. **Tools modal** filters out Supermemory tools for users who haven’t configured it.
 3. **Brain Button** indicates success/ failure, displays saved facts.
-4. Ask/Write/Rewriter overlays have checkboxes for "Use memories"; disabled if Supermemory not ready.
+4. Write/Rewriter overlays have checkboxes for "Use memories"; disabled if Supermemory not ready.
 
 ---
 ## 8. Edge-Case Handling Summary
@@ -219,7 +218,7 @@ This captures **in-page actions** (Writer, Rewriter, Summarizer, etc.) and store
 | **Network failure** | Caught, logged, job marked `failed` with retry up to MAX_RETRIES. |
 | **Browser restart during processing** | `startup.ts` modules reset `processing` → `pending` so alarms can resume. |
 | **Queue overflow** | New items are discarded with `warn`, preventing unbounded storage. |
-| **Concurrent Gemini tools conflict** | Writer/Rewriter/Asker choose between function-calling and pre-search depending on other tools to avoid API incompatibility. |
+| **Concurrent Gemini tools conflict** | Writer/Rewriter choose between function-calling and pre-search depending on other tools to avoid API incompatibility. |
 | **Large fact text** | `addService` truncates to 1024 chars per fact to satisfy API limits; oversized entries logged and skipped. |
 | **Missing memories** | If search returns zero results, prompts omit memory context gracefully. |
 
@@ -243,7 +242,7 @@ This captures **in-page actions** (Writer, Rewriter, Summarizer, etc.) and store
 
 - [ ] Supermemory Settings: enable/disable, store key, invalid key.
 - [ ] Manual BrainButton flow saves facts & shows tooltip states.
-- [ ] Writer/Rewriter/Asker produce richer output with memories (enable vs disable).
+- [ ] Writer/Rewriter produce richer output with memories (enable vs disable).
 - [ ] Auto Extraction queue populates & drains; verifies `autoMemoryMinMessages` threshold.
 - [ ] Content Memory queue processes page interactions, even after browser restart.
 - [ ] Rate-limit & network failures trigger retries.
