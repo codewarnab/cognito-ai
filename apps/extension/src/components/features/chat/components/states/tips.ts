@@ -28,6 +28,7 @@ export const TIPS = [
     "Set minimum text length for Summarizer and Rewriter tools",
 
     "Add YouTube videos by clicking on the attachment icon",
-    "Select text on any page to quickly add it as an attachment"
+    "Select text on any page to quickly add it as an attachment",
+    "Get natural sounding audio by clicking on the audio icon below the message"
 ];
 
