@@ -1,4 +1,6 @@
 import React, { useState, useId } from 'react';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import {
     Dialog,
     DialogContent,
@@ -8,6 +10,16 @@ import {
 } from '../../ui/primitives/dialog/Dialog';
 import type { Reminder, RepeatFrequency } from '../../../actions/reminder/types';
 import { ConfirmDialog } from '../../ui/primitives/dialog/ConfirmDialog';
+import { WheelTimePicker } from '../../ui/primitives/wheel-time-picker/WheelTimePicker';
+import { Calendar } from '../../ui/primitives/calendar/Calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../../ui/primitives/popover/Popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../ui/primitives/select/Select';
 
 interface EditReminderDialogProps {
     isOpen: boolean;
@@ -29,13 +41,8 @@ export const EditReminderDialog: React.FC<EditReminderDialogProps> = ({
 
     // Split date and time
     const [repeat, setRepeat] = useState<RepeatFrequency>(reminder.repeat || 'none');
-    const [date, setDate] = useState(() => {
-        const d = new Date(reminder.when);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    });
+    const [date, setDate] = useState<Date | undefined>(() => new Date(reminder.when));
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [time, setTime] = useState(() => {
         const d = new Date(reminder.when);
         const hours = String(d.getHours()).padStart(2, '0');
@@ -49,9 +56,6 @@ export const EditReminderDialog: React.FC<EditReminderDialogProps> = ({
 
     const titleId = useId();
     const descriptionId = useId();
-    const repeatId = useId();
-    const dateId = useId();
-    const timeId = useId();
 
     const handleSave = () => {
         // Validate title
@@ -61,8 +65,14 @@ export const EditReminderDialog: React.FC<EditReminderDialogProps> = ({
         }
 
         // Combine date and time
-        const dateTimeString = `${date}T${time}`;
-        const when = new Date(dateTimeString).getTime();
+        if (!date) {
+            setError('Please select a date.');
+            return;
+        }
+        const [hours, minutes] = time.split(':').map(Number);
+        const combinedDate = new Date(date);
+        combinedDate.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+        const when = combinedDate.getTime();
         const now = Date.now();
 
         if (isNaN(when) || when <= now) {
@@ -144,38 +154,83 @@ export const EditReminderDialog: React.FC<EditReminderDialogProps> = ({
                         {/* When Section - 3 separate fields */}
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium text-white/70">When</label>
-                            <div className="grid grid-cols-3 gap-2 sm:grid-cols-2">
+                            <div className="flex flex-col gap-2">
                                 {/* Repeat Dropdown */}
-                                <select
-                                    id={repeatId}
-                                    className="w-full px-2.5 py-2 bg-white/5 border border-white/[0.08] rounded-lg text-white text-[13px] transition-all duration-150 box-border focus:outline-none focus:border-[#6496ff]/35 focus:bg-white/[0.07] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2210%22%20height%3D%2210%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%23888%22%20d%3D%22M6%209L1%204h10z%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_8px_center] pr-7 cursor-pointer sm:col-span-full"
-                                    value={repeat}
-                                    onChange={(e) => setRepeat(e.target.value as RepeatFrequency)}
-                                >
-                                    <option value="none">Doesn't repeat</option>
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                    <option value="yearly">Yearly</option>
-                                </select>
+                                <Select value={repeat} onValueChange={(value) => setRepeat(value as RepeatFrequency)}>
+                                    <SelectTrigger className="w-full px-2.5 py-2 h-auto bg-white/5 border-white/[0.08] rounded-lg text-white text-[13px] transition-all duration-150 box-border focus:border-[#6496ff]/35 focus:bg-white/[0.07]">
+                                        <SelectValue placeholder="Repeat" />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-[#1a1f2e] border-white/[0.08] rounded-lg shadow-lg z-[10001]">
+                                        <SelectItem value="none" className="text-white hover:bg-white/[0.08] focus:bg-white/[0.08] focus:text-white">Doesn't repeat</SelectItem>
+                                        <SelectItem value="daily" className="text-white hover:bg-white/[0.08] focus:bg-white/[0.08] focus:text-white">Daily</SelectItem>
+                                        <SelectItem value="weekly" className="text-white hover:bg-white/[0.08] focus:bg-white/[0.08] focus:text-white">Weekly</SelectItem>
+                                        <SelectItem value="monthly" className="text-white hover:bg-white/[0.08] focus:bg-white/[0.08] focus:text-white">Monthly</SelectItem>
+                                        <SelectItem value="yearly" className="text-white hover:bg-white/[0.08] focus:bg-white/[0.08] focus:text-white">Yearly</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {/* Date and Time row */}
+                                <div className="flex gap-2">
+                                    {/* Date Picker */}
+                                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                        <PopoverTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="flex-1 px-2.5 py-2 bg-white/5 border border-white/[0.08] rounded-lg text-white text-[13px] transition-all duration-150 box-border focus:outline-none focus:border-[#6496ff]/35 focus:bg-white/[0.07] flex items-center justify-between gap-1.5 min-w-0"
+                                            >
+                                                <span className="truncate">
+                                                    {date ? format(date, 'dd-MM-yyyy') : 'Pick date'}
+                                                </span>
+                                                <CalendarIcon className="h-3.5 w-3.5 opacity-50 shrink-0" />
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            className="w-auto p-0 bg-[#1a1f2e] border-white/[0.08] rounded-xl shadow-lg z-[10001]"
+                                            align="start"
+                                            sideOffset={4}
+                                        >
+                                            <Calendar
+                                                mode="single"
+                                                selected={date}
+                                                onSelect={(selectedDate) => {
+                                                    setDate(selectedDate);
+                                                    setIsCalendarOpen(false);
+                                                }}
+                                                disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                                                className="rounded-xl bg-[#1a1f2e] text-white [--rdp-accent-color:rgba(100,150,255,0.3)] [--rdp-accent-background-color:rgba(100,150,255,0.15)]"
+                                                classNames={{
+                                                    months: "flex flex-col",
+                                                    month: "space-y-3",
+                                                    caption: "flex justify-center pt-1 relative items-center",
+                                                    caption_label: "text-sm font-medium text-white",
+                                                    nav: "flex items-center gap-1",
+                                                    nav_button: "h-7 w-7 bg-transparent hover:bg-white/[0.08] rounded-md flex items-center justify-center transition-colors",
+                                                    nav_button_previous: "absolute left-1",
+                                                    nav_button_next: "absolute right-1",
+                                                    table: "w-full border-collapse",
+                                                    head_row: "flex",
+                                                    head_cell: "text-white/40 rounded-md w-8 font-normal text-[0.8rem]",
+                                                    row: "flex w-full mt-1",
+                                                    cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-white/[0.08] rounded-md",
+                                                    day: "h-8 w-8 p-0 font-normal text-white/80 hover:bg-white/[0.08] rounded-md transition-colors aria-selected:opacity-100",
+                                                    day_selected: "bg-[#6496ff] text-white hover:bg-[#6496ff] hover:text-white",
+                                                    day_today: "bg-white/[0.08] text-white",
+                                                    day_outside: "text-white/20 opacity-50",
+                                                    day_disabled: "text-white/20 opacity-30 cursor-not-allowed",
+                                                    day_hidden: "invisible",
+                                                }}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
 
-                                {/* Date Picker */}
-                                <input
-                                    id={dateId}
-                                    type="date"
-                                    className="w-full px-2.5 py-2 bg-white/5 border border-white/[0.08] rounded-lg text-white text-[13px] transition-all duration-150 box-border focus:outline-none focus:border-[#6496ff]/35 focus:bg-white/[0.07] text-xs min-w-0 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                                    value={date}
-                                    onChange={(e) => setDate(e.target.value)}
-                                />
-
-                                {/* Time Picker */}
-                                <input
-                                    id={timeId}
-                                    type="time"
-                                    className="w-full px-2.5 py-2 bg-white/5 border border-white/[0.08] rounded-lg text-white text-[13px] transition-all duration-150 box-border focus:outline-none focus:border-[#6496ff]/35 focus:bg-white/[0.07] text-xs min-w-0 [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-50 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                                    value={time}
-                                    onChange={(e) => setTime(e.target.value)}
-                                />
+                                    {/* Time Picker */}
+                                    <div className="flex-1">
+                                        <WheelTimePicker
+                                            value={time}
+                                            onChange={setTime}
+                                            label="Select Time"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

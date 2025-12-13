@@ -29,6 +29,7 @@ export const TIPS = [
 
     "Add YouTube videos by clicking on the attachment icon",
     "Select text on any page to quickly add it as an attachment",
-    "Get natural sounding audio by clicking on the audio icon below the message"
+    "Get natural sounding audio by clicking on the audio icon below the message",
+    "You can edit reminders from reminders panel three dot -> reminders -> edit"
 ];
 
