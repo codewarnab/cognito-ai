@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CopyIcon, type CopyIconHandle } from '@/components/shared/icons/CopyIcon';
 import { VoiceButton } from './VoiceButton';
