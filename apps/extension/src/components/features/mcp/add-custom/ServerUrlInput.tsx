@@ -46,10 +46,12 @@ export const ServerUrlInput: React.FC<ServerUrlInputProps> = ({ value, onChange,
                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)"
               }}>
               <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Examples:</div>
-              <div style={{ fontFamily: "monospace", fontSize: "0.7rem", lineHeight: "1.6" }}>
+              <div style={{ fontFamily: "monospace", fontSize: "0.7rem", lineHeight: "1.6", wordBreak: "break-all" }}>
                 https://api.example.com/mcp
                 <br />
                 https://mcp.example.com/sse
+                <br />
+                https://mcp.example.com/mcp/?apiKey=YOUR_API_KEY
               </div>
             </div>
           )}
