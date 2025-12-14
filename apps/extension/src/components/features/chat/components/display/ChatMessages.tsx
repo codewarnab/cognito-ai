@@ -290,7 +290,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                             const mergedParts = mergeToolParts(message.parts);
 
                                             return (
-                                                <div className="flex flex-col gap-0">
+                                                <div className="flex flex-col gap-2">
                                                     {mergedParts.map((part: any, partIndex: number) => {
                                                         // Render text parts (but skip tab attachment text parts)
                                                         if (part.type === 'text' && part.text) {

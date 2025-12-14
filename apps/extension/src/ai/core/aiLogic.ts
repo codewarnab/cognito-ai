@@ -17,6 +17,7 @@ import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 import { getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import {
   APIError,
@@ -157,7 +158,8 @@ export async function streamAIResponse(params: {
 
               // Check if web search mode is active
               const searchSettings = await getSearchSettings();
-              const hasSearchKey = await hasApiKeyForProvider(searchSettings.defaultProvider);
+              // hasSearchKey is true if user has their own key OR if using backend API key
+              const hasSearchKey = WEB_SEARCH_SELF_API_KEY_HIDDEN || await hasApiKeyForProvider(searchSettings.defaultProvider);
               isSearchModeActive = searchSettings.enabled && hasSearchKey && !workflowConfig;
 
               // DEBUG: Log search mode determination
@@ -351,7 +353,8 @@ export async function streamAIResponse(params: {
 
                 // Re-check search mode settings (may have changed mid-conversation)
                 const currentSearchSettings = await getSearchSettings();
-                const currentHasSearchKey = await hasApiKeyForProvider(currentSearchSettings.defaultProvider);
+                // hasSearchKey is true if user has their own key OR if using backend API key
+                const currentHasSearchKey = WEB_SEARCH_SELF_API_KEY_HIDDEN || await hasApiKeyForProvider(currentSearchSettings.defaultProvider);
                 const currentSearchModeActive = currentSearchSettings.enabled && currentHasSearchKey && !workflowConfig;
 
                 // Re-check tools mode (chat vs agent)
