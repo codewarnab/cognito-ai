@@ -17,6 +17,7 @@ import {
     getApiKeyForProvider,
 } from '@/utils/settings/searchSettings';
 import type { SearchResults, SearchResultItem, SearchResultImage } from '@/search/types';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
 const log = createLogger('Tool-DeepWebSearch');
 
@@ -106,7 +107,8 @@ async function executeDeepWebSearch(input: DeepSearchParams): Promise<DeepSearch
     const settings = await getSearchSettings();
     const apiKey = await getApiKeyForProvider(settings.defaultProvider);
 
-    if (!apiKey) {
+    // When using backend provider (WEB_SEARCH_SELF_API_KEY_HIDDEN), no local API key is needed
+    if (!WEB_SEARCH_SELF_API_KEY_HIDDEN && !apiKey) {
         log.warn('No API key configured');
         return { results: [], images: [], query: queries.join(' | '), number_of_results: 0, executed_queries: queries, unique_results: 0 };
     }
@@ -115,7 +117,7 @@ async function executeDeepWebSearch(input: DeepSearchParams): Promise<DeepSearch
     const resultsPerQuery = Math.max(5, Math.floor(15 / queries.length));
 
     const searchPromises = queries.map((query) =>
-        executeSingleSearch(query, apiKey, settings.defaultProvider, resultsPerQuery, searchDepth, include_domains ?? [], exclude_domains ?? [])
+        executeSingleSearch(query, apiKey || '', settings.defaultProvider, resultsPerQuery, searchDepth, include_domains ?? [], exclude_domains ?? [])
     );
 
     try {

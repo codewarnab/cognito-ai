@@ -5,6 +5,7 @@
  * in a single execution step, reducing round-trips and improving efficiency.
  * 
  * Security: Code is validated using AST analysis before execution.
+ * Execution: Code is executed in a sandboxed iframe to comply with MV3 CSP.
  */
 
 import { z } from 'zod';
@@ -13,18 +14,30 @@ import { validateCode } from './validateCode';
 import { getAllTools } from '../registryUtils';
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { getWebMCPToolsFromBackground } from '../webmcpTools';
+import { executeInSandbox, type ExecutionResult } from './SandboxBridge';
 
 const log = createLogger('ExecuteTools');
 
+/** Store for active abort controllers to cancel pending sandbox operations */
+const pendingOperations = new Map<string, { cancelled: boolean }>();
+
 /**
- * Execute validated JavaScript code with access to tools
+ * Execute validated JavaScript code with access to tools via sandbox.
+ * Uses the SandboxBridge to execute code in an isolated iframe that permits
+ * `new Function()` and `eval()`, which are blocked by MV3 CSP in extension pages.
  */
 async function executeToolsCode(
     code: string,
     abortSignal?: AbortSignal
 ): Promise<{ output: string; success: boolean; error?: string }> {
+    // Generate a unique operation ID for abort tracking
+    const operationId = `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const operationState = { cancelled: false };
+    pendingOperations.set(operationId, operationState);
+
     try {
-        // Step 1: Validate the code before execution
+        // Step 1: Validate the code before sending to sandbox
+        // This runs in the main thread BEFORE code is sent to sandbox
         const validation = validateCode(code);
         if (!validation.isValid) {
             const errorMsg = `Code validation failed:\n${validation.errors.join('\n')}`;
@@ -33,6 +46,15 @@ async function executeToolsCode(
                 output: errorMsg,
                 success: false,
                 error: 'VALIDATION_FAILED',
+            };
+        }
+
+        // Check abort signal before proceeding
+        if (abortSignal?.aborted) {
+            return {
+                output: 'Operation cancelled',
+                success: false,
+                error: 'ABORTED',
             };
         }
 
@@ -59,62 +81,92 @@ async function executeToolsCode(
 
         // Combine all tools
         const allTools = { ...extensionTools, ...mcpTools, ...webmcpTools };
+        const availableToolNames = Object.keys(allTools);
 
-        // Step 3: Wrap tools so they can be called directly as functions
-        // IMPORTANT: We wrap in anonymous functions to prevent toString() from exposing implementation
-        const wrappedTools: Record<string, any> = {};
-        for (const [name, tool] of Object.entries(allTools)) {
-            // Create a wrapper function that hides the original implementation
-            const wrapper = async (...args: any[]) => {
-                // Check abort before each tool call
-                if (abortSignal?.aborted) {
-                    throw new Error('Operation cancelled');
-                }
-                log.info(`Executing tool from code: ${name}`, { args });
-                // Handle both direct call and .execute() patterns
-                return await tool.execute(...args);
-            };
+        log.info('Executing code via sandbox with tools:', {
+            codeLength: code.length,
+            availableTools: availableToolNames.length,
+        });
 
-            // Make the tool callable directly
-            wrappedTools[name] = wrapper;
+        // Step 3: Create the tool executor callback
+        // This is called by the sandbox bridge when code calls a tool
+        const toolExecutor = async (toolName: string, args: unknown[]): Promise<unknown> => {
+            // Check abort signal before executing tool
+            if (abortSignal?.aborted || operationState.cancelled) {
+                throw new Error('Operation cancelled');
+            }
 
-            // Also keep the original structure for tools.name.execute() pattern
-            wrappedTools[name].execute = wrapper;
-            wrappedTools[name].description = tool.description;
+            const tool = allTools[toolName];
+            if (!tool) {
+                throw new Error(`Tool not found: ${toolName}`);
+            }
+
+            log.info(`Executing tool from sandbox: ${toolName}`, { args });
+
+            // Execute the tool - args is an array, typically with a single object argument
+            const result = await tool.execute(...args);
+            return result;
+        };
+
+        // Step 4: Set up abort signal listener
+        const abortHandler = () => {
+            operationState.cancelled = true;
+            log.info('Operation aborted by signal');
+        };
+
+        if (abortSignal) {
+            abortSignal.addEventListener('abort', abortHandler, { once: true });
         }
 
-        log.info('Executing code with tools:', {
-            codeLength: code.length,
-            availableTools: Object.keys(wrappedTools).length,
-        });
+        try {
+            // Step 5: Execute code in the sandbox with abort signal support
+            const sandboxResult: ExecutionResult = await executeInSandbox(
+                code,
+                availableToolNames,
+                toolExecutor,
+                { abortSignal }
+            );
 
-        // Step 4: Create the async function with tools in scope
-        // eslint-disable-next-line no-new-func
-        const asyncFunc = new Function(
-            'tools',
-            `return (async () => {
-${code}
-            })();`
-        );
+            // Step 6: Format and return the result
+            if (!sandboxResult.success) {
+                // Include detailed error information from sandbox
+                let errorOutput = sandboxResult.error || 'Unknown sandbox error';
 
-        // Step 5: Execute the function with the wrapped tools context
-        const result = await asyncFunc(wrappedTools);
+                // Add error details if available
+                if (sandboxResult.errorDetails) {
+                    errorOutput += `\n\nError Type: ${sandboxResult.errorDetails.type}`;
+                    if (sandboxResult.errorDetails.context) {
+                        errorOutput += `\nContext: ${JSON.stringify(sandboxResult.errorDetails.context, null, 2)}`;
+                    }
+                }
 
-        // Step 6: Format and return the result
-        const output =
-            typeof result === 'object'
-                ? JSON.stringify(result, null, 2)
-                : String(result ?? 'undefined');
+                return {
+                    output: errorOutput,
+                    success: false,
+                    error: sandboxResult.errorCode || sandboxResult.error,
+                };
+            }
 
-        log.info('Code execution completed:', {
-            outputLength: output.length,
-            resultType: typeof result,
-        });
+            const output =
+                typeof sandboxResult.result === 'object'
+                    ? JSON.stringify(sandboxResult.result, null, 2)
+                    : String(sandboxResult.result ?? 'undefined');
 
-        return {
-            output,
-            success: true,
-        };
+            log.info('Sandbox code execution completed:', {
+                outputLength: output.length,
+                resultType: typeof sandboxResult.result,
+            });
+
+            return {
+                output,
+                success: true,
+            };
+        } finally {
+            // Clean up abort listener
+            if (abortSignal) {
+                abortSignal.removeEventListener('abort', abortHandler);
+            }
+        }
     } catch (error: any) {
         log.error('Code execution failed:', error);
         return {
@@ -122,6 +174,9 @@ ${code}
             success: false,
             error: error.message,
         };
+    } finally {
+        // Clean up operation tracking
+        pendingOperations.delete(operationId);
     }
 }
 

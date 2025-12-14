@@ -18,6 +18,7 @@ import {
     getApiKeyForProvider,
 } from '@/utils/settings/searchSettings';
 import type { SearchResults } from '@/search/types';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
 const log = createLogger('Tool-WebSearch');
 
@@ -61,24 +62,26 @@ async function executeWebSearch(input: SearchParams): Promise<SearchResults> {
         include_domains,
         exclude_domains,
     } = input;
-    
+
     log.info('🔍 executeWebSearch called with input', {
         query: query.substring(0, 50),
         search_depth_from_input: search_depth,
         max_results_from_input: max_results,
     });
-    
+
     const settings = await getSearchSettings();
-    
+
     log.info('🔍 Settings loaded from storage', {
         defaultSearchDepth: settings.defaultSearchDepth,
         maxResults: settings.maxResults,
         provider: settings.defaultProvider,
     });
-    
+
     const apiKey = await getApiKeyForProvider(settings.defaultProvider);
 
-    if (!apiKey) {
+    // When using backend provider (WEB_SEARCH_SELF_API_KEY_HIDDEN), no local API key is needed
+    // The backend has its own server-side API key
+    if (!WEB_SEARCH_SELF_API_KEY_HIDDEN && !apiKey) {
         log.warn('No API key configured for search provider', {
             provider: settings.defaultProvider,
         });
@@ -90,7 +93,8 @@ async function executeWebSearch(input: SearchParams): Promise<SearchResults> {
         };
     }
 
-    const provider = createSearchProvider(settings.defaultProvider, apiKey);
+    // For backend provider, apiKey can be empty string - the provider will use server-side key
+    const provider = createSearchProvider(settings.defaultProvider, apiKey || '');
 
     const maxResults = max_results ?? settings.maxResults;
     const searchDepth = search_depth ?? settings.defaultSearchDepth;

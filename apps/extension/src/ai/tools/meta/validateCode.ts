@@ -2,7 +2,7 @@
  * AST-based Code Validation for Adaptive Mode
  * Validates JavaScript code before execution to prevent dangerous operations
  * 
- * Based on ai-code-tools security validation approach
+ *  validation approach
  */
 
 import * as acorn from 'acorn';
@@ -67,9 +67,16 @@ const FORBIDDEN_IDENTIFIERS = new Set([
 /**
  * Validate JavaScript code using AST analysis
  * Blocks dangerous patterns before execution
+ * 
+ * Security layers:
+ * 1. Block FORBIDDEN_IDENTIFIERS (explicit blocklist)
+ * 2. Only allow ALLOWED_GLOBALS (explicit allowlist)
+ * 3. Block dangerous patterns (constructor chains, infinite loops)
  */
 export function validateCode(code: string): ValidationResult {
     const errors: string[] = [];
+    // Track locally declared variables (these are allowed to be accessed)
+    const declaredVariables = new Set<string>();
 
     try {
         // Wrap code in async function context for parsing
@@ -82,7 +89,88 @@ export function validateCode(code: string): ValidationResult {
             sourceType: 'script',
         });
 
-        // Walk the AST to check for forbidden patterns
+        // First pass: collect all declared variables
+        function collectDeclarations(node: any) {
+            if (!node || typeof node !== 'object') return;
+
+            // Variable declarations: const x, let y, var z
+            if (node.type === 'VariableDeclaration') {
+                for (const decl of node.declarations) {
+                    if (decl.id.type === 'Identifier') {
+                        declaredVariables.add(decl.id.name);
+                    } else if (decl.id.type === 'ObjectPattern') {
+                        // Destructuring: const { a, b } = obj
+                        collectPatternNames(decl.id, declaredVariables);
+                    } else if (decl.id.type === 'ArrayPattern') {
+                        // Array destructuring: const [a, b] = arr
+                        collectPatternNames(decl.id, declaredVariables);
+                    }
+                }
+            }
+
+            // Function declarations: function foo() {}
+            if (node.type === 'FunctionDeclaration' && node.id) {
+                declaredVariables.add(node.id.name);
+            }
+
+            // Function parameters
+            if (node.type === 'FunctionDeclaration' || node.type === 'FunctionExpression' || node.type === 'ArrowFunctionExpression') {
+                for (const param of node.params || []) {
+                    if (param.type === 'Identifier') {
+                        declaredVariables.add(param.name);
+                    } else {
+                        collectPatternNames(param, declaredVariables);
+                    }
+                }
+            }
+
+            // Catch clause parameter: catch (e) {}
+            if (node.type === 'CatchClause' && node.param) {
+                if (node.param.type === 'Identifier') {
+                    declaredVariables.add(node.param.name);
+                }
+            }
+
+            // Recursively collect from child nodes
+            for (const key in node) {
+                if (key === 'parent') continue;
+                const child = node[key];
+                if (Array.isArray(child)) {
+                    child.forEach(c => collectDeclarations(c));
+                } else if (child && typeof child === 'object') {
+                    collectDeclarations(child);
+                }
+            }
+        }
+
+        // Helper to collect names from destructuring patterns
+        function collectPatternNames(pattern: any, names: Set<string>) {
+            if (!pattern) return;
+            if (pattern.type === 'Identifier') {
+                names.add(pattern.name);
+            } else if (pattern.type === 'ObjectPattern') {
+                for (const prop of pattern.properties) {
+                    if (prop.type === 'Property') {
+                        collectPatternNames(prop.value, names);
+                    } else if (prop.type === 'RestElement') {
+                        collectPatternNames(prop.argument, names);
+                    }
+                }
+            } else if (pattern.type === 'ArrayPattern') {
+                for (const element of pattern.elements) {
+                    if (element) collectPatternNames(element, names);
+                }
+            } else if (pattern.type === 'RestElement') {
+                collectPatternNames(pattern.argument, names);
+            } else if (pattern.type === 'AssignmentPattern') {
+                collectPatternNames(pattern.left, names);
+            }
+        }
+
+        // Collect all declarations first
+        collectDeclarations(ast);
+
+        // Second pass: validate the code
         function walk(node: any) {
             if (!node || typeof node !== 'object') return;
 
@@ -99,6 +187,42 @@ export function validateCode(code: string): ValidationResult {
             // Check for forbidden identifiers
             if (node.type === 'Identifier' && FORBIDDEN_IDENTIFIERS.has(node.name)) {
                 errors.push(`Forbidden identifier: ${node.name}`);
+            }
+
+            // Check that global identifier access is in ALLOWED_GLOBALS or is locally declared
+            // Only check identifiers that are being "read" (not declarations or property names)
+            if (node.type === 'Identifier') {
+                const parent = node.parent;
+                const name = node.name;
+
+                // Skip if this is a declaration target
+                if (parent?.type === 'VariableDeclarator' && parent.id === node) {
+                    // This is the left side of a declaration, skip
+                }
+                // Skip if this is a property key in an object
+                else if (parent?.type === 'Property' && parent.key === node && !parent.computed) {
+                    // This is a property key, skip
+                }
+                // Skip if this is a member expression property (not computed)
+                else if (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed) {
+                    // This is like obj.foo - foo is a property, not a global
+                }
+                // Skip function declaration names
+                else if (parent?.type === 'FunctionDeclaration' && parent.id === node) {
+                    // This is a function name declaration
+                }
+                // Skip function parameter definitions
+                else if ((parent?.type === 'FunctionDeclaration' || parent?.type === 'FunctionExpression' || parent?.type === 'ArrowFunctionExpression') && parent.params?.includes(node)) {
+                    // This is a parameter definition
+                }
+                // Skip catch clause parameter
+                else if (parent?.type === 'CatchClause' && parent.param === node) {
+                    // This is a catch parameter
+                }
+                // Otherwise, this is an identifier access - validate it
+                else if (!declaredVariables.has(name) && !ALLOWED_GLOBALS.has(name)) {
+                    errors.push(`Access to unauthorized global: '${name}'. Only allowed globals: ${Array.from(ALLOWED_GLOBALS).join(', ')}`);
+                }
             }
 
             // Check for member expressions accessing forbidden globals

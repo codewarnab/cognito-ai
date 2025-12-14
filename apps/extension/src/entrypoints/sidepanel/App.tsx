@@ -62,6 +62,9 @@ import {
     useOnboardingTestHandles,
 } from "@/hooks/sidepanel";
 
+// Sandbox initialization hook
+import { useSandbox } from "@/hooks/sandbox";
+
 // Utils
 import { handleAPIError } from "@/utils/errors";
 
@@ -75,6 +78,15 @@ function AIChatContent() {
     // Register actions and workflows
     useRegisterAllActions();
     useRegisterAllWorkflows();
+
+    // Initialize sandbox bridge for adaptive mode code execution
+    // This creates the hidden iframe early so it's ready when needed
+    const { isReady: isSandboxReady, error: sandboxError } = useSandbox();
+    if (sandboxError) {
+        log.warn('Sandbox initialization failed:', sandboxError);
+    } else if (isSandboxReady) {
+        log.debug('Sandbox is ready for code execution');
+    }
 
     // UI State - other states not managed by the hook
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);

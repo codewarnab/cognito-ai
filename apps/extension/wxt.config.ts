@@ -157,7 +157,16 @@ export default defineConfig({
             "keyword": "ai"
         },
         content_security_policy: {
-            "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+            "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+            // Sandbox pages have a more relaxed CSP that allows unsafe-eval
+            // This is used by the sandbox-executor for dynamic code execution
+            "sandbox": "sandbox allow-scripts allow-forms; script-src 'self' 'unsafe-inline' 'unsafe-eval'; child-src 'self';"
+        },
+        // Sandbox pages run in a unique origin with no chrome.* API access
+        // They can use eval() and new Function() for dynamic code execution
+        // WXT compiles entrypoint folders like "sandbox-executor" to "sandbox-executor.html" in root
+        sandbox: {
+            pages: ["sandbox-executor.html"]
         },
 
         // Web accessible resources - files that can be accessed from web pages

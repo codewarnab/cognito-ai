@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sandbox Executor</title>
+    <!-- 
+        This is a sandboxed page for executing dynamic JavaScript code.
+        It runs in a unique origin with no access to chrome.* APIs.
+        Communication with the main extension happens via postMessage.
+    -->
+</head>
+
+<body>
+    <script type="module" src="./executor.ts"></script>
+</body>
+
+</html>
