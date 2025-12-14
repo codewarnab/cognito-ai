@@ -25,7 +25,7 @@ interface CopilotChatWindowProps {
     onSettingsClick?: () => void;
     onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
-    onNewThreadClick?: () => void;
+    onNewThreadClick?: (forceCreate?: boolean) => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
@@ -145,7 +145,7 @@ export function CopilotChatWindow({
     }, []);
 
     // Clear conversation mode on new thread
-    const handleNewThread = () => {
+    const handleNewThread = (forceCreate?: boolean) => {
         clearConversationStartMode();
         setModelState(prev => ({
             ...prev,
@@ -157,7 +157,7 @@ export function CopilotChatWindow({
         clearAllDismissals();
 
         if (onNewThreadClick) {
-            onNewThreadClick();
+            onNewThreadClick(forceCreate);
         }
     };
 

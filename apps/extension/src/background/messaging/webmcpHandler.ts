@@ -46,7 +46,7 @@ export function isWebMCPMessage(message: unknown): boolean {
  * Handle WebMCP-related messages
  */
 export async function handleWebMCPMessage(
-  message: { type: string; [key: string]: unknown },
+  message: { type: string;[key: string]: unknown },
   sender: chrome.runtime.MessageSender,
   sendResponse: (response?: unknown) => void
 ): Promise<void> {
@@ -85,19 +85,33 @@ export async function handleWebMCPMessage(
       case 'webmcp/tools/list': {
         const allTools = getActiveTabWebMCPTools();
         const disabledTools = await getDisabledTools();
-        
+
         // Filter out disabled tools for AI consumption
         const enabledTools = allTools.filter(
           (tool) => !disabledTools.includes(tool.name)
         );
-        
+
         log.debug('Returning WebMCP tools list', {
           total: allTools.length,
           enabled: enabledTools.length,
           disabled: disabledTools.length,
         });
-        
+
         sendResponse({ success: true, data: { tools: enabledTools } });
+        break;
+      }
+
+      case 'webmcp/tools/list-all': {
+        // Return ALL tools for UI consumption (shows all tools with enable/disable toggles)
+        const allTools = getActiveTabWebMCPTools();
+        const disabledTools = await getDisabledTools();
+
+        log.debug('Returning all WebMCP tools for UI', {
+          total: allTools.length,
+          disabled: disabledTools.length,
+        });
+
+        sendResponse({ success: true, data: { tools: allTools, disabledTools } });
         break;
       }
 
@@ -118,7 +132,7 @@ export async function handleWebMCPMessage(
             await setActiveTab(activeTab.id);
           }
         }
-        
+
         // Send refresh request to the active tab
         if (state.activeTabId) {
           try {

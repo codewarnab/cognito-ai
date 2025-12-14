@@ -5,7 +5,7 @@ import { getEnabledToolsOverride, setEnabledToolsOverride, getToolsMode, setTool
 import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS, WORKFLOW_ONLY_TOOLS, WEB_SEARCH_ONLY_TOOLS } from '@/constants/toolDescriptions';
 import { isSupermemoryReady } from '@/utils/supermemory';
 import { useWebMCPTools } from '@/hooks/webmcp';
-import { CHAT_MODE_TOOLS, AGENT_MODE_TOOLS, TOOL_WARNING_THRESHOLD } from './constants';
+import { CHAT_MODE_TOOLS, AGENT_MODE_TOOLS, ADAPTIVE_MODE_TOOLS, ADAPTIVE_ONLY_TOOLS, TOOL_WARNING_THRESHOLD } from './constants';
 import type { ToolMode, McpToolWithServer } from './types';
 
 const log = createLogger('ToolsPopover');
@@ -55,6 +55,11 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
             enabledList.every(t => agentSet.has(t));
         if (isAgentMode) return 'agent';
 
+        const adaptiveSet = new Set(ADAPTIVE_MODE_TOOLS);
+        const isAdaptiveMode = enabledList.length === ADAPTIVE_MODE_TOOLS.length &&
+            enabledList.every(t => adaptiveSet.has(t));
+        if (isAdaptiveMode) return 'adaptive';
+
         return null;
     }, []);
 
@@ -67,6 +72,8 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
             toolsToEnable = [...CHAT_MODE_TOOLS];
         } else if (mode === 'agent') {
             toolsToEnable = [...AGENT_MODE_TOOLS];
+        } else if (mode === 'adaptive') {
+            toolsToEnable = [...ADAPTIVE_MODE_TOOLS];
         }
 
         if (!supermemoryConfigured) {
@@ -224,7 +231,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
             checkSupermemory();
             loadMcpTools();
         }
-        
+
         if (!isOpen) {
             // Reset the flag when modal closes so tools reload on next open
             hasLoadedToolsRef.current = false;
@@ -234,7 +241,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     // Separate effect for WebMCP discovery to avoid re-triggering loadTools
     useEffect(() => {
         if (!isOpen) return;
-        
+
         refreshWebMCPTools();
 
         const checkAndDiscoverWebMCP = async () => {
@@ -422,6 +429,11 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     const groupedTools = useMemo(() => {
         const groups: Record<string, string[]> = {};
         filteredTools.forEach(tool => {
+            // Hide adaptive-only tools (discoverTools, executeTools) when not in adaptive mode
+            if (currentMode !== 'adaptive' && ADAPTIVE_ONLY_TOOLS.includes(tool)) {
+                return;
+            }
+
             let category = 'Other';
             for (const [cat, tools] of Object.entries(TOOL_CATEGORIES)) {
                 if (tools.includes(tool)) {
@@ -435,7 +447,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
             groups[category]!.push(tool);
         });
         return groups;
-    }, [filteredTools]);
+    }, [filteredTools, currentMode]);
 
     useEffect(() => {
         if (toolSearchQuery) {

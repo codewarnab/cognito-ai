@@ -27,6 +27,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/primitives';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
 const log = createLogger('SearchSettingsSection', 'SETTINGS');
 
@@ -392,151 +393,153 @@ export const SearchSettingsSection: React.FC = () => {
                         </div>
 
 
-                        {/* API Keys Accordion */}
-                        <div
-                            className="block p-0"
-                            style={{ display: 'block', padding: 0 }}
-                        >
-                            <button
-                                type="button"
-                                onClick={handleApiKeysToggle}
-                                onKeyDown={handleApiKeysKeyDown}
-                                aria-expanded={isApiKeysOpen}
-                                aria-label="Toggle API keys section"
-                                className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
+                        {/* API Keys Accordion - Hidden when using backend API key */}
+                        {!WEB_SEARCH_SELF_API_KEY_HIDDEN && (
+                            <div
+                                className="block p-0"
+                                style={{ display: 'block', padding: 0 }}
                             >
-                                <div className="text-left">
-                                    <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
-                                        <Key
-                                            size={14}
-                                            style={{
-                                                display: 'inline',
-                                                marginRight: '6px',
-                                                verticalAlign: 'text-bottom',
-                                            }}
-                                        />
-                                        API Key
-                                    </div>
-                                    <div className="text-xs text-[var(--text-secondary)]">
-                                        {apiKeys.tavily ? 'Configured ✓' : 'Not configured'}
-                                    </div>
-                                </div>
-                                {isApiKeysOpen ? (
-                                    <ChevronUp size={16} />
-                                ) : (
-                                    <ChevronDown size={16} />
-                                )}
-                            </button>
-
-                            {isApiKeysOpen && (
-                                <div
-                                    style={{
-                                        padding: '12px',
-                                        borderTop: '1px solid var(--border-color)',
-                                    }}
+                                <button
+                                    type="button"
+                                    onClick={handleApiKeysToggle}
+                                    onKeyDown={handleApiKeysKeyDown}
+                                    aria-expanded={isApiKeysOpen}
+                                    aria-label="Toggle API keys section"
+                                    className="w-full flex justify-between items-center p-3 bg-transparent border-none cursor-pointer text-inherit transition-colors hover:bg-white/5"
                                 >
-                                    {PROVIDERS.map((provider) => (
-                                        <div key={provider.id} style={{ marginBottom: '16px' }}>
-                                            <div
+                                    <div className="text-left">
+                                        <div className="text-sm font-medium text-[var(--text-primary)] mb-0.5">
+                                            <Key
+                                                size={14}
                                                 style={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'center',
-                                                    marginBottom: '6px',
+                                                    display: 'inline',
+                                                    marginRight: '6px',
+                                                    verticalAlign: 'text-bottom',
                                                 }}
-                                            >
-                                                <label
-                                                    className="text-sm font-medium text-[var(--text-primary)] mb-0.5"
-                                                    htmlFor={`api-key-${provider.id}`}
-                                                >
-                                                    {provider.name} API Key
-                                                </label>
-                                                <a
-                                                    href={provider.signupUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    style={{
-                                                        fontSize: '11px',
-                                                        color: 'var(--text-secondary)',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: '4px',
-                                                    }}
-                                                >
-                                                    Get API key <ExternalLink size={10} />
-                                                </a>
-                                            </div>
-                                            <div
-                                                className="text-xs text-[var(--text-secondary)]"
-                                                style={{ marginBottom: '6px' }}
-                                            >
-                                                {provider.description}
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input
-                                                    id={`api-key-${provider.id}`}
-                                                    type="password"
-                                                    className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
-                                                    placeholder={provider.placeholder}
-                                                    value={apiKeys[provider.id] || ''}
-                                                    onChange={(e) =>
-                                                        updateApiKey(provider.id, e.target.value)
-                                                    }
-                                                    style={{ flex: 1 }}
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => testConnection(provider)}
-                                                    disabled={isTesting || !apiKeys[provider.id]}
-                                                    className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-[13px] font-medium cursor-pointer transition-all hover:bg-white/10 hover:border-white/20"
-                                                    aria-label={`Test ${provider.name} API key`}
-                                                >
-                                                    {isTesting ? (
-                                                        <Loader2
-                                                            size={12}
-                                                            style={{
-                                                                animation:
-                                                                    'spin 1s linear infinite',
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        'Test'
-                                                    )}
-                                                </button>
-                                            </div>
+                                            />
+                                            API Key
+                                        </div>
+                                        <div className="text-xs text-[var(--text-secondary)]">
+                                            {apiKeys.tavily ? 'Configured ✓' : 'Not configured'}
+                                        </div>
+                                    </div>
+                                    {isApiKeysOpen ? (
+                                        <ChevronUp size={16} />
+                                    ) : (
+                                        <ChevronDown size={16} />
+                                    )}
+                                </button>
 
-                                            {/* Test result display */}
-                                            {testResult && testResult.provider === provider.id && (
+                                {isApiKeysOpen && (
+                                    <div
+                                        style={{
+                                            padding: '12px',
+                                            borderTop: '1px solid var(--border-color)',
+                                        }}
+                                    >
+                                        {PROVIDERS.map((provider) => (
+                                            <div key={provider.id} style={{ marginBottom: '16px' }}>
                                                 <div
                                                     style={{
-                                                        marginTop: '8px',
-                                                        padding: '8px',
-                                                        borderRadius: '6px',
-                                                        fontSize: '12px',
                                                         display: 'flex',
+                                                        justifyContent: 'space-between',
                                                         alignItems: 'center',
-                                                        gap: '6px',
-                                                        background: testResult.success
-                                                            ? 'rgba(34, 197, 94, 0.1)'
-                                                            : 'rgba(239, 68, 68, 0.1)',
-                                                        color: testResult.success
-                                                            ? 'rgb(34, 197, 94)'
-                                                            : 'rgb(239, 68, 68)',
+                                                        marginBottom: '6px',
                                                     }}
                                                 >
-                                                    {testResult.success ? (
-                                                        <CheckCircle size={14} />
-                                                    ) : (
-                                                        <XCircle size={14} />
-                                                    )}
-                                                    {testResult.message}
+                                                    <label
+                                                        className="text-sm font-medium text-[var(--text-primary)] mb-0.5"
+                                                        htmlFor={`api-key-${provider.id}`}
+                                                    >
+                                                        {provider.name} API Key
+                                                    </label>
+                                                    <a
+                                                        href={provider.signupUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            fontSize: '11px',
+                                                            color: 'var(--text-secondary)',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                        }}
+                                                    >
+                                                        Get API key <ExternalLink size={10} />
+                                                    </a>
                                                 </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                                <div
+                                                    className="text-xs text-[var(--text-secondary)]"
+                                                    style={{ marginBottom: '6px' }}
+                                                >
+                                                    {provider.description}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <input
+                                                        id={`api-key-${provider.id}`}
+                                                        type="password"
+                                                        className="flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--color-secondary)]"
+                                                        placeholder={provider.placeholder}
+                                                        value={apiKeys[provider.id] || ''}
+                                                        onChange={(e) =>
+                                                            updateApiKey(provider.id, e.target.value)
+                                                        }
+                                                        style={{ flex: 1 }}
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => testConnection(provider)}
+                                                        disabled={isTesting || !apiKeys[provider.id]}
+                                                        className="px-3 py-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] text-[13px] font-medium cursor-pointer transition-all hover:bg-white/10 hover:border-white/20"
+                                                        aria-label={`Test ${provider.name} API key`}
+                                                    >
+                                                        {isTesting ? (
+                                                            <Loader2
+                                                                size={12}
+                                                                style={{
+                                                                    animation:
+                                                                        'spin 1s linear infinite',
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            'Test'
+                                                        )}
+                                                    </button>
+                                                </div>
+
+                                                {/* Test result display */}
+                                                {testResult && testResult.provider === provider.id && (
+                                                    <div
+                                                        style={{
+                                                            marginTop: '8px',
+                                                            padding: '8px',
+                                                            borderRadius: '6px',
+                                                            fontSize: '12px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '6px',
+                                                            background: testResult.success
+                                                                ? 'rgba(34, 197, 94, 0.1)'
+                                                                : 'rgba(239, 68, 68, 0.1)',
+                                                            color: testResult.success
+                                                                ? 'rgb(34, 197, 94)'
+                                                                : 'rgb(239, 68, 68)',
+                                                        }}
+                                                    >
+                                                        {testResult.success ? (
+                                                            <CheckCircle size={14} />
+                                                        ) : (
+                                                            <XCircle size={14} />
+                                                        )}
+                                                        {testResult.message}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </>
                 )}
             </div>

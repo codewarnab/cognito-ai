@@ -8,6 +8,7 @@ import { createUIMessageStream, convertToModelMessages, generateId, type UIMessa
 import { createLogger } from '~logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt, chatModeSystemPrompt } from '../prompts/templates/remote';
+import { buildAdaptiveSystemPrompt, adaptiveSystemPromptStatic } from '../prompts/templates/adaptivePrompt';
 import { getWebSearchSystemPrompt } from '../prompts/searchPrompt';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
@@ -176,16 +177,28 @@ export async function streamAIResponse(params: {
                 usePrompt = getWebSearchSystemPrompt();
                 log.info('🔍 SEARCH MODE ACTIVE - Using dedicated web search prompt');
               } else {
-                // Normal mode: Check tools mode for chat vs agent prompt
+                // Normal mode: Check tools mode for chat vs agent vs adaptive prompt
                 const toolsMode = await getToolsMode();
-                usePrompt = (toolsMode === 'chat' && !workflowConfig)
-                  ? chatModeSystemPrompt
-                  : remoteSystemPrompt;
+
+                if (toolsMode === 'chat' && !workflowConfig) {
+                  usePrompt = chatModeSystemPrompt;
+                } else if (toolsMode === 'adaptive' && !workflowConfig) {
+                  // Adaptive mode: Build dynamic prompt with tool index
+                  try {
+                    usePrompt = await buildAdaptiveSystemPrompt();
+                  } catch (error) {
+                    log.warn('Failed to build adaptive prompt, using static version:', error);
+                    usePrompt = adaptiveSystemPromptStatic;
+                  }
+                } else {
+                  usePrompt = remoteSystemPrompt;
+                }
 
                 log.info('📝 System prompt selection:', {
                   toolsMode,
                   isWorkflow: !!workflowConfig,
-                  usingChatPrompt: toolsMode === 'chat' && !workflowConfig
+                  usingChatPrompt: toolsMode === 'chat' && !workflowConfig,
+                  usingAdaptivePrompt: toolsMode === 'adaptive' && !workflowConfig
                 });
               }
 

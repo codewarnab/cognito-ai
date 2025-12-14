@@ -10,9 +10,10 @@ export type TTSProvider = 'gemini' | 'web-native';
  * Tools mode determines which system prompt and tool set to use.
  * - 'chat': Minimal tools, focused on reading and Q&A (simpler system prompt)
  * - 'agent': Full browser automation capabilities (full system prompt)
+ * - 'adaptive': On-demand tool discovery - AI discovers and calls tools as needed without loading all definitions
  * - 'custom': User has customized the tool selection
  */
-export type ToolsMode = 'chat' | 'agent' | 'custom';
+export type ToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
 
 export interface VoiceSettings {
   voiceName: VoiceName;

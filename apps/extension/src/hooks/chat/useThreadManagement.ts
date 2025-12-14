@@ -106,13 +106,14 @@ export function useThreadManagement({
         loadMessages();
     }, [currentThreadId, setMessages]);
 
-    const handleNewThread = useCallback(async () => {
+    const handleNewThread = useCallback(async (forceCreate: boolean = false) => {
         try {
             // Queue current thread for extraction before creating new one
             if (currentThreadId) {
                 // Check if current thread is already empty
+                // Skip this check if forceCreate is true (e.g., from "Continue Anyway" button during streaming)
                 const messages = await loadThreadMessages(currentThreadId);
-                if (messages.length === 0) {
+                if (!forceCreate && messages.length === 0) {
                     log.info("Current thread is already empty, skipping new thread creation");
                     return;
                 }

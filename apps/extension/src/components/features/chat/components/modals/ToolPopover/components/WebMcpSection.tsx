@@ -191,7 +191,7 @@ export const WebMcpSection: React.FC<WebMcpSectionProps> = ({
                                                 <Toggle
                                                     checked={enabled}
                                                     onChange={(checked) => onToggleTool(tool.name, checked)}
-                                                    style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
+                                                    size="sm"
                                                 />
                                             </div>
                                         );

@@ -150,6 +150,9 @@ importers:
       '@types/jsdom':
         specifier: ^27.0.0
         version: 27.0.0
+      acorn:
+        specifier: ^8.15.0
+        version: 8.15.0
       ai:
         specifier: ^5.0.104
         version: 5.0.104(zod@4.1.13)

@@ -95,7 +95,11 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   // Web Search (requires API key, filtered by search mode)
   'webSearch',
   'retrieve',
-  'deepWebSearch'
+  'deepWebSearch',
+
+  // Meta-tools for Adaptive mode
+  'discoverTools',
+  'executeTools'
 ];
 
 /**

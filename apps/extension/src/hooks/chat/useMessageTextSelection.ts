@@ -81,10 +81,11 @@ export function useMessageTextSelection(
             return;
         }
 
-        // Check if we're inside a user message (don't show popover for user messages)
-        // User messages have bg-blue-500 class
-        const userMessageBubble = ancestorElement.closest('.bg-blue-500');
-        if (userMessageBubble) {
+        // Check if we're inside an actual assistant message content area
+        // Only show popover for selections within markdown-content (assistant messages)
+        const assistantMessageContent = ancestorElement.closest('.markdown-content');
+        if (!assistantMessageContent) {
+            // Not in an assistant message - could be EmptyState, user message, or other UI
             clearSelectionState();
             return;
         }

@@ -35,7 +35,7 @@ export const LoadingIndicator: React.FC = () => {
             <TextShimmer
                 key={messageIndex}
                 as="span"
-                className="text-base font-medium [--base-color:#a1a1aa] [--base-gradient-color:#ffffff]"
+                className="text-sm font-medium [--base-color:#a1a1aa] [--base-gradient-color:#ffffff]"
                 duration={2}
                 spread={2}
             >

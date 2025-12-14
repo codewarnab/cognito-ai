@@ -44,3 +44,19 @@ export const AGENT_MODE_TOOLS: string[] = [
     // Agent Tools
     'getYouTubeTranscript',
 ];
+
+export const ADAPTIVE_MODE_TOOLS: string[] = [
+    // Meta-tools for on-demand discovery and execution
+    'discoverTools',
+    'executeTools',
+    // Pre-loaded popular tools (cold start optimization)
+    'readPageContent',
+    'takeScreenshot',
+    'getActiveTab',
+];
+
+// Tools that should ONLY be visible in Adaptive mode (hidden in Chat/Agent)
+export const ADAPTIVE_ONLY_TOOLS: string[] = [
+    'discoverTools',
+    'executeTools',
+];

@@ -25,7 +25,10 @@ export interface SearchApiKeys {
     tavily?: string;
 }
 
-/** Default search settings */
+/** 
+ * Default search settings 
+ * Web search is disabled by default - users must explicitly enable it.
+ */
 export const DEFAULT_SEARCH_SETTINGS: SearchSettings = {
     enabled: false,
     defaultProvider: 'tavily',

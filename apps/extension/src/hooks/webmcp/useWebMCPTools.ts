@@ -62,12 +62,17 @@ export function useWebMCPTools(): UseWebMCPToolsReturn {
       setIsLoading(true);
       setError(null);
 
+      // Use list-all to get ALL tools (including disabled) for UI consumption
       const response = await chrome.runtime.sendMessage({
-        type: 'webmcp/tools/list',
+        type: 'webmcp/tools/list-all',
       });
 
       if (response?.success) {
         setTools(response.data?.tools || []);
+        // Sync disabled tools from response to ensure state is consistent
+        if (Array.isArray(response.data?.disabledTools)) {
+          setDisabledTools(response.data.disabledTools);
+        }
       } else {
         setError(response?.error || 'Failed to fetch WebMCP tools');
       }

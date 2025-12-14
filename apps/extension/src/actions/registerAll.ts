@@ -9,6 +9,7 @@ import { registerYouTubeToNotionActions } from "./youtubeToNotion";
 import { registerBookmarkActions } from "./bookmarks";
 import { registerDomActions } from "./dom";
 import { useWebSearch, useRetrieve, useDeepWebSearch } from "./search";
+import { useMetaTools } from "./meta/useMetaTools";
 
 export function useRegisterAllActions() {
   // These functions call hooks under the hood; ensure this is invoked within a component body.
@@ -26,4 +27,5 @@ export function useRegisterAllActions() {
   useWebSearch(); // Web search tool
   useRetrieve(); // URL content retrieval tool
   useDeepWebSearch(); // Deep web search with parallel queries
+  useMetaTools(); // Adaptive mode meta-tools (discoverTools, executeTools)
 }

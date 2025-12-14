@@ -7,7 +7,7 @@ interface ChatHeaderProps {
     onSettingsClick?: () => void;
     onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
-    onNewThreadClick?: () => void;
+    onNewThreadClick?: (forceCreate?: boolean) => void;
     onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
@@ -250,7 +250,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                 onClose={() => setShowStreamingWarning(false)}
                 onContinue={() => {
                     setShowStreamingWarning(false);
-                    onNewThreadClick?.();
+                    onNewThreadClick?.(true);
                 }}
             />
         </div>

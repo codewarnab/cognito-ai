@@ -1,5 +1,6 @@
 import React from 'react';
-import { MessageSquare, Bot } from 'lucide-react';
+import { MessageSquare, Bot, Sparkles, Info } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/primitives/popover/Popover';
 import type { ToolMode } from '../types';
 
 interface ModeSelectorProps {
@@ -30,6 +31,15 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         color: isActive ? 'var(--color-primary, #3b82f6)' : 'var(--text-secondary, #9ca3af)',
     });
 
+    const getAdaptiveButtonStyle = (isActive: boolean): React.CSSProperties => ({
+        ...getButtonStyle(isActive),
+        border: isActive ? '1px solid var(--color-success, #10b981)' : '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+        background: isActive
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08))'
+            : 'var(--bg-tertiary, #1a2637)',
+        color: isActive ? 'var(--color-success, #10b981)' : 'var(--text-secondary, #9ca3af)',
+    });
+
     return (
         <div style={{
             display: 'flex',
@@ -54,6 +64,63 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                 <Bot size={12} />
                 <span>Agent</span>
             </button>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+                <button
+                    type="button"
+                    style={getAdaptiveButtonStyle(displayMode === 'adaptive')}
+                    onClick={() => onModeChange('adaptive')}
+                >
+                    <Sparkles size={12} />
+                    <span>Adaptive</span>
+                </button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginLeft: '2px',
+                                padding: '2px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'help',
+                                color: 'var(--text-secondary, #9ca3af)',
+                                opacity: 0.6,
+                            }}
+                        >
+                            <Info size={10} />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        side="top"
+                        align="start"
+                        sideOffset={8}
+                        className="w-[220px] text-[11px] leading-relaxed"
+                    >
+                        <div style={{
+                            fontWeight: 600,
+                            color: 'var(--color-success, #10b981)',
+                            marginBottom: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}>
+                            <Sparkles size={12} />
+                            Adaptive Mode
+                        </div>
+                        <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #9ca3af)' }}>
+                            Discovers and executes tools on-demand without loading all definitions in context.
+                        </p>
+                        <p style={{ margin: 0, opacity: 0.8, color: 'var(--text-secondary, #9ca3af)' }}>
+                            ✓ More efficient context usage<br />
+                            ✓ Access to all available tools<br />
+                            ✓ Smart multi-step orchestration
+                        </p>
+                    </PopoverContent>
+                </Popover>
+            </div>
             {hasUserModified && (
                 <div style={{
                     marginLeft: 'auto',

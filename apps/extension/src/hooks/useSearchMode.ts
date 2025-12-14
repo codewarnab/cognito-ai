@@ -14,6 +14,7 @@ import {
     hasApiKeyForProvider,
 } from '@/utils/settings/searchSettings';
 import type { SearchDepth } from '@/search/types';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
 const log = createLogger('useSearchMode', 'SETTINGS');
 
@@ -53,15 +54,16 @@ export function useSearchMode(): UseSearchModeResult {
                 log.info('🔍 Loading search settings from storage', { settings });
 
                 // Check if API key is configured
-                const keyConfigured = await hasApiKeyForProvider(settings.defaultProvider);
+                // When WEB_SEARCH_SELF_API_KEY_HIDDEN is enabled, we use the backend API key
+                const keyConfigured = WEB_SEARCH_SELF_API_KEY_HIDDEN || await hasApiKeyForProvider(settings.defaultProvider);
                 setHasApiKey(keyConfigured);
 
                 // Read search mode from searchSettings.enabled (same source as aiLogic.ts)
-                // Only enable if API key is also configured
+                // When using backend API key, search can be enabled even without user API key
                 const effectiveMode = settings.enabled && keyConfigured;
                 setIsSearchModeState(effectiveMode);
                 setSearchDepthState(settings.defaultSearchDepth);
-                
+
                 log.info('🔍 Search mode loaded from searchSettings', {
                     settingsEnabled: settings.enabled,
                     hasApiKey: keyConfigured,
@@ -86,12 +88,12 @@ export function useSearchMode(): UseSearchModeResult {
             areaName: string
         ) => {
             if (areaName !== 'local') return;
-            
+
             // Check if searchSettings changed
             if (changes.searchSettings) {
                 const newSettings = changes.searchSettings.newValue;
                 const oldSettings = changes.searchSettings.oldValue;
-                
+
                 log.info('🔄 Storage change detected for searchSettings', {
                     oldEnabled: oldSettings?.enabled,
                     newEnabled: newSettings?.enabled,
@@ -104,7 +106,7 @@ export function useSearchMode(): UseSearchModeResult {
                     // Note: hasApiKey check happens async, so we trust the stored enabled state
                     setIsSearchModeState(newSettings.enabled && hasApiKey);
                     setSearchDepthState(newSettings.defaultSearchDepth || 'basic');
-                    
+
                     log.info('🔄 Updated local state from storage change', {
                         isSearchMode: newSettings.enabled && hasApiKey,
                         searchDepth: newSettings.defaultSearchDepth
@@ -122,24 +124,24 @@ export function useSearchMode(): UseSearchModeResult {
     // Persist search mode to storage - MUST update searchSettings.enabled for aiLogic.ts
     const setSearchMode = useCallback(async (enabled: boolean) => {
         log.info('🔧 setSearchMode called', { enabled, currentState: isSearchMode });
-        
+
         // Update local state immediately for responsive UI
         setIsSearchModeState(enabled);
-        
+
         try {
             // Update searchSettings.enabled - this is what aiLogic.ts reads
             const currentSettings = await getSearchSettings();
             log.info('🔧 Current settings before save', { currentSettings });
-            
+
             const newSettings = {
                 ...currentSettings,
                 enabled,
             };
             await saveSearchSettings(newSettings);
-            
-            log.info('✅ Search mode saved to searchSettings', { 
-                enabled, 
-                savedSettings: newSettings 
+
+            log.info('✅ Search mode saved to searchSettings', {
+                enabled,
+                savedSettings: newSettings
             });
         } catch (error) {
             log.error('❌ Failed to save search mode', {
@@ -153,10 +155,10 @@ export function useSearchMode(): UseSearchModeResult {
     // Toggle search mode
     const toggleSearchMode = useCallback(() => {
         const newValue = !isSearchMode;
-        log.info('🔄 toggleSearchMode called', { 
-            currentState: isSearchMode, 
+        log.info('🔄 toggleSearchMode called', {
+            currentState: isSearchMode,
             newState: newValue,
-            hasApiKey 
+            hasApiKey
         });
         setSearchMode(newValue);
     }, [isSearchMode, setSearchMode, hasApiKey]);
@@ -167,24 +169,24 @@ export function useSearchMode(): UseSearchModeResult {
         setSearchDepthState(depth);
         try {
             const currentSettings = await getSearchSettings();
-            log.info('🔧 Current settings before depth save', { 
+            log.info('🔧 Current settings before depth save', {
                 currentDefaultSearchDepth: currentSettings.defaultSearchDepth,
-                newDepth: depth 
+                newDepth: depth
             });
             const newSettings = {
                 ...currentSettings,
                 defaultSearchDepth: depth,
             };
             await saveSearchSettings(newSettings);
-            log.info('✅ Search depth saved to searchSettings', { 
-                depth, 
-                savedSettings: newSettings 
+            log.info('✅ Search depth saved to searchSettings', {
+                depth,
+                savedSettings: newSettings
             });
-            
+
             // Verify the save worked
             const verifySettings = await getSearchSettings();
-            log.info('🔍 Verified settings after save', { 
-                verifiedDepth: verifySettings.defaultSearchDepth 
+            log.info('🔍 Verified settings after save', {
+                verifiedDepth: verifySettings.defaultSearchDepth
             });
         } catch (error) {
             log.error('❌ Failed to save search depth', {

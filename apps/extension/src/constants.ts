@@ -88,6 +88,21 @@ export const RETRIEVE_API_URL =
     import.meta.env.WXT_RETRIEVE_API_URL || 'https://youtube-transcript-generator-five.vercel.app/retrieve';
 
 /**
+ * Web Search Backend API URL
+ * Used when WEB_SEARCH_SELF_API_KEY_HIDDEN is enabled to proxy requests through the backend
+ */
+export const WEB_SEARCH_API_URL =
+    import.meta.env.WXT_WEB_SEARCH_API_URL || 'https://youtube-transcript-generator-five.vercel.app/web-search';
+
+/**
+ * Web Search Self API Key Hidden Configuration
+ * When enabled, the extension uses the backend's Tavily API key instead of requiring
+ * users to configure their own. This hides the API key input in settings and enables
+ * web search by default.
+ */
+export const WEB_SEARCH_SELF_API_KEY_HIDDEN = import.meta.env.WXT_WEB_SEARCH_SELF_API_KEY_HIDDEN === 'true';
+
+/**
  * Logging Presets - Quick configurations for common scenarios
  * 
  * To use a preset, update the LOG_CONFIG export at the end of this section
