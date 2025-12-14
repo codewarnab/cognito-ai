@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageSquare, Bot, Sparkles, Info } from 'lucide-react';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/primitives/popover/Popover';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip/Tooltip';
 import type { ToolMode } from '../types';
 
 interface ModeSelectorProps {
@@ -73,53 +73,55 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     <Sparkles size={12} />
                     <span>Adaptive</span>
                 </button>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <button
-                            type="button"
-                            style={{
+                {displayMode === 'adaptive' && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                type="button"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginLeft: '2px',
+                                    padding: '2px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    cursor: 'help',
+                                    color: 'var(--color-success, #10b981)',
+                                    opacity: 0.8,
+                                }}
+                            >
+                                <Info size={10} />
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                            side="top"
+                            align="start"
+                            sideOffset={8}
+                            className="w-[220px] text-[11px] leading-relaxed p-3"
+                        >
+                            <div style={{
+                                fontWeight: 600,
+                                color: 'var(--color-success, #10b981)',
+                                marginBottom: '6px',
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                marginLeft: '2px',
-                                padding: '2px',
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'help',
-                                color: 'var(--text-secondary, #9ca3af)',
-                                opacity: 0.6,
-                            }}
-                        >
-                            <Info size={10} />
-                        </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                        side="top"
-                        align="start"
-                        sideOffset={8}
-                        className="w-[220px] text-[11px] leading-relaxed"
-                    >
-                        <div style={{
-                            fontWeight: 600,
-                            color: 'var(--color-success, #10b981)',
-                            marginBottom: '6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                        }}>
-                            <Sparkles size={12} />
-                            Adaptive Mode
-                        </div>
-                        <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #9ca3af)' }}>
-                            Discovers and executes tools on-demand without loading all definitions in context.
-                        </p>
-                        <p style={{ margin: 0, opacity: 0.8, color: 'var(--text-secondary, #9ca3af)' }}>
-                            ✓ More efficient context usage<br />
-                            ✓ Access to all available tools<br />
-                            ✓ Smart multi-step orchestration
-                        </p>
-                    </PopoverContent>
-                </Popover>
+                                gap: '4px'
+                            }}>
+                                <Sparkles size={12} />
+                                Adaptive Mode
+                            </div>
+                            <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #9ca3af)' }}>
+                                Discovers and executes tools on-demand without loading all definitions in context.
+                            </p>
+                            <p style={{ margin: 0, opacity: 0.8, color: 'var(--text-secondary, #9ca3af)' }}>
+                                ✓ More efficient context usage<br />
+                                ✓ Access to all available tools<br />
+                                ✓ Smart multi-step orchestration
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
             </div>
             {hasUserModified && (
                 <div style={{
