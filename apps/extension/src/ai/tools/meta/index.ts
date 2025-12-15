@@ -8,3 +8,4 @@
 export { discoverTools, getToolIndex } from './discoverTools';
 export { executeTools } from './executeTools';
 export { validateCode } from './validateCode';
+export type { TrackedToolCall, ExecuteToolsResult } from './types';

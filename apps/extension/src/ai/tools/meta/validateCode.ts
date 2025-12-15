@@ -62,6 +62,15 @@ const FORBIDDEN_IDENTIFIERS = new Set([
     'fetch', // Must use tools instead
     'XMLHttpRequest',
     'WebSocket',
+    '__proto__', // Block prototype chain access
+    'prototype', // Block prototype pollution
+    // Additional dangerous globals
+    'Reflect', // Metaprogramming, bypassing proxies
+    'Proxy', // Creating traps for objects
+    'AsyncFunction', // Can be used to escape via async prototype
+    'GeneratorFunction', // Similar escape via generator prototype
+    'SharedArrayBuffer', // Side-channel attacks
+    'Atomics', // Low-level memory operations
 ]);
 
 /**
@@ -235,23 +244,15 @@ export function validateCode(code: string): ValidationResult {
                 }
             }
 
-            // Check for constructor property access chains (e.g., {}.constructor.constructor)
-            // This is a common way to get access to the Function constructor
+            // Block ANY .constructor property access
+            // This prevents getting references to built-in constructors for reflection
+            // e.g., "".constructor gives String, {}.constructor.constructor gives Function
             if (
                 node.type === 'MemberExpression' &&
                 node.property.type === 'Identifier' &&
                 node.property.name === 'constructor'
             ) {
-                // Check if this is a nested constructor access (constructor.constructor)
-                if (
-                    node.object.type === 'MemberExpression' &&
-                    node.object.property.type === 'Identifier' &&
-                    node.object.property.name === 'constructor'
-                ) {
-                    errors.push(
-                        'Nested constructor property access is not allowed (potential Function constructor escape)'
-                    );
-                }
+                errors.push('Accessing .constructor is not allowed');
             }
 
             // Block while and do-while loops to prevent infinite loops that block the thread

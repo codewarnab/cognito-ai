@@ -14,6 +14,14 @@ import { getWebMCPToolsFromBackground } from '../webmcpTools';
 const log = createLogger('DiscoverTools');
 
 /**
+ * Escape special regex characters to prevent ReDoS attacks
+ * @see https://stackoverflow.com/questions/61551989/avoiding-redos-attacks
+ */
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
  * Tool info returned by discover
  */
 interface DiscoveredTool {
@@ -35,7 +43,7 @@ async function discoverToolsInMemory(
 ): Promise<{ tools: DiscoveredTool[]; totalAvailable: number }> {
     try {
         const matchedTools: DiscoveredTool[] = [];
-        const regex = new RegExp(query, 'i'); // Case-insensitive search
+        const regex = new RegExp(escapeRegex(query), 'i'); // Case-insensitive search
 
         // Get all tool sources
         const extensionTools = getAllTools();

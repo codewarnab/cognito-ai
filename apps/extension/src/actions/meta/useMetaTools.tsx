@@ -11,6 +11,7 @@ import { useToolUI } from '@/ai/tools/components';
 import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 import { discoverTools, executeTools } from '@/ai/tools/meta';
+import { ExecuteToolsRenderer } from './ExecuteToolsRenderer';
 import { createLogger } from '~logger';
 
 const log = createLogger('MetaTools');
@@ -36,7 +37,7 @@ export function useMetaTools() {
             return <CompactToolRenderer state={state} />;
         });
 
-        // Register executeTools
+        // Register executeTools with custom renderer for sub-tool visualization
         registerTool({
             name: 'executeTools',
             description: executeTools.description,
@@ -45,7 +46,7 @@ export function useMetaTools() {
         });
 
         registerToolUI('executeTools', (state: ToolUIState) => {
-            return <CompactToolRenderer state={state} />;
+            return <ExecuteToolsRenderer state={state} />;
         });
 
         log.info('✅ Meta-tools registration complete');

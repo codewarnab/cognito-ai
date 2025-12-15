@@ -52,6 +52,23 @@ interface ToolRequestMessage {
 type IncomingMessage = ExecuteCodeMessage | ToolResultMessage;
 
 // ============================================================================
+// Origin Validation
+// ============================================================================
+
+/**
+ * Get the expected parent origin for message validation.
+ * In a sandbox iframe, we expect messages from the extension origin.
+ */
+function getExpectedOrigin(): string {
+    // The sandbox is hosted at chrome-extension://<extension-id>/sandbox-executor.html
+    // Messages should come from the same extension origin
+    // Since we're in a sandbox, we need to extract the origin from our own URL
+    return new URL(location.href).origin;
+}
+
+const EXPECTED_ORIGIN = getExpectedOrigin();
+
+// ============================================================================
 // Pending Tool Calls Tracking
 // ============================================================================
 
@@ -94,7 +111,7 @@ function createToolsProxy(toolNames: string[], requestId: string): Record<string
                     args,
                 };
 
-                parent.postMessage(message, '*');
+                parent.postMessage(message, EXPECTED_ORIGIN);
             });
         };
     }
@@ -257,6 +274,12 @@ ${code}
 // ============================================================================
 
 window.addEventListener('message', async (event: MessageEvent<IncomingMessage>) => {
+    // Security: Validate message origin
+    if (event.origin !== EXPECTED_ORIGIN) {
+        console.warn('[Sandbox] Ignoring message from unexpected origin:', event.origin);
+        return;
+    }
+
     const data = event.data;
 
     if (!data || typeof data !== 'object' || !('type' in data)) {
@@ -295,7 +318,7 @@ window.addEventListener('message', async (event: MessageEvent<IncomingMessage>) 
                 errorDetails: result.errorDetails,
             };
 
-            parent.postMessage(response, '*');
+            parent.postMessage(response, EXPECTED_ORIGIN);
             break;
         }
 
@@ -341,4 +364,4 @@ try {
 }
 
 // Notify parent that sandbox is ready
-parent.postMessage({ type: 'SANDBOX_READY' }, '*');
+parent.postMessage({ type: 'SANDBOX_READY' }, EXPECTED_ORIGIN);

@@ -10,7 +10,7 @@
  * - Sandbox executes code and sends results back
  * - Tool calls from sandbox are proxied back to main thread
  * 
- * Phase 5 Enhancements:
+ * Features:
  * - Sandbox crash/unresponsive detection
  * - Proper cleanup on abort
  * - Detailed error messages for debugging
@@ -19,6 +19,7 @@
 
 import { createLogger } from '~logger';
 import { safeSerialize, safeDeserialize, formatError } from './serializationUtils';
+import type { TrackedToolCall } from './types';
 
 const log = createLogger('SandboxBridge');
 
@@ -46,7 +47,7 @@ export interface ExecuteResultMessage {
     success: boolean;
     result?: unknown;
     error?: string;
-    /** Phase 5: Detailed error information from sandbox */
+    /** Detailed error information from sandbox */
     errorDetails?: {
         type: string;
         stack?: string;
@@ -79,6 +80,8 @@ export interface ExecutionResult {
         stack?: string;
         context?: Record<string, unknown>;
     };
+    /** Tracked tool calls made during execution */
+    toolCalls?: TrackedToolCall[];
 }
 
 export interface PendingRequest {
@@ -91,6 +94,8 @@ export interface PendingRequest {
     createdAt: number;
     /** Request ID for logging */
     requestId: string;
+    /** Tracked tool calls for this execution */
+    trackedToolCalls?: TrackedToolCall[];
 }
 
 // ============================================================================
@@ -124,7 +129,7 @@ export enum SandboxErrorCode {
 // ============================================================================
 
 /** Default timeout for code execution in milliseconds */
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = 150_000;
 
 /** Timeout for waiting for sandbox to be ready */
 const SANDBOX_READY_TIMEOUT_MS = 5_000;
@@ -136,7 +141,7 @@ const HEALTH_CHECK_INTERVAL_MS = 10_000;
 const MAX_CONSECUTIVE_FAILURES = 3;
 
 /** Timeout for individual tool execution */
-const TOOL_EXECUTION_TIMEOUT_MS = 60_000;
+const TOOL_EXECUTION_TIMEOUT_MS = 120_000;
 
 // ============================================================================
 // SandboxBridge Singleton
@@ -146,7 +151,7 @@ const TOOL_EXECUTION_TIMEOUT_MS = 60_000;
  * Bridge class that manages the sandboxed iframe and message passing.
  * Uses singleton pattern to reuse the iframe across executions.
  * 
- * Phase 5 Features:
+ * 
  * - Health monitoring and automatic recovery
  * - Abort signal support
  * - Safe serialization of results
@@ -162,7 +167,7 @@ class SandboxBridge {
     private requestIdCounter = 0;
     private messageHandler: ((event: MessageEvent) => void) | null = null;
 
-    // Phase 5: Health monitoring
+    // Health monitoring state
     private consecutiveFailures = 0;
     private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
     private lastSuccessfulExecution: number = Date.now();
@@ -315,7 +320,7 @@ class SandboxBridge {
 
     /**
      * Execute a tool request from the sandbox and send the result back.
-     * Phase 5: Added timeout handling and safe serialization.
+     * Includes timeout handling, safe serialization, and tool call tracking for UI.
      */
     private async executeToolRequest(
         request: ToolRequestMessage,
@@ -328,9 +333,28 @@ class SandboxBridge {
             callId: request.callId,
         });
 
+        // Track this tool call for UI rendering
+        const trackedCall: TrackedToolCall = {
+            callId: request.callId,
+            toolName: request.toolName,
+            input: request.args[0], // First arg is usually the input object
+            state: 'loading',
+            startTime,
+        };
+
+        // Add to pending request's tracked calls array
+        if (pending.trackedToolCalls) {
+            pending.trackedToolCalls.push(trackedCall);
+        }
+
         try {
             // Check if request was aborted
             if (pending.abortController?.signal.aborted) {
+                // Update tracked call with abort error
+                trackedCall.state = 'error';
+                trackedCall.errorText = 'Request was aborted';
+                trackedCall.durationMs = Date.now() - startTime;
+
                 this.sendToolResult(request.callId, undefined, 'Request was aborted');
                 return;
             }
@@ -351,18 +375,31 @@ class SandboxBridge {
             this.sendToolResult(request.callId, serializedResult);
 
             const duration = Date.now() - startTime;
+
+            // Update tracked call with success
+            trackedCall.output = result;
+            trackedCall.state = 'success';
+            trackedCall.durationMs = duration;
+
             log.debug('Tool execution completed:', {
                 toolName: request.toolName,
                 durationMs: duration,
             });
         } catch (error: unknown) {
             const errorInfo = formatError(error);
+            const duration = Date.now() - startTime;
+
             log.error('Tool execution failed:', {
                 toolName: request.toolName,
                 error: errorInfo.message,
                 type: errorInfo.type,
-                durationMs: Date.now() - startTime,
+                durationMs: duration,
             });
+
+            // Update tracked call with error
+            trackedCall.state = 'error';
+            trackedCall.errorText = errorInfo.message;
+            trackedCall.durationMs = duration;
 
             // Send detailed error message
             const errorMessage = `${errorInfo.type}: ${errorInfo.message}`;
@@ -386,7 +423,7 @@ class SandboxBridge {
             error,
         };
 
-        this.iframe.contentWindow.postMessage(message, '*');
+        this.iframe.contentWindow.postMessage(message, chrome.runtime.getURL(''));
     }
 
     /**
@@ -399,7 +436,7 @@ class SandboxBridge {
     /**
      * Send code to the sandbox for execution.
      * 
-     * Phase 5: Enhanced with abort signal support, health monitoring, and detailed errors.
+     * Supports abort signal, health monitoring, and detailed error reporting.
      * 
      * @param code JavaScript code to execute
      * @param availableTools List of tool names available in the sandbox
@@ -463,6 +500,9 @@ class SandboxBridge {
         const requestId = this.generateRequestId();
         const abortController = new AbortController();
 
+        // Phase 2 (Option B): Track tool calls for this execution
+        const trackedToolCalls: TrackedToolCall[] = [];
+
         return new Promise<ExecutionResult>((resolve) => {
             // Set up timeout
             const timeoutId = setTimeout(() => {
@@ -480,6 +520,7 @@ class SandboxBridge {
                             pendingToolCalls: this.pendingRequests.size,
                         },
                     },
+                    toolCalls: trackedToolCalls, // Include partial tool calls on timeout
                 });
             }, timeoutMs);
 
@@ -492,6 +533,7 @@ class SandboxBridge {
                     success: false,
                     error: 'Operation was aborted',
                     errorCode: SandboxErrorCode.ABORTED,
+                    toolCalls: trackedToolCalls, // Include partial tool calls on abort
                 });
             };
 
@@ -530,6 +572,7 @@ class SandboxBridge {
                     resolve({
                         ...result,
                         result: deserializedResult,
+                        toolCalls: trackedToolCalls, // Include tracked tool calls
                     });
                 },
                 reject: (error) => {
@@ -554,6 +597,7 @@ class SandboxBridge {
                 abortController,
                 createdAt: Date.now(),
                 requestId,
+                trackedToolCalls, // Include tracked calls array
             });
 
             // Send the code to sandbox
@@ -570,7 +614,7 @@ class SandboxBridge {
                 toolCount: availableTools.length,
             });
 
-            this.iframe!.contentWindow!.postMessage(message, '*');
+            this.iframe!.contentWindow!.postMessage(message, chrome.runtime.getURL(''));
         });
     }
 
@@ -583,7 +627,6 @@ class SandboxBridge {
 
     /**
      * Get the health status of the sandbox.
-     * Phase 5: Added for monitoring sandbox health.
      */
     getHealthStatus(): {
         isReady: boolean;
@@ -602,8 +645,7 @@ class SandboxBridge {
     }
 
     /**
-     * Start periodic health checking.
-     * Phase 5: Added for automatic health monitoring.
+     * Start periodic health checking for automatic recovery.
      */
     startHealthCheck(): void {
         if (this.healthCheckInterval) {
@@ -648,8 +690,7 @@ class SandboxBridge {
     }
 
     /**
-     * Restart the sandbox iframe.
-     * Phase 5: Added for recovery from crashes/unresponsive states.
+     * Restart the sandbox iframe for recovery from crashes/unresponsive states.
      */
     private async restartSandbox(): Promise<void> {
         log.info('Restarting sandbox...');
@@ -726,7 +767,7 @@ export function getSandboxBridge(): SandboxBridge {
  * Execute code in the sandbox with access to tools.
  * This is the main entry point for sandbox code execution.
  * 
- * Phase 5: Enhanced with abort signal support and detailed error handling.
+ * Supports abort signal and provides detailed error handling.
  * 
  * @param code JavaScript code to execute
  * @param availableTools List of tool names available

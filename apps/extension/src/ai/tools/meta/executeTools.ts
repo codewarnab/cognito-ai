@@ -15,6 +15,7 @@ import { getAllTools } from '../registryUtils';
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { getWebMCPToolsFromBackground } from '../webmcpTools';
 import { executeInSandbox, type ExecutionResult } from './SandboxBridge';
+import type { TrackedToolCall } from './types';
 
 const log = createLogger('ExecuteTools');
 
@@ -29,7 +30,7 @@ const pendingOperations = new Map<string, { cancelled: boolean }>();
 async function executeToolsCode(
     code: string,
     abortSignal?: AbortSignal
-): Promise<{ output: string; success: boolean; error?: string }> {
+): Promise<{ output: string; success: boolean; error?: string; toolCalls?: TrackedToolCall[] }> {
     // Generate a unique operation ID for abort tracking
     const operationId = `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const operationState = { cancelled: false };
@@ -96,6 +97,19 @@ async function executeToolsCode(
                 throw new Error('Operation cancelled');
             }
 
+            // Gracefully handle recursive meta-tool calls
+            // Instead of throwing (which would crash), return a helpful message
+            if (toolName === 'executeTools' || toolName === 'discoverTools') {
+                log.warn(`Attempted recursive call to ${toolName} inside executeTools`);
+                return {
+                    error: true,
+                    message: `Cannot call ${toolName} inside executeTools. You're already in executeTools - call other tools directly via the 'tools' object.`,
+                    hint: toolName === 'executeTools'
+                        ? "You don't need nested executeTools. Just call tools directly: await tools.readPageContent(), await tools.webSearch(), etc."
+                        : "No need to discover tools here - all available tools are already accessible via the 'tools' object. Just call them directly.",
+                };
+            }
+
             const tool = allTools[toolName];
             if (!tool) {
                 throw new Error(`Tool not found: ${toolName}`);
@@ -144,6 +158,7 @@ async function executeToolsCode(
                     output: errorOutput,
                     success: false,
                     error: sandboxResult.errorCode || sandboxResult.error,
+                    toolCalls: sandboxResult.toolCalls, // Include partial tool calls on error
                 };
             }
 
@@ -155,11 +170,13 @@ async function executeToolsCode(
             log.info('Sandbox code execution completed:', {
                 outputLength: output.length,
                 resultType: typeof sandboxResult.result,
+                toolCallCount: sandboxResult.toolCalls?.length ?? 0,
             });
 
             return {
                 output,
                 success: true,
+                toolCalls: sandboxResult.toolCalls, // Pass through tracked tool calls
             };
         } finally {
             // Clean up abort listener

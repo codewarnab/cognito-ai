@@ -210,7 +210,14 @@ const AskAIButton = () => {
         if (e.button !== 0) return; // Only left click
 
         const rect = buttonRef.current?.getBoundingClientRect();
-        if (rect) {
+        if (rect && buttonRef.current) {
+            // Explicitly set the current position to prevent jumping
+            // and clear right/bottom to prevent stretching when left/top are set
+            buttonRef.current.style.left = `${rect.left}px`;
+            buttonRef.current.style.top = `${rect.top}px`;
+            buttonRef.current.style.right = 'auto';
+            buttonRef.current.style.bottom = 'auto';
+
             dragOffset.current = {
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top,
@@ -320,6 +327,13 @@ const AskAIButton = () => {
             // Sync React state with final position from ref
             if (currentPositionRef.current) {
                 setPosition(currentPositionRef.current);
+            } else if (!hasDragged.current && position === null && buttonRef.current) {
+                // If we didn't drag and were in default position,
+                // clear manual styles to revert to CSS class positioning
+                buttonRef.current.style.removeProperty('left');
+                buttonRef.current.style.removeProperty('top');
+                buttonRef.current.style.removeProperty('right');
+                buttonRef.current.style.removeProperty('bottom');
             }
 
             // Check if button was over trash when released (use ref for latest value)

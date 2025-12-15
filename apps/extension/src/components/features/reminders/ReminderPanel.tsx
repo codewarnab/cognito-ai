@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Trash2, Calendar } from 'lucide-react';
+import { X, Trash2, Calendar, Copy, Check } from 'lucide-react';
 import { ClockIcon } from '../../../../assets/icons/chat/clock';
 import { getActiveReminders, deleteReminder } from '../../../actions/reminder/storage';
 import { updateReminderWithAlarm } from '../../../actions/reminder/utils';
@@ -10,6 +10,15 @@ import { EditReminderDialog } from './EditReminderDialog';
 import { SquarePenIcon } from '../../shared/icons/SquarePenIcon';
 
 const log = createLogger('ReminderPanel');
+
+// Example suggestions for creating reminders
+const REMINDER_SUGGESTIONS = [
+    "Remind me to take a break in 30 minutes",
+    "Set a reminder for my meeting tomorrow at 10am",
+    "Remind me to drink water every 2 hours",
+    "Set a reminder to check emails at 9am daily",
+    "Remind me to call mom this weekend",
+];
 
 interface ReminderPanelProps {
     isOpen: boolean;
@@ -21,6 +30,7 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
     const [loading, setLoading] = useState(true);
     const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
     // Load reminders when panel opens
     useEffect(() => {
@@ -39,6 +49,16 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
             log.error('Failed to load reminders', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCopySuggestion = async (suggestion: string, index: number) => {
+        try {
+            await navigator.clipboard.writeText(suggestion);
+            setCopiedIndex(index);
+            setTimeout(() => setCopiedIndex(null), 2000);
+        } catch (error) {
+            log.error('Failed to copy suggestion', error);
         }
     };
 
@@ -174,12 +194,40 @@ export const ReminderPanel: React.FC<ReminderPanelProps> = ({ isOpen, onClose })
                                     <p className="text-sm text-white/60 font-normal m-0 font-sans">Loading reminders...</p>
                                 </div>
                             ) : reminders.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-20 px-8 gap-4 text-center">
-                                    <ClockIcon size={56} className="text-white/30 mb-2" />
-                                    <p className="text-sm font-normal my-2 text-white font-sans">No active reminders</p>
-                                    <span className="text-[13px] text-white/60 leading-relaxed max-w-[280px] font-sans font-normal">
-                                        Ask the AI assistant to create a reminder and it will appear here
-                                    </span>
+                                <div className="flex flex-col items-center py-8 px-5 gap-5">
+                                    <div className="flex flex-col items-center gap-3 text-center">
+                                        <ClockIcon size={48} className="text-white/25" />
+                                        <p className="text-sm font-medium m-0 text-white/90 font-sans">No active reminders</p>
+                                        <span className="text-[13px] text-white/50 leading-relaxed font-sans font-normal">
+                                            Try one of these examples to get started
+                                        </span>
+                                    </div>
+
+                                    {/* Suggestions */}
+                                    <div className="flex flex-col gap-2 w-full mt-2">
+                                        {REMINDER_SUGGESTIONS.map((suggestion, index) => (
+                                            <div
+                                                key={index}
+                                                className="group flex items-center gap-3 p-3 bg-white/[0.03] border border-white/[0.06] rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/[0.06] hover:border-white/[0.1]"
+                                                onClick={() => handleCopySuggestion(suggestion, index)}
+                                            >
+                                                <span className="flex-1 text-[13px] text-white/70 leading-snug font-sans">
+                                                    {suggestion}
+                                                </span>
+                                                <button
+                                                    className="flex items-center justify-center p-1.5 bg-transparent border-none text-white/30 cursor-pointer rounded transition-all duration-200 group-hover:text-white/60 hover:!text-white hover:!bg-white/10"
+                                                    title="Copy to clipboard"
+                                                    aria-label="Copy suggestion"
+                                                >
+                                                    {copiedIndex === index ? (
+                                                        <Check size={14} className="text-green-400" />
+                                                    ) : (
+                                                        <Copy size={14} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-2 p-4">

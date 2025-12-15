@@ -238,7 +238,8 @@ export function safeDeserialize(value: unknown): unknown {
             case 'Date':
                 return new Date(obj.value as string);
             case 'RegExp':
-                return new RegExp(obj.source as string, obj.flags as string);
+                // Return string representation instead of reconstructing RegExp to prevent ReDoS
+                return `[RegExp: /${obj.source}/${obj.flags}]`;
             case 'Map': {
                 const map = new Map();
                 for (const [k, v] of obj.entries as [unknown, unknown][]) {
