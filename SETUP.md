@@ -143,7 +143,7 @@ Once updated, rebuild the extension (dev or prod) and reload it in Chrome.
 ```
 cognito-ai/
 ├── apps/
-│   ├── extension/          # Chrome Extension (Plasmo)
+│   ├── extension/          # Chrome Extension (WXT)
 │   │   ├── src/            # Extension source code
 │   │   ├── assets/         # Icons and images
 │   │   └── build/          # Build output
@@ -168,7 +168,7 @@ Create a `.env` file in the root or specific package directories if you need to 
 
 ### Build Errors
 
-- Clear the build cache: `rm -rf apps/extension/build/ apps/extension/.plasmo/`
+- Clear the build cache: `rm -rf apps/extension/build/ apps/extension/.wxt/`
 - Reinstall dependencies: `pnpm install`
 - Restart the development server: `pnpm dev`
 
@@ -179,7 +179,7 @@ Create a `.env` file in the root or specific package directories if you need to 
 
 ## Additional Resources
 
-- [Plasmo Documentation](https://docs.plasmo.com/)
+- [WXT Documentation](https://wxt.dev/)
 - [Chrome Extension Documentation](https://developer.chrome.com/docs/extensions/)
 - [Project README](./README.md)
 - [Contributing Guidelines](./CONTRIBUTING.md)

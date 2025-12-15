@@ -9,7 +9,7 @@ Cognito AI is a **pnpm monorepo** containing a privacy-first, AI-powered Chrome 
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (Plasmo)
+│   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
@@ -90,7 +90,7 @@ git checkout -b feat/backend-vercel-caching
 
 ### Extension (`apps/extension/.env`)
 ```env
-PLASMO_PUBLIC_GOOGLE_AI_API_KEY=your_gemini_api_key
+# Environment variables are now prefixed with WXT_ (see apps/extension/.env.example)
 ```
 
 ### Backend Cloudflare
@@ -155,7 +155,7 @@ To share types/utilities between packages:
 pnpm install --force
 ```
 
-### Plasmo not finding files
+### WXT not finding files
 Check `apps/extension/tsconfig.json` path mappings.
 
 ### Vercel build failing

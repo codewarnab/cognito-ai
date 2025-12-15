@@ -7,7 +7,7 @@ This is a **pnpm monorepo** containing the Cognito AI Chrome extension, document
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (Plasmo)
+│   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
 │   └── docs/               # @cognito/docs - Documentation (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy

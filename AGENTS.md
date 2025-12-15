@@ -9,7 +9,7 @@ Cognito AI is a **pnpm monorepo** containing multiple packages:
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (Plasmo)
+│   ├── extension/          # @cognito/extension - Chrome Extension (wxt)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
@@ -88,7 +88,7 @@ pnpm add -D -w typescript-eslint                    # To root (dev tools)
 ### Extension (`apps/extension/`)
 ```env
 # apps/extension/.env
-PLASMO_PUBLIC_GOOGLE_AI_API_KEY=your_key
+# Environment variables are now prefixed with WXT_ (see apps/extension/.env.example)
 ```
 
 ### Backend Cloudflare (`packages/backend-cloudflare/`)
@@ -169,7 +169,7 @@ When working in a specific package, prioritize that package's documentation over
 pnpm install --force
 ```
 
-### Plasmo not finding files
+### WXT not finding files
 Check `apps/extension/tsconfig.json` path mappings.
 
 ### Vercel build failing

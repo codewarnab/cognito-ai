@@ -8,7 +8,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/version-0.0.1-blue.svg)](./package.json)
-[![Built with Plasmo](https://img.shields.io/badge/built%20with-Plasmo-blueviolet)](https://www.plasmo.com/)
+[![Built with WXT](https://img.shields.io/badge/built%20with-WXT-blueviolet)](https://wxt.dev/)
 
 [Features](#features) • [Installation](#installation) • [Usage](#usage) • [Development](#development) • [Contributing](#contributing) • [License](#license)
 
@@ -116,14 +116,14 @@ pnpm add -D -w typescript-eslint
 
 ### Submit to the Webstores
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+To submit your extension to the web stores, build your extension and upload it to the store. For automated submission, you can set up GitHub Actions to publish your extension automatically.
 
 ### Project Structure
 
 ```
 cognito-ai/
 ├── apps/
-│   ├── extension/              # @cognito/extension - Chrome Extension (Plasmo)
+│   ├── extension/              # @cognito/extension - Chrome Extension (WXT)
 │   │   ├── src/
 │   │   │   ├── sidepanel.tsx   # Main UI
 │   │   │   ├── background.ts   # Service worker
@@ -179,7 +179,7 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 - [Monorepo Guide](./MONOREPO.md) - Architecture, deployment, and migration guides
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - [AI Agents Guide](./AGENTS.md) - Navigation guide for AI coding assistants
-- [Plasmo Documentation](https://docs.plasmo.com/) - Framework documentation
+- [WXT Documentation](https://wxt.dev/) - Framework documentation
 - [Chrome Extension Docs](https://developer.chrome.com/docs/extensions/) - Chrome API reference
 
 ## License
@@ -188,7 +188,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 ## Acknowledgments
 
-- Built with [Plasmo](https://www.plasmo.com/)
+- Built with [WXT](https://wxt.dev/)
 - Powered by [Google Generative AI](https://ai.google.dev/) & [Vercel AI SDK](https://sdk.vercel.ai/docs)
 - Voice by [ElevenLabs](https://elevenlabs.io/)
 - UI components from [Radix UI](https://www.radix-ui.com/)

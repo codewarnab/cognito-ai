@@ -7,7 +7,7 @@ This document describes the monorepo structure, development workflows, and migra
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (Plasmo)
+│   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
@@ -331,9 +331,9 @@ pnpm clean
 pnpm install
 ```
 
-### Plasmo not finding files after move
+### WXT not finding files after move
 
-Update paths in `apps/extension/tsconfig.json` if needed. Plasmo resolves relative to package root.
+Update paths in `apps/extension/tsconfig.json` if needed. WXT resolves relative to package root.
 
 ### Vercel build failing after restructure
 
