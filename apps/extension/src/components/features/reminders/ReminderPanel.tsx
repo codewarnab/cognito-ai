@@ -13,11 +13,8 @@ const log = createLogger('ReminderPanel');
 
 // Example suggestions for creating reminders
 const REMINDER_SUGGESTIONS = [
-    "Remind me to take a break in 30 minutes",
-    "Set a reminder for my meeting tomorrow at 10am",
-    "Remind me to drink water every 2 hours",
-    "Set a reminder to check emails at 9am daily",
-    "Remind me to call mom this weekend",
+    "Remind me tomorrow at 9am",
+    "Take a break in 30 minutes",
 ];
 
 interface ReminderPanelProps {

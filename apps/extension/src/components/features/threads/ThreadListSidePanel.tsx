@@ -28,6 +28,13 @@ export function ThreadListSidePanel({
     const [threads, setThreads] = useState<ChatThread[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter threads based on search query
+    const filteredThreads = threads.filter(thread =>
+        cleanTitle(thread.title).toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     const loadThreads = async () => {
         try {
@@ -140,12 +147,96 @@ export function ThreadListSidePanel({
                             </button>
                         </div>
 
-                        <button onClick={handleNewChat} className="flex items-center justify-center gap-2 m-[16px_20px] p-[12px_16px] bg-white/[0.05] text-white/[0.9] border border-white/[0.08] rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] hover:-translate-y-px hover:shadow-md sm:m-[12px_16px]">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M12 5v14M5 12h14" />
-                            </svg>
-                            New Chat
-                        </button>
+                        <div className="flex flex-col gap-2 m-[16px_20px] sm:m-[12px_16px]">
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleNewChat} className="flex items-center justify-center gap-2 flex-1 p-[12px_16px] bg-white/[0.05] text-white/[0.9] border border-white/[0.08] rounded-lg text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.12] hover:-translate-y-px hover:shadow-md whitespace-nowrap">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                    New Chat
+                                </button>
+
+                                {/* Search Toggle Button */}
+                                <button
+                                    onClick={() => {
+                                        setIsSearchOpen(!isSearchOpen);
+                                        if (isSearchOpen) {
+                                            setSearchQuery('');
+                                        }
+                                    }}
+                                    className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all duration-200 shrink-0 ${isSearchOpen
+                                            ? 'bg-white/[0.08] border-white/[0.15] text-white'
+                                            : 'bg-white/[0.05] border-white/[0.08] text-[#888888] hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-white'
+                                        }`}
+                                    title={isSearchOpen ? "Close search" : "Search chats"}
+                                >
+                                    <AnimatePresence mode="wait">
+                                        {isSearchOpen ? (
+                                            <motion.svg
+                                                key="close"
+                                                initial={{ opacity: 0, rotate: -90 }}
+                                                animate={{ opacity: 1, rotate: 0 }}
+                                                exit={{ opacity: 0, rotate: 90 }}
+                                                transition={{ duration: 0.15 }}
+                                                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                            >
+                                                <path d="M18 6L6 18M6 6l12 12" />
+                                            </motion.svg>
+                                        ) : (
+                                            <motion.svg
+                                                key="search"
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                transition={{ duration: 0.15 }}
+                                                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                                            >
+                                                <circle cx="11" cy="11" r="8" />
+                                                <path d="m21 21-4.35-4.35" />
+                                            </motion.svg>
+                                        )}
+                                    </AnimatePresence>
+                                </button>
+                            </div>
+
+                            {/* Expandable Search Input */}
+                            <AnimatePresence>
+                                {isSearchOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="flex items-center gap-2 p-3 bg-white/[0.05] border border-white/[0.08] rounded-lg">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40 shrink-0">
+                                                <circle cx="11" cy="11" r="8" />
+                                                <path d="m21 21-4.35-4.35" />
+                                            </svg>
+                                            <input
+                                                type="text"
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                placeholder="Search chats..."
+                                                autoFocus
+                                                className="flex-1 bg-transparent border-none outline-none text-white text-sm placeholder:text-white/40"
+                                            />
+                                            {searchQuery && (
+                                                <button
+                                                    onClick={() => setSearchQuery('')}
+                                                    className="flex items-center justify-center p-1 bg-transparent border-none text-white/40 cursor-pointer transition-colors hover:text-white"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M18 6L6 18M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                         <div className="flex-1 overflow-y-auto px-5 pb-5 sm:px-4 sm:pb-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/[0.15] [&::-webkit-scrollbar-thumb]:rounded-sm hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
                             {isLoading ? (
@@ -188,9 +279,20 @@ export function ThreadListSidePanel({
                                     <h3 className="m-0 mb-2 text-lg font-medium text-white">No conversations yet</h3>
                                     <p className="m-0 text-sm opacity-70">Start a new conversation to begin</p>
                                 </div>
+                            ) : filteredThreads.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-12 px-6 text-center text-white/50">
+                                    <div className="mb-4 opacity-50">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                            <circle cx="11" cy="11" r="8" />
+                                            <path d="m21 21-4.35-4.35" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="m-0 mb-2 text-lg font-medium text-white">No matching chats</h3>
+                                    <p className="m-0 text-sm opacity-70">Try a different search term</p>
+                                </div>
                             ) : (
                                 <div className="flex flex-col gap-2">
-                                    {threads.map((thread) => (
+                                    {filteredThreads.map((thread) => (
                                         <div
                                             key={thread.id}
                                             className={`flex items-center justify-between p-[12px_16px] bg-white/[0.03] border border-white/[0.08] rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/[0.05] hover:border-white/[0.12] hover:translate-x-1 group ${thread.id === currentThreadId ? '!bg-white/[0.05] !border-[#1264ff]/50 shadow-md' : ''}`}
