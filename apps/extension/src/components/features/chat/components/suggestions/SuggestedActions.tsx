@@ -43,6 +43,20 @@ const FALLBACK_SUGGESTIONS = [
     },
 ];
 
+const getPillSizeClasses = (index: number) => {
+    // Base sizes (Pill 1, 2, 3)
+    switch (index) {
+        case 0: // Pill 1
+            return 'text-xs py-[7px] px-[14px] max-[480px]:text-[11px] max-[480px]:py-1 max-[480px]:px-2.5 max-[360px]:text-[10px] max-[360px]:py-1 max-[360px]:px-2';
+        case 1: // Pill 2
+            return 'text-[13px] py-[9px] px-4 max-[480px]:text-xs max-[480px]:py-[5px] max-[480px]:px-3 max-[360px]:text-[11px] max-[360px]:py-1 max-[360px]:px-2.5';
+        case 2: // Pill 3
+            return 'text-sm py-[11px] px-[18px] max-[480px]:text-[13px] max-[480px]:py-1.5 max-[480px]:px-3.5 max-[360px]:text-xs max-[360px]:py-[5px] max-[360px]:px-3';
+        default:
+            return 'text-xs py-[7px] px-[14px]';
+    }
+};
+
 export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     messages,
     input,
@@ -138,23 +152,27 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ duration: 0.2 }}
-                    className="suggested-actions-container"
+                    className="absolute bottom-full left-0 right-0 mb-2 px-3 max-w-[70%] z-0 pointer-events-auto max-[480px]:max-w-[65%] max-[480px]:mb-1.5 max-[480px]:px-2.5 max-[360px]:max-w-[60%]"
                 >
                     {/* Show loading indicator when generating (no suggestions yet) */}
                     {isGenerating && suggestedActions.length === 0 ? (
-                        <div className="suggested-actions-loading-state">
-                            <div className="loading-shimmer">Generating suggestions...</div>
-                            <div className="suggested-actions-grid">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={`skeleton-${i}`} className="suggested-action-skeleton">
-                                        <div className="skeleton-shimmer"></div>
+                        <div className="flex flex-col items-start gap-1.5">
+                            <div className="hidden">Generating suggestions...</div>
+                            <div className="flex flex-col items-start gap-1 w-auto max-w-none max-[480px]:gap-[5px]">
+                                {[1, 2, 3].map((i, index) => (
+                                    <div
+                                        key={`skeleton-${i}`}
+                                        className="h-6 bg-white/[0.03] rounded-[14px] relative overflow-hidden"
+                                        style={{ width: index === 0 ? 80 : index === 1 ? 110 : 140 }}
+                                    >
+                                        <div className="absolute top-0 -left-full w-full h-full bg-gradient-to-r from-transparent via-white/[0.06] to-transparent animate-[shimmer_1.5s_infinite]"></div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ) : (
                         /* Show actual suggestions (AI or fallback on error) */
-                        <div className="suggested-actions-grid">
+                        <div className="flex flex-col items-start gap-1 w-auto max-w-none max-[480px]:gap-[5px]">
                             {suggestedActions.map((suggestedAction, index) => (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -165,9 +183,16 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
                                 >
                                     <button
                                         onClick={() => handleSuggestionClick(suggestedAction.action)}
-                                        className={`suggested-action-button suggested-action-pill-${index + 1}`}
+                                        className={`
+                                            inline-flex items-center text-left bg-white/[0.04] border-none rounded-full 
+                                            text-white/60 font-normal leading-[1.3] cursor-pointer transition-all duration-150 
+                                            whitespace-nowrap w-auto min-h-auto max-h-none h-auto flex-row hover:bg-white/[0.08] 
+                                            hover:text-white/85 hover:transform-none hover:shadow-none active:bg-white/[0.06] active:scale-98
+                                            disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04] disabled:hover:transform-none
+                                            ${getPillSizeClasses(index)}
+                                        `}
                                     >
-                                        <TextMorph className="suggested-action-title">
+                                        <TextMorph className="font-normal text-inherit text-inherit leading-inherit">
                                             {suggestedAction.title}
                                         </TextMorph>
                                     </button>

@@ -37,14 +37,14 @@ export const McpServerCardFooter: React.FC<McpServerCardFooterProps> = ({
     onLogout
 }) => {
     return (
-        <div className="mcp-card__footer">
+        <div className="flex flex-col gap-3 p-4 bg-[var(--bg-secondary,#0f1420)]">
             {requiresAuth && (
                 <StatusBadge state={badgeState} />
             )}
             {status.error && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
                     <span
-                        className="mcp-card__error"
+                        className="flex items-center gap-1 font-medium text-xs"
                         style={{
                             fontSize: '12px',
                             color: status.state === 'cloudflare-error' ? '#f59e0b' : '#ef4444',
@@ -74,7 +74,7 @@ export const McpServerCardFooter: React.FC<McpServerCardFooterProps> = ({
                 </div>
             )}
             {healthCheckStatus && (
-                <span className="mcp-card__health-status" style={{
+                <span className="font-medium text-xs" style={{
                     fontSize: '12px',
                     color: healthCheckStatus.startsWith('✓') ? '#10b981' : healthCheckStatus.startsWith('✗') ? '#ef4444' : '#6b7280',
                     fontWeight: 500

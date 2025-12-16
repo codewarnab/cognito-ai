@@ -25,6 +25,11 @@ export default defineConfig({
 
     // React support via Vite with Node.js polyfills and Tailwind CSS
     vite: () => ({
+        // Enable CORS for sandbox pages (which run in null origin)
+        // Without this, the sandbox iframe cannot load ES modules from localhost:3000
+        server: {
+            cors: true,
+        },
         plugins: [
             react(),
             tailwindcss(),

@@ -107,7 +107,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
 
     return (
         <>
-            <div className="mcp-card" ref={cardRef}>
+            <div className="flex flex-col bg-[var(--bg-secondary,#0f1420)] border border-[var(--border-color,rgba(255,255,255,0.08))] rounded-xl overflow-hidden transition-all duration-200 hover:border-[var(--border-hover,rgba(255,255,255,0.15))] hover:-translate-y-0.5 hover:shadow-lg" ref={cardRef}>
                 <McpServerCardHeader
                     name={name}
                     icon={icon}

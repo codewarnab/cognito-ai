@@ -8,11 +8,11 @@
 
 /* Import all modular CSS files */
 @import './base.css';
-@import './notifications.css';
-@import './input.css';
-@import './modes.css';
-@import './attachments.css';
-@import './suggestions.css';
+
+
+
+
+
 @import './voice.css';
 @import './markdown.css';
 @import './streamdown-overrides.css';

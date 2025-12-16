@@ -431,6 +431,108 @@ function ExplainButton() {
 
 ---
 
+## Security Review
+
+> **Status**: Reviewed December 2024
+> **Verdict**: ✅ No critical vulnerabilities. Minor improvements recommended.
+
+### Security Strengths
+
+1. **User Control First**: Content is NEVER auto-sent - user must always press Send
+2. **Multi-Layer Defense**: Sanitization → Rate Limiting → User Permissions → Source Attribution → Audit Logging
+3. **Isolated Content Script**: Bridge runs in `ISOLATED` world, preventing direct DOM access from malicious pages
+4. **Strict API Limitations**: Websites cannot modify system prompts, execute tools, or access chat history
+
+### Required Security Fixes
+
+#### 1. postMessage Origin Validation (High Priority)
+
+**Issue**: The plan uses `event.source !== window` check but doesn't validate origin. Responses use wildcard `'*'` target.
+
+**Fix in Content Script**:
+```typescript
+// content-to-chat-bridge.content.ts
+window.addEventListener('message', async (event) => {
+  // Validate source AND origin
+  if (event.source !== window) return;
+  if (event.origin !== window.location.origin) return;  // ADD THIS
+  if (event.data?.type !== '__COGNITO_SEND_TO_CHAT__') return;
+  
+  // ... validation logic ...
+  
+  // Use specific origin for response (NOT '*')
+  window.postMessage({
+    type: '__COGNITO_RESPONSE__',
+    id,
+    result: response
+  }, window.location.origin);  // CHANGED from '*'
+});
+```
+
+**Fix in SDK**:
+```typescript
+// packages/web-sdk/src/index.ts
+const handler = (e: MessageEvent) => {
+  // Validate origin matches current page
+  if (e.origin !== window.location.origin) return;  // ADD THIS
+  if (e.data?.type === '__COGNITO_RESPONSE__' && e.data?.id === id) {
+    window.removeEventListener('message', handler);
+    resolve(e.data.result);
+  }
+};
+```
+
+#### 2. HTML Sanitization (Medium Priority)
+
+**Issue**: Simple regex `/<[^>]*>/g` may miss edge cases.
+
+**Fix**: Use DOM-based sanitization:
+```typescript
+// src/utils/contentToChat/sanitizer.ts
+function sanitizeContent(raw: unknown): string {
+  if (typeof raw !== 'string') {
+    throw new ValidationError('Content must be a string');
+  }
+  
+  const MAX_LENGTH = 10_000;
+  if (raw.length > MAX_LENGTH) {
+    throw new ValidationError(`Content exceeds ${MAX_LENGTH} character limit`);
+  }
+  
+  // DOM-based HTML escaping (safer than regex)
+  const div = document.createElement('div');
+  div.textContent = raw;
+  const stripped = div.textContent || '';
+  
+  // Normalize whitespace
+  const normalized = stripped.replace(/\s+/g, ' ').trim();
+  
+  return normalized;
+}
+```
+
+#### 3. WebMCP Hints Social Engineering (Low Priority)
+
+**Issue**: Malicious sites could suggest misleading tool names to confuse users.
+
+**Mitigation**:
+- UI must clearly indicate hints are "suggestions from website"
+- AI must validate tool names exist before displaying
+- Document in user-facing help that websites cannot force tool execution
+
+### Security Checklist for Implementation
+
+- [ ] postMessage uses origin validation in content script
+- [ ] postMessage responses use specific origin (not `'*'`)
+- [ ] SDK validates origin in response handler
+- [ ] HTML sanitization uses DOM-based approach
+- [ ] WebMCP hints are clearly labeled as "website suggestions"
+- [ ] Rate limiting tested with burst requests
+- [ ] Audit logging captures all API calls
+- [ ] Settings UI allows viewing/clearing activity logs
+
+---
+
 ## Phase 1: Core Infrastructure
 
 **Goal**: Build the secure content bridge between websites and Cognito sidepanel.

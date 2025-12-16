@@ -23,10 +23,9 @@ import { DocumentProvider } from "./contexts/documentContext";
 
 // Styles - Only essential CSS that doesn't conflict with Tailwind
 import "./styles/features/copilot/index-minimal.css"; // Minimal version without layout overrides
-import "./styles/features/mcp/index.css";
-import "./styles/features/mentions/index.css";
-import "./styles/features/threads/index.css";
-import "./styles/features/reminders/index.css";
+
+
+
 import "./styles/features/workflows/index.css";
 import "./styles/components/voice-recording-pill.css";
 import "./styles/features/onboarding/index.css";
@@ -45,7 +44,7 @@ import { useRegisterAllWorkflows } from "./workflows/registerAll";
 import { useAIChat } from "./ai/hooks";
 
 // Custom hooks
-import { useApiKey, useOnboarding } from "./hooks/settings";
+import { useOnboarding } from "./hooks/settings";
 import { useVoiceRecording } from "./hooks/ui";
 import { useThreadManagement, useMessageHandlers, useAIChatMessages } from "./hooks/chat";
 import { useActiveTabDetection } from "./hooks/browser";
@@ -85,14 +84,11 @@ function AIChatContent() {
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
     const [localPdfInfo, setLocalPdfInfo] = useState<LocalPdfInfo | null>(null);
 
-    // Refs
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const voiceInputRef = useRef<VoiceInputHandle>(null);
 
-    // Custom hooks for separated concerns
-    // const apiKey = useApiKey();
 
-    // Detect active tab for local PDF auto-attach feature
     const activeTabDetection = useActiveTabDetection();
 
     const {

@@ -283,7 +283,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     }
 
     return (
-        <div className="mcp-panel">
+        <div className="flex flex-col h-screen max-h-screen bg-[var(--bg-primary,#0a0e1a)] text-[var(--text-primary,#ffffff)] overflow-hidden">
             <McpHeader title="MCP Server Management" onBack={onBack} />
 
             {/* Tool count warning */}
@@ -311,10 +311,10 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             )}
 
             {/* Search Bar with Plus Icon */}
-            <div className="mcp-search-container" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                <div className="mcp-search-wrapper" style={{ flex: 1 }}>
+            <div className="px-5 py-4 bg-[var(--bg-primary,#0a0e1a)] border-b border-[var(--border-color,rgba(255,255,255,0.08))]" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div className="relative flex items-center bg-[var(--bg-secondary,#0f1420)] border border-[var(--border-color,rgba(255,255,255,0.08))] rounded-[10px] transition-all duration-200 focus-within:bg-[var(--bg-tertiary,#141f30)] focus-within:border-[var(--blue-stride,#1264FF)] focus-within:ring-2 focus-within:ring-[rgba(18,100,255,0.1)]" style={{ flex: 1 }}>
                     <svg
-                        className="mcp-search-icon"
+                        className="absolute left-3.5 text-[var(--text-tertiary,rgba(255,255,255,0.4))] pointer-events-none transition-colors duration-200"
                         width="18"
                         height="18"
                         viewBox="0 0 24 24"
@@ -329,7 +329,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     </svg>
                     <input
                         type="text"
-                        className="mcp-search-input"
+                        className="w-full py-3 pr-4 pl-11 bg-transparent border-none outline-none text-[var(--text-primary,#ffffff)] text-sm font-inherit placeholder:text-[var(--text-tertiary,rgba(255,255,255,0.4))]"
                         placeholder="Search MCP servers..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -337,7 +337,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     />
                     {searchQuery && (
                         <button
-                            className="mcp-search-clear"
+                            className="absolute right-2.5 flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded-md text-[#a3a3a3] cursor-pointer transition-all duration-200 hover:bg-[#404040] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3b82f6] focus-visible:outline-offset-2"
                             onClick={() => setSearchQuery("")}
                             aria-label="Clear search"
                         >
@@ -408,9 +408,9 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                 </Popover>
             </div>
 
-            <div className="mcp-content">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[var(--bg-primary,#0a0e1a)] min-h-0 max-h-[calc(100vh-145px)] scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-transparent hover:scrollbar-thumb-white/25">
                 {filteredServers.length > 0 ? (
-                    <ul className="mcp-list" role="list">
+                    <ul className="list-none m-0 p-0 flex flex-col gap-4" role="list">
                         {filteredServers.map((server) => (
                             <li key={server.id}>
                                 <McpServerCard
@@ -430,8 +430,9 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                         ))}
                     </ul>
                 ) : (
-                    <div className="mcp-no-results">
+                    <div className="flex flex-col items-center justify-center py-[60px] px-5 text-center">
                         <svg
+                            className="text-[#525252] mb-4 opacity-50"
                             width="48"
                             height="48"
                             viewBox="0 0 24 24"
@@ -444,8 +445,8 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.35-4.35" />
                         </svg>
-                        <p className="mcp-no-results-text">No servers found</p>
-                        <p className="mcp-no-results-subtext">
+                        <p className="m-0 mb-2 text-base font-semibold text-[#d4d4d4]">No servers found</p>
+                        <p className="m-0 text-sm text-[#737373]">
                             Try searching for a different server name or add a custom server
                         </p>
                         <button
@@ -505,3 +506,4 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         </div>
     )
 }
+

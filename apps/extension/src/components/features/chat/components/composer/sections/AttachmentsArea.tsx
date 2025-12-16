@@ -22,7 +22,7 @@ export const AttachmentsArea: React.FC<AttachmentsAreaProps> = ({
         <>
             {/* Tab Attachments Preview */}
             {tabAttachments.length > 0 && (
-                <div className="tab-attachments-container">
+                <div className="flex flex-wrap gap-2 p-2 pb-2 border-b border-white/10">
                     <TabAttachment
                         tabs={tabAttachments}
                         onRemoveAll={() => {
@@ -34,7 +34,7 @@ export const AttachmentsArea: React.FC<AttachmentsAreaProps> = ({
 
             {/* File Attachments Preview */}
             {attachments.length > 0 && (
-                <div className="file-attachments-container">
+                <div className="flex flex-wrap gap-[10px] p-2 pb-2 border-b border-white/10">
                     {attachments.map(attachment => (
                         <FileAttachment
                             key={attachment.id}
@@ -44,6 +44,7 @@ export const AttachmentsArea: React.FC<AttachmentsAreaProps> = ({
                     ))}
                 </div>
             )}
+
         </>
     );
 };

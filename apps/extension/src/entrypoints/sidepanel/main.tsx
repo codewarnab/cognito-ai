@@ -18,7 +18,7 @@ import App from './App';
 // Import global styles (paths relative from src/entrypoints/sidepanel/)
 // These are imported from src/styles/ directory
 import '../../styles/features/copilot/index.css';
-import '../../styles/features/mcp/index.css';
+
 
 
 

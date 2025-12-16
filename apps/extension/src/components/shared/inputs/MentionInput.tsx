@@ -169,7 +169,7 @@ export function MentionInput({
     }, [showDropdown]);
 
     return (
-        <div className="mention-input-wrapper">
+        <div className="relative flex-1 w-full">
             {/* Textarea for multi-line support - mentions shown as plain text */}
             <textarea
                 ref={inputRef}

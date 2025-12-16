@@ -30,7 +30,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
     onLogout
 }) => {
     return (
-        <div className="mcp-card__actions">
+        <div className="flex gap-2">
             {requiresAuth ? (
                 isAuthenticated ? (
                     <>

@@ -119,14 +119,14 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="mcp-panel">
+    <div className="flex flex-col h-screen max-h-screen bg-[var(--bg-primary,#0a0e1a)] text-[var(--text-primary,#ffffff)] overflow-hidden">
       <McpHeader title="Add Custom MCP Server" onBack={onBack} />
 
-      <div className="mcp-form-content">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[var(--bg-primary,#0a0e1a)] scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-transparent hover:scrollbar-thumb-white/25">
         <InfoBanner />
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div className="flex flex-col gap-5">
             <ServerNameInput value={serverName} onChange={setServerName} />
             <ServerUrlInput value={serverUrl} onChange={setServerUrl} error={urlError} />
             <DescriptionInput
