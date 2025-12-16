@@ -13,7 +13,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('LRUCache');
+const log = createLogger('LRUCache', 'UTILS');
 
 /**
  * Node in the doubly-linked list
@@ -65,7 +65,7 @@ export class LRUCache<K, V> {
      */
     get(key: K): V | undefined {
         const node = this.cache.get(key);
-        
+
         if (!node) {
             return undefined;
         }
@@ -78,7 +78,7 @@ export class LRUCache<K, V> {
 
         // Move to front (most recently used)
         this.moveToFront(node);
-        
+
         return node.value;
     }
 
@@ -152,14 +152,14 @@ export class LRUCache<K, V> {
      */
     delete(key: K): boolean {
         const node = this.cache.get(key);
-        
+
         if (!node) {
             return false;
         }
 
         this.removeNode(node);
         this.cache.delete(key);
-        
+
         return true;
     }
 
@@ -267,11 +267,11 @@ export class LRUCache<K, V> {
         // Add to front
         node.prev = null;
         node.next = this.head;
-        
+
         if (this.head) {
             this.head.prev = node;
         }
-        
+
         this.head = node;
 
         if (!this.tail) {
@@ -308,9 +308,9 @@ export class LRUCache<K, V> {
         }
 
         const evictedNode = this.tail;
-        
+
         log.debug(`Evicting LRU entry: ${String(evictedNode.key)}`);
-        
+
         // Call eviction callback if provided
         if (this.onEvict) {
             this.onEvict(evictedNode.key, evictedNode.value);

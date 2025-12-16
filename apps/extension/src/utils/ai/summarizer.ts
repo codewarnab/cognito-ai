@@ -8,7 +8,7 @@
 import { createLogger } from '~logger';
 import { HIDE_LOCAL_MODE } from '@/constants';
 
-const log = createLogger('Summarizer');
+const log = createLogger('Summarizer', 'AI_PROMPTS');
 
 /**
  * Availability status for the Summarizer API

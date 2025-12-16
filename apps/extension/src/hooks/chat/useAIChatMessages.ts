@@ -4,7 +4,7 @@ import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '..
 import { generateThreadTitle } from '@/utils/ai';
 import type { UIMessage } from 'ai';
 
-const log = createLogger('useAIChatMessages');
+const log = createLogger('useAIChatMessages', 'AI_CHAT');
 
 interface UseAIChatMessagesProps {
     currentThreadId: string | null;

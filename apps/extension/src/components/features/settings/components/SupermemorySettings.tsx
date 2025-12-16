@@ -17,7 +17,7 @@ import {
 } from '@/utils/supermemory';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
 
-const log = createLogger('SupermemorySettings');
+const log = createLogger('SupermemorySettings', 'UI_SETTINGS');
 
 const SUPERMEMORY_CONSOLE_URL = 'https://console.supermemory.ai/keys';
 

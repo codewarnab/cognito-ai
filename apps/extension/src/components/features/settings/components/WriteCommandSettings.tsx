@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('WriteCommandSettings');
+const log = createLogger('WriteCommandSettings', 'UI_SETTINGS');
 
 export const WriteCommandSettings: React.FC = () => {
     const [settings, setSettings] = useState<Settings>(DEFAULT_WRITE_SETTINGS);

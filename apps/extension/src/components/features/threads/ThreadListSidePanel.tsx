@@ -4,7 +4,7 @@ import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
 import { createLogger } from '~logger';
 
-const log = createLogger('ThreadListSidePanel');
+const log = createLogger('ThreadListSidePanel', 'UI_THREADS');
 
 function cleanTitle(title: string): string {
     return title.replace(/^(User:|Assistant:)\s*/gi, '').trim();
@@ -165,8 +165,8 @@ export function ThreadListSidePanel({
                                         }
                                     }}
                                     className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all duration-200 shrink-0 ${isSearchOpen
-                                            ? 'bg-white/[0.08] border-white/[0.15] text-white'
-                                            : 'bg-white/[0.05] border-white/[0.08] text-[#888888] hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-white'
+                                        ? 'bg-white/[0.08] border-white/[0.15] text-white'
+                                        : 'bg-white/[0.05] border-white/[0.08] text-[#888888] hover:bg-white/[0.08] hover:border-white/[0.12] hover:text-white'
                                         }`}
                                     title={isSearchOpen ? "Close search" : "Search chats"}
                                 >

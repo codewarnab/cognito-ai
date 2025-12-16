@@ -16,6 +16,7 @@ const PRESET_NAMES: LoggerPresetName[] = [
   'DEBUG_MCP',
   'DEBUG_VOICE',
   'DEBUG_TOOLS',
+  'DEBUG_SANDBOX',
   'DEBUG_WORKFLOW',
   'PRODUCTION',
   'QUIET',
@@ -28,6 +29,7 @@ const GROUP_LABELS: Record<keyof typeof LOGGER_CATEGORY_GROUPS, string> = {
   AI: 'AI',
   Voice: 'Voice',
   Memory: 'Memory',
+  UI: 'UI Components',
   System: 'System',
   Debug: 'Debug',
 };
@@ -295,8 +297,8 @@ export const LoggerPanel: React.FC<LoggerPanelProps> = ({ onBack }) => {
                 key={preset}
                 type="button"
                 className={`py-1.5 px-3 border rounded-lg text-xs font-medium cursor-pointer transition-all duration-200 ${activePreset === preset
-                    ? 'bg-[var(--color-secondary)] border-[var(--color-secondary)] text-white'
-                    : 'bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--glass-bg-hover)] hover:border-[var(--border-color-hover)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--color-secondary)] border-[var(--color-secondary)] text-white'
+                  : 'bg-[var(--bg-tertiary)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--glass-bg-hover)] hover:border-[var(--border-color-hover)] hover:text-[var(--text-primary)]'
                   }`}
                 onClick={() => handlePresetClick(preset)}
               >

@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('VoiceSettings');
+const log = createLogger('VoiceSettings', 'UI_SETTINGS');
 
 const VOICE_OPTIONS: VoiceName[] = ['Aoede', 'Orus', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Orion'];
 

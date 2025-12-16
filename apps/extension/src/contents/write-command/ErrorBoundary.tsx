@@ -5,7 +5,7 @@
 import React from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('WriteCommandErrorBoundary');
+const log = createLogger('WriteCommandErrorBoundary', 'CONTENT_SCRIPTS');
 
 interface ErrorBoundaryProps {
     children: React.ReactNode;

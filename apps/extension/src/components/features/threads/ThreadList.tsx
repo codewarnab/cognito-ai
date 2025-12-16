@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
 import { createLogger } from '~logger';
-const log = createLogger('ThreadList');
+const log = createLogger('ThreadList', 'UI_THREADS');
 
 interface ThreadListProps {
     currentThreadId: string | null;

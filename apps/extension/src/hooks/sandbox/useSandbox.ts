@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { initializeSandbox, isSandboxReady } from '@/ai/tools/meta/SandboxBridge';
 import { createLogger } from '~logger';
 
-const log = createLogger('useSandbox');
+const log = createLogger('useSandbox', 'TOOLS_EXECUTION');
 
 export interface UseSandboxResult {
     /** Whether the sandbox is ready for code execution */

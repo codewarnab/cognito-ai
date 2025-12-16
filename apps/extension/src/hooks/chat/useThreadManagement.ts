@@ -16,7 +16,7 @@ import type { AppUsage } from '@/ai/types/usage';
 import { clearAllDismissals } from '@/utils/settings';
 import { maybeQueueForExtraction } from '@/utils/supermemory/extractionTrigger';
 
-const log = createLogger('useThreadManagement');
+const log = createLogger('useThreadManagement', 'AI_CHAT');
 
 interface UseThreadManagementProps {
     setMessages?: (messages: UIMessage[]) => void;

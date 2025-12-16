@@ -11,7 +11,7 @@ import { suggestionCache } from '@/utils/ai';
 import { generateContextualSuggestions, type Suggestion } from '@/ai/suggestions';
 import type { ModelState } from '@/components/features/chat/types';
 
-const log = createLogger('UseSuggestions');
+const log = createLogger('UseSuggestions', 'MEMORY_SUGGESTIONS');
 
 // Debounce delay: 1 seconds after page change
 const DEBOUNCE_DELAY_MS = 1000;

@@ -9,7 +9,7 @@ import { createLogger } from '~logger';
 import { ALL_TOOLS, getEnabledTools, setEnabledTools } from '@/services/elevenlabs/settings';
 import '../styles/ToolSelector.css';
 
-const log = createLogger('ToolSelector');
+const log = createLogger('ToolSelector', 'UI_VOICE');
 
 interface ToolSelectorProps {
   isOpen: boolean;
@@ -29,7 +29,7 @@ export const ToolSelector: React.FC<ToolSelectorProps> = ({
   useEffect(() => {
     const loadTools = async () => {
       if (!isOpen) return;
-      
+
       try {
         setIsLoading(true);
         const tools = await getEnabledTools();

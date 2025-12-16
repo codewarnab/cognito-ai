@@ -11,7 +11,7 @@ import type { FileAttachmentData } from '@/components/features/chat/components/a
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import type { UIMessage } from 'ai';
 
-const log = createLogger('useMessageHandlers');
+const log = createLogger('useMessageHandlers', 'AI_CHAT');
 
 interface UseMessageHandlersProps {
     messages: UIMessage[];

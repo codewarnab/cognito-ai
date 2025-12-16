@@ -8,7 +8,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('ToolMetadataStore');
+const log = createLogger('ToolMetadataStore', 'MCP_TOOLS');
 
 /**
  * Map of tool name → server ID

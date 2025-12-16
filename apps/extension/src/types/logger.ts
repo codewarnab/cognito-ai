@@ -34,6 +34,13 @@ export type LogCategory =
   // Memory
   | 'MEMORY_OPERATIONS'
   | 'MEMORY_SUGGESTIONS'
+  // UI
+  | 'UI_CHAT'
+  | 'UI_VOICE'
+  | 'UI_SETTINGS'
+  | 'UI_THREADS'
+  | 'UI_SIDEPANEL'
+  | 'UI_REMINDERS'
   // System
   | 'BACKGROUND'
   | 'STORAGE'
@@ -43,6 +50,9 @@ export type LogCategory =
   | 'SEARCH'
   | 'WORKFLOW'
   | 'SETTINGS'
+  | 'BROWSER'
+  | 'ATTACHMENTS'
+  | 'CONTENT_SCRIPTS'
   // Debug
   | 'DEBUG'
   | 'PERFORMANCE'
@@ -62,6 +72,7 @@ export type LoggerPresetName =
   | 'DEBUG_MCP'
   | 'DEBUG_VOICE'
   | 'DEBUG_TOOLS'
+  | 'DEBUG_SANDBOX'
   | 'DEBUG_WORKFLOW'
   | 'PRODUCTION'
   | 'QUIET'
@@ -81,6 +92,7 @@ export const LOGGER_CATEGORY_GROUPS = {
   AI: ['AI_CHAT', 'AI_PROMPTS', 'AI_VOICE', 'AI_WEBSITE_DETECTION'] as const,
   Voice: ['VOICE_RECORDING', 'VOICE_CLIENT', 'VOICE_UI', 'VOICE_AUDIO'] as const,
   Memory: ['MEMORY_OPERATIONS', 'MEMORY_SUGGESTIONS'] as const,
-  System: ['BACKGROUND', 'STORAGE', 'UTILS', 'NOTIFICATIONS', 'CREDENTIALS', 'SEARCH', 'SETTINGS', 'WORKFLOW'] as const,
+  UI: ['UI_CHAT', 'UI_VOICE', 'UI_SETTINGS', 'UI_THREADS', 'UI_SIDEPANEL', 'UI_REMINDERS'] as const,
+  System: ['BACKGROUND', 'STORAGE', 'UTILS', 'NOTIFICATIONS', 'CREDENTIALS', 'SEARCH', 'SETTINGS', 'WORKFLOW', 'BROWSER', 'ATTACHMENTS', 'CONTENT_SCRIPTS'] as const,
   Debug: ['DEBUG', 'PERFORMANCE', 'ERRORS_ONLY', 'SHOW_ALL'] as const,
 } as const;

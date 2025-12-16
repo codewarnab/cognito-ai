@@ -6,7 +6,7 @@
 import { createLogger } from '~logger';
 import { ENV } from '@/utils/env';
 
-const log = createLogger('ElevenLabs-API');
+const log = createLogger('ElevenLabs-API', 'VOICE_CLIENT');
 
 // Worker URL from environment variables (with fallback to default)
 const WORKER_BASE_URL = ENV.ELEVENLABS_WORKER_URL;

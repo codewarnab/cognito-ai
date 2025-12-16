@@ -94,13 +94,53 @@ let currentRequestId: string | null = null;
 function createToolsProxy(toolNames: string[], requestId: string): Record<string, (...args: unknown[]) => Promise<unknown>> {
     const proxy: Record<string, (...args: unknown[]) => Promise<unknown>> = {};
 
+    console.log('[Sandbox] Creating tools proxy with tools:', toolNames);
+
     for (const toolName of toolNames) {
         proxy[toolName] = async (...args: unknown[]): Promise<unknown> => {
             const callId = `${requestId}-${++callIdCounter}`;
+            const startTime = Date.now();
+
+            console.log(`[Sandbox] 🔧 TOOL CALL START: ${toolName}`, {
+                callId,
+                requestId,
+                args: JSON.stringify(args).substring(0, 200),
+                timestamp: new Date().toISOString(),
+            });
 
             return new Promise((resolve, reject) => {
-                // Store the promise resolvers
-                pendingToolCalls.set(callId, { resolve, reject });
+                // Set up timeout for this specific tool call
+                const timeoutId = setTimeout(() => {
+                    console.error(`[Sandbox] ⏰ TOOL TIMEOUT: ${toolName} after ${TOOL_CALL_TIMEOUT_MS}ms`, {
+                        callId,
+                        pendingCalls: Array.from(pendingToolCalls.keys()),
+                    });
+                    pendingToolCalls.delete(callId);
+                    reject(new Error(`Tool ${toolName} timed out after ${TOOL_CALL_TIMEOUT_MS}ms`));
+                }, TOOL_CALL_TIMEOUT_MS);
+
+                // Store the promise resolvers with timeout cleanup
+                pendingToolCalls.set(callId, {
+                    resolve: (value) => {
+                        clearTimeout(timeoutId);
+                        const duration = Date.now() - startTime;
+                        console.log(`[Sandbox] ✅ TOOL SUCCESS: ${toolName} in ${duration}ms`, {
+                            callId,
+                            resultType: typeof value,
+                            resultPreview: JSON.stringify(value).substring(0, 200),
+                        });
+                        resolve(value);
+                    },
+                    reject: (error) => {
+                        clearTimeout(timeoutId);
+                        const duration = Date.now() - startTime;
+                        console.error(`[Sandbox] ❌ TOOL ERROR: ${toolName} in ${duration}ms`, {
+                            callId,
+                            error: error.message,
+                        });
+                        reject(error);
+                    },
+                });
 
                 // Send the tool request to the parent (extension)
                 const message: ToolRequestMessage = {
@@ -111,7 +151,15 @@ function createToolsProxy(toolNames: string[], requestId: string): Record<string
                     args,
                 };
 
+                console.log(`[Sandbox] 📤 Sending TOOL_REQUEST to parent:`, {
+                    toolName,
+                    callId,
+                    origin: EXPECTED_ORIGIN,
+                });
+
                 parent.postMessage(message, EXPECTED_ORIGIN);
+
+                console.log(`[Sandbox] 📤 TOOL_REQUEST sent, waiting for TOOL_RESULT...`, { callId });
             });
         };
     }
@@ -325,17 +373,28 @@ window.addEventListener('message', async (event: MessageEvent<IncomingMessage>) 
         case 'TOOL_RESULT': {
             const { callId, result, error } = data;
 
+            console.log('[Sandbox] 📥 Received TOOL_RESULT:', {
+                callId,
+                hasResult: result !== undefined,
+                hasError: !!error,
+                resultPreview: result ? JSON.stringify(result).substring(0, 200) : 'undefined',
+                error: error || 'none',
+                pendingCallIds: Array.from(pendingToolCalls.keys()),
+            });
+
             const pending = pendingToolCalls.get(callId);
             if (pending) {
                 pendingToolCalls.delete(callId);
 
                 if (error) {
+                    console.log(`[Sandbox] 📥 Calling reject for callId: ${callId}`);
                     pending.reject(new Error(error));
                 } else {
+                    console.log(`[Sandbox] 📥 Calling resolve for callId: ${callId}`);
                     pending.resolve(result);
                 }
             } else {
-                console.warn('[Sandbox] Received TOOL_RESULT for unknown callId:', callId);
+                console.warn('[Sandbox] ⚠️ Received TOOL_RESULT for unknown callId:', callId, 'Pending calls:', Array.from(pendingToolCalls.keys()));
             }
             break;
         }

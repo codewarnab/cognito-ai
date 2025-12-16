@@ -228,7 +228,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 >
                                     Features
                                 </MenuItem>
-                                {process.env.NODE_ENV === 'development' && (
+                                {true  && (
                                     <MenuItem
                                         onClick={() => {
                                             setShowHeaderMenu(false);

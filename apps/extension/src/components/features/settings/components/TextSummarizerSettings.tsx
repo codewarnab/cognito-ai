@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('TextSummarizerSettings');
+const log = createLogger('TextSummarizerSettings', 'UI_SETTINGS');
 
 export const TextSummarizerSettings: React.FC = () => {
     const [settings, setSettings] = useState<Settings>(DEFAULT_SUMMARIZER_SETTINGS);

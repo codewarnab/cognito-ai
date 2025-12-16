@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('ResearchWorkflowSettings');
+const log = createLogger('ResearchWorkflowSettings', 'UI_SETTINGS');
 
 export const ResearchWorkflowSettings: React.FC = () => {
     const [settings, setSettings] = useState<Settings>(DEFAULT_RESEARCH_WORKFLOW_SETTINGS);

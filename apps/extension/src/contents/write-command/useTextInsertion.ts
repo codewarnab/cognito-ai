@@ -5,7 +5,7 @@
 import { useCallback } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('TextInsertion');
+const log = createLogger('TextInsertion', 'CONTENT_SCRIPTS');
 
 export interface InsertResult {
     success: boolean;

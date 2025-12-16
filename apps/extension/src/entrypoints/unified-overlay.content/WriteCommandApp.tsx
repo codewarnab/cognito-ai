@@ -14,7 +14,7 @@ import { getWriteCommandSettings } from '@/utils/settings';
 import type { WriteStreamChunk, WriteError, WriteGenerateRequest, WriteAttachmentPayload } from '@/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('WriteCommand');
+const log = createLogger('WriteCommand', 'CONTENT_SCRIPTS');
 
 interface WriteCommandAppProps {
     ctx: any;

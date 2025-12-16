@@ -7,7 +7,7 @@ import type { YouTubeVideoInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
 import type { ProcessFileOptions } from './useFileAttachments';
 
-const log = createLogger('useYouTubeVideoAttachment');
+const log = createLogger('useYouTubeVideoAttachment', 'ATTACHMENTS');
 
 interface UseYouTubeVideoAttachmentOptions {
     youtubeVideoInfo?: YouTubeVideoInfo | null;
@@ -271,12 +271,12 @@ export const useYouTubeVideoAttachment = ({
 
             // Create transcript text - use compact format if segments available
             let transcriptText: string;
-            
+
             if (transcriptEntry.segments && transcriptEntry.segments.length > 0) {
                 // Use processed compact format (significantly reduces token usage)
                 const processed = processTranscriptForAI(transcriptEntry);
                 const segmentsJson = JSON.stringify(processed.segments);
-                
+
                 transcriptText = `[YOUTUBE VIDEO TRANSCRIPT]
 Title: ${processed.title}
 Author: ${processed.author || 'Unknown'}

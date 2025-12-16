@@ -13,7 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('TTSAndDataSettings');
+const log = createLogger('TTSAndDataSettings', 'UI_SETTINGS');
 
 const TTS_OPTIONS: { value: TTSProvider; label: string; description: string }[] = [
     { value: 'gemini', label: 'Gemini TTS', description: 'High-quality AI-powered text-to-speech' },

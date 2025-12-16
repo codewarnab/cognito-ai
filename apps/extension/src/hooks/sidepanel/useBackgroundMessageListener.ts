@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useBackgroundMessageListener');
+const log = createLogger('useBackgroundMessageListener', 'UI_SIDEPANEL');
 
 export interface UseBackgroundMessageListenerProps {
     currentThreadId: string | null;
@@ -35,17 +35,17 @@ export function useBackgroundMessageListener({
         ) => {
             // Create a unique key for this message to detect duplicates
             const dedupeKey = `${message?.type}-${JSON.stringify(message?.payload)}`;
-            
+
             // Check if we've already processed this exact message recently (within 1 second)
             if (processedMessagesRef.current.has(dedupeKey)) {
                 log.warn('⚠️ Duplicate message detected and ignored', { type: message?.type });
                 sendResponse({ success: true, duplicate: true });
                 return true;
             }
-            
+
             // Mark this message as processed
             processedMessagesRef.current.add(dedupeKey);
-            
+
             // Clean up old entries after 1 second
             if (cleanupTimeoutRef.current) {
                 clearTimeout(cleanupTimeoutRef.current);

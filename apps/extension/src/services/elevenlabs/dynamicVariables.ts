@@ -6,7 +6,7 @@
 import { createLogger } from '~logger';
 import { getEnabledTools } from './settings';
 
-const log = createLogger('ElevenLabs-DynamicVars');
+const log = createLogger('ElevenLabs-DynamicVars', 'VOICE_CLIENT');
 
 interface ToolDefinition {
   id: string;

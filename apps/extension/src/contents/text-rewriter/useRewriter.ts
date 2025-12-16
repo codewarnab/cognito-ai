@@ -7,7 +7,7 @@ import { getRewriteSettings } from '@/utils/settings/rewriteSettings';
 import type { RewriteMessage, RewritePreset, RewriteRequest } from '@/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('UseRewriter');
+const log = createLogger('UseRewriter', 'CONTENT_SCRIPTS');
 
 interface RewriterState {
     rewrittenText: string;

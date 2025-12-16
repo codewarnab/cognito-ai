@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { createLogger } from '~logger';
 import type { AudioLinesIconHandle } from '@/components/shared/icons';
 
-const log = createLogger('useVoiceRecording');
+const log = createLogger('useVoiceRecording', 'VOICE_RECORDING');
 
 /**
  * Hook to manage voice recording state and animations

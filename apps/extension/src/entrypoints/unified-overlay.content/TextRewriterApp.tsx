@@ -6,7 +6,7 @@ import type { RewritePreset, RewriteSelectionData } from '@/types';
 import { isRewriteEnabled } from '@/utils/settings/rewriteSettings';
 import { createLogger } from '~logger';
 
-const log = createLogger('TextRewriter');
+const log = createLogger('TextRewriter', 'CONTENT_SCRIPTS');
 
 // Message type from background context menu
 interface ShowRewriterMessage {

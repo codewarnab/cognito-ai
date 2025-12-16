@@ -6,7 +6,7 @@
 import { createLogger } from '~logger';
 import type { Suggestion } from '@/ai/suggestions';
 
-const log = createLogger('SuggestionCache');
+const log = createLogger('SuggestionCache', 'MEMORY_SUGGESTIONS');
 
 // Cache duration: 5 minutes
 const CACHE_DURATION_MS = 5 * 60 * 1000;

@@ -10,7 +10,7 @@ import { extractMentions, type TabMention } from './mentionUtils';
 import { captureTabSnapshot, type TabSnapshotResult } from '@/utils/tabs/tabSnapshot';
 import { createLogger } from '~logger';
 
-const log = createLogger('MentionProcessor');
+const log = createLogger('MentionProcessor', 'AI_CHAT');
 
 /**
  * Optimized message processor with caching and batch operations

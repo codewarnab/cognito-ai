@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/primitives';
 
-const log = createLogger('TextRewriterSettings');
+const log = createLogger('TextRewriterSettings', 'UI_SETTINGS');
 
 export const TextRewriterSettings: React.FC = () => {
     const [settings, setSettings] = useState<Settings>(DEFAULT_REWRITE_SETTINGS);

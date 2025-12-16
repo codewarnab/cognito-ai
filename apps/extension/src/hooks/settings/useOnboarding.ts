@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useOnboarding');
+const log = createLogger('useOnboarding', 'SETTINGS');
 
 /**
  * Hook to manage onboarding state and persistence

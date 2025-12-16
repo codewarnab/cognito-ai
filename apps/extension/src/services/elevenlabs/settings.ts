@@ -6,7 +6,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('ElevenLabs-Settings');
+const log = createLogger('ElevenLabs-Settings', 'VOICE_CLIENT');
 
 // Default tools that are enabled
 const DEFAULT_ENABLED_TOOLS = [

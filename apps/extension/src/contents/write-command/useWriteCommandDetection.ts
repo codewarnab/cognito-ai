@@ -14,7 +14,7 @@ import { isWriteCommandEnabled } from '@/utils/settings';
 import type { WritePosition, WriterModeState } from '@/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('WriteCommandDetection');
+const log = createLogger('WriteCommandDetection', 'CONTENT_SCRIPTS');
 
 const COMMAND_PATTERN = /\/write(?:\s|$)/i;
 const OVERLAY_OFFSET_Y = 20; // Increased offset to position overlay further below input

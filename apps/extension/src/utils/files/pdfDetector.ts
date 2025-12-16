@@ -1,6 +1,6 @@
 import { createLogger } from '~logger';
 
-const log = createLogger('PDFDetector');
+const log = createLogger('PDFDetector', 'UTILS');
 
 export interface PDFUrlInfo {
     url: string;

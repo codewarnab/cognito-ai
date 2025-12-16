@@ -9,7 +9,7 @@ import { createLogger } from '~logger';
 import { EditReminderDialog } from './EditReminderDialog';
 import { SquarePenIcon } from '../../shared/icons/SquarePenIcon';
 
-const log = createLogger('ReminderPanel');
+const log = createLogger('ReminderPanel', 'UI_REMINDERS');
 
 // Example suggestions for creating reminders
 const REMINDER_SUGGESTIONS = [

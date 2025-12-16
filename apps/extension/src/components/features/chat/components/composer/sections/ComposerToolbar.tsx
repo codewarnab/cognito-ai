@@ -3,7 +3,7 @@ import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
-import { Tooltip } from '@/components/ui/primitives';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives';
 import { Wrench } from 'lucide-react';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { SEARCH_TOOL_NAMES } from '@/ai/tools/searchToolFilter';
@@ -85,49 +85,48 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             )}
 
             <div style={{ position: 'relative' }}>
-                <Tooltip
-                    content={
-                        isSearchActive
+                <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            onClick={() => !activeWorkflow && !isSearchActive && setShowToolsModal(!showToolsModal)}
+                            disabled={!!activeWorkflow || isSearchActive}
+                            aria-label={isSearchActive ? "Tools locked in search mode" : "Manage enabled tools"}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: 'transparent',
+                                color: isTooManyTools && !isSearchActive
+                                    ? 'var(--color-warning, #f59e0b)'
+                                    : activeWorkflow || isSearchActive
+                                        ? 'var(--text-tertiary, #6b7280)'
+                                        : 'var(--text-secondary, #9ca3af)',
+                                cursor: activeWorkflow || isSearchActive ? 'not-allowed' : 'pointer',
+                                opacity: activeWorkflow || isSearchActive ? 0.5 : 1,
+                                transition: 'color 0.15s, opacity 0.15s',
+                                fontSize: '12px',
+                                fontWeight: 800,
+                            }}
+                        >
+                            <Wrench size={14} />
+                            <span style={{ fontSize: '10px', fontWeight: 400 }}>
+                                {isSearchActive ? searchToolsCount : totalEnabledCount}
+                            </span>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        {isSearchActive
                             ? `Tools are locked in Search mode (${searchToolsCount} search tools available)`
                             : activeWorkflow
                                 ? "Tools are managed by the active workflow"
                                 : isTooManyTools
                                     ? "Too many tools enabled - may slow AI responses"
-                                    : "Manage enabled tools"
-                    }
-                    position="top"
-                    delay={200}
-                >
-                    <button
-                        type="button"
-                        onClick={() => !activeWorkflow && !isSearchActive && setShowToolsModal(!showToolsModal)}
-                        disabled={!!activeWorkflow || isSearchActive}
-                        aria-label={isSearchActive ? "Tools locked in search mode" : "Manage enabled tools"}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            background: 'transparent',
-                            color: isTooManyTools && !isSearchActive
-                                ? 'var(--color-warning, #f59e0b)'
-                                : activeWorkflow || isSearchActive
-                                    ? 'var(--text-tertiary, #6b7280)'
-                                    : 'var(--text-secondary, #9ca3af)',
-                            cursor: activeWorkflow || isSearchActive ? 'not-allowed' : 'pointer',
-                            opacity: activeWorkflow || isSearchActive ? 0.5 : 1,
-                            transition: 'color 0.15s, opacity 0.15s',
-                            fontSize: '12px',
-                            fontWeight: 800,
-                        }}
-                    >
-                        <Wrench size={14} />
-                        <span style={{ fontSize: '10px', fontWeight: 400 }}>
-                            {isSearchActive ? searchToolsCount : totalEnabledCount}
-                        </span>
-                    </button>
+                                    : "Manage enabled tools"}
+                    </TooltipContent>
                 </Tooltip>
 
                 {/* Tools Popover - hidden when search mode is active */}
