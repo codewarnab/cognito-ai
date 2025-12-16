@@ -6,10 +6,16 @@
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
+import { withSupermemory } from '@supermemory/tools/ai-sdk';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/credentials';
+import {
+    isSupermemoryReady,
+    getSupermemoryApiKey,
+    getSupermemoryUserId
+} from '@/utils/supermemory';
 import { customFetch } from '../utils/fetchHelpers';
 import type { AIMode } from '../types/types';
 import type { AIProvider } from '@/utils/credentials';
@@ -32,6 +38,44 @@ async function validateAndGetApiKey(): Promise<string> {
 }
 
 const log = createLogger('ModelFactory', 'AI_CHAT');
+
+/**
+ * Wraps a model with Supermemory if configured and enabled
+ * 
+ * @param model - The AI model to potentially wrap
+ * @returns The wrapped model if Supermemory is ready, otherwise the original model
+ */
+async function wrapModelWithSupermemory(model: any): Promise<any> {
+    try {
+        const ready = await isSupermemoryReady();
+        if (!ready) {
+            log.debug('Supermemory not ready, using model without memory');
+            return model;
+        }
+
+        const [apiKey, userId] = await Promise.all([
+            getSupermemoryApiKey(),
+            getSupermemoryUserId()
+        ]);
+
+        if (!apiKey) {
+            log.debug('Supermemory API key not available, using model without memory');
+            return model;
+        }
+
+        log.info('🧠 Wrapping model with Supermemory', { userId });
+        // @ts-ignore - apiKey is valid in recent versions but types might be stale
+        return withSupermemory(model, userId, {
+            apiKey,
+            addMemory: 'always'
+        });
+    } catch (error) {
+        log.warn('Failed to wrap model with Supermemory, using model without memory', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+        return model;
+    }
+}
 
 /**
  * Result of model initialization
@@ -158,7 +202,7 @@ async function initializeVertexModel(modelName: string): Promise<ModelInitResult
             },
         });
 
-        const model = vertex(modelName);
+        const model = await wrapModelWithSupermemory(vertex(modelName));
 
         log.info('✅ Vertex AI model initialized successfully:', {
             modelName,
@@ -204,7 +248,7 @@ async function initializeGoogleModel(modelName: string): Promise<ModelInitResult
             apiKey,
             fetch: customFetch
         });
-        const model = google(modelName);
+        const model = await wrapModelWithSupermemory(google(modelName));
 
         log.info('✅ Google Generative AI model initialized successfully:', modelName);
 
