@@ -71,22 +71,10 @@ function isValidExtensionOrigin(origin: string): boolean {
     return origin.startsWith('chrome-extension://');
 }
 
-/**
- * Get the parent frame's origin for sending messages back.
- * We extract this from the referrer or location since the sandbox's own origin is null.
- */
-function getParentOrigin(): string {
-    // The sandbox HTML is loaded from chrome-extension://<id>/sandbox-executor.html
-    // So we can extract the extension origin from our own location
-    try {
-        return new URL(location.href).origin;
-    } catch {
-        // Fallback: allow any origin for postMessage back to parent
-        return '*';
-    }
-}
-
-const PARENT_ORIGIN = getParentOrigin();
+// Use '*' for targetOrigin because sandboxed iframes have complex origin handling.
+// Attempts to use chrome.runtime.getURL() or origin extraction caused message drops
+// due to mismatch between parent's origin and sandbox's perceived origin.
+const PARENT_ORIGIN = '*';
 
 // ============================================================================
 // Pending Tool Calls Tracking

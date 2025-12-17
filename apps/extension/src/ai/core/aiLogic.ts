@@ -493,13 +493,14 @@ export async function streamAIResponse(params: {
                   const toolNameMatch = errorMessage.match(/tool ['"]([^'"]+)['"]/);
                   const attemptedTool = toolNameMatch ? toolNameMatch[1] : 'unknown';
 
-                  // Get available tool names
-                  const availableTools = Object.keys(tools);
+                  // Get available tool names - use initialActiveTools if set (reflects actual mode)
+                  const availableTools = initialActiveTools || Object.keys(tools);
 
-                  // Check if we're in adaptive mode by looking at available tools
+                  // Check if we're in adaptive mode by looking at the active tools
+                  // This is a synchronous check because onError callback cannot be async
                   const isAdaptiveMode = availableTools.includes('executeTools') &&
                     availableTools.includes('discoverTools') &&
-                    !availableTools.includes('createReminder'); // Adaptive mode has limited pre-loaded tools
+                    availableTools.length < 10;
 
                   let feedback: string;
 

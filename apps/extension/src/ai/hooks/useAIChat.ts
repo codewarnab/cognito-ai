@@ -45,6 +45,13 @@ export function useAIChat(options: UseAIChatOptions) {
   const setStoreMessages = useChatStore((state: ChatState) => state.setMessages);
   const setStoreUsage = useChatStore((state: ChatState) => state.setUsage);
 
+  // Get store messages for syncing FROM store (thread switching)
+  const storeMessages = useChatStore((state: ChatState) => state.messages);
+  const storeIsHydrated = useChatStore((state: ChatState) => state.isHydrated);
+
+  // Track last thread ID to detect thread switches
+  const lastThreadIdRef = useRef<string | null>(null);
+
   // Track current usage for this thread
   const [currentUsage, setCurrentUsage] = useState<AppUsage | null>(null);
   const lastWarningPercent = useRef<number | null>(null);
@@ -63,7 +70,7 @@ export function useAIChat(options: UseAIChatOptions) {
         modelId: usage.modelId
       });
       setCurrentUsage(usage);
-      
+
       // Sync to store
       setStoreUsage(usage);
 
@@ -251,6 +258,32 @@ export function useAIChat(options: UseAIChatOptions) {
       setStoreStatus('error');
     }
   }, [chat.status, setStoreStatus]);
+
+  // Sync messages FROM store TO useChat when thread changes
+  // This is critical for thread switching - store loads from IndexedDB, we sync to useChat
+  useEffect(() => {
+    // Only sync if store is hydrated and thread has actually changed
+    if (!storeIsHydrated) {
+      log.info('⏳ Store not hydrated yet, skipping sync');
+      return;
+    }
+
+    const threadChanged = lastThreadIdRef.current !== null && lastThreadIdRef.current !== threadId;
+
+    if (threadChanged) {
+      log.info('🔄 Thread switch detected, syncing store messages to useChat', {
+        from: lastThreadIdRef.current,
+        to: threadId,
+        storeMessageCount: storeMessages.length
+      });
+
+      // Sync store messages to useChat
+      chat.setMessages(storeMessages);
+    }
+
+    // Update last thread ID
+    lastThreadIdRef.current = threadId;
+  }, [threadId, storeMessages, storeIsHydrated, chat.setMessages]);
 
   // Sync messages to store when they change
   useEffect(() => {

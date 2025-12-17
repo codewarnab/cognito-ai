@@ -52,25 +52,36 @@ export async function saveChatMessage(
  * Load chat history for a specific thread
  * 
  * Uses compound index [threadId+sequenceNumber] for pre-sorted retrieval.
- * Time complexity: O(n) - no sorting needed, results come pre-ordered from IndexedDB
+ * Falls back to simple threadId query with timestamp sorting for legacy data.
  * 
  * @param threadId - The thread ID to load messages for
- * @returns Array of messages sorted by sequence number (via compound index)
+ * @returns Array of messages sorted by sequence number or timestamp
  * 
  * @remarks
  * Returns messages with complete UIMessage structure including tool calls.
- * Messages are retrieved in sorted order using compound index.
+ * Primary: Uses compound index for O(n) pre-sorted retrieval.
+ * Fallback: Uses threadId index with timestamp sort for data without sequenceNumber.
  */
 export async function loadThreadMessages(threadId: string): Promise<ChatMessage[]> {
-    // Use compound index for pre-sorted retrieval
-    // This gives us O(n) retrieval instead of O(n log n) post-sort
-    return await db.chatMessages
+    // Try compound index first for pre-sorted retrieval
+    let messages = await db.chatMessages
         .where('[threadId+sequenceNumber]')
         .between(
             [threadId, Dexie.minKey],
             [threadId, Dexie.maxKey]
         )
         .toArray();
+
+    // Fallback: If compound index returns empty, try simple threadId query
+    // This handles legacy data without proper sequenceNumber values
+    if (messages.length === 0) {
+        messages = await db.chatMessages
+            .where('threadId')
+            .equals(threadId)
+            .sortBy('timestamp');
+    }
+
+    return messages;
 }
 
 /**

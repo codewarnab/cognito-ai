@@ -319,7 +319,10 @@ export class SandboxBridge {
             error,
         };
 
-        this.iframe.contentWindow.postMessage(message, chrome.runtime.getURL(''));
+        // Use '*' for targetOrigin because sandboxed iframes have complex origin handling.
+        // Attempts to use chrome.runtime.getURL() or origin extraction caused message drops
+        // due to mismatch between parent's origin and sandbox's perceived origin.
+        this.iframe.contentWindow.postMessage(message, '*');
     }
 
     /**
@@ -510,7 +513,10 @@ export class SandboxBridge {
                 toolCount: availableTools.length,
             });
 
-            this.iframe!.contentWindow!.postMessage(message, chrome.runtime.getURL(''));
+            // Use '*' for targetOrigin because sandboxed iframes have complex origin handling.
+            // Attempts to use chrome.runtime.getURL() or origin extraction caused message drops
+            // due to mismatch between parent's origin and sandbox's perceived origin.
+            this.iframe!.contentWindow!.postMessage(message, '*');
         });
     }
 
