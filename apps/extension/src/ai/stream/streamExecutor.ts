@@ -159,21 +159,21 @@ export async function executeStreamText(params: {
         if ('googleMaps' in tools) {
             try {
                 // Get location with 5s timeout
-                const location = await getCurrentLocation({ timeout: 5000 });
-                if (location) {
+                const result = await getCurrentLocation({ timeout: 5000 });
+                if (result.success) {
                     providerOptions = {
                         google: {
                             retrievalConfig: {
                                 latLng: {
-                                    latitude: location.latitude,
-                                    longitude: location.longitude
+                                    latitude: result.location.latitude,
+                                    longitude: result.location.longitude
                                 }
                             }
                         }
                     };
-                    log.info('📍 Location injected into Google Maps tool context', { location });
+                    log.info('📍 Location injected into Google Maps tool context', { location: result.location });
                 } else {
-                    log.warn('⚠️ Google Maps tool active but failed to get location');
+                    log.warn('⚠️ Google Maps tool active but failed to get location', { error: result.error });
                 }
             } catch (error) {
                 log.error('❌ Failed to get location for Google Maps tool', { error });

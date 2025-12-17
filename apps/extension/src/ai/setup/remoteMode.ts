@@ -105,21 +105,9 @@ export async function setupRemoteMode(
             filtered: Object.keys(allExtensionTools).length - Object.keys(extensionTools).length
         });
 
-        // FIX: Ensure search tools are always included if registered
-        // Search tools (webSearch, retrieve, deepWebSearch) must be available for search mode to work
-        // They may be filtered out if user's enabledToolsOverride doesn't include them
-        if (allExtensionTools['webSearch'] && !extensionTools['webSearch']) {
-            extensionTools['webSearch'] = allExtensionTools['webSearch'];
-            log.info('🔧 FIX: Added webSearch tool (was filtered out by enabledTools)');
-        }
-        if (allExtensionTools['retrieve'] && !extensionTools['retrieve']) {
-            extensionTools['retrieve'] = allExtensionTools['retrieve'];
-            log.info('🔧 FIX: Added retrieve tool (was filtered out by enabledTools)');
-        }
-        if (allExtensionTools['deepWebSearch'] && !extensionTools['deepWebSearch']) {
-            extensionTools['deepWebSearch'] = allExtensionTools['deepWebSearch'];
-            log.info('🔧 FIX: Added deepWebSearch tool (was filtered out by enabledTools)');
-        }
+        // NOTE: Search tools (webSearch, retrieve, deepWebSearch) are NOT force-added here.
+        // They are only available when search mode is active, which is handled by
+        // filterToolsObjectBySearchMode() in the AI execution pipeline.
     }
 
     log.info('🔧 Extension tools loaded:', {
@@ -229,6 +217,19 @@ export async function setupRemoteMode(
                 }
             } catch (error) {
                 log.warn('⚠️ Failed to load Google Maps tool:', error);
+            }
+        }
+        if (enabledTools.includes('googleSearch')) {
+            try {
+                // Initialize Google Search tool for web search grounding
+                if (google.tools.googleSearch) {
+                    integrationTools.googleSearch = google.tools.googleSearch({});
+                    log.info('🔎 Google Search tool loaded');
+                } else {
+                    log.warn('⚠️ Google Search tool not found in google.tools');
+                }
+            } catch (error) {
+                log.warn('⚠️ Failed to load Google Search tool:', error);
             }
         }
     }

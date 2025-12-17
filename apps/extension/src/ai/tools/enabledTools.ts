@@ -77,6 +77,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   // Agent Tools
   'getYouTubeTranscript',
   'googleMaps',
+  'googleSearch',
 
   // Report Generation (workflow-specific, may be filtered in certain modes)
   'generatePDF',

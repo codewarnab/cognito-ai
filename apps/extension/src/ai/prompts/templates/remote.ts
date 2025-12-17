@@ -216,6 +216,11 @@ function buildCapabilities(): string {
     "  • Access to external tools via MCP servers when configured",
     "  • Extended capabilities through third-party integrations",
     "",
+    "GOOGLE SEARCH:",
+    "  • Use Google Search grounding for current information",
+    "  • Get real-time search results and trending topics",
+    "  • Answer questions about recent events and news",
+    "",
     "GENERAL:",
     "  • Initial page context provided once per thread",
     "  • Context becomes stale after navigation - use content extraction tools to refresh",
@@ -263,6 +268,7 @@ CURRENT CONTEXT: You can read the current page content when users ask about what
 - Search tabs and bookmarks
 - Analyze YouTube video transcripts
 - Answer questions from your knowledge
+- Use Google Search for current events and real-time information
 
 NOTE: This is Chat mode with limited tools. For browser automation (clicking, typing, navigating, form filling), suggest the user switch to Agent mode.`);
 

@@ -75,6 +75,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
         <AnimatePresence>
             {isOpen && (
                 <motion.div
+                    key="tools-popover"
                     ref={popoverRef}
                     initial={{ opacity: 0, y: 8, scale: 0.96 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -111,10 +112,13 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         }}
                     />
 
-                    <SearchBar
-                        value={toolSearchQuery}
-                        onChange={setToolSearchQuery}
-                    />
+                    {/* Hide search bar in Adaptive mode */}
+                    {displayMode !== 'adaptive' && (
+                        <SearchBar
+                            value={toolSearchQuery}
+                            onChange={setToolSearchQuery}
+                        />
+                    )}
 
                     <ModeSelector
                         displayMode={displayMode}
@@ -131,96 +135,125 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                             scrollbarColor: 'var(--border-color) transparent',
                         }}
                     >
-                        {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
-                            <WebMcpSection
-                                tools={filteredWebMCPTools}
-                                disabledTools={webmcpDisabledTools}
-                                isLoading={webmcpLoading}
-                                enabledCount={enabledWebMCPCount}
-                                isExpanded={expandedCategories['webmcp-active'] ?? false}
-                                searchQuery={toolSearchQuery}
-                                onToggleCategory={toggleCategory}
-                                onToggleTool={toggleWebMCPTool}
-                                onToggleCategoryAll={handleToggleWebMcpCategoryAll}
-                            />
-                        )}
-
-                        {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
-                            <div style={{
-                                height: '1px',
-                                backgroundColor: 'var(--border-color, rgba(255, 255, 255, 0.08))',
-                                margin: '8px 0',
-                            }} />
-                        )}
-
-                        {Object.entries(groupedTools).map(([category, tools]) => (
-                            <ToolCategory
-                                key={category}
-                                category={category}
-                                tools={tools}
-                                enabledMap={enabledMap}
-                                isExpanded={expandedCategories[category] ?? false}
-                                supermemoryConfigured={supermemoryConfigured}
-                                showSupermemoryTooltip={showSupermemoryTooltip}
-                                searchQuery={toolSearchQuery}
-                                onToggleCategory={toggleCategory}
-                                onToggleTool={handleToggleTool}
-                                onToggleCategoryAll={handleToggleCategory}
-                                onSetSupermemoryTooltip={setShowSupermemoryTooltip}
-                            />
-                        ))}
-
-                        {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
-                            <div style={{
-                                padding: '16px',
-                                textAlign: 'center',
-                                color: 'var(--text-tertiary, #6b7280)',
-                                fontSize: '11px',
-                            }}>
-                                No tools found
-                            </div>
-                        )}
-
-                        {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
-                            <div style={{
-                                marginTop: '8px',
-                                paddingTop: '8px',
-                                borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-                            }}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '4px 8px 6px',
-                                    fontSize: '10px',
-                                    fontWeight: 600,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    color: 'var(--text-tertiary, #6b7280)',
-                                }}>
-                                    <Server size={12} />
-                                    <span>MCP Servers</span>
-                                    {mcpLoading && (
-                                        <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
-                                            Loading...
-                                        </span>
-                                    )}
+                        {/* Adaptive mode: Show simple read-only list of enabled tools */}
+                        {displayMode === 'adaptive' ? (
+                            <div className="p-2">
+                                <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pb-2 uppercase tracking-wide">
+                                    Active Tools
                                 </div>
-                                {Object.entries(mcpServerGroups).map(([serverId, { name, tools: serverTools }]) => (
-                                    <McpCategory
-                                        key={serverId}
-                                        serverId={serverId}
-                                        serverName={name}
-                                        tools={serverTools}
-                                        disabledTools={mcpDisabledTools[serverId] || []}
-                                        isExpanded={expandedCategories[`mcp-${serverId}`] ?? false}
+                                <div className="grid grid-cols-2 gap-1">
+                                    {Object.entries(enabledMap)
+                                        .filter(([, enabled]) => enabled)
+                                        .map(([toolName]) => (
+                                            <div
+                                                key={toolName}
+                                                className="flex items-center gap-1.5 py-1.5 px-2 rounded-md bg-white/[0.03]"
+                                            >
+                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                <span className="text-[11px] text-[var(--text-primary,#fff)] font-medium truncate">
+                                                    {toolName}
+                                                </span>
+                                            </div>
+                                        ))}
+                                </div>
+                                <div className="mt-3 p-2 text-[10px] text-[var(--text-tertiary,#6b7280)] bg-white/[0.03] rounded-md leading-relaxed">
+                                    Other tools are discovered and used automatically.
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
+                                    <WebMcpSection
+                                        tools={filteredWebMCPTools}
+                                        disabledTools={webmcpDisabledTools}
+                                        isLoading={webmcpLoading}
+                                        enabledCount={enabledWebMCPCount}
+                                        isExpanded={expandedCategories['webmcp-active'] ?? false}
                                         searchQuery={toolSearchQuery}
                                         onToggleCategory={toggleCategory}
-                                        onToggleTool={handleToggleMcpTool}
-                                        onToggleCategoryAll={handleToggleMcpCategory}
+                                        onToggleTool={toggleWebMCPTool}
+                                        onToggleCategoryAll={handleToggleWebMcpCategoryAll}
+                                    />
+                                )}
+
+                                {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
+                                    <div style={{
+                                        height: '1px',
+                                        backgroundColor: 'var(--border-color, rgba(255, 255, 255, 0.08))',
+                                        margin: '8px 0',
+                                    }} />
+                                )}
+
+                                {Object.entries(groupedTools).map(([category, tools]) => (
+                                    <ToolCategory
+                                        key={category}
+                                        category={category}
+                                        tools={tools}
+                                        enabledMap={enabledMap}
+                                        isExpanded={expandedCategories[category] ?? false}
+                                        supermemoryConfigured={supermemoryConfigured}
+                                        showSupermemoryTooltip={showSupermemoryTooltip}
+                                        searchQuery={toolSearchQuery}
+                                        onToggleCategory={toggleCategory}
+                                        onToggleTool={handleToggleTool}
+                                        onToggleCategoryAll={handleToggleCategory}
+                                        onSetSupermemoryTooltip={setShowSupermemoryTooltip}
                                     />
                                 ))}
-                            </div>
+
+                                {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
+                                    <div style={{
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                        color: 'var(--text-tertiary, #6b7280)',
+                                        fontSize: '11px',
+                                    }}>
+                                        No tools found
+                                    </div>
+                                )}
+
+                                {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
+                                    <div style={{
+                                        marginTop: '8px',
+                                        paddingTop: '8px',
+                                        borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                                    }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '4px 8px 6px',
+                                            fontSize: '10px',
+                                            fontWeight: 600,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.5px',
+                                            color: 'var(--text-tertiary, #6b7280)',
+                                        }}>
+                                            <Server size={12} />
+                                            <span>MCP Servers</span>
+                                            {mcpLoading && (
+                                                <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
+                                                    Loading...
+                                                </span>
+                                            )}
+                                        </div>
+                                        {Object.entries(mcpServerGroups).map(([serverId, { name, tools: serverTools }]) => (
+                                            <McpCategory
+                                                key={serverId}
+                                                serverId={serverId}
+                                                serverName={name}
+                                                tools={serverTools}
+                                                disabledTools={mcpDisabledTools[serverId] || []}
+                                                isExpanded={expandedCategories[`mcp-${serverId}`] ?? false}
+                                                searchQuery={toolSearchQuery}
+                                                onToggleCategory={toggleCategory}
+                                                onToggleTool={handleToggleMcpTool}
+                                                onToggleCategoryAll={handleToggleMcpCategory}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
 
@@ -237,7 +270,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     />
                 </motion.div>
             )}
-            <Dialog open={showLocationPermissionDialog} onOpenChange={setShowLocationPermissionDialog}>
+            <Dialog key="location-permission-dialog" open={showLocationPermissionDialog} onOpenChange={setShowLocationPermissionDialog}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Location Access Blocked</DialogTitle>
@@ -261,7 +294,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <Dialog open={showLocationTimeoutDialog} onOpenChange={setShowLocationTimeoutDialog}>
+            <Dialog key="location-timeout-dialog" open={showLocationTimeoutDialog} onOpenChange={setShowLocationTimeoutDialog}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Location Services Unavailable</DialogTitle>

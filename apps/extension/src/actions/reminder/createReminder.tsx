@@ -119,39 +119,26 @@ EXAMPLE: createReminder(title="workout", dateTime="tomorrow at 6am", generatedTi
             return <CompactToolRenderer state={state} />;
         }, {
             renderInput: (input: any) => (
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    fontSize: '13px',
-                    color: 'var(--text-secondary)'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', opacity: 0.7 }}>Task:</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', opacity: 0.9 }}>
+                <div className="flex flex-col gap-1.5 text-[13px] text-[var(--text-secondary)]">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs opacity-70">Task:</span>
+                        <span className="text-xs text-[var(--text-primary)] opacity-90">
                             {input.title}
                         </span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '12px', opacity: 0.7 }}>When:</span>
-                        <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs opacity-70">When:</span>
+                        <span className="text-[11px] px-1.5 py-0.5 opacity-90">
                             {input.dateTime}
                         </span>
                     </div>
                     {input.generatedTitle && (
-                        <div style={{
-                            marginTop: '4px',
-                            padding: '6px 8px',
-                            background: 'var(--bg-tertiary)',
-                            borderRadius: '3px',
-                            border: '1px solid var(--border-color)',
-                            fontSize: '11px'
-                        }}>
-                            <div style={{ color: 'var(--text-primary)', opacity: 0.9, marginBottom: '2px' }}>
+                        <div className="mt-1 p-1.5 px-2 bg-[var(--bg-tertiary)] rounded-sm border border-[var(--border-color)] text-[11px]">
+                            <div className="text-[var(--text-primary)] opacity-90 mb-0.5">
                                 {input.generatedTitle}
                             </div>
                             {input.generatedDescription && (
-                                <div style={{ fontSize: '10px', opacity: 0.6 }}>
+                                <div className="text-[10px] opacity-60">
                                     {input.generatedDescription}
                                 </div>
                             )}
@@ -160,34 +147,21 @@ EXAMPLE: createReminder(title="workout", dateTime="tomorrow at 6am", generatedTi
                 </div>
             ),
             renderOutput: (output: any) => (
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    fontSize: '13px',
-                    color: 'var(--text-secondary)'
-                }}>
+                <div className="flex flex-col gap-1.5 text-[13px] text-[var(--text-secondary)]">
                     {output.success && (
                         <>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '12px', opacity: 0.7 }}>Reminder set for:</span>
-                                <span style={{ fontSize: '11px', padding: '2px 6px', opacity: 0.9 }}>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs opacity-70">Reminder set for:</span>
+                                <span className="text-[11px] px-1.5 py-0.5 opacity-90">
                                     {output.when}
                                 </span>
                             </div>
-                            <div style={{
-                                marginTop: '4px',
-                                padding: '6px 8px',
-                                background: 'var(--bg-tertiary)',
-                                borderRadius: '3px',
-                                border: '1px solid var(--border-color)',
-                                fontSize: '11px'
-                            }}>
-                                <div style={{ color: 'var(--text-primary)', opacity: 0.9, marginBottom: '2px' }}>
+                            <div className="mt-1 p-1.5 px-2 bg-[var(--bg-tertiary)] rounded-sm border border-[var(--border-color)] text-[11px]">
+                                <div className="text-[var(--text-primary)] opacity-90 mb-0.5">
                                     {output.generatedTitle}
                                 </div>
                                 {output.generatedDescription && (
-                                    <div style={{ fontSize: '10px', opacity: 0.6 }}>
+                                    <div className="text-[10px] opacity-60">
                                         {output.generatedDescription}
                                     </div>
                                 )}
@@ -196,21 +170,13 @@ EXAMPLE: createReminder(title="workout", dateTime="tomorrow at 6am", generatedTi
                     )}
                     {output.error && (
                         <>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '12px', opacity: 0.7, color: 'var(--error-color)' }}>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs opacity-70 text-[var(--error-color)]">
                                     {output.error}
                                 </span>
                             </div>
                             {output.details && (
-                                <div style={{
-                                    fontSize: '11px',
-                                    opacity: 0.6,
-                                    padding: '4px 6px',
-                                    background: 'var(--bg-tertiary)',
-                                    borderRadius: '3px',
-                                    border: '1px solid var(--border-color)',
-                                    marginTop: '2px'
-                                }}>
+                                <div className="text-[11px] opacity-60 p-1 px-1.5 bg-[var(--bg-tertiary)] rounded-sm border border-[var(--border-color)] mt-0.5">
                                     {output.details}
                                 </div>
                             )}

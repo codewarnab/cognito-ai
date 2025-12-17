@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { getFileIcon, truncateFileName } from '@/utils/files';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 
@@ -146,30 +148,46 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                     </div>
                 )}
             </div>
-            {showPreview && attachment.type === 'image' && attachment.preview && (
-                <div
-                    className="fixed inset-0 z-[10000] flex flex-col items-center justify-center gap-4 p-10"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="absolute inset-0 bg-black/85 animate-in fade-in duration-200 pointer-events-none" />
-                    <img
-                        src={attachment.preview}
-                        alt={attachment.file.name}
-                        className="relative block max-w-full max-h-full w-auto h-auto rounded-xl object-contain shadow-[0_20px_60px_rgba(0,0,0,0.9)] animate-in zoom-in-95 duration-200"
-                    />
-                    <button
-                        type="button"
-                        className="absolute top-5 right-5 text-white/70 hover:text-white transition-colors p-2 bg-black/20 rounded-full hover:bg-black/40 z-50"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setShowPreview(false);
-                        }}
-                        aria-label="Close preview"
-                    >
-                        <X size={24} />
-                    </button>
-                    <p className="relative text-white/60 text-[13px] font-medium m-0 py-2 px-4 bg-black/50 rounded-lg animate-in fade-in duration-200">Press esc to close the preview</p>
-                </div>
+            {createPortal(
+                <AnimatePresence>
+                    {showPreview && attachment.type === 'image' && attachment.preview && (
+                        <motion.div
+                            className="fixed inset-0 z-[10000] bg-black/90 flex items-center justify-center p-10 cursor-pointer"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowPreview(false)}
+                        >
+                            <button
+                                type="button"
+                                className="absolute top-5 right-5 w-10 h-10 rounded-full bg-gray-500/50 border-none flex items-center justify-center cursor-pointer z-[9999] transition-colors duration-200 text-white hover:bg-gray-500/70 active:bg-gray-500/80"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShowPreview(false);
+                                }}
+                                aria-label="Close preview"
+                            >
+                                <X size={20} />
+                            </button>
+                            <motion.div
+                                className="max-w-[90vw] max-h-[90vh] flex flex-col items-center justify-center cursor-default gap-3"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <img
+                                    src={attachment.preview}
+                                    alt={attachment.file.name}
+                                    className="max-w-full max-h-[calc(90vh-40px)] w-auto h-auto rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.9)] object-contain"
+                                />
+                                <div className="text-[13px] text-white/50 text-center px-3 py-1 bg-white/8 rounded-md">Press ESC to close</div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
             )}
         </>
     );

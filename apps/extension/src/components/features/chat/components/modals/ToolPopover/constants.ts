@@ -8,6 +8,7 @@ export const CHAT_MODE_TOOLS: string[] = [
     'switchTabs',
 
     'getYouTubeTranscript',
+    'googleSearch',
 ];
 
 export const AGENT_MODE_TOOLS: string[] = [
@@ -43,6 +44,7 @@ export const AGENT_MODE_TOOLS: string[] = [
     'cancelReminder',
     // Agent Tools
     'getYouTubeTranscript',
+    'googleSearch',
 ];
 
 export const ADAPTIVE_MODE_TOOLS: string[] = [
