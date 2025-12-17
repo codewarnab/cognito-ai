@@ -6,6 +6,7 @@
 
 import { createUIMessageStream, convertToModelMessages, generateId, type UIMessage } from 'ai';
 import { createLogger } from '~logger';
+
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt, chatModeSystemPrompt } from '../prompts/templates/remote';
 import { buildAdaptiveSystemPrompt, adaptiveSystemPromptStatic } from '../prompts/templates/adaptivePrompt';
@@ -458,14 +459,20 @@ export async function streamAIResponse(params: {
           writer.merge(
             result.toUIMessageStream({
               onError: (error) => {
-                // Log the raw error first to help debug
+                // Clone error properties BEFORE logging to avoid frozen object mutation
+                // OpenTelemetry's logger calls args.unshift() which fails on frozen arrays
+                const safeError = error instanceof Error
+                  ? { message: error.message, name: error.name, stack: error.stack }
+                  : (typeof error === 'object' && error !== null
+                    ? { ...error }
+                    : { message: String(error) });
+
+                // Log the cloned error to help debug
                 log.error('🔥 AI stream onError callback - RAW ERROR:', {
-                  error,
+                  error: safeError,
                   errorType: typeof error,
-                  errorKeys: error ? Object.keys(error) : [],
                   errorConstructor: error?.constructor?.name,
                   isErrorInstance: error instanceof Error,
-                  errorStringified: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
                 });
 
                 // Safely extract error properties with defensive checks

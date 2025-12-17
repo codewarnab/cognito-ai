@@ -83,8 +83,8 @@ export class SimpleFrontendTransport {
     };
 
     try {
-      // Handle different trigger types - clone messages to avoid mutating frozen state
-      // We must spread the array to create a new extensible array
+      // Handle different trigger types - clone messages to avoid mutating original state
+      // Note: With setAutoFreeze(false) in chatStore, objects are no longer frozen
       let requestMessages = [...messages];
 
       if (trigger === 'regenerate-message') {

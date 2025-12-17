@@ -13,9 +13,15 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { setAutoFreeze } from 'immer';
 import type { UIMessage } from 'ai';
 import type { ChatState, ChatStatus } from './types';
 import type { AppUsage } from '@/types/ai/usage';
+
+// Disable Immer's auto-freeze to prevent "Cannot add property" errors
+// The AI SDK internally modifies message objects during stream processing
+// and expects mutable objects
+setAutoFreeze(false);
 
 export const useChatStore = create<ChatState>()(
   subscribeWithSelector(
@@ -61,12 +67,13 @@ export const useChatStore = create<ChatState>()(
         // Convert ChatMessage to UIMessage
         const uiMessages: UIMessage[] = storedMessages.map((msg) => msg.message);
 
-        set((state) => {
-          state.currentThreadId = threadId;
-          state.messages = uiMessages;
-          state.usage = null;
-          state.contextWarningPercent = null;
-          state.status = 'idle';
+        // Use partial object update to avoid TypeScript deep type instantiation issues
+        set({
+          currentThreadId: threadId,
+          messages: uiMessages,
+          usage: null,
+          contextWarningPercent: null,
+          status: 'idle' as ChatStatus,
         });
 
         await setLastActiveThreadId(threadId);
@@ -88,33 +95,27 @@ export const useChatStore = create<ChatState>()(
 
       // Messages - Immer enables direct mutations
       setMessages: (messages: UIMessage[]) => {
-        set((state) => {
-          state.messages = messages;
-        });
+        // Use object-based set to avoid TypeScript deep type instantiation issues
+        set({ messages });
       },
 
       addMessage: (message: UIMessage) => {
-        set((state) => {
-          state.messages.push(message);
-        });
+        // Use immutable pattern to avoid TypeScript deep type issues
+        set({ messages: [...get().messages, message] });
       },
 
       updateMessage: (id: string, updates: Partial<UIMessage>) => {
-        set((state) => {
-          const msg = state.messages.find((m) => m.id === id);
-          if (msg) {
-            Object.assign(msg, updates);
-          }
+        // Use immutable pattern to avoid TypeScript deep type issues
+        set({
+          messages: get().messages.map((m) =>
+            m.id === id ? { ...m, ...updates } : m
+          ),
         });
       },
 
       removeMessage: (id: string) => {
-        set((state) => {
-          const index = state.messages.findIndex((m) => m.id === id);
-          if (index !== -1) {
-            state.messages.splice(index, 1);
-          }
-        });
+        // Use immutable pattern to avoid TypeScript deep type issues
+        set({ messages: get().messages.filter((m) => m.id !== id) });
       },
 
       // Input

@@ -56,17 +56,37 @@ type IncomingMessage = ExecuteCodeMessage | ToolResultMessage;
 // ============================================================================
 
 /**
- * Get the expected parent origin for message validation.
- * In a sandbox iframe, we expect messages from the extension origin.
+ * Validate that a message origin is from our extension.
+ * 
+ * IMPORTANT: Sandbox pages run in a unique/null origin context, but they
+ * receive messages from the parent extension page which has a chrome-extension:// origin.
+ * We cannot use the sandbox's own origin for validation since it's null.
+ * 
+ * Instead, we validate that messages come from a chrome-extension:// URL.
+ * For additional security, we could store and validate the specific extension ID.
  */
-function getExpectedOrigin(): string {
-    // The sandbox is hosted at chrome-extension://<extension-id>/sandbox-executor.html
-    // Messages should come from the same extension origin
-    // Since we're in a sandbox, we need to extract the origin from our own URL
-    return new URL(location.href).origin;
+function isValidExtensionOrigin(origin: string): boolean {
+    // Messages from the extension will have chrome-extension://<id> origin
+    // The sandbox's own origin is 'null' (string) due to sandboxing
+    return origin.startsWith('chrome-extension://');
 }
 
-const EXPECTED_ORIGIN = getExpectedOrigin();
+/**
+ * Get the parent frame's origin for sending messages back.
+ * We extract this from the referrer or location since the sandbox's own origin is null.
+ */
+function getParentOrigin(): string {
+    // The sandbox HTML is loaded from chrome-extension://<id>/sandbox-executor.html
+    // So we can extract the extension origin from our own location
+    try {
+        return new URL(location.href).origin;
+    } catch {
+        // Fallback: allow any origin for postMessage back to parent
+        return '*';
+    }
+}
+
+const PARENT_ORIGIN = getParentOrigin();
 
 // ============================================================================
 // Pending Tool Calls Tracking
@@ -154,10 +174,10 @@ function createToolsProxy(toolNames: string[], requestId: string): Record<string
                 console.log(`[Sandbox] 📤 Sending TOOL_REQUEST to parent:`, {
                     toolName,
                     callId,
-                    origin: EXPECTED_ORIGIN,
+                    origin: PARENT_ORIGIN,
                 });
 
-                parent.postMessage(message, EXPECTED_ORIGIN);
+                parent.postMessage(message, PARENT_ORIGIN);
 
                 console.log(`[Sandbox] 📤 TOOL_REQUEST sent, waiting for TOOL_RESULT...`, { callId });
             });
@@ -322,8 +342,8 @@ ${code}
 // ============================================================================
 
 window.addEventListener('message', async (event: MessageEvent<IncomingMessage>) => {
-    // Security: Validate message origin
-    if (event.origin !== EXPECTED_ORIGIN) {
+    // Security: Validate message origin - must be from our extension
+    if (!isValidExtensionOrigin(event.origin)) {
         console.warn('[Sandbox] Ignoring message from unexpected origin:', event.origin);
         return;
     }
@@ -366,7 +386,7 @@ window.addEventListener('message', async (event: MessageEvent<IncomingMessage>) 
                 errorDetails: result.errorDetails,
             };
 
-            parent.postMessage(response, EXPECTED_ORIGIN);
+            parent.postMessage(response, PARENT_ORIGIN);
             break;
         }
 
@@ -423,4 +443,4 @@ try {
 }
 
 // Notify parent that sandbox is ready
-parent.postMessage({ type: 'SANDBOX_READY' }, EXPECTED_ORIGIN);
+parent.postMessage({ type: 'SANDBOX_READY' }, PARENT_ORIGIN);

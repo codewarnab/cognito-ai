@@ -235,7 +235,7 @@ export async function setupRemoteMode(
     }
 
     // Combine all tools
-    const tools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools, ...smTools, ...integrationTools };
+    const tools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools, ...smTools, };
 
     log.info('🔧 All tools loaded:', {
         count: Object.keys(tools).length,
