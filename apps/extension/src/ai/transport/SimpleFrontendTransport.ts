@@ -83,13 +83,14 @@ export class SimpleFrontendTransport {
     };
 
     try {
-      // Handle different trigger types
-      let requestMessages = messages;
+      // Handle different trigger types - clone messages to avoid mutating frozen state
+      // We must spread the array to create a new extensible array
+      let requestMessages = [...messages];
 
       if (trigger === 'regenerate-message') {
         // For regenerating messages, use the existing messages
         log.info('Processing regenerate-message request', { messageId });
-        requestMessages = messages;
+        requestMessages = [...messages];
       }
 
       // Process messages for tab mentions (extracts @[Tab](id) and adds context)
@@ -120,9 +121,12 @@ export class SimpleFrontendTransport {
       }
 
       // Check if the last user message contains a NEW workflow command
-      const lastUserMessage = requestMessages
-        .filter((m: UIMessage) => m.role === 'user')
-        .pop();
+      // Find index to allow replacement in the array
+      const lastUserMessageIndex = requestMessages.slice().reverse().findIndex((m) => m.role === 'user');
+      // findIndex on reversed array gives index from end. Convert to real index.
+      const realIndex = lastUserMessageIndex >= 0 ? requestMessages.length - 1 - lastUserMessageIndex : -1;
+
+      const lastUserMessage = realIndex >= 0 ? requestMessages[realIndex] : undefined;
 
       if (lastUserMessage && !activeSession) {
         // Extract text from message parts with safety checks
@@ -202,8 +206,11 @@ export class SimpleFrontendTransport {
 
                 // Update the last message to contain only the query
                 try {
-                  if (lastUserMessage.parts && Array.isArray(lastUserMessage.parts)) {
-                    lastUserMessage.parts = lastUserMessage.parts.map((part: any) => {
+                  // CLONE the message before modification to handle frozen objects
+                  const newMessage = { ...lastUserMessage };
+
+                  if (newMessage.parts && Array.isArray(newMessage.parts)) {
+                    newMessage.parts = newMessage.parts.map((part: any) => {
                       if (!part || !part.type || part.type !== 'text') {
                         return part;
                       }
@@ -215,6 +222,9 @@ export class SimpleFrontendTransport {
                       return part;
                     });
                   }
+
+                  // Replace in the requestMessages array
+                  requestMessages[realIndex] = newMessage;
 
                   log.info('📝 Cleaned message for workflow', {
                     original: messageText,

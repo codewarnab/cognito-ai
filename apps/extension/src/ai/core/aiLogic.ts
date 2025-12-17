@@ -675,7 +675,12 @@ export async function streamAIResponse(params: {
                       };
 
                       // Attach usage to the message for persistence and recalculation
-                      (lastAssistantMsg as any).usage = appUsage;
+                      // Handle case where message object might be frozen
+                      try {
+                        (lastAssistantMsg as any).usage = appUsage;
+                      } catch (error) {
+                        log.warn('Could not attach usage to message (likely frozen)', error);
+                      }
 
                       log.info('? Attached final usage to message', {
                         messageId: lastAssistantMsg.id,

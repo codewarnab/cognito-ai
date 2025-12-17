@@ -4,7 +4,7 @@
 
 // UI Feature Flags
 /** Hide the model selector in the composer toolbar */
-export const HIDE_MODEL_SELECTOR = true;
+export const HIDE_MODEL_SELECTOR = false;
 
 // Gemini Model Configuration
 // Shared model constants for features like summarizer, writer, and rewriter
