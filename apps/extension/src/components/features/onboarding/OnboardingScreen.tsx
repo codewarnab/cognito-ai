@@ -5,6 +5,9 @@ import { WelcomePage } from './WelcomePage';
 import { FeaturesPage } from './FeaturesPage';
 import { CapabilitiesPage } from './CapabilitiesPage';
 import { GetStartedPage } from './GetStartedPage';
+import { createLogger } from '~logger';
+
+const log = createLogger('OnboardingScreen', 'UI_SIDEPANEL');
 
 interface OnboardingScreenProps {
     onComplete?: () => void;
@@ -23,7 +26,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
     const totalPages = 4;
 
     useEffect(() => {
-        console.log('OnboardingScreen mounted');
+        log.debug('OnboardingScreen mounted');
         // Animation happens automatically on mount
         return () => { };
     }, []);

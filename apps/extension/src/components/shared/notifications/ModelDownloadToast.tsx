@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
 import type { ModelDownloadProgress } from '@/utils/ai';
+import { createLogger } from '~logger';
+
+const log = createLogger('ModelDownloadToast', 'NOTIFICATIONS');
 
 interface ModelDownloadToastProps {
     model: 'language' | 'summarizer';
@@ -149,7 +152,7 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
     }>({});
 
     useEffect(() => {
-        console.log('[ModelDownloadToast] Setting up broadcast listener');
+        log.debug('Setting up broadcast listener');
 
         // Listen for download progress updates relayed from background
         const listener = (
@@ -159,7 +162,7 @@ export const ModelDownloadToastContainer: React.FC<ModelDownloadToastContainerPr
         ): boolean | undefined => {
             if (message.type === 'MODEL_DOWNLOAD_PROGRESS_UPDATE') {
                 const progress: ModelDownloadProgress = message.data;
-                console.log('[ModelDownloadToast] Received update from background:', progress);
+                log.debug('Received update from background:', progress);
 
                 setDownloads((prev) => ({
                     ...prev,

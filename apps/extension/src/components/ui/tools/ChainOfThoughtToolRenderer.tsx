@@ -13,6 +13,7 @@ import { YouTubeTranscriptIcon } from '@assets/icons/chat/youtube-transcipt';
 import { VideoScanIcon, VideoSearchIcon, VideoTagIcon } from '@assets/icons/chat/videotype-detection';
 import { QuestionPlanner, AnswerWriter, NotionPageWriter } from '@assets/icons/chat/youtube-notion-agent-icons';
 import { progressStore } from '@/ai/agents/youtubeToNotion/progressStore';
+import { createLogger } from '~logger';
 import type { ProgressUpdate } from '@/ai/agents/youtubeToNotion/progressTypes';
 import type { ToolUIState } from '@/ai/tools/components';
 import {
@@ -22,6 +23,8 @@ import {
     ChainOfThoughtStep,
     ChainOfThoughtBadge
 } from './ChainOfThought';
+
+const log = createLogger('ChainOfThoughtToolRenderer', 'UI_CHAT');
 
 interface ChainOfThoughtToolRendererProps {
     state: ToolUIState;
@@ -73,7 +76,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
     const [videoIconIndex, setVideoIconIndex] = useState(0);
 
     useEffect(() => {
-        console.log('[ChainOfThought] Mounting, setting up subscription');
+        log.debug('Mounting, setting up subscription');
 
         // Subscribe to progress updates
         const unsubscribe = progressStore.subscribe(() => {
@@ -81,7 +84,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
             // since only one YouTube to Notion workflow runs at a time
             const allSteps = progressStore.getAll();
             const workflowId = progressStore.getCurrentWorkflowId();
-            console.log('[ChainOfThought] Progress update received', {
+            log.debug('Progress update received', {
                 count: allSteps.length,
                 workflowId,
                 steps: allSteps.map(s => s.title)
@@ -92,7 +95,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
         // Load existing steps immediately
         const allSteps = progressStore.getAll();
         const workflowId = progressStore.getCurrentWorkflowId();
-        console.log('[ChainOfThought] Initial load', {
+        log.debug('Initial load', {
             count: allSteps.length,
             workflowId,
             steps: allSteps.map(s => s.title)
@@ -100,7 +103,7 @@ export const ChainOfThoughtToolRenderer = memo(({ state }: ChainOfThoughtToolRen
         setSteps(allSteps);
 
         return () => {
-            console.log('[ChainOfThought] Unmounting, unsubscribing');
+            log.debug('Unmounting, unsubscribing');
             unsubscribe();
         };
     }, []);

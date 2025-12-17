@@ -3,8 +3,11 @@
  * Implements step-up authorization per MCP specification
  */
 
+import { createLogger } from '~logger';
 import type { ScopeChallenge, McpServerOAuthConfig } from './types';
 import { parseScopeChallenge } from './discovery';
+
+const log = createLogger('ScopeHandler', 'MCP_AUTH');
 
 /**
  * Storage key for challenged scopes
@@ -26,7 +29,7 @@ function getGrantedScopesKey(serverId: string): string {
 export async function storeChallengedScopes(serverId: string, scopes: string[]): Promise<void> {
     const key = getChallengedScopesKey(serverId);
     await chrome.storage.local.set({ [key]: scopes });
-    console.log(`[ScopeHandler:${serverId}] Stored challenged scopes:`, scopes);
+    log.debug(`[${serverId}] Stored challenged scopes:`, scopes);
 }
 
 /**
@@ -44,7 +47,7 @@ export async function getChallengedScopes(serverId: string): Promise<string[] | 
 export async function storeGrantedScopes(serverId: string, scopes: string[]): Promise<void> {
     const key = getGrantedScopesKey(serverId);
     await chrome.storage.local.set({ [key]: scopes });
-    console.log(`[ScopeHandler:${serverId}] Stored granted scopes:`, scopes);
+    log.debug(`[${serverId}] Stored granted scopes:`, scopes);
 }
 
 /**
@@ -88,13 +91,13 @@ export function joinScopes(scopes: string[]): string {
  */
 export function mergeScopes(scopes1: string[], scopes2: string[]): string[] {
     const merged = [...scopes1];
-    
+
     for (const scope of scopes2) {
         if (!merged.includes(scope)) {
             merged.push(scope);
         }
     }
-    
+
     return merged;
 }
 
@@ -112,55 +115,55 @@ export async function selectScopes(
     serverConfig?: McpServerOAuthConfig,
     challenge?: ScopeChallenge
 ): Promise<string[]> {
-    console.log(`[ScopeHandler:${serverId}] Selecting scopes for authorization`);
-    
+    log.debug(`[${serverId}] Selecting scopes for authorization`);
+
     let selectedScopes: string[] = [];
-    
+
     // Priority 1: Challenge scopes (insufficient_scope error)
     if (challenge?.scope) {
         const challengedScopes = parseScopeString(challenge.scope);
-        console.log(`[ScopeHandler:${serverId}] Using scopes from challenge:`, challengedScopes);
-        
+        log.debug(`[${serverId}] Using scopes from challenge:`, challengedScopes);
+
         // Include previously granted scopes if available
         const grantedScopes = await getGrantedScopes(serverId);
         if (grantedScopes && grantedScopes.length > 0) {
             selectedScopes = mergeScopes(grantedScopes, challengedScopes);
-            console.log(`[ScopeHandler:${serverId}] Merged with granted scopes:`, selectedScopes);
+            log.debug(`[${serverId}] Merged with granted scopes:`, selectedScopes);
         } else {
             selectedScopes = challengedScopes;
         }
-        
+
         // Store challenged scopes for tracking
         await storeChallengedScopes(serverId, challengedScopes);
-        
+
         return selectedScopes;
     }
-    
+
     // Priority 2: Re-authorization with granted + challenged scopes
     const [grantedScopes, challengedScopes] = await Promise.all([
         getGrantedScopes(serverId),
         getChallengedScopes(serverId)
     ]);
-    
+
     if (grantedScopes && challengedScopes) {
         selectedScopes = mergeScopes(grantedScopes, challengedScopes);
-        console.log(`[ScopeHandler:${serverId}] Re-auth: using granted + challenged:`, selectedScopes);
+        log.debug(`[${serverId}] Re-auth: using granted + challenged:`, selectedScopes);
         return selectedScopes;
     }
-    
+
     if (grantedScopes && grantedScopes.length > 0) {
-        console.log(`[ScopeHandler:${serverId}] Re-auth: using granted scopes:`, grantedScopes);
+        log.debug(`[${serverId}] Re-auth: using granted scopes:`, grantedScopes);
         return grantedScopes;
     }
-    
+
     // Priority 3: Default scopes from server config
     if (serverConfig?.scopes && serverConfig.scopes.length > 0) {
-        console.log(`[ScopeHandler:${serverId}] Using default config scopes:`, serverConfig.scopes);
+        log.debug(`[${serverId}] Using default config scopes:`, serverConfig.scopes);
         return serverConfig.scopes;
     }
-    
+
     // Priority 4: Empty (let server decide)
-    console.log(`[ScopeHandler:${serverId}] No scopes specified, letting server decide`);
+    log.debug(`[${serverId}] No scopes specified, letting server decide`);
     return [];
 }
 
@@ -173,25 +176,25 @@ export function handleWwwAuthenticateHeader(
     response: Response
 ): ScopeChallenge | null {
     const wwwAuth = response.headers.get('WWW-Authenticate');
-    
+
     if (!wwwAuth) {
         return null;
     }
-    
+
     const challenge = parseScopeChallenge(wwwAuth);
-    
+
     if (!challenge) {
         return null;
     }
-    
-    console.log(`[ScopeHandler:${serverId}] WWW-Authenticate challenge:`, challenge);
-    
+
+    log.debug(`[${serverId}] WWW-Authenticate challenge:`, challenge);
+
     // Check if it's an insufficient_scope error
     if (challenge.error === 'insufficient_scope') {
-        console.log(`[ScopeHandler:${serverId}] Insufficient scope error detected`);
+        log.warn(`[${serverId}] Insufficient scope error detected`);
         return challenge;
     }
-    
+
     return challenge;
 }
 
@@ -202,12 +205,12 @@ export function isInsufficientScopeError(response: Response): boolean {
     if (response.status !== 401 && response.status !== 403) {
         return false;
     }
-    
+
     const wwwAuth = response.headers.get('WWW-Authenticate');
     if (!wwwAuth) {
         return false;
     }
-    
+
     const challenge = parseScopeChallenge(wwwAuth);
     return challenge?.error === 'insufficient_scope';
 }
@@ -221,13 +224,13 @@ export async function updateGrantedScopes(
     scopeString?: string
 ): Promise<void> {
     if (!scopeString) {
-        console.log(`[ScopeHandler:${serverId}] No scope returned from token response`);
+        log.debug(`[${serverId}] No scope returned from token response`);
         return;
     }
-    
+
     const scopes = parseScopeString(scopeString);
     await storeGrantedScopes(serverId, scopes);
-    
+
     // Clear challenged scopes after successful grant
     const key = getChallengedScopesKey(serverId);
     await chrome.storage.local.remove(key);

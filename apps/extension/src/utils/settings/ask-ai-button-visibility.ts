@@ -5,6 +5,10 @@
  * based on user preferences and drag-to-delete actions.
  */
 
+import { createLogger } from '~logger';
+
+const log = createLogger('AskAI Visibility', 'SETTINGS');
+
 export interface VisibilitySettings {
     hiddenDomains: string[];           // Domains where button is hidden
     hiddenForSession: boolean;         // Session-based hide (cleared on browser restart)
@@ -26,7 +30,7 @@ export function getCurrentDomain(url?: string): string {
         const urlObj = new URL(targetUrl);
         return urlObj.hostname;
     } catch (error) {
-        console.error('[AskAI Visibility] Error extracting domain:', error);
+        log.error('Error extracting domain:', error);
         return '';
     }
 }
@@ -51,7 +55,7 @@ export async function getVisibilitySettings(): Promise<VisibilitySettings> {
                 ]);
                 hiddenForSession = Boolean(sessionResult[STORAGE_KEYS.HIDDEN_FOR_SESSION]);
             } catch (sessionError) {
-                console.warn('[AskAI Visibility] Session visibility read failed, defaulting to false', sessionError);
+                log.warn('Session visibility read failed, defaulting to false', sessionError);
             }
         }
 
@@ -64,7 +68,7 @@ export async function getVisibilitySettings(): Promise<VisibilitySettings> {
             hiddenForSession,
         };
     } catch (error) {
-        console.error('[AskAI Visibility] Error getting visibility settings:', error);
+        log.error('Error getting visibility settings:', error);
         return {
             hiddenDomains: [],
             permanentlyHidden: false,
@@ -81,7 +85,7 @@ export async function hideForCurrentPage(url?: string): Promise<void> {
         const domain = getCurrentDomain(url);
 
         if (!domain) {
-            console.error('[AskAI Visibility] Cannot hide: invalid domain');
+            log.error('Cannot hide: invalid domain');
             return;
         }
 
@@ -95,10 +99,10 @@ export async function hideForCurrentPage(url?: string): Promise<void> {
                 [STORAGE_KEYS.HIDDEN_DOMAINS]: settings.hiddenDomains,
             });
 
-            console.log(`[AskAI Visibility] Hidden for domain: ${domain}`);
+            log.info(`Hidden for domain: ${domain}`);
         }
     } catch (error) {
-        console.error('[AskAI Visibility] Error hiding for current page:', error);
+        log.error('Error hiding for current page:', error);
     }
 }
 
@@ -111,9 +115,9 @@ export async function hideForSession(): Promise<void> {
             [STORAGE_KEYS.HIDDEN_FOR_SESSION]: true,
         });
 
-        console.log('[AskAI Visibility] Hidden for session');
+        log.info('Hidden for session');
     } catch (error) {
-        console.error('[AskAI Visibility] Error hiding for session:', error);
+        log.error('Error hiding for session:', error);
     }
 }
 
@@ -126,9 +130,9 @@ export async function hideForever(): Promise<void> {
             [STORAGE_KEYS.PERMANENTLY_HIDDEN]: true,
         });
 
-        console.log('[AskAI Visibility] Hidden permanently');
+        log.info('Hidden permanently');
     } catch (error) {
-        console.error('[AskAI Visibility] Error hiding permanently:', error);
+        log.error('Error hiding permanently:', error);
     }
 }
 
@@ -142,26 +146,26 @@ export async function shouldShowButton(url?: string): Promise<boolean> {
 
         // Check if permanently hidden
         if (settings.permanentlyHidden) {
-            console.log('[AskAI Visibility] Button hidden permanently');
+            log.debug('Button hidden permanently');
             return false;
         }
 
         // Check if hidden for session
         if (settings.hiddenForSession) {
-            console.log('[AskAI Visibility] Button hidden for session');
+            log.debug('Button hidden for session');
             return false;
         }
 
         // Check if current domain is hidden
         const domain = getCurrentDomain(url);
         if (domain && settings.hiddenDomains.includes(domain)) {
-            console.log(`[AskAI Visibility] Button hidden for domain: ${domain}`);
+            log.debug(`Button hidden for domain: ${domain}`);
             return false;
         }
 
         return true;
     } catch (error) {
-        console.error('[AskAI Visibility] Error checking button visibility:', error);
+        log.error('Error checking button visibility:', error);
         // Default to showing button if error occurs
         return true;
     }
@@ -177,9 +181,9 @@ export async function clearSessionHide(): Promise<void> {
             [STORAGE_KEYS.HIDDEN_FOR_SESSION]: false,
         });
 
-        console.log('[AskAI Visibility] Session hide cleared');
+        log.info('Session hide cleared');
     } catch (error) {
-        console.error('[AskAI Visibility] Error clearing session hide:', error);
+        log.error('Error clearing session hide:', error);
     }
 }
 
@@ -197,9 +201,9 @@ export async function removeDomainFromHidden(domain: string): Promise<void> {
             [STORAGE_KEYS.HIDDEN_DOMAINS]: settings.hiddenDomains,
         });
 
-        console.log(`[AskAI Visibility] Removed domain from hidden list: ${domain}`);
+        log.info(`Removed domain from hidden list: ${domain}`);
     } catch (error) {
-        console.error('[AskAI Visibility] Error removing domain from hidden:', error);
+        log.error('Error removing domain from hidden:', error);
     }
 }
 
@@ -213,9 +217,9 @@ export async function reEnableButton(): Promise<void> {
             [STORAGE_KEYS.PERMANENTLY_HIDDEN]: false,
         });
 
-        console.log('[AskAI Visibility] Button re-enabled globally');
+        log.info('Button re-enabled globally');
     } catch (error) {
-        console.error('[AskAI Visibility] Error re-enabling button:', error);
+        log.error('Error re-enabling button:', error);
     }
 }
 
@@ -229,8 +233,8 @@ export async function clearAllHiddenDomains(): Promise<void> {
             [STORAGE_KEYS.HIDDEN_DOMAINS]: [],
         });
 
-        console.log('[AskAI Visibility] All hidden domains cleared');
+        log.info('All hidden domains cleared');
     } catch (error) {
-        console.error('[AskAI Visibility] Error clearing hidden domains:', error);
+        log.error('Error clearing hidden domains:', error);
     }
 }

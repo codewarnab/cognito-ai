@@ -3,12 +3,15 @@
  * Implements RFC 9728 (Protected Resource Metadata) and RFC 8414 (Authorization Server Metadata)
  */
 
+import { createLogger } from '~logger';
 import type {
     ProtectedResourceMetadata,
     AuthorizationServerMetadata,
     ScopeChallenge,
     OAuthEndpoints
 } from './types';
+
+const log = createLogger('Discovery', 'MCP_AUTH');
 
 const DISCOVERY_TIMEOUT = 10000; // 10 seconds
 
@@ -57,11 +60,11 @@ export async function discoverProtectedResourceMetadata(
 ): Promise<ProtectedResourceMetadata | null> {
     const url = new URL(mcpUrl);
 
-    console.log(`[Discovery] Starting Protected Resource Metadata discovery for ${mcpUrl}`);
+    log.info(`Starting Protected Resource Metadata discovery for ${mcpUrl}`);
 
     // Method 1: Try to get WWW-Authenticate header from 401 response
     try {
-        console.log(`[Discovery] Method 1: Attempting GET ${mcpUrl} for WWW-Authenticate header`);
+        log.debug(`Method 1: Attempting GET ${mcpUrl} for WWW-Authenticate header`);
         const response = await fetch(mcpUrl, {
             method: 'GET',
             headers: {
@@ -75,31 +78,31 @@ export async function discoverProtectedResourceMetadata(
             if (wwwAuth) {
                 const challenge = parseScopeChallenge(wwwAuth);
                 if (challenge?.resource_metadata) {
-                    console.log(`[Discovery] Found resource_metadata URL in WWW-Authenticate: ${challenge.resource_metadata}`);
+                    log.info(`Found resource_metadata URL in WWW-Authenticate: ${challenge.resource_metadata}`);
                     const metadata = await fetchProtectedResourceMetadata(challenge.resource_metadata);
                     if (metadata) return metadata;
                 }
             }
         }
     } catch (error) {
-        console.log(`[Discovery] Method 1 failed (expected):`, error instanceof Error ? error.message : 'unknown');
+        log.debug(`Method 1 failed (expected):`, error instanceof Error ? error.message : 'unknown');
     }
 
     // Method 2: Try /.well-known/oauth-protected-resource/{path}
     if (url.pathname && url.pathname !== '/') {
         const wellKnownUrl = `${url.origin}/.well-known/oauth-protected-resource${url.pathname}`;
-        console.log(`[Discovery] Method 2: Trying ${wellKnownUrl}`);
+        log.debug(`Method 2: Trying ${wellKnownUrl}`);
         const metadata = await fetchProtectedResourceMetadata(wellKnownUrl);
         if (metadata) return metadata;
     }
 
     // Method 3: Try /.well-known/oauth-protected-resource (root)
     const rootWellKnownUrl = `${url.origin}/.well-known/oauth-protected-resource`;
-    console.log(`[Discovery] Method 3: Trying ${rootWellKnownUrl}`);
+    log.debug(`Method 3: Trying ${rootWellKnownUrl}`);
     const metadata = await fetchProtectedResourceMetadata(rootWellKnownUrl);
     if (metadata) return metadata;
 
-    console.log(`[Discovery] Protected Resource Metadata not found for ${mcpUrl}`);
+    log.info(`Protected Resource Metadata not found for ${mcpUrl}`);
     return null;
 }
 
@@ -117,12 +120,12 @@ async function fetchProtectedResourceMetadata(url: string): Promise<ProtectedRes
         });
 
         if (response.status === 404) {
-            console.log(`[Discovery] 404 Not Found: ${url} (gracefully continuing)`);
+            log.debug(`404 Not Found: ${url} (gracefully continuing)`);
             return null;
         }
 
         if (!response.ok) {
-            console.warn(`[Discovery] Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+            log.warn(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
             return null;
         }
 
@@ -130,17 +133,17 @@ async function fetchProtectedResourceMetadata(url: string): Promise<ProtectedRes
 
         // Validate required fields
         if (!metadata.authorization_servers || !Array.isArray(metadata.authorization_servers)) {
-            console.warn(`[Discovery] Invalid metadata from ${url}: missing authorization_servers`);
+            log.warn(`Invalid metadata from ${url}: missing authorization_servers`);
             return null;
         }
 
-        console.log(`[Discovery] Successfully discovered Protected Resource Metadata from ${url}`);
+        log.info(`Successfully discovered Protected Resource Metadata from ${url}`);
         return metadata;
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-            console.warn(`[Discovery] Timeout fetching ${url}`);
+            log.warn(`Timeout fetching ${url}`);
         } else {
-            console.log(`[Discovery] Error fetching ${url}:`, error instanceof Error ? error.message : 'unknown');
+            log.debug(`Error fetching ${url}:`, error instanceof Error ? error.message : 'unknown');
         }
         return null;
     }
@@ -156,7 +159,7 @@ export async function discoverAuthorizationServerMetadata(
     const url = new URL(issuerUrl);
     const hasPath = url.pathname && url.pathname !== '/';
 
-    console.log(`[Discovery] Starting Authorization Server Metadata discovery for ${issuerUrl}`);
+    log.info(`Starting Authorization Server Metadata discovery for ${issuerUrl}`);
 
     const endpoints: string[] = [];
 
@@ -183,15 +186,15 @@ export async function discoverAuthorizationServerMetadata(
 
     // Try each endpoint in order
     for (const endpoint of endpoints) {
-        console.log(`[Discovery] Trying ${endpoint}`);
+        log.debug(`Trying ${endpoint}`);
         const metadata = await fetchAuthorizationServerMetadata(endpoint);
 
         if (metadata) {
             // Verify PKCE support as required by MCP spec
             if (!metadata.code_challenge_methods_supported ||
                 metadata.code_challenge_methods_supported.length === 0) {
-                console.warn(`[Discovery] Authorization server at ${endpoint} does not support PKCE (required by MCP spec)`);
-                console.warn(`[Discovery] Missing code_challenge_methods_supported field`);
+                log.warn(`Authorization server at ${endpoint} does not support PKCE (required by MCP spec)`);
+                log.warn(`Missing code_challenge_methods_supported field`);
                 // Continue to try other endpoints
                 continue;
             }
@@ -200,7 +203,7 @@ export async function discoverAuthorizationServerMetadata(
         }
     }
 
-    console.log(`[Discovery] Authorization Server Metadata not found for ${issuerUrl}`);
+    log.info(`Authorization Server Metadata not found for ${issuerUrl}`);
     return null;
 }
 
@@ -218,12 +221,12 @@ async function fetchAuthorizationServerMetadata(url: string): Promise<Authorizat
         });
 
         if (response.status === 404) {
-            console.log(`[Discovery] 404 Not Found: ${url} (trying next method)`);
+            log.debug(`404 Not Found: ${url} (trying next method)`);
             return null;
         }
 
         if (!response.ok) {
-            console.warn(`[Discovery] Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+            log.warn(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
             return null;
         }
 
@@ -231,22 +234,22 @@ async function fetchAuthorizationServerMetadata(url: string): Promise<Authorizat
 
         // Validate required fields per RFC 8414
         if (!metadata.issuer || !metadata.authorization_endpoint || !metadata.token_endpoint) {
-            console.warn(`[Discovery] Invalid metadata from ${url}: missing required fields`);
+            log.warn(`Invalid metadata from ${url}: missing required fields`);
             return null;
         }
 
-        console.log(`[Discovery] Successfully discovered Authorization Server Metadata from ${url}`);
-        console.log(`[Discovery] - Authorization endpoint: ${metadata.authorization_endpoint}`);
-        console.log(`[Discovery] - Token endpoint: ${metadata.token_endpoint}`);
-        console.log(`[Discovery] - Registration endpoint: ${metadata.registration_endpoint || 'not provided'}`);
-        console.log(`[Discovery] - PKCE support: ${metadata.code_challenge_methods_supported?.join(', ') || 'none'}`);
+        log.info(`Successfully discovered Authorization Server Metadata from ${url}`);
+        log.debug(`- Authorization endpoint: ${metadata.authorization_endpoint}`);
+        log.debug(`- Token endpoint: ${metadata.token_endpoint}`);
+        log.debug(`- Registration endpoint: ${metadata.registration_endpoint || 'not provided'}`);
+        log.debug(`- PKCE support: ${metadata.code_challenge_methods_supported?.join(', ') || 'none'}`);
 
         return metadata;
     } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
-            console.warn(`[Discovery] Timeout fetching ${url}`);
+            log.warn(`Timeout fetching ${url}`);
         } else {
-            console.log(`[Discovery] Error fetching ${url}:`, error instanceof Error ? error.message : 'unknown');
+            log.debug(`Error fetching ${url}:`, error instanceof Error ? error.message : 'unknown');
         }
         return null;
     }
@@ -277,8 +280,8 @@ function createFallbackEndpoints(authorizationBaseUrl: string): OAuthEndpoints {
 
     const baseUrl = `${url.origin}${pathname}`;
 
-    console.log(`[Discovery] Original URL: ${authorizationBaseUrl}`);
-    console.log(`[Discovery] Extracted base URL: ${baseUrl}`);
+    log.debug(`Original URL: ${authorizationBaseUrl}`);
+    log.debug(`Extracted base URL: ${baseUrl}`);
 
     const endpoints: OAuthEndpoints = {
         authorization_endpoint: `${baseUrl}/authorize`,
@@ -286,10 +289,10 @@ function createFallbackEndpoints(authorizationBaseUrl: string): OAuthEndpoints {
         registration_endpoint: `${baseUrl}/register`
     };
 
-    console.log(`[Discovery] Fallback endpoints created:`);
-    console.log(`[Discovery] - Authorization: ${endpoints.authorization_endpoint}`);
-    console.log(`[Discovery] - Token: ${endpoints.token_endpoint}`);
-    console.log(`[Discovery] - Registration: ${endpoints.registration_endpoint}`);
+    log.debug(`Fallback endpoints created:`);
+    log.debug(`- Authorization: ${endpoints.authorization_endpoint}`);
+    log.debug(`- Token: ${endpoints.token_endpoint}`);
+    log.debug(`- Registration: ${endpoints.registration_endpoint}`);
 
     return endpoints;
 }
@@ -302,12 +305,12 @@ function createFallbackEndpoints(authorizationBaseUrl: string): OAuthEndpoints {
 export async function discoverOAuthEndpoints(
     mcpUrl: string
 ): Promise<OAuthEndpoints | null> {
-    console.log(`[Discovery] Starting full OAuth discovery for ${mcpUrl}`);
+    log.info(`Starting full OAuth discovery for ${mcpUrl}`);
 
     const mcpOrigin = new URL(mcpUrl).origin;
 
     // OPTIMIZATION: Run both Protected Resource and Direct Auth Server discovery in parallel
-    console.log(`[Discovery] Running parallel discovery: Protected Resource Metadata + Direct Auth Server`);
+    log.debug(`Running parallel discovery: Protected Resource Metadata + Direct Auth Server`);
     const [resourceMetadata, directAuthMetadata] = await Promise.all([
         discoverProtectedResourceMetadata(mcpUrl),
         discoverAuthorizationServerMetadata(mcpOrigin)
@@ -325,21 +328,21 @@ export async function discoverOAuthEndpoints(
             scopes_supported: directAuthMetadata.scopes_supported
         };
 
-        console.log(`[Discovery] Successfully discovered OAuth endpoints via direct Authorization Server discovery`);
+        log.info(`Successfully discovered OAuth endpoints via direct Authorization Server discovery`);
         return endpoints;
     }
 
     // If Protected Resource Metadata found authorization servers, try them
     if (resourceMetadata?.authorization_servers && resourceMetadata.authorization_servers.length > 0) {
-        console.log(`[Discovery] Found ${resourceMetadata.authorization_servers.length} authorization server(s) in Protected Resource Metadata`);
+        log.info(`Found ${resourceMetadata.authorization_servers.length} authorization server(s) in Protected Resource Metadata`);
 
         // OPTIMIZATION: Try all authorization servers in parallel instead of sequentially
-        console.log(`[Discovery] Attempting parallel authorization server discovery`);
+        log.debug(`Attempting parallel authorization server discovery`);
         const authMetadataPromises = resourceMetadata.authorization_servers.map(authServerUrl =>
             discoverAuthorizationServerMetadata(authServerUrl)
                 .then(metadata => ({ url: authServerUrl, metadata }))
                 .catch(err => {
-                    console.log(`[Discovery] Error discovering ${authServerUrl}:`, err instanceof Error ? err.message : 'unknown');
+                    log.debug(`Error discovering ${authServerUrl}:`, err instanceof Error ? err.message : 'unknown');
                     return { url: authServerUrl, metadata: null };
                 })
         );
@@ -360,19 +363,19 @@ export async function discoverOAuthEndpoints(
                 resource: resourceMetadata.resource
             };
 
-            console.log(`[Discovery] Successfully discovered OAuth endpoints for ${mcpUrl}`);
+            log.info(`Successfully discovered OAuth endpoints for ${mcpUrl}`);
             return endpoints;
         }
 
         // If all authorization servers failed, try fallback
-        console.log(`[Discovery] All authorization servers failed, attempting fallback`);
+        log.warn(`All authorization servers failed, attempting fallback`);
         const authServerUrl = resourceMetadata.authorization_servers[0];
         if (authServerUrl) {
             const fallbackEndpoints = createFallbackEndpoints(authServerUrl);
 
             const isValid = await validateFallbackEndpoints(fallbackEndpoints);
             if (isValid) {
-                console.log(`[Discovery] Fallback endpoints validated successfully`);
+                log.info(`Fallback endpoints validated successfully`);
                 // Include resource metadata if available
                 if (resourceMetadata.resource) {
                     fallbackEndpoints.resource = resourceMetadata.resource;
@@ -386,16 +389,16 @@ export async function discoverOAuthEndpoints(
     }
 
     // Last resort: Fallback using MCP URL as authorization base
-    console.log(`[Discovery] No authorization servers found, attempting fallback with MCP URL`);
+    log.warn(`No authorization servers found, attempting fallback with MCP URL`);
     const fallbackEndpoints = createFallbackEndpoints(mcpUrl);
 
     const isValid = await validateFallbackEndpoints(fallbackEndpoints);
     if (isValid) {
-        console.log(`[Discovery] Fallback endpoints validated successfully`);
+        log.info(`Fallback endpoints validated successfully`);
         return fallbackEndpoints;
     }
 
-    console.log(`[Discovery] Failed to discover OAuth endpoints for ${mcpUrl}`);
+    log.error(`Failed to discover OAuth endpoints for ${mcpUrl}`);
     return null;
 }
 
@@ -404,7 +407,7 @@ export async function discoverOAuthEndpoints(
  * Returns true if at least the authorization or token endpoint exists
  */
 async function validateFallbackEndpoints(endpoints: OAuthEndpoints): Promise<boolean> {
-    console.log(`[Discovery] Validating fallback endpoints...`);
+    log.debug(`Validating fallback endpoints...`);
 
     const checks = [];
 
@@ -416,11 +419,11 @@ async function validateFallbackEndpoints(endpoints: OAuthEndpoints): Promise<boo
         }).then(
             res => {
                 const valid = res.status !== 404 && res.status !== 500;
-                console.log(`[Discovery] Authorization endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
+                log.debug(`Authorization endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
                 return valid;
             },
             err => {
-                console.log(`[Discovery] Authorization endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
+                log.debug(`Authorization endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
                 return false;
             }
         )
@@ -434,11 +437,11 @@ async function validateFallbackEndpoints(endpoints: OAuthEndpoints): Promise<boo
         }).then(
             res => {
                 const valid = res.status !== 404 && res.status !== 500;
-                console.log(`[Discovery] Token endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
+                log.debug(`Token endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
                 return valid;
             },
             err => {
-                console.log(`[Discovery] Token endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
+                log.debug(`Token endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
                 return false;
             }
         )
@@ -453,11 +456,11 @@ async function validateFallbackEndpoints(endpoints: OAuthEndpoints): Promise<boo
             }).then(
                 res => {
                     const valid = res.status !== 404 && res.status !== 500;
-                    console.log(`[Discovery] Registration endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
+                    log.debug(`Registration endpoint check: ${res.status} - ${valid ? 'valid' : 'invalid'}`);
                     return valid;
                 },
                 err => {
-                    console.log(`[Discovery] Registration endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
+                    log.debug(`Registration endpoint check failed:`, err instanceof Error ? err.message : 'unknown');
                     return false;
                 }
             )
@@ -469,7 +472,7 @@ async function validateFallbackEndpoints(endpoints: OAuthEndpoints): Promise<boo
 
     // Consider valid if at least one required endpoint (auth or token) exists
     const isValid = validCount >= 1;
-    console.log(`[Discovery] Fallback validation result: ${validCount}/${results.length} endpoints valid - ${isValid ? 'PASS' : 'FAIL'}`);
+    log.debug(`Fallback validation result: ${validCount}/${results.length} endpoints valid - ${isValid ? 'PASS' : 'FAIL'}`);
 
     return isValid;
 }

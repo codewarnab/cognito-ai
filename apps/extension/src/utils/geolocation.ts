@@ -1,6 +1,11 @@
 /**
  * Interface definition for geolocation coordinates
  */
+
+import { createLogger } from '~logger';
+
+const log = createLogger('Geolocation', 'BROWSER');
+
 export interface GeoLocation {
     latitude: number;
     longitude: number;
@@ -46,7 +51,7 @@ export const checkLocationPermission = async (): Promise<PermissionState> => {
         const result = await navigator.permissions.query({ name: 'geolocation' });
         return result.state;
     } catch (e) {
-        console.warn('[Geolocation] Failed to query permission:', e);
+        log.warn('Failed to query permission:', e);
         return 'prompt';
     }
 };
@@ -62,7 +67,7 @@ export const watchLocationPermission = (
     callback: (state: PermissionState) => void
 ): (() => void) => {
     if (!navigator.permissions || !navigator.permissions.query) {
-        console.warn('[Geolocation] Permissions API not supported, cannot watch for changes');
+        log.warn('Permissions API not supported, cannot watch for changes');
         return () => { };
     }
 
@@ -71,7 +76,7 @@ export const watchLocationPermission = (
 
     const handleChange = function (this: PermissionStatus) {
         if (isActive) {
-            console.log('[Geolocation] Permission state changed to:', this.state);
+            log.info('Permission state changed to:', this.state);
             callback(this.state);
         }
     };
@@ -84,7 +89,7 @@ export const watchLocationPermission = (
             status.addEventListener('change', handleChange);
         })
         .catch((e) => {
-            console.warn('[Geolocation] Failed to set up permission watcher:', e);
+            log.warn('Failed to set up permission watcher:', e);
         });
 
     // Return cleanup function
@@ -125,7 +130,7 @@ export const getCurrentLocation = (
                     });
                 },
                 (error) => {
-                    console.warn('[Geolocation] Direct request failed:', error);
+                    log.warn('Direct request failed:', error);
                     // Map error codes to our error types
                     let errorType: 'denied' | 'timeout' | 'unavailable' | 'unknown';
                     switch (error.code) {
@@ -159,13 +164,13 @@ export const getCurrentLocation = (
             if (response && response.ok && response.location) {
                 resolve({ success: true, location: response.location });
             } else {
-                console.warn('[Geolocation] Offscreen request failed:', response?.error);
+                log.warn('Offscreen request failed:', response?.error);
                 // Try to determine error type from response
                 const errorType = response?.errorType || 'unknown';
                 resolve({ success: false, error: errorType });
             }
         } catch (error) {
-            console.warn('[Geolocation] Failed to communicate with background:', error);
+            log.warn('Failed to communicate with background:', error);
             resolve({ success: false, error: 'unknown' });
         }
     });

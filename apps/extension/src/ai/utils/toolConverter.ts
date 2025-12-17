@@ -485,11 +485,11 @@ export function validateFunctionDeclaration(
  * Test helper: Convert a single Zod schema and log the result
  */
 export function testSchemaConversion(schema: z.ZodSchema, name: string = 'test'): void {
-    console.log(`\n=== Testing ${name} ===`);
-    console.log('Input Zod Schema:', schema);
+    log.info(`\n=== Testing ${name} ===`);
+    log.info('Input Zod Schema:', schema);
 
     const result = zodToGeminiAPISchema(schema);
-    console.log('Output Gemini API Schema:', JSON.stringify(result, null, 2));
+    log.info('Output Gemini API Schema:', JSON.stringify(result, null, 2));
 
     const validation = validateFunctionDeclaration({
         name,
@@ -499,5 +499,5 @@ export function testSchemaConversion(schema: z.ZodSchema, name: string = 'test')
             properties: (result as any).properties || {},
         },
     });
-    console.log('Validation:', validation);
+    log.info('Validation:', validation);
 }

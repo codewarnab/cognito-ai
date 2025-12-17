@@ -3,6 +3,9 @@ import { isPdfDismissed, dismissPdf } from '@/utils/settings';
 import { FileAccessError } from '../../errors';
 import type { LocalPdfInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
+import { createLogger } from '~logger';
+
+const log = createLogger('useLocalPdfAttachment', 'ATTACHMENTS');
 
 interface UseLocalPdfAttachmentOptions {
     localPdfInfo?: LocalPdfInfo | null;
@@ -27,7 +30,7 @@ export const useLocalPdfAttachment = ({
         setIsAttachingLocalPdf(true);
 
         try {
-            console.log('[useLocalPdfAttachment] Attempting to attach local PDF:', localPdfInfo.filename);
+            log.info('Attempting to attach local PDF:', localPdfInfo.filename);
 
             // Send message to background script to read the file
             const response = await chrome.runtime.sendMessage({
@@ -40,8 +43,7 @@ export const useLocalPdfAttachment = ({
             if (!response.success) {
                 // Handle specific error cases
                 if (response.needsPermission) {
-                    // Show permission guide
-                    // const { FileAccessError } = await import('../../errors');
+                    // Show permission guide 
                     const helpText = FileAccessError.getPermissionHelpText();
                     onError?.(
                         `${response.error}\n\n${helpText}`,
@@ -80,7 +82,7 @@ export const useLocalPdfAttachment = ({
                 lastModified: Date.now()
             });
 
-            console.log('[useLocalPdfAttachment] Successfully created File object:', {
+            log.info('Successfully created File object:', {
                 name: file.name,
                 size: file.size,
                 type: file.type
@@ -96,7 +98,7 @@ export const useLocalPdfAttachment = ({
             onError?.(`Attached ${filename.length > 20 ? filename.substring(0, 20) + '...' : filename}`, 'info');
 
         } catch (error) {
-            console.error('[useLocalPdfAttachment] Error attaching local PDF:', error);
+            log.error('Error attaching local PDF:', error);
             onError?.(
                 'Failed to attach PDF. Please try manual upload using the attachment button.',
                 'error'

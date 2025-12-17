@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react"
 import type { McpServerStatus, McpExtensionMessage, McpExtensionResponse } from "../../../../mcp/types"
+import { createLogger } from '~logger'
+
+const log = createLogger('useMcpServer', 'MCP_CLIENT')
 
 interface UseMcpServerOptions {
     id: string
@@ -76,7 +79,7 @@ export const useMcpServer = ({
             let settled = false
 
             try {
-                console.log(`[McpServerCard:${id}] Sending message:`, message.type)
+                log.info(`Sending message:`, message.type)
                 chrome.runtime.sendMessage(message, (response) => {
                     if (settled) return
                     settled = true
@@ -84,24 +87,24 @@ export const useMcpServer = ({
                     const lastError = chrome.runtime.lastError
                     if (lastError) {
                         const errorMessage = lastError.message || 'Unknown runtime error'
-                        console.error(`[McpServerCard:${id}] Runtime error:`, errorMessage)
+                        log.error(`Runtime error:`, errorMessage)
                         reject({ success: false, error: `chrome.runtime.lastError: ${errorMessage}` })
                         return
                     }
 
                     if (response === undefined) {
-                        console.error(`[McpServerCard:${id}] No response received for:`, message.type)
+                        log.error(`No response received for:`, message.type)
                         resolve({ success: false, error: 'No response' })
                         return
                     }
 
-                    console.log(`[McpServerCard:${id}] Response received:`, message.type, response)
+                    log.info(`Response received:`, message.type, response)
                     resolve(response as McpExtensionResponse)
                 })
             } catch (err) {
                 if (settled) return
                 settled = true
-                console.error(`[McpServerCard:${id}] Send message error:`, err)
+                log.error(`Send message error:`, err)
                 reject(err)
             }
         })
@@ -136,7 +139,7 @@ export const useMcpServer = ({
                 }
             }
         } catch (error) {
-            console.error(`[McpServerCard:${id}] Failed to load status:`, error)
+            log.error(`Failed to load status:`, error)
         }
     }
 
@@ -159,7 +162,7 @@ export const useMcpServer = ({
                     alert(response.error || 'Failed to enable server')
                 }
             } catch (error) {
-                console.error(`[McpServerCard:${id}] Enable error:`, error)
+                log.error(`Enable error:`, error)
                 setHealthCheckStatus('')
                 alert('Failed to enable server')
             } finally {
@@ -180,13 +183,13 @@ export const useMcpServer = ({
             if (response.success) {
                 const toolCount = (response.data as { toolCount?: number })?.toolCount || 0
                 setHealthCheckStatus(`✓ Healthy (${toolCount} tools available)`)
-                console.log(`[McpServerCard:${id}] Health check success:`, response.data)
+                log.info(`Health check success:`, response.data)
             } else {
                 setHealthCheckStatus(`✗ Failed: ${response.error}`)
-                console.error(`[McpServerCard:${id}] Health check failed:`, response.error)
+                log.error(`Health check failed:`, response.error)
             }
         } catch (error) {
-            console.error(`[McpServerCard:${id}] Health check error:`, error)
+            log.error(`Health check error:`, error)
             setHealthCheckStatus('✗ Health check failed')
         } finally {
             setIsLoading(false)
@@ -212,7 +215,7 @@ export const useMcpServer = ({
                 await loadStatus()
             }
         } catch (error) {
-            console.error(`[McpServerCard:${id}] Auth error:`, error)
+            log.error(`Auth error:`, error)
             alert('Authentication failed')
             // Reload status to ensure UI reflects the actual server state
             await loadStatus()
@@ -230,7 +233,7 @@ export const useMcpServer = ({
                 setIsEnabled(false)
             }
         } catch (error) {
-            console.error(`[McpServerCard:${id}] Logout error:`, error)
+            log.error(`Logout error:`, error)
         } finally {
             setIsLoading(false)
         }
@@ -244,7 +247,7 @@ export const useMcpServer = ({
                 setIsEnabled(false)
             }
         } catch (error) {
-            console.error(`[McpServerCard:${id}] Disable error:`, error)
+            log.error(`Disable error:`, error)
         } finally {
             setIsLoading(false)
         }
