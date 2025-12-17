@@ -35,7 +35,7 @@ apps/extension/
 │   │   ├── shell/          # App shell components
 │   │   └── ui/             # Reusable UI primitives
 │   ├── mcp/                # MCP client implementation
-│   ├── memory/             # Dexie database (local memory)
+│   ├── db/                 # Dexie database (local memory)
 │   ├── workflows/          # Automation workflows
 │   ├── hooks/              # React hooks
 │   ├── utils/              # Utilities
@@ -91,7 +91,6 @@ This extension has detailed coding standards in:
 - `.cursor/rules/coding-standards.mdc` - Comprehensive coding standards
 - `.kiro/steering/` - Topic-specific Kiro steering files
 - `.trae/rules/project_rules.md` - Trae project rules
-- `TAILWIND_MIGRATION_GUIDE.md` - Tailwind CSS styling standards
 
 ## Development
 
@@ -144,6 +143,24 @@ import icon from '@assets/icon.png';
 import { createLogger } from '../../logger';
 import { Button } from '../../../components/ui/Button';
 ```
+
+## Logger Categories
+
+All `createLogger` calls MUST include a category as the second argument:
+
+```typescript
+import { createLogger } from '~logger';
+const log = createLogger('FeatureName', 'CATEGORY');
+```
+
+**Available Categories:**
+- **MCP**: `MCP_CLIENT`, `MCP_TOOLS`, `MCP_EXECUTION`, `MCP_AUTH`, `MCP_SSE`, `WEBMCP`
+- **Tools**: `TOOLS_REGISTRY`, `TOOLS_EXECUTION`, `TOOLS_VALIDATION`, `TOOLS_INTEGRATION`
+- **AI**: `AI_CHAT`, `AI_PROMPTS`, `AI_VOICE`, `AI_WEBSITE_DETECTION`
+- **Voice**: `VOICE_RECORDING`, `VOICE_CLIENT`, `VOICE_UI`, `VOICE_AUDIO`
+- **Memory**: `MEMORY_OPERATIONS`, `MEMORY_SUGGESTIONS`
+- **UI**: `UI_CHAT`, `UI_VOICE`, `UI_SETTINGS`, `UI_THREADS`, `UI_SIDEPANEL`, `UI_REMINDERS`
+- **System**: `BACKGROUND`, `STORAGE`, `UTILS`, `NOTIFICATIONS`, `CREDENTIALS`, `SEARCH`, `SETTINGS`, `WORKFLOW`, `BROWSER`, `ATTACHMENTS`, `CONTENT_SCRIPTS`
 
 ## Testing the Extension
 

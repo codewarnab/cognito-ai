@@ -12,8 +12,9 @@ Cognito is a powerful Chrome extension that transforms your browser into an inte
 - **Human-like Interactions**: Simulates realistic user behavior with proper timing and animations
 
 ### 🎤 Voice Interface
-- **Real-time Voice Conversation**: Natural voice interaction using Google's Gemini Live API
+- **Real-time Voice Conversation**: Natural voice interaction using ElevenLabs conversational AI
 - **Voice Mode UI**: Full-screen voice interface with 3D audio visualization
+- **Configurable Voices**: Choose from multiple ElevenLabs voices with customizable settings
 - **Microphone Integration**: Automatic permission handling and audio processing
 - **Voice-to-Action**: Convert voice commands directly into browser actions
 
@@ -34,6 +35,12 @@ Cognito is a powerful Chrome extension that transforms your browser into an inte
 - **Search Result Parsing**: Extract structured data from search results
 - **Content Analysis**: Advanced page analysis with heading hierarchy and landmark detection
 - **Search Bar Detection**: Automatically locate and interact with search inputs
+
+### 🌐 Web Search Integration
+- **Web Search**: Real-time web search using Tavily API for current information retrieval
+- **Deep Web Search**: Comprehensive multi-query parallel search for in-depth research
+- **Content Retrieval**: Extract and process content from any URL via Jina Reader
+- **Source Citations**: Automatically include relevant source links in AI responses
 
 ### 📊 Workflow Automation
 - **Research Workflow**: Comprehensive research with multi-source analysis and report generation
@@ -78,12 +85,25 @@ Cognito is a powerful Chrome extension that transforms your browser into an inte
 - **API Integration**: RESTful API for external integrations
 - **Custom Tool Development**: Framework for creating custom automation tools
 
+### 🧩 Adaptive Mode
+- **On-Demand Tool Discovery**: AI discovers and loads tools only when needed, reducing token usage
+- **Smart Tool Selection**: Automatically identifies the most relevant tools for each task
+- **Lightweight Context**: Minimal tool definitions loaded initially for faster responses
+- **Dynamic Execution**: Tools are discovered, validated, and executed in a single flow
+- **Code Execution**: Sandboxed JavaScript execution for complex data processing tasks
+
 ## Technical Architecture
 
 ### AI Models
-- **Gemini Live**: Real-time voice conversation and natural language processing
 - **Gemini Pro**: Text-based AI for complex reasoning and task planning
+- **ElevenLabs**: Real-time voice conversation with high-quality speech synthesis
 - **Local Models**: Optional local AI processing for privacy-sensitive tasks
+
+### AI Modes
+- **Chat Mode**: Conversational AI without browser automation tools
+- **Agent Mode**: Full access to all browser automation tools
+- **Adaptive Mode**: On-demand tool discovery for efficient, context-aware automation
+- **Custom Mode**: User-configurable tool selection for specific workflows
 
 ### Data Storage
 - **IndexedDB**: Local storage for chat history, settings, and user data
@@ -100,16 +120,28 @@ Cognito is a powerful Chrome extension that transforms your browser into an inte
 
 ### MCP Servers (Model Context Protocol)
 - **Ahrefs**: SEO analysis and keyword research
+- **Asana**: Task and project management
 - **Astro Docs**: Documentation and development resources
+- **Atlassian**: Jira and Confluence integration
+- **Canva**: Design and creative tools
+- **CoinGecko**: Cryptocurrency data and market information
+- **Context7**: Contextual documentation lookup
+- **DeepWiki**: Code architecture analysis
+- **Figma**: Design collaboration and prototyping
+- **GitHub**: Repository and code management
 - **Hugging Face**: Machine learning models and datasets
 - **Linear**: Project management and issue tracking
+- **Netlify**: Web deployment and hosting
 - **Notion**: Note-taking and knowledge management
+- **PayPal**: Payment processing
+- **Sentry**: Error tracking and monitoring
+- **Stripe**: Payment and billing integration
 - **Supabase**: Database and backend services
+- **Supermemory**: AI memory and knowledge management
 - **Vercel**: Web deployment and hosting
-- **DeepWiki**: Code architecture analysis
-- **CoinGecko**: Cryptocurrency data and market information
-- **Fetch**: Web content retrieval and processing
-- **Sequential Thinking**: Advanced problem-solving tools
+- **Webflow**: Visual web development
+- **Wix**: Website building and management
+- **Custom Servers**: Add any MCP-compatible server via URL
 
 ### Browser Capabilities
 - **Chrome Extensions API**: Full access to Chrome's extension capabilities

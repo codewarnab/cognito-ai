@@ -86,8 +86,44 @@
 - **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions; count only enabled tools and exclude disabled/workflow-only tools to ensure accurate counts match actual available tools.
 
 ## Storage and Data
-- Use Chrome storage APIs (`chrome.storage.local`) for extension storage; avoid direct `localStorage` (`src/memory/store.ts`).
-- Maintain indices for efficient queries; update index on CRUD (`src/memory/store.ts:37`, `src/memory/store.ts:68`).
+- Use Chrome storage APIs (`chrome.storage.local`) for user settings and preferences.
+- Use Dexie (IndexedDB wrapper) for structured data like messages, threads, and usage tracking (`src/db/`).
+- Avoid direct `localStorage` in extension code; prefer the appropriate storage API for the data type.
+- Maintain indices for efficient queries; define Dexie schemas with appropriate indices (`src/db/database.ts`).
+
+## Database Directory Structure (`src/db/`)
+- `database.ts` - Core Dexie database setup, schema definitions, and database instance
+- `index.ts` - Barrel export file for all database operations
+- `management.ts` - Database management utilities (clear, reset, migrations)
+- `messages.ts` - Message CRUD operations and queries
+- `threads.ts` - Thread management (create, update, delete, list)
+- `settings.ts` - Persistent settings storage via IndexedDB
+- `usage.ts` - Token usage tracking and aggregation
+- `types.ts` - TypeScript interfaces for database entities
+- `reportSections.ts` - Report section storage for research features
+- `researchSources.ts` - Research source tracking and management
+
+## AI Modes
+The extension supports multiple AI operational modes configured via `ToolsMode` (`src/types/settings.ts`):
+
+| Mode | Description | Prompt Used |
+|------|-------------|-------------|
+| `chat` | Conversational mode without tool execution | `chatModeSystemPrompt` |
+| `agent` | Full agentic mode with all tools pre-loaded | `agentModeSystemPrompt` |
+| `adaptive` | On-demand tool discovery mode for context efficiency | `adaptiveSystemPrompt` |
+| `custom` | User-defined tool selection | Varies |
+
+### Adaptive Mode
+Adaptive mode (`src/ai/prompts/templates/adaptivePrompt.ts`) enables efficient tool usage by:
+1. Loading only a lightweight **tool index** (name + description) instead of full tool definitions
+2. Using `discoverTools("keyword")` to search and retrieve full details for specific tools
+3. Using `executeTools` to orchestrate tool execution via JavaScript code
+4. Pre-loading common tools (readPageContent, takeScreenshot, getActiveTab) for direct access
+
+**Key Rules:**
+- Tools CANNOT be called directly by name in adaptive mode (except pre-loaded tools)
+- Always use `discoverTools` → `executeTools` workflow for non-pre-loaded tools
+- Verify task completion by reading page state after actions
 
 ## Performance and UX
 - Avoid heavy operations on the UI thread; use offscreen where applicable (`public/offscreen.js:1`).
