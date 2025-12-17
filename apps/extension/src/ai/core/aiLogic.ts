@@ -154,7 +154,7 @@ export async function streamAIResponse(params: {
 
             } else {
               // ========== REMOTE MODE (Gemini API or Vertex AI) ==========
-              const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+              const modelName = modelConfig.remoteModel || 'gemini-3-flash-preview';
 
               // Check if web search mode is active
               const searchSettings = await getSearchSettings();
@@ -665,7 +665,7 @@ export async function streamAIResponse(params: {
 
                     if (lastAssistantMsg) {
                       // Convert to AppUsage format with context limits
-                      const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+                      const modelName = modelConfig.remoteModel || 'gemini-3-flash-preview';
                       const contextLimits = getContextLimits(modelName);
 
                       const appUsage: AppUsage = {

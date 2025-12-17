@@ -22,19 +22,24 @@ interface ModelOption {
 
 const MODEL_OPTIONS: ModelOption[] = [
     {
-        id: 'gemini-2.5-pro',
-        name: 'Gemini 2.5 Pro',
-        description: 'capable model for complex tasks',
-    },
-    {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
+        id: 'gemini-3-flash-preview',
+        name: 'Gemini 3 Flash',
         description: 'Fast and efficient for most tasks',
     },
     {
         id: 'gemini-3-pro-preview',
-        name: 'Gemini 3.0 pro ',
-        description: 'Most capable model ',
+        name: 'Gemini 3 Pro',
+        description: 'Most capable model for complex tasks',
+    },
+    {
+        id: 'gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        description: 'Advanced capabilities for complex tasks',
+    },
+    {
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        description: 'Previous generation flash model',
     },
 ];
 
@@ -53,7 +58,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
     const isOpen = controlledIsOpen ?? internalIsOpen;
     const setIsOpen = onOpenChange ?? setInternalIsOpen;
 
-    const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-2.5-flash');
+    const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-3-flash-preview');
     const [isLoading, setIsLoading] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);

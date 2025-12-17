@@ -26,7 +26,7 @@ export async function getModelConfig(): Promise<StoredModelConfig> {
   const result = await chrome.storage.local.get(STORAGE_KEYS.MODEL_CONFIG);
   const config = result[STORAGE_KEYS.MODEL_CONFIG] || {
     mode: 'local', // Default to local
-    remoteModel: 'gemini-2.5-flash',
+    remoteModel: 'gemini-3-flash-preview',
   };
 
   // Force remote mode if HIDE_LOCAL_MODE is enabled

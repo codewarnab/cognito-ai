@@ -211,7 +211,7 @@ export function createOnFinishCallback(
 
         // Capture and enhance usage information for remote mode only
         if (effectiveMode === 'remote' && usage) {
-            const modelName = modelConfig.remoteModel || 'gemini-2.5-flash';
+            const modelName = modelConfig.remoteModel || 'gemini-3-flash-preview';
             const contextLimits = getContextLimits(modelName);
 
             const appUsage: AppUsage = {

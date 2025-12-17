@@ -2,13 +2,17 @@
  * Configuration constants for the extension
  */
 
+// UI Feature Flags
+/** Hide the model selector in the composer toolbar */
+export const HIDE_MODEL_SELECTOR = true;
+
 // Gemini Model Configuration
 // Shared model constants for features like summarizer, writer, and rewriter
 export const GEMINI_MODELS = {
     /** Lite model for fast, cost-effective operations (summarizer, writer, rewriter) */
     LITE: 'gemini-2.5-flash-lite',
     /** Standard model for general-purpose tasks */
-    FLASH: 'gemini-2.5-flash',
+    FLASH: 'gemini-3-flash-preview',
     /** Pro model for complex reasoning tasks */
     PRO: 'gemini-2.5-pro',
 } as const;

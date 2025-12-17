@@ -5,7 +5,7 @@ import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Wrench } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
 import { SEARCH_TOOL_NAMES } from '@/ai/tools/searchToolFilter';
 import { createLogger } from '~logger';
 import type { AIMode, ModelState } from '../../../types';
@@ -151,10 +151,12 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             <SearchControls activeWorkflow={activeWorkflow} />
 
             {/* Model Selector - Gemini icon with model popover */}
-            <ModelSelectorPopover
-                isOpen={isModelSelectorOpen}
-                onOpenChange={setIsModelSelectorOpen}
-            />
+            {!HIDE_MODEL_SELECTOR && (
+                <ModelSelectorPopover
+                    isOpen={isModelSelectorOpen}
+                    onOpenChange={setIsModelSelectorOpen}
+                />
+            )}
         </div>
     );
 };

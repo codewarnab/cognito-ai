@@ -30,7 +30,7 @@ export const ProviderSetup: React.FC<ProviderSetupProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-    const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-2.5-flash');
+    const [selectedModel, setSelectedModel] = useState<RemoteModelType>('gemini-3-flash-preview');
     const [bothProvidersConfigured, setBothProvidersConfigured] = useState(false);
 
     // Google AI fields

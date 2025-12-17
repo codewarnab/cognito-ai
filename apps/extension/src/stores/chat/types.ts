@@ -10,7 +10,7 @@ import type { AppUsage } from '@/types/ai/usage';
 // ============================================================================
 
 export type AIMode = 'local' | 'remote' | 'agent' | 'adaptive';
-export type RemoteModel = 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-3-pro-preview';
+export type RemoteModel = 'gemini-3-flash-preview' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-3-pro-preview';
 
 export interface ModelState {
   /** Current AI mode */

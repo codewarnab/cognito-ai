@@ -38,7 +38,7 @@ export const useSettingsStore = create<SettingsState>()(
     googleApiKey: null,
     anthropicApiKey: null,
     openaiApiKey: null,
-    preferredModel: 'gemini-2.5-flash',
+    preferredModel: 'gemini-3-flash-preview',
     preferredMode: 'remote',
     enableVoiceMode: true,
     enableNotificationSound: true,
@@ -54,7 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
     setApiKey: async (provider, key) => {
       const keyField = `${provider}ApiKey` as keyof SettingsState;
       const state = get();
-      
+
       set({
         [keyField]: key,
         hasAnyProviderConfigured: !!(
@@ -80,13 +80,13 @@ export const useSettingsStore = create<SettingsState>()(
     toggleTool: (toolId, enabled) => {
       const tools = [...get().enabledBuiltInTools];
       const index = tools.indexOf(toolId);
-      
+
       if (enabled && index === -1) {
         tools.push(toolId);
       } else if (!enabled && index !== -1) {
         tools.splice(index, 1);
       }
-      
+
       set({ enabledBuiltInTools: tools });
     },
 

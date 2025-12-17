@@ -42,6 +42,7 @@ export interface AppUsage extends LanguageModelUsage {
  */
 export function getContextLimits(modelId: string): AppUsage['context'] {
     switch (modelId) {
+        case 'gemini-3-flash-preview':
         case 'gemini-2.5-flash':
         case 'gemini-2.5-flash-lite':
         case 'gemini-2.5-flash-image':

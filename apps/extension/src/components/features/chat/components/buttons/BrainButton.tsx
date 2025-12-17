@@ -151,7 +151,7 @@ async function analyzeAndExtractFacts(
   userMessage: string,
   aiResponse: string
 ): Promise<ExtractedFact[]> {
-  const { model, provider, modelName } = await initializeModel('gemini-2.5-flash', 'remote');
+  const { model, provider, modelName } = await initializeModel('gemini-3-flash-preview', 'remote');
 
   log.info('Extracting facts with AI', { provider, modelName });
 

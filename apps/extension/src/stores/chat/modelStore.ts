@@ -22,7 +22,7 @@ export const useModelStore = create<ModelState>()(
   })((set, get) => ({
     // Initial state
     mode: 'remote',
-    remoteModel: 'gemini-2.5-flash',
+    remoteModel: 'gemini-3-flash-preview',
     hasApiKey: false,
     conversationStartMode: null,
     isLoading: true,

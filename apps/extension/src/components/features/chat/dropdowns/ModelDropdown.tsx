@@ -10,9 +10,14 @@ interface ModelDropdownProps {
 
 const MODEL_OPTIONS: { value: RemoteModelType; label: string; description: string }[] = [
   {
+    value: 'gemini-3-flash-preview',
+    label: 'Gemini 3 Flash',
+    description: 'Fast and efficient for most tasks.',
+  },
+  {
     value: 'gemini-2.5-flash',
     label: 'Gemini 2.5 Flash',
-    description: 'High-performance model for general use.',
+    description: 'Previous generation flash model.',
   },
   {
     value: 'gemini-2.5-flash-lite',
