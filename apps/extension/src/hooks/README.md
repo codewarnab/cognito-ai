@@ -62,11 +62,12 @@ Hooks for settings and configuration:
 
 ### Sidepanel (`sidepanel/`)
 Sidepanel-specific hooks:
-- `useSidepanelUiState` - UI state toggles and mode management
 - `useBackgroundMessageListener` - Omnibox/notification message handling
 - `useImagePreviewListener` - Image preview state changes
 - `useNotificationSound` - Notification sound initialization
 - `useOnboardingTestHandles` - Test function exposure
+
+> **Note:** UI state management has been migrated to Zustand stores. See `src/stores/` for `useUINavigationStore` and `useSettingsStore`.
 
 ### Suggestions (`suggestions/`)
 AI-powered suggestion hooks:
@@ -75,7 +76,8 @@ AI-powered suggestion hooks:
 ### UI (`ui/`)
 Generic UI state hooks:
 - `useWindowVisibility` - Window visibility context consumer
-- `useVoiceRecording` - Voice recording state and animations
+
+> **Note:** Voice recording state has been moved to `useVoiceModeStore`. See `src/stores/voice/`.
 
 ### Workflows (`workflows/`)
 Workflow-related hooks:

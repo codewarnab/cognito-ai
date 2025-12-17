@@ -24,6 +24,7 @@ apps/extension/
 │   │   ├── sidepanel/      # Main side panel React app
 │   │   ├── background/     # Background Service Worker
 │   │   └── contents/       # Content scripts
+│   ├── stores/             # Zustand state management (see below)
 │   ├── actions/            # Browser automation actions
 │   ├── ai/                 # AI model integration & prompts
 │   │   ├── core/           # Core AI logic (modelSetup, aiLogic)
@@ -44,6 +45,45 @@ apps/extension/
 ├── public/                 # Static files (offscreen.js, etc.)
 └── wxt.config.ts           # WXT configuration
 ```
+
+## State Management (Zustand Stores)
+
+The extension uses Zustand for centralized state management with Chrome storage sync.
+
+**CRITICAL: Selective Subscriptions Required**
+
+Never subscribe to the entire store. Always use selectors to subscribe to specific state slices:
+
+```typescript
+// ❌ BAD - Causes infinite re-render loops
+const store = useToolsStore();
+
+// ✅ GOOD - Selective subscriptions
+const showModal = useToolsStore((s) => s.showModal);
+const setShowModal = useToolsStore((s) => s.setShowModal);
+const itemCount = useToolsStore((s) => s.itemCount);
+```
+
+| Store | Purpose |
+|-------|---------|
+| `useSettingsStore` | API keys, preferences, feature flags |
+| `useUINavigationStore` | Panel navigation, overlays, chat mode |
+| `useModelStore` | AI mode and model selection |
+| `useChatStore` | Messages, threads, usage tracking |
+| `useAttachmentsStore` | File, tab, PDF, YouTube attachments |
+| `useToolsStore` | Tool enabled states and counts |
+| `useVoiceModeStore` | Voice recording and ElevenLabs state |
+| `useMcpStore` | MCP server connections and status |
+
+**Usage Pattern:**
+```typescript
+import { useChatStore, type ChatState } from '@/stores';
+
+// Always type the state parameter in selectors
+const messages = useChatStore((state: ChatState) => state.messages);
+```
+
+See `src/stores/README.md` for detailed documentation.
 
 ## AI Editor Configs
 
@@ -81,6 +121,12 @@ WXT_ELEVENLABS_WORKER_URL=https://your-worker.workers.dev
 | `src/entrypoints/background/` | Service worker, MCP, message handling |
 | `wxt.config.ts` | WXT and manifest configuration |
 | `tsconfig.json` | TypeScript config with path aliases |
+
+## UI Standards
+
+- All clickable buttons must include `cursor-pointer` class for proper UX
+- Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers
+- **Never modify primitive UI components** (`src/components/ui/primitives/`) directly; always add props for customization and pass them from consuming components
 
 ## Path Aliases
 

@@ -7,6 +7,7 @@
 
 import { createLogger } from '~logger';
 import { HIDE_LOCAL_MODE } from '@/constants';
+import { sendMessage } from '@/lib/messaging';
 
 const log = createLogger('Summarizer', 'AI_PROMPTS');
 
@@ -107,19 +108,16 @@ export async function generateHeadline(
     chrome.runtime.onMessage.addListener(progressListener);
 
     try {
-        const response = await chrome.runtime.sendMessage({
-            type: 'summarize:request',
-            payload: {
-                requestId,
-                text: cleanText,
-                options: {
-                    type: 'headline',
-                    format: 'plain-text',
-                    length: 'short',
-                    sharedContext: context
-                },
-                context
-            }
+        const response = await sendMessage('summarize:request', {
+            requestId,
+            text: cleanText,
+            options: {
+                type: 'headline',
+                format: 'plain-text',
+                length: 'short',
+                sharedContext: context
+            },
+            context
         });
 
         if (!response?.ok) {

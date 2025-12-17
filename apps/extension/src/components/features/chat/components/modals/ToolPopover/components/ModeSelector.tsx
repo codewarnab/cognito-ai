@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MessageSquare, Bot, Sparkles, Info } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip/Tooltip';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { ToolMode } from '../types';
 
 interface ModeSelectorProps {
@@ -14,6 +14,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
     hasUserModified,
     onModeChange,
 }) => {
+    const [showAdaptiveInfo, setShowAdaptiveInfo] = useState(false);
     const getButtonStyle = (isActive: boolean): React.CSSProperties => ({
         display: 'flex',
         alignItems: 'center',
@@ -74,53 +75,71 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     <span>Adaptive</span>
                 </button>
                 {displayMode === 'adaptive' && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <button
-                                type="button"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    marginLeft: '2px',
-                                    padding: '2px',
-                                    background: 'transparent',
-                                    border: 'none',
-                                    cursor: 'help',
-                                    color: 'var(--color-success, #10b981)',
-                                    opacity: 0.8,
-                                }}
-                            >
-                                <Info size={10} />
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                            side="top"
-                            align="start"
-                            sideOffset={8}
-                            className="w-[220px] text-[11px] leading-relaxed p-3"
-                        >
-                            <div style={{
-                                fontWeight: 600,
-                                color: 'var(--color-success, #10b981)',
-                                marginBottom: '6px',
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            type="button"
+                            style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px'
-                            }}>
-                                <Sparkles size={12} />
-                                Adaptive Mode
-                            </div>
-                            <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #9ca3af)' }}>
-                                Discovers and executes tools on-demand without loading all definitions in context.
-                            </p>
-                            <p style={{ margin: 0, opacity: 0.8, color: 'var(--text-secondary, #9ca3af)' }}>
-                                ✓ More efficient context usage<br />
-                                ✓ Access to all available tools<br />
-                                ✓ Smart multi-step orchestration
-                            </p>
-                        </TooltipContent>
-                    </Tooltip>
+                                justifyContent: 'center',
+                                marginLeft: '2px',
+                                padding: '2px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'help',
+                                color: 'var(--color-success, #10b981)',
+                                opacity: 0.8,
+                            }}
+                            onMouseEnter={() => setShowAdaptiveInfo(true)}
+                            onMouseLeave={() => setShowAdaptiveInfo(false)}
+                        >
+                            <Info size={10} />
+                        </button>
+                        <AnimatePresence>
+                            {showAdaptiveInfo && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 4 }}
+                                    transition={{ duration: 0.15 }}
+                                    style={{
+                                        position: 'absolute',
+                                        bottom: 'calc(100% + 8px)',
+                                        left: '-100px',
+                                        width: '220px',
+                                        padding: '12px',
+                                        backgroundColor: 'var(--bg-tertiary, #1a2637)',
+                                        border: '1px solid var(--border-color, rgba(255, 255, 255, 0.1))',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.3)',
+                                        zIndex: 150,
+                                        fontSize: '11px',
+                                        lineHeight: 1.5,
+                                    }}
+                                >
+                                    <div style={{
+                                        fontWeight: 600,
+                                        color: 'var(--color-success, #10b981)',
+                                        marginBottom: '6px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}>
+                                        <Sparkles size={12} />
+                                        Adaptive Mode
+                                    </div>
+                                    <p style={{ margin: '0 0 6px 0', color: 'var(--text-secondary, #9ca3af)' }}>
+                                        Discovers and executes tools on-demand without loading all definitions in context.
+                                    </p>
+                                    <p style={{ margin: 0, opacity: 0.8, color: 'var(--text-secondary, #9ca3af)' }}>
+                                        ✓ More efficient context usage<br />
+                                        ✓ Access to all available tools<br />
+                                        ✓ Smart multi-step orchestration
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 )}
             </div>
             {hasUserModified && (

@@ -7,6 +7,7 @@ fileMatchPattern: "**/*.tsx"
 
 ## Component Patterns
 - Use functional components with hooks
+- Use Zustand stores from `@/stores` for global state (see `zustand-stores.md`)
 - Keep side effects inside `useEffect` with correct dependencies
 - Always include dependency arrays in `useImperativeHandle`
 - Never call state setters during render phase; use `useEffect` instead

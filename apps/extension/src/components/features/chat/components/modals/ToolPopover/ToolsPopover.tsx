@@ -93,7 +93,6 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
                         display: 'flex',
                         flexDirection: 'column',
-                        overflow: 'hidden',
                         zIndex: 100,
                     }}
                 >
@@ -138,24 +137,100 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         {/* Adaptive mode: Show simple read-only list of enabled tools */}
                         {displayMode === 'adaptive' ? (
                             <div className="p-2">
-                                <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pb-2 uppercase tracking-wide">
-                                    Active Tools
-                                </div>
-                                <div className="grid grid-cols-2 gap-1">
-                                    {Object.entries(enabledMap)
-                                        .filter(([, enabled]) => enabled)
-                                        .map(([toolName]) => (
-                                            <div
-                                                key={toolName}
-                                                className="flex items-center gap-1.5 py-1.5 px-2 rounded-md bg-white/[0.03]"
-                                            >
-                                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                                                <span className="text-[11px] text-[var(--text-primary,#fff)] font-medium truncate">
-                                                    {toolName}
-                                                </span>
+                                {(() => {
+                                    const hasMcp = Object.keys(mcpServerGroups).length > 0;
+                                    const hasWebMcp = filteredWebMCPTools.length > 0;
+                                    const isCompact = hasMcp || hasWebMcp;
+                                    const enabledTools = Object.entries(enabledMap).filter(([, enabled]) => enabled);
+
+                                    return (
+                                        <>
+                                            <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pb-1.5 uppercase tracking-wide flex items-center justify-between">
+                                                <span>Active Tools</span>
+                                                {isCompact && (
+                                                    <span className="text-[9px] font-normal normal-case tracking-normal opacity-70">
+                                                        {enabledTools.length} tools
+                                                    </span>
+                                                )}
                                             </div>
-                                        ))}
-                                </div>
+                                            {isCompact ? (
+                                                <div className="flex flex-wrap gap-1 px-1">
+                                                    {enabledTools.map(([toolName]) => (
+                                                        <div
+                                                            key={toolName}
+                                                            className="flex items-center gap-1 py-1 px-1.5 rounded bg-white/[0.03]"
+                                                        >
+                                                            <div className="w-1 h-1 rounded-full bg-green-500 shrink-0" />
+                                                            <span className="text-[9px] text-[var(--text-primary,#fff)] font-medium">
+                                                                {toolName}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="grid grid-cols-2 gap-1">
+                                                    {enabledTools.map(([toolName]) => (
+                                                        <div
+                                                            key={toolName}
+                                                            className="flex items-center gap-1.5 py-1.5 px-2 rounded-md bg-white/[0.03]"
+                                                        >
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                                                            <span className="text-[11px] text-[var(--text-primary,#fff)] font-medium truncate">
+                                                                {toolName}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
+                                {/* Show connected MCP servers */}
+                                {Object.keys(mcpServerGroups).length > 0 && (
+                                    <>
+                                        <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pt-2.5 pb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                                            <Server size={10} />
+                                            <span>MCP ({Object.keys(mcpServerGroups).length})</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 px-1">
+                                            {Object.entries(mcpServerGroups).map(([serverId, { name }]) => (
+                                                <div
+                                                    key={serverId}
+                                                    className="flex items-center gap-1 py-1 px-1.5 rounded bg-white/[0.03]"
+                                                >
+                                                    <div className="w-1 h-1 rounded-full bg-blue-500 shrink-0" />
+                                                    <span className="text-[9px] text-[var(--text-primary,#fff)] font-medium truncate max-w-[80px]">
+                                                        {name}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                                {/* Show WebMCP websites */}
+                                {filteredWebMCPTools.length > 0 && (
+                                    <>
+                                        <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pt-2.5 pb-1.5 uppercase tracking-wide flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                                <span className="w-0.5 h-0.5 rounded-full bg-emerald-500" />
+                                            </span>
+                                            <span>Web ({filteredWebMCPTools.length})</span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 px-1">
+                                            {(() => {
+                                                const domain = filteredWebMCPTools[0]?.domain;
+                                                return domain ? (
+                                                    <div className="flex items-center gap-1 py-1 px-1.5 rounded bg-white/[0.03]">
+                                                        <div className="w-1 h-1 rounded-full bg-emerald-500 shrink-0" />
+                                                        <span className="text-[9px] text-[var(--text-primary,#fff)] font-medium truncate max-w-[100px]">
+                                                            {domain}
+                                                        </span>
+                                                    </div>
+                                                ) : null;
+                                            })()}
+                                        </div>
+                                    </>
+                                )}
                                 <div className="mt-3 p-2 text-[10px] text-[var(--text-tertiary,#6b7280)] bg-white/[0.03] rounded-md leading-relaxed">
                                     Other tools are discovered and used automatically.
                                 </div>
@@ -184,39 +259,11 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                                     }} />
                                 )}
 
-                                {Object.entries(groupedTools).map(([category, tools]) => (
-                                    <ToolCategory
-                                        key={category}
-                                        category={category}
-                                        tools={tools}
-                                        enabledMap={enabledMap}
-                                        isExpanded={expandedCategories[category] ?? false}
-                                        supermemoryConfigured={supermemoryConfigured}
-                                        showSupermemoryTooltip={showSupermemoryTooltip}
-                                        searchQuery={toolSearchQuery}
-                                        onToggleCategory={toggleCategory}
-                                        onToggleTool={handleToggleTool}
-                                        onToggleCategoryAll={handleToggleCategory}
-                                        onSetSupermemoryTooltip={setShowSupermemoryTooltip}
-                                    />
-                                ))}
-
-                                {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
-                                    <div style={{
-                                        padding: '16px',
-                                        textAlign: 'center',
-                                        color: 'var(--text-tertiary, #6b7280)',
-                                        fontSize: '11px',
-                                    }}>
-                                        No tools found
-                                    </div>
-                                )}
-
                                 {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
                                     <div style={{
-                                        marginTop: '8px',
-                                        paddingTop: '8px',
-                                        borderTop: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
+                                        marginBottom: '8px',
+                                        paddingBottom: '8px',
+                                        borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
                                     }}>
                                         <div style={{
                                             display: 'flex',
@@ -251,6 +298,34 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                                                 onToggleCategoryAll={handleToggleMcpCategory}
                                             />
                                         ))}
+                                    </div>
+                                )}
+
+                                {Object.entries(groupedTools).map(([category, tools]) => (
+                                    <ToolCategory
+                                        key={category}
+                                        category={category}
+                                        tools={tools}
+                                        enabledMap={enabledMap}
+                                        isExpanded={expandedCategories[category] ?? false}
+                                        supermemoryConfigured={supermemoryConfigured}
+                                        showSupermemoryTooltip={showSupermemoryTooltip}
+                                        searchQuery={toolSearchQuery}
+                                        onToggleCategory={toggleCategory}
+                                        onToggleTool={handleToggleTool}
+                                        onToggleCategoryAll={handleToggleCategory}
+                                        onSetSupermemoryTooltip={setShowSupermemoryTooltip}
+                                    />
+                                ))}
+
+                                {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
+                                    <div style={{
+                                        padding: '16px',
+                                        textAlign: 'center',
+                                        color: 'var(--text-tertiary, #6b7280)',
+                                        fontSize: '11px',
+                                    }}>
+                                        No tools found
                                     </div>
                                 )}
                             </>

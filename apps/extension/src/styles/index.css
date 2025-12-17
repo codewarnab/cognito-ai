@@ -11,5 +11,9 @@
 @import './core/variables.css';
 @import './core/animations.css';
 
+/* Component-specific styles that require CSS (scrollbars, etc.) */
+@import './components/chat-scrollbar.css';
+@import './components/mcp-scrollbar.css';
+
 /* Note: All component, layout, and feature styles have been migrated to Tailwind CSS */
 /* Content script styles are imported directly in their respective entrypoint files */

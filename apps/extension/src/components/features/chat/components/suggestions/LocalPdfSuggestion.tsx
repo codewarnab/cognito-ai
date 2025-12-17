@@ -7,6 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { PaperclipIcon } from '@/components/shared/icons';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 
 interface LocalPdfSuggestionProps {
     /** Name of the PDF file */
@@ -26,17 +27,14 @@ export const LocalPdfSuggestion: React.FC<LocalPdfSuggestionProps> = ({
     isLoading = false,
 }) => {
     // Hide voice-mode-fab when showing PDF suggestion
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+    
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            voiceFab.style.visibility = 'hidden';
-        }
+        setVoiceFabVisibility(false);
         return () => {
-            if (voiceFab) {
-                voiceFab.style.visibility = '';
-            }
+            setVoiceFabVisibility(true);
         };
-    }, []);
+    }, [setVoiceFabVisibility]);
 
     // Truncate long filenames
     const displayName = filename.length > 30

@@ -3,11 +3,12 @@
  *
  * Generic UI state and interaction hooks including:
  * - Window visibility tracking
- * - Voice recording state and animations
+ *
+ * Note: Voice recording state has been moved to useVoiceModeStore
  *
  * @example
- * import { useWindowVisibility, useVoiceRecording } from '@/hooks/ui';
+ * import { useWindowVisibility } from '@/hooks/ui';
+ * import { useVoiceModeStore } from '@/stores';
  */
 
 export { useWindowVisibility } from './useWindowVisibility';
-export { useVoiceRecording } from './useVoiceRecording';

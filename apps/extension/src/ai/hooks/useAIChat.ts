@@ -1,6 +1,8 @@
 /**
  * Custom React hook for AI chat using AI SDK v5
  * Uses SimpleFrontendTransport to call AI logic directly from the frontend
+ * 
+ * Syncs with useChatStore for centralized state management.
  */
 
 import { useChat } from '@ai-sdk/react';
@@ -16,6 +18,7 @@ import { debounce } from '@/utils/general';
 import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
 import { useWindowVisibility } from '../../contexts/WindowVisibilityContext';
 import { playNotificationSound } from '@/utils/notifications';
+import { useChatStore, type ChatState } from '@/stores';
 
 const log = createLogger('useAIChat');
 
@@ -37,6 +40,11 @@ export function useAIChat(options: UseAIChatOptions) {
   // Get window visibility state for notification sound
   const { isUserAway } = useWindowVisibility();
 
+  // Get chat store actions for syncing state
+  const setStoreStatus = useChatStore((state: ChatState) => state.setStatus);
+  const setStoreMessages = useChatStore((state: ChatState) => state.setMessages);
+  const setStoreUsage = useChatStore((state: ChatState) => state.setUsage);
+
   // Track current usage for this thread
   const [currentUsage, setCurrentUsage] = useState<AppUsage | null>(null);
   const lastWarningPercent = useRef<number | null>(null);
@@ -55,6 +63,9 @@ export function useAIChat(options: UseAIChatOptions) {
         modelId: usage.modelId
       });
       setCurrentUsage(usage);
+      
+      // Sync to store
+      setStoreUsage(usage);
 
       // Persist to database (also debounced)
       if (threadId) {
@@ -83,7 +94,7 @@ export function useAIChat(options: UseAIChatOptions) {
         }
       }
     }, 300), // 300ms debounce
-    [threadId, onContextWarning]
+    [threadId, onContextWarning, setStoreUsage]
   );
 
   // Set up usage update callback
@@ -223,9 +234,30 @@ export function useAIChat(options: UseAIChatOptions) {
         messageId: finishResult.message.id,
         isError: finishResult.isError
       });
+      // Sync status to store
+      setStoreStatus('idle');
       onFinish?.(finishResult);
     },
   });
+
+  // Sync chat status to store
+  useEffect(() => {
+    const status = chat.status;
+    if (status === 'submitted' || status === 'streaming') {
+      setStoreStatus(status);
+    } else if (status === 'ready') {
+      setStoreStatus('idle');
+    } else if (status === 'error') {
+      setStoreStatus('error');
+    }
+  }, [chat.status, setStoreStatus]);
+
+  // Sync messages to store when they change
+  useEffect(() => {
+    if (chat.messages && chat.messages.length > 0) {
+      setStoreMessages(chat.messages);
+    }
+  }, [chat.messages, setStoreMessages]);
 
   // Recalculate usage from messages whenever they change
   // This ensures the context indicator always shows up when messages are loaded

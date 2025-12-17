@@ -5,7 +5,8 @@
  * (sidepanel, options page, etc.).
  */
 
-import type { McpServerStatus } from './types';
+import type { McpServerStatus, McpConnectionState } from './types';
+import { trySendMcpMessage } from '@/lib/messaging';
 
 /**
  * Broadcast status update to all listeners
@@ -20,10 +21,9 @@ import type { McpServerStatus } from './types';
  * @param status - The current status of the server
  */
 export function broadcastStatusUpdate(serverId: string, status: McpServerStatus): void {
-    chrome.runtime.sendMessage({
-        type: `mcp/${serverId}/status/update`,
-        payload: status
-    }).catch(() => {
-        // Ignore errors if no listeners
+    void trySendMcpMessage(serverId, 'status/update', {
+        state: status.state as McpConnectionState,
+        error: status.error,
+        tools: status.tools,
     });
 }

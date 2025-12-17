@@ -20,6 +20,7 @@ apps/extension/
 │   │   ├── sidepanel/          # Main UI entry point (React)
 │   │   ├── background/         # Background Service Worker (MCP, messaging)
 │   │   └── contents/           # Content scripts
+│   ├── stores/                 # Zustand state management
 │   ├── actions/                # Browser automation actions
 │   ├── ai/                     # AI model integration & prompts
 │   ├── components/             # Reusable React UI components
@@ -29,6 +30,30 @@ apps/extension/
 ├── wxt.config.ts               # WXT configuration
 └── package.json
 ```
+
+## State Management
+
+Uses Zustand stores with Chrome storage sync. Always type selectors:
+
+```typescript
+import { useChatStore, type ChatState } from '@/stores';
+const messages = useChatStore((state: ChatState) => state.messages);
+```
+
+**CRITICAL: Selective Subscriptions Required**
+
+Never subscribe to the entire store with `useStore()`. Always use individual selectors:
+
+```typescript
+// ❌ BAD - Causes infinite re-render loops
+const store = useToolsStore();
+
+// ✅ GOOD - Selective subscriptions for each value
+const showModal = useToolsStore((s) => s.showModal);
+const setShowModal = useToolsStore((s) => s.setShowModal);
+```
+
+Available stores: `useSettingsStore`, `useUINavigationStore`, `useModelStore`, `useChatStore`, `useAttachmentsStore`, `useToolsStore`, `useVoiceModeStore`, `useMcpStore`.
 
 ## Development Workflow
 
@@ -83,6 +108,12 @@ The extension supports configuration via Environment Variables. Copy `apps/exten
 | `WXT_HIDE_LOCAL_MODE` | Hide Local LLM features | `true` |
 | `WXT_YOUTUBE_BADGE_PREFETCH` | Auto-prefetch transcripts | `true` |
 | `WXT_LOG_PRESET` | Logging Level | `DEVELOPMENT` |
+
+## UI Standards
+
+- All clickable buttons must include `cursor-pointer` class for proper UX
+- Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers
+- **Never modify primitive UI components** (`src/components/ui/primitives/`) directly; always add props for customization and pass them from consuming components
 
 ## Logger Categories
 

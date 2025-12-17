@@ -24,6 +24,9 @@ export * from './workflows';
 // Event types
 export * from './events';
 
+// Messaging types (type-safe messaging system)
+export * from './messaging';
+
 // Utility types
 export * from './utils';
 

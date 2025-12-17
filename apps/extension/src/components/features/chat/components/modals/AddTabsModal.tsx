@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon } from '@/components/shared/icons/XIcon';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 
 interface Tab {
     id: string;
@@ -15,11 +17,11 @@ interface AddTabsModalProps {
     onAddTabs: (tabs: Tab[]) => void;
 }
 
-export const AddTabsModal: React.FC<AddTabsModalProps> = ({
+export function AddTabsModal({
     isOpen,
     onClose,
     onAddTabs,
-}) => {
+}: AddTabsModalProps): React.ReactNode {
     const [searchQuery, setSearchQuery] = useState('');
     const [allTabs, setAllTabs] = useState<Tab[]>([]);
     const [selectedTabs, setSelectedTabs] = useState<Set<string>>(new Set());
@@ -80,16 +82,11 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
     }, [isOpen, onClose]);
 
     // Hide voice-mode-fab when modal is open
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            if (isOpen) {
-                voiceFab.style.visibility = 'hidden';
-            } else {
-                voiceFab.style.visibility = '';
-            }
-        }
-    }, [isOpen]);
+        setVoiceFabVisibility(!isOpen);
+    }, [isOpen, setVoiceFabVisibility]);
 
     const filteredTabs = allTabs.filter(tab =>
         tab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,7 +111,8 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
 
     if (!isOpen) return null;
 
-    return (
+    // Cast to fix React types version conflict
+    return createPortal(
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -438,6 +436,7 @@ export const AddTabsModal: React.FC<AddTabsModalProps> = ({
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
-    );
-};
+        </AnimatePresence>,
+        document.body
+    ) as React.ReactNode;
+}

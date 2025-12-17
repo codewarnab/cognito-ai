@@ -7,6 +7,7 @@
 
 import React, { useEffect } from 'react';
 import { TypeIcon } from 'lucide-react';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 
 interface SelectedTextSuggestionProps {
     /** Preview of the selected text (truncated) */
@@ -29,19 +30,14 @@ export const SelectedTextSuggestion: React.FC<SelectedTextSuggestionProps> = ({
     isLoading = false,
 }) => {
     // Hide voice-mode-fab when showing selected text suggestion
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+    
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            voiceFab.style.visibility = 'hidden';
-        }
+        setVoiceFabVisibility(false);
         return () => {
-            // Re-query to avoid stale reference
-            const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-            if (voiceFab) {
-                voiceFab.style.visibility = '';
-            }
+            setVoiceFabVisibility(true);
         };
-    }, []);
+    }, [setVoiceFabVisibility]);
 
     // Truncate preview for compact display
     const displayText = textPreview.length > 30

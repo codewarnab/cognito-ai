@@ -1,0 +1,41 @@
+/* Modern minimal scrollbar for MCP pages */
+
+/* MCP Manager scrollable area */
+.mcp-scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mcp-scrollable::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+}
+
+.mcp-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    transition: background 0.2s ease;
+}
+
+.mcp-scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.mcp-scrollable::-webkit-scrollbar-thumb:active {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+/* Hide scrollbar when not hovering (auto-hide effect) */
+.mcp-scrollable {
+    scrollbar-gutter: stable;
+}
+
+/* Firefox scrollbar */
+.mcp-scrollable {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* Smooth scrolling */
+.mcp-scrollable {
+    scroll-behavior: smooth;
+}

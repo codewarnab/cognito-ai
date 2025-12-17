@@ -3,6 +3,7 @@
  */
 
 import { createLogger } from '~logger';
+import { sendMessage } from '@/lib/messaging';
 
 const log = createLogger('Geolocation', 'BROWSER');
 
@@ -156,18 +157,19 @@ export const getCurrentLocation = (
         // Fallback for Content Scripts: Send message to background -> offscreen
         try {
             // Send message to background -> offscreen
-            const response = await chrome.runtime.sendMessage({
-                type: 'geolocation/request',
-                payload: { options }
-            });
+            const response = await sendMessage('geolocation/request');
 
-            if (response && response.ok && response.location) {
-                resolve({ success: true, location: response.location });
+            if (response.success === true) {
+                resolve({
+                    success: true,
+                    location: {
+                        latitude: response.position.coords.latitude,
+                        longitude: response.position.coords.longitude
+                    }
+                });
             } else {
-                log.warn('Offscreen request failed:', response?.error);
-                // Try to determine error type from response
-                const errorType = response?.errorType || 'unknown';
-                resolve({ success: false, error: errorType });
+                log.warn('Offscreen request failed:', response.error);
+                resolve({ success: false, error: response.errorType });
             }
         } catch (error) {
             log.warn('Failed to communicate with background:', error);

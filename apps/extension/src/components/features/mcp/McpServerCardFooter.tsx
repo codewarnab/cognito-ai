@@ -37,51 +37,37 @@ export const McpServerCardFooter: React.FC<McpServerCardFooterProps> = ({
     onLogout
 }) => {
     return (
-        <div className="flex flex-col gap-3 p-4 bg-[var(--bg-secondary,#0f1420)]">
-            {requiresAuth && (
-                <StatusBadge state={badgeState} />
-            )}
-            {status.error && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '100%' }}>
-                    <span
-                        className="flex items-center gap-1 font-medium text-xs"
-                        style={{
-                            fontSize: '12px',
-                            color: status.state === 'cloudflare-error' ? '#f59e0b' : '#ef4444',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontWeight: 500
-                        }}
-                    >
-                        {status.state === 'cloudflare-error' && (
-                            <span style={{ fontSize: '14px' }}>⚠️</span>
-                        )}
-                        {status.error}
-                    </span>
-                    {status.state === 'cloudflare-error' && (
-                        <span
-                            style={{
-                                fontSize: '11px',
-                                color: '#6b7280',
-                                fontStyle: 'italic',
-                                lineHeight: '1.4'
-                            }}
-                        >
-                            This is a server-side issue with {serverName}. Not related to your setup or authentication. The extension will retry automatically.
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+                {requiresAuth && (
+                    <StatusBadge state={badgeState} />
+                )}
+                {status.error && (
+                    <div className="flex flex-col gap-1 w-full">
+                        <span className={`flex items-center gap-1 font-medium text-xs ${
+                            status.state === 'cloudflare-error' ? 'text-amber-500' : 'text-red-500'
+                        }`}>
+                            {status.state === 'cloudflare-error' && (
+                                <span className="text-sm">⚠️</span>
+                            )}
+                            {status.error}
                         </span>
-                    )}
-                </div>
-            )}
-            {healthCheckStatus && (
-                <span className="font-medium text-xs" style={{
-                    fontSize: '12px',
-                    color: healthCheckStatus.startsWith('✓') ? '#10b981' : healthCheckStatus.startsWith('✗') ? '#ef4444' : '#6b7280',
-                    fontWeight: 500
-                }}>
-                    {healthCheckStatus}
-                </span>
-            )}
+                        {status.state === 'cloudflare-error' && (
+                            <span className="text-[11px] text-gray-500 italic leading-snug">
+                                This is a server-side issue with {serverName}. Not related to your setup or authentication. The extension will retry automatically.
+                            </span>
+                        )}
+                    </div>
+                )}
+                {healthCheckStatus && (
+                    <span className={`font-medium text-xs ${
+                        healthCheckStatus.startsWith('✓') ? 'text-emerald-500' : 
+                        healthCheckStatus.startsWith('✗') ? 'text-red-500' : 'text-gray-500'
+                    }`}>
+                        {healthCheckStatus}
+                    </span>
+                )}
+            </div>
             <McpServerCardActions
                 serverId={serverId}
                 isEnabled={isEnabled}

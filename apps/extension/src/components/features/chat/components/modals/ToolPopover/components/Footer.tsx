@@ -57,15 +57,19 @@ export const Footer: React.FC<FooterProps> = ({
             </span>
         </div>
         {isTooManyTools && (
-            <span style={{
-                fontSize: '9px',
-                fontWeight: 500,
-                color: 'var(--color-warning, #f59e0b)',
-                padding: '2px 6px',
-                background: 'rgba(245, 158, 11, 0.15)',
-                borderRadius: '4px',
-            }}>
-                Too many tools
+            <span
+                style={{
+                    fontSize: '9px',
+                    fontWeight: 500,
+                    color: 'var(--color-warning, #f59e0b)',
+                    padding: '2px 4px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    borderRadius: '4px',
+                    whiteSpace: 'nowrap',
+                }}
+                title="Too many tools enabled"
+            >
+                {mcpToolsCount > 0 && webmcpToolsCount > 0 ? 'Too many' : 'Too many tools'}
             </span>
         )}
         <div style={{ position: 'relative' }}>

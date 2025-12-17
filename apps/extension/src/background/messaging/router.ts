@@ -77,10 +77,14 @@ export function initializeMessageRouter(): void {
             return true; // Will respond asynchronously
         }
 
-        // Route UI messages
+        // Route UI messages (support both action: and type: patterns for backward compatibility)
         if (
             message.action === 'OPEN_SIDEBAR' ||
+            message.type === 'OPEN_SIDEBAR' ||
             message.action === 'OPEN_SIDEBAR_WITH_MESSAGE' ||
+            message.type === 'OPEN_SIDEBAR_WITH_MESSAGE' ||
+            message.action === 'CHECK_SIDEBAR_STATUS' ||
+            message.type === 'CHECK_SIDEBAR_STATUS' ||
             message.type === 'MODEL_DOWNLOAD_PROGRESS' ||
             message.type === 'ai/notification/create' ||
             message.type === 'summarize:availability' ||

@@ -10,7 +10,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Settings2 } from 'lucide-react';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip/Tooltip';
 import { VoicePoweredOrb } from '../visualizations/VoicePoweredOrb';
 import { VoiceControls } from './VoiceControls';
 import { VoiceModeStatusDisplay } from './VoiceModeStatus';

@@ -4,6 +4,8 @@
  * so UI components can listen and display progress independently
  */
 
+import { trySendMessage } from '@/lib/messaging';
+
 export interface ModelDownloadProgress {
     model: 'language' | 'summarizer';
     progress: number; // 0-100
@@ -16,12 +18,11 @@ export interface ModelDownloadProgress {
  */
 export function broadcastDownloadProgress(progress: ModelDownloadProgress): void {
     // Broadcast to all extension contexts (sidepanel, popup, etc.)
-    chrome.runtime.sendMessage({
-        type: 'MODEL_DOWNLOAD_PROGRESS',
-        data: progress,
-    }).catch((error) => {
-        // Ignore errors if no listeners
-        console.debug('No listeners for download progress:', error);
+    void trySendMessage('MODEL_DOWNLOAD_PROGRESS', {
+        modelId: progress.model,
+        loaded: progress.progress,
+        total: 100,
+        progress: progress.progress,
     });
 }
 

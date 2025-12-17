@@ -9,7 +9,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ state }) => {
 
     return (
         <span
-            className={`status-badge ${isAuthenticated ? "status-badge--authenticated" : "status-badge--not-authenticated"}`}
+            className={`inline-flex items-center self-start px-2.5 py-1 text-[11px] font-medium rounded-full ${
+                isAuthenticated 
+                    ? "bg-emerald-500/15 text-emerald-400" 
+                    : "bg-[#1e293b]/80 text-white/50"
+            }`}
             role="status"
             aria-label={isAuthenticated ? "Authenticated" : "Not Authenticated"}
         >

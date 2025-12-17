@@ -1,23 +1,17 @@
 import React from 'react';
-import { FileAttachment, type FileAttachmentData } from '../../attachments/FileAttachment';
-import { TabAttachment, type TabAttachmentData } from '../../attachments/TabAttachment';
-
-interface AttachmentsAreaProps {
-    attachments: FileAttachmentData[];
-    tabAttachments: TabAttachmentData[];
-    handleRemoveAttachment: (id: string) => void;
-    handleRemoveTabAttachment: (id: string) => void;
-}
+import { FileAttachment } from '../../attachments/FileAttachment';
+import { TabAttachment } from '../../attachments/TabAttachment';
+import { useAttachmentsStore } from '@/stores';
 
 /**
  * Area displaying file and tab attachments.
+ * Uses Zustand store for state management.
  */
-export const AttachmentsArea: React.FC<AttachmentsAreaProps> = ({
-    attachments,
-    tabAttachments,
-    handleRemoveAttachment,
-    handleRemoveTabAttachment
-}) => {
+export const AttachmentsArea: React.FC = () => {
+    const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
+    const tabAttachments = useAttachmentsStore((s) => s.tabAttachments);
+    const removeFileAttachment = useAttachmentsStore((s) => s.removeFileAttachment);
+    const removeTabAttachment = useAttachmentsStore((s) => s.removeTabAttachment);
     return (
         <>
             {/* Tab Attachments Preview */}
@@ -26,25 +20,24 @@ export const AttachmentsArea: React.FC<AttachmentsAreaProps> = ({
                     <TabAttachment
                         tabs={tabAttachments}
                         onRemoveAll={() => {
-                            tabAttachments.forEach(tab => handleRemoveTabAttachment(tab.id));
+                            tabAttachments.forEach((tab) => removeTabAttachment(tab.id));
                         }}
                     />
                 </div>
             )}
 
             {/* File Attachments Preview */}
-            {attachments.length > 0 && (
+            {fileAttachments.length > 0 && (
                 <div className="flex flex-wrap gap-[10px] p-2 pb-2 border-b border-white/10">
-                    {attachments.map(attachment => (
+                    {fileAttachments.map((attachment) => (
                         <FileAttachment
                             key={attachment.id}
                             attachment={attachment}
-                            onRemove={handleRemoveAttachment}
+                            onRemove={removeFileAttachment}
                         />
                     ))}
                 </div>
             )}
-
         </>
     );
 };

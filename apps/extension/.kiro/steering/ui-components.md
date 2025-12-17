@@ -5,6 +5,11 @@ fileMatchPattern: "**/components/**/*.{ts,tsx}"
 
 # UI Components Standards
 
+## Primitive Components
+- **CRITICAL**: Never modify primitive UI components (`src/components/ui/primitives/`) directly
+- Always add props for customization and pass them from consuming components
+- Primitives should be configurable, not hardcoded
+
 ## Component Structure
 - Extract duplicate configurations into reusable arrays with interfaces
 - Define TypeScript interfaces for all component props

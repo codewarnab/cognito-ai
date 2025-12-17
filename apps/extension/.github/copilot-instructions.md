@@ -41,9 +41,18 @@ export function useMyTool() {
 - **Offscreen Document** (`public/offscreen.js`) - Hosts Chrome Summarizer API for local model downloads
 
 ### Storage & State
+- **Zustand Stores** (`src/stores/`) - Centralized state management with Chrome storage sync
+  - `useSettingsStore` - API keys, preferences, feature flags
+  - `useUINavigationStore` - Panel navigation, overlays, chat mode
+  - `useModelStore` - AI mode and model selection
+  - `useChatStore` - Messages, threads, usage tracking
+  - `useAttachmentsStore` - File, tab, PDF, YouTube attachments
+  - `useToolsStore` - Tool enabled states and counts
+  - `useVoiceModeStore` - Voice recording and ElevenLabs state
+  - `useMcpStore` - MCP server connections and status
 - **Tool Registry** (`src/ai/tools/registryUtils.ts`) - Global `Map<string, ToolDefinition>`, accessed via `getAllTools()`, `getTool(name)`
 - **Workflow Registry** (`src/workflows/registry.ts`) - Similar pattern for multi-step workflows
-- **MCP Server State** (`src/mcp/state.ts`) - Centralized state management per server (tokens, credentials, connection status)
+- **MCP Server State** (`src/mcp/state.ts`) - Per-server state (tokens, credentials, connection status)
 - **Memory System** (`src/memory/store.ts`) - Uses `@plasmohq/storage` with indexed key-value storage for AI memory persistence
 - **Thread Management** - Messages persisted to IndexedDB/Dexie by thread ID for conversation history
 
@@ -76,6 +85,22 @@ import icon from '@assets/...';                 // Assets folder
 ```
 
 **Never** use relative paths like `../../../utils/...`
+
+### Zustand Store Pattern (Required)
+```typescript
+import { useChatStore, type ChatState } from '@/stores';
+
+// ALWAYS type the state parameter in selectors
+const messages = useChatStore((state: ChatState) => state.messages);
+
+// For multiple values, destructure
+const { messages, setMessages, clearChat } = useChatStore();
+
+// Non-reactive access in event handlers
+const handleClear = () => {
+  useChatStore.getState().clearChat();
+};
+```
 
 ### Logger Pattern (Required)
 ```typescript
@@ -236,6 +261,9 @@ pnpm type:check    # TypeScript validation
 - ❌ Missing units on CSS numeric values - always include `px`, `%`, etc.
 - ❌ Accessing error properties without null check - use `error?.message || 'Unknown'`
 - ❌ API keys in URL params - use headers (`X-Goog-Api-Key`)
+- ❌ Buttons without `cursor-pointer` - always add for proper UX
+- ❌ Default browser scrollbars - use `mcp-scrollable` class for modern minimal scrollbars
+- ❌ Modifying primitive components directly - always pass customization via props
 
 ## Useful Commands
 ```powershell

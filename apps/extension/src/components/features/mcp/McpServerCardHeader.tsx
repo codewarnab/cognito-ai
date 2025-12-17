@@ -59,9 +59,9 @@ export const McpServerCardHeader: React.FC<McpServerCardHeaderProps> = ({
     }, [showTooltip])
 
     return (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color,rgba(255,255,255,0.08))] bg-[var(--bg-tertiary,#141f30)]">
+        <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[var(--bg-primary,#0a0e1a)] text-[var(--text-secondary,rgba(255,255,255,0.6))]" aria-hidden="true">
+                <div className="flex items-center justify-center w-9 h-9 rounded-lg text-white/80 [&>svg]:w-6 [&>svg]:h-6 [&>img]:w-6 [&>img]:h-6" aria-hidden="true">
                     {icon}
                 </div>
                 <div className="flex flex-col min-w-0">

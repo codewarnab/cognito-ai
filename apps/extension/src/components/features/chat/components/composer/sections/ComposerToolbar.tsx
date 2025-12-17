@@ -3,8 +3,8 @@ import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives';
 import { Wrench } from 'lucide-react';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { SEARCH_TOOL_NAMES } from '@/ai/tools/searchToolFilter';
 import { createLogger } from '~logger';
@@ -27,8 +27,8 @@ interface ComposerToolbarProps {
     showToolsModal: boolean;
     setShowToolsModal: (show: boolean) => void;
     loadToolsCount: () => Promise<void>;
-    setEnabledToolsCount: (count: number) => void;
-    setMcpToolsCount: (count: number) => void;
+    setEnabledToolsCount: () => void;
+    setMcpToolsCount: () => void;
     // Workflow/search state
     activeWorkflow: WorkflowDefinition | null;
     isSearchActive: boolean;
@@ -72,6 +72,13 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         toolsDisplay: isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}`
     });
 
+    const getTooltipText = () => {
+        if (isSearchActive) return `Tools are locked in Search mode (${searchToolsCount} search tools available)`;
+        if (activeWorkflow) return "Tools are managed by the active workflow";
+        if (isTooManyTools) return "Too many tools enabled - may slow AI responses";
+        return "Manage enabled tools";
+    };
+
     return (
         <div className="flex items-center shrink-0" style={{ gap: '8px' }}>
             {!HIDE_LOCAL_MODE && (
@@ -85,7 +92,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             )}
 
             <div style={{ position: 'relative' }}>
-                <Tooltip delayDuration={200}>
+                <Tooltip>
                     <TooltipTrigger asChild>
                         <button
                             type="button"
@@ -119,13 +126,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                        {isSearchActive
-                            ? `Tools are locked in Search mode (${searchToolsCount} search tools available)`
-                            : activeWorkflow
-                                ? "Tools are managed by the active workflow"
-                                : isTooManyTools
-                                    ? "Too many tools enabled - may slow AI responses"
-                                    : "Manage enabled tools"}
+                        {getTooltipText()}
                     </TooltipContent>
                 </Tooltip>
 
@@ -138,9 +139,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                             // Refresh tools count after modal closes
                             loadToolsCount();
                         }}
-                        onCountChange={(extCount, mcpCount) => {
-                            setEnabledToolsCount(extCount);
-                            setMcpToolsCount(mcpCount);
+                        onCountChange={() => {
+                            setEnabledToolsCount();
+                            setMcpToolsCount();
                         }}
                     />
                 )}

@@ -10,10 +10,10 @@
  * - Settings and onboarding flows
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from 'framer-motion';
 
-// UI Components - use path aliases (configured in wxt.config.ts)
+// UI Components
 import { CopilotChatWindow } from "@/components/shell";
 import { McpManager } from "@/components/features/mcp";
 import { Troubleshooting } from "@/components/features/help/Troubleshooting";
@@ -38,7 +38,9 @@ import type { FileAttachmentData, TabAttachmentData } from "@/components/feature
 
 // Contexts
 import { WindowVisibilityProvider } from "@/contexts/WindowVisibilityContext";
-import { DocumentProvider } from "@/contexts/documentContext";
+
+// Stores
+import { useUINavigationStore, useChatStore, useModelStore, useVoiceModeStore, useToolsStore, type ChatState, type ModelState, type VoiceModeState, type ToolsState } from "@/stores";
 
 // Core functionality
 import { createLogger } from '~logger';
@@ -48,14 +50,12 @@ import { useAIChat } from "@/ai/hooks";
 
 // Custom hooks
 import { useOnboarding } from "@/hooks/settings";
-import { useVoiceRecording } from "@/hooks/ui";
-import { useThreadManagement, useMessageHandlers, useAIChatMessages } from "@/hooks/chat";
+import { useMessageHandlers, useAIChatMessages } from "@/hooks/chat";
 import { useActiveTabDetection } from "@/hooks/browser";
 import type { LocalPdfInfo } from "@/hooks/browser";
 
 // Sidepanel-specific hooks
 import {
-    useSidepanelUiState,
     useNotificationSound,
     useBackgroundMessageListener,
     useImagePreviewListener,
@@ -70,7 +70,6 @@ import { handleAPIError } from "@/utils/errors";
 
 /**
  * Inner component that uses AI SDK v5
- * Uses custom ChromeExtensionTransport for service worker communication
  */
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
@@ -80,7 +79,6 @@ function AIChatContent() {
     useRegisterAllWorkflows();
 
     // Initialize sandbox bridge for adaptive mode code execution
-    // This creates the hidden iframe early so it's ready when needed
     const { isReady: isSandboxReady, error: sandboxError } = useSandbox();
     if (sandboxError) {
         log.warn('Sandbox initialization failed:', sandboxError);
@@ -88,9 +86,43 @@ function AIChatContent() {
         log.debug('Sandbox is ready for code execution');
     }
 
-    // UI State - other states not managed by the hook
+    // UI Navigation Store
+    const {
+        activePanel,
+        navigateTo,
+        isThreadsPanelOpen,
+        isRemindersPanelOpen,
+        openOverlay,
+        closeOverlay,
+        chatMode,
+        setChatMode,
+        isVoiceFabVisible,
+        showChatInterface,
+        setShowChatInterface,
+    } = useUINavigationStore();
+
+    // Chat Store - centralized chat state
+    const storeInput = useChatStore((state: ChatState) => state.input);
+    const setStoreInput = useChatStore((state: ChatState) => state.setInput);
+    const storeErrorToast = useChatStore((state: ChatState) => state.errorToast);
+    const showStoreErrorToast = useChatStore((state: ChatState) => state.showErrorToast);
+    const dismissStoreErrorToast = useChatStore((state: ChatState) => state.dismissErrorToast);
+    const storeCurrentThreadId = useChatStore((state: ChatState) => state.currentThreadId);
+    const initializeChatStore = useChatStore((state: ChatState) => state.initialize);
+    const createNewThread = useChatStore((state: ChatState) => state.createNewThread);
+    const selectThread = useChatStore((state: ChatState) => state.selectThread);
+    const clearChat = useChatStore((state: ChatState) => state.clearChat);
+    const storeMessages = useChatStore((state: ChatState) => state.messages);
+    const storeUsage = useChatStore((state: ChatState) => state.usage);
+
+    // Model Store - initialize on mount
+    const initializeModelStore = useModelStore((state: ModelState) => state.initialize);
+
+    // Tools Store - initialize on mount for accurate tool counts
+    const initializeToolsStore = useToolsStore((state: ToolsState) => state.initialize);
+
+    // Local UI state (transient - not persisted)
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
-    const [errorToast, setErrorToast] = useState<{ message: string; details?: string } | null>(null);
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
     const [localPdfInfo, setLocalPdfInfo] = useState<LocalPdfInfo | null>(null);
 
@@ -98,28 +130,21 @@ function AIChatContent() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const voiceInputRef = useRef<VoiceInputHandle>(null);
 
-    // Custom hooks for separated concerns
-    // const apiKey = useApiKey();
-
     // Detect active tab for local PDF auto-attach feature
     const activeTabDetection = useActiveTabDetection();
 
     const {
         showOnboarding,
-        showChatInterface,
         setShowOnboarding,
-        setShowChatInterface,
         handleOnboardingComplete,
         handleOnboardingSkip,
         resetOnboarding,
     } = useOnboarding();
 
-    const {
-        isRecording,
-        showPill,
-        audioLinesIconRef,
-        handleRecordingChange,
-    } = useVoiceRecording();
+    // Voice Mode Store - replaces useVoiceRecording hook
+    const isRecording = useVoiceModeStore((state: VoiceModeState) => state.isRecording);
+    const showPill = useVoiceModeStore((state: VoiceModeState) => state.showRecordingPill);
+    const handleRecordingChange = useVoiceModeStore((state: VoiceModeState) => state.handleRecordingChange);
 
     // Initialize notification sound
     useNotificationSound();
@@ -127,8 +152,15 @@ function AIChatContent() {
     // Listen for image preview state changes
     const { isImagePreviewOpen } = useImagePreviewListener();
 
-    // Initialize state for thread management
-    const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
+    // Initialize stores on mount
+    useEffect(() => {
+        initializeChatStore();
+        initializeModelStore();
+        initializeToolsStore();
+    }, [initializeChatStore, initializeModelStore, initializeToolsStore]);
+
+    // Use thread ID from store
+    const currentThreadId = storeCurrentThreadId;
 
     // Initialize message persistence with proper threadId
     const { handleFinish } = useAIChatMessages({
@@ -138,7 +170,7 @@ function AIChatContent() {
             setContextWarning({
                 percent,
                 isNearLimit: percent >= 80,
-                tokensUsed: 0, // These will be updated by the AI chat hook
+                tokensUsed: 0,
                 tokensLimit: 0
             });
             const dismissTimeout = percent >= 95 ? 15000 : 10000;
@@ -150,13 +182,11 @@ function AIChatContent() {
     const aiChat = useAIChat({
         threadId: currentThreadId || 'default',
         onError: (error) => {
-            // Add defensive null check
             if (!error) {
                 log.error('AI Chat error - received null/undefined error!');
                 return;
             }
 
-            // Log full error details including complete stack trace
             log.error('AI Chat error', {
                 error,
                 name: error?.name,
@@ -167,28 +197,24 @@ function AIChatContent() {
                 fullError: error
             });
 
-            // Handle API errors and show error toast if needed
             if (error instanceof Error) {
                 const errorObj = error as any;
 
-                // First, check if this is a stream processing error that should be suppressed
                 const isStreamProcessingError =
                     error.message?.includes('Cannot read properties') ||
                     error.message?.includes('Cannot access') ||
                     error.message?.includes('is not defined') ||
                     error.message?.includes('is undefined');
 
-                // If we recently had a known API error (within 5 seconds), ignore stream processing errors
                 if (lastBrowserError && (Date.now() - lastBrowserError) < 5000 && isStreamProcessingError) {
                     log.info('✅ SUPPRESSED: Stream processing error that occurred after known API error', {
                         message: error.message,
                         errorCode: errorObj?.errorCode,
                         timeSinceBrowserError: Date.now() - lastBrowserError
                     });
-                    return; // Suppress this error completely
+                    return;
                 }
 
-                // If this is a BrowserAPIError OR API auth error, track it to avoid showing subsequent TypeErrors
                 const isKnownAPIError = errorObj?.errorCode?.includes('BROWSER_AI') ||
                     errorObj?.errorCode === 'API_AUTH_FAILED' ||
                     errorObj?.errorCode === 'API_RATE_LIMIT' ||
@@ -201,24 +227,19 @@ function AIChatContent() {
                     });
                     setLastBrowserError(Date.now());
 
-                    // Show the error toast
                     const errorToastState = handleAPIError(error);
                     if (errorToastState) {
                         log.info('📢 Setting error toast state:', errorToastState.message.substring(0, 100));
-                        setErrorToast(errorToastState);
-                    } else {
-                        log.warn('⚠️ handleAPIError returned null for known API error');
+                        showStoreErrorToast(errorToastState.message, errorToastState.details);
                     }
                     return;
                 }
 
-                // Clear the error timestamp after 5 seconds
                 if (lastBrowserError && (Date.now() - lastBrowserError) >= 5000) {
                     log.info('Clearing API error timestamp');
                     setLastBrowserError(null);
                 }
 
-                // Handle other API errors normally
                 log.info('Handling other error type:', {
                     errorCode: errorObj?.errorCode,
                     message: error.message?.substring(0, 100)
@@ -226,9 +247,7 @@ function AIChatContent() {
                 const errorToastState = handleAPIError(error);
                 if (errorToastState) {
                     log.info('📢 Setting error toast state for other error:', errorToastState.message.substring(0, 100));
-                    setErrorToast(errorToastState);
-                } else {
-                    log.info('ℹ️ No toast to show for this error (might be suppressed)');
+                    showStoreErrorToast(errorToastState.message, errorToastState.details);
                 }
             }
         },
@@ -237,7 +256,7 @@ function AIChatContent() {
             setContextWarning({
                 percent,
                 isNearLimit: percent >= 80,
-                tokensUsed: 0, // These will be updated by the AI chat hook
+                tokensUsed: 0,
                 tokensLimit: 0
             });
             const dismissTimeout = percent >= 95 ? 15000 : 10000;
@@ -251,33 +270,47 @@ function AIChatContent() {
         sendMessage,
         status,
         stop,
-        setMessages,
         usage,
-        resetUsage,
-        setUsage,
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
-    // Thread management hook - now has access to all functions including setUsage
-    const {
-        currentThreadId: managedThreadId,
-        handleNewThread,
-        handleThreadSelect,
-        handleClearChat,
-    } = useThreadManagement({
-        setMessages,
-        setContextWarning,
-        resetUsage,
-        setUsage,
-    });
+    // Thread management using store actions
+    const handleNewThread = useCallback(async (forceCreate: boolean = false) => {
+        try {
+            // Check if current thread is already empty (skip if forceCreate)
+            if (!forceCreate && storeMessages.length === 0) {
+                log.info("Current thread is already empty, skipping new thread creation");
+                return;
+            }
 
-    // Sync managed thread ID with local state
-    useEffect(() => {
-        if (managedThreadId) {
-            setCurrentThreadId(managedThreadId);
+            await createNewThread();
+            setContextWarning(null);
+            log.info("✨ Created new thread via store");
+        } catch (error) {
+            log.error("Failed to create new thread", error);
         }
-    }, [managedThreadId]);
+    }, [createNewThread, storeMessages.length]);
+
+    const handleThreadSelect = useCallback(async (threadId: string) => {
+        log.info("🔄 Switching to thread via store", { threadId });
+        setContextWarning(null);
+        await selectThread(threadId);
+    }, [selectThread]);
+
+    const handleClearChat = useCallback(async () => {
+        if (!currentThreadId) return;
+
+        if (window.confirm('Are you sure you want to clear the chat history for this thread?')) {
+            try {
+                log.info("Clearing thread messages via store", { threadId: currentThreadId });
+                await clearChat();
+                log.info("Thread messages cleared successfully");
+            } catch (error) {
+                log.error("Failed to clear thread messages", error);
+            }
+        }
+    }, [currentThreadId, clearChat]);
 
     // Update local PDF info when active tab changes
     useEffect(() => {
@@ -292,7 +325,6 @@ function AIChatContent() {
                 filePath: activeTabDetection.filePath,
             });
         } else {
-            // Clear state when tab is not a local PDF
             if (localPdfInfo) {
                 log.debug('Clearing local PDF info - tab is not a local PDF');
                 setLocalPdfInfo(null);
@@ -307,54 +339,53 @@ function AIChatContent() {
         isLoading,
         sendMessage,
         onError: (message: string) => {
-            setErrorToast({ message });
+            showStoreErrorToast(message);
         },
     });
 
-    // Wrapper for handleSendMessage to work with input state
-    // Note: This needs to be defined before uiState hook since the hook needs it
-    const handleSendMessageWithInput = async (messageText?: string, attachments?: FileAttachmentData[], tabAttachments?: TabAttachmentData[], workflowId?: string, inputValue?: string) => {
-        await handleSend(messageText !== undefined ? messageText : (inputValue || ''), attachments, tabAttachments, workflowId);
-    };
-
-    // UI State hook
-    const {
-        input,
-        setInput,
-        showMcp,
-        setShowMcp,
-        showSettings,
-        setShowSettings,
-        showThreads,
-        setShowThreads,
-        showReminders,
-        setShowReminders,
-        showTroubleshooting,
-        setShowTroubleshooting,
-        showFeatures,
-        setShowFeatures,
-        showProviderSetup,
-        setShowProviderSetup,
-        showLoggerPanel,
-        setShowLoggerPanel,
-        mode,
-        setMode,
-        handleModeChange,
-        handleKeyPress,
-        handleContinue,
-    } = useSidepanelUiState({
-        isRecording,
-        onSendMessage: () => handleSendMessageWithInput(undefined, undefined, undefined, undefined, input),
-        sendMessage,
-    });
-
-    // Wrapper for handleSendMessage to work with input state
-    const handleSendMessage = async (messageText?: string, attachments?: FileAttachmentData[], tabAttachments?: TabAttachmentData[], workflowId?: string) => {
-        await handleSendMessageWithInput(messageText, attachments, tabAttachments, workflowId, input);
+    // Handle send message
+    const handleSendMessage = useCallback(async (
+        messageText?: string,
+        attachments?: FileAttachmentData[],
+        tabAttachments?: TabAttachmentData[],
+        workflowId?: string
+    ) => {
+        await handleSend(messageText !== undefined ? messageText : storeInput, attachments, tabAttachments, workflowId);
         if (messageText === undefined) {
-            setInput(''); // Only clear if using input state
+            setStoreInput('');
         }
-    };
+    }, [handleSend, storeInput, setStoreInput]);
+
+    // Handle key press for sending messages
+    const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (storeInput.trim().length > 0) {
+                handleSendMessage();
+            }
+        }
+    }, [storeInput, handleSendMessage]);
+
+    // Handle continue button click
+    const handleContinue = useCallback(() => {
+        log.info("Continue button clicked - sending continue message");
+        sendMessage({
+            text: "Please continue from where you left off. Complete any remaining tasks or tool calls that were interrupted by the step limit."
+        });
+    }, [sendMessage]);
+
+    // Handle mode change
+    const handleModeChange = useCallback(async (newMode: 'text' | 'voice') => {
+        if (chatMode === newMode) return;
+
+        if (isRecording) {
+            log.warn('Cannot switch mode while recording');
+            return;
+        }
+
+        log.info('Switching mode', { from: chatMode, to: newMode });
+        setChatMode(newMode);
+    }, [chatMode, isRecording, setChatMode]);
 
     // Expose test functions globally
     useOnboardingTestHandles({
@@ -369,7 +400,7 @@ function AIChatContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Listen for background messages (omnibox and notifications)
+    // Listen for background messages
     useBackgroundMessageListener({
         currentThreadId,
         handleNewThread,
@@ -382,11 +413,8 @@ function AIChatContent() {
     // Keyboard shortcut: Ctrl+N for new chat
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Check for Ctrl+N (or Cmd+N on Mac)
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                e.preventDefault(); // Prevent browser's default new window behavior
-
-                // Only trigger if not currently loading
+                e.preventDefault();
                 if (!isLoading) {
                     log.info('Ctrl+N pressed - creating new thread');
                     handleNewThread();
@@ -398,44 +426,37 @@ function AIChatContent() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isLoading, handleNewThread]);
 
-    // Render MCP Manager or Chat Window
-    if (showMcp) {
-        return <McpManager onBack={() => setShowMcp(false)} />;
+    // Render based on active panel
+    if (activePanel === 'mcp') {
+        return <McpManager onBack={() => navigateTo('chat')} />;
     }
 
-    // Render Troubleshooting page
-    if (showTroubleshooting) {
-        return <Troubleshooting onBack={() => setShowTroubleshooting(false)} />;
+    if (activePanel === 'troubleshooting') {
+        return <Troubleshooting onBack={() => navigateTo('chat')} />;
     }
 
-    // Render Features page
-    if (showFeatures) {
-        return <Features onBack={() => setShowFeatures(false)} onPromptClick={(prompt) => {
-            setInput(prompt);
+    if (activePanel === 'features') {
+        return <Features onBack={() => navigateTo('chat')} onPromptClick={(prompt) => {
+            setStoreInput(prompt);
+            navigateTo('chat');
         }} />;
     }
 
-    // Render Provider Setup page
-    if (showProviderSetup) {
-        return <ProviderSetup onBack={() => setShowProviderSetup(false)} />;
+    if (activePanel === 'providerSetup') {
+        return <ProviderSetup onBack={() => navigateTo('chat')} />;
     }
 
-    // Render Settings page
-    if (showSettings) {
+    if (activePanel === 'settings') {
         return (
             <SettingsPage
-                onBack={() => setShowSettings(false)}
-                onProviderSetupClick={() => {
-                    setShowSettings(false);
-                    setShowProviderSetup(true);
-                }}
+                onBack={() => navigateTo('chat')}
+                onProviderSetupClick={() => navigateTo('providerSetup')}
             />
         );
     }
 
-    // Render Logger Panel (dev mode only)
-    if (showLoggerPanel) {
-        return <LoggerPanel onBack={() => setShowLoggerPanel(false)} />;
+    if (activePanel === 'loggerPanel') {
+        return <LoggerPanel onBack={() => navigateTo('chat')} />;
     }
 
     // Show onboarding screen if enabled
@@ -450,23 +471,19 @@ function AIChatContent() {
         );
     }
 
-
-    // Only render chat interface and overlays when not in onboarding/loading
+    // Only render chat interface when visible
     if (!showChatInterface) {
-        return null; // Don't render anything when chat interface is hidden
+        return null;
     }
 
     return (
         <>
-            {/* MCP and Tools commented out for now */}
-            {/* <ToolRenderer /> */}
-
             {/* Error Toast Notification */}
             <ErrorToast
-                message={errorToast?.message || ''}
-                technicalDetails={errorToast?.details}
-                isVisible={!!errorToast}
-                onDismiss={() => setErrorToast(null)}
+                message={storeErrorToast?.message || ''}
+                technicalDetails={storeErrorToast?.details}
+                isVisible={!!storeErrorToast}
+                onDismiss={dismissStoreErrorToast}
                 duration={10000}
             />
 
@@ -480,12 +497,12 @@ function AIChatContent() {
             )}
 
             {/* Reminder Panel - Side panel overlay */}
-            <ReminderPanel isOpen={showReminders} onClose={() => setShowReminders(false)} />
+            <ReminderPanel isOpen={isRemindersPanelOpen} onClose={() => closeOverlay('reminders')} />
 
             {/* Thread List Side Panel */}
             <ThreadListSidePanel
-                isOpen={showThreads}
-                onClose={() => setShowThreads(false)}
+                isOpen={isThreadsPanelOpen}
+                onClose={() => closeOverlay('threads')}
                 currentThreadId={currentThreadId}
                 onThreadSelect={handleThreadSelect}
                 onNewThread={handleNewThread}
@@ -499,24 +516,23 @@ function AIChatContent() {
                     transition={{ duration: 0.25, ease: "easeOut" }}
                     className="chat-interface-container"
                 >
-                    {/* Conditional rendering based on mode */}
-                    {mode === 'text' ? (
+                    {chatMode === 'text' ? (
                         <>
                             <CopilotChatWindow
                                 messages={messages.filter(m => m.role !== 'system') as any}
-                                input={input}
-                                setInput={setInput}
+                                input={storeInput}
+                                setInput={setStoreInput}
                                 onSendMessage={handleSendMessage}
                                 onKeyDown={handleKeyPress}
                                 onClearChat={handleClearChat}
-                                onSettingsClick={() => setShowMcp(true)}
-                                onGeneralSettingsClick={() => setShowSettings(true)}
-                                onThreadsClick={() => setShowThreads(true)}
-                                onRemindersClick={() => setShowReminders(true)}
-                                onTroubleshootingClick={() => setShowTroubleshooting(true)}
-                                onFeaturesClick={() => setShowFeatures(true)}
-                                onProviderSetupClick={() => setShowProviderSetup(true)}
-                                onLoggerPanelClick={() => setShowLoggerPanel(true)}
+                                onSettingsClick={() => navigateTo('mcp')}
+                                onGeneralSettingsClick={() => navigateTo('settings')}
+                                onThreadsClick={() => openOverlay('threads')}
+                                onRemindersClick={() => openOverlay('reminders')}
+                                onTroubleshootingClick={() => navigateTo('troubleshooting')}
+                                onFeaturesClick={() => navigateTo('features')}
+                                onProviderSetupClick={() => navigateTo('providerSetup')}
+                                onLoggerPanelClick={() => navigateTo('loggerPanel')}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}
@@ -525,23 +541,21 @@ function AIChatContent() {
                                 isRecording={isRecording}
                                 onRecordingChange={handleRecordingChange}
                                 voiceInputRef={voiceInputRef}
-                                usage={usage}
+                                usage={storeUsage || usage}
                                 localPdfInfo={localPdfInfo}
                                 threadId={currentThreadId}
                             />
 
                             {/* Floating Recording Pill - Only in text mode */}
                             <VoiceRecordingPill
-                                ref={audioLinesIconRef}
                                 isVisible={showPill && !isImagePreviewOpen}
                                 onStopRecording={() => {
-                                    // Stop the voice recording
                                     voiceInputRef.current?.stopRecording();
                                 }}
                             />
 
                             {/* Voice Mode FAB - Only in text mode */}
-                            {!isImagePreviewOpen && (
+                            {!isImagePreviewOpen && isVoiceFabVisible && (
                                 <motion.button
                                     className={`fixed bottom-[120px] right-4 w-[44px] h-11 rounded-full 
                                         bg-white/5 border border-white/10 text-white/60 
@@ -569,9 +583,7 @@ function AIChatContent() {
                             )}
                         </>
                     ) : (
-                        <VoiceModeUI
-                            onBack={() => setMode('text')}
-                        />
+                        <VoiceModeUI onBack={() => setChatMode('text')} />
                     )}
                 </motion.div>
             )}
@@ -585,11 +597,9 @@ function AIChatContent() {
 function App() {
     return (
         <WindowVisibilityProvider>
-            <DocumentProvider>
                 <ToolUIProvider>
                     <AIChatContent />
                 </ToolUIProvider>
-            </DocumentProvider>
         </WindowVisibilityProvider>
     );
 }

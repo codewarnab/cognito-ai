@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react"
+import React, { useMemo, useEffect, useRef } from "react"
 import { McpHeader } from "./McpHeader"
 import { McpServerCard } from "./McpServerCard"
 import { McpToolsManager } from "./McpToolsManager"
@@ -6,36 +6,17 @@ import { AddCustomMcp } from "./AddCustomMcp"
 import { ToolCountWarning } from "./ToolCountWarning"
 import { MCP_SERVERS, type ServerConfig } from "@/constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/primitives/popover"
-import { getCloudToolsCount } from "@/ai/tools"
 import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "@/constants"
 import { PlusIcon, type PlusIconHandle } from "@assets/icons/ui/plus"
 import { McpServerDefault } from "@assets/brands/integrations/McpServerDefault"
+import { useMcpStore, type McpState } from "@/stores"
 
 interface McpManagerProps {
     onBack: () => void
 }
 
-interface ServerStatus {
-    serverId: string
-    isEnabled: boolean
-    isAuthenticated: boolean
-}
-
-// Custom server stored in localStorage
-interface CustomServerData {
-    id: string
-    name: string
-    url: string
-    description: string
-    image?: string
-    requiresAuthentication: boolean
-    initialEnabled?: boolean
-    initialAuthenticated?: boolean
-    isCustom: boolean
-}
-
 // Helper to convert custom server data to ServerConfig
-const customServerToConfig = (server: CustomServerData): ServerConfig => ({
+const customServerToConfig = (server: { id: string; name: string; url: string; description: string; image?: string; requiresAuthentication: boolean; initialEnabled?: boolean; initialAuthenticated?: boolean }): ServerConfig => ({
     id: server.id,
     name: server.name,
     icon: server.image
@@ -50,146 +31,53 @@ const customServerToConfig = (server: CustomServerData): ServerConfig => ({
 })
 
 export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
-    const [searchQuery, setSearchQuery] = useState("")
-    const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({})
-    const [activeView, setActiveView] = useState<'list' | 'tools' | 'add-custom'>('list')
-    const [selectedServerId, setSelectedServerId] = useState<string | null>(null)
-    const [mcpToolCount, setMcpToolCount] = useState(0)
-    const [cloudToolCount, setCloudToolCount] = useState(0)
-    const [customServers, setCustomServers] = useState<ServerConfig[]>([])
     const plusIconRef = useRef<PlusIconHandle>(null)
 
-    // Load custom servers from chrome.storage.local on mount and when returning from add-custom view
+    // Store state with typed selectors
+    const serverStatuses = useMcpStore((state: McpState) => state.serverStatuses)
+    const customServers = useMcpStore((state: McpState) => state.customServers)
+    const mcpToolCount = useMcpStore((state: McpState) => state.mcpToolCount)
+    const cloudToolCount = useMcpStore((state: McpState) => state.cloudToolCount)
+    const totalToolCount = useMcpStore((state: McpState) => state.totalToolCount)
+    const searchQuery = useMcpStore((state: McpState) => state.searchQuery)
+    const activeView = useMcpStore((state: McpState) => state.activeView)
+    const selectedServerId = useMcpStore((state: McpState) => state.selectedServerId)
+    const isInitialized = useMcpStore((state: McpState) => state.isInitialized)
+
+    // Store actions
+    const initialize = useMcpStore((state: McpState) => state.initialize)
+    const setSearchQuery = useMcpStore((state: McpState) => state.setSearchQuery)
+    const navigateToTools = useMcpStore((state: McpState) => state.navigateToTools)
+    const navigateToList = useMcpStore((state: McpState) => state.navigateToList)
+    const navigateToAddCustom = useMcpStore((state: McpState) => state.navigateToAddCustom)
+    const deleteCustomServer = useMcpStore((state: McpState) => state.deleteCustomServer)
+    const loadCustomServers = useMcpStore((state: McpState) => state.loadCustomServers)
+
+    // Initialize store on mount
     useEffect(() => {
-        const loadCustomServers = async () => {
-            try {
-                const result = await chrome.storage.local.get("customMcpServers")
-                const stored = result.customMcpServers
-                if (stored && Array.isArray(stored)) {
-                    const configs = stored.map(customServerToConfig)
-                    setCustomServers(configs)
-                } else {
-                    setCustomServers([])
-                }
-            } catch (error) {
-                console.error('Failed to load custom MCP servers:', error)
-                setCustomServers([])
-            }
+        if (!isInitialized) {
+            initialize()
         }
+    }, [isInitialized, initialize])
 
-        loadCustomServers()
-    }, [activeView]) // Reload when view changes (e.g., after adding a new server)
-
-    // Fetch MCP tool count on mount and when server statuses change
+    // Reload custom servers when returning from add-custom view
     useEffect(() => {
-        const fetchMcpToolCount = async () => {
-            try {
-                const response = await chrome.runtime.sendMessage({ type: 'mcp/tools/list' })
-                if (response.success && response.tools) {
-                    const count = Object.keys(response.tools).length
-                    setMcpToolCount(count)
-                }
-            } catch (error) {
-                console.error('Failed to fetch MCP tools count:', error)
-                setMcpToolCount(0)
-            }
+        if (activeView === 'list') {
+            loadCustomServers()
         }
+    }, [activeView, loadCustomServers])
 
-        fetchMcpToolCount()
-    }, [serverStatuses]) // Re-fetch when server statuses change
-
-    // Get cloud tool count on mount
-    useEffect(() => {
-        try {
-            const count = getCloudToolsCount()
-            setCloudToolCount(count)
-        } catch (error) {
-            console.error('Failed to get cloud tools count:', error)
-            setCloudToolCount(0)
-        }
-    }, [])
-
-    const totalToolCount = cloudToolCount + mcpToolCount
     const showWarning = totalToolCount > TOOLS_WARNING_THRESHOLD
 
-    // Fetch real authentication status on mount and listen for updates
-    useEffect(() => {
-        const loadStatuses = async () => {
-            // Combine official and custom servers
-            const allServers = [...MCP_SERVERS, ...customServers]
-
-            // Fetch status for all servers in parallel
-            const statusPromises = allServers.map(async (server) => {
-                try {
-                    const response = await chrome.runtime.sendMessage({
-                        type: `mcp/${server.id}/status/get`
-                    })
-                    if (response.success && response.data) {
-                        const status = response.data
-                        const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
-                        return {
-                            serverId: server.id,
-                            status: {
-                                serverId: server.id,
-                                isEnabled: status.state === 'connected',
-                                isAuthenticated: isAuth
-                            }
-                        }
-                    }
-                    return null
-                } catch (error) {
-                    console.error(`Failed to load ${server.name} status:`, error)
-                    return null
-                }
-            })
-
-            // Wait for all promises to complete
-            const results = await Promise.all(statusPromises)
-
-            // Build the statuses object from successful results
-            const newStatuses: Record<string, ServerStatus> = {}
-            results.forEach(result => {
-                if (result) {
-                    newStatuses[result.serverId] = result.status
-                }
-            })
-
-            // Update state once with all statuses
-            setServerStatuses(prev => ({
-                ...prev,
-                ...newStatuses
-            }))
-        }
-
-        loadStatuses()
-
-        // Listen for status updates from any server
-        const handleMessage = (message: { type?: string; payload?: any }) => {
-            // Match pattern: mcp/{serverId}/status/update
-            const match = message.type?.match(/^mcp\/([^/]+)\/status\/update$/)
-            if (match && match[1]) {
-                const serverId = match[1]
-                const status = message.payload
-                const isAuth = ['authenticated', 'connected', 'connecting', 'token-refresh'].includes(status.state)
-                setServerStatuses(prev => ({
-                    ...prev,
-                    [serverId]: {
-                        serverId,
-                        isEnabled: status.state === 'connected',
-                        isAuthenticated: isAuth
-                    }
-                }))
-            }
-        }
-
-        chrome.runtime.onMessage.addListener(handleMessage)
-        return () => chrome.runtime.onMessage.removeListener(handleMessage)
-    }, [customServers])
+    // Convert custom servers to ServerConfig format
+    const customServerConfigs = useMemo(() => 
+        customServers.map(customServerToConfig), 
+        [customServers]
+    )
 
     // Filter servers based on search query
     const filteredServers = useMemo(() => {
-        // Combine custom servers (at top) with official servers
-        const allServers = [...customServers, ...MCP_SERVERS]
+        const allServers = [...customServerConfigs, ...MCP_SERVERS]
 
         let results = !searchQuery.trim()
             ? allServers
@@ -208,54 +96,39 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
             const bCustom = (b as ServerConfig & { isCustom?: boolean }).isCustom ? 1 : 0
             if (aCustom !== bCustom) return bCustom - aCustom
 
-            // Priority 1: Enabled servers first (use real status if available, fallback to initial)
+            // Priority 1: Enabled servers first
             const aEnabled = aStatus?.isEnabled ?? a.initialEnabled ? 1 : 0
             const bEnabled = bStatus?.isEnabled ?? b.initialEnabled ? 1 : 0
             if (aEnabled !== bEnabled) return bEnabled - aEnabled
 
-            // Priority 2: Authenticated servers next (use real status if available, fallback to initial)
+            // Priority 2: Authenticated servers next
             const aAuth = aStatus?.isAuthenticated ?? a.initialAuthenticated ? 1 : 0
             const bAuth = bStatus?.isAuthenticated ?? b.initialAuthenticated ? 1 : 0
             if (aAuth !== bAuth) return bAuth - aAuth
 
-            // Keep original order for same priority
             return 0
         })
-    }, [searchQuery, serverStatuses, customServers])
+    }, [searchQuery, serverStatuses, customServerConfigs])
 
     const handleManageTools = (serverId: string) => {
-        setSelectedServerId(serverId)
-        setActiveView('tools')
+        navigateToTools(serverId)
     }
 
     const handleBackToList = () => {
-        setActiveView('list')
-        setSelectedServerId(null)
+        navigateToList()
     }
 
-    // Handler for deleting custom MCP servers
     const handleDeleteServer = async (serverId: string) => {
         try {
-            const result = await chrome.storage.local.get("customMcpServers")
-            const servers = result.customMcpServers || []
-            const updatedServers = servers.filter((s: CustomServerData) => s.id !== serverId)
-            await chrome.storage.local.set({ customMcpServers: updatedServers })
-
-            // Notify background to reload custom servers cache
-            await chrome.runtime.sendMessage({ type: 'mcp/custom-servers/reload' })
-
-            // Update local state
-            setCustomServers(prev => prev.filter(s => s.id !== serverId))
+            await deleteCustomServer(serverId)
         } catch (error) {
             console.error('Failed to delete custom MCP server:', error)
         }
     }
 
-    // Handler for plus icon click
     const handlePlusIconClick = () => {
-        setActiveView('add-custom')
+        navigateToAddCustom()
 
-        // Trigger animation on click
         if (plusIconRef.current) {
             plusIconRef.current.startAnimation()
             setTimeout(() => {
@@ -286,7 +159,6 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         <div className="flex flex-col h-screen max-h-screen bg-[var(--bg-primary,#0a0e1a)] text-[var(--text-primary,#ffffff)] overflow-hidden">
             <McpHeader title="MCP Server Management" onBack={onBack} />
 
-            {/* Tool count warning */}
             {showWarning && (
                 <ToolCountWarning
                     cloudToolCount={cloudToolCount}
@@ -295,7 +167,6 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                 />
             )}
 
-            {/* Note about local mode */}
             {!HIDE_LOCAL_MODE && (
                 <div style={{
                     padding: '0.75rem 1rem',
@@ -337,7 +208,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     />
                     {searchQuery && (
                         <button
-                            className="absolute right-2.5 flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded-md text-[#a3a3a3] cursor-pointer transition-all duration-200 hover:bg-[#404040] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#3b82f6] focus-visible:outline-offset-2"
+                            className="absolute right-2.5 flex items-center justify-center w-7 h-7 p-0 bg-transparent border-none rounded-md text-[#a3a3a3] cursor-pointer transition-all duration-200 hover:bg-[#404040] hover:text-white  focus-visible:outline-2 focus-visible:outline-[#3b82f6] focus-visible:outline-offset-2"
                             onClick={() => setSearchQuery("")}
                             aria-label="Clear search"
                         >
@@ -358,7 +229,6 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                     )}
                 </div>
 
-                {/* Plus Icon Button with Tooltip */}
                 <Popover>
                     <PopoverTrigger asChild>
                         <button
@@ -408,9 +278,9 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                 </Popover>
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[var(--bg-primary,#0a0e1a)] min-h-0 max-h-[calc(100vh-145px)] scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-transparent hover:scrollbar-thumb-white/25">
+            <div className="mcp-scrollable flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[#0a0e1a] min-h-0">
                 {filteredServers.length > 0 ? (
-                    <ul className="list-none m-0 p-0 flex flex-col gap-4" role="list">
+                    <ul className="list-none m-0 p-0 flex flex-col gap-3" role="list">
                         {filteredServers.map((server) => (
                             <li key={server.id}>
                                 <McpServerCard
@@ -506,4 +376,3 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
         </div>
     )
 }
-

@@ -3,6 +3,7 @@ import { AnimatedCircularProgressBar } from "@/components/features/chat/componen
 import type { AppUsage } from "@/ai/types/usage";
 import { cn } from "@/utils/ui";
 import { createLogger } from '~logger';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 
 const log = createLogger('ContextIndicator', 'UI_CHAT');
 
@@ -27,16 +28,11 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
     }, [usage]);
 
     // Hide voice-mode-fab when showing details
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+    
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            if (showDetails) {
-                voiceFab.style.visibility = 'hidden';
-            } else {
-                voiceFab.style.visibility = '';
-            }
-        }
-    }, [showDetails]);
+        setVoiceFabVisibility(!showDetails);
+    }, [showDetails, setVoiceFabVisibility]);
 
     // Calculate percentage
     const percent = useMemo(() => {

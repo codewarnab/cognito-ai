@@ -40,9 +40,17 @@ alwaysApply: true
 - Use standardized error types: API/Gemini errors, Browser/Chrome API errors, Stream write helpers
 - Provide user-facing messages via `apiErrorHandler` toast mapping
 
+## Zustand Stores
+- **CRITICAL**: Always type the `state` parameter in Zustand selectors: `(state: ChatState) => state.messages`
+- **CRITICAL**: Always import both the store hook AND its state type: `import { useChatStore, type ChatState } from '@/stores'`
+- Use selectors for single values (better performance): `const messages = useChatStore((state: ChatState) => state.messages)`
+- Use destructuring for multiple values: `const { messages, setMessages } = useChatStore()`
+- Use `getState()` for non-reactive access in event handlers: `useChatStore.getState().setMessages([])`
+- Available stores: `useSettingsStore`, `useUINavigationStore`, `useModelStore`, `useChatStore`, `useAttachmentsStore`, `useToolsStore`, `useVoiceModeStore`, `useMcpStore`
+
 ## React and Hooks
 - Use functional components with hooks
-- Derive UI state via hooks; avoid global mutable state
+- Derive UI state via Zustand stores; avoid prop drilling for global state
 - Keep side effects inside `useEffect` with correct dependencies; guard async flows
 - **CRITICAL**: Always include dependency arrays in `useImperativeHandle` (e.g., `[controls]`) to prevent unnecessary re-renders
 - **CRITICAL**: Always call prop event handlers (onMouseEnter/onMouseLeave/etc.) unconditionally; only conditionally trigger internal animations
@@ -55,6 +63,7 @@ alwaysApply: true
 - Add accessibility attributes to SVG icons: `aria-label` and `role="img"` for meaningful icons, or `aria-hidden="true"` for decorative ones
 
 ## Component Best Practices
+- **CRITICAL**: Never modify primitive UI components (`src/components/ui/primitives/`) directly; always add props for customization and pass them from consuming components
 - Always define TypeScript interfaces for component props, even for simple components
 - Never use inline `//` comments inside JSX attributes; use `{/* */}` JSX comments or move comments outside tags
 - Export names must use `Icon` suffix for all icon exports (e.g., `XMLIcon`, not `XML`)

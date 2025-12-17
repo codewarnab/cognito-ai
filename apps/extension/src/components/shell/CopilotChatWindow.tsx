@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { ChatHeader } from '@/components/features/chat/components/display';
 import { ChatMessages } from '@/components/features/chat/components/display';
 import { ChatInput } from '@/components/features/chat/components/composer';
 import { ErrorNotification } from '@/components/features/chat/components/feedback';
 import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '@/audio/VoiceInput';
-import { getModelConfig, setModelConfig, clearConversationStartMode } from '@/utils/ai';
-import { hasGoogleApiKey, hasAnyProviderConfigured } from '@/utils/credentials';
 import { HIDE_LOCAL_MODE } from '@/constants';
-import type { Message, AIMode, RemoteModelType, ModelState } from '@/components/features/chat/types';
+import type { Message, AIMode, RemoteModelType } from '@/components/features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
 import { clearAllDismissals } from '@/utils/settings';
+import { useModelStore, useSettingsStore, type ModelState as StoreModelState } from '@/stores';
 
 interface CopilotChatWindowProps {
     messages: Message[];
@@ -70,105 +69,66 @@ export function CopilotChatWindow({
     localPdfInfo,
     threadId,
 }: CopilotChatWindowProps) {
-    // Lazy initialization: compute initial state synchronously
-    const [modelState, setModelState] = useState<ModelState>(() => {
-        // Return a default state; will be hydrated in useEffect
-        return {
-            mode: 'local',
-            remoteModel: 'gemini-2.5-flash',
-            hasApiKey: false,
-            isLoading: true, // Track loading state
-        };
-    });
-    const [errorNotification, setErrorNotification] = useState<{
+    // Use Zustand stores for model and settings state
+    const mode = useModelStore((state: StoreModelState) => state.mode);
+    const remoteModel = useModelStore((state: StoreModelState) => state.remoteModel);
+    const hasApiKey = useModelStore((state: StoreModelState) => state.hasApiKey);
+    const conversationStartMode = useModelStore((state: StoreModelState) => state.conversationStartMode);
+    const modelIsLoading = useModelStore((state: StoreModelState) => state.isLoading);
+    const setMode = useModelStore((state: StoreModelState) => state.setMode);
+    const setRemoteModel = useModelStore((state: StoreModelState) => state.setRemoteModel);
+    const clearConversationStartMode = useModelStore((state: StoreModelState) => state.clearConversationStartMode);
+    const initializeModel = useModelStore((state: StoreModelState) => state.initialize);
+    const refreshApiKeyStatus = useModelStore((state: StoreModelState) => state.refreshApiKeyStatus);
+
+    const needsProviderSetup = useSettingsStore((state) => state.needsProviderSetup());
+
+    const [errorNotification, setErrorNotification] = React.useState<{
         message: string;
         type: 'error' | 'warning' | 'info';
     } | null>(null);
-    const [needsProviderSetup, setNeedsProviderSetup] = useState(false);
 
-    // Load initial state with error handling
+    // Derive modelState from store for backward compatibility with child components
+    const modelState = React.useMemo(() => ({
+        mode,
+        remoteModel,
+        hasApiKey,
+        conversationStartMode,
+        isLoading: modelIsLoading,
+    }), [mode, remoteModel, hasApiKey, conversationStartMode, modelIsLoading]);
+
+    // Initialize model store on mount
     useEffect(() => {
-        async function loadModelState() {
-            try {
-                const config = await getModelConfig();
-                const hasKey = await hasGoogleApiKey();
-                const hasProvider = await hasAnyProviderConfigured();
+        initializeModel();
+    }, [initializeModel]);
 
-                setModelState({
-                    mode: config.mode,
-                    remoteModel: config.remoteModel,
-                    hasApiKey: hasKey,
-                    conversationStartMode: config.conversationStartMode,
-                    isLoading: false,
-                });
-                setNeedsProviderSetup(!hasProvider);
-            } catch (error) {
-                console.error('Failed to load model state:', error);
-                // Set error state but keep defaults
-                setModelState(prev => ({
-                    ...prev,
-                    isLoading: false,
-                }));
-            }
-        }
-        loadModelState();
-    }, []);
-
-    // Listen for API key changes in storage (both old and new storage systems)
+    // Listen for API key changes in storage
     useEffect(() => {
         const handleStorageChange = async (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
             if (areaName === 'local') {
-                // Check old storage key (legacy)
-                if (changes.gemini_api_key) {
-                    const hasKey = !!changes.gemini_api_key.newValue;
-                    setModelState(prev => ({
-                        ...prev,
-                        hasApiKey: hasKey,
-                    }));
-                }
-
-                // Check new provider config storage
-                if (changes.ai_provider_config) {
-                    const hasKey = await hasGoogleApiKey();
-                    const hasProvider = await hasAnyProviderConfigured();
-                    setModelState(prev => ({
-                        ...prev,
-                        hasApiKey: hasKey,
-                    }));
-                    setNeedsProviderSetup(!hasProvider);
+                if (changes.gemini_api_key || changes.ai_provider_config) {
+                    refreshApiKeyStatus();
                 }
             }
         };
 
         chrome.storage.onChanged.addListener(handleStorageChange);
         return () => chrome.storage.onChanged.removeListener(handleStorageChange);
-    }, []);
+    }, [refreshApiKeyStatus]);
 
     // Clear conversation mode on new thread
     const handleNewThread = (forceCreate?: boolean) => {
         clearConversationStartMode();
-        setModelState(prev => ({
-            ...prev,
-            conversationStartMode: undefined,
-        }));
-
-        // Always clear PDF dismissals when user clicks new thread
-        // This ensures fresh suggestions even if already on a new/empty thread
         clearAllDismissals();
-
-        if (onNewThreadClick) {
-            onNewThreadClick(forceCreate);
-        }
+        onNewThreadClick?.(forceCreate);
     };
 
-    const handleModeChange = async (mode: AIMode) => {
-        await setModelConfig({ mode });
-        setModelState(prev => ({ ...prev, mode }));
+    const handleModeChange = async (newMode: AIMode) => {
+        setMode(newMode as StoreModelState['mode']);
     };
 
-    const handleModelChange = async (remoteModel: RemoteModelType) => {
-        await setModelConfig({ remoteModel });
-        setModelState(prev => ({ ...prev, remoteModel }));
+    const handleModelChange = async (newRemoteModel: RemoteModelType) => {
+        setRemoteModel(newRemoteModel as StoreModelState['remoteModel']);
     };
 
     const handleError = (message: string, type: 'error' | 'warning' | 'info' = 'error') => {
@@ -181,15 +141,7 @@ export function CopilotChatWindow({
 
     const handleApiKeySaved = async () => {
         // Refresh API key state when dialog saves the key
-        try {
-            const hasKey = await hasGoogleApiKey();
-            setModelState(prev => ({
-                ...prev,
-                hasApiKey: hasKey,
-            }));
-        } catch (error) {
-            console.error('Failed to check API key status:', error);
-        }
+        await refreshApiKeyStatus();
     };
 
     const handleOpenApiKeyDialog = () => {

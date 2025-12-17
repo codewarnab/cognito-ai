@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { validateFile, createImagePreview, isImageFile } from '@/utils/files';
-import type { FileAttachmentData, FileAttachmentMeta } from '@/components/features/chat/components/attachments';
+import type { FileAttachmentMeta } from '@/components/features/chat/components/attachments';
 import type { AIMode } from '@/components/features/chat/types';
+import { useAttachmentsStore } from '@/stores';
 
 interface UseFileAttachmentsOptions {
     mode: AIMode;
@@ -15,8 +16,14 @@ export interface ProcessFileOptions {
 }
 
 export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions) => {
-    const [attachments, setAttachments] = useState<FileAttachmentData[]>([]);
-    const [isDragging, setIsDragging] = useState(false);
+    // Use Zustand store instead of local state
+    const attachments = useAttachmentsStore((s) => s.fileAttachments);
+    const isDragging = useAttachmentsStore((s) => s.isDragging);
+    const addFileAttachment = useAttachmentsStore((s) => s.addFileAttachment);
+    const removeFileAttachment = useAttachmentsStore((s) => s.removeFileAttachment);
+    const clearFileAttachments = useAttachmentsStore((s) => s.clearFileAttachments);
+    const setIsDragging = useAttachmentsStore((s) => s.setIsDragging);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Process files (shared between file input, paste, and drag & drop)
@@ -47,12 +54,9 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
                 }
             }
 
-            setAttachments(prev => [
-                ...prev,
-                { id, file, preview, type, meta }
-            ]);
+            addFileAttachment({ id, file, preview, type, meta });
         }
-    }, []);
+    }, [addFileAttachment]);
 
     // Handle file selection from file input
     const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,7 +95,7 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
         e.preventDefault();
         e.stopPropagation();
         setIsDragging(true);
-    }, []);
+    }, [setIsDragging]);
 
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -104,7 +108,7 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
         if (x <= rect.left || x >= rect.right || y <= rect.top || y >= rect.bottom) {
             setIsDragging(false);
         }
-    }, []);
+    }, [setIsDragging]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -126,17 +130,17 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
         if (files.length > 0) {
             await processFiles(files);
         }
-    }, [mode, onError, processFiles]);
+    }, [mode, onError, processFiles, setIsDragging]);
 
     // Remove attachment
     const handleRemoveAttachment = useCallback((id: string) => {
-        setAttachments(prev => prev.filter(att => att.id !== id));
-    }, []);
+        removeFileAttachment(id);
+    }, [removeFileAttachment]);
 
     // Clear all attachments
     const clearAttachments = useCallback(() => {
-        setAttachments([]);
-    }, []);
+        clearFileAttachments();
+    }, [clearFileAttachments]);
 
     // Open file picker
     const openFilePicker = useCallback(() => {

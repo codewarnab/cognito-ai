@@ -33,6 +33,9 @@ import '../../styles/fonts.css';
 import '../../styles/core/variables.css';
 import '../../styles/core/animations.css';
 
+// Component Styles
+import '../../styles/components/mcp-scrollbar.css';
+
 // Feature Styles (To be migrated later, keeping for now)
 
 

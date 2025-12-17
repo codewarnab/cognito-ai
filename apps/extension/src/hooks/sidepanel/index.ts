@@ -1,6 +1,3 @@
-export { useSidepanelUiState } from './useSidepanelUiState';
-export type { SidepanelUiStateReturn } from './useSidepanelUiState';
-
 export { useNotificationSound } from './useNotificationSound';
 
 export { useBackgroundMessageListener } from './useBackgroundMessageListener';

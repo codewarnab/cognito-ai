@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XIcon } from '@/components/shared/icons/XIcon';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 import { createLogger } from '~logger';
 import { fetchTranscriptDirect, processTranscriptForAI } from '@/ai/agents/youtubeToNotion/transcript';
 import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
@@ -20,12 +22,12 @@ interface AddYouTubeVideoModalProps {
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
 }
 
-export const AddYouTubeVideoModal: React.FC<AddYouTubeVideoModalProps> = ({
+export function AddYouTubeVideoModal({
     isOpen,
     onClose,
     processFiles,
     onError,
-}) => {
+}: AddYouTubeVideoModalProps): React.ReactNode {
     const [url, setUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
@@ -57,6 +59,13 @@ export const AddYouTubeVideoModal: React.FC<AddYouTubeVideoModalProps> = ({
 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen, onClose, isLoading]);
+
+    // Hide voice-mode-fab when modal is open
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+
+    useEffect(() => {
+        setVoiceFabVisibility(!isOpen);
+    }, [isOpen, setVoiceFabVisibility]);
 
 
     const validateUrl = (inputUrl: string): boolean => {
@@ -187,8 +196,8 @@ ${transcriptEntry.transcript}
 
     if (!isOpen) return null;
 
-
-    return (
+    // Cast to fix React types version conflict
+    return createPortal(
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -350,9 +359,10 @@ ${transcriptEntry.transcript}
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
-    );
-};
+        </AnimatePresence>,
+        document.body
+    ) as React.ReactNode;
+}
 
 
 const LoadingSpinner: React.FC = () => (

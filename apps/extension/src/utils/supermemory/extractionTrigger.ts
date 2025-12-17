@@ -9,6 +9,7 @@ import { createLogger } from '~logger';
 import { loadThreadMessages } from '~/db';
 import { isSupermemoryReady } from '@/utils/supermemory/credentials';
 import { isAutoExtractionEnabled, getAutoExtractionMinMessages } from './autoExtraction';
+import { sendMessage } from '@/lib/messaging';
 
 const log = createLogger('ExtractionTrigger', 'UTILS');
 
@@ -105,8 +106,7 @@ export async function maybeQueueForExtraction(threadId: string): Promise<void> {
     }
 
     // Send to background for queueing
-    await chrome.runtime.sendMessage({
-      type: 'QUEUE_MEMORY_EXTRACTION',
+    await sendMessage('QUEUE_MEMORY_EXTRACTION', {
       threadId,
       messageCount: messages.length,
     });

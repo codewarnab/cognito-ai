@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react"
 import { McpHeader } from "./McpHeader"
 import { MCP_SERVERS } from "@/constants/mcpServers"
 import { Toggle } from "../../ui/primitives/toggle/Toggle"
+import { sendMcpMessage } from "@/lib/messaging"
 import type { McpTool } from "../../../mcp/types"
 
 interface McpToolsManagerProps {
@@ -27,24 +28,20 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
 
             try {
                 // Fetch available tools
-                const toolsResponse = await chrome.runtime.sendMessage({
-                    type: `mcp/${serverId}/tools/list`
-                })
+                const toolsResponse = await sendMcpMessage(serverId, 'tools/list')
 
                 if (!toolsResponse.success) {
                     throw new Error(toolsResponse.error || 'Failed to fetch tools')
                 }
 
                 // Fetch disabled tools config
-                const configResponse = await chrome.runtime.sendMessage({
-                    type: `mcp/${serverId}/tools/config/get`
-                })
+                const configResponse = await sendMcpMessage(serverId, 'tools/config/get')
 
                 if (!configResponse.success) {
                     throw new Error(configResponse.error || 'Failed to fetch tool configuration')
                 }
 
-                setTools(toolsResponse.data || [])
+                setTools(toolsResponse.data?.tools || [])
                 setDisabledTools(configResponse.data || [])
             } catch (err) {
                 console.error('Error fetching tool data:', err)
@@ -74,9 +71,8 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
 
         saveTimeoutRef.current = window.setTimeout(async () => {
             try {
-                const response = await chrome.runtime.sendMessage({
-                    type: `mcp/${serverId}/tools/config/set`,
-                    payload: { disabledTools: newDisabledTools }
+                const response = await sendMcpMessage(serverId, 'tools/config/set', {
+                    disabledTools: newDisabledTools
                 })
 
                 if (!response.success) {
@@ -109,7 +105,7 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
         })
     }
 
-    const truncateDescription = (description: string | undefined, maxLength: number = 120): { text: string, isTruncated: boolean } => {
+    const truncateDescription = (description: string | undefined, maxLength: number = 80): { text: string, isTruncated: boolean } => {
         if (!description) return { text: 'No description available', isTruncated: false }
         if (description.length <= maxLength) return { text: description, isTruncated: false }
         return { text: description.substring(0, maxLength) + '...', isTruncated: true }
@@ -129,8 +125,8 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
 
             {/* Server Info - Minimal Header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] backdrop-blur-md">
-                <div className="flex items-center gap-3.5">
-                    <div className="flex items-center justify-center w-11 h-11 bg-gradient-to-br from-[rgba(59,130,246,0.15)] to-[rgba(139,92,246,0.1)] border border-[rgba(59,130,246,0.2)] rounded-xl text-[var(--blue-stride,#1264FF)] shrink-0">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-[rgba(59,130,246,0.15)] to-[rgba(139,92,246,0.1)] border border-[rgba(59,130,246,0.2)] rounded-lg text-[var(--blue-stride,#1264FF)] shrink-0 [&>svg]:w-5 [&>svg]:h-5 [&>img]:w-5 [&>img]:h-5">
                         {serverConfig?.icon}
                     </div>
                     <div className="flex flex-col gap-0.5">
@@ -140,15 +136,15 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
                 </div>
 
                 {!loading && tools.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                        <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.25)] rounded-full">
-                            <span className="text-sm font-bold text-[#22c55e] tabular-nums">{enabledCount}</span>
-                            <span className="text-[11px] font-medium text-[rgba(34,197,94,0.8)] lowercase">active</span>
+                    <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-[rgba(34,197,94,0.12)] border border-[rgba(34,197,94,0.25)] rounded-full">
+                            <span className="text-xs font-bold text-[#22c55e] tabular-nums">{enabledCount}</span>
+                            <span className="text-[10px] font-medium text-[rgba(34,197,94,0.8)] lowercase">active</span>
                         </div>
-                        <span className="text-xs text-[rgba(255,255,255,0.2)] font-light">/</span>
-                        <div className="flex items-center gap-1 px-2.5 py-1.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-full muted">
-                            <span className="text-sm font-bold text-[rgba(255,255,255,0.7)] tabular-nums">{tools.length}</span>
-                            <span className="text-[11px] font-medium text-[rgba(255,255,255,0.4)] lowercase">total</span>
+                        <span className="text-[10px] text-[rgba(255,255,255,0.2)] font-light">/</span>
+                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] rounded-full muted">
+                            <span className="text-xs font-bold text-[rgba(255,255,255,0.7)] tabular-nums">{tools.length}</span>
+                            <span className="text-[10px] font-medium text-[rgba(255,255,255,0.4)] lowercase">total</span>
                         </div>
                     </div>
                 )}
@@ -164,7 +160,7 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
             )}
 
             {/* Tools List */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-4 min-h-0 max-h-[calc(100vh-145px)] scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-transparent hover:scrollbar-thumb-white/25">
+            <div className="mcp-scrollable flex-1 overflow-y-auto overflow-x-hidden px-6 pb-6 pt-4 min-h-0 max-h-[calc(100vh-145px)]">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-[60px] px-5 gap-4 text-center">
                         <div className="w-8 h-8 border-2 border-[rgba(255,255,255,0.1)] border-t-[#3b82f6] rounded-full animate-spin"></div>
@@ -203,7 +199,7 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
                             return (
                                 <div
                                     key={tool.name}
-                                    className={`bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] rounded-[14px] transition-all duration-200 hover:bg-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] hover:shadow-xl animate-in slide-in-from-bottom-2 fade-in duration-300 ${isEnabled ? 'border-[rgba(59,130,246,0.2)] bg-gradient-to-br from-[rgba(59,130,246,0.05)] to-[rgba(255,255,255,0.03)] hover:border-[rgba(59,130,246,0.3)]' : ''}`}
+                                    className={`bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] rounded-[14px] transition-all  hover:bg-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.1)] hover:shadow-xl animate-in slide-in-from-bottom-2 fade-in duration-300 ${isEnabled ? 'border-[rgba(59,130,246,0.2)] bg-gradient-to-br from-[rgba(59,130,246,0.05)] to-[rgba(255,255,255,0.03)] hover:border-[rgba(59,130,246,0.3)]' : ''}`}
                                     style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
                                 >
                                     <div className="p-[16px_18px]">
@@ -213,6 +209,7 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
                                                 checked={isEnabled}
                                                 onChange={() => handleToggleTool(tool.name)}
                                                 disabled={false}
+                                                size="sm"
                                             />
                                         </div>
                                         <p className={`m-0 text-[13px] leading-relaxed ${isEnabled ? 'text-[rgba(255,255,255,0.55)]' : 'text-[rgba(255,255,255,0.35)]'}`}>

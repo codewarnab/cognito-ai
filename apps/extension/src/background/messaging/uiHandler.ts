@@ -21,8 +21,16 @@ export async function handleUiMessage(
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
 ): Promise<void> {
-    // Handle Ask AI button - open sidepanel
-    if (message.action === 'OPEN_SIDEBAR') {
+    // Handle sidebar status check (support both action: and type: patterns)
+    if (message.action === 'CHECK_SIDEBAR_STATUS' || message.type === 'CHECK_SIDEBAR_STATUS') {
+        // For now, we always respond with false since we don't track sidebar state
+        // This can be enhanced later to actually track sidebar open state
+        sendResponse({ isOpen: false });
+        return;
+    }
+
+    // Handle Ask AI button - open sidepanel (support both action: and type: patterns)
+    if (message.action === 'OPEN_SIDEBAR' || message.type === 'OPEN_SIDEBAR') {
         const windowId = getLastFocusedWindowId();
 
         if (windowId) {
@@ -55,8 +63,8 @@ export async function handleUiMessage(
         return;
     }
 
-    // Handle Ask AI button with message and attachments - open sidepanel and send message
-    if (message.action === 'OPEN_SIDEBAR_WITH_MESSAGE') {
+    // Handle Ask AI button with message and attachments - open sidepanel and send message (support both patterns)
+    if (message.action === 'OPEN_SIDEBAR_WITH_MESSAGE' || message.type === 'OPEN_SIDEBAR_WITH_MESSAGE') {
         const windowId = getLastFocusedWindowId();
 
         if (windowId) {

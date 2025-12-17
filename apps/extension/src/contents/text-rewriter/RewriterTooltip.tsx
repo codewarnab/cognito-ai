@@ -7,6 +7,7 @@ import { RewriterPresets } from './RewriterPresets';
 import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getRewriteSettings, updateRewriteSetting } from '@/utils/settings/rewriteSettings';
+import { trySendMessage } from '@/lib/messaging';
 import type { RewritePreset } from '@/types';
 
 interface RewriterTooltipProps {
@@ -96,12 +97,7 @@ export function RewriterTooltip({
 
         // Check if Supermemory is configured
         // This is done via message to background since content scripts can't access storage directly
-        chrome.runtime.sendMessage({ type: 'CHECK_SUPERMEMORY_READY' }, (response) => {
-            if (chrome.runtime.lastError) {
-                // Fallback to not configured
-                setSupermemoryConfigured(false);
-                return;
-            }
+        trySendMessage('CHECK_SUPERMEMORY_READY').then((response) => {
             setSupermemoryConfigured(response?.ready ?? false);
         });
     }, []);

@@ -8,6 +8,7 @@
 
 import React, { useEffect } from 'react';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
+import { useUINavigationStore, type UINavigationState } from '@/stores';
 
 /** Loading state for the badge */
 export type YouTubeBadgeLoadingState = 'idle' | 'fetching' | 'ready';
@@ -50,19 +51,14 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
     const hasThumbnail = thumbnailUrl && !thumbnailError;
 
     // Hide voice-mode-fab when showing YouTube suggestion
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+    
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            voiceFab.style.visibility = 'hidden';
-        }
+        setVoiceFabVisibility(false);
         return () => {
-            // Re-query to avoid stale reference
-            const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-            if (voiceFab) {
-                voiceFab.style.visibility = '';
-            }
+            setVoiceFabVisibility(true);
         };
-    }, []);
+    }, [setVoiceFabVisibility]);
 
     // Reset thumbnail error when URL changes
     useEffect(() => {

@@ -3,12 +3,8 @@ export { Composer } from './Composer';
 export type { ComposerProps } from './Composer';
 export { ChatInput } from './ChatInput';
 
-// Context
-export { ComposerProvider, useComposer } from './ComposerContext';
-export type { ComposerContextValue } from './ComposerContext';
-
 // Hooks
-export { useToolsCount, useVoiceFabVisibility, useScreenshotCapture } from './hooks';
+export { useScreenshotCapture } from './hooks';
 
 // Sections (for advanced usage/customization)
 export {

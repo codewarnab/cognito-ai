@@ -58,6 +58,7 @@
 - Derive UI state via hooks; avoid global mutable state.
 - Keep side effects inside `useEffect` with correct dependencies; guard async flows.
 - Expose callbacks with clear names (`onSendMessage`, `onError`, `onFinish`).
+- **CRITICAL (Zustand)**: Always use **selective subscriptions** when accessing Zustand stores in components. Never subscribe to the entire store with `useStore()` as it causes re-renders on ANY state change, leading to infinite update loops. Always use selectors: `useStore((s) => s.specificValue)` for each piece of state needed.
 - **CRITICAL**: Always include dependency arrays in `useImperativeHandle` (e.g., `[controls]`) to prevent unnecessary re-renders and stale closures.
 - For controlled/uncontrolled components: set control flags inside imperative methods, not in hook initialization, to preserve default behavior.
 - **CRITICAL**: Always call prop event handlers (onMouseEnter/onMouseLeave/etc.) unconditionally, even when internal control logic branches; only conditionally trigger internal animations to maintain React's prop contract.
@@ -173,6 +174,8 @@
 - **CRITICAL**: Use `type="button"` on all buttons that shouldn't submit forms; omitting this defaults to `type="submit"` and triggers unintended form submissions.
 - **CRITICAL**: Add keyboard accessibility to clickable non-button elements; include `role="button"`, `tabIndex={0}`, and `onKeyDown` handlers for Enter/Space keys.
 - **CRITICAL**: Always append units to numeric displays (%, px, ms) for clarity; "75" should be "75%" for percentages.
+- **CRITICAL**: All clickable buttons must include `cursor-pointer` class; browsers don't always default to pointer cursor on styled buttons.
+- **CRITICAL**: Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers to apply thin, rounded, semi-transparent scrollbar styling.
 - Use consistent class naming; avoid copy-paste artifacts like `copy-message-button` on download components.
 
 ## Async Message Handling

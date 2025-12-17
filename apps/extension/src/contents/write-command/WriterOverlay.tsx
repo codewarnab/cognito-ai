@@ -10,6 +10,7 @@ import { getAcceptedFileTypes } from './writerAttachmentUtils';
 import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
+import { trySendMessage } from '@/lib/messaging';
 import type { WritePosition, WriteAttachmentPayload } from '@/types';
 
 interface WriterOverlayProps {
@@ -155,12 +156,7 @@ export function WriterOverlay({
 
         // Check if Supermemory is configured
         // This is done via message to background since content scripts can't access storage directly
-        chrome.runtime.sendMessage({ type: 'CHECK_SUPERMEMORY_READY' }, (response) => {
-            if (chrome.runtime.lastError) {
-                // Fallback to not configured
-                setSupermemoryConfigured(false);
-                return;
-            }
+        trySendMessage('CHECK_SUPERMEMORY_READY').then((response) => {
             setSupermemoryConfigured(response?.ready ?? false);
         });
     }, []);

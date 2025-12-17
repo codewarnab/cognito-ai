@@ -10,6 +10,7 @@ import { HeadersInput, type KeyValuePair } from "./add-custom/HeadersInput"
 import { FormActions } from "./add-custom/FormActions"
 import { generateServerId } from "./add-custom/utils"
 import { MCP_SERVERS } from "@/constants/mcpServers"
+import { sendMcpStaticMessage } from "@/lib/messaging"
 import { createLogger } from "~logger"
 
 const log = createLogger('AddCustomMcp', 'MCP_CLIENT')
@@ -108,7 +109,7 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
       await chrome.storage.local.set({ customMcpServers: updatedServers })
 
       // Notify background to reload custom servers cache
-      await chrome.runtime.sendMessage({ type: 'mcp/custom-servers/reload' })
+      await sendMcpStaticMessage('mcp/custom-servers/reload')
 
       log.info(`Added custom MCP server: ${serverName} (${serverId})`)
       onBack()
@@ -122,7 +123,7 @@ export const AddCustomMcp: React.FC<AddCustomMcpProps> = ({ onBack }) => {
     <div className="flex flex-col h-screen max-h-screen bg-[var(--bg-primary,#0a0e1a)] text-[var(--text-primary,#ffffff)] overflow-hidden">
       <McpHeader title="Add Custom MCP Server" onBack={onBack} />
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[var(--bg-primary,#0a0e1a)] scrollbar-thin scrollbar-thumb-white/15 scrollbar-track-transparent hover:scrollbar-thumb-white/25">
+      <div className="mcp-scrollable flex-1 overflow-y-auto overflow-x-hidden p-5 bg-[#0a0e1a]">
         <InfoBanner />
 
         <form onSubmit={handleSubmit}>

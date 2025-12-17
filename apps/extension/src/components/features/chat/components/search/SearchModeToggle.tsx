@@ -70,34 +70,25 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
 
     const isButtonDisabled = isLoading || !hasApiKey || disabled;
 
-    const buttonElement = (
-        <button
-            type="button"
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
-            disabled={isButtonDisabled}
-            aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
-            aria-pressed={isEnabled}
-            className={classNames}
-            style={!hasApiKey ? { pointerEvents: 'none' } : undefined}
-        >
-            <Globe size={14} className={`transition-colors duration-150 ${isEnabled && hasApiKey ? 'text-blue-500' : ''}`} />
-            <span className="hidden min-[400px]:inline">Search</span>
-        </button>
-    );
-
     // Use Popover for API key warning (more reliable than tooltip)
+    // Note: We render the button directly inside PopoverTrigger without asChild
+    // to avoid ref composition issues that cause infinite re-renders
     if (!hasApiKey) {
         return (
             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                 <PopoverTrigger asChild>
-                    <span
-                        className="cursor-not-allowed"
+                    <button
+                        type="button"
+                        disabled
+                        aria-label="Web search unavailable - API key required"
+                        className={classNames}
+                        style={{ pointerEvents: 'none' }}
                         onMouseEnter={() => setIsPopoverOpen(true)}
                         onMouseLeave={() => setIsPopoverOpen(false)}
                     >
-                        {buttonElement}
-                    </span>
+                        <Globe size={14} className="transition-colors duration-150" />
+                        <span className="hidden min-[400px]:inline">Search</span>
+                    </button>
                 </PopoverTrigger>
                 <PopoverContent
                     side="top"
@@ -117,12 +108,23 @@ export const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
     }
 
     // Use Tooltip for normal states
+    // Note: We render the button directly inside TooltipTrigger without asChild
+    // to avoid ref composition issues that cause infinite re-renders
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <span className={isButtonDisabled ? 'cursor-not-allowed' : ''}>
-                    {buttonElement}
-                </span>
+                <button
+                    type="button"
+                    onClick={handleClick}
+                    onKeyDown={handleKeyDown}
+                    disabled={isButtonDisabled}
+                    aria-label={isEnabled ? 'Disable web search' : 'Enable web search'}
+                    aria-pressed={isEnabled}
+                    className={classNames}
+                >
+                    <Globe size={14} className={`transition-colors duration-150 ${isEnabled && hasApiKey ? 'text-blue-500' : ''}`} />
+                    <span className="hidden min-[400px]:inline">Search</span>
+                </button>
             </TooltipTrigger>
             <TooltipContent side="top">
                 {tooltipContent}

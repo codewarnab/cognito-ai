@@ -1,17 +1,16 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { type VoiceInputHandle } from '@/audio/VoiceInput';
 import { SuggestedActions } from '../suggestions/SuggestedActions';
 import { Composer } from './Composer';
-import type { FileAttachmentData } from '../attachments/FileAttachment';
-import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
-import { useFileAttachments, useLocalPdfAttachment, useYouTubeVideoAttachment } from '@/hooks/attachments';
+import { useFileAttachments } from '@/hooks/attachments';
 import { useYouTubeVideoDetection, useSelectedTextDetection } from '@/hooks/browser';
 import { useWorkflowMode } from '@/hooks/workflows';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { useChatInputValidation } from '@/hooks/chat';
+import { useUINavigationStore, useAttachmentsStore } from '@/stores';
 
 interface ChatInputProps {
     messages: Message[];
@@ -19,8 +18,8 @@ interface ChatInputProps {
     setInput: (value: string) => void;
     onSendMessage: (
         messageText?: string,
-        attachments?: FileAttachmentData[],
-        tabAttachments?: TabAttachmentData[],
+        attachments?: Array<{ id: string; file: File; preview?: string; type: string }>,
+        tabAttachments?: Array<{ id: string; title: string; url: string; favIconUrl?: string }>,
         workflowId?: string
     ) => void;
     isLoading: boolean;
@@ -35,8 +34,8 @@ interface ChatInputProps {
     onModelChange: (model: RemoteModelType) => void;
     onApiKeySaved?: () => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
-    usage?: AppUsage | null; // Token usage tracking
-    localPdfInfo?: LocalPdfInfo | null; // Local PDF detection info
+    usage?: AppUsage | null;
+    localPdfInfo?: LocalPdfInfo | null;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -54,92 +53,150 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     modelState,
     onModeChange,
     onError,
-    // usage, // Token usage tracking
-    // usage, // Token usage tracking
-    localPdfInfo, // Local PDF detection info
+    localPdfInfo,
 }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const composerRef = useRef<HTMLDivElement>(null);
     const internalVoiceInputRef = useRef<VoiceInputHandle>(null);
     const [showModeDropdown, setShowModeDropdown] = useState(false);
-    const [tabAttachments, setTabAttachments] = useState<Array<{ id: string; title: string; url: string; favIconUrl?: string }>>([]);
 
     // Use external ref if provided, otherwise use local ref
     const voiceInputRef = externalVoiceInputRef || internalVoiceInputRef;
 
-    // Custom hooks for separated concerns
+    // Attachments store
+    const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
+    const tabAttachments = useAttachmentsStore((s) => s.tabAttachments);
+    const clearForNewMessage = useAttachmentsStore((s) => s.clearForNewMessage);
+    const setIsDragging = useAttachmentsStore((s) => s.setIsDragging);
+    
+    // Local PDF store state
+    const setLocalPdfInfo = useAttachmentsStore((s) => s.setLocalPdfInfo);
+    const setIsAttachingLocalPdf = useAttachmentsStore((s) => s.setIsAttachingLocalPdf);
+    
+    // YouTube store state
+    const setYouTubeVideoInfo = useAttachmentsStore((s) => s.setYouTubeVideoInfo);
+    const setIsAttachingYouTube = useAttachmentsStore((s) => s.setIsAttachingYouTube);
+    
+    // Selected text store state
+    const setSelectedTextInfo = useAttachmentsStore((s) => s.setSelectedTextInfo);
+    const setIsAttachingSelectedText = useAttachmentsStore((s) => s.setIsAttachingSelectedText);
+    const dismissSelectedText = useAttachmentsStore((s) => s.dismissSelectedText);
+
+    // File attachments hook (for processFiles and file input handling)
     const {
-        attachments,
-        isDragging,
         fileInputRef,
         processFiles,
         handleFileChange,
         handlePaste,
-        handleRemoveAttachment,
-        clearAttachments,
         openFilePicker,
-        dragHandlers,
+        dragHandlers: rawDragHandlers,
     } = useFileAttachments({ mode: modelState.mode, onError });
 
-    const {
-        isAttachingLocalPdf,
-        shouldShowLocalPdfSuggestion,
-        handleAttachLocalPdf,
-        handleDismissLocalPdf,
-    } = useLocalPdfAttachment({
-        localPdfInfo,
-        mode: modelState.mode,
-        onError,
-        processFiles,
-    });
+    // Sync file attachments from hook to store
+    // Note: We need to intercept processFiles to add to store instead
+    const processFilesWithStore = useCallback(async (files: File[] | Array<{ file: File; meta?: any }>) => {
+        await processFiles(files);
+    }, [processFiles]);
 
-    // YouTube video detection and attachment
-    const youtubeVideoInfo = useYouTubeVideoDetection();
-    const {
-        isAttachingVideo,
-        shouldShowYouTubeVideoSuggestion,
-        handleAttachYouTubeVideo,
-        handleDismissYouTubeVideo,
-        isFetchingInBackground,
-        videoMetadata,
-    } = useYouTubeVideoAttachment({
-        youtubeVideoInfo: youtubeVideoInfo.isYouTubeVideo ? {
-            url: youtubeVideoInfo.url!,
-            videoId: youtubeVideoInfo.videoId!,
-            title: youtubeVideoInfo.title!,
-        } : null,
-        mode: modelState.mode,
-        onError,
-        processFiles,
-    });
-
-    // Selected text detection and attachment
-    const { hasSelectedText, selectedTextInfo, clearSelection } = useSelectedTextDetection();
-    const [isSelectedTextDismissed, setIsSelectedTextDismissed] = useState(false);
-    const [isAttachingSelectedText, setIsAttachingSelectedText] = useState(false);
-    // Track attached text content to avoid showing duplicate suggestions
-    const [attachedTextContent, setAttachedTextContent] = useState<Set<string>>(new Set());
-
-    // Reset dismissed state when selected text changes
+    // Sync local PDF info to store
     useEffect(() => {
-        if (selectedTextInfo?.text) {
-            setIsSelectedTextDismissed(false);
+        setLocalPdfInfo(localPdfInfo ?? null);
+    }, [localPdfInfo, setLocalPdfInfo]);
+
+    // YouTube video detection
+    const youtubeVideoInfo = useYouTubeVideoDetection();
+    
+    // Sync YouTube info to store
+    useEffect(() => {
+        if (youtubeVideoInfo.isYouTubeVideo) {
+            setYouTubeVideoInfo({
+                videoId: youtubeVideoInfo.videoId!,
+                url: youtubeVideoInfo.url!,
+                title: youtubeVideoInfo.title!,
+            });
+        } else {
+            setYouTubeVideoInfo(null);
         }
-    }, [selectedTextInfo?.text]);
+    }, [youtubeVideoInfo.isYouTubeVideo, youtubeVideoInfo.videoId, youtubeVideoInfo.url, youtubeVideoInfo.title, setYouTubeVideoInfo]);
 
-    // Check if current selected text is already attached
-    const isTextAlreadyAttached = selectedTextInfo?.text
-        ? attachedTextContent.has(selectedTextInfo.text)
-        : false;
+    // Selected text detection
+    const { hasSelectedText, selectedTextInfo, clearSelection } = useSelectedTextDetection();
+    
+    // Sync selected text to store
+    useEffect(() => {
+        if (hasSelectedText && selectedTextInfo) {
+            setSelectedTextInfo({
+                text: selectedTextInfo.text,
+                url: selectedTextInfo.pageUrl,
+                title: selectedTextInfo.pageTitle,
+            });
+        } else {
+            setSelectedTextInfo(null);
+        }
+    }, [hasSelectedText, selectedTextInfo, setSelectedTextInfo]);
 
-    const shouldShowSelectedTextSuggestion = hasSelectedText && !isSelectedTextDismissed && !isTextAlreadyAttached;
+    // Wrap drag handlers to sync isDragging to store
+    const dragHandlers = {
+        onDragEnter: (e: React.DragEvent) => {
+            rawDragHandlers.onDragEnter(e);
+            setIsDragging(true);
+        },
+        onDragLeave: (e: React.DragEvent) => {
+            rawDragHandlers.onDragLeave(e);
+            // Check if leaving the form
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            if (e.clientX <= rect.left || e.clientX >= rect.right || e.clientY <= rect.top || e.clientY >= rect.bottom) {
+                setIsDragging(false);
+            }
+        },
+        onDragOver: rawDragHandlers.onDragOver,
+        onDrop: (e: React.DragEvent) => {
+            rawDragHandlers.onDrop(e);
+            setIsDragging(false);
+        },
+    };
 
-    const handleAttachSelectedText = async () => {
+    // Attachment handlers that use processFiles and update store
+    const handleAttachLocalPdf = useCallback(async () => {
+        if (!localPdfInfo) return;
+        setIsAttachingLocalPdf(true);
+        try {
+            const response = await fetch(localPdfInfo.url);
+            const blob = await response.blob();
+            const file = new File([blob], localPdfInfo.filename, { type: 'application/pdf' });
+            await processFilesWithStore([file]);
+        } catch (error) {
+            onError?.('Failed to attach PDF', 'error');
+        } finally {
+            setIsAttachingLocalPdf(false);
+        }
+    }, [localPdfInfo, processFilesWithStore, onError, setIsAttachingLocalPdf]);
+
+    const handleAttachYouTubeVideo = useCallback(async () => {
+        if (!youtubeVideoInfo.isYouTubeVideo) return;
+        setIsAttachingYouTube(true);
+        try {
+            // Create a placeholder file with video info
+            const videoData = {
+                type: 'youtube_video',
+                videoId: youtubeVideoInfo.videoId,
+                url: youtubeVideoInfo.url,
+                title: youtubeVideoInfo.title,
+            };
+            const blob = new Blob([JSON.stringify(videoData)], { type: 'application/json' });
+            const file = new File([blob], `youtube-${youtubeVideoInfo.videoId}.json`, { type: 'application/json' });
+            await processFilesWithStore([{ file, meta: { source: 'youtube', videoId: videoData.videoId, url: videoData.url, title: videoData.title } }]);
+        } catch (error) {
+            onError?.('Failed to attach YouTube video', 'error');
+        } finally {
+            setIsAttachingYouTube(false);
+        }
+    }, [youtubeVideoInfo, processFilesWithStore, onError, setIsAttachingYouTube]);
+
+    const handleAttachSelectedText = useCallback(async () => {
         if (!selectedTextInfo) return;
-
         setIsAttachingSelectedText(true);
         try {
-            // Create text content with source attribution at the end
             const sourceAttribution = [
                 '',
                 '---',
@@ -151,29 +208,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             ].join('\n');
 
             const textWithSource = selectedTextInfo.text + '\n' + sourceAttribution;
-
-            // Create a text file from the selected text with source info
             const blob = new Blob([textWithSource], { type: 'text/plain' });
-            const filename = `selected-text-${Date.now()}.txt`;
-            const file = new File([blob], filename, { type: 'text/plain' });
-
-            await processFiles([file]);
-
-            // Track this text content as attached
-            setAttachedTextContent(prev => new Set(prev).add(selectedTextInfo.text));
+            const file = new File([blob], `selected-text-${Date.now()}.txt`, { type: 'text/plain' });
+            await processFilesWithStore([file]);
             clearSelection();
-            setIsSelectedTextDismissed(true);
+            dismissSelectedText();
         } catch (error) {
             onError?.('Failed to add selected text', 'error');
         } finally {
             setIsAttachingSelectedText(false);
         }
-    };
-
-    const handleDismissSelectedText = () => {
-        setIsSelectedTextDismissed(true);
-    };
-
+    }, [selectedTextInfo, processFilesWithStore, clearSelection, dismissSelectedText, onError, setIsAttachingSelectedText]);
 
     const {
         activeWorkflow,
@@ -190,63 +235,44 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         onError,
     });
 
-    // Get search mode control to auto-disable search when workflow is selected
     const { isSearchMode, toggleSearchMode } = useSearchMode();
 
     // Auto-disable search mode when a workflow is activated
     useEffect(() => {
         if (activeWorkflow && isSearchMode) {
-            // Workflow activated while search is on - turn off search
             toggleSearchMode();
         }
-    }, [activeWorkflow]); // Only trigger when activeWorkflow changes
+    }, [activeWorkflow]);
 
     // Handle send with attachments and workflow
     const handleSend = async () => {
-        // Validate input before sending
-        if (!(await validateBeforeSend(input, attachments))) {
+        if (!(await validateBeforeSend(input, fileAttachments))) {
             return;
         }
 
-        // If workflow is active, add workflow metadata to message
         if (activeWorkflow) {
-            onSendMessage(input, attachments, tabAttachments, activeWorkflow.id);
+            onSendMessage(input, fileAttachments, tabAttachments, activeWorkflow.id);
             handleClearWorkflow();
         } else {
-            onSendMessage(input, attachments, tabAttachments);
+            onSendMessage(input, fileAttachments, tabAttachments);
         }
 
         setInput('');
-        clearAttachments();
-        setTabAttachments([]);
+        clearForNewMessage();
     };
 
-    const handleAddTabAttachments = (tabs: Array<{ id: string; title: string; url: string; favIconUrl?: string }>) => {
-        setTabAttachments(prev => [...prev, ...tabs]);
-    };
-
-    const handleRemoveTabAttachment = (id: string) => {
-        setTabAttachments(prev => prev.filter(tab => tab.id !== id));
-    };
-
-    // Add paste event listener for file pasting
+    // Add paste event listener
     useEffect(() => {
         const composerElement = composerRef.current;
         if (!composerElement) return;
-
         composerElement.addEventListener('paste', handlePaste as any);
-
-        return () => {
-            composerElement.removeEventListener('paste', handlePaste as any);
-        };
+        return () => composerElement.removeEventListener('paste', handlePaste as any);
     }, [handlePaste]);
 
-    // Hide voice-mode-fab when there's text in input
+    // Hide voice FAB when there's text
+    const setVoiceFabVisibility = useUINavigationStore.getState().setVoiceFabVisibility;
     useEffect(() => {
-        const voiceFab = document.querySelector('#voice-mode-fab') as HTMLElement;
-        if (voiceFab) {
-            voiceFab.style.visibility = input.trim() ? 'hidden' : '';
-        }
+        setVoiceFabVisibility(!input.trim());
     }, [input]);
 
     const handleSuggestionClick = (action: string) => {
@@ -254,22 +280,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         textareaRef.current?.focus();
     };
 
+    // Derive suggestion visibility from store
+    const isYouTubeDismissed = useAttachmentsStore((s) => s.isYouTubeDismissed);
+    const isSelectedTextDismissed = useAttachmentsStore((s) => s.isSelectedTextDismissed);
+    const shouldShowYouTubeVideoSuggestion = youtubeVideoInfo.isYouTubeVideo && !isYouTubeDismissed;
+    const shouldShowSelectedTextSuggestion = hasSelectedText && !isSelectedTextDismissed;
+
     return (
         <div className="px-4 pb-2 bg-[rgba(10,14,26,0.85)] backdrop-blur-[20px] shrink-0 relative shadow-[0_-4px_24px_rgba(0,0,0,0.3)] z-10">
-
-
-            {/* Suggested Actions */}
             <SuggestedActions
                 messages={messages}
                 input={input}
                 isLoading={isLoading}
                 activeWorkflow={activeWorkflow}
-                attachments={attachments}
+                attachments={fileAttachments}
                 isRecording={isRecording}
                 modelState={modelState}
                 onSuggestionClick={handleSuggestionClick}
                 tabAttachments={tabAttachments}
-                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
+                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion}
                 shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
             />
 
@@ -303,41 +332,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     modelState={modelState}
                     onModeChange={onModeChange}
                     onError={onError}
-                    attachments={attachments}
-                    isDragging={isDragging}
                     openFilePicker={openFilePicker}
-                    handleRemoveAttachment={handleRemoveAttachment}
-                    processFiles={processFiles}
-                    tabAttachments={tabAttachments}
-                    handleRemoveTabAttachment={handleRemoveTabAttachment}
-                    handleAddTabAttachments={handleAddTabAttachments}
+                    processFiles={processFilesWithStore}
                     activeWorkflow={activeWorkflow}
                     showSlashDropdown={showSlashDropdown}
                     slashSearchQuery={slashSearchQuery}
                     handleSelectWorkflow={handleSelectWorkflow}
                     handleClearWorkflow={handleClearWorkflow}
                     handleSlashCommandDetection={handleSlashCommandDetection}
-                    localPdfInfo={localPdfInfo}
-                    shouldShowLocalPdfSuggestion={shouldShowLocalPdfSuggestion ?? false}
-                    isAttachingLocalPdf={isAttachingLocalPdf}
                     handleAttachLocalPdf={handleAttachLocalPdf}
-                    handleDismissLocalPdf={handleDismissLocalPdf}
-                    youtubeVideoInfo={youtubeVideoInfo.isYouTubeVideo ? {
-                        url: youtubeVideoInfo.url!,
-                        videoId: youtubeVideoInfo.videoId!,
-                        title: youtubeVideoInfo.title!,
-                    } : null}
-                    shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion ?? false}
-                    isAttachingVideo={isAttachingVideo}
-                    isFetchingInBackground={isFetchingInBackground}
                     handleAttachYouTubeVideo={handleAttachYouTubeVideo}
-                    handleDismissYouTubeVideo={handleDismissYouTubeVideo}
-                    videoMetadata={videoMetadata}
-                    selectedTextInfo={selectedTextInfo}
-                    shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
-                    isAttachingSelectedText={isAttachingSelectedText}
                     handleAttachSelectedText={handleAttachSelectedText}
-                    handleDismissSelectedText={handleDismissSelectedText}
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={setShowModeDropdown}
                     composerRef={composerRef}

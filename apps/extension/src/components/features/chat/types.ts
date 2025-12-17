@@ -28,8 +28,8 @@ export interface FileAttachment {
 // Legacy type - kept for backwards compatibility
 export type ExecutionMode = 'local' | 'cloud';
 
-// Modern types from AI module
-export type AIMode = 'local' | 'remote';
+// Modern types from AI module - matches store types
+export type AIMode = 'local' | 'remote' | 'agent' | 'adaptive';
 
 export type RemoteModelType =
     | 'gemini-2.5-flash'
@@ -42,6 +42,6 @@ export interface ModelState {
     mode: AIMode;
     remoteModel: RemoteModelType;
     hasApiKey: boolean;
-    conversationStartMode?: AIMode;
+    conversationStartMode?: AIMode | null;
     isLoading?: boolean;
 }

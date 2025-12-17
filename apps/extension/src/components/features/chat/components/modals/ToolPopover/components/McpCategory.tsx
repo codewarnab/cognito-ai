@@ -133,7 +133,7 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
                                         <Toggle
                                             checked={enabled}
                                             onChange={(checked) => onToggleTool(serverId, tool.name, checked)}
-                                            style={{ transform: 'scale(0.65)', transformOrigin: 'right center' }}
+                                            size="sm"
                                         />
                                     </div>
                                 );

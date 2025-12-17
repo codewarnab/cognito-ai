@@ -4,6 +4,7 @@ import { browser } from 'wxt/browser';
 import { SparklesIcon } from "@assets/icons/ui/star";
 import { TrashZone } from "@/components/ui/trash-zone";
 import { EyeOff, Clock, XCircle } from "lucide-react";
+import { trySendMessage } from "@/lib/messaging";
 import {
     shouldShowButton,
     hideForCurrentPage,
@@ -63,20 +64,16 @@ const AskAIButton = () => {
             }
 
             // Check if sidebar is already open
-            chrome.runtime.sendMessage({ action: "CHECK_SIDEBAR_STATUS" }, (response) => {
-                // Ignore errors (e.g. if no listener responds)
-                if (chrome.runtime.lastError) {
-                    // If we get here, button should be shown
-                    setIsVisible(true);
-                    setIsReady(true);
-                    return;
-                }
-
+            trySendMessage('CHECK_SIDEBAR_STATUS').then((response) => {
                 if (response && response.isOpen) {
                     setIsVisible(false);
                 } else {
                     setIsVisible(true);
                 }
+                setIsReady(true);
+            }).catch(() => {
+                // If we get here, button should be shown
+                setIsVisible(true);
                 setIsReady(true);
             });
         })();
@@ -151,7 +148,7 @@ const AskAIButton = () => {
             return; // Don't open if just finished dragging
         }
         console.log("[AskAI] Button clicked, sending OPEN_SIDEBAR message");
-        chrome.runtime.sendMessage({ action: "OPEN_SIDEBAR" });
+        void trySendMessage('OPEN_SIDEBAR');
     };
 
     // Handle menu option selection

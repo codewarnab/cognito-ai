@@ -16,6 +16,12 @@ interface McpServerCardActionsProps {
     onLogout: () => void
 }
 
+// Button style constants
+const btnBase = "inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+const btnSecondary = `${btnBase} px-3 py-1.5 text-xs bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white`
+const btnSecondaryIcon = `${btnBase} p-1.5 bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:border-white/20 hover:text-white`
+const btnPrimary = `${btnBase} px-4 py-1.5 text-xs bg-[#2563eb] text-white hover:bg-[#1d4ed8]`
+
 export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
     serverId,
     isEnabled,
@@ -36,7 +42,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                     <>
                         {isEnabled && onManageTools && (
                             <button
-                                className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                                className={isNarrowView ? btnSecondaryIcon : btnSecondary}
                                 onClick={() => onManageTools(serverId)}
                                 disabled={isLoading}
                                 title="Manage Tools"
@@ -50,7 +56,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                         )}
                         {isEnabled && (
                             <button
-                                className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                                className={isNarrowView ? btnSecondaryIcon : btnSecondary}
                                 onClick={onHealthCheck}
                                 disabled={isLoading}
                                 title="Check server health"
@@ -63,7 +69,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                             </button>
                         )}
                         <button
-                            className="btn btn--secondary btn--sm"
+                            className={btnSecondary}
                             onClick={onLogout}
                             disabled={isLoading}
                         >
@@ -72,7 +78,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                     </>
                 ) : (
                     <button
-                        className="btn btn--primary btn--sm"
+                        className={btnPrimary}
                         onClick={onAuthenticate}
                         disabled={isLoading}
                     >
@@ -83,7 +89,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                 <>
                     {isEnabled && onManageTools && (
                         <button
-                            className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                            className={isNarrowView ? btnSecondaryIcon : btnSecondary}
                             onClick={() => onManageTools(serverId)}
                             disabled={isLoading}
                             title="Manage Tools"
@@ -97,7 +103,7 @@ export const McpServerCardActions: React.FC<McpServerCardActionsProps> = ({
                     )}
                     {isEnabled && (
                         <button
-                            className={`btn btn--secondary btn--sm ${isNarrowView ? 'btn--icon' : ''}`}
+                            className={isNarrowView ? btnSecondaryIcon : btnSecondary}
                             onClick={onHealthCheck}
                             disabled={isLoading}
                             title="Check server health"

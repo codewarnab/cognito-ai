@@ -1,17 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { VoiceInputHandle } from '@/audio/VoiceInput';
-import type { FileAttachmentData } from '../attachments/FileAttachment';
-import type { TabAttachmentData } from '../attachments/TabAttachment';
 import type { AIMode, ModelState } from '../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
-import type { LocalPdfInfo, YouTubeVideoInfo, SelectedTextInfo } from '@/hooks/browser';
-import type { YouTubeVideoMetadata } from '@/hooks/attachments/useYouTubeVideoAttachment';
 import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 
+// Stores
+import { useUINavigationStore, useToolsStore, useAttachmentsStore, type UINavigationState } from '@/stores';
+
 // Extracted hooks
-import { useToolsCount, useVoiceFabVisibility, useScreenshotCapture } from './hooks';
+import { useScreenshotCapture } from './hooks';
 
 // Extracted section components
 import {
@@ -40,17 +39,9 @@ export interface ComposerProps {
     onModeChange: (mode: AIMode) => void;
     onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
 
-    // File attachments
-    attachments: FileAttachmentData[];
-    isDragging: boolean;
+    // File processing (needed for attachment handlers)
     openFilePicker: () => void;
-    handleRemoveAttachment: (id: string) => void;
     processFiles: (files: File[] | ProcessFileOptions[]) => Promise<void>;
-
-    // Tab attachments
-    tabAttachments: TabAttachmentData[];
-    handleRemoveTabAttachment: (id: string) => void;
-    handleAddTabAttachments: (tabs: TabAttachmentData[]) => void;
 
     // Workflow
     activeWorkflow: WorkflowDefinition | null;
@@ -60,28 +51,10 @@ export interface ComposerProps {
     handleClearWorkflow: () => void;
     handleSlashCommandDetection: (show: boolean, query: string) => void;
 
-    // Local PDF
-    localPdfInfo?: LocalPdfInfo | null;
-    shouldShowLocalPdfSuggestion: boolean;
-    isAttachingLocalPdf: boolean;
+    // Attachment action handlers (require processFiles)
     handleAttachLocalPdf: () => void;
-    handleDismissLocalPdf: () => void;
-
-    // YouTube Video
-    youtubeVideoInfo?: YouTubeVideoInfo | null;
-    shouldShowYouTubeVideoSuggestion: boolean;
-    isAttachingVideo: boolean;
-    isFetchingInBackground?: boolean;
     handleAttachYouTubeVideo: () => void;
-    handleDismissYouTubeVideo: () => void;
-    videoMetadata?: YouTubeVideoMetadata | null;
-
-    // Selected Text
-    selectedTextInfo?: SelectedTextInfo | null;
-    shouldShowSelectedTextSuggestion: boolean;
-    isAttachingSelectedText: boolean;
     handleAttachSelectedText: () => void;
-    handleDismissSelectedText: () => void;
 
     // Mode dropdown
     showModeDropdown: boolean;
@@ -105,37 +78,17 @@ export const Composer: React.FC<ComposerProps> = ({
     modelState,
     onModeChange,
     onError,
-    attachments,
-    isDragging,
     openFilePicker,
-    handleRemoveAttachment,
     processFiles,
-    tabAttachments,
-    handleRemoveTabAttachment,
-    handleAddTabAttachments,
     activeWorkflow,
     showSlashDropdown,
     slashSearchQuery,
     handleSelectWorkflow,
     handleClearWorkflow,
     handleSlashCommandDetection,
-    localPdfInfo,
-    shouldShowLocalPdfSuggestion,
-    isAttachingLocalPdf,
     handleAttachLocalPdf,
-    handleDismissLocalPdf,
-    youtubeVideoInfo,
-    shouldShowYouTubeVideoSuggestion,
-    isAttachingVideo,
-    isFetchingInBackground,
     handleAttachYouTubeVideo,
-    handleDismissYouTubeVideo,
-    videoMetadata,
-    selectedTextInfo,
-    shouldShowSelectedTextSuggestion,
-    isAttachingSelectedText,
     handleAttachSelectedText,
-    handleDismissSelectedText,
     showModeDropdown,
     onToggleModeDropdown,
     composerRef,
@@ -145,22 +98,41 @@ export const Composer: React.FC<ComposerProps> = ({
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showAddYouTubeVideoModal, setShowAddYouTubeVideoModal] = useState(false);
-    const [showToolsModal, setShowToolsModal] = useState(false);
     const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
+
+    // Attachments from store
+    const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
+    const tabAttachments = useAttachmentsStore((s) => s.tabAttachments);
+    const isDragging = useAttachmentsStore((s) => s.isDragging);
+    const addTabAttachments = useAttachmentsStore((s) => s.addTabAttachments);
 
     // Derived state
     const isLocalMode = modelState.mode === 'local';
     const { isSearchMode, hasApiKey: hasSearchApiKey, isLoading: isSearchLoading, searchDepth } = useSearchMode();
     const isSearchActive = isSearchMode && hasSearchApiKey;
 
-    // Custom hooks
-    const toolsState = useToolsCount();
+    // Tools state from store - use selective subscriptions to avoid re-render loops
+    const showToolsModal = useToolsStore((s) => s.showToolsModal);
+    const setShowToolsModal = useToolsStore((s) => s.setShowToolsModal);
+    const mcpTools = useToolsStore((s) => s.mcpTools);
+    const webMcpToolsCount = useToolsStore((s) => s.webMcpToolsCount);
+    const totalEnabledCount = useToolsStore((s) => s.totalEnabledCount);
+    const isTooManyTools = useToolsStore((s) => s.isTooManyTools);
+    const loadMcpTools = useToolsStore((s) => s.loadMcpTools);
+    const recalculateCounts = useToolsStore((s) => s.recalculateCounts);
+
     const { handleScreenshotClick } = useScreenshotCapture(processFiles);
 
-    // Voice FAB visibility management
-    useVoiceFabVisibility(showAttachmentDropdown, attachments.length, tabAttachments.length, isModelSelectorOpen, isRecording);
+    // Voice FAB visibility management via store
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
-    // Debug logging for search mode state
+    useEffect(() => {
+        // Hide FAB when dropdown/attachments/recording are active
+        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording;
+        setVoiceFabVisibility(!shouldHide);
+    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, setVoiceFabVisibility]);
+
+    // Debug logging
     log.info('🎨 Composer render - search mode state', {
         isSearchMode,
         hasSearchApiKey,
@@ -171,7 +143,7 @@ export const Composer: React.FC<ComposerProps> = ({
 
     log.debug('Composer render', {
         isLoading,
-        attachmentsCount: attachments.length,
+        attachmentsCount: fileAttachments.length,
         tabAttachmentsCount: tabAttachments.length,
         isSearchActive
     });
@@ -194,23 +166,9 @@ export const Composer: React.FC<ComposerProps> = ({
 
             {/* Suggestions area: Local PDF, YouTube video, and Selected Text */}
             <SuggestionsArea
-                localPdfInfo={localPdfInfo}
-                shouldShowLocalPdfSuggestion={shouldShowLocalPdfSuggestion}
-                isAttachingLocalPdf={isAttachingLocalPdf}
-                handleAttachLocalPdf={handleAttachLocalPdf}
-                handleDismissLocalPdf={handleDismissLocalPdf}
-                youtubeVideoInfo={youtubeVideoInfo}
-                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion}
-                isAttachingVideo={isAttachingVideo}
-                isFetchingInBackground={isFetchingInBackground}
-                handleAttachYouTubeVideo={handleAttachYouTubeVideo}
-                handleDismissYouTubeVideo={handleDismissYouTubeVideo}
-                videoMetadata={videoMetadata}
-                selectedTextInfo={selectedTextInfo}
-                shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
-                isAttachingSelectedText={isAttachingSelectedText}
-                handleAttachSelectedText={handleAttachSelectedText}
-                handleDismissSelectedText={handleDismissSelectedText}
+                onAttachLocalPdf={handleAttachLocalPdf}
+                onAttachYouTubeVideo={handleAttachYouTubeVideo}
+                onAttachSelectedText={handleAttachSelectedText}
             />
 
             {/* Workflow section: badge and slash command dropdown */}
@@ -224,13 +182,8 @@ export const Composer: React.FC<ComposerProps> = ({
                 mode={modelState.mode}
             />
 
-            {/* Attachments area: tab and file attachments */}
-            <AttachmentsArea
-                attachments={attachments}
-                tabAttachments={tabAttachments}
-                handleRemoveAttachment={handleRemoveAttachment}
-                handleRemoveTabAttachment={handleRemoveTabAttachment}
-            />
+            {/* Attachments area: tab and file attachments (uses store) */}
+            <AttachmentsArea />
 
             {/* Main input area with MentionInput */}
             <ComposerInput
@@ -240,7 +193,7 @@ export const Composer: React.FC<ComposerProps> = ({
                 pendingMessageId={pendingMessageId}
                 nextMessageId={nextMessageId}
                 activeWorkflow={activeWorkflow}
-                attachments={attachments}
+                attachments={fileAttachments}
                 showSlashDropdown={showSlashDropdown}
                 handleSlashCommandDetection={handleSlashCommandDetection}
                 composerRef={composerRef}
@@ -257,15 +210,15 @@ export const Composer: React.FC<ComposerProps> = ({
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={onToggleModeDropdown}
                     onError={onError}
-                    mcpToolsCount={toolsState.mcpToolsCount}
-                    webMcpToolsCount={toolsState.webMcpToolsCount}
-                    totalEnabledCount={toolsState.totalEnabledCount}
-                    isTooManyTools={toolsState.isTooManyTools}
+                    mcpToolsCount={mcpTools.length}
+                    webMcpToolsCount={webMcpToolsCount}
+                    totalEnabledCount={totalEnabledCount}
+                    isTooManyTools={isTooManyTools}
                     showToolsModal={showToolsModal}
                     setShowToolsModal={setShowToolsModal}
-                    loadToolsCount={toolsState.loadToolsCount}
-                    setEnabledToolsCount={toolsState.setEnabledToolsCount}
-                    setMcpToolsCount={toolsState.setMcpToolsCount}
+                    loadToolsCount={loadMcpTools}
+                    setEnabledToolsCount={recalculateCounts}
+                    setMcpToolsCount={recalculateCounts}
                     activeWorkflow={activeWorkflow}
                     isSearchActive={isSearchActive}
                     isModelSelectorOpen={isModelSelectorOpen}
@@ -281,12 +234,12 @@ export const Composer: React.FC<ComposerProps> = ({
                     onRecordingChange={onRecordingChange}
                     voiceInputRef={voiceInputRef}
                     onStop={onStop}
-                    attachments={attachments}
+                    attachments={fileAttachments}
                     isLocalMode={isLocalMode}
                     isSearchActive={isSearchActive}
                     openFilePicker={openFilePicker}
                     handleScreenshotClick={handleScreenshotClick}
-                    handleAddTabAttachments={handleAddTabAttachments}
+                    handleAddTabAttachments={addTabAttachments}
                     processFiles={processFiles}
                     onError={onError}
                     showAttachmentDropdown={showAttachmentDropdown}
