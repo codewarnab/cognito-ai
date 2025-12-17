@@ -296,8 +296,10 @@ export class SimpleFrontendTransport {
 
       log.info('📥 Stream received from streamAIResponse, returning to caller');
 
-      // Remove abort listener (stream won't be aborted via external signal)
-      abortSignal?.removeEventListener('abort', onAbort);
+      // NOTE: We intentionally keep the abort listener attached!
+      // The listener should remain active throughout the stream lifecycle
+      // so that calling stop() can abort the ongoing stream at any time.
+      // The cleanup function will handle removing the listener properly.
 
       // Return the stream as ReadableStream
       return uiMessageStream;
