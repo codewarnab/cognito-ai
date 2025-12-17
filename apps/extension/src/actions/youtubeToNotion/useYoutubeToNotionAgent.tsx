@@ -16,7 +16,7 @@ import { executeYouTubeToNotion } from '@/ai/agents/youtubeToNotion/youtubeToNot
 import { progressStore } from '@/ai/agents/youtubeToNotion/progressStore';
 import type { ToolUIState } from '@/ai/tools/components';
 
-const log = createLogger('Tool-YouTubeToNotion');
+const log = createLogger('Tool-YouTubeToNotion', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the youtubeToNotionAgent tool

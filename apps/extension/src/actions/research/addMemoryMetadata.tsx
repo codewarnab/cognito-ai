@@ -9,7 +9,7 @@ import { registerTool } from '@/ai/tools';
 import { addResearchMetadata } from '@/db';
 import { createLogger } from '~logger';
 
-const log = createLogger('Tool-AddMemoryMetadata');
+const log = createLogger('Tool-AddMemoryMetadata', 'TOOLS_EXECUTION');
 
 export function useAddMemoryMetadataTool() {
     useEffect(() => {

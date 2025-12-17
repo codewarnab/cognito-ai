@@ -3,7 +3,7 @@ import { Settings } from 'lucide-react';
 import { createLogger } from '~logger';
 import { getMaxToolCallLimit, setMaxToolCallLimit } from '@/utils/settings';
 
-const log = createLogger('MaxToolCallSettings');
+const log = createLogger('MaxToolCallSettings', 'UI_SETTINGS');
 
 export const MaxToolCallSettings: React.FC = () => {
     const [maxLimit, setMaxLimit] = useState(20);

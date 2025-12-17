@@ -192,7 +192,7 @@ alwaysApply: true
 ### Logger Import
 ```ts
 import { createLogger } from '~logger';
-const log = createLogger('SettingsPage');
+const log = createLogger('SettingsPage', 'UI_SETTINGS');
 log.info('Loaded');
 ```
 

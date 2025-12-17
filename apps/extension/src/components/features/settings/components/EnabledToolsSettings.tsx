@@ -8,7 +8,7 @@ import { TOOL_CATEGORIES, TOOL_DESCRIPTIONS, SUPERMEMORY_TOOLS } from '@/constan
 import { isSupermemoryReady } from '@/utils/supermemory';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
 
-const log = createLogger('EnabledToolsSettings');
+const log = createLogger('EnabledToolsSettings', 'UI_SETTINGS');
 
 export const EnabledToolsSettings: React.FC = () => {
     const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});

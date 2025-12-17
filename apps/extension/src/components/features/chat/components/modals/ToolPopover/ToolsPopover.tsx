@@ -9,6 +9,14 @@ import { McpCategory } from './components/McpCategory';
 import { WebMcpSection } from './components/WebMcpSection';
 import { Footer } from './components/Footer';
 import type { ToolsPopoverProps } from './types';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter
+} from '@/components/ui/primitives/dialog/Dialog';
 
 export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onCountChange }) => {
     const {
@@ -46,7 +54,16 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
         handleToggleMcpCategory,
         handleToggleWebMcpCategoryAll,
         toggleCategory,
+        showLocationPermissionDialog,
+        setShowLocationPermissionDialog,
+        showLocationTimeoutDialog,
+        setShowLocationTimeoutDialog,
     } = useToolsPopover(isOpen, onClose);
+
+    const handleOpenLocationSettings = () => {
+        chrome.tabs.create({ url: 'chrome://settings/content/siteDetails?site=chrome-extension%3A%2F%2F' + chrome.runtime.id });
+        setShowLocationPermissionDialog(false);
+    };
 
     useEffect(() => {
         if (isOpen && onCountChange) {
@@ -220,6 +237,62 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     />
                 </motion.div>
             )}
+            <Dialog open={showLocationPermissionDialog} onOpenChange={setShowLocationPermissionDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Location Access Blocked</DialogTitle>
+                        <DialogDescription>
+                            Location access is blocked. Please enable it in the extension details in Chrome Settings to use this feature.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-row justify-end space-x-2">
+                        <button
+                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-transparent text-white border border-white/10 hover:bg-white/10 cursor-pointer"
+                            onClick={() => setShowLocationPermissionDialog(false)}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-[#1264FF] text-white hover:bg-[#0d4fd8] cursor-pointer"
+                            onClick={handleOpenLocationSettings}
+                        >
+                            Fix Settings
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={showLocationTimeoutDialog} onOpenChange={setShowLocationTimeoutDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Location Services Unavailable</DialogTitle>
+                        <DialogDescription>
+                            Location request timed out. This usually means location services are disabled in your system settings.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="mt-4 space-y-3 text-sm text-[var(--text-secondary)]">
+                        <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <p className="font-semibold text-[var(--text-primary)] mb-1">Windows</p>
+                            <p>Settings → Privacy & Security → Location → Turn on "Location services"</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <p className="font-semibold text-[var(--text-primary)] mb-1">macOS</p>
+                            <p>System Preferences → Security & Privacy → Privacy → Location Services → Enable</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <p className="font-semibold text-[var(--text-primary)] mb-1">Linux</p>
+                            <p>Check your distribution's location/privacy settings, or enable location in GNOME Settings → Privacy → Location Services</p>
+                        </div>
+                    </div>
+                    <DialogFooter className="flex-row justify-end space-x-2 mt-4">
+                        <button
+                            className="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-[#1264FF] text-white hover:bg-[#0d4fd8] cursor-pointer"
+                            onClick={() => setShowLocationTimeoutDialog(false)}
+                        >
+                            Got it
+                        </button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AnimatePresence>
     );
 };

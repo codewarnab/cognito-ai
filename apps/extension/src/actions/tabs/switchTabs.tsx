@@ -15,7 +15,7 @@ import type { ToolUIState } from '@/ai/tools/components';
 import { safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
-const log = createLogger('Tool-SwitchTabs');
+const log = createLogger('Tool-SwitchTabs', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the switchTabs tool

@@ -16,7 +16,7 @@ import {
 } from '@/db';
 import { createLogger } from '~logger';
 
-const log = createLogger('Tool-AppendToReport');
+const log = createLogger('Tool-AppendToReport', 'TOOLS_EXECUTION');
 
 export function useAppendToReportTool() {
     useEffect(() => {

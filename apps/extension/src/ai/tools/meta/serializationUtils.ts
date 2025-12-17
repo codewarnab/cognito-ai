@@ -14,7 +14,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('SerializationUtils');
+const log = createLogger('SerializationUtils', 'TOOLS_EXECUTION');
 
 // ============================================================================
 // Types

@@ -13,6 +13,7 @@ import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { getWebMCPToolsFromBackground } from '../tools/webmcpTools';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { pdfAgentAsTool } from '../agents/pdf';
+import { google } from '@ai-sdk/google';
 import { initializeModel } from '../core/modelFactory';
 import { getSupermemoryApiKey, isSupermemoryReady, getSupermemoryUserId } from '@/utils/supermemory';
 import type { WorkflowDefinition } from '../../workflows/types';
@@ -212,8 +213,28 @@ export async function setupRemoteMode(
         }
     }
 
+    // Add Google Integration tools (not in workflow mode)
+    let integrationTools: Record<string, any> = {};
+    if (!workflowConfig) {
+        if (enabledTools.includes('googleMaps')) {
+            try {
+                // Initialize Google Maps tool
+                // This requires the google provider settings, but the tool itself is initialized here
+                // Permission checking happens at runtime or via tool toggle UI
+                if (google.tools.googleMaps) {
+                    integrationTools.googleMaps = google.tools.googleMaps({});
+                    log.info('🗺️ Google Maps tool loaded');
+                } else {
+                    log.warn('⚠️ Google Maps tool not found in google.tools');
+                }
+            } catch (error) {
+                log.warn('⚠️ Failed to load Google Maps tool:', error);
+            }
+        }
+    }
+
     // Combine all tools
-    const tools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools, ...smTools };
+    const tools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools, ...smTools, ...integrationTools };
 
     log.info('🔧 All tools loaded:', {
         count: Object.keys(tools).length,
@@ -222,6 +243,7 @@ export async function setupRemoteMode(
         webmcp: Object.keys(webmcpTools).length,
         agents: Object.keys(agentTools).length,
         supermemory: Object.keys(smTools).length,
+        integrations: Object.keys(integrationTools).length,
         workflowMode: !!workflowConfig,
     });
 

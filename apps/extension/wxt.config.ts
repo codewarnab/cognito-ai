@@ -139,7 +139,8 @@ export default defineConfig({
             "bookmarks",
             "omnibox",
             "clipboardWrite",
-            "contextMenus"
+            "contextMenus",
+            "geolocation"
         ],
         optional_permissions: [
             "tabCapture",

@@ -72,7 +72,7 @@ import { handleAPIError } from "@/utils/errors";
  * Uses custom ChromeExtensionTransport for service worker communication
  */
 function AIChatContent() {
-    const log = createLogger("SidePanel-AI-SDK");
+    const log = createLogger("SidePanel-AI-SDK", 'UI_SIDEPANEL');
 
     // Register actions and workflows
     useRegisterAllActions();

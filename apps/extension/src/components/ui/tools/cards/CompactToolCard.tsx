@@ -15,7 +15,7 @@ import { createLogger } from '~logger';
 import type { CustomInputOutputRenderers } from '@/ai/tools/components';
 import { ToolFileAttachment, type ToolFileAttachmentData } from '@/components/features/chat/components/attachments';
 
-const log = createLogger('CompactToolCard');
+const log = createLogger('CompactToolCard', 'UI_CHAT');
 
 interface CompactToolCardProps {
     toolName: string;

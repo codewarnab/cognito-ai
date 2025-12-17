@@ -13,7 +13,7 @@ import { createLogger } from '~logger';
 import { compileReportContent, getCurrentResearchSessionId } from '@/db';
 
 
-const log = createLogger('Tool-GeneratePDF');
+const log = createLogger('Tool-GeneratePDF', 'TOOLS_EXECUTION');
 
 
 /**

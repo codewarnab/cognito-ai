@@ -13,7 +13,7 @@ import { createLogger } from '~logger';
 import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 
-const log = createLogger('Tool-GetActiveTab');
+const log = createLogger('Tool-GetActiveTab', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the getActiveTab tool

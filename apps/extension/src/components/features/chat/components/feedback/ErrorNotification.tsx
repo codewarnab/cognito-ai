@@ -20,7 +20,7 @@ export const ErrorNotification: React.FC<ErrorNotificationProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="fixed top-[70px] left-[8%] -translate-x-1/2 z-[9999] max-w-[90%] w-auto min-w-[300px] backdrop-blur-[10px] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.1)] bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.4)]"
+                className="fixed top-[70px] right-4 z-[9999] max-w-[90%] w-auto min-w-[300px] backdrop-blur-[10px] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(255,255,255,0.1)] bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.4)]"
             >
                 <div className="flex items-center gap-3 py-3 px-4">
                     <div className="shrink-0 flex items-center justify-center text-[#fbbf24]">

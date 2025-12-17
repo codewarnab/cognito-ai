@@ -15,7 +15,7 @@ import { initializeModel } from '../core/modelFactory';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { LRUCache } from '~/utils/cache/LRUCache';
 
-const log = createLogger('SuggestionGenerator');
+const log = createLogger('SuggestionGenerator', 'AI_PROMPTS');
 
 // ============================================================================
 // Suggestions Cache - 10-minute TTL, max 20 pages

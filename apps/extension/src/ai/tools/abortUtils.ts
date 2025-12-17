@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('AbortUtils');
+const log = createLogger('AbortUtils', 'TOOLS_EXECUTION');
 
 /**
  * Check if operation was aborted and throw if so

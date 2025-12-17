@@ -6,7 +6,7 @@
 import { useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('BlobURLRegistry');
+const log = createLogger('BlobURLRegistry', 'ATTACHMENTS');
 
 /**
  * Global registry of active Blob URLs

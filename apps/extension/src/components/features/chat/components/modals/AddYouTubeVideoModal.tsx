@@ -5,7 +5,7 @@ import { createLogger } from '~logger';
 import { fetchTranscriptDirect, processTranscriptForAI } from '@/ai/agents/youtubeToNotion/transcript';
 import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 
-const log = createLogger('AddYouTubeVideoModal');
+const log = createLogger('AddYouTubeVideoModal', 'UI_CHAT');
 
 /**
  * Regex pattern to validate YouTube URLs
@@ -98,11 +98,11 @@ export const AddYouTubeVideoModal: React.FC<AddYouTubeVideoModalProps> = ({
 
             // Create transcript text - use compact format if segments available
             let transcriptText: string;
-            
+
             if (transcriptEntry.segments && transcriptEntry.segments.length > 0) {
                 const processed = processTranscriptForAI(transcriptEntry);
                 const segmentsJson = JSON.stringify(processed.segments);
-                
+
                 transcriptText = `[YOUTUBE VIDEO TRANSCRIPT]
 Title: ${processed.title}
 Author: ${processed.author || 'Unknown'}

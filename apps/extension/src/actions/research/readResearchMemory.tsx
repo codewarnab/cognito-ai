@@ -9,7 +9,7 @@ import { registerTool } from '@/ai/tools';
 import { readResearchMemory } from '@/db';
 import { createLogger } from '~logger';
 
-const log = createLogger('Tool-ReadResearchMemory');
+const log = createLogger('Tool-ReadResearchMemory', 'TOOLS_EXECUTION');
 
 export function useReadResearchMemoryTool() {
     useEffect(() => {
@@ -51,10 +51,10 @@ EXAMPLE: readResearchMemory({ sourceId: 'research_source_1' })`,
                         };
                     }
 
-                    log.info('Retrieved research source', { 
-                        sourceId, 
+                    log.info('Retrieved research source', {
+                        sourceId,
                         contentLength: source.content.length,
-                        title: source.title 
+                        title: source.title
                     });
 
                     return {

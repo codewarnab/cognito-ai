@@ -15,7 +15,7 @@ import { retrieveSchema, type RetrieveParams } from '@/search/schema';
 import { RETRIEVE_API_URL } from '@/constants';
 import type { SearchResults } from '@/search/types';
 
-const log = createLogger('Tool-Retrieve');
+const log = createLogger('Tool-Retrieve', 'TOOLS_EXECUTION');
 
 /** Tool name constant */
 export const RETRIEVE_TOOL_NAME = 'retrieve';

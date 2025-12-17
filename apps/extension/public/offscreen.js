@@ -79,14 +79,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
                 // Create new summarizer
                 creating = true;
-                let summarizer;arizer if exists
+                let summarizer;
                 if (cachedSummarizer) {
-                        try {
-                            cachedSummarizer.destroy();
-                        } catch (e) {
-                            console.warn('[Offscreen] Error destroying old summarizer:', e);
-                        }
+                    try {
+                        cachedSummarizer.destroy();
+                    } catch (e) {
+                        console.warn('[Offscreen] Error destroying old summarizer:', e);
                     }
+                }
 
                 try {
                     summarizer = await window.Summarizer.create(summarizerOptions);
@@ -117,6 +117,34 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 }
             }
             return;
+        }
+        if (message?.type === 'offscreen/geolocation/request') {
+            try {
+                const { options } = message.payload || {};
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        sendResponse({
+                            ok: true,
+                            location: {
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            }
+                        });
+                    },
+                    (error) => {
+                        sendResponse({
+                            ok: false,
+                            error: error.message,
+                            code: error.code
+                        });
+                    },
+                    options
+                );
+            } catch (err) {
+                sendResponse({ ok: false, error: err.message });
+            }
+            return true; // Keep channel open for async callback
         }
     })();
 

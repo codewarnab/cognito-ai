@@ -19,7 +19,7 @@ import {
 import type { SearchResults, SearchResultItem, SearchResultImage } from '@/search/types';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
-const log = createLogger('Tool-DeepWebSearch');
+const log = createLogger('Tool-DeepWebSearch', 'TOOLS_EXECUTION');
 
 export const DEEP_WEB_SEARCH_TOOL_NAME = 'deepWebSearch';
 

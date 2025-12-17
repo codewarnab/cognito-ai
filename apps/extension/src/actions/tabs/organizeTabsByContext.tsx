@@ -15,7 +15,7 @@ import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 import { tabManager } from './TabManager';
 
-const log = createLogger('Tool-OrganizeTabsByContext');
+const log = createLogger('Tool-OrganizeTabsByContext', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the organizeTabsByContext tool

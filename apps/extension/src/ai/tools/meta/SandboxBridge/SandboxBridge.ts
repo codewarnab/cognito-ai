@@ -37,7 +37,7 @@ import {
     type ToolRequestMessage
 } from './types';
 
-const log = createLogger('SandboxBridge');
+const log = createLogger('SandboxBridge', 'TOOLS_EXECUTION');
 
 // ============================================================================
 // SandboxBridge Singleton

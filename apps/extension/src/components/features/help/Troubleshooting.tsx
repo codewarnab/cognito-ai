@@ -30,7 +30,7 @@ export const Troubleshooting: React.FC<TroubleshootingProps> = ({ onBack }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 max-[480px]:p-4 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/20">
+            <div className="flex-1 overflow-y-auto p-6 max-[480px]:p-4 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
                 <Accordion type="single">
                     {troubleshootingData.map((item) => (
                         <AccordionItem key={item.id} value={item.id}>

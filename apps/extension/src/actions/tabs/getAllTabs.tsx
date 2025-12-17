@@ -13,7 +13,7 @@ import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 import { tabManager } from './TabManager';
 
-const log = createLogger('Tool-GetAllTabs');
+const log = createLogger('Tool-GetAllTabs', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the getAllTabs tool

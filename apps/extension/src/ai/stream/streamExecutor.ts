@@ -8,6 +8,7 @@ import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 import { createOnStepFinishCallback, createOnFinishCallback } from './streamCallbacks';
+import { getCurrentLocation } from '../../utils/geolocation';
 
 const log = createLogger('StreamExecutor', 'AI_CHAT');
 
@@ -153,6 +154,32 @@ export async function executeStreamText(params: {
             return boundTools;
         })();
 
+        // Check for Google Maps tool and fetch location if active
+        let providerOptions: any = {};
+        if ('googleMaps' in tools) {
+            try {
+                // Get location with 5s timeout
+                const location = await getCurrentLocation({ timeout: 5000 });
+                if (location) {
+                    providerOptions = {
+                        google: {
+                            retrievalConfig: {
+                                latLng: {
+                                    latitude: location.latitude,
+                                    longitude: location.longitude
+                                }
+                            }
+                        }
+                    };
+                    log.info('📍 Location injected into Google Maps tool context', { location });
+                } else {
+                    log.warn('⚠️ Google Maps tool active but failed to get location');
+                }
+            } catch (error) {
+                log.error('❌ Failed to get location for Google Maps tool', { error });
+            }
+        }
+
         return await streamText({
             model,
             messages: modelMessages,
@@ -161,6 +188,7 @@ export async function executeStreamText(params: {
             ...(abortSignal && { abortSignal }),
             ...(prepareStep && { prepareStep }),
             ...(activeTools && { activeTools }),
+            ...(Object.keys(providerOptions).length > 0 && { providerOptions }),
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools

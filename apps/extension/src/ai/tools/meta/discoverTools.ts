@@ -11,7 +11,7 @@ import { getAllTools } from '../registryUtils';
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
 import { getWebMCPToolsFromBackground } from '../webmcpTools';
 
-const log = createLogger('DiscoverTools');
+const log = createLogger('DiscoverTools', 'TOOLS_EXECUTION');
 
 /**
  * Escape special regex characters to prevent ReDoS attacks

@@ -18,7 +18,7 @@ import {
     getAvailableTemplateTypes
 } from './templates';
 
-const log = createLogger('Tool-GetReportTemplate');
+const log = createLogger('Tool-GetReportTemplate', 'TOOLS_EXECUTION');
 
 /**
  * Format template as markdown structure

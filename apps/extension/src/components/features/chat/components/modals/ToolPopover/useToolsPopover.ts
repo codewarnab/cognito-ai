@@ -6,9 +6,10 @@ import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS, WORKFLOW_ONLY_TOOLS, WEB_SEARCH_ONL
 import { isSupermemoryReady } from '@/utils/supermemory';
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { CHAT_MODE_TOOLS, AGENT_MODE_TOOLS, ADAPTIVE_MODE_TOOLS, ADAPTIVE_ONLY_TOOLS, TOOL_WARNING_THRESHOLD } from './constants';
+import { getCurrentLocation, checkLocationPermission, watchLocationPermission } from '@/utils/geolocation';
 import type { ToolMode, McpToolWithServer } from './types';
 
-const log = createLogger('ToolsPopover');
+const log = createLogger('ToolsPopover', 'UI_CHAT');
 
 export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({});
@@ -22,6 +23,8 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     const [mcpTools, setMcpTools] = useState<McpToolWithServer[]>([]);
     const [mcpDisabledTools, setMcpDisabledTools] = useState<Record<string, string[]>>({});
     const [mcpLoading, setMcpLoading] = useState(false);
+    const [showLocationPermissionDialog, setShowLocationPermissionDialog] = useState(false);
+    const [showLocationTimeoutDialog, setShowLocationTimeoutDialog] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
     const lastDiscoveredDomainRef = useRef<string | null>(null);
     const hasLoadedToolsRef = useRef(false);
@@ -238,6 +241,39 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
         }
     }, [isOpen]);
 
+    // Watch for location permission changes and auto-disable googleMaps if permission is revoked
+    useEffect(() => {
+        const cleanup = watchLocationPermission(async (state) => {
+            if (state === 'denied' && enabledMap['googleMaps']) {
+                log.warn('Location permission revoked, disabling googleMaps tool');
+
+                // Update local state
+                const newMap = { ...enabledMap, googleMaps: false };
+                setEnabledMap(newMap);
+
+                // Persist to storage
+                const enabledList = Object.entries(newMap).filter(([, v]) => v).map(([k]) => k);
+                const matchedMode = getToolsMatchingMode(newMap);
+
+                if (matchedMode) {
+                    setCurrentMode(matchedMode);
+                    setHasUserModified(false);
+                } else {
+                    setHasUserModified(true);
+                }
+
+                try {
+                    await setEnabledToolsOverride(enabledList);
+                    await setToolsMode(matchedMode || 'custom');
+                } catch (err) {
+                    log.error('Failed to save tool config after permission revoke', err);
+                }
+            }
+        });
+
+        return cleanup;
+    }, [enabledMap, getToolsMatchingMode]);
+
     // Separate effect for WebMCP discovery to avoid re-triggering loadTools
     useEffect(() => {
         if (!isOpen) return;
@@ -277,6 +313,44 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
         if (checked && SUPERMEMORY_TOOLS.includes(tool) && !supermemoryConfigured) {
             setShowSupermemoryTooltip(tool);
             return;
+        }
+
+        // Special handling for Google Maps: Request location permission
+        if (checked && tool === 'googleMaps') {
+            log.info('Google Maps toggle: requesting location permission');
+
+            try {
+                const permissionState = await checkLocationPermission();
+                if (permissionState === 'denied') {
+                    const msg = 'Location access is blocked. Please enable it in the extension details in Chrome Settings.';
+                    log.warn(`Google Maps toggle: ${msg}`);
+                    setShowLocationPermissionDialog(true);
+                    return;
+                }
+
+                // Use 5s timeout for faster feedback
+                const result = await getCurrentLocation({
+                    timeout: 5000,
+                    enableHighAccuracy: false,
+                    maximumAge: 0
+                });
+
+                if (!result.success) {
+                    log.warn('Google Maps toggle: location request failed', { error: result.error });
+                    // Show appropriate dialog based on error type
+                    if (result.error === 'timeout' || result.error === 'unavailable') {
+                        // Timeout or unavailable usually means system location is disabled
+                        setShowLocationTimeoutDialog(true);
+                    } else if (result.error === 'denied') {
+                        setShowLocationPermissionDialog(true);
+                    }
+                    return;
+                }
+                log.info('Google Maps toggle: location permission granted', result.location);
+            } catch (error) {
+                log.error('Google Maps toggle: error getting location', error);
+                return;
+            }
         }
 
         const newMap = { ...enabledMap, [tool]: checked };
@@ -522,5 +596,9 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
         handleToggleMcpCategory,
         handleToggleWebMcpCategoryAll,
         toggleCategory,
+        showLocationPermissionDialog,
+        setShowLocationPermissionDialog,
+        showLocationTimeoutDialog,
+        setShowLocationTimeoutDialog,
     };
 }

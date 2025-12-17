@@ -32,6 +32,8 @@ export const TOOLS_DISABLED_BY_DEFAULT: string[] = [
   // Workflow-only tools - automatically enabled during specific workflows
   'generatePDF',
   'getReportTemplate',
+  // Google Maps - requires location permission
+  'googleMaps',
 ];
 
 export const DEFAULT_ENABLED_TOOLS: string[] = [
@@ -74,6 +76,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
 
   // Agent Tools
   'getYouTubeTranscript',
+  'googleMaps',
 
   // Report Generation (workflow-specific, may be filtered in certain modes)
   'generatePDF',

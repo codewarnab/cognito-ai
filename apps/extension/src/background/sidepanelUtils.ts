@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('SidepanelUtils');
+const log = createLogger('SidepanelUtils', 'BACKGROUND');
 
 /**
  * Opens the sidepanel for the currently focused window
@@ -93,9 +93,9 @@ export async function sendMessageToSidepanelWithAttachments(
     try {
         await chrome.runtime.sendMessage({
             type: 'ask-ai/send-message',
-            payload: { 
+            payload: {
                 message: text.trim(),
-                tabAttachments 
+                tabAttachments
             }
         });
         log.info(`Message with attachments sent to sidepanel successfully (attempt ${attempt})`);

@@ -20,7 +20,7 @@ import {
 import type { SearchResults } from '@/search/types';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
-const log = createLogger('Tool-WebSearch');
+const log = createLogger('Tool-WebSearch', 'TOOLS_EXECUTION');
 
 /** Tool name constant */
 export const WEB_SEARCH_TOOL_NAME = 'webSearch';

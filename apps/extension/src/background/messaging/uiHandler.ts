@@ -166,4 +166,20 @@ export async function handleUiMessage(
         }
         return;
     }
+
+    // Handle Geolocation requests via offscreen
+    if (message?.type === 'geolocation/request') {
+        await ensureOffscreenDocument();
+        try {
+            const res = await chrome.runtime.sendMessage({
+                type: 'offscreen/geolocation/request',
+                payload: message.payload
+            });
+            sendResponse(res);
+        } catch (error) {
+            backgroundLog.error('Geolocation request failed', error);
+            sendResponse({ ok: false, error: error instanceof Error ? error.message : 'Unknown error' });
+        }
+        return;
+    }
 }

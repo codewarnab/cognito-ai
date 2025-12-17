@@ -14,7 +14,7 @@ import { getWorkflow } from '../../workflows/registry';
 import { workflowSessionManager } from '../../workflows/sessionManager';
 import type { AppUsage } from '../types/usage';
 
-const log = createLogger('SimpleFrontendTransport');
+const log = createLogger('SimpleFrontendTransport', 'AI_CHAT');
 
 /**
  * Simple transport implementation

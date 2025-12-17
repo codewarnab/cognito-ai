@@ -7,7 +7,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('TabManager');
+const log = createLogger('TabManager', 'BROWSER');
 
 export interface TabGroup {
     domain: string;

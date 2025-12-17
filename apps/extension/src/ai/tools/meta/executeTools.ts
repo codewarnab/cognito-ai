@@ -17,7 +17,7 @@ import { getWebMCPToolsFromBackground } from '../webmcpTools';
 import { executeInSandbox, type ExecutionResult } from './SandboxBridge';
 import type { TrackedToolCall } from './types';
 
-const log = createLogger('ExecuteTools');
+const log = createLogger('ExecuteTools', 'TOOLS_EXECUTION');
 
 /** Store for active abort controllers to cancel pending sandbox operations */
 const pendingOperations = new Map<string, { cancelled: boolean }>();

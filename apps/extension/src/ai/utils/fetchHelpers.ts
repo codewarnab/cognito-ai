@@ -6,7 +6,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('AI-FetchHelpers');
+const log = createLogger('AI-FetchHelpers', 'AI_CHAT');
 
 /**
  * Custom fetch implementation that removes referrer header

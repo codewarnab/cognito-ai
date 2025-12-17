@@ -41,7 +41,7 @@ import { CodeExecuteIcon } from '@assets/icons/chat/code-execute';
 import { SupermemoryIcon } from '@assets/icons/chat/supermemory';
 import { TavilyIcon } from './TavilyIcon';
 
-const log = createLogger('ToolIconMapper');
+const log = createLogger('ToolIconMapper', 'UI_CHAT');
 
 // Wrench icon wrapper component for MCP tools with animation support
 export interface WrenchIconHandle {

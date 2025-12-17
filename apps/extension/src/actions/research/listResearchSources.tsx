@@ -10,7 +10,7 @@ import { listResearchSources, getCurrentResearchSessionId, type ResearchSource }
 import { createLogger } from '~logger';
 
 
-const log = createLogger('Tool-ListResearchSources');
+const log = createLogger('Tool-ListResearchSources', 'TOOLS_EXECUTION');
 
 export function useListResearchSourcesTool() {
     useEffect(() => {

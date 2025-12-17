@@ -4,7 +4,7 @@ import type { AppUsage } from "@/ai/types/usage";
 import { cn } from "@/utils/ui";
 import { createLogger } from '~logger';
 
-const log = createLogger('ContextIndicator');
+const log = createLogger('ContextIndicator', 'UI_CHAT');
 
 interface ContextIndicatorProps {
     usage: AppUsage | null;

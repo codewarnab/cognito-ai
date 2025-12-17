@@ -14,10 +14,10 @@
         "type:watch": "tsc --noEmit --watch"
     },
     "dependencies": {
-        "@ai-sdk/google": "^2.0.44",
-        "@ai-sdk/google-vertex": "^3.0.82",
+        "@ai-sdk/google": "^2.0.47",
+        "@ai-sdk/google-vertex": "^3.0.92",
         "@ai-sdk/mcp": "^0.0.7",
-        "@ai-sdk/react": "^2.0.104",
+        "@ai-sdk/react": "^2.0.116",
         "@built-in-ai/core": "3.0.0-beta.0",
         "@elevenlabs/react": "^0.12.1",
         "@google/genai": "^1.30.0",
@@ -36,7 +36,7 @@
         "@tailwindcss/vite": "^4.1.4",
         "@types/jsdom": "^27.0.0",
         "acorn": "^8.15.0",
-        "ai": "^5.0.104",
+        "ai": "^5.0.114",
         "chrono-node": "^2.9.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

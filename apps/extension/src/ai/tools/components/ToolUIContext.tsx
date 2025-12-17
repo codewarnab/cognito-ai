@@ -3,11 +3,11 @@
  * Provides a way for tools to register their UI rendering components
  */
 
-import  { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('ToolUIContext');
+const log = createLogger('ToolUIContext', 'UI_CHAT');
 
 export interface ToolUIState {
   toolCallId: string;

@@ -1,4 +1,4 @@
-# Cognito AI Browser Agent - Development Guide
+  # Cognito AI Browser Agent - Development Guide
 
 ## Project Overview
 Cognito is a Chrome MV3 extension that provides an AI-powered browser agent with voice interaction, tool execution, MCP server integration, and automated workflows. Built with Plasmo, React, TypeScript, and AI SDK v5.
@@ -80,13 +80,22 @@ import icon from '@assets/...';                 // Assets folder
 ### Logger Pattern (Required)
 ```typescript
 import { createLogger } from '~logger';
-const log = createLogger('FeatureName', 'OPTIONAL_CONTEXT');
+const log = createLogger('FeatureName', 'CATEGORY'); // Category is REQUIRED
 
 log.debug('Verbose state');     // Development debugging
 log.info('Normal operation');   // Important events
 log.warn('Recoverable issue');  // Warnings
 log.error('Failure', error);    // Errors with context
 ```
+
+**Available Categories:**
+- **MCP**: `MCP_CLIENT`, `MCP_TOOLS`, `MCP_EXECUTION`, `MCP_AUTH`, `MCP_SSE`, `WEBMCP`
+- **Tools**: `TOOLS_REGISTRY`, `TOOLS_EXECUTION`, `TOOLS_VALIDATION`, `TOOLS_INTEGRATION`
+- **AI**: `AI_CHAT`, `AI_PROMPTS`, `AI_VOICE`, `AI_WEBSITE_DETECTION`
+- **Voice**: `VOICE_RECORDING`, `VOICE_CLIENT`, `VOICE_UI`, `VOICE_AUDIO`
+- **Memory**: `MEMORY_OPERATIONS`, `MEMORY_SUGGESTIONS`
+- **UI**: `UI_CHAT`, `UI_VOICE`, `UI_SETTINGS`, `UI_THREADS`, `UI_SIDEPANEL`, `UI_REMINDERS`
+- **System**: `BACKGROUND`, `STORAGE`, `UTILS`, `NOTIFICATIONS`, `CREDENTIALS`, `SEARCH`, `SETTINGS`, `WORKFLOW`, `BROWSER`, `ATTACHMENTS`, `CONTENT_SCRIPTS`
 
 **Never log secrets, API keys, or PII**. Sanitize error objects before logging.
 

@@ -15,7 +15,7 @@ import type { AIProvider, VertexCredentials } from '@/utils/credentials';
 import { getModelConfig, setModelConfig } from '@/utils/ai';
 import type { RemoteModelType } from '../../features/chat/types';
 
-const log = createLogger('ProviderSetup');
+const log = createLogger('ProviderSetup', 'UI_SETTINGS');
 // TODO(@ui): when we add more than a couple of providers, update ProviderSetup to use a searchable combo-box instead of simple radio buttons so the selection stays manageable.
 interface ProviderSetupProps {
     onBack: () => void;

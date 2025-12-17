@@ -12,6 +12,7 @@ import { handleUiMessage } from './uiHandler';
 import { handleSummarizeRequest } from '../summarizer';
 import { handleWriteGenerate } from '../writer';
 import { handleRewriteRequest } from '../rewriter';
+import { handleGeolocationRequest } from './geolocationHandler';
 
 import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
 import { queueThreadForExtraction } from '../supermemory/extraction/queue';
@@ -88,6 +89,13 @@ export function initializeMessageRouter(): void {
             handleUiMessage(message, sender, sendResponse);
             return true; // Will respond asynchronously
         }
+
+        // Route Geolocation messages
+        if (message.type === 'geolocation/request') {
+            handleGeolocationRequest(message, sendResponse);
+            return true; // Will respond asynchronously
+        }
+
 
         // Return false for unhandled messages
         return false;

@@ -21,8 +21,8 @@ const log = createLogger('Background-Offscreen', 'BACKGROUND');
  * document already exists.
  * 
  * Reason: IFRAME_SCRIPTING is used to run DOM APIs & scripts in an isolated context.
- * Justification: Run Chrome Summarizer API in an isolated offscreen document.
- * 
+ * Justification: Run Chrome Summarizer API and Geolocation in an isolated offscreen document.
+ *  
  * @returns A promise that resolves when the document exists (either already present or newly created)
  */
 export async function ensureOffscreenDocument(): Promise<void> {
@@ -37,8 +37,8 @@ export async function ensureOffscreenDocument(): Promise<void> {
             await chrome.offscreen.createDocument({
                 url: 'offscreen.html',
                 // Using IFRAME_SCRIPTING is appropriate for running DOM APIs & scripts
-                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING],
-                justification: 'Run Chrome Summarizer API in an isolated offscreen document'
+                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING,chrome.offscreen.Reason.GEOLOCATION],
+                justification: 'Run Chrome Summarizer API and Geolocation in an isolated offscreen document'
             });
             log.info('Offscreen document created');
         }

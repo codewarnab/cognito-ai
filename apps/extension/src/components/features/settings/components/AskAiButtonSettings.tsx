@@ -14,7 +14,7 @@ import {
 } from '@/utils/settings';
 import { Toggle } from '../../../shared/inputs/Toggle';
 
-const log = createLogger('AskAiButtonSettings');
+const log = createLogger('AskAiButtonSettings', 'UI_SETTINGS');
 
 export const AskAiButtonSettings: React.FC = () => {
     const [askAiVisibility, setAskAiVisibility] = useState<VisibilitySettings>({

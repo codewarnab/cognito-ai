@@ -83,3 +83,21 @@ The extension supports configuration via Environment Variables. Copy `apps/exten
 | `WXT_HIDE_LOCAL_MODE` | Hide Local LLM features | `true` |
 | `WXT_YOUTUBE_BADGE_PREFETCH` | Auto-prefetch transcripts | `true` |
 | `WXT_LOG_PRESET` | Logging Level | `DEVELOPMENT` |
+
+## Logger Categories
+
+All `createLogger` calls MUST include a category as the second argument:
+
+```typescript
+import { createLogger } from '~logger';
+const log = createLogger('FeatureName', 'CATEGORY');
+```
+
+**Available Categories:**
+- **MCP**: `MCP_CLIENT`, `MCP_TOOLS`, `MCP_EXECUTION`, `MCP_AUTH`, `MCP_SSE`, `WEBMCP`
+- **Tools**: `TOOLS_REGISTRY`, `TOOLS_EXECUTION`, `TOOLS_VALIDATION`, `TOOLS_INTEGRATION`
+- **AI**: `AI_CHAT`, `AI_PROMPTS`, `AI_VOICE`, `AI_WEBSITE_DETECTION`
+- **Voice**: `VOICE_RECORDING`, `VOICE_CLIENT`, `VOICE_UI`, `VOICE_AUDIO`
+- **Memory**: `MEMORY_OPERATIONS`, `MEMORY_SUGGESTIONS`
+- **UI**: `UI_CHAT`, `UI_VOICE`, `UI_SETTINGS`, `UI_THREADS`, `UI_SIDEPANEL`, `UI_REMINDERS`
+- **System**: `BACKGROUND`, `STORAGE`, `UTILS`, `NOTIFICATIONS`, `CREDENTIALS`, `SEARCH`, `SETTINGS`, `WORKFLOW`, `BROWSER`, `ATTACHMENTS`, `CONTENT_SCRIPTS`

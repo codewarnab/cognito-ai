@@ -12,7 +12,7 @@
 import { z } from 'zod';
 import { createLogger } from '~logger';
 
-const log = createLogger('ToolRegistry');
+const log = createLogger('ToolRegistry', 'TOOLS_REGISTRY');
 
 export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   /** Unique tool name */

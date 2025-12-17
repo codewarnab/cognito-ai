@@ -17,7 +17,7 @@ import type { ToolUIState } from '@/ai/tools/components';
 import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
-const log = createLogger('Tool-NavigateTo');
+const log = createLogger('Tool-NavigateTo', 'TOOLS_EXECUTION');
 
 /**
  * Hook to register the navigateTo tool

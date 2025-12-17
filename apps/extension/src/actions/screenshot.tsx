@@ -6,7 +6,7 @@ import { CompactToolRenderer } from "@/ai/tools/components";
 import type { ToolUIState } from "@/ai/tools/components";
 import { createLogger } from '~logger';
 
-const log = createLogger('Tool-TakeScreenshot');
+const log = createLogger('Tool-TakeScreenshot', 'TOOLS_EXECUTION');
 
 // Quality presets for screenshot compression
 const QUALITY_PRESETS = {

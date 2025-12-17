@@ -8,7 +8,7 @@ import type { WorkflowDefinition } from '@/workflows/types';
 import { createLogger } from '~logger';
 import { getSuggestionsEnabled } from '@/utils/settings';
 
-const log = createLogger('SuggestedActions');
+const log = createLogger('SuggestedActions', 'UI_CHAT');
 
 interface SuggestedActionsProps {
     messages: Message[];

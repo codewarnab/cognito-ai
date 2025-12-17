@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai';
 import type { AppUsage } from '../types/usage';
 import { createLogger } from '~logger';
 
-const log = createLogger('calculateUsageFromMessages');
+const log = createLogger('calculateUsageFromMessages', 'AI_CHAT');
 
 /**
  * Calculate cumulative usage from messages in memory

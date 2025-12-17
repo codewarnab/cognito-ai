@@ -16,7 +16,7 @@ import type { ToolUIState } from './ToolUIContext';
 import { createLogger } from '~logger';
 import { CompactToolRenderer } from './CompactToolRenderer';
 
-const log = createLogger('ToolPartRenderer');
+const log = createLogger('ToolPartRenderer', 'UI_CHAT');
 
 interface ToolPartRendererProps {
   part: any; // Tool part from AI SDK v5 message

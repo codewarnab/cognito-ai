@@ -14,7 +14,7 @@ import { createLogger } from '~logger';
 type FunctionDeclarationSchema = Schema;
 type FunctionDeclarationSchemaProperty = Schema;
 
-const log = createLogger('ToolConverter');
+const log = createLogger('ToolConverter', 'TOOLS_REGISTRY');
 
 /**
  * Map Zod types to Gemini API SchemaType

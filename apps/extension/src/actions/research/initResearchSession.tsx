@@ -9,7 +9,7 @@ import { registerTool } from '@/ai/tools';
 import { initResearchSession } from '@/db';
 import { createLogger } from '~logger';
 
-const log = createLogger('Tool-InitResearchSession');
+const log = createLogger('Tool-InitResearchSession', 'TOOLS_EXECUTION');
 
 export function useInitResearchSessionTool() {
     useEffect(() => {

@@ -39,8 +39,17 @@ import '../../styles/core/animations.css';
 // Main sidepanel styles (Migrated to inline/tailwind)
 // import '../../sidepanel.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
-);
+import { LoggerConfigManager } from '~logger';
+
+const init = async () => {
+    // Initialize logger configuration from storage
+    await LoggerConfigManager.initialize();
+
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
+};
+
+init();
