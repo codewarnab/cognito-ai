@@ -489,12 +489,31 @@ export async function streamAIResponse(params: {
                   // Get available tool names
                   const availableTools = Object.keys(tools);
 
-                  // Create helpful feedback message
-                  const feedback = `Tool "${attemptedTool}" is not available.\n\n` +
-                    `**Available tools:** ${availableTools.slice(0, 15).join(', ')}${availableTools.length > 15 ? ', ...' : ''}\n\n` +
-                    `Please choose from the available tools and try again. Make sure the tool name is spelled correctly.`;
+                  // Check if we're in adaptive mode by looking at available tools
+                  const isAdaptiveMode = availableTools.includes('executeTools') &&
+                    availableTools.includes('discoverTools') &&
+                    !availableTools.includes('createReminder'); // Adaptive mode has limited pre-loaded tools
 
-                  log.info('📝 Sending tool-not-found feedback to AI:', { attemptedTool, availableToolsCount: availableTools.length });
+                  let feedback: string;
+
+                  if (isAdaptiveMode) {
+                    // Adaptive mode: Guide AI to use executeTools
+                    feedback = `**Adaptive Mode Notice**\n\n` +
+                      `You tried to call "${attemptedTool}" directly, but in Adaptive mode you cannot call tools directly.\n\n` +
+                      `**In Adaptive Mode, follow this workflow:**\n` +
+                      `1. First use \`discoverTools\` to find available tools for your task\n` +
+                      `2. Then use \`executeTools\` to execute the discovered tool with the required parameters\n\n` +
+                      `**Your current pre-loaded tools (can call directly):** ${availableTools.join(', ')}`;
+
+                    log.info('📝 Sending adaptive-mode feedback to AI:', { attemptedTool, isAdaptiveMode: true });
+                  } else {
+                    // Non-adaptive mode: Standard feedback
+                    feedback = `Tool "${attemptedTool}" is not available.\n\n` +
+                      `**Available tools:** ${availableTools.slice(0, 15).join(', ')}${availableTools.length > 15 ? ', ...' : ''}\n\n` +
+                      `Please choose from the available tools and try again. Make sure the tool name is spelled correctly.`;
+
+                    log.info('📝 Sending tool-not-found feedback to AI:', { attemptedTool, availableToolsCount: availableTools.length });
+                  }
 
                   // Return feedback message instead of error - AI SDK will include this as context
                   return feedback;
