@@ -27,6 +27,8 @@ export const useSettingsStore = create<SettingsState>()(
       'logCategories',
       'theme',
       'compactMode',
+      'useBackendMode',
+      'backendModel',
     ],
     onHydrate: () => {
       // Mark as hydrated after loading from storage
@@ -48,6 +50,8 @@ export const useSettingsStore = create<SettingsState>()(
     logCategories: [],
     theme: 'dark',
     compactMode: false,
+    useBackendMode: false,
+    backendModel: 'gemini-2.0-flash',
     isHydrated: false,
 
     // Actions
@@ -99,6 +103,10 @@ export const useSettingsStore = create<SettingsState>()(
     setEnableVoiceMode: (enabled) => set({ enableVoiceMode: enabled }),
 
     setEnableNotificationSound: (enabled) => set({ enableNotificationSound: enabled }),
+
+    setUseBackendMode: (value) => set({ useBackendMode: value }),
+
+    setBackendModel: (model) => set({ backendModel: model }),
 
     loadFromStorage: async () => {
       // Load from legacy storage locations for migration

@@ -128,54 +128,30 @@ Key developments include mandatory risk assessments for high-risk AI systems in 
 }
 
 /**
- * Legacy prompt addition for backward compatibility.
- * @deprecated Use buildWebSearchSystemPrompt() for complete replacement instead.
+ * Prompt addition for when search mode is enabled.
+ * This is APPENDED to the existing system prompt (chat/agent/remote).
+ * Unlike the full web search prompt, this is designed to work alongside other tools.
  */
-export const SEARCH_SYSTEM_PROMPT = `
-## Web Search Capability
+export const SEARCH_PROMPT_ADDITION = `
+## Web Search Tools Available
 
-You have access to real-time web search and URL content retrieval tools.
+You have access to web search tools for real-time information:
 
-### When to Use Web Search
-Use the webSearch tool when:
-- User asks about current events, news, or recent information
-- User asks for facts you're uncertain about or that may have changed
-- User asks about specific products, prices, or availability
-- User asks about people, places, or things that may have recent updates
-- Information requires up-to-date data (weather, stocks, sports scores)
+- **webSearch**: Quick single-query search for facts, news, prices
+- **deepWebSearch**: Multi-query parallel search for comprehensive research (2-5 queries)
+- **retrieve**: Fetch full content from a specific URL
 
-Do NOT search when:
-- You're confident in your knowledge and it's unlikely to have changed
-- The question is about general concepts or definitions
-- User explicitly asks you to use your existing knowledge
+**When to Use:**
+- Current events, news, recent information
+- Facts you're uncertain about or that may have changed
+- Specific products, prices, or availability
+- Topics requiring up-to-date data
 
-### When to Use Retrieve
-Use the retrieve tool when:
-- You found a relevant URL from search results that needs deeper reading
-- User provides a specific URL they want you to analyze
-- You need the full content of an article, not just a snippet
+**Citation Rules:**
+- ALWAYS include source URLs as markdown links: [Source Name](URL)
+- Use numbered references [1](URL) or inline links in your response
 
-### Search Depth Selection
-- Use "basic" (default) for simple factual queries
-- Use "advanced" for complex topics requiring comprehensive coverage
-
-### Citation Format
-ALWAYS include source URLs/links in your response.
-
-Instead:
-- Use markdown links: [Source](URL)
-- Or numbered citations: [1](URL)
-
-Rules:
-1. ALWAYS include URLs, markdown links, or numbered citations with links
-2. If no relevant results, say so and use general knowledge
-
-### Response Structure for Search Queries
-1. Search for relevant information
-2. Synthesize findings into a clean response WITH links
-3. Mention source names naturally in the text with links
-4. Note if information is time-sensitive
-`;
+**Tip:** Use deepWebSearch for complex topics that benefit from multiple perspectives.`;
 
 /**
  * Brief reminder to add to user messages when search is enabled.
@@ -183,13 +159,12 @@ Rules:
 export const SEARCH_USER_REMINDER = `[Search mode is enabled - use webSearch for current information and cite sources]`;
 
 /**
- * Gets the appropriate search prompt based on mode.
+ * Gets the search prompt addition to append to existing prompts.
  * @param searchEnabled - Whether search mode is enabled
- * @returns System prompt addition for search, or empty string if disabled
- * @deprecated Use buildWebSearchSystemPrompt() for complete replacement instead.
+ * @returns Prompt addition for search, or empty string if disabled
  */
 export function getSearchPromptAddition(searchEnabled: boolean): string {
-    return searchEnabled ? SEARCH_SYSTEM_PROMPT : '';
+    return searchEnabled ? SEARCH_PROMPT_ADDITION : '';
 }
 
 /**

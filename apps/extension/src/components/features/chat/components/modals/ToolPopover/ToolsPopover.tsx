@@ -259,7 +259,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                                             letterSpacing: '0.5px',
                                             color: 'var(--text-tertiary, #6b7280)',
                                         }}>
-                                            {(Server as any)({ size: 12 })}
+                                            <Server size={12} />
                                             <span>MCP Servers</span>
                                             {mcpLoading && (
                                                 <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>

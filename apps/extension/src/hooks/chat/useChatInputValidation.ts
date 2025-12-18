@@ -3,6 +3,7 @@ import type { AIMode, Message } from '@/components/features/chat/types';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import { hasGoogleApiKey } from '@/utils/credentials';
 import { HIDE_LOCAL_MODE } from '@/constants';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 
 interface UseChatInputValidationOptions {
     mode: AIMode;
@@ -21,8 +22,11 @@ export const useChatInputValidation = ({ mode, messages, onError }: UseChatInput
             return false;
         }
 
-        // Validate API key if in remote mode or HIDE_LOCAL_MODE is enabled
-        if ((HIDE_LOCAL_MODE || mode === 'remote') && !(await hasGoogleApiKey())) {
+        // Skip API key validation if backend mode is enabled
+        const useBackendMode = useSettingsStore.getState().useBackendMode;
+        
+        // Validate API key if in remote mode or HIDE_LOCAL_MODE is enabled (unless using backend mode)
+        if (!useBackendMode && (HIDE_LOCAL_MODE || mode === 'remote') && !(await hasGoogleApiKey())) {
             onError?.(
                 'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
                 'error'

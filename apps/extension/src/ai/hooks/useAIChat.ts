@@ -237,9 +237,11 @@ export function useAIChat(options: UseAIChatOptions) {
     transport,
     onError: handleError,
     onFinish: (finishResult) => {
+      // Add null safety check for message - may not exist in all stream modes
       log.info('AI response finished', {
-        messageId: finishResult.message.id,
-        isError: finishResult.isError
+        messageId: finishResult?.message?.id || 'unknown',
+        isError: finishResult?.isError ?? false,
+        hasMessage: !!finishResult?.message,
       });
       // Sync status to store
       setStoreStatus('idle');

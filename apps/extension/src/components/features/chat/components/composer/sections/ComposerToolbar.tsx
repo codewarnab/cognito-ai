@@ -3,11 +3,11 @@ import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
-import { Wrench } from 'lucide-react';
+import { Wrench, Cloud, Key } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
-import { SEARCH_TOOL_NAMES } from '@/ai/tools/searchToolFilter';
 import { createLogger } from '~logger';
+import { useSettingsStore, type SettingsState } from '@/stores';
 import type { AIMode, ModelState } from '../../../types';
 import type { WorkflowDefinition } from '@/workflows/types';
 
@@ -29,9 +29,8 @@ interface ComposerToolbarProps {
     loadToolsCount: () => Promise<void>;
     setEnabledToolsCount: () => void;
     setMcpToolsCount: () => void;
-    // Workflow/search state
+    // Workflow state
     activeWorkflow: WorkflowDefinition | null;
-    isSearchActive: boolean;
     // Model selector state
     isModelSelectorOpen?: boolean;
     setIsModelSelectorOpen?: (isOpen: boolean) => void;
@@ -56,24 +55,23 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     setEnabledToolsCount,
     setMcpToolsCount,
     activeWorkflow,
-    isSearchActive,
     isModelSelectorOpen,
     setIsModelSelectorOpen
 }) => {
     // Debug logging for tools display
-    const searchToolsCount = SEARCH_TOOL_NAMES.length;
     log.info('🔧 ComposerToolbar render', {
-        isSearchActive,
         totalEnabledCount,
         mcpToolsCount,
         webMcpToolsCount,
-        searchToolsCount,
         activeWorkflow: activeWorkflow?.name || null,
-        toolsDisplay: isSearchActive ? `${searchToolsCount} (Search)` : `${totalEnabledCount}`
+        isAdaptiveMode: modelState.mode === 'adaptive'
     });
 
+    // Backend mode state
+    const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
+    const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
+
     const getTooltipText = () => {
-        if (isSearchActive) return `Tools are locked in Search mode (${searchToolsCount} search tools available)`;
         if (activeWorkflow) return "Tools are managed by the active workflow";
         if (isTooManyTools) return "Too many tools enabled - may slow AI responses";
         return "Manage enabled tools";
@@ -96,9 +94,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     <TooltipTrigger asChild>
                         <button
                             type="button"
-                            onClick={() => !activeWorkflow && !isSearchActive && setShowToolsModal(!showToolsModal)}
-                            disabled={!!activeWorkflow || isSearchActive}
-                            aria-label={isSearchActive ? "Tools locked in search mode" : "Manage enabled tools"}
+                            onClick={() => !activeWorkflow && setShowToolsModal(!showToolsModal)}
+                            disabled={!!activeWorkflow}
+                            aria-label="Manage enabled tools"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -107,13 +105,13 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                                 borderRadius: '6px',
                                 border: 'none',
                                 background: 'transparent',
-                                color: isTooManyTools && !isSearchActive
+                                color: isTooManyTools
                                     ? 'var(--color-warning, #f59e0b)'
-                                    : activeWorkflow || isSearchActive
+                                    : activeWorkflow
                                         ? 'var(--text-tertiary, #6b7280)'
                                         : 'var(--text-secondary, #9ca3af)',
-                                cursor: activeWorkflow || isSearchActive ? 'not-allowed' : 'pointer',
-                                opacity: activeWorkflow || isSearchActive ? 0.5 : 1,
+                                cursor: activeWorkflow ? 'not-allowed' : 'pointer',
+                                opacity: activeWorkflow ? 0.5 : 1,
                                 transition: 'color 0.15s, opacity 0.15s',
                                 fontSize: '12px',
                                 fontWeight: 800,
@@ -121,7 +119,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                         >
                             <Wrench size={14} />
                             <span style={{ fontSize: '10px', fontWeight: 400 }}>
-                                {isSearchActive ? searchToolsCount : totalEnabledCount}
+                                {totalEnabledCount}
                             </span>
                         </button>
                     </TooltipTrigger>
@@ -130,8 +128,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     </TooltipContent>
                 </Tooltip>
 
-                {/* Tools Popover - hidden when search mode is active */}
-                {!isSearchActive && (
+                {/* Tools Popover */}
+                {(
                     <ToolsModal
                         isOpen={showToolsModal}
                         onClose={() => {
@@ -147,8 +145,11 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 )}
             </div>
 
-            {/* Search Controls - Toggle and Depth Selector */}
-            <SearchControls activeWorkflow={activeWorkflow} />
+            {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode) */}
+            <SearchControls
+                activeWorkflow={activeWorkflow}
+                isAdaptiveMode={modelState.mode === 'adaptive'}
+            />
 
             {/* Model Selector - Gemini icon with model popover */}
             {!HIDE_MODEL_SELECTOR && (
@@ -157,6 +158,59 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     onOpenChange={setIsModelSelectorOpen}
                 />
             )}
+
+            {/* Backend Mode Toggle */}
+            <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            onClick={() => setUseBackendMode(!useBackendMode)}
+                            className="cursor-pointer"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: useBackendMode
+                                    ? 'rgba(139, 92, 246, 0.1)'
+                                    : 'rgba(156, 163, 175, 0.1)',
+                                color: useBackendMode
+                                    ? 'rgb(139, 92, 246)'
+                                    : 'var(--text-secondary, #9ca3af)',
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {useBackendMode ? (
+                                <>
+                                    <Cloud size={14} />
+                                    <span>Backend</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Key size={14} />
+                                    <span>BYOK</span>
+                                </>
+                            )}
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[200px]">
+                        <p className="text-xs">
+                            {useBackendMode
+                                ? "Using Cognito's API (rate limited, no API key needed)"
+                                : "Using your API key (unlimited, key stays on device)"
+                            }
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Click to switch modes
+                        </p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
         </div>
     );
 };

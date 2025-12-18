@@ -15,6 +15,10 @@ export {
 } from './contextBuilder';
 export type { PlatformInfo } from './contextBuilder';
 
+// Backend writer exports
+export { generateWithBackend, generateTextWithBackend } from './backendWriter';
+export type { BackendWriteOptions } from './backendWriter';
+
 // Stream parser exports
 export {
     parseGeminiSSE,

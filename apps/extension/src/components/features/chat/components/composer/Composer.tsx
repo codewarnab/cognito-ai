@@ -220,7 +220,6 @@ export const Composer: React.FC<ComposerProps> = ({
                     setEnabledToolsCount={recalculateCounts}
                     setMcpToolsCount={recalculateCounts}
                     activeWorkflow={activeWorkflow}
-                    isSearchActive={isSearchActive}
                     isModelSelectorOpen={isModelSelectorOpen}
                     setIsModelSelectorOpen={setIsModelSelectorOpen}
                 />

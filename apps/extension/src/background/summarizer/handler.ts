@@ -1,11 +1,14 @@
 /**
  * Summarizer Message Handler
  * Handles summarize request messages with streaming response via port
+ * Supports both BYOK (Gemini API) and Backend mode (Vercel)
  */
 
 import { createLogger } from '~logger';
 import { geminiSummarizer, type SummarizerOptions } from './geminiSummarizer';
+import { summarizeWithBackend } from './backendSummarizer';
 import { queueContentMemoryForSummarizer } from '../supermemory/contentMemory/hooks';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { SummarizeRequest } from '@/types';
 
 const log = createLogger('SummarizerHandler', 'BACKGROUND');
@@ -107,12 +110,25 @@ export async function handleSummarizeRequest(
         log.debug('Port disconnected during summarization');
     });
 
+    // Check if backend mode is enabled
+    const useBackendMode = useSettingsStore.getState().useBackendMode;
+    const hasApiKey = useSettingsStore.getState().hasGoogleApiKey();
+
     try {
         // Accumulate full summary for memory building
         let fullSummary = '';
 
+        // Choose streaming source based on mode
+        const streamSource = (useBackendMode && !hasApiKey)
+            ? summarizeWithBackend(text, options)
+            : geminiSummarizer.summarizeStream(text, options);
+
+        if (useBackendMode && !hasApiKey) {
+            log.info('Using backend mode for summarization');
+        }
+
         // Stream chunks back via port
-        for await (const chunk of geminiSummarizer.summarizeStream(text, options)) {
+        for await (const chunk of streamSource) {
             // Check if port is still connected before sending
             if (!isPortConnected) {
                 log.warn('Port disconnected, stopping stream');

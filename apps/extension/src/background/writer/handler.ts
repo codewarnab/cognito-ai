@@ -1,11 +1,14 @@
 /**
  * Writer Message Handler
  * Handles write request messages with streaming response via port
+ * Supports both BYOK (Gemini API) and Backend mode (Vercel)
  */
 
 import { createLogger } from '~logger';
 import { geminiWriter, type WriterOptions } from './geminiWriter';
+import { generateWithBackend } from './backendWriter';
 import { queueContentMemoryForWriter } from '../supermemory/contentMemory/hooks';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { WriteGenerateRequest } from '@/types';
 
 const log = createLogger('WriterHandler', 'BACKGROUND');
@@ -119,48 +122,93 @@ export async function handleWriteGenerate(
         log.debug('Port disconnected during write generation');
     });
 
+    // Check if backend mode is enabled
+    const useBackendMode = useSettingsStore.getState().useBackendMode;
+    const hasApiKey = useSettingsStore.getState().hasGoogleApiKey();
+
     try {
-        // Generate complete response (non-streaming)
-        // AI-driven memory search is handled within geminiWriter via function calling
-        const text = await geminiWriter.generate(prompt, options);
+        let text: string;
 
-        log.info('Generation complete', { textLength: text.length });
+        if (useBackendMode && !hasApiKey) {
+            // Use backend mode - stream from Vercel
+            log.info('Using backend mode for write generation');
+            const chunks: string[] = [];
 
-        // Send the complete response
-        if (isPortConnected) {
-            try {
-                port.postMessage({
-                    action: 'WRITE_STREAM_CHUNK',
-                    text: text,
-                    done: false,
-                });
+            for await (const chunk of generateWithBackend(prompt, {
+                tone: options.tone,
+                pageContext: options.pageContext,
+            })) {
+                chunks.push(chunk);
+                // Stream chunks to content script
+                if (isPortConnected) {
+                    try {
+                        port.postMessage({
+                            action: 'WRITE_STREAM_CHUNK',
+                            text: chunk,
+                            done: false,
+                        });
+                    } catch {
+                        log.debug('Failed to post chunk, port likely closed');
+                        return;
+                    }
+                }
+            }
+
+            text = chunks.join('');
+
+            // Send completion
+            if (isPortConnected) {
                 port.postMessage({
                     action: 'WRITE_STREAM_CHUNK',
                     text: '',
                     done: true,
                 });
-                log.info('Response sent to content script');
-
-                // Queue for memory building (fire and forget)
-                queueContentMemoryForWriter({
-                    prompt,
-                    generatedText: text,
-                    tone: settings?.tone,
-                    pageContext: pageContext ? {
-                        title: pageContext.title || '',
-                        url: pageContext.url || '',
-                        domain: pageContext.domain || '',
-                        platform: pageContext.platform,
-                        fieldType: pageContext.fieldType,
-                    } : undefined,
-                    hasAttachment: !!attachment,
-                }).catch(() => {}); // Fire and forget
-            } catch (postError) {
-                log.error('Failed to post message', postError);
             }
         } else {
-            log.warn('Port disconnected before response could be sent');
+            // Use BYOK mode - direct Gemini API
+            // Generate complete response (non-streaming)
+            // AI-driven memory search is handled within geminiWriter via function calling
+            text = await geminiWriter.generate(prompt, options);
+
+            log.info('Generation complete (BYOK)', { textLength: text.length });
+
+            // Send the complete response
+            if (isPortConnected) {
+                try {
+                    port.postMessage({
+                        action: 'WRITE_STREAM_CHUNK',
+                        text: text,
+                        done: false,
+                    });
+                    port.postMessage({
+                        action: 'WRITE_STREAM_CHUNK',
+                        text: '',
+                        done: true,
+                    });
+                } catch (postError) {
+                    log.error('Failed to post message', postError);
+                }
+            } else {
+                log.warn('Port disconnected before response could be sent');
+            }
         }
+
+        log.info('Response sent to content script');
+
+        // Queue for memory building (fire and forget)
+        queueContentMemoryForWriter({
+            prompt,
+            generatedText: text,
+            tone: settings?.tone,
+            pageContext: pageContext ? {
+                title: pageContext.title || '',
+                url: pageContext.url || '',
+                domain: pageContext.domain || '',
+                platform: pageContext.platform,
+                fieldType: pageContext.fieldType,
+            } : undefined,
+            hasAttachment: !!attachment,
+        }).catch(() => {}); // Fire and forget
     } catch (error) {
         log.error('Write generation failed', error);
 

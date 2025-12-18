@@ -18,9 +18,11 @@ export interface SearchControlsProps {
     className?: string;
     /** Active workflow - disables search toggle when present */
     activeWorkflow?: WorkflowDefinition | null;
+    /** Whether adaptive mode is active - hides search controls entirely */
+    isAdaptiveMode?: boolean;
 }
 
-export const SearchControls: React.FC<SearchControlsProps> = ({ className, activeWorkflow }) => {
+export const SearchControls: React.FC<SearchControlsProps> = ({ className, activeWorkflow, isAdaptiveMode }) => {
     const {
         isSearchMode,
         toggleSearchMode,
@@ -29,6 +31,12 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ className, activ
         hasApiKey,
         isLoading,
     } = useSearchMode();
+
+    // Hide search controls entirely in adaptive mode
+    // Search tools are discoverable via discoverTools in that mode
+    if (isAdaptiveMode) {
+        return null;
+    }
 
     // Debug logging
     log.info('🌐 SearchControls render', {

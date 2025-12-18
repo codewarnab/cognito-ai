@@ -7,6 +7,7 @@ import { processTabsForMessage, type ProcessedTab } from '@/utils/tabs';
 import { getModelConfig, setConversationStartMode } from '@/utils/ai';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { hasGoogleApiKey } from '@/utils/credentials';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import type { UIMessage } from 'ai';
@@ -78,8 +79,11 @@ export function useMessageHandlers({
 
         try {
             // Validate API key if HIDE_LOCAL_MODE is enabled or if in remote mode
+            // Skip validation if backend mode is enabled (uses server-side API key)
             const config = await getModelConfig();
-            if ((HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
+            const useBackendMode = useSettingsStore.getState().useBackendMode;
+            
+            if (!useBackendMode && (HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
                 onError?.(
                     'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
                     'error'

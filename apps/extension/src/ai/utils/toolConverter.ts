@@ -501,3 +501,139 @@ export function testSchemaConversion(schema: z.ZodSchema, name: string = 'test')
     });
     log.info('Validation:', validation);
 }
+
+/**
+ * Convert Zod schema to JSON Schema format
+ * Used for sending tool schemas to the backend API
+ */
+export function zodToJsonSchema(schema: z.ZodSchema, parentContext?: string): Record<string, unknown> {
+    // First unwrap any wrapper types (describe, optional, default, etc.)
+    const unwrapped = unwrapZodSchema(schema);
+    const zodDef = unwrapped?._def;
+    let zodType = zodDef?.typeName;
+
+    // Handle undefined zodType
+    if (!zodType) {
+        if (zodDef?.shape !== undefined) {
+            zodType = 'ZodObject';
+        } else if (zodDef?.type) {
+            const typeMap: Record<string, string> = {
+                'object': 'ZodObject',
+                'string': 'ZodString',
+                'number': 'ZodNumber',
+                'boolean': 'ZodBoolean',
+                'array': 'ZodArray',
+            };
+            zodType = typeMap[zodDef.type];
+        }
+        
+        if (!zodType) {
+            return { type: 'string' };
+        }
+    }
+
+    // Handle ZodOptional by unwrapping
+    if (zodType === 'ZodOptional') {
+        return zodToJsonSchema(zodDef.innerType, `${parentContext || 'schema'}.optional`);
+    }
+
+    // Handle ZodDefault by unwrapping
+    if (zodType === 'ZodDefault') {
+        return zodToJsonSchema(zodDef.innerType, `${parentContext || 'schema'}.default`);
+    }
+
+    const result: Record<string, unknown> = {};
+
+    // Add description if available
+    const description = extractDescription(schema) || extractDescription(unwrapped);
+    if (description) {
+        result.description = description;
+    }
+
+    // Map Zod types to JSON Schema types
+    switch (zodType) {
+        case 'ZodString':
+            result.type = 'string';
+            break;
+
+        case 'ZodNumber':
+            result.type = 'number';
+            break;
+
+        case 'ZodBoolean':
+            result.type = 'boolean';
+            break;
+
+        case 'ZodArray':
+            result.type = 'array';
+            if (zodDef.type) {
+                result.items = zodToJsonSchema(zodDef.type, `${parentContext || 'schema'}.array.items`);
+            }
+            break;
+
+        case 'ZodObject': {
+            result.type = 'object';
+            
+            let shape: any;
+            if (typeof zodDef.shape === 'function') {
+                shape = zodDef.shape();
+            } else if (typeof zodDef.shape === 'object') {
+                shape = zodDef.shape;
+            } else {
+                shape = {};
+            }
+
+            const properties: Record<string, unknown> = {};
+            const required: string[] = [];
+
+            if (shape && typeof shape === 'object') {
+                for (const [key, value] of Object.entries(shape)) {
+                    if (!value) continue;
+
+                    const zodValue = value as z.ZodSchema;
+                    properties[key] = zodToJsonSchema(zodValue, `${parentContext || 'schema'}.${key}`);
+
+                    // Track required fields
+                    if (!isOptional(zodValue) && (zodValue as any)?._def?.typeName !== 'ZodDefault') {
+                        required.push(key);
+                    }
+                }
+            }
+
+            result.properties = properties;
+            if (required.length > 0) {
+                result.required = required;
+            }
+            break;
+        }
+
+        case 'ZodEnum':
+            result.type = 'string';
+            if (zodDef.values && Array.isArray(zodDef.values)) {
+                result.enum = zodDef.values;
+            }
+            break;
+
+        case 'ZodUnion':
+            // For unions, use first option as simplification
+            if (zodDef.options && zodDef.options.length > 0) {
+                return zodToJsonSchema(zodDef.options[0], `${parentContext || 'schema'}.union[0]`);
+            }
+            result.type = 'string';
+            break;
+
+        case 'ZodLiteral':
+            result.type = typeof zodDef.value;
+            result.enum = [zodDef.value];
+            break;
+
+        case 'ZodNull':
+            result.type = 'null';
+            break;
+
+        default:
+            result.type = 'string';
+    }
+
+    return result;
+}

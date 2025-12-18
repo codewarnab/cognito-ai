@@ -10,7 +10,7 @@ import { createLogger } from '~logger';
 import { localSystemPrompt } from '../prompts/templates/local';
 import { remoteSystemPrompt, chatModeSystemPrompt } from '../prompts/templates/remote';
 import { buildAdaptiveSystemPrompt, adaptiveSystemPromptStatic } from '../prompts/templates/adaptivePrompt';
-import { getWebSearchSystemPrompt } from '../prompts/searchPrompt';
+import { getSearchPromptAddition } from '../prompts/searchPrompt';
 import { getWorkflow } from '../../workflows/registry';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../prompts/website';
 
@@ -19,7 +19,7 @@ import { getModelConfig } from '@/utils/ai';
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
-import { getSearchOnlyTools, SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
+import { SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import {
   APIError,
   NetworkError,
@@ -31,6 +31,8 @@ import { executeStreamText } from '../stream/streamExecutor';
 import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
+import { streamBackendChat, streamBackendChatWithTools } from '../backend';
+import { useSettingsStore } from '@/stores';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
 
@@ -79,6 +81,22 @@ export async function streamAIResponse(params: {
   const { messages, abortSignal, initialPageContext, onError, onUsageUpdate, workflowId, threadId, onFinishCallback } = params;
 
   log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
+
+  // Check if backend mode is enabled
+  const useBackendMode = useSettingsStore.getState().useBackendMode;
+
+  if (useBackendMode) {
+    log.info('🌐 Using BACKEND MODE with tools - routing to Vercel backend');
+    return streamBackendChatWithTools({
+      messages,
+      systemPrompt: undefined, // Will use default on backend
+      abortSignal,
+      onError,
+      onFinishCallback,
+      onToolCall: (tc) => log.info('Tool call:', { name: tc.name, id: tc.id }),
+      onToolResult: (tr) => log.info('Tool result:', { id: tr.id, isError: tr.isError }),
+    });
+  }
 
   // Get current model configuration
   const modelConfig = await getModelConfig();
@@ -173,37 +191,39 @@ export async function streamAIResponse(params: {
               });
 
               // Determine which system prompt to use
+              // Always select based on toolsMode, then optionally append search instructions
               let usePrompt: string;
+              const toolsMode = await getToolsMode();
 
-              if (isSearchModeActive) {
-                // SEARCH MODE: Use dedicated web search prompt (REPLACES normal prompt)
-                usePrompt = getWebSearchSystemPrompt();
-                log.info('🔍 SEARCH MODE ACTIVE - Using dedicated web search prompt');
-              } else {
-                // Normal mode: Check tools mode for chat vs agent vs adaptive prompt
-                const toolsMode = await getToolsMode();
-
-                if (toolsMode === 'chat' && !workflowConfig) {
-                  usePrompt = chatModeSystemPrompt;
-                } else if (toolsMode === 'adaptive' && !workflowConfig) {
-                  // Adaptive mode: Build dynamic prompt with tool index
-                  try {
-                    usePrompt = await buildAdaptiveSystemPrompt();
-                  } catch (error) {
-                    log.warn('Failed to build adaptive prompt, using static version:', error);
-                    usePrompt = adaptiveSystemPromptStatic;
-                  }
-                } else {
-                  usePrompt = remoteSystemPrompt;
+              if (toolsMode === 'chat' && !workflowConfig) {
+                usePrompt = chatModeSystemPrompt;
+              } else if (toolsMode === 'adaptive' && !workflowConfig) {
+                // Adaptive mode: Build dynamic prompt with tool index
+                try {
+                  usePrompt = await buildAdaptiveSystemPrompt();
+                } catch (error) {
+                  log.warn('Failed to build adaptive prompt, using static version:', error);
+                  usePrompt = adaptiveSystemPromptStatic;
                 }
-
-                log.info('📝 System prompt selection:', {
-                  toolsMode,
-                  isWorkflow: !!workflowConfig,
-                  usingChatPrompt: toolsMode === 'chat' && !workflowConfig,
-                  usingAdaptivePrompt: toolsMode === 'adaptive' && !workflowConfig
-                });
+              } else {
+                usePrompt = remoteSystemPrompt;
               }
+
+              // Append search instructions if search mode enabled (non-adaptive only)
+              // In adaptive mode, search tools are discoverable via discoverTools
+              if (isSearchModeActive && toolsMode !== 'adaptive') {
+                usePrompt += '\n\n' + getSearchPromptAddition(true);
+                log.info('🔍 SEARCH MODE ACTIVE - Appending search instructions to prompt');
+              }
+
+              log.info('📝 System prompt selection:', {
+                toolsMode,
+                isWorkflow: !!workflowConfig,
+                isSearchModeActive,
+                usingChatPrompt: toolsMode === 'chat' && !workflowConfig,
+                usingAdaptivePrompt: toolsMode === 'adaptive' && !workflowConfig,
+                searchInstructionsAppended: isSearchModeActive && toolsMode !== 'adaptive'
+              });
 
               const remoteSetup = await setupRemoteMode(
                 modelName,
@@ -218,32 +238,23 @@ export async function streamAIResponse(params: {
               tools = remoteSetup.tools;
 
               // Set initial activeTools based on current mode
-              // prepareStep will update this if mode changes mid-conversation
-              if (isSearchModeActive) {
-                initialActiveTools = getSearchOnlyTools();
-
-                // DEBUG: Verify search tools are in the tools object
-                const webSearchInTools = 'webSearch' in tools;
-                const retrieveInTools = 'retrieve' in tools;
-                const deepWebSearchInTools = 'deepWebSearch' in tools;
-
-                log.info('🔍 SEARCH MODE - Initial active tools:', {
-                  active: initialActiveTools,
-                  totalAvailable: Object.keys(tools).length,
-                  webSearchInTools,
-                  retrieveInTools,
-                  deepWebSearchInTools,
-                  allToolNames: Object.keys(tools),
+              // ADDITIVE MODEL: Add search tools to existing tools when enabled
+              if (toolsMode === 'adaptive' && !workflowConfig) {
+                // Adaptive mode: All tools except search tools (they're discoverable)
+                initialActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
+                log.info('🌐 ADAPTIVE MODE - Search tools discoverable via discoverTools:', {
+                  activeCount: initialActiveTools.length,
+                  searchToolsDiscoverable: SEARCH_TOOL_NAMES
                 });
-
-                if (!webSearchInTools || !retrieveInTools || !deepWebSearchInTools) {
-                  log.error('❌ CRITICAL: Search tools missing from tools object!', {
-                    webSearchInTools,
-                    retrieveInTools,
-                    deepWebSearchInTools,
-                    message: 'Search mode is active but search tools are not available'
-                  });
-                }
+              } else if (isSearchModeActive) {
+                // Search mode enabled in chat/agent: Include search tools WITH other tools
+                initialActiveTools = Object.keys(tools);
+                const activeToolsList = initialActiveTools;
+                log.info('🔍 SEARCH MODE - Search tools added to existing tools:', {
+                  activeCount: activeToolsList.length,
+                  searchToolsIncluded: SEARCH_TOOL_NAMES.filter(t => activeToolsList.includes(t)),
+                  allToolNames: activeToolsList,
+                });
               } else {
                 // Normal mode: All tools except search tools
                 initialActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
@@ -377,11 +388,19 @@ export async function streamAIResponse(params: {
                     toolsModeChanged
                   });
 
-                  // Update system prompt based on new mode
-                  if (currentSearchModeActive) {
-                    stepPrompt = getWebSearchSystemPrompt();
-                    stepActiveTools = getSearchOnlyTools();
-                    log.info('🔍 Switched to SEARCH MODE');
+                  // Update system prompt based on new mode (additive model)
+                  if (currentToolsMode === 'adaptive' && !workflowConfig) {
+                    // Adaptive mode: search tools are discoverable, no special prompt needed
+                    stepActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
+                    log.info('🌐 Switched to ADAPTIVE MODE - Search tools discoverable');
+                  } else if (currentSearchModeActive) {
+                    // Search mode enabled: append search instructions, include all tools
+                    stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
+                      ? chatModeSystemPrompt
+                      : remoteSystemPrompt;
+                    stepPrompt += '\n\n' + getSearchPromptAddition(true);
+                    stepActiveTools = Object.keys(tools);
+                    log.info('🔍 Switched to SEARCH MODE (additive)');
                   } else {
                     stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
                       ? chatModeSystemPrompt

@@ -2,6 +2,20 @@
  * Settings Store Types
  */
 
+/** Available backend models */
+export type BackendModel = 'gemini-2.0-flash' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
+
+/** Backend model options for UI */
+export const BACKEND_MODEL_OPTIONS: Array<{
+  value: BackendModel;
+  label: string;
+  description: string;
+}> = [
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', description: 'Fast & capable' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', description: 'Balanced' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', description: 'Most capable (higher quota usage)' },
+];
+
 export interface SettingsState {
   // Provider settings
   hasAnyProviderConfigured: boolean;
@@ -29,6 +43,10 @@ export interface SettingsState {
   theme: 'dark' | 'light' | 'system';
   compactMode: boolean;
 
+  // Backend mode settings
+  useBackendMode: boolean;
+  backendModel: BackendModel;
+
   // Hydration state
   isHydrated: boolean;
 
@@ -42,6 +60,8 @@ export interface SettingsState {
   setCompactMode: (compact: boolean) => void;
   setEnableVoiceMode: (enabled: boolean) => void;
   setEnableNotificationSound: (enabled: boolean) => void;
+  setUseBackendMode: (value: boolean) => void;
+  setBackendModel: (model: BackendModel) => void;
   loadFromStorage: () => Promise<void>;
 
   // Computed helpers

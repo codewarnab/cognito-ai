@@ -1,11 +1,14 @@
 /**
  * Rewriter Message Handler
  * Handles rewrite request messages (non-streaming) via port
+ * Supports both BYOK (Gemini API) and Backend mode (Vercel)
  */
 
 import { createLogger } from '~logger';
 import { geminiRewriter, type RewriterOptions } from './geminiRewriter';
+import { rewriteWithBackend } from './backendRewriter';
 import { queueContentMemoryForRewriter } from '../supermemory/contentMemory/hooks';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { RewriteRequest } from '@/types';
 
 const log = createLogger('RewriterHandler', 'BACKGROUND');
@@ -103,20 +106,37 @@ export async function handleRewriteRequest(
         log.debug('Port disconnected during rewrite');
     });
 
-    try {
-        // Build options - AI-driven memory search is handled within geminiRewriter
-        // via function calling when enableSupermemorySearch is true
-        const options: RewriterOptions = {
-            preset,
-            instruction,
-            enableUrlContext: enableUrlContext ?? false,
-            enableGoogleSearch: enableGoogleSearch ?? false,
-            // Pass to rewriter for AI-driven function calling
-            enableSupermemorySearch: enableSupermemorySearch ?? false,
-        };
+    // Check if backend mode is enabled
+    const useBackendMode = useSettingsStore.getState().useBackendMode;
+    const hasApiKey = useSettingsStore.getState().hasGoogleApiKey();
 
-        // Generate complete rewrite (non-streaming)
-        const rewrittenText = await geminiRewriter.rewrite(selectedText, options);
+    try {
+        let rewrittenText: string;
+
+        if (useBackendMode && !hasApiKey) {
+            // Use backend mode - Vercel API
+            log.info('Using backend mode for rewrite');
+            const result = await rewriteWithBackend(selectedText, {
+                preset,
+                instruction,
+            });
+            rewrittenText = result.text;
+        } else {
+            // Use BYOK mode - direct Gemini API
+            // Build options - AI-driven memory search is handled within geminiRewriter
+            // via function calling when enableSupermemorySearch is true
+            const options: RewriterOptions = {
+                preset,
+                instruction,
+                enableUrlContext: enableUrlContext ?? false,
+                enableGoogleSearch: enableGoogleSearch ?? false,
+                // Pass to rewriter for AI-driven function calling
+                enableSupermemorySearch: enableSupermemorySearch ?? false,
+            };
+
+            // Generate complete rewrite (non-streaming)
+            rewrittenText = await geminiRewriter.rewrite(selectedText, options);
+        }
 
         log.info('Rewrite complete', { outputLength: rewrittenText.length });
 
