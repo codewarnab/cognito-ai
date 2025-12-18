@@ -271,6 +271,40 @@ export function WriterOverlay({
         return () => inputEl.removeEventListener('paste', handlePasteEvent);
     }, [handlePaste]);
 
+    // Disable page shortcuts while overlay is open
+    // Capture keyboard events early and stop ALL propagation to prevent page shortcuts from firing
+    useEffect(() => {
+        const captureKeyboardEvents = (e: KeyboardEvent) => {
+            // Allow the event to be processed by our own handlers
+            // but stop it from reaching the page's handlers
+            // Don't block Escape key so the overlay can still be closed
+            if (e.key !== 'Escape') {
+                // stopImmediatePropagation is more aggressive than stopPropagation
+                // It stops ALL other listeners, even on the same element, even in capture phase
+                // This is necessary for sites like GitHub that use aggressive event handling
+                e.stopImmediatePropagation();
+            }
+        };
+
+        // Use capture phase to intercept events BEFORE they reach page handlers
+        // Adding to both document and window to catch all possible event targets
+        document.addEventListener('keydown', captureKeyboardEvents, true);
+        document.addEventListener('keyup', captureKeyboardEvents, true);
+        document.addEventListener('keypress', captureKeyboardEvents, true);
+        window.addEventListener('keydown', captureKeyboardEvents, true);
+        window.addEventListener('keyup', captureKeyboardEvents, true);
+        window.addEventListener('keypress', captureKeyboardEvents, true);
+
+        return () => {
+            document.removeEventListener('keydown', captureKeyboardEvents, true);
+            document.removeEventListener('keyup', captureKeyboardEvents, true);
+            document.removeEventListener('keypress', captureKeyboardEvents, true);
+            window.removeEventListener('keydown', captureKeyboardEvents, true);
+            window.removeEventListener('keyup', captureKeyboardEvents, true);
+            window.removeEventListener('keypress', captureKeyboardEvents, true);
+        };
+    }, []);
+
     // Handle keyboard shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

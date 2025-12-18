@@ -16,10 +16,6 @@ import {
 import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS } from '@/constants/toolDescriptions';
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { ADAPTIVE_ONLY_TOOLS } from './constants';
-import {
-  getCurrentLocation,
-  checkLocationPermission,
-} from '@/utils/geolocation';
 import type { ToolMode, McpToolWithServer } from './types';
 
 const log = createLogger('ToolsPopover', 'UI_CHAT');
@@ -59,8 +55,6 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   // Local UI state (not persisted)
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
   const [showSupermemoryTooltip, setShowSupermemoryTooltip] = useState<string | null>(null);
-  const [showLocationPermissionDialog, setShowLocationPermissionDialog] = useState(false);
-  const [showLocationTimeoutDialog, setShowLocationTimeoutDialog] = useState(false);
 
   const popoverRef = useRef<HTMLDivElement>(null);
   const lastDiscoveredDomainRef = useRef<string | null>(null);
@@ -189,40 +183,6 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
       if (checked && SUPERMEMORY_TOOLS.includes(tool) && !supermemoryConfigured) {
         setShowSupermemoryTooltip(tool);
         return;
-      }
-
-      // Special handling for Google Maps: Request location permission
-      if (checked && tool === 'googleMaps') {
-        log.info('Google Maps toggle: requesting location permission');
-
-        try {
-          const permissionState = await checkLocationPermission();
-          if (permissionState === 'denied') {
-            log.warn('Google Maps toggle: Location access is blocked');
-            setShowLocationPermissionDialog(true);
-            return;
-          }
-
-          const result = await getCurrentLocation({
-            timeout: 5000,
-            enableHighAccuracy: false,
-            maximumAge: 0,
-          });
-
-          if (!result.success) {
-            log.warn('Google Maps toggle: location request failed', { error: result.error });
-            if (result.error === 'timeout' || result.error === 'unavailable') {
-              setShowLocationTimeoutDialog(true);
-            } else if (result.error === 'denied') {
-              setShowLocationPermissionDialog(true);
-            }
-            return;
-          }
-          log.info('Google Maps toggle: location permission granted', result.location);
-        } catch (error) {
-          log.error('Google Maps toggle: error getting location', error);
-          return;
-        }
       }
 
       await toggleTool(tool, checked);
@@ -403,9 +363,5 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     handleToggleMcpCategory,
     handleToggleWebMcpCategoryAll,
     toggleCategory: toggleCategoryExpanded,
-    showLocationPermissionDialog,
-    setShowLocationPermissionDialog,
-    showLocationTimeoutDialog,
-    setShowLocationTimeoutDialog,
   };
 }

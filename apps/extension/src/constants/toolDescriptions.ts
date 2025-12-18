@@ -39,8 +39,6 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
 
     // Other
     getYouTubeTranscript: 'Fetch YouTube video transcript and metadata',
-    googleMaps: 'Find places and directions using Google Maps',
-    googleSearch: 'Search the web using Google Search grounding',
     generatePDF: 'Generate PDF documents',
     getReportTemplate: 'Get report templates',
 
@@ -69,7 +67,7 @@ export const TOOL_CATEGORIES: Record<string, string[]> = {
     'History': [],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],
     'Reminders': ['createReminder', 'listReminders', 'cancelReminder'],
-    'Utilities': ['getYouTubeTranscript', 'googleMaps', 'googleSearch'],
+    'Utilities': ['getYouTubeTranscript'],
     'Memory': ['addMemory', 'searchMemories']
 };
 

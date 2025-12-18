@@ -22,7 +22,6 @@ import {
   WEB_SEARCH_ONLY_TOOLS,
 } from '@/constants/toolDescriptions';
 import { isSupermemoryReady } from '@/utils/supermemory';
-import { watchLocationPermission } from '@/utils/geolocation';
 import { sendMcpMessage, sendMcpStaticMessage } from '@/lib/messaging';
 import { createLogger } from '~logger';
 import {
@@ -34,9 +33,6 @@ import {
 import type { ToolsState, ToolMode, McpToolWithServer } from './types';
 
 const log = createLogger('toolsStore', 'STORAGE');
-
-// Store cleanup function for location permission watcher
-let locationPermissionCleanup: (() => void) | null = null;
 
 // Mode tool presets imported from constants
 
@@ -383,19 +379,6 @@ export const useToolsStore = create<ToolsState>()(
         await get().checkSupermemory();
         await get().loadFromStorage();
         await get().loadMcpTools();
-
-        // Set up global location permission watcher
-        // This runs even when the popover is closed
-        if (locationPermissionCleanup) {
-          locationPermissionCleanup();
-        }
-        locationPermissionCleanup = watchLocationPermission(async (state) => {
-          const { enabledMap } = get();
-          if (state === 'denied' && enabledMap['googleMaps']) {
-            log.warn('Location permission revoked, disabling googleMaps tool');
-            await get().toggleTool('googleMaps', false);
-          }
-        });
 
         set({ isInitialized: true });
         log.info('Tools store initialized');
