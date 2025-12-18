@@ -11,7 +11,7 @@ cognito-ai/
 │   └── docs/               # @cognito/docs - Documentation (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy
-│   └── backend-vercel/     # @cognito/backend-vercel - YouTube transcript API
+│   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts
 └── [root config files]
 ```
 

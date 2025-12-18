@@ -10,6 +10,7 @@
 - **Workflow Automation:** Supports "Smart Actions" and workflows to automate browser tasks.
 - **Voice Mode:** ElevenLabs integration for conversational AI.
 - **YouTube Integration:** Dedicated API for fetching video transcripts.
+- **Backend Mode:** Optional server-side AI processing without requiring user API keys.
 
 ## Extension Structure
 
@@ -108,6 +109,44 @@ The extension supports configuration via Environment Variables. Copy `apps/exten
 | `WXT_HIDE_LOCAL_MODE` | Hide Local LLM features | `true` |
 | `WXT_YOUTUBE_BADGE_PREFETCH` | Auto-prefetch transcripts | `true` |
 | `WXT_LOG_PRESET` | Logging Level | `DEVELOPMENT` |
+| `WXT_BACKEND_API_URL` | Backend API Endpoint | Vercel Prod |
+
+## Backend Integration
+
+The extension supports two modes for AI processing:
+
+| Mode | Description | Requirements |
+|------|-------------|-------------|
+| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
+| **BYOK Mode** | Direct API calls with user's key | Google API Key |
+
+### Backend Module (`src/ai/backend/`)
+
+```text
+src/ai/backend/
+├── index.ts                   # Module exports
+├── backendChat.ts             # Simple backend chat
+├── backendChatWithTools.ts    # Chat with frontend tool execution
+├── frontendToolExecutor.ts    # Local tool execution  
+├── gracefulDegradation.ts     # Auto-fallback to BYOK
+├── streamingOptimizations.ts  # Fetch optimizations
+└── webmcpIntegration.ts       # WebMCP tool integration
+```
+
+### Switching Modes
+
+```typescript
+import { useSettingsStore } from '@/stores';
+
+// Toggle backend mode
+const setUseBackendMode = useSettingsStore((s) => s.setUseBackendMode);
+setUseBackendMode(true);  // Use backend
+setUseBackendMode(false); // Use BYOK
+```
+
+### Graceful Degradation
+
+When backend rate limits are exceeded, the extension automatically falls back to BYOK mode if the user has an API key configured.
 
 ## UI Standards
 

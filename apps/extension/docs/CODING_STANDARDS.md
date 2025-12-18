@@ -125,6 +125,43 @@ Adaptive mode (`src/ai/prompts/templates/adaptivePrompt.ts`) enables efficient t
 - Always use `discoverTools` → `executeTools` workflow for non-pre-loaded tools
 - Verify task completion by reading page state after actions
 
+## Backend Integration
+
+The extension supports two modes for AI processing configured via `useSettingsStore.useBackendMode`:
+
+| Mode | Description | API Key Required |
+|------|-------------|------------------|
+| **Backend Mode** | Routes AI through hosted Vercel backend | No |
+| **BYOK Mode** | Direct calls to Google AI from extension | Yes |
+
+### Backend Module (`src/ai/backend/`)
+- `backendChat.ts` - Simple backend chat (no tools)
+- `backendChatWithTools.ts` - Full tool execution loop with frontend tools pattern
+- `frontendToolExecutor.ts` - Execute tools locally from backend `tool_call` events
+- `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
+
+### Frontend Tools Pattern
+When using backend mode with tools:
+1. Extension sends tool schemas to backend
+2. Backend streams `tool_call` events back
+3. Extension executes tools locally via `frontendToolExecutor`
+4. Results are sent back to backend to continue generation
+
+### Mode Toggling
+```typescript
+import { useSettingsStore } from '@/stores';
+
+// Check current mode
+const useBackendMode = useSettingsStore.getState().useBackendMode;
+
+// Switch modes
+useSettingsStore.getState().setUseBackendMode(true);  // Backend mode
+useSettingsStore.getState().setUseBackendMode(false); // BYOK mode
+```
+
+### Graceful Degradation
+When backend rate limits are exceeded, the extension automatically falls back to BYOK mode if the user has an API key configured. See `src/ai/backend/gracefulDegradation.ts`.
+
 ## Performance and UX
 - Avoid heavy operations on the UI thread; use offscreen where applicable (`public/offscreen.js:1`).
 - Throttle/batch UI updates during streaming and downloads (`public/offscreen.js:46`).

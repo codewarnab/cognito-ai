@@ -14,6 +14,7 @@ This document helps AI coding assistants understand the Chrome extension.
 - **Voice Mode**: ElevenLabs integration for conversational AI
 - **Browser Automation**: Smart Actions and workflows
 - **YouTube Integration**: Video transcript extraction
+- **Backend Mode**: Server-side AI processing (no API key required)
 
 ## Architecture
 
@@ -29,6 +30,7 @@ apps/extension/
 │   ├── ai/                 # AI model integration & prompts
 │   │   ├── core/           # Core AI logic (modelSetup, aiLogic)
 │   │   ├── prompts/        # System and tool prompts
+│   │   ├── backend/        # Backend integration (chat, tools, fallback)
 │   │   └── errors/         # Error handlers
 │   ├── components/         # React UI components
 │   │   ├── features/       # Feature-specific components
@@ -172,6 +174,23 @@ const log = createLogger('FeatureName', 'CATEGORY');
 
 The extension relies on backend services:
 - **ElevenLabs Proxy**: `packages/backend-cloudflare/` for voice mode
+- **AI Chat Backend**: `packages/backend-vercel/` for AI chat (backend mode)
 - **YouTube API**: `packages/backend-vercel/` for video transcripts
+
+### Backend Integration
+
+The extension supports two modes for AI processing:
+
+| Mode | Description | Requirements |
+|------|-------------|-------------|
+| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
+| **BYOK Mode** | Direct API calls with user's key | Google API Key |
+
+Toggle modes via `useSettingsStore.setUseBackendMode()`.
+
+**Backend Module** (`src/ai/backend/`):
+- `backendChatWithTools.ts` - Full tool execution loop
+- `frontendToolExecutor.ts` - Local tool execution
+- `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
 
 See those packages' `AGENTS.md` files for their documentation.

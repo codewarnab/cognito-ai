@@ -14,6 +14,7 @@ This document helps Claude understand the Chrome extension codebase.
 - **Voice Mode**: ElevenLabs integration for conversational AI
 - **Browser Automation**: Smart Actions and workflows
 - **YouTube Integration**: Video transcript extraction
+- **Backend Mode**: Server-side AI processing (no API key required)
 
 ## Architecture
 
@@ -29,6 +30,7 @@ apps/extension/
 │   ├── ai/                 # AI model integration & prompts
 │   │   ├── core/           # Core AI logic (modelSetup, aiLogic)
 │   │   ├── prompts/        # System and tool prompts
+│   │   ├── backend/        # Backend integration (chat, tools, fallback)
 │   │   └── errors/         # Error handlers
 │   ├── components/         # React UI components
 │   │   ├── features/       # Feature-specific components
@@ -197,7 +199,27 @@ See `src/stores/README.md` for detailed documentation.
 
 The extension relies on backend services:
 - **ElevenLabs Proxy**: `packages/backend-cloudflare/` for voice mode
+- **AI Chat Backend**: `packages/backend-vercel/` for AI chat when in backend mode
 - **YouTube API**: `packages/backend-vercel/` for video transcripts
+
+### Backend Integration
+
+The extension supports two modes for AI processing:
+
+| Mode | Description | Requirements |
+|------|-------------|-------------|
+| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
+| **BYOK Mode** | Direct API calls with user's key | Google API Key |
+
+Toggle modes via `useSettingsStore.setUseBackendMode()`.
+
+**Backend Module** (`src/ai/backend/`):
+- `backendChat.ts` - Simple backend chat (no tools)
+- `backendChatWithTools.ts` - Full tool execution loop
+- `frontendToolExecutor.ts` - Execute tools locally from backend requests
+- `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
+- `streamingOptimizations.ts` - Fetch optimizations for streaming
+- `webmcpIntegration.ts` - WebMCP tool integration
 
 See those packages' `CLAUDE.md` files for their documentation.
 

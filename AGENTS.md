@@ -13,7 +13,7 @@ cognito-ai/
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
-│   └── backend-vercel/     # @cognito/backend-vercel - YouTube transcript API (Express)
+│   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 └── [root config files]
 ```
 
@@ -23,7 +23,7 @@ cognito-ai/
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/extension/AGENTS.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-cloudflare/AGENTS.md) |
-| Vercel Backend | `packages/backend-vercel/` | YouTube transcript | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/AGENTS.md) |
+| Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/AGENTS.md) |
 | Docs | `apps/docs/` | Documentation site | See `apps/docs/` |
 
 ## Git Workflow
@@ -103,8 +103,10 @@ ELEVENLABS_AGENT_ID=agent_xxx
 ### Backend Vercel (`packages/backend-vercel/`)
 ```env
 # packages/backend-vercel/.env or Vercel Dashboard
-SUPADATA_API_KEY=your_key
-JINA_API_KEY=your_key
+GOOGLE_AI_API_KEY=your_key         # For AI chat endpoints
+SUPADATA_API_KEY=your_key          # For YouTube transcripts
+JINA_API_KEY=your_key              # For URL retrieval (optional)
+TAVILY_API_KEY=your_key            # For web search (optional)
 UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_token
 ```
