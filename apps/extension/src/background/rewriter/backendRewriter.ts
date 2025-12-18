@@ -6,12 +6,12 @@
 
 import { createLogger } from '~logger';
 import type { RewriterOptions } from './geminiRewriter';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendRewriter', 'BACKGROUND');
 
-const BACKEND_URL =
-    import.meta.env.WXT_BACKEND_API_URL ||
-    'https://youtube-transcript-generator-five.vercel.app';
+// Backend API URL from centralized ENV
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendRewriteOptions extends Pick<RewriterOptions, 'preset' | 'instruction'> {
     // Gemini built-in tools (Phase 6)

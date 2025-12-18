@@ -7,13 +7,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 import { createLogger } from '~logger';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendUsage', 'AI_CHAT');
 
-// Backend API URL
-const BACKEND_URL =
-    import.meta.env.WXT_BACKEND_API_URL ||
-    'https://youtube-transcript-generator-five.vercel.app';
+// Backend API URL from centralized ENV
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface UsageInfo {
     requests: {

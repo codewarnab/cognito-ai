@@ -87,9 +87,28 @@ export async function streamAIResponse(params: {
 
   if (useBackendMode) {
     log.info('🌐 Using BACKEND MODE with tools - routing to Vercel backend');
+    // Fetch user's selected model from config
+    const modelConfig = await getModelConfig();
+    // Cast to BackendModel - if model isn't supported by backend, it will use default
+    const selectedModel = (modelConfig.remoteModel || 'gemini-2.5-flash') as import('@/stores/settings/types').BackendModel;
+
+    // Get current tools mode (chat/agent/adaptive)
+    // 'custom' mode is treated as 'agent' for backend purposes
+    const toolsMode = await getToolsMode();
+    const backendMode = toolsMode === 'custom' ? 'agent' : toolsMode;
+
+    log.info('📡 Backend mode using model:', { selectedModel, toolsMode: backendMode });
+
+    // TODO: Pass search mode settings (searchEnabled, searchDepth) when implementing search with backend
+    // TODO: Pass initialPageContext for page-aware conversations  
+    // TODO: Pass workflowId for workflow-specific behavior on backend
+    // TODO: Handle adaptive mode dynamic tool discovery on backend
+
     return streamBackendChatWithTools({
       messages,
-      systemPrompt: undefined, // Will use default on backend
+      systemPrompt: undefined, // Backend will use mode-appropriate prompt
+      model: selectedModel,
+      mode: backendMode,
       abortSignal,
       onError,
       onFinishCallback,

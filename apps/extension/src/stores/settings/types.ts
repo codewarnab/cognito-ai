@@ -2,8 +2,13 @@
  * Settings Store Types
  */
 
-/** Available backend models */
-export type BackendModel = 'gemini-2.0-flash' | 'gemini-1.5-flash' | 'gemini-1.5-pro';
+/** Available backend models - Must match RemoteModelType from @/ai/types/types.ts */
+export type BackendModel =
+  | 'gemini-3-flash-preview'
+  | 'gemini-3-pro-preview'
+  | 'gemini-2.5-pro'
+  | 'gemini-2.5-flash'
+  | 'gemini-2.0-flash';
 
 /** Backend model options for UI */
 export const BACKEND_MODEL_OPTIONS: Array<{
@@ -11,10 +16,12 @@ export const BACKEND_MODEL_OPTIONS: Array<{
   label: string;
   description: string;
 }> = [
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', description: 'Fast & capable' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', description: 'Balanced' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', description: 'Most capable (higher quota usage)' },
-];
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash', description: 'Latest & fastest' },
+    { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro', description: 'Most capable for complex tasks' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Advanced capabilities' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Previous generation flash' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', description: 'Legacy model' },
+  ];
 
 export interface SettingsState {
   // Provider settings

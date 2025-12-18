@@ -331,7 +331,10 @@ import { executeToolLocally, getToolSchemas, type ToolCall, type ToolResult } fr
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT');
 
-const BACKEND_URL = import.meta.env.WXT_BACKEND_API_URL || 'https://cognito-ai-api.vercel.app';
+// Use centralized ENV for backend URL
+import { ENV } from '@/utils/env';
+
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendChatWithToolsParams {
   messages: UIMessage[];

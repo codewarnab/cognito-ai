@@ -18,23 +18,31 @@ import {
 } from './frontendToolExecutor';
 import { createBackendController, clearBackendController } from './streamingOptimizations';
 import type { BackendModel } from '@/stores/settings/types';
+import type { ToolMode } from '@/stores/tools/types';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT');
 
-// Backend API URL - use environment variable or default to production
-const BACKEND_URL =
-    import.meta.env.WXT_BACKEND_API_URL ||
-    'https://youtube-transcript-generator-five.vercel.app';
+// Backend API URL from centralized ENV
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendChatWithToolsParams {
     messages: UIMessage[];
     systemPrompt?: string;
     model?: BackendModel;
+    /** 
+     * AI mode: 'chat' (minimal tools), 'agent' (all tools), or 'adaptive' (dynamic discovery)
+     * Backend uses this to select appropriate system prompt
+     */
+    mode?: ToolMode;
     abortSignal?: AbortSignal;
     onError?: (error: Error) => void;
     onFinishCallback?: () => void;
     onToolCall?: (toolCall: ToolCall) => void;
     onToolResult?: (result: ToolResult) => void;
+    // TODO: Add search mode support - pass searchEnabled and searchDepth to backend
+    // TODO: Add page context support - pass initialPageContext to backend  
+    // TODO: Add workflow support - pass workflowId for workflow-specific prompts
 }
 
 /**
@@ -143,7 +151,8 @@ export async function streamBackendChatWithTools(
     const {
         messages,
         systemPrompt,
-        model = 'gemini-2.0-flash',
+        model = 'gemini-2.5-flash',
+        mode = 'agent', // Default to agent mode for full tool access
         abortSignal,
         onError,
         onFinishCallback,
@@ -151,7 +160,7 @@ export async function streamBackendChatWithTools(
         onToolResult,
     } = params;
 
-    log.info('Starting backend chat with tools', { messageCount: messages.length, model });
+    log.info('Starting backend chat with tools', { messageCount: messages.length, model, mode });
 
     // Create abort controller for this request
     const controller = createBackendController();
@@ -217,7 +226,10 @@ export async function streamBackendChatWithTools(
                                     system: systemPrompt,
                                     tools: toolSchemas,
                                     model, // Use selected model
+                                    mode, // Send mode so backend can use appropriate prompt
                                     maxSteps: 1, // One step at a time for tool execution
+                                    // TODO: Add searchEnabled, searchDepth for search mode
+                                    // TODO: Add pageContext for initial page context
                                 }),
                                 signal: abortSignal || controller.signal,
                             }

@@ -323,12 +323,14 @@ export function checkSuggestionRateLimit(ip: string): boolean {
  */
 
 import { createLogger } from '~logger';
+import { ENV } from '@/utils/env';
 import type { PageContext } from '@/utils/tabs';
 import type { Suggestion } from './generator';
 
 const log = createLogger('BackendSuggestions', 'AI_PROMPTS');
 
-const BACKEND_URL = import.meta.env.WXT_BACKEND_API_URL || 'https://cognito-ai-api.vercel.app';
+// Use centralized ENV for backend URL
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 interface SimplifiedPageContext {
     url: string;

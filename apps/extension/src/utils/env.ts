@@ -26,6 +26,13 @@ export const ENV = {
      * ElevenLabs Worker URL for TTS proxy
      */
     ELEVENLABS_WORKER_URL: import.meta.env.WXT_ELEVENLABS_WORKER_URL || 'https://elevenlabs-proxy.codewarnab.workers.dev',
+    /**
+     * Backend API URL for AI chat, summarizer, writer, rewriter
+     */
+    BACKEND_API_URL: import.meta.env.WXT_BACKEND_API_URL || 'https://youtube-transcript-generator-five.vercel.app',
+    /**
+     * Metadata API URL for YouTube video metadata
+     */
     METADATA_API_URL: import.meta.env.WXT_METADATA_API_URL || 'https://youtube-transcript-generator-five.vercel.app/metadata',
 } as const;
 

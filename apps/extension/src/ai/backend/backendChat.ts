@@ -9,11 +9,12 @@ import { createUIMessageStream, generateId, type UIMessage } from 'ai';
 import { createLogger } from '~logger';
 import { createBackendController, clearBackendController } from './streamingOptimizations';
 import type { BackendModel } from '@/stores/settings/types';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendChat', 'AI_CHAT');
 
-// Backend API URL - use environment variable or default to production
-const BACKEND_URL = import.meta.env.WXT_BACKEND_API_URL || 'https://youtube-transcript-generator-five.vercel.app';
+// Backend API URL from centralized ENV
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendChatParams {
     messages: UIMessage[];

@@ -11,9 +11,11 @@ import { z } from 'zod';
 import { createLogger } from '~logger';
 import type { PageContext } from '@/utils/tabs';
 import { generateLocalContextualSuggestions } from './local';
+import { generateBackendSuggestions } from './backendSuggestions';
 import { initializeModel } from '../core/modelFactory';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { LRUCache } from '~/utils/cache/LRUCache';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 
 const log = createLogger('SuggestionGenerator', 'AI_PROMPTS');
 
@@ -55,7 +57,7 @@ export type Suggestion = {
 };
 
 /**
- * Generate contextual suggestions using AI (remote or local)
+ * Generate contextual suggestions using AI (remote, local, or backend)
  * Uses LRU cache to avoid regenerating for the same page
  * @param pageContext - Current page context
  * @param mode - AI mode ('remote' or 'local'). If 'remote', uses active provider (Vertex or Google AI)
@@ -73,6 +75,24 @@ export async function generateContextualSuggestions(
     }
 
     try {
+        // Check if we should use backend mode
+        const { useBackendMode } = useSettingsStore.getState();
+
+        if (useBackendMode) {
+            log.info('🌐 Using backend mode for suggestions');
+            const backendResult = await generateBackendSuggestions(pageContext);
+
+            if (backendResult) {
+                suggestionsCache.set(cacheKey, backendResult);
+                log.debug('📦 Cached backend suggestions', { url: pageContext?.url });
+                return backendResult;
+            }
+
+            // If backend fails, we can't fall back to local (no API key)
+            log.warn('Backend suggestion generation failed, no fallback available');
+            return null;
+        }
+
         // If local mode requested, use local AI (but skip if HIDE_LOCAL_MODE is enabled)
         if (mode === 'local') {
             if (HIDE_LOCAL_MODE) {

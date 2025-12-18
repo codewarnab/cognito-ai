@@ -544,11 +544,13 @@ Output ONLY the rewritten text, no explanations.`;
  */
 
 import { createLogger } from '~logger';
+import { ENV } from '@/utils/env';
 import type { WriterOptions } from './geminiWriter';
 
 const log = createLogger('BackendWriter', 'BACKGROUND');
 
-const BACKEND_URL = import.meta.env.WXT_BACKEND_API_URL || 'https://cognito-ai-api.vercel.app';
+// Use centralized ENV for backend URL
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendWriteOptions extends Pick<WriterOptions, 'tone' | 'pageContext'> {
     enableUrlContext?: boolean;
@@ -627,11 +629,13 @@ export async function* generateWithBackend(
  */
 
 import { createLogger } from '~logger';
+import { ENV } from '@/utils/env';
 import type { RewriterOptions } from './geminiRewriter';
 
 const log = createLogger('BackendRewriter', 'BACKGROUND');
 
-const BACKEND_URL = import.meta.env.WXT_BACKEND_API_URL || 'https://cognito-ai-api.vercel.app';
+// Use centralized ENV for backend URL
+const BACKEND_URL = ENV.BACKEND_API_URL;
 
 export interface BackendRewriteOptions extends Pick<RewriterOptions, 'preset' | 'instruction'> {
     enableUrlContext?: boolean;
