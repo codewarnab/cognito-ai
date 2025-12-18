@@ -261,19 +261,22 @@ export function useAIChat(options: UseAIChatOptions) {
     }
   }, [chat.status, setStoreStatus]);
 
-  // Sync messages FROM store TO useChat when thread changes
+  // Sync messages FROM store TO useChat when thread changes or on initial load
   // This is critical for thread switching - store loads from IndexedDB, we sync to useChat
   useEffect(() => {
-    // Only sync if store is hydrated and thread has actually changed
+    // Only sync if store is hydrated
     if (!storeIsHydrated) {
       log.info('⏳ Store not hydrated yet, skipping sync');
       return;
     }
 
-    const threadChanged = lastThreadIdRef.current !== null && lastThreadIdRef.current !== threadId;
+    // Check if we need to sync:
+    // 1. If we just switched threads (ref != current)
+    // 2. OR if this is the first time we are seeing a valid threadId (ref is null)
+    const shouldSync = lastThreadIdRef.current !== threadId;
 
-    if (threadChanged) {
-      log.info('🔄 Thread switch detected, syncing store messages to useChat', {
+    if (shouldSync) {
+      log.info('🔄 Thread switch or initial load, syncing store messages to useChat', {
         from: lastThreadIdRef.current,
         to: threadId,
         storeMessageCount: storeMessages.length

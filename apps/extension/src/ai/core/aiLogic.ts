@@ -31,7 +31,7 @@ import { executeStreamText } from '../stream/streamExecutor';
 import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
-import { streamBackendChat, streamBackendChatWithTools } from '../backend';
+import {  streamBackendChatWithTools } from '../backend';
 import { useSettingsStore } from '@/stores';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
@@ -97,7 +97,10 @@ export async function streamAIResponse(params: {
     const toolsMode = await getToolsMode();
     const backendMode = toolsMode === 'custom' ? 'agent' : toolsMode;
 
-    log.info('📡 Backend mode using model:', { selectedModel, toolsMode: backendMode });
+    // Get user's max tool call limit
+    const userMaxSteps = await getMaxToolCallLimit();
+
+    log.info('📡 Backend mode using model:', { selectedModel, toolsMode: backendMode, maxSteps: userMaxSteps });
 
     // TODO: Pass search mode settings (searchEnabled, searchDepth) when implementing search with backend
     // TODO: Pass initialPageContext for page-aware conversations  
@@ -109,6 +112,7 @@ export async function streamAIResponse(params: {
       systemPrompt: undefined, // Backend will use mode-appropriate prompt
       model: selectedModel,
       mode: backendMode,
+      maxSteps: userMaxSteps,
       abortSignal,
       onError,
       onFinishCallback,

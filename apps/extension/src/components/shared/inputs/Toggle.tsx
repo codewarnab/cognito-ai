@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as SwitchPrimitive from '@radix-ui/react-switch';
 
 interface ToggleProps {
@@ -11,6 +11,7 @@ interface ToggleProps {
 }
 
 export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, disabled, className = '', size = 'md' }) => {
+    const [isPressed, setIsPressed] = useState(false);
     const id = label ? `toggle-${label.replace(/\s+/g, '-').toLowerCase()}` : undefined;
 
     // Size configurations
@@ -19,6 +20,10 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, disabl
         md: { width: 42, height: 25, thumb: 21, translateOn: 19, translateOff: 2 },
     };
     const s = sizes[size];
+
+    // Bouncy easing function
+    const bouncyTransition = 'transform 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55)';
+    const pressedTransition = 'transform 150ms ease-out';
 
     return (
         <div className={`flex items-center gap-3 ${className}`}>
@@ -34,15 +39,19 @@ export const Toggle: React.FC<ToggleProps> = ({ checked, onChange, label, disabl
                 }}
                 checked={checked}
                 onCheckedChange={onChange}
+                onMouseDown={() => setIsPressed(true)}
+                onMouseUp={() => setIsPressed(false)}
+                onMouseLeave={() => setIsPressed(false)}
                 disabled={disabled}
                 id={id}
             >
                 <SwitchPrimitive.Thumb
-                    className="block bg-white rounded-full shadow-md transition-transform duration-100 will-change-transform"
+                    className="block bg-white rounded-full shadow-md will-change-transform"
                     style={{
                         width: s.thumb,
                         height: s.thumb,
-                        transform: checked ? `translateX(${s.translateOn}px)` : `translateX(${s.translateOff}px)`,
+                        transform: `translateX(${checked ? s.translateOn : s.translateOff}px) scale(${isPressed ? 0.9 : 1})`,
+                        transition: isPressed ? pressedTransition : bouncyTransition,
                         boxShadow: '0 2px 2px rgba(0, 0, 0, 0.2)',
                     }}
                 />

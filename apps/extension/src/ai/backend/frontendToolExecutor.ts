@@ -12,6 +12,9 @@ import { getWebMCPToolsFromBackground } from '../tools/webmcpTools';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { zodToJsonSchema } from '../utils/toolConverter';
 import { useToolsStore } from '@/stores';
+import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
+import { SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
+import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
 const log = createLogger('FrontendToolExecutor', 'TOOLS_EXECUTION');
 
@@ -40,6 +43,7 @@ let cachedTools: Record<string, any> | null = null;
  * Get all available tools for frontend execution
  * Filters based on user settings from useToolsStore
  * Includes extension tools, MCP tools, and agent tools
+ * Also includes search tools when search mode is active
  */
 async function getAllAvailableTools(): Promise<Record<string, any>> {
     // Get user's tool settings from store
@@ -48,9 +52,17 @@ async function getAllAvailableTools(): Promise<Record<string, any>> {
     const enabledMap = toolsState.enabledMap;
     const mcpDisabledTools = toolsState.mcpDisabledTools;
 
+    // Check if search mode is active
+    const searchSettings = await getSearchSettings();
+    const hasSearchKey = WEB_SEARCH_SELF_API_KEY_HIDDEN || await hasApiKeyForProvider(searchSettings.defaultProvider);
+    const isSearchModeActive = searchSettings.enabled && hasSearchKey;
+
     log.info('Filtering tools based on user settings:', {
         enabledBuiltInCount: Object.values(enabledMap).filter(v => v).length,
         mcpServersWithDisabled: Object.keys(mcpDisabledTools).length,
+        isSearchModeActive,
+        searchSettingsEnabled: searchSettings.enabled,
+        hasSearchApiKey: hasSearchKey,
     });
 
     // Get extension tools and filter by user's enabledMap
@@ -61,6 +73,21 @@ async function getAllAvailableTools(): Promise<Record<string, any>> {
             return enabledMap[name] === true;
         })
     );
+
+    // Add search tools if search mode is active
+    // Search tools are NOT in enabledMap by design (they're managed via search toggle)
+    // but when search mode is enabled, we need to include them
+    let searchTools: Record<string, any> = {};
+    if (isSearchModeActive) {
+        for (const toolName of SEARCH_TOOL_NAMES) {
+            if (allExtensionTools[toolName]) {
+                searchTools[toolName] = allExtensionTools[toolName];
+            }
+        }
+        log.info('Search mode active - adding search tools:', {
+            added: Object.keys(searchTools),
+        });
+    }
 
     // Get MCP tools and filter by user's disabled list per server
     let mcpTools: Record<string, any> = {};
@@ -130,15 +157,17 @@ async function getAllAvailableTools(): Promise<Record<string, any>> {
         agentTools.getYouTubeTranscript = getYouTubeTranscript;
     }
 
-    // Combine all tools
-    const allTools = { ...extensionTools, ...mcpTools, ...webmcpTools, ...agentTools };
+    // Combine all tools (search tools are added when search mode is active)
+    const allTools = { ...extensionTools, ...searchTools, ...mcpTools, ...webmcpTools, ...agentTools };
 
     log.info('All enabled tools for backend mode:', {
         total: Object.keys(allTools).length,
         extension: Object.keys(extensionTools).length,
+        search: Object.keys(searchTools).length,
         mcp: Object.keys(mcpTools).length,
         webmcp: Object.keys(webmcpTools).length,
         agent: Object.keys(agentTools).length,
+        isSearchModeActive,
     });
 
     return allTools;

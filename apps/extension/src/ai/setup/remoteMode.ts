@@ -9,6 +9,7 @@ import { createLogger } from '~logger';
 import { supermemoryTools } from '@supermemory/tools/ai-sdk';
 import { getAllTools } from '../tools/registryUtils';
 import { enabledTools } from '../tools/enabledTools';
+import { SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
 import { getWebMCPToolsFromBackground } from '../tools/webmcpTools';
 import { getYouTubeTranscript } from '../agents/youtube';
@@ -97,16 +98,24 @@ export async function setupRemoteMode(
                 !WORKFLOW_ONLY_TOOLS.includes(name) && enabledTools.includes(name)
             )
         );
+
+        // IMPORTANT: Always include search tools in the tools object
+        // Search tools are NOT in enabledTools (they're managed via search mode toggle)
+        // Availability is controlled by activeTools in aiLogic.ts based on search mode state
+        // But they must be present here for activeTools to be able to enable them
+        for (const searchToolName of SEARCH_TOOL_NAMES) {
+            if (allExtensionTools[searchToolName] && !extensionTools[searchToolName]) {
+                extensionTools[searchToolName] = allExtensionTools[searchToolName];
+            }
+        }
+
         log.info('🔧 Normal mode - applying enabledTools filter:', {
             excluded: WORKFLOW_ONLY_TOOLS,
             available: Object.keys(extensionTools),
             totalEnabled: enabledTools.length,
-            filtered: Object.keys(allExtensionTools).length - Object.keys(extensionTools).length
+            filtered: Object.keys(allExtensionTools).length - Object.keys(extensionTools).length,
+            searchToolsIncluded: SEARCH_TOOL_NAMES.filter(t => extensionTools[t]),
         });
-
-        // NOTE: Search tools (webSearch, retrieve, deepWebSearch) are NOT force-added here.
-        // They are only available when search mode is active, which is handled by
-        // filterToolsObjectBySearchMode() in the AI execution pipeline.
     }
 
     log.info('🔧 Extension tools loaded:', {

@@ -40,7 +40,8 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
       let state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error' = 'input-available';
 
       // Handle AI SDK v5 tool-call parts (tool is executing, no result yet)
-      if (part.type === 'tool-call') {
+      // Supports both 'tool-call' (legacy) and 'tool-input-available' (AI SDK v5)
+      if (part.type === 'tool-call' || part.type === 'tool-input-available') {
         toolName = part.toolName;
         toolCallId = part.toolCallId;
         input = part.args || part.input;
@@ -49,7 +50,8 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
         state = 'input-available'; // This means "executing/loading"
       }
       // Handle tool-result parts (tool execution completed)
-      else if (part.type === 'tool-result') {
+      // Supports both 'tool-result' (legacy) and 'tool-output-available' (AI SDK v5)
+      else if (part.type === 'tool-result' || part.type === 'tool-output-available') {
         toolName = part.toolName;
         toolCallId = part.toolCallId;
         output = part.result || part.output;

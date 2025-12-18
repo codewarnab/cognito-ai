@@ -35,6 +35,11 @@ export interface BackendChatWithToolsParams {
      * Backend uses this to select appropriate system prompt
      */
     mode?: ToolMode;
+    /**
+     * Maximum number of tool execution steps (frontend loop limit)
+     * Defaults to 10 if not specified
+     */
+    maxSteps?: number;
     abortSignal?: AbortSignal;
     onError?: (error: Error) => void;
     onFinishCallback?: () => void;
@@ -153,6 +158,7 @@ export async function streamBackendChatWithTools(
         systemPrompt,
         model = 'gemini-2.5-flash',
         mode = 'agent', // Default to agent mode for full tool access
+        maxSteps: userMaxSteps = 20, // Default to 10 if not specified
         abortSignal,
         onError,
         onFinishCallback,
@@ -204,7 +210,7 @@ export async function streamBackendChatWithTools(
                     let conversationMessages = [...simpleMessages];
                     let continueLoop = true;
                     let stepCount = 0;
-                    const maxSteps = 10;
+                    const maxSteps = userMaxSteps;
 
                     while (continueLoop && stepCount < maxSteps) {
                         stepCount++;
@@ -303,18 +309,12 @@ export async function streamBackendChatWithTools(
                                             name: toolCall.name,
                                         });
 
-                                        // Write tool call info as text for UI visibility
-                                        if (!hasStartedText) {
-                                            writer.write({
-                                                type: 'text-start',
-                                                id: messageId,
-                                            });
-                                            hasStartedText = true;
-                                        }
+                                        // Write structured tool-input-available event for proper UI rendering
                                         writer.write({
-                                            type: 'text-delta',
-                                            id: messageId,
-                                            delta: `\n🔧 Calling tool: **${toolCall.name}**\n`,
+                                            type: 'tool-input-available',
+                                            toolCallId: toolCall.id,
+                                            toolName: toolCall.name,
+                                            input: toolCall.arguments,
                                         });
                                         break;
 
@@ -362,14 +362,11 @@ export async function streamBackendChatWithTools(
                                     isError: result.isError,
                                 });
 
-                                // Write tool result info as text for UI visibility
-                                const resultPreview = result.isError
-                                    ? `❌ Error: ${result.result}`
-                                    : `✅ Done`;
+                                // Write structured tool-output-available event for proper UI rendering
                                 writer.write({
-                                    type: 'text-delta',
-                                    id: 'tool-result-' + generateId(),
-                                    delta: `${resultPreview}\n`,
+                                    type: 'tool-output-available',
+                                    toolCallId: result.id,
+                                    output: result.result,
                                 });
                             }
 
