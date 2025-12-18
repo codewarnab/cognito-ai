@@ -45,8 +45,12 @@ export interface BackendChatWithToolsParams {
     onFinishCallback?: () => void;
     onToolCall?: (toolCall: ToolCall) => void;
     onToolResult?: (result: ToolResult) => void;
+    /**
+     * Initial page context captured when conversation started.
+     * Formatted string from formatPageContextForAI()
+     */
+    initialPageContext?: string;
     // TODO: Add search mode support - pass searchEnabled and searchDepth to backend
-    // TODO: Add page context support - pass initialPageContext to backend  
     // TODO: Add workflow support - pass workflowId for workflow-specific prompts
 }
 
@@ -164,9 +168,16 @@ export async function streamBackendChatWithTools(
         onFinishCallback,
         onToolCall,
         onToolResult,
+        initialPageContext,
     } = params;
 
-    log.info('Starting backend chat with tools', { messageCount: messages.length, model, mode });
+    log.info('Starting backend chat with tools', {
+        messageCount: messages.length,
+        model,
+        mode,
+        hasPageContext: !!initialPageContext,
+        pageContextLength: initialPageContext?.length || 0,
+    });
 
     // Create abort controller for this request
     const controller = createBackendController();
@@ -234,8 +245,8 @@ export async function streamBackendChatWithTools(
                                     model, // Use selected model
                                     mode, // Send mode so backend can use appropriate prompt
                                     maxSteps: 1, // One step at a time for tool execution
+                                    pageContext: initialPageContext, // Page context for page-aware conversations
                                     // TODO: Add searchEnabled, searchDepth for search mode
-                                    // TODO: Add pageContext for initial page context
                                 }),
                                 signal: abortSignal || controller.signal,
                             }

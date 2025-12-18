@@ -31,7 +31,7 @@ import { executeStreamText } from '../stream/streamExecutor';
 import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
-import {  streamBackendChatWithTools } from '../backend';
+import { streamBackendChatWithTools } from '../backend';
 import { useSettingsStore } from '@/stores';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
@@ -103,7 +103,6 @@ export async function streamAIResponse(params: {
     log.info('📡 Backend mode using model:', { selectedModel, toolsMode: backendMode, maxSteps: userMaxSteps });
 
     // TODO: Pass search mode settings (searchEnabled, searchDepth) when implementing search with backend
-    // TODO: Pass initialPageContext for page-aware conversations  
     // TODO: Pass workflowId for workflow-specific behavior on backend
     // TODO: Handle adaptive mode dynamic tool discovery on backend
 
@@ -116,6 +115,7 @@ export async function streamAIResponse(params: {
       abortSignal,
       onError,
       onFinishCallback,
+      initialPageContext, // Pass page context for page-aware conversations
       onToolCall: (tc) => log.info('Tool call:', { name: tc.name, id: tc.id }),
       onToolResult: (tr) => log.info('Tool result:', { id: tr.id, isError: tr.isError }),
     });

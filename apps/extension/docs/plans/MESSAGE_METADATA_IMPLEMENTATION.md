@@ -18,7 +18,7 @@ The AI SDK v5 supports message metadata via the `UIMessage<T>` generic type. Thi
 1. Define the metadata type
 2. Send metadata from both BYOK and Backend modes
 3. Update the frontend to consume typed messages
-4. Display the model name in the UI
+4. (Future) Display the model name in the UI
 
 ---
 
@@ -273,39 +273,11 @@ export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
 
 ---
 
-### Phase 5: UI Integration (Optional Enhancement)
+### Phase 5: UI Integration (Future TODO)
 
-**Files to modify:**
-- `apps/extension/src/components/features/chat/components/display/MessageBubble.tsx` (or equivalent)
-
-#### Step 5.1: Display Model Name in Message UI
-
-Add a subtle model indicator to AI messages:
-
-```tsx
-// In your message component
-
-import type { CognitoUIMessage } from '@/ai/types';
-
-interface MessageProps {
-  message: CognitoUIMessage;
-}
-
-function AIMessage({ message }: MessageProps) {
-  return (
-    <div className="message-bubble">
-      {/* Existing message content */}
-      
-      {/* Model indicator - only show for assistant messages with metadata */}
-      {message.role === 'assistant' && message.metadata?.model && (
-        <span className="text-xs text-muted-foreground opacity-60">
-          {message.metadata.model}
-        </span>
-      )}
-    </div>
-  );
-}
-```
+> **Note:** We are currently only implementing the data layer. The UI display will be added in a future update .
+add this below todo in the component 
+- [ ] **TODO:** Update `MessageBubble.tsx` (or equivalent) to display the model name from `message.metadata.model`.
 
 ---
 
@@ -387,7 +359,7 @@ const dbMessages: ChatMessage[] = result.messages
 | `src/ai/hooks/useAIChat.ts` | MODIFY | Use CognitoUIMessage generic |
 | `src/stores/chat/types.ts` | MODIFY | Update message type |
 | `src/hooks/chat/useAIChatMessages.ts` | MODIFY | Use CognitoUIMessage |
-| (Optional) Message UI component | MODIFY | Display model name |
+| (Optional) Message UI component | MODIFY | (Future) Display model name |
 | (Optional) `src/db/types.ts` | MODIFY | Add metadata to ChatMessage |
 
 ---
@@ -427,7 +399,7 @@ const dbMessages: ChatMessage[] = result.messages
 | Phase 2: BYOK | 30 min | Required |
 | Phase 3: Backend | 30 min | Required |
 | Phase 4: Frontend Types | 45 min | Required |
-| Phase 5: UI | 30 min | Optional |
+| Phase 5: UI | TBD | Future |
 | Phase 6: Persistence | 30 min | Optional |
 
 **Total (Required):** ~2 hours
