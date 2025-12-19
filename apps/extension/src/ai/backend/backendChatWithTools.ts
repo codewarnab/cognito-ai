@@ -8,7 +8,7 @@
  * 4. Send results back to continue generation
  */
 
-import { createUIMessageStream, generateId, type UIMessage } from 'ai';
+import { createUIMessageStream, generateId, type UIMessage, convertToModelMessages, type ModelMessage } from 'ai';
 import { createLogger } from '~logger';
 import {
     executeToolLocally,
@@ -194,26 +194,12 @@ export async function streamBackendChatWithTools(
                         transient: true,
                     });
 
-                    // Convert UIMessages to simple format for backend
-                    // UIMessage uses 'parts' array, extract text from text parts
-                    const simpleMessages = messages
-                        .map((msg) => {
-                            let textContent = '';
-                            if (msg.parts && Array.isArray(msg.parts)) {
-                                textContent = msg.parts
-                                    .filter((part: any) => part && part.type === 'text')
-                                    .map((part: any) => part.text || '')
-                                    .join('');
-                            }
-                            return {
-                                role: msg.role,
-                                content: textContent,
-                            };
-                        })
-                        .filter((msg) => msg.content.length > 0);
+                    // Convert UIMessages to ModelMessages to preserve full history including tool invocations
+                    // This fixes the issue where previous tool calls were dropped/malformed
+                    const initialMessages = convertToModelMessages(messages);
 
                     // Tool execution loop
-                    let conversationMessages = [...simpleMessages];
+                    let conversationMessages: ModelMessage[] = [...initialMessages];
                     let continueLoop = true;
                     let stepCount = 0;
                     const maxSteps = userMaxSteps;
@@ -384,28 +370,57 @@ export async function streamBackendChatWithTools(
                             }
 
                             // Add assistant message with tool calls to conversation
+                            // Properly formatted using AI SDK Core Message format
+                            const assistantContent: Array<any> = [];
+                            if (accumulatedText) {
+                                assistantContent.push({ type: 'text', text: accumulatedText });
+                            }
+
+                            for (const tc of pendingToolCalls) {
+                                assistantContent.push({
+                                    type: 'tool-call',
+                                    toolCallId: tc.id,
+                                    toolName: tc.name,
+                                    args: tc.arguments, // Using args as AI SDK v5 convertToModelMessages uses args for tool calls usually
+                                });
+                            }
+
                             conversationMessages.push({
                                 role: 'assistant',
-                                content: accumulatedText || '',
-                                // Include tool calls in the message
-                                tool_calls: pendingToolCalls.map((tc) => ({
-                                    id: tc.id,
-                                    type: 'function',
-                                    function: {
-                                        name: tc.name,
-                                        arguments: JSON.stringify(tc.arguments),
-                                    },
-                                })),
-                            } as any);
+                                content: assistantContent,
+                            });
 
                             // Add tool results as tool messages
-                            for (const result of toolResults) {
-                                conversationMessages.push({
-                                    role: 'tool',
-                                    content: JSON.stringify(result.result),
-                                    tool_call_id: result.id,
-                                } as any);
-                            }
+                            conversationMessages.push({
+                                role: 'tool',
+                                content: toolResults.map((result) => {
+                                    const tc = pendingToolCalls.find(t => t.id === result.id);
+
+                                    // Common properties for ToolResultPart
+                                    const common = {
+                                        type: 'tool-result' as const,
+                                        toolCallId: result.id,
+                                        toolName: tc?.name || 'unknown',
+                                    };
+
+                                    const resultValue = typeof result.result === 'string'
+                                        ? result.result
+                                        : JSON.stringify(result.result);
+
+                                    if (result.isError) {
+                                        return {
+                                            ...common,
+                                            isError: true,
+                                            result: resultValue,
+                                        };
+                                    } else {
+                                        return {
+                                            ...common,
+                                            result: resultValue,
+                                        };
+                                    }
+                                }) as any,
+                            });
 
                             // Continue the loop for more generation
                             accumulatedText = '';
