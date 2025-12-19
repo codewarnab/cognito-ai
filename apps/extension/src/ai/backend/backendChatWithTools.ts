@@ -55,11 +55,20 @@ export interface BackendChatWithToolsParams {
 }
 
 /**
- * Parse AI SDK stream format
+ * Parse AI SDK v5 UI Message Stream format
  * Returns parsed events from the stream chunk
+ * 
+ * AI SDK v5 uses Server-Sent Events (SSE) format:
+ * - data: {"type":"start","messageId":"..."}
+ * - data: {"type":"text-start","id":"..."}
+ * - data: {"type":"text-delta","id":"...","delta":"Hello"}
+ * - data: {"type":"text-end","id":"..."}
+ * - data: {"type":"tool-input-available","toolCallId":"...","toolName":"...","input":{...}}
+ * - data: {"type":"finish"}
+ * - data: [DONE]
  */
 function parseStreamChunk(chunk: string): Array<{
-    type: 'text' | 'tool_call' | 'tool_result' | 'finish' | 'error' | 'unknown';
+    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'finish' | 'error' | 'unknown';
     data: any;
 }> {
     const events: Array<{ type: any; data: any }> = [];
@@ -75,24 +84,106 @@ function parseStreamChunk(chunk: string): Array<{
         if (!line.trim()) continue;
 
         try {
-            // AI SDK stream format: prefix:json_data
-            // 0: text delta
-            // 2: data message (metadata)
-            // 3: error
-            // 9: tool call
-            // a: tool result
-            // b: step finish
-            // c: step start
-            // d: finish/done (final message)
-            // e: step finish event (finishReason, usage) - NOT error!
-            // f: message start
-            if (line.startsWith('0:')) {
-                // Text delta
+            // AI SDK v5 UI Message Stream uses SSE format: "data: {...}"
+            if (line.startsWith('data: ')) {
+                const dataContent = line.slice(6); // Remove "data: " prefix
+
+                // Check for [DONE] marker
+                if (dataContent === '[DONE]') {
+                    log.info('🔍 [STREAM DEBUG] Stream done marker received');
+                    events.push({ type: 'finish', data: { done: true } });
+                    continue;
+                }
+
+                // Parse JSON data
+                const parsed = JSON.parse(dataContent);
+                const eventType = parsed.type;
+
+                log.info('🔍 [STREAM DEBUG] SSE event:', { eventType, parsed });
+
+                switch (eventType) {
+                    case 'start':
+                        // Message start - contains messageId
+                        log.info('🔍 [STREAM DEBUG] Message start:', parsed);
+                        break;
+
+                    case 'text-start':
+                        // Text block start
+                        events.push({ type: 'text_start', data: { id: parsed.id } });
+                        break;
+
+                    case 'text-delta':
+                        // Text delta
+                        log.info('🔍 [STREAM DEBUG] Text delta parsed:', { delta: parsed.delta });
+                        events.push({ type: 'text', data: parsed.delta });
+                        break;
+
+                    case 'text-end':
+                        // Text block end
+                        events.push({ type: 'text_end', data: { id: parsed.id } });
+                        break;
+
+                    case 'tool-input-available':
+                        // Tool call with complete input
+                        events.push({
+                            type: 'tool_call',
+                            data: {
+                                id: parsed.toolCallId,
+                                name: parsed.toolName,
+                                arguments: parsed.input,
+                            },
+                        });
+                        break;
+
+                    case 'tool-output-available':
+                        // Tool result
+                        events.push({ type: 'tool_result', data: parsed });
+                        break;
+
+                    case 'error':
+                        log.error('Stream error:', parsed);
+                        events.push({ type: 'error', data: { message: parsed.errorText || 'Unknown error' } });
+                        break;
+
+                    case 'finish':
+                    case 'finish-step':
+                        // Finish event
+                        log.info('🔍 [STREAM DEBUG] Finish event:', parsed);
+                        events.push({ type: 'finish', data: parsed });
+                        break;
+
+                    case 'start-step':
+                    case 'tool-input-start':
+                    case 'tool-input-delta':
+                    case 'reasoning-start':
+                    case 'reasoning-delta':
+                    case 'reasoning-end':
+                    case 'source-url':
+                    case 'source-document':
+                    case 'file':
+                        // Other event types we don't need to handle specifically
+                        log.debug('SSE event:', eventType, parsed);
+                        break;
+
+                    default:
+                        // Unknown event type
+                        if (eventType?.startsWith('data-')) {
+                            // Custom data part
+                            log.debug('Custom data part:', eventType, parsed);
+                        } else {
+                            log.debug('Unknown SSE event type:', eventType);
+                        }
+                }
+            }
+            // Legacy format support (AI SDK v4 style with numeric prefixes)
+            // Keep for backward compatibility during transition
+            else if (line.startsWith('0:')) {
+                // Text delta (legacy)
                 const text = JSON.parse(line.slice(2));
-                log.info('🔍 [STREAM DEBUG] Text delta parsed:', { text });
+                log.info('🔍 [STREAM DEBUG] Legacy text delta:', { text });
                 events.push({ type: 'text', data: text });
             } else if (line.startsWith('9:')) {
-                // Tool call - format: {"toolCallId":"xxx","toolName":"xxx","args":{...}}
+                // Tool call (legacy)
                 const toolCallData = JSON.parse(line.slice(2));
                 events.push({
                     type: 'tool_call',
@@ -103,11 +194,11 @@ function parseStreamChunk(chunk: string): Array<{
                     },
                 });
             } else if (line.startsWith('a:')) {
-                // Tool result
+                // Tool result (legacy)
                 const resultData = JSON.parse(line.slice(2));
                 events.push({ type: 'tool_result', data: resultData });
             } else if (line.startsWith('3:')) {
-                // Error - only '3:' prefix is for errors in AI SDK
+                // Error (legacy)
                 try {
                     const errorData = JSON.parse(line.slice(2));
                     events.push({ type: 'error', data: errorData });
@@ -115,36 +206,28 @@ function parseStreamChunk(chunk: string): Array<{
                     events.push({ type: 'error', data: { message: line.slice(2) } });
                 }
             } else if (line.startsWith('d:') || line.startsWith('e:')) {
-                // Finish/done signal
-                // 'd:' = final message finish
-                // 'e:' = step finish event (contains finishReason, usage, isContinued)
-                // Both indicate successful completion, NOT errors
+                // Finish/done signal (legacy)
                 try {
                     const finishData = JSON.parse(line.slice(2));
-                    log.info('🔍 [STREAM DEBUG] Finish event parsed:', { prefix: line[0], finishData });
+                    log.info('🔍 [STREAM DEBUG] Legacy finish event:', { prefix: line[0], finishData });
                     events.push({ type: 'finish', data: finishData });
                 } catch {
-                    log.info('🔍 [STREAM DEBUG] Finish event (no data):', { prefix: line[0] });
+                    log.info('🔍 [STREAM DEBUG] Legacy finish event (no data):', { prefix: line[0] });
                     events.push({ type: 'finish', data: null });
                 }
-            } else if (line.startsWith('f:')) {
-                // Message start - contains messageId
-                log.info('🔍 [STREAM DEBUG] Message start:', line.slice(2));
-            } else if (line.startsWith('2:')) {
-                // Data message (metadata)
-                log.debug('Data message:', line.slice(2));
-            } else if (line.startsWith('b:')) {
-                // Step finish
-                log.debug('Step finish:', line.slice(2));
-            } else if (line.startsWith('c:')) {
-                // Step start
-                log.debug('Step start:', line.slice(2));
+            } else if (line.startsWith('f:') || line.startsWith('2:') ||
+                line.startsWith('b:') || line.startsWith('c:')) {
+                // Other legacy message types
+                log.debug('Legacy stream line:', line.substring(0, 50));
+            } else if (line.startsWith(':')) {
+                // SSE comment/keep-alive ping - ignore
+                log.debug('SSE ping/comment:', line);
             } else {
                 // Unknown format
                 log.debug('Unknown stream line format:', line.substring(0, 50));
             }
         } catch (e) {
-            log.warn('Failed to parse stream line:', line.substring(0, 100));
+            log.warn('Failed to parse stream line:', line.substring(0, 100), e);
         }
     }
 
@@ -337,6 +420,12 @@ export async function streamBackendChatWithTools(
 
                                     case 'finish':
                                         log.info('Stream finished signal received');
+                                        break;
+
+                                    case 'text_start':
+                                    case 'text_end':
+                                        // These are handled by our manual hasStartedText logic
+                                        // Ignore the events from the parser
                                         break;
                                 }
                             }
