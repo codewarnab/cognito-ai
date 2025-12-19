@@ -1,9 +1,44 @@
 /**
- * WebMCP Manager
- *
- * Manages WebMCP tools state for the active tab only.
- * Unlike the reference WebMCP extension which tracks all tabs,
- * we only track tools from the currently active tab.
+ * WebMCP Manager - State Management for Web-based Model Context Protocol
+ * 
+ * WebMCP (Web-based Model Context Protocol) extends the MCP standard to enable
+ * tool discovery and execution directly from websites. This manager handles the
+ * state and lifecycle of WebMCP tools discovered from the active browser tab.
+ * 
+ * ## What is WebMCP?
+ * 
+ * WebMCP allows websites to expose tools that AI assistants can discover and execute.
+ * Unlike traditional MCP servers that run as separate services, WebMCP tools are
+ * embedded in web pages and executed in the browser context.
+ * 
+ * ## Active Tab Only Design
+ * 
+ * Unlike some WebMCP implementations that track all tabs, this manager intentionally
+ * tracks **only the active tab**. This design choice:
+ * 
+ * - **Reduces memory usage** - No need to store tools from all tabs
+ * - **Simplifies state** - Clear mental model for users
+ * - **Avoids stale data** - Tools are always fresh from current page
+ * - **Improves security** - Only interacts with the tab user is viewing
+ * 
+ * ## State Management
+ * 
+ * The manager maintains an in-memory state that includes:
+ * - Currently discovered tools from the active tab
+ * - Active tab ID and domain
+ * - Discovery status
+ * - Last update timestamp
+ * 
+ * ## Event Flow
+ * 
+ * 1. Tab activation triggers `setActiveTab()`
+ * 2. Manager sends `webmcp/tools/refresh` to content script
+ * 3. Content script discovers tools and sends `webmcp/tools/register`
+ * 4. Manager updates state and notifies listeners
+ * 5. UI receives `webmcp/tools/updated` broadcast
+ * 
+ * @module background/webmcp
+ * @see {@link file://./README.md | WebMCP Module README}
  */
 
 import { createLogger } from '~logger';

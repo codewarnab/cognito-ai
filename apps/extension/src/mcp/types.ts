@@ -1,5 +1,25 @@
 /**
  * Type definitions for MCP (Model Context Protocol) integration
+ * 
+ * MCP (Model Context Protocol) is an open standard developed by Anthropic that enables
+ * AI models to connect with external tools, data sources, and services. It provides
+ * a standardized way for AI assistants to:
+ * 
+ * - **Discover** available tools and resources from MCP servers
+ * - **Execute** tool calls with structured input/output
+ * - **Read** resources like documents, databases, or APIs
+ * - **Use** prompts and templates provided by servers
+ * 
+ * This module defines TypeScript types for:
+ * - Connection states and lifecycle management
+ * - OAuth 2.0 authentication with Dynamic Client Registration
+ * - MCP protocol messages (JSON-RPC 2.0 based)
+ * - Tool, resource, and prompt definitions
+ * - Server status and configuration
+ * 
+ * @see {@link https://modelcontextprotocol.io/ | MCP Specification}
+ * @see {@link https://github.com/anthropics/mcp-sdk-js | MCP SDK}
+ * @module mcp/types
  */
 
 /**

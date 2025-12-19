@@ -1,6 +1,43 @@
 /**
- * WebMCP (Browser-based MCP) type definitions
- * For discovering and executing tools from websites with WebMCP servers
+ * WebMCP (Web-based Model Context Protocol) Type Definitions
+ * 
+ * WebMCP extends the MCP (Model Context Protocol) standard to enable tool discovery
+ * and execution directly from websites. Unlike traditional MCP servers that run as
+ * separate services, WebMCP tools are embedded in web pages and executed in the
+ * browser context.
+ * 
+ * ## What is WebMCP?
+ * 
+ * WebMCP allows websites to expose tools that AI assistants can discover and execute.
+ * This enables seamless integration with web applications without requiring separate
+ * MCP server infrastructure.
+ * 
+ * ## Key Differences from Server-based MCP
+ * 
+ * | Aspect | MCP (Server-based) | WebMCP (Browser-based) |
+ * |--------|-------------------|----------------------|
+ * | Where | Remote server | Active browser tab |
+ * | Discovery | Via SSE connection | Via content script |
+ * | Execution | Server-side | Client-side (in webpage) |
+ * | Scope | Always available | Only on active tab |
+ * | Auth | OAuth 2.0 | Uses existing webpage session |
+ * 
+ * ## Architecture
+ * 
+ * 1. Content script (`webmcp-proxy.content.ts`) is injected into web pages
+ * 2. Script detects WebMCP tools and reports to background service worker
+ * 3. WebMCP Manager (`background/webmcp/manager.ts`) tracks active tab's tools
+ * 4. AI can discover and execute tools via the standard tool interface
+ * 
+ * ## Tool Naming Convention
+ * 
+ * WebMCP tools are prefixed to avoid conflicts:
+ * ```
+ * webmcp_{domain}_{toolName}
+ * ```
+ * 
+ * @module types/webmcp
+ * @see {@link file://./../../background/webmcp/README.md | WebMCP Module README}
  */
 
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';

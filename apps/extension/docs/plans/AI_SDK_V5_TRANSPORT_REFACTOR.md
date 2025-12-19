@@ -367,6 +367,12 @@ writeErrorToStream(writer, appError, 'Backend chat');
 Create/update docs explaining the transport architecture:
 
 **File**: `apps/extension/docs/TRANSPORT_ARCHITECTURE.md`
+ALso update     
+.kiro of the extension  folder 
+.coding standards in extension folder 
+AGENTS.md in the extension folder
+GEMINI.md in the extension folder
+CLAUDE.md in the extension folder 
 
 ```markdown
 # Transport Architecture

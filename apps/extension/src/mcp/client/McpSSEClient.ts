@@ -1,12 +1,43 @@
 /**
- * Generic MCP SSE Client
- * Handles Server-Sent Events connection to MCP servers
+ * MCP SSE Client - Server-Sent Events client for Model Context Protocol
  * 
- * Enhanced with comprehensive error handling:
+ * This client implements the MCP (Model Context Protocol) specification for connecting
+ * to MCP servers using Server-Sent Events (SSE) for real-time communication. MCP is
+ * an open standard that enables AI models to interact with external tools and data.
+ * 
+ * ## Transport Modes
+ * 
+ * The client supports two transport modes:
+ * 
+ * 1. **Streamable HTTP** (newer) - Single HTTP connection with bidirectional streaming
+ *    - Initialization happens during connection
+ *    - Session ID received from response headers
+ * 
+ * 2. **HTTP+SSE** (legacy) - Separate SSE stream for server→client, POST for client→server
+ *    - Waits for endpoint event from SSE
+ *    - Then sends initialize request via POST
+ * 
+ * ## Features
+ * 
  * - Automatic retry with exponential backoff
  * - Detailed error categorization (network, auth, server errors)
  * - Rate limit detection and handling
  * - Connection recovery and reconnection
+ * - OAuth token integration
+ * - Request/response tracking with timeout handling
+ * 
+ * ## Architecture
+ * 
+ * The client uses a modular architecture with separate managers:
+ * - `ConnectionManager` - Connection lifecycle and reconnection
+ * - `TransportDetector` - Transport type detection and endpoint handling
+ * - `StreamProcessor` - SSE stream parsing and message extraction
+ * - `RequestManager` - Request/response tracking and timeout handling
+ * - `MessageHandler` - MCP message processing and routing
+ * - `ErrorHandler` - Error categorization and recovery
+ * 
+ * @see {@link https://modelcontextprotocol.io/ | MCP Specification}
+ * @module mcp/client
  */
 
 import type {
