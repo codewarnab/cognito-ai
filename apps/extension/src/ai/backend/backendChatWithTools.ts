@@ -17,6 +17,9 @@ import {
     type ToolResult,
 } from './frontendToolExecutor';
 import { createBackendController, clearBackendController } from './streamingOptimizations';
+import { writeErrorToStream } from '../stream/streamHelpers';
+import { parseGeminiError } from '../errors/handlers';
+import { APIError, NetworkError } from '../../errors/errorTypes';
 import type { BackendModel } from '@/stores/settings/types';
 import type { ToolMode } from '@/stores/tools/types';
 import { ENV } from '@/utils/env';
@@ -55,76 +58,56 @@ export interface BackendChatWithToolsParams {
 }
 
 /**
- * Parse AI SDK v5 UI Message Stream format
- * Returns parsed events from the stream chunk
+ * Parse AI SDK v5 UI Message Stream format (SSE only)
  * 
- * AI SDK v5 uses Server-Sent Events (SSE) format:
- * - data: {"type":"start","messageId":"..."}
- * - data: {"type":"text-start","id":"..."}
- * - data: {"type":"text-delta","id":"...","delta":"Hello"}
- * - data: {"type":"text-end","id":"..."}
- * - data: {"type":"tool-input-available","toolCallId":"...","toolName":"...","input":{...}}
- * - data: {"type":"finish"}
- * - data: [DONE]
+ * Format: data: {"type":"...", ...}
+ * 
+ * Supported types:
+ * - start: Message start with messageId
+ * - text-start/text-delta/text-end: Text streaming
+ * - tool-input-available: Complete tool call ready for execution
+ * - tool-output-available: Tool result
+ * - finish/finish-step: Stream completion
+ * - error: Stream error
  */
 function parseStreamChunk(chunk: string): Array<{
-    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'finish' | 'error' | 'unknown';
+    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'finish' | 'error';
     data: any;
 }> {
     const events: Array<{ type: any; data: any }> = [];
-
-    log.info('🔍 [STREAM DEBUG] Parsing chunk:', {
-        chunkLength: chunk.length,
-        chunkPreview: chunk.substring(0, 200),
-        lineCount: chunk.split('\n').length,
-    });
     const lines = chunk.split('\n');
 
     for (const line of lines) {
         if (!line.trim()) continue;
 
-        try {
-            // AI SDK v5 UI Message Stream uses SSE format: "data: {...}"
-            if (line.startsWith('data: ')) {
-                const dataContent = line.slice(6); // Remove "data: " prefix
+        // AI SDK v5 SSE format: "data: {...}"
+        if (line.startsWith('data: ')) {
+            const dataContent = line.slice(6);
 
-                // Check for [DONE] marker
-                if (dataContent === '[DONE]') {
-                    log.info('🔍 [STREAM DEBUG] Stream done marker received');
-                    events.push({ type: 'finish', data: { done: true } });
-                    continue;
-                }
+            // Stream termination marker
+            if (dataContent === '[DONE]') {
+                events.push({ type: 'finish', data: { done: true } });
+                continue;
+            }
 
-                // Parse JSON data
+            try {
                 const parsed = JSON.parse(dataContent);
                 const eventType = parsed.type;
 
-                log.info('🔍 [STREAM DEBUG] SSE event:', { eventType, parsed });
-
                 switch (eventType) {
-                    case 'start':
-                        // Message start - contains messageId
-                        log.info('🔍 [STREAM DEBUG] Message start:', parsed);
-                        break;
-
                     case 'text-start':
-                        // Text block start
                         events.push({ type: 'text_start', data: { id: parsed.id } });
                         break;
 
                     case 'text-delta':
-                        // Text delta
-                        log.info('🔍 [STREAM DEBUG] Text delta parsed:', { delta: parsed.delta });
                         events.push({ type: 'text', data: parsed.delta });
                         break;
 
                     case 'text-end':
-                        // Text block end
                         events.push({ type: 'text_end', data: { id: parsed.id } });
                         break;
 
                     case 'tool-input-available':
-                        // Tool call with complete input
                         events.push({
                             type: 'tool_call',
                             data: {
@@ -136,7 +119,6 @@ function parseStreamChunk(chunk: string): Array<{
                         break;
 
                     case 'tool-output-available':
-                        // Tool result
                         events.push({ type: 'tool_result', data: parsed });
                         break;
 
@@ -147,88 +129,18 @@ function parseStreamChunk(chunk: string): Array<{
 
                     case 'finish':
                     case 'finish-step':
-                        // Finish event
-                        log.info('🔍 [STREAM DEBUG] Finish event:', parsed);
                         events.push({ type: 'finish', data: parsed });
                         break;
 
-                    case 'start-step':
-                    case 'tool-input-start':
-                    case 'tool-input-delta':
-                    case 'reasoning-start':
-                    case 'reasoning-delta':
-                    case 'reasoning-end':
-                    case 'source-url':
-                    case 'source-document':
-                    case 'file':
-                        // Other event types we don't need to handle specifically
-                        log.debug('SSE event:', eventType, parsed);
-                        break;
-
+                    // Ignore other event types (start, start-step, reasoning-*, source-*, file, etc.)
                     default:
-                        // Unknown event type
-                        if (eventType?.startsWith('data-')) {
-                            // Custom data part
-                            log.debug('Custom data part:', eventType, parsed);
-                        } else {
-                            log.debug('Unknown SSE event type:', eventType);
-                        }
+                        break;
                 }
+            } catch (e) {
+                // Ignore unparseable lines
             }
-            // Legacy format support (AI SDK v4 style with numeric prefixes)
-            // Keep for backward compatibility during transition
-            else if (line.startsWith('0:')) {
-                // Text delta (legacy)
-                const text = JSON.parse(line.slice(2));
-                log.info('🔍 [STREAM DEBUG] Legacy text delta:', { text });
-                events.push({ type: 'text', data: text });
-            } else if (line.startsWith('9:')) {
-                // Tool call (legacy)
-                const toolCallData = JSON.parse(line.slice(2));
-                events.push({
-                    type: 'tool_call',
-                    data: {
-                        id: toolCallData.toolCallId,
-                        name: toolCallData.toolName,
-                        arguments: toolCallData.args,
-                    },
-                });
-            } else if (line.startsWith('a:')) {
-                // Tool result (legacy)
-                const resultData = JSON.parse(line.slice(2));
-                events.push({ type: 'tool_result', data: resultData });
-            } else if (line.startsWith('3:')) {
-                // Error (legacy)
-                try {
-                    const errorData = JSON.parse(line.slice(2));
-                    events.push({ type: 'error', data: errorData });
-                } catch {
-                    events.push({ type: 'error', data: { message: line.slice(2) } });
-                }
-            } else if (line.startsWith('d:') || line.startsWith('e:')) {
-                // Finish/done signal (legacy)
-                try {
-                    const finishData = JSON.parse(line.slice(2));
-                    log.info('🔍 [STREAM DEBUG] Legacy finish event:', { prefix: line[0], finishData });
-                    events.push({ type: 'finish', data: finishData });
-                } catch {
-                    log.info('🔍 [STREAM DEBUG] Legacy finish event (no data):', { prefix: line[0] });
-                    events.push({ type: 'finish', data: null });
-                }
-            } else if (line.startsWith('f:') || line.startsWith('2:') ||
-                line.startsWith('b:') || line.startsWith('c:')) {
-                // Other legacy message types
-                log.debug('Legacy stream line:', line.substring(0, 50));
-            } else if (line.startsWith(':')) {
-                // SSE comment/keep-alive ping - ignore
-                log.debug('SSE ping/comment:', line);
-            } else {
-                // Unknown format
-                log.debug('Unknown stream line format:', line.substring(0, 50));
-            }
-        } catch (e) {
-            log.warn('Failed to parse stream line:', line.substring(0, 100), e);
         }
+        // Ignore SSE comments/pings (lines starting with :)
     }
 
     return events;
@@ -320,6 +232,7 @@ export async function streamBackendChatWithTools(
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'Connection': 'keep-alive',
+                                    'Accept': 'text/event-stream',
                                 },
                                 body: JSON.stringify({
                                     messages: conversationMessages,
@@ -527,9 +440,6 @@ export async function streamBackendChatWithTools(
                     clearBackendController();
                     log.error('Backend chat with tools error:', error);
 
-                    const errorMessage =
-                        error instanceof Error ? error.message : 'Unknown error';
-
                     // Check if aborted
                     if (error instanceof Error && error.name === 'AbortError') {
                         log.info('Backend chat was aborted by user');
@@ -542,12 +452,13 @@ export async function streamBackendChatWithTools(
                         return;
                     }
 
-                    // Write error to stream
-                    writer.write({
-                        type: 'text-delta',
-                        id: 'error-' + generateId(),
-                        delta: `\n\n❌ **Error:** ${errorMessage}\n\nPlease try again or switch to BYOK mode with your own API key.`,
-                    });
+                    // Parse error into our error types for consistent UX across BYOK and backend modes
+                    const appError = error instanceof APIError || error instanceof NetworkError
+                        ? error
+                        : parseGeminiError(error);
+
+                    // Write unified error to stream
+                    writeErrorToStream(writer, appError, 'Backend chat');
 
                     // Send error status
                     writer.write({
@@ -557,9 +468,7 @@ export async function streamBackendChatWithTools(
                         transient: false,
                     });
 
-                    onError?.(
-                        error instanceof Error ? error : new Error(errorMessage)
-                    );
+                    onError?.(appError);
                 }
             },
         });
