@@ -21,6 +21,14 @@
   - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@/ai';`)
   - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@/ai/core/modelSetup';`)
 
+## Environment Variables
+- **CRITICAL**: Always use the centralized `ENV` module from `@/utils/env` instead of directly accessing `import.meta.env` or `process.env`
+- Example:
+  - ✅ `import { ENV } from '@/utils/env'; const url = ENV.BACKEND_API_URL;`
+  - ❌ `const url = import.meta.env.WXT_BACKEND_API_URL;`
+  - ❌ `const url = process.env.WXT_BACKEND_API_URL;`
+- See `src/utils/env.ts` for available variables and defaults
+
 ## Imports
 - **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
 - Group imports at the top; never define functions/constants between import blocks

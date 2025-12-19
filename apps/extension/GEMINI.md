@@ -145,16 +145,29 @@ pnpm --filter @cognito/docs build
 
 ## Configuration
 
-The extension supports configuration via Environment Variables. Copy `apps/extension/.env.example` to `apps/extension/.env` to customize:
+The extension supports configuration via Environment Variables. Copy `apps/extension/.env.example` to `apps/extension/.env` to customize.
+
+**CRITICAL**: Always use the centralized `ENV` module instead of directly accessing `import.meta.env` or `process.env`:
+
+```typescript
+// ✅ CORRECT - Use centralized ENV module
+import { ENV } from '@/utils/env';
+
+const workerUrl = ENV.ELEVENLABS_WORKER_URL;
+const backendUrl = ENV.BACKEND_API_URL;
+
+// ❌ WRONG - Never access directly
+const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
+const backendUrl = process.env.WXT_BACKEND_API_URL;
+```
+
+See `src/utils/env.ts` for all available environment variables with defaults.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `WXT_TRANSCRIPT_API_URL` | YouTube Transcript API Endpoint | Vercel Prod |
-| `WXT_RETRIEVE_API_URL` | URL Retrieval API Endpoint | Vercel Prod |
-| `WXT_HIDE_LOCAL_MODE` | Hide Local LLM features | `true` |
-| `WXT_YOUTUBE_BADGE_PREFETCH` | Auto-prefetch transcripts | `true` |
-| `WXT_LOG_PRESET` | Logging Level | `DEVELOPMENT` |
+| `WXT_ELEVENLABS_WORKER_URL` | ElevenLabs Worker URL | Cloudflare Prod |
 | `WXT_BACKEND_API_URL` | Backend API Endpoint | Vercel Prod |
+| `WXT_METADATA_API_URL` | Metadata API URL | Vercel Prod |
 
 ## Backend Integration
 

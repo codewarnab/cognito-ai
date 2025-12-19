@@ -63,6 +63,22 @@ pnpm build
 
 ## Environment Variables
 
+**CRITICAL**: Always use the centralized `ENV` module instead of directly accessing `import.meta.env` or `process.env`:
+
+```typescript
+// ✅ CORRECT - Use centralized ENV module
+import { ENV } from '@/utils/env';
+
+const workerUrl = ENV.ELEVENLABS_WORKER_URL;
+const backendUrl = ENV.BACKEND_API_URL;
+
+// ❌ WRONG - Never access directly
+const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
+const backendUrl = process.env.WXT_BACKEND_API_URL;
+```
+
+See `src/utils/env.ts` for all available environment variables with defaults.
+
 ```env
 # apps/extension/.env
 WXT_ELEVENLABS_WORKER_URL=https://your-worker.workers.dev

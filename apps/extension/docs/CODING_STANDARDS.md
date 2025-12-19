@@ -31,6 +31,22 @@
 - **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks.
 - **CRITICAL**: Remove duplicate imports of the same identifier; consolidate into single import statement.
 
+## Environment Variables
+- **CRITICAL**: Always use the centralized `ENV` module from `@/utils/env` instead of directly accessing `import.meta.env` or `process.env`.
+- The `ENV` module provides typed access to all WXT environment variables with sensible defaults.
+- Examples:
+  ```typescript
+  // ✅ CORRECT - Use centralized ENV module
+  import { ENV } from '@/utils/env';
+  const workerUrl = ENV.ELEVENLABS_WORKER_URL;
+  const backendUrl = ENV.BACKEND_API_URL;
+  
+  // ❌ WRONG - Never access directly
+  const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
+  const backendUrl = process.env.WXT_BACKEND_API_URL;
+  ```
+- See `src/utils/env.ts` for all available environment variables with their default values.
+
 ## Logger Usage
 - Initialize a module-scoped logger and reuse it:
   - `const log = createLogger('FeatureName');` or with context `createLogger('FeatureName', 'CONTEXT')` (`src/ai/core/modelSetup.ts:36`).
