@@ -396,8 +396,9 @@ export async function streamAIResponse(params: {
                 const currentToolsMode = await getToolsMode();
 
                 // Determine if mode changed from initial setup
+                // Skip mode change detection when in workflow mode - workflow prompt should be preserved
                 const modeChanged = currentSearchModeActive !== isSearchModeActive;
-                const toolsModeChanged = !currentSearchModeActive && !isSearchModeActive &&
+                const toolsModeChanged = !workflowConfig && !currentSearchModeActive && !isSearchModeActive &&
                   ((currentToolsMode === 'chat') !== (enhancedPrompt === chatModeSystemPrompt));
 
                 let stepPrompt: string | undefined;
@@ -418,16 +419,18 @@ export async function streamAIResponse(params: {
                     log.info('🌐 Switched to ADAPTIVE MODE - Search tools discoverable');
                   } else if (currentSearchModeActive) {
                     // Search mode enabled: append search instructions, include all tools
-                    stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
-                      ? chatModeSystemPrompt
-                      : remoteSystemPrompt;
+                    // Preserve workflow prompt if in workflow mode
+                    stepPrompt = workflowConfig
+                      ? workflowConfig.systemPrompt
+                      : (currentToolsMode === 'chat' ? chatModeSystemPrompt : remoteSystemPrompt);
                     stepPrompt += '\n\n' + getSearchPromptAddition(true);
                     stepActiveTools = Object.keys(tools);
                     log.info('🔍 Switched to SEARCH MODE (additive)');
                   } else {
-                    stepPrompt = (currentToolsMode === 'chat' && !workflowConfig)
-                      ? chatModeSystemPrompt
-                      : remoteSystemPrompt;
+                    // Preserve workflow prompt if in workflow mode
+                    stepPrompt = workflowConfig
+                      ? workflowConfig.systemPrompt
+                      : (currentToolsMode === 'chat' ? chatModeSystemPrompt : remoteSystemPrompt);
                     // In non-search mode, exclude search tools
                     stepActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
                     log.info(`📝 Switched to ${currentToolsMode.toUpperCase()} MODE`);

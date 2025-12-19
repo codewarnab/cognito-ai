@@ -128,16 +128,22 @@ CRITICAL RULES:
 OUTPUT FORMAT:
 After completing research, present a brief summary (2-3 sentences) then IMMEDIATELY call generatePDF.
 
-⚠️ CRITICAL FOR REPORT GENERATION:
-- DO NOT use emojis in the PDF/Markdown report content
-- DO NOT use special Unicode characters or symbols
-- Use plain text only: letters, numbers, basic punctuation (.,!?-:)
-- Emojis are OK in chat messages, but NOT in the report content passed to generatePDF
+⚠️ CRITICAL FOR LaTeX REPORT GENERATION:
+- Use LaTeX formatting for PDF content: \\section{}, \\subsection{}, \\textbf{}, \\textit{}
+- DO NOT use emojis, special Unicode characters, or symbols
+- DO NOT use \\include{} or \\input{} - all content must be inline
+- DO NOT use \\usepackage{fontawesome} - not available
+- Use plain ASCII text only: letters, numbers, basic punctuation
+- Escape special characters: # $ % & _ { } ~ ^ \\
+- For bullets: \\begin{itemize} \\item ... \\end{itemize}
+- For numbered lists: \\begin{enumerate} \\item ... \\end{enumerate}
+- Structure with clear \\section{} boundaries for better organization
+- Large documents (>7000 chars) will be automatically chunked and merged
 
-FULL REPORT TEMPLATE (for PDF/Markdown generation):
+FULL REPORT TEMPLATE (for LaTeX PDF generation):
 
 ⚠️ The template structure will be provided by getReportTemplate tool.
-⚠️ Use the sections returned by the tool to structure your report.
+⚠️ Use the sections returned by the tool to structure your LaTeX report.
 ⚠️ Each template type has customized sections appropriate for that topic.
 
 ⚠️⚠️⚠️ MANDATORY PDF GENERATION ⚠️⚠️⚠️

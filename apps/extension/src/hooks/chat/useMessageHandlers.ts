@@ -11,6 +11,9 @@ import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import type { UIMessage } from 'ai';
+import { workflowSessionManager } from '@/workflows/sessionManager';
+import { getWorkflow } from '@/workflows/registry';
+import { parseWorkflowCommand, isSlashCommand } from '@/utils/chat';
 
 const log = createLogger('useMessageHandlers', 'AI_CHAT');
 
@@ -82,7 +85,7 @@ export function useMessageHandlers({
             // Skip validation if backend mode is enabled (uses server-side API key)
             const config = await getModelConfig();
             const useBackendMode = useSettingsStore.getState().useBackendMode;
-            
+
             if (!useBackendMode && (HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
                 onError?.(
                     'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
@@ -113,10 +116,59 @@ export function useMessageHandlers({
                 }
             }
 
-            let finalMessage = trimmedInput;
+            // Extract clean display message and detect workflows
+            // We want to show the user query without the /command prefix in the UI
+            let displayMessage = trimmedInput;
+            let detectedWorkflowId: string | undefined = workflowId;
+
+            // If workflowId was provided (from workflow dropdown selection), just use clean message
             if (workflowId) {
-                log.info("Workflow mode active", { workflowId });
-                finalMessage = `/${workflowId} ${trimmedInput}`;
+                log.info("Workflow mode active via selection", { workflowId });
+                displayMessage = trimmedInput;
+            } else if (isSlashCommand(trimmedInput)) {
+                // If user typed a slash command directly, parse and strip it for display
+                const parsed = parseWorkflowCommand(trimmedInput);
+                if (parsed && parsed.query) {
+                    detectedWorkflowId = parsed.workflowId;
+                    displayMessage = parsed.query; // Clean query without /command prefix
+                    log.info("Workflow detected from slash command", {
+                        workflowId: detectedWorkflowId,
+                        displayMessage
+                    });
+                }
+            }
+
+            // Start workflow session if we have a workflow (either from selection or slash command)
+            if (detectedWorkflowId && currentThreadId) {
+                const workflow = getWorkflow(detectedWorkflowId);
+                if (workflow) {
+                    // Check if session already exists (avoid duplicates)
+                    const existingSession = workflowSessionManager.getSession(currentThreadId);
+                    if (!existingSession) {
+                        const sessionId = workflowSessionManager.startSession(currentThreadId, workflow);
+                        log.info("Started workflow session in useMessageHandlers", {
+                            sessionId,
+                            workflowId: detectedWorkflowId,
+                            threadId: currentThreadId
+                        });
+
+                        // Initialize research context if this is the research workflow
+                        if (detectedWorkflowId === 'research') {
+                            try {
+                                const { startResearchContext } = await import('@/workflows/researchContext');
+                                startResearchContext({
+                                    threadId: currentThreadId,
+                                    userRequest: displayMessage
+                                });
+                                log.info("Research context initialized", { userRequest: displayMessage });
+                            } catch (err) {
+                                log.error("Failed to initialize research context", err);
+                            }
+                        }
+                    }
+                } else {
+                    log.warn("Workflow not found", { workflowId: detectedWorkflowId });
+                }
             }
 
             // Capture page context for first message
@@ -179,10 +231,10 @@ export function useMessageHandlers({
 
                         messageParts = [];
 
-                        if (finalMessage) {
+                        if (displayMessage) {
                             messageParts.push({
                                 type: 'text',
-                                text: finalMessage
+                                text: displayMessage
                             });
                         }
 
@@ -214,10 +266,10 @@ export function useMessageHandlers({
                     const tabMessageParts: any[] = messageParts?.length ? messageParts : [];
 
                     // Add text if not already added
-                    if (finalMessage && !tabMessageParts.some(p => p.type === 'text')) {
+                    if (displayMessage && !tabMessageParts.some(p => p.type === 'text')) {
                         tabMessageParts.push({
                             type: 'text',
-                            text: finalMessage
+                            text: displayMessage
                         });
                     }
 
@@ -282,7 +334,8 @@ export function useMessageHandlers({
             }
 
             // Regular message (no attachments)
-            sendMessage({ text: finalMessage });
+            // Use displayMessage which has the slash command prefix stripped for clean UI display
+            sendMessage({ text: displayMessage });
         } finally {
             // Reset sending flag after a short delay
             setTimeout(() => {

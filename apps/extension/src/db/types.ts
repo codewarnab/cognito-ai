@@ -37,6 +37,23 @@ export interface ResearchSource {
 }
 
 // ============================================================================
+// Stored PDF Interface (For Persistent PDF Storage)
+// ============================================================================
+
+/**
+ * PDF stored in IndexedDB for persistent access
+ * Fixes blob URL issue where PDFs can't be opened in new tabs
+ */
+export interface StoredPDF {
+    id: string;              // UUID
+    filename: string;
+    blob: Blob;
+    size: number;
+    createdAt: number;       // Timestamp
+    expiresAt: number;       // Auto-cleanup after 24 hours
+}
+
+// ============================================================================
 // Type Re-exports (Backward compatibility)
 // ============================================================================
 

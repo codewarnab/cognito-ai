@@ -1,24 +1,26 @@
 /**
  * Tool File Attachment Component
  * Renders file attachments from tool results with Open and Download actions
+ * Supports both blob URLs and IndexedDB PDF references
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Download, ExternalLink } from 'lucide-react';
 import { getFileIcon } from '@/utils/files';
+import { getPDF } from '@/db';
 
 export interface ToolFileAttachmentData {
     type: 'file';
     name: string;
-    url: string; // Blob URL
+    url?: string;         // Legacy: direct blob URL
+    pdfId?: string;       // New: IndexedDB reference ID
     mediaType: string;
     size: number;
 }
 
 interface ToolFileAttachmentProps {
     fileData: ToolFileAttachmentData;
-    messageId?: string; // Optional: for Blob URL lifecycle management
-    onUrlRevoke?: (url: string) => void; // Callback when component unmounts
+    messageId?: string; // Optional: for logging
 }
 
 /**
@@ -32,49 +34,75 @@ function formatFileSize(bytes: number): string {
 
 
 
-export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData, messageId, onUrlRevoke }) => {
+export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData }) => {
     const [isDownloading, setIsDownloading] = useState(false);
+    const [isOpening, setIsOpening] = useState(false);
+
+    /**
+     * Get blob URL from IndexedDB or use existing URL
+     */
+    const getBlobUrl = async (): Promise<string | null> => {
+        if (fileData.pdfId) {
+            // Fetch from IndexedDB
+            const pdf = await getPDF(fileData.pdfId);
+            if (pdf) {
+                return URL.createObjectURL(pdf.blob);
+            }
+            console.error(`PDF not found in IndexedDB: ${fileData.pdfId}`);
+            return null;
+        }
+        return fileData.url || null;
+    };
 
     // Handle opening file in new tab
-    const handleOpen = () => {
-        window.open(fileData.url, '_blank', 'noopener,noreferrer');
+    const handleOpen = async () => {
+        setIsOpening(true);
+        try {
+            const url = await getBlobUrl();
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+
+                // Revoke blob URL after delay if it was created from IndexedDB
+                if (fileData.pdfId) {
+                    setTimeout(() => URL.revokeObjectURL(url), 10000);
+                }
+            } else {
+                console.error('Failed to get PDF URL for opening');
+            }
+        } catch (error) {
+            console.error('Failed to open file:', error);
+        } finally {
+            setIsOpening(false);
+        }
     };
 
     // Handle download
     const handleDownload = async () => {
         setIsDownloading(true);
         try {
-            // Create temporary anchor and trigger download
-            const link = document.createElement('a');
-            link.href = fileData.url;
-            link.download = fileData.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            const url = await getBlobUrl();
+            if (url) {
+                // Create temporary anchor and trigger download
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileData.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Revoke blob URL after delay if it was created from IndexedDB
+                if (fileData.pdfId) {
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }
+            } else {
+                console.error('Failed to get PDF URL for download');
+            }
         } catch (error) {
             console.error('Failed to download file:', error);
         } finally {
             setIsDownloading(false);
         }
     };
-
-    // Cleanup blob URL when component unmounts
-    useEffect(() => {
-        return () => {
-            // Always revoke the Blob URL to prevent memory leaks
-            try {
-                URL.revokeObjectURL(fileData.url);
-                console.debug(`Revoked Blob URL for ${fileData.name}${messageId ? ` (message: ${messageId})` : ''}`);
-            } catch (error) {
-                console.error('Error revoking Blob URL:', error);
-            }
-
-            // Also call the callback if provided
-            if (onUrlRevoke) {
-                onUrlRevoke(fileData.url);
-            }
-        };
-    }, [fileData.url, fileData.name, messageId]);
 
     return (
         <div
@@ -158,6 +186,7 @@ export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData
                 <button
                     type="button"
                     onClick={handleOpen}
+                    disabled={isOpening}
                     title="Open in new tab"
                     style={{
                         display: 'flex',
@@ -170,12 +199,15 @@ export const ToolFileAttachment: React.FC<ToolFileAttachmentProps> = ({ fileData
                         borderRadius: '5px',
                         background: 'transparent',
                         color: 'rgba(255, 255, 255, 0.65)',
-                        cursor: 'pointer',
+                        cursor: isOpening ? 'not-allowed' : 'pointer',
+                        opacity: isOpening ? 0.5 : 1,
                         transition: 'all 0.15s ease',
                     }}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
-                        e.currentTarget.style.color = 'rgba(59, 130, 246, 0.95)';
+                        if (!isOpening) {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)';
+                            e.currentTarget.style.color = 'rgba(59, 130, 246, 0.95)';
+                        }
                     }}
                     onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent';

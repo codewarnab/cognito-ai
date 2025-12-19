@@ -32,5 +32,8 @@ export * from './reportSections';
 // Research Sources API + Session Management
 export * from './researchSources';
 
+// Stored PDFs API
+export * from './storedPDFs';
+
 // Default export
 export { default } from './database';

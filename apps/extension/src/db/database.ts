@@ -11,7 +11,7 @@ import type {
     ChatMessage,
     SettingRecord
 } from '~/types/database';
-import type { ReportSection, ResearchSource } from './types';
+import type { ReportSection, ResearchSource, StoredPDF } from './types';
 
 // ============================================================================
 // Dexie Database Class
@@ -27,6 +27,7 @@ import type { ReportSection, ResearchSource } from './types';
  * - Chat threads (conversation containers)
  * - Report sections for incremental building
  * - Research sources for context offloading
+ * - Stored PDFs for persistent PDF access
  * 
  * Uses compound index [threadId+sequenceNumber] for efficient sorted message retrieval.
  */
@@ -36,6 +37,7 @@ export class AppDB extends Dexie {
     chatThreads!: Table<ChatThread, string>;
     reportSections!: Table<ReportSection, string>;
     researchSources!: Table<ResearchSource, string>;
+    storedPDFs!: Table<StoredPDF, string>;
 
     constructor() {
         super('ChatDB');
@@ -50,7 +52,8 @@ export class AppDB extends Dexie {
             chatMessages: 'id, threadId, timestamp, sequenceNumber, [threadId+sequenceNumber]',
             chatThreads: 'id, createdAt, updatedAt',
             reportSections: 'id, sessionId, order',
-            researchSources: 'sourceId, sessionId, expiresAt'
+            researchSources: 'sourceId, sessionId, expiresAt',
+            storedPDFs: '&id, filename, createdAt, expiresAt'
         });
     }
 }
