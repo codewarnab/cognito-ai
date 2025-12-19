@@ -210,6 +210,9 @@ export async function streamBackendChatWithTools(
                             messageCount: conversationMessages.length,
                         });
 
+                        // Debug: Log the full messages structure for debugging
+                        console.log('[BACKEND-DEBUG] Messages being sent:', JSON.stringify(conversationMessages, null, 2));
+
                         // Make request to backend
                         const response = await fetch(
                             `${BACKEND_URL}/api/ai/chat-with-tools`,
@@ -260,6 +263,10 @@ export async function streamBackendChatWithTools(
                             if (done) break;
 
                             const chunk = decoder.decode(value, { stream: true });
+
+                            // Debug: Log raw chunk from backend
+                            console.log('[BACKEND-DEBUG] Raw chunk received:', chunk);
+
                             const events = parseStreamChunk(chunk);
 
                             log.info('🔍 [STREAM DEBUG] Events from chunk:', { eventCount: events.length, types: events.map(e => e.type) });
@@ -391,34 +398,27 @@ export async function streamBackendChatWithTools(
                             });
 
                             // Add tool results as tool messages
+                            // AI SDK v5: ToolResultPart uses 'output' with LanguageModelV2ToolResultOutput format
                             conversationMessages.push({
                                 role: 'tool',
                                 content: toolResults.map((result) => {
                                     const tc = pendingToolCalls.find(t => t.id === result.id);
 
-                                    // Common properties for ToolResultPart
-                                    const common = {
-                                        type: 'tool-result' as const,
-                                        toolCallId: result.id,
-                                        toolName: tc?.name || 'unknown',
-                                    };
-
                                     const resultValue = typeof result.result === 'string'
                                         ? result.result
                                         : JSON.stringify(result.result);
 
-                                    if (result.isError) {
-                                        return {
-                                            ...common,
-                                            isError: true,
-                                            result: resultValue,
-                                        };
-                                    } else {
-                                        return {
-                                            ...common,
-                                            result: resultValue,
-                                        };
-                                    }
+                                    // AI SDK v5 ToolResultPart format with LanguageModelV2ToolResultOutput
+                                    return {
+                                        type: 'tool-result' as const,
+                                        toolCallId: result.id,
+                                        toolName: tc?.name || 'unknown',
+                                        // output must be LanguageModelV2ToolResultOutput:
+                                        // { type: 'text' | 'json' | 'error-text' | 'error-json', value: ... }
+                                        output: result.isError
+                                            ? { type: 'error-text' as const, value: resultValue }
+                                            : { type: 'text' as const, value: resultValue },
+                                    };
                                 }) as any,
                             });
 
