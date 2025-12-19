@@ -24,7 +24,7 @@ export const useChatInputValidation = ({ mode, messages, onError }: UseChatInput
 
         // Skip API key validation if backend mode is enabled
         const useBackendMode = useSettingsStore.getState().useBackendMode;
-        
+
         // Validate API key if in remote mode or HIDE_LOCAL_MODE is enabled (unless using backend mode)
         if (!useBackendMode && (HIDE_LOCAL_MODE || mode === 'remote') && !(await hasGoogleApiKey())) {
             onError?.(
