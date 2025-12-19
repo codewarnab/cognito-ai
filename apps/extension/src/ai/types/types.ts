@@ -1,13 +1,39 @@
 /**
  * Type definitions for AI Logic
  * Shared types for local and remote AI implementations
+ * 
+ * ## Mode Types in Extension
+ * 
+ * | Type | Values | Purpose | Store |
+ * |------|--------|---------|-------|
+ * | AIProviderMode | local/remote | Where AI runs | useModelStore.mode |
+ * | ToolsMode | chat/agent/adaptive/custom | Available tools | useToolsStore.currentMode |
+ * | ChatMode | text/voice | Input method | useUINavigationStore.chatMode |
+ * | Backend Mode | boolean | Use hosted API | useSettingsStore.useBackendMode |
  */
 
 import type { UIMessage } from 'ai';
 import type { AIProvider } from '@/utils/credentials';
 
-// AI Mode types
-export type AIMode = 'local' | 'remote';
+/**
+ * AI Provider Mode - where the AI inference runs
+ * 
+ * - `local`: Uses Chrome's built-in AI (on-device Gemini Nano)
+ * - `remote`: Uses cloud API (Gemini Pro/Flash)
+ * 
+ * When `remote` is selected, the API call routing depends on Backend Mode:
+ * - Backend Mode ON: Uses hosted Vercel backend (no API key needed)
+ * - Backend Mode OFF: BYOK - direct Google AI API calls (requires API key)
+ */
+export type AIProviderMode = 'local' | 'remote';
+
+/**
+ * AIMode - alias for AIProviderMode
+ * 
+ * Many files import `AIMode` instead of `AIProviderMode`.
+ * Both refer to the same concept: where AI inference runs.
+ */
+export type AIMode = AIProviderMode;
 
 // Remote model options
 export type RemoteModelType =
@@ -20,7 +46,7 @@ export type RemoteModelType =
 
 // Model configuration
 export interface ModelConfig {
-  mode: AIMode;
+  mode: AIProviderMode;
   remoteModel?: RemoteModelType;
 }
 
@@ -42,9 +68,10 @@ export interface ToolCapabilities {
 }
 
 export interface ModelState {
-  mode: AIMode;
+  mode: AIProviderMode;
   remoteModel: RemoteModelType;
   hasApiKey: boolean;
-  conversationStartMode?: AIMode;
+  conversationStartMode?: AIProviderMode | null;
+  isLoading?: boolean;
   provider?: AIProvider;
 }

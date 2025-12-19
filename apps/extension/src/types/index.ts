@@ -25,7 +25,22 @@ export * from './workflows';
 export * from './events';
 
 // Messaging types (type-safe messaging system)
-export * from './messaging';
+// Note: Both events and messaging export isTypedMessage - we prefer the events version
+export {
+    type MessageDefinition,
+    type MessageRegistry,
+    type MessageType,
+    type MessagePayload,
+    type MessageResponse,
+    type TypedMessage,
+    type NoPayloadMessageType,
+    type PayloadMessageType,
+    isMessageType,
+} from './messaging';
+
+// Re-export MCP and port message types from messaging
+export * from './messaging/mcp';
+export * from './messaging/ports';
 
 // Utility types
 export * from './utils';

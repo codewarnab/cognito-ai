@@ -3,10 +3,46 @@
  *
  * Types for tool configuration, enabled states, and mode management.
  * Synced with Chrome storage for persistence.
+ * 
+ * ## ToolsMode vs ToolMode
+ * 
+ * `ToolMode` is an alias for `ToolsMode` (from @/types/settings).
+ * It determines which tools are available to the AI:
+ * 
+ * - `chat`: Minimal tools, focused on reading and Q&A
+ * - `agent`: Full browser automation capabilities
+ * - `adaptive`: On-demand tool discovery via `discoverTools` + `executeTools`
+ * - `custom`: User has customized the tool selection
  */
 
-// Re-export shared types from ToolPopover (single source of truth)
-export type { ToolMode, McpToolWithServer, WebMcpTool } from '@/components/features/chat/components/modals/ToolPopover/types';
+import type { ToolsMode } from '@/types/settings';
+import type { McpTool } from '@/mcp/types';
+
+/**
+ * ToolMode - alias for ToolsMode
+ * 
+ * Used throughout the tools store and UI components.
+ */
+export type ToolMode = ToolsMode;
+
+/**
+ * MCP Tool with server information attached
+ */
+export interface McpToolWithServer extends McpTool {
+  serverId: string;
+  serverName: string;
+}
+
+/**
+ * WebMCP Tool definition
+ */
+export interface WebMcpTool {
+  name: string;
+  originalName: string;
+  description?: string;
+  domain?: string;
+  favicon?: string;
+}
 
 export interface ToolsState {
   // Built-in tools enabled state

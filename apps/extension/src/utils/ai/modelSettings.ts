@@ -3,7 +3,7 @@
  * Manages AI model configuration and conversation mode restrictions
  */
 
-import type { AIMode, RemoteModelType } from '@/ai/types/types';
+import type { AIProviderMode, RemoteModelType } from '@/ai/types/types';
 import type { AIProvider } from '@/utils/credentials/providerTypes';
 import { HIDE_LOCAL_MODE } from '@/constants';
 
@@ -13,9 +13,9 @@ const STORAGE_KEYS = {
 };
 
 export interface StoredModelConfig {
-  mode: AIMode;
+  mode: AIProviderMode;
   remoteModel: RemoteModelType;
-  conversationStartMode?: AIMode; // Track initial mode for switching restrictions
+  conversationStartMode?: AIProviderMode; // Track initial mode for switching restrictions
   preferredProvider?: AIProvider; // Preferred AI provider (google or vertex)
 }
 
@@ -50,7 +50,7 @@ export async function setModelConfig(config: Partial<StoredModelConfig>): Promis
 /**
  * Set the mode the conversation started with
  */
-export async function setConversationStartMode(mode: AIMode): Promise<void> {
+export async function setConversationStartMode(mode: AIProviderMode): Promise<void> {
   const config = await getModelConfig();
   config.conversationStartMode = mode;
   await chrome.storage.local.set({ [STORAGE_KEYS.MODEL_CONFIG]: config });
@@ -72,7 +72,7 @@ export async function clearConversationStartMode(): Promise<void> {
  * - Remote ΓåÆ Local: NOT allowed (downgrading mid-conversation)
  * - No conversation started: Always allowed
  */
-export async function canSwitchMode(fromMode: AIMode, toMode: AIMode): Promise<boolean> {
+export async function canSwitchMode(fromMode: AIProviderMode, toMode: AIProviderMode): Promise<boolean> {
   const config = await getModelConfig();
   const startMode = config.conversationStartMode;
 

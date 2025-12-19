@@ -206,6 +206,47 @@ setUseBackendMode(false); // Use BYOK
 
 When backend rate limits are exceeded, the extension automatically falls back to BYOK mode if the user has an API key configured.
 
+## Mode Architecture
+
+The extension uses 4 distinct "mode" concepts. Don't confuse them:
+
+| Type | Values | Purpose | Store |
+|------|--------|---------|-------|
+| `AIProviderMode` | `local`/`remote` | WHERE AI runs | `useModelStore.mode` |
+| `ToolsMode` | `chat`/`agent`/`adaptive`/`custom` | WHICH TOOLS available | `useToolsStore.currentMode` |
+| `ChatMode` | `text`/`voice` | User INPUT METHOD | `useUINavigationStore.chatMode` |
+| Backend Mode | `boolean` | HOW remote API is called | `useSettingsStore.useBackendMode` |
+
+### AIProviderMode (local/remote)
+
+```
+AIProviderMode = 'local'  → Chrome built-in AI (Gemini Nano)
+AIProviderMode = 'remote' → Cloud API, check Backend Mode:
+  └─ useBackendMode = true  → Vercel backend (no key)
+  └─ useBackendMode = false → BYOK (direct Google AI API)
+```
+
+### ToolsMode (chat/agent/adaptive/custom)
+
+- `chat`: Minimal tools (readPageContent, takeScreenshot, etc.)
+- `agent`: Full browser automation (navigateTo, clickByText, typeInField, etc.)
+- `adaptive`: Meta-tools (`discoverTools`, `executeTools`) for on-demand discovery
+- `custom`: User-customized selection
+
+### Type Imports
+
+```typescript
+// AIProviderMode / AIMode
+import type { AIProviderMode, AIMode } from '@/stores/chat/types';
+
+// ToolsMode / ToolMode
+import type { ToolsMode } from '@/types/settings';
+import type { ToolMode } from '@/stores/tools/types';
+
+// ChatMode
+import type { ChatMode } from '@/stores/ui/types';
+```
+
 ## UI Standards
 
 - All clickable buttons must include `cursor-pointer` class for proper UX

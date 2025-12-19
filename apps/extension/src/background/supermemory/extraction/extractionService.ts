@@ -155,7 +155,7 @@ class MemoryExtractionService {
             const facts = (parsed.facts || []) as ExtractedFact[];
             return {
               threadId,
-              facts: facts.filter(f => f.content && f.confidence !== 'low'),
+              facts: facts.filter(f => f.content),
               processedAt: Date.now(),
               messageCount: messages.length,
               contentHash,

@@ -32,7 +32,7 @@ export interface SettingsState {
 
   // Model preferences
   preferredModel: string;
-  preferredMode: 'local' | 'remote' | 'agent' | 'adaptive';
+  preferredMode: 'local' | 'remote';
 
   // Feature flags
   enableVoiceMode: boolean;

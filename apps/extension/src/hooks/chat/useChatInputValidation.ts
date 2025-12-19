@@ -43,8 +43,8 @@ export const useChatInputValidation = ({ mode, messages, onError }: UseChatInput
             for (const msg of messages) {
                 if (msg.parts && msg.parts.length > 0) {
                     for (const part of msg.parts) {
-                        if (part.type === 'text' && part.text) {
-                            totalWords += part.text.split(/\s+/).filter((word: string) => word.length > 0).length;
+                        if (part.type === 'text' && part.content) {
+                            totalWords += part.content.split(/\s+/).filter((word: string) => word.length > 0).length;
                         }
                     }
                 }

@@ -1,5 +1,16 @@
 /**
  * Chat & Model Store Types
+ * 
+ * ## Mode Types in Extension
+ * 
+ * | Type | Values | Purpose | Store |
+ * |------|--------|---------|-------|
+ * | AIProviderMode | local/remote | Where AI runs | useModelStore.mode |
+ * | ToolsMode | chat/agent/adaptive/custom | Available tools | useToolsStore.currentMode |
+ * | ChatMode | text/voice | Input method | useUINavigationStore.chatMode |
+ * | Backend Mode | boolean | Use hosted API | useSettingsStore.useBackendMode |
+ * 
+ * See `@/components/features/chat/types.ts` for detailed documentation.
  */
 
 import type { UIMessage } from 'ai';
@@ -9,27 +20,42 @@ import type { AppUsage } from '@/types/ai/usage';
 // Model Store Types
 // ============================================================================
 
-export type AIMode = 'local' | 'remote' | 'agent' | 'adaptive';
+/**
+ * AI Provider Mode - where the AI inference runs
+ * 
+ * - `local`: Uses Chrome's built-in AI (on-device Gemini Nano)
+ * - `remote`: Uses cloud API (Gemini Pro/Flash)
+ */
+export type AIProviderMode = 'local' | 'remote';
+
+/**
+ * AIMode - alias for AIProviderMode
+ * 
+ * Many files import `AIMode` instead of `AIProviderMode`.
+ * Both refer to the same concept: where AI inference runs.
+ */
+export type AIMode = AIProviderMode;
+
 export type RemoteModel = 'gemini-3-flash-preview' | 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-3-pro-preview';
 
 export interface ModelState {
   /** Current AI mode */
-  mode: AIMode;
+  mode: AIProviderMode;
   /** Selected remote model */
   remoteModel: RemoteModel;
   /** Whether API key is configured */
   hasApiKey: boolean;
   /** Mode at conversation start (for agent mode detection) */
-  conversationStartMode: AIMode | null;
+  conversationStartMode: AIProviderMode | null;
   /** Loading state during initialization */
   isLoading: boolean;
   /** Hydration state */
   isHydrated: boolean;
 
   // Actions
-  setMode: (mode: AIMode) => void;
+  setMode: (mode: AIProviderMode) => void;
   setRemoteModel: (model: RemoteModel) => void;
-  setConversationStartMode: (mode: AIMode | null) => void;
+  setConversationStartMode: (mode: AIProviderMode | null) => void;
   clearConversationStartMode: () => void;
   refreshApiKeyStatus: () => Promise<void>;
   initialize: () => Promise<void>;

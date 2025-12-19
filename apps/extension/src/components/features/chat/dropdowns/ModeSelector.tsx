@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { CloudCogIcon, LaptopMinimalCheckIcon } from '../../../shared/icons';
 import { canSwitchMode } from '@/utils/ai';
-import type { AIMode, ModelState } from '../types';
+import type { AIMode, ModelState } from '@/ai/types/types';
 
 interface ModeSelectorProps {
     modelState: ModelState;

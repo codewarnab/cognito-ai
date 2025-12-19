@@ -87,6 +87,22 @@ const messages = useChatStore((state: ChatState) => state.messages);
 
 See `src/stores/README.md` for detailed documentation.
 
+## Mode Architecture
+
+The extension uses 4 distinct "mode" concepts:
+
+| Type | Values | Purpose | Store |
+|------|--------|---------|-------|
+| `AIProviderMode` | `local`/`remote` | WHERE AI runs | `useModelStore.mode` |
+| `ToolsMode` | `chat`/`agent`/`adaptive`/`custom` | WHICH TOOLS available | `useToolsStore.currentMode` |
+| `ChatMode` | `text`/`voice` | User INPUT METHOD | `useUINavigationStore.chatMode` |
+| Backend Mode | `boolean` | HOW remote API is called | `useSettingsStore.useBackendMode` |
+
+**How Modes Interact:**
+- When `AIProviderMode = 'remote'`, Backend Mode determines API routing
+- ToolsMode and ChatMode are independent of AIProviderMode
+
+
 ## React 19
 
 This extension uses **React 19** with important patterns:

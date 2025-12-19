@@ -16,9 +16,13 @@ export const storeLogger = <T extends object>(
 
   return (f: StateCreator<T, [], []>): StateCreator<T, [], []> =>
     (set, get, store) => {
-      const loggedSet: typeof set = (...args) => {
+      const loggedSet: typeof set = (partial, replace) => {
         const prevState = get();
-        set(...args);
+        if (replace === true) {
+          set(partial as T, true);
+        } else {
+          set(partial, replace);
+        }
         const nextState = get();
         
         // Only log in development

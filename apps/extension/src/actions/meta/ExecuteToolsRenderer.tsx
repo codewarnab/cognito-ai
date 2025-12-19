@@ -8,7 +8,7 @@
  * - Smooth transitions between states
  */
 
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CompactToolCard } from '@/components/ui/tools/cards';
 import { LoadingCheckIcon, type LoadingCheckIconHandle } from '@assets/icons/chat/loading-check';

@@ -7,8 +7,8 @@ import { Wrench, Cloud, Key } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
 import { createLogger } from '~logger';
-import { useSettingsStore, type SettingsState } from '@/stores';
-import type { AIMode, ModelState } from '../../../types';
+import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
+import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
 
 const log = createLogger('ComposerToolbar', 'AI_CHAT');
@@ -58,13 +58,19 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     isModelSelectorOpen,
     setIsModelSelectorOpen
 }) => {
+    // Get ToolsMode (chat/agent/adaptive/custom) - different from AIProviderMode (local/remote)
+    const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
+    const isAdaptiveMode = toolsMode === 'adaptive';
+
     // Debug logging for tools display
     log.info('🔧 ComposerToolbar render', {
         totalEnabledCount,
         mcpToolsCount,
         webMcpToolsCount,
         activeWorkflow: activeWorkflow?.name || null,
-        isAdaptiveMode: modelState.mode === 'adaptive'
+        isAdaptiveMode,
+        toolsMode,
+        aiProviderMode: modelState.mode
     });
 
     // Backend mode state
@@ -148,7 +154,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode) */}
             <SearchControls
                 activeWorkflow={activeWorkflow}
-                isAdaptiveMode={modelState.mode === 'adaptive'}
+                isAdaptiveMode={isAdaptiveMode}
             />
 
             {/* Model Selector - Gemini icon with model popover */}

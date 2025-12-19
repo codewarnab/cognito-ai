@@ -235,6 +235,39 @@ const messages = useChatStore((state: ChatState) => state.messages);
 
 See `src/stores/README.md` for detailed documentation.
 
+## Mode Architecture
+
+The extension uses 4 distinct "mode" concepts. Don't confuse them:
+
+| Type | Values | Purpose | Store |
+|------|--------|---------|-------|
+| `AIProviderMode` | `local`/`remote` | WHERE AI runs | `useModelStore.mode` |
+| `ToolsMode` | `chat`/`agent`/`adaptive`/`custom` | WHICH TOOLS available | `useToolsStore.currentMode` |
+| `ChatMode` | `text`/`voice` | User INPUT METHOD | `useUINavigationStore.chatMode` |
+| Backend Mode | `boolean` | HOW remote API is called | `useSettingsStore.useBackendMode` |
+
+### How Modes Interact
+
+```
+AIProviderMode = 'local'  → Chrome built-in AI (Gemini Nano)
+AIProviderMode = 'remote' → Check Backend Mode:
+  └─ useBackendMode = true  → Vercel backend (no key)
+  └─ useBackendMode = false → BYOK (direct Google AI API)
+```
+
+### Type Imports
+
+```typescript
+// AIProviderMode / AIMode
+import type { AIProviderMode, AIMode } from '@/stores/chat/types';
+
+// ToolsMode / ToolMode
+import type { ToolsMode } from '@/types/settings';
+import type { ToolMode } from '@/stores/tools/types';
+
+// ChatMode
+import type { ChatMode } from '@/stores/ui/types';
+```
 
 ## Testing the Extension
 
