@@ -4,7 +4,7 @@ This document helps Claude understand the Chrome extension codebase.
 
 ## Overview
 
-**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/). It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
+**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/) and **React 19**. It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
 
 ## Key Features
 
@@ -105,11 +105,42 @@ import { Button } from '../../../components/ui/Button';
 
 ## Coding Standards
 
+### React 19 Patterns
+
+This extension uses **React 19** with the following key patterns:
+
+#### `ref` as a Prop
+In React 19, `ref` is passed as a regular prop:
+
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}
+
+function MyComponent({ ref, ...props }: Props) {
+  return <div ref={ref} {...props} />;
+}
+```
+
+#### `useRef` Null Handling
+`useRef<T>(null)` returns `RefObject<T | null>`:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+// Component props accepting refs
+interface Props {
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+```
+
 ### React Components
 
 - Use functional components with hooks
 - Prefer named exports for components
-- Use TypeScript interfaces for props
+- Use TypeScript interfaces for props (include `| null` for ref types)
 - Keep components focused and single-purpose
 
 ```typescript

@@ -105,7 +105,7 @@ export const LinkPreview: React.FC<LinkPreviewProps> = ({
     if (icon) {
         // Clone element to add custom classes if needed, or just use as is
         // But here we want to match the styling of the fallback Globe
-        siteIcon = React.cloneElement(icon as React.ReactElement, {
+        siteIcon = React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
             className: "w-4 h-4 mt-0.5 shrink-0"
         });
     }

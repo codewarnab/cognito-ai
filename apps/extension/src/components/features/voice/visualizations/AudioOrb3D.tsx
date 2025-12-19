@@ -28,7 +28,7 @@ export const AudioOrb3D: React.FC<AudioOrb3DProps> = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationFrameRef = useRef<number>();
+    const animationFrameRef = useRef<number | undefined>(undefined);
     const sceneRef = useRef<{
         scene?: THREE.Scene;
         camera?: THREE.PerspectiveCamera;

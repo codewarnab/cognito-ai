@@ -1,10 +1,10 @@
 # Cognito AI Extension
 
-**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/). This is part of a **pnpm monorepo** containing the Chrome extension, documentation site, and backend services.
+**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/) and **React 19**. This is part of a **pnpm monorepo** containing the Chrome extension, documentation site, and backend services.
 
 ## Key Features
 
-- **AI Side Panel:** Interactive chat interface accessible via `Ctrl+Shift+H` (or `Cmd+Shift+H`), built with React and Tailwind CSS.    
+- **AI Side Panel:** Interactive chat interface accessible via `Ctrl+Shift+H` (or `Cmd+Shift+H`), built with React 19 and Tailwind CSS.    
 - **Model Context Protocol (MCP):** Implements an MCP client to dynamically discover and connect to "MCP servers," extending the agent's capabilities.
 - **Privacy-First Memory:** Uses `Dexie` (IndexedDB) to store user data locally within the browser.
 - **Workflow Automation:** Supports "Smart Actions" and workflows to automate browser tasks.
@@ -30,6 +30,51 @@ apps/extension/
 │   └── workflows/              # Automation workflows
 ├── wxt.config.ts               # WXT configuration
 └── package.json
+```
+
+## React 19
+
+This extension uses **React 19** with important changes from React 18:
+
+### `ref` as a Prop
+In React 19, `ref` is passed as a regular prop instead of using `forwardRef`:
+
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}
+
+function MyComponent({ ref, ...props }: Props) {
+  return <div ref={ref} {...props} />;
+}
+
+// ❌ Old React 18 pattern (still works but not preferred)
+const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  return <div ref={ref} {...props} />;
+});
+```
+
+### `useRef` Null Handling
+`useRef<T>(null)` now returns `RefObject<T | null>` instead of `RefObject<T>`:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+// Component props accepting refs
+interface Props {
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+```
+
+### Component Props with Refs
+When accepting refs in component props, include `| null` in the type:
+
+```typescript
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+}
 ```
 
 ## State Management

@@ -4,7 +4,7 @@ This document helps AI coding assistants understand the Chrome extension.
 
 ## Overview
 
-**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/). It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
+**Cognito** is a privacy-first, AI-powered Chrome extension built with [WXT](https://wxt.dev/) and **React 19**. It provides an AI side panel interface for interacting with web pages, automating browser tasks, and managing local memory.
 
 ## Key Features
 
@@ -86,6 +86,35 @@ const messages = useChatStore((state: ChatState) => state.messages);
 ```
 
 See `src/stores/README.md` for detailed documentation.
+
+## React 19
+
+This extension uses **React 19** with important patterns:
+
+### `ref` as a Prop
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}
+
+function MyComponent({ ref, ...props }: Props) {
+  return <div ref={ref} {...props} />;
+}
+```
+
+### `useRef` Null Handling
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+// Component props accepting refs
+interface Props {
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+```
+
+See `docs/CODING_STANDARDS.md` for comprehensive React 19 patterns.
 
 ## AI Editor Configs
 

@@ -15,7 +15,7 @@ interface ComposerActionsProps {
     isLoading: boolean;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
-    voiceInputRef: React.RefObject<VoiceInputHandle>;
+    voiceInputRef: React.RefObject<VoiceInputHandle | null>;
     onStop?: () => void;
     attachments: FileAttachmentData[];
     isLocalMode: boolean;
@@ -34,7 +34,7 @@ interface ComposerActionsProps {
     showAddYouTubeVideoModal: boolean;
     setShowAddYouTubeVideoModal: (show: boolean) => void;
     // Refs
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 

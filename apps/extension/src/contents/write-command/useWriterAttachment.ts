@@ -21,7 +21,7 @@ interface UseWriterAttachmentOptions {
 interface UseWriterAttachmentReturn {
     attachment: WriteAttachment | null;
     isProcessing: boolean;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     processFile: (file: File) => Promise<boolean>;
     handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
     handleFileDrop: (e: React.DragEvent) => Promise<void>;
@@ -56,11 +56,11 @@ export function useWriterAttachment({
 
             try {
                 const type = getAttachmentType(file.type);
-                
+
                 // Compress large images to reduce payload size
                 let processedFile: File | Blob = file;
                 let mimeType = file.type;
-                
+
                 if (shouldCompressImage(file)) {
                     try {
                         processedFile = await compressImage(file);
@@ -71,7 +71,7 @@ export function useWriterAttachment({
                         processedFile = file;
                     }
                 }
-                
+
                 const base64Data = await fileToBase64(processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: mimeType }));
 
                 let preview: string | undefined;

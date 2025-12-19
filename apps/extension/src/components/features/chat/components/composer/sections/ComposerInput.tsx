@@ -15,7 +15,7 @@ interface ComposerInputProps {
     attachments: FileAttachmentData[];
     showSlashDropdown: boolean;
     handleSlashCommandDetection: (show: boolean, query: string) => void;
-    composerRef: React.RefObject<HTMLDivElement>;
+    composerRef: React.RefObject<HTMLDivElement | null>;
     isSearchActive?: boolean;
     searchDepth?: SearchDepth;
 }

@@ -9,7 +9,7 @@ Cognito AI is a **pnpm monorepo** containing multiple packages:
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (wxt)
+│   ├── extension/          # @cognito/extension - Chrome Extension (WXT + React 19)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)

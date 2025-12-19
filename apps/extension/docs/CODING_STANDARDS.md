@@ -68,6 +68,83 @@
 - **CRITICAL**: Observer pattern (subscribe/publish) should send real current state to new subscribers, not synthetic dummy triggers; if no current state exists, don't call callback immediately or document that it's notification-only.
 - **CRITICAL**: Use refs for values that need to stay current across closure boundaries in event handlers; closures capture variable values at creation time, causing stale state bugs when accessing state variables directly in callbacks registered during component initialization.
 
+## React 19 Patterns
+This extension uses **React 19** with the following important patterns:
+
+### `ref` as a Prop (Preferred)
+In React 19, `ref` is passed as a regular prop instead of using `forwardRef`:
+
+```typescript
+// ✅ React 19 - ref as a regular prop
+interface MyComponentProps {
+  ref?: React.RefObject<HTMLDivElement | null>;
+  className?: string;
+}
+
+function MyComponent({ ref, className }: MyComponentProps) {
+  return <div ref={ref} className={className} />;
+}
+
+// ❌ Old React 18 pattern (still works but not preferred for new code)
+const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  return <div ref={ref} {...props} />;
+});
+```
+
+### `useRef` Null Handling
+`useRef<T>(null)` now returns `RefObject<T | null>` instead of `RefObject<T>`. Always include `| null` in the type:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+const containerRef = useRef<HTMLDivElement | null>(null);
+
+// ❌ Old pattern - no longer compatible
+const inputRef = useRef<HTMLInputElement>(null);
+```
+
+### Component Props Accepting Refs
+When defining component props that accept refs, always include `| null` in the RefObject type:
+
+```typescript
+// ✅ Correct - includes null for React 19 compatibility
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  submitButtonRef?: React.RefObject<HTMLButtonElement | null>;
+}
+
+// ❌ Incorrect - will cause type errors in React 19
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+}
+```
+
+### Passing Refs Between Components
+When passing refs from parent to child components:
+
+```typescript
+// Parent component
+function Parent() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  
+  return <ChildComponent inputRef={inputRef} />;
+}
+
+// Child component accepting ref as prop
+interface ChildProps {
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}
+
+function ChildComponent({ inputRef }: ChildProps) {
+  return <input ref={inputRef} type="text" />;
+}
+```
+
+### Migration Notes
+- Existing `forwardRef` components continue to work but prefer the new pattern for new code
+- When updating existing components, change prop interfaces to include `| null` for ref types
+- Search for `RefObject<.*>` patterns that may need `| null` added
+
 ## Component Best Practices (from Batch 2 Review)
 - Always define TypeScript interfaces for component props, even for simple components with single props like `size?: number`.
 - Never use inline `//` comments inside JSX attributes; use `{/* */}` JSX comments or move comments outside tags.

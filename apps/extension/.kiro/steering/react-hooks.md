@@ -5,6 +5,34 @@ fileMatchPattern: "**/*.tsx"
 
 # React and Hooks Standards
 
+## React 19 Patterns
+This extension uses **React 19**. Key patterns:
+
+### `ref` as a Prop
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}
+
+function MyComponent({ ref, ...props }: Props) {
+  return <div ref={ref} {...props} />;
+}
+```
+
+### `useRef` Null Handling
+`useRef<T>(null)` returns `RefObject<T | null>`:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+// Props accepting refs
+interface Props {
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}
+```
+
 ## Component Patterns
 - Use functional components with hooks
 - Use Zustand stores from `@/stores` for global state (see `zustand-stores.md`)

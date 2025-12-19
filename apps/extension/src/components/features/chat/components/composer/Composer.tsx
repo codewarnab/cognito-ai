@@ -31,7 +31,7 @@ export interface ComposerProps {
     isLoading: boolean;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
-    voiceInputRef: React.RefObject<VoiceInputHandle>;
+    voiceInputRef: React.RefObject<VoiceInputHandle | null>;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
@@ -61,8 +61,8 @@ export interface ComposerProps {
     onToggleModeDropdown: (show: boolean) => void;
 
     // Refs
-    composerRef: React.RefObject<HTMLDivElement>;
-    textareaRef: React.RefObject<HTMLTextAreaElement>;
+    composerRef: React.RefObject<HTMLDivElement | null>;
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export const Composer: React.FC<ComposerProps> = ({

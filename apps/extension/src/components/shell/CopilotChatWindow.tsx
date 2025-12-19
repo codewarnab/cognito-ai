@@ -35,7 +35,7 @@ interface CopilotChatWindowProps {
     nextMessageId?: string;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
-    voiceInputRef?: React.RefObject<VoiceInputHandle>;
+    voiceInputRef?: React.RefObject<VoiceInputHandle | null>;
     onContinue?: () => void;
     usage?: AppUsage | null;
     localPdfInfo?: LocalPdfInfo | null;

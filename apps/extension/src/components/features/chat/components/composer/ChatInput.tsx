@@ -25,7 +25,7 @@ interface ChatInputProps {
     isLoading: boolean;
     isRecording?: boolean;
     onRecordingChange?: (isRecording: boolean) => void;
-    voiceInputRef?: React.RefObject<VoiceInputHandle>;
+    voiceInputRef?: React.RefObject<VoiceInputHandle | null>;
     onStop?: () => void;
     pendingMessageId?: string | null;
     nextMessageId?: string;
@@ -68,15 +68,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const tabAttachments = useAttachmentsStore((s) => s.tabAttachments);
     const clearForNewMessage = useAttachmentsStore((s) => s.clearForNewMessage);
     const setIsDragging = useAttachmentsStore((s) => s.setIsDragging);
-    
+
     // Local PDF store state
     const setLocalPdfInfo = useAttachmentsStore((s) => s.setLocalPdfInfo);
     const setIsAttachingLocalPdf = useAttachmentsStore((s) => s.setIsAttachingLocalPdf);
-    
+
     // YouTube store state
     const setYouTubeVideoInfo = useAttachmentsStore((s) => s.setYouTubeVideoInfo);
     const setIsAttachingYouTube = useAttachmentsStore((s) => s.setIsAttachingYouTube);
-    
+
     // Selected text store state
     const setSelectedTextInfo = useAttachmentsStore((s) => s.setSelectedTextInfo);
     const setIsAttachingSelectedText = useAttachmentsStore((s) => s.setIsAttachingSelectedText);
@@ -105,7 +105,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // YouTube video detection
     const youtubeVideoInfo = useYouTubeVideoDetection();
-    
+
     // Sync YouTube info to store
     useEffect(() => {
         if (youtubeVideoInfo.isYouTubeVideo) {
@@ -121,7 +121,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // Selected text detection
     const { hasSelectedText, selectedTextInfo, clearSelection } = useSelectedTextDetection();
-    
+
     // Sync selected text to store
     useEffect(() => {
         if (hasSelectedText && selectedTextInfo) {
