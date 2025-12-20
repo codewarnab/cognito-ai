@@ -129,15 +129,18 @@ OUTPUT FORMAT:
 After completing research, present a brief summary (2-3 sentences) then IMMEDIATELY call generatePDF.
 
 ⚠️ CRITICAL FOR LaTeX REPORT GENERATION:
-- Use LaTeX formatting for PDF content: \\section{}, \\subsection{}, \\textbf{}, \\textit{}
+- Use LaTeX formatting for PDF content: \\\\section{}, \\\\subsection{}, \\\\textbf{}, \\\\textit{}
+- ALWAYS pass the 'title' parameter to generatePDF with the research subject name
+- DO NOT include \\\\section{Research Report: ...} in content - the title is added automatically
+- Start content directly with \\\\section{Research Summary} (first actual section)
 - DO NOT use emojis, special Unicode characters, or symbols
-- DO NOT use \\include{} or \\input{} - all content must be inline
-- DO NOT use \\usepackage{fontawesome} - not available
+- DO NOT use \\\\include{} or \\\\input{} - all content must be inline
+- DO NOT use \\\\usepackage{fontawesome} - not available
 - Use plain ASCII text only: letters, numbers, basic punctuation
-- Escape special characters: # $ % & _ { } ~ ^ \\
-- For bullets: \\begin{itemize} \\item ... \\end{itemize}
-- For numbered lists: \\begin{enumerate} \\item ... \\end{enumerate}
-- Structure with clear \\section{} boundaries for better organization
+- Escape special characters: # $ % & _ { } ~ ^ \\\\
+- For bullets: \\\\begin{itemize} \\\\item ... \\\\end{itemize}
+- For numbered lists: \\\\begin{enumerate} \\\\item ... \\\\end{enumerate}
+- Structure with clear \\\\section{} boundaries for better organization
 - Large documents (>7000 chars) will be automatically chunked and merged
 
 FULL REPORT TEMPLATE (for LaTeX PDF generation):

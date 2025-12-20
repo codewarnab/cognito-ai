@@ -61,16 +61,26 @@ export function escapeLatex(text: string): string {
  * - Merging multiple PDFs for large documents
  * 
  * @param latexContent - LaTeX body content (will be wrapped by backend)
- * @param filename - Optional filename for the PDF
+ * @param options - Optional configuration (filename, title)
  * @returns PDF blob
  */
 export async function generatePDFFromLatex(
     latexContent: string,
-    filename = 'report.pdf'
+    options: { filename?: string; title?: string } = {}
 ): Promise<Blob> {
+    const { filename = 'report.pdf', title } = options;
+
     log.info('Sending LaTeX to backend for compilation', {
         contentLength: latexContent.length,
         filename,
+        title: title ? `"${title}"` : '(none)',
+    });
+
+    // Generate current date for the report
+    const date = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
     });
 
     const response = await fetch(`${ENV.BACKEND_API_URL}/latex-compile`, {
@@ -80,6 +90,8 @@ export async function generatePDFFromLatex(
             latexContent,
             command: 'pdflatex',
             filename,
+            title,
+            date,
         }),
     });
 

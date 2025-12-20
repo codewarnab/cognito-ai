@@ -27,14 +27,19 @@ export function useGeneratePDFTool() {
             description: `Generate a professional PDF report using LaTeX formatting and display it as an interactive attachment in chat with Open/Download buttons.
 
 INPUT: LaTeX-formatted content (not markdown). Use LaTeX commands:
-- \\section{Title}, \\subsection{Title} for headers
-- \\textbf{text} for bold, \\textit{text} for italic
-- \\begin{itemize} \\item ... \\end{itemize} for bullets
-- \\begin{enumerate} \\item ... \\end{enumerate} for numbered lists
+- \\\\section{Title}, \\\\subsection{Title} for headers (DO NOT include report title as a section)
+- \\\\textbf{text} for bold, \\\\textit{text} for italic
+- \\\\begin{itemize} \\\\item ... \\\\end{itemize} for bullets
+- \\\\begin{enumerate} \\\\item ... \\\\end{enumerate} for numbered lists
 - Standard paragraphs as plain text
 
+TITLE PARAMETER (REQUIRED):
+- Pass the research subject as the 'title' parameter (e.g., "codewarnab", "React", "OpenAI")
+- Backend will generate a styled header with the title and current date
+- DO NOT include \\\\section{Research Report: ...} in content - title is handled separately
+
 LIMITATIONS (LaTeX Online API):
-- No \\include{} or \\input{} - all content must be inline
+- No \\\\include{} or \\\\input{} - all content must be inline
 - No fontawesome package - use standard symbols
 - No BibTeX - embed citations directly
 - Large documents (>7000 chars) will be automatically chunked and merged
@@ -42,14 +47,15 @@ LIMITATIONS (LaTeX Online API):
 
 Shows error with retry option if LaTeX compilation fails.`,
             parameters: z.object({
-                content: z.string().optional().describe('The LaTeX content to render in the PDF. Use LaTeX formatting: \\section{}, \\textbf{}, \\begin{itemize}, etc. Optional if using compileFromBuffer.'),
+                content: z.string().optional().describe('The LaTeX content to render in the PDF. Use LaTeX formatting: \\\\section{}, \\\\textbf{}, \\\\begin{itemize}, etc. DO NOT include a title section - use the title parameter instead. Optional if using compileFromBuffer.'),
+                title: z.string().optional().describe('The research subject title (e.g., "codewarnab", "React Framework", "OpenAI"). Will be displayed as a styled header at the top of the PDF. ALWAYS provide this.'),
                 filename: z.string()
                     .describe('The filename for the PDF file (without extension). Example: "research-report-2025"')
                     .optional()
                     .default('report'),
                 compileFromBuffer: z.boolean().optional().describe('If true, compile content from report sections buffer instead of using content parameter'),
             }),
-            execute: async ({ content, filename, compileFromBuffer }) => {
+            execute: async ({ content, title, filename, compileFromBuffer }) => {
                 try {
                     let finalContent = content;
 
@@ -97,8 +103,11 @@ Shows error with retry option if LaTeX compilation fails.`,
                     const fullFilename = `${cleanFilename}.pdf`;
 
                     // Generate PDF using LaTeX Online API
-                    log.info('Generating PDF via LaTeX Online API...');
-                    const pdfBlob = await generatePDFFromLatex(finalContent);
+                    log.info('Generating PDF via LaTeX Online API...', { title });
+                    const pdfBlob = await generatePDFFromLatex(finalContent, {
+                        filename: fullFilename,
+                        title
+                    });
 
                     // Store PDF in IndexedDB for persistent access
                     const pdfId = await storePDF(pdfBlob, fullFilename);
