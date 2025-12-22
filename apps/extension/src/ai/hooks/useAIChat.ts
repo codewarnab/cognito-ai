@@ -6,6 +6,7 @@
  */
 
 import { useChat } from '@ai-sdk/react';
+import { lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { SimpleFrontendTransport } from '../transport/SimpleFrontendTransport';
 import type { UIMessage } from 'ai';
 import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
@@ -235,6 +236,8 @@ export function useAIChat(options: UseAIChatOptions) {
   const chat = useChat({
     id: threadId,
     transport,
+    // Auto-send when all tool results are available (for human-in-the-loop approval flow)
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
     onError: handleError,
     onFinish: (finishResult) => {
       // Add null safety check for message - may not exist in all stream modes
@@ -342,6 +345,8 @@ export function useAIChat(options: UseAIChatOptions) {
     resetUsage,
     // Expose setter for external usage updates (e.g., from thread loading)
     setUsage: setCurrentUsage,
+    // Expose addToolOutput for human-in-the-loop tool approval
+    addToolOutput: chat.addToolOutput,
     // Add custom cleanup method
     cleanup: () => {
       transport.cleanup(threadId);

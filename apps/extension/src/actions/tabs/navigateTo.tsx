@@ -13,7 +13,7 @@ import { useToolUI } from '@/ai/tools/components';
 import { createLogger } from '~logger';
 import { useActionHelpers } from '../useActionHelpers';
 import { CompactToolRenderer } from '@/ai/tools/components';
-import type { ToolUIState } from '@/ai/tools/components';
+import type { ToolUIState, ToolUIRenderOptions } from '@/ai/tools/components';
 import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
 
@@ -99,8 +99,8 @@ export function useNavigateToTool() {
         });
 
         // Register the UI renderer for this tool - uses CompactToolRenderer with custom renderers
-        registerToolUI('navigateTo', (state: ToolUIState) => {
-            return <CompactToolRenderer state={state} />;
+        registerToolUI('navigateTo', (state: ToolUIState, options?: ToolUIRenderOptions) => {
+            return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
         }, {
             // Optional: Custom input renderer for navigateTo tool
             renderInput: (input: { url: string; newTab: boolean }) => (

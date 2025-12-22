@@ -19,12 +19,14 @@ const log = createLogger('CompactToolCard', 'UI_CHAT');
 
 interface CompactToolCardProps {
     toolName: string;
-    state: 'loading' | 'success' | 'error';
+    state: 'loading' | 'success' | 'error' | 'pending-approval';
     input?: any;
     output?: any;
     errorText?: string;
     customRenderers?: CustomInputOutputRenderers;
     messageId?: string; // For Blob URL lifecycle management
+    onApprove?: () => void; // Human-in-the-loop approval
+    onDeny?: () => void; // Human-in-the-loop denial
 }
 
 export function CompactToolCard({
@@ -34,7 +36,9 @@ export function CompactToolCard({
     output,
     errorText,
     customRenderers,
-    messageId
+    messageId,
+    onApprove,
+    onDeny
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
     useEffect(() => {
@@ -169,6 +173,16 @@ export function CompactToolCard({
                         <CircleCheckIcon ref={circleCheckRef} size={16} />
                     </div>
 
+                    {/* Pending approval icon - amber/yellow */}
+                    {state === 'pending-approval' && (
+                        <div className="w-4 h-4 rounded-full flex items-center justify-center text-amber-500 shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 6v6l4 2" />
+                            </svg>
+                        </div>
+                    )}
+
                     {/* Error icon - only visible when error */}
                     {state === 'error' && (
                         <div className="w-4 h-4 rounded-full flex items-center justify-center bg-[var(--color-error)] text-white text-[10px] font-bold shrink-0">✕</div>
@@ -183,6 +197,35 @@ export function CompactToolCard({
                     )}
                 </div>
             </div>
+
+            {/* Human-in-the-loop Approval Buttons */}
+            {state === 'pending-approval' && (onApprove || onDeny) && (
+                <div className="flex items-center gap-2 mt-2 pl-6 animate-in slide-in-from-top-1 fade-in duration-200">
+                    <span className="text-xs text-[var(--text-secondary)]">
+                        Allow this action?
+                    </span>
+                    {onApprove && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onApprove(); }}
+                            className="px-3 py-1 text-xs font-medium rounded-md 
+                                bg-green-600 hover:bg-green-700 text-white cursor-pointer
+                                transition-colors duration-150 flex items-center gap-1"
+                        >
+                            ✓ Approve
+                        </button>
+                    )}
+                    {onDeny && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDeny(); }}
+                            className="px-3 py-1 text-xs font-medium rounded-md
+                                bg-red-600 hover:bg-red-700 text-white cursor-pointer
+                                transition-colors duration-150 flex items-center gap-1"
+                        >
+                            ✕ Deny
+                        </button>
+                    )}
+                </div>
+            )}
 
             {/* File Attachment - Always visible when available */}
             {output?.fileData && state === 'success' && (

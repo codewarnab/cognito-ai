@@ -29,14 +29,18 @@ export const hasToolCalls = (message: Message): boolean => {
         }
 
         const toolParts = message.parts.filter((part: any) => {
-            if (!part || !part.type) return false;
+            if (!part) return false;
 
             const isToolCall = part.type === 'tool-call';
             const isToolResult = part.type === 'tool-result';
-            const startsWithTool = part.type.startsWith('tool-');
+            const startsWithTool = part.type?.startsWith('tool-');
             const isDynamicTool = part.type === 'dynamic-tool';
 
-            return isToolCall || isToolResult || startsWithTool || isDynamicTool;
+            // Support Gemini native format
+            const hasFunctionCall = part.functionCall !== undefined;
+            const hasFunctionResponse = part.functionResponse !== undefined;
+
+            return isToolCall || isToolResult || startsWithTool || isDynamicTool || hasFunctionCall || hasFunctionResponse;
         });
 
         return toolParts.length > 0;

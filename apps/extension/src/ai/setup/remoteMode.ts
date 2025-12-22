@@ -34,6 +34,12 @@ export interface RemoteModeSetup {
 const WORKFLOW_ONLY_TOOLS = ['generatePDF', 'getReportTemplate'];
 
 /**
+ * Tools that require human approval before execution
+ * These tools will show Approve/Deny buttons in the UI and wait for user decision
+ */
+export const TOOLS_REQUIRING_APPROVAL = ['navigateTo'];
+
+/**
  * Setup remote mode with tools
  * Supports both Google Generative AI and Vertex AI providers
  * 

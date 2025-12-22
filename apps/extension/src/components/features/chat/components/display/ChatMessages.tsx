@@ -71,6 +71,7 @@ interface ChatMessagesProps {
     onContinue?: () => void; // Callback to send continue message
     threadId?: string | null; // Current thread ID for brain button
     onQuoteText?: (text: string) => void; // Callback to insert quoted text into composer
+    addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void; // Human-in-the-loop approval
 }
 
 /**
@@ -81,10 +82,33 @@ interface ChatMessagesProps {
  * - tool-call shows loading state (no result yet)
  * - tool-result shows success state (execution complete)
  * - Only the latest state is displayed
+ * 
+ * Handles both AI SDK format (tool-call/tool-result) and Gemini format (functionCall/functionResponse)
  */
 function mergeToolParts(parts: any[]): any[] {
     const toolMap = new Map<string, any>();
     const mergedParts: any[] = [];
+
+    // Helper to check if part is a tool call (AI SDK or Gemini format)
+    const isToolCall = (part: any) =>
+        part.type === 'tool-call' ||
+        part.type?.startsWith('tool-') ||
+        part.type === 'dynamic-tool' ||
+        part.functionCall !== undefined;
+
+    // Helper to check if part is a tool result (AI SDK or Gemini format)
+    const isToolResult = (part: any) =>
+        part.type === 'tool-result' ||
+        part.type === 'tool-output-available' ||
+        part.functionResponse !== undefined;
+
+    // Helper to get toolCallId from various formats
+    const getToolCallId = (part: any): string | undefined => {
+        if (part.toolCallId) return part.toolCallId;
+        if (part.functionCall?.name) return `gemini-${part.functionCall.name}`;
+        if (part.functionResponse?.name) return `gemini-${part.functionResponse.name}`;
+        return undefined;
+    };
 
     for (const part of parts) {
         // Handle text parts - always include
@@ -94,13 +118,8 @@ function mergeToolParts(parts: any[]): any[] {
         }
 
         // Handle tool parts - merge by toolCallId
-        if (
-            part.type === 'tool-call' ||
-            part.type === 'tool-result' ||
-            part.type?.startsWith('tool-') ||
-            part.type === 'dynamic-tool'
-        ) {
-            const toolCallId = part.toolCallId;
+        if (isToolCall(part) || isToolResult(part)) {
+            const toolCallId = getToolCallId(part);
 
             if (!toolCallId) {
                 // No ID, can't merge - just add it
@@ -117,8 +136,8 @@ function mergeToolParts(parts: any[]): any[] {
                 mergedParts.push(part);
             } else {
                 // We've seen this tool before - merge the parts
-                // tool-result should override tool-call
-                if (part.type === 'tool-result') {
+                // tool-result/functionResponse should override tool-call/functionCall
+                if (isToolResult(part)) {
                     // Replace the existing part with the result
                     const index = mergedParts.indexOf(existingTool);
                     if (index !== -1) {
@@ -126,12 +145,12 @@ function mergeToolParts(parts: any[]): any[] {
                         const mergedPart = {
                             ...part,
                             args: existingTool.args || part.args,
-                            input: existingTool.input || part.input,
+                            input: existingTool.input || part.input || existingTool.functionCall?.args,
                         };
                         mergedParts[index] = mergedPart;
                         toolMap.set(toolCallId, mergedPart);
                     }
-                } else if (existingTool.type === 'tool-call' && part.type === 'tool-call') {
+                } else if (isToolCall(existingTool) && isToolCall(part)) {
                     // Multiple tool-calls with same ID - keep the first one
                     continue;
                 }
@@ -171,6 +190,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     onContinue,
     threadId,
     onQuoteText,
+    addToolOutput,
 }) => {
     const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
@@ -242,6 +262,157 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
         return hasContinueStatus;
     }, [messages, isLoading]);
 
+    // Pre-process messages to:
+    // 1. Deduplicate consecutive assistant messages with the same toolCallId (AI SDK v5 bug workaround)
+    //    The bug: AbstractChat.makeRequest generates a new message ID at line 9363, ignoring the
+    //    messageId parameter passed from addToolOutput. This causes pushMessage instead of replaceMessage.
+    // NOTE: We no longer merge user tool-result messages - that was causing issues with subsequent tool calls
+    const processedMessages = useMemo(() => {
+        const result: Message[] = [];
+        const skipIds = new Set<string>();
+
+        // Helper to extract tool identifiers from a message (supports both AI SDK and Gemini formats)
+        const getToolIdentifiers = (m: Message): Set<string> => {
+            const ids = new Set<string>();
+            if (!m.parts) return ids;
+            m.parts.forEach((part: any) => {
+                // AI SDK format: uses toolCallId
+                if (part.toolCallId) {
+                    ids.add(part.toolCallId);
+                }
+                // Gemini format: uses functionCall.name (fallback)
+                // Note: We create a composite key to avoid collisions
+                if (part.functionCall?.name && !part.toolCallId) {
+                    // Use function name + args hash as identifier
+                    const argsStr = JSON.stringify(part.functionCall.args || {});
+                    ids.add(`gemini:${part.functionCall.name}:${argsStr.substring(0, 50)}`);
+                }
+            });
+            return ids;
+        };
+
+        // Helper to check if two messages are duplicates (same tool calls)
+        // Returns true ONLY if they have exactly the same tools (not just overlapping)
+        const areDuplicateToolMessages = (m1: Message, m2: Message): boolean => {
+            const ids1 = getToolIdentifiers(m1);
+            const ids2 = getToolIdentifiers(m2);
+
+            // Must have same number of tool calls
+            if (ids1.size !== ids2.size || ids1.size === 0) return false;
+
+            // All IDs must match
+            for (const id of ids1) {
+                if (!ids2.has(id)) return false;
+            }
+            return true;
+        };
+
+        // Helper to check if a tool part has output (completed state)
+        const hasToolOutput = (part: any): boolean => {
+            return part.state === 'output-available' ||
+                part.state === 'result' ||
+                part.output !== undefined ||
+                part.functionResponse !== undefined;
+        };
+
+        // Helper to merge two assistant messages with matching tool calls
+        // The newer message's parts take precedence for completed tool calls
+        const mergeAssistantMessages = (older: Message, newer: Message): Message => {
+            const olderParts = older.parts || [];
+            const newerParts = newer.parts || [];
+
+            // Create a map of toolCallId -> newer part (with output)
+            const newerToolParts = new Map<string, any>();
+            newerParts.forEach((part: any) => {
+                if (part.toolCallId && hasToolOutput(part)) {
+                    newerToolParts.set(part.toolCallId, part);
+                }
+            });
+
+            // Merge: use newer parts where available, otherwise keep older parts
+            const mergedParts = olderParts.map((part: any) => {
+                if (part.toolCallId && newerToolParts.has(part.toolCallId)) {
+                    return newerToolParts.get(part.toolCallId);
+                }
+                return part;
+            });
+
+            // Add any text parts from newer message that aren't in older
+            newerParts.forEach((part: any) => {
+                if (part.type === 'text' && part.text?.trim()) {
+                    // Only add if older doesn't have this text
+                    const hasText = mergedParts.some((p: any) =>
+                        p.type === 'text' && p.text === part.text
+                    );
+                    if (!hasText) {
+                        mergedParts.push(part);
+                    }
+                }
+            });
+
+            return {
+                ...older,
+                parts: mergedParts
+            };
+        };
+
+        console.log('[DEDUP] Processing messages, count:', messages.length);
+
+        for (let i = 0; i < messages.length; i++) {
+            const msg = messages[i];
+
+            if (!msg) continue;
+            if (msg.id && skipIds.has(msg.id)) {
+                console.log(`[DEDUP] Skipping message ${i} (id: ${msg.id}) - already processed`);
+                continue;
+            }
+
+            const hasToolCallsResult = hasToolCalls(msg);
+            console.log(`[DEDUP] Message ${i}: role=${msg.role}, hasTools=${hasToolCallsResult}, id=${msg.id}`);
+
+            // Only deduplicate assistant messages with tool calls
+            if (msg.role === 'assistant' && hasToolCallsResult) {
+                // Look ahead for potential duplicates (AI SDK v5 bug creates duplicate assistant messages)
+                if (i + 1 < messages.length) {
+                    const nextMsg = messages[i + 1];
+
+                    // ONLY merge if next is ALSO an assistant message with EXACTLY the same tools
+                    // This handles the duplicate bug where the same tool call appears twice
+                    if (nextMsg && nextMsg.role === 'assistant' && hasToolCalls(nextMsg)) {
+                        if (areDuplicateToolMessages(msg, nextMsg)) {
+                            console.log('[DEDUP] ✓ Found exact duplicate, merging', {
+                                olderId: msg.id,
+                                newerId: nextMsg.id,
+                                toolIds: Array.from(getToolIdentifiers(msg))
+                            });
+
+                            // Merge the messages, newer takes precedence for completed tools
+                            const mergedMsg = mergeAssistantMessages(msg, nextMsg);
+                            result.push(mergedMsg);
+
+                            // Skip the duplicate
+                            if (nextMsg.id) {
+                                skipIds.add(nextMsg.id);
+                            }
+                            continue;
+                        } else {
+                            console.log('[DEDUP] ✗ Not duplicates - different tools', {
+                                msg1Tools: Array.from(getToolIdentifiers(msg)),
+                                msg2Tools: Array.from(getToolIdentifiers(nextMsg))
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Default: just push the message
+            result.push(msg);
+        }
+
+        console.log('[DEDUP] Final result count:', result.length, 'skipped:', Array.from(skipIds));
+        return result;
+    }, [messages]);
+
     return (
         <div className="chat-messages-container flex-1 overflow-y-auto overflow-x-hidden pr-1 pl-4 pb-6 pt-16 flex flex-col gap-3 bg-[#0a0e1a] min-h-0 relative" ref={messagesContainerRef}>
             {/* Quote popover for text selection */}
@@ -251,12 +422,16 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                 <EmptyState isLocalMode={isLocalMode} onConfigureApiKey={onConfigureApiKey} />
             ) : (
                 <AnimatePresence>
-                    {messages
+                    {processedMessages
                         .filter(message => {
                             // Filter out internal messages (tab context)
                             if ((message as any).metadata?.internal) {
                                 return false;
                             }
+
+                            // Note: We don't need to filter tool-result messages here anymore
+                            // because they are handled in processedMessages above
+
                             const content = getMessageContent(message);
                             const hasText = typeof content === 'string' && content.trim().length > 0;
                             const hasTools = hasToolCalls(message);
@@ -435,6 +610,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                     <ToolPartRenderer
                                                                         part={part}
                                                                         messageId={message.id || `msg-${index}`}
+                                                                        addToolOutput={addToolOutput}
                                                                     />
                                                                 </div>
                                                             );

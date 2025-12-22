@@ -4,7 +4,7 @@
 
 export interface ActionFormatterContext {
     toolName: string;
-    state: 'loading' | 'success' | 'error';
+    state: 'loading' | 'success' | 'error' | 'pending-approval';
     input?: any;
     output?: any;
 }

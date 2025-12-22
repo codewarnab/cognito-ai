@@ -21,13 +21,14 @@ const log = createLogger('ToolPartRenderer', 'UI_CHAT');
 interface ToolPartRendererProps {
   part: any; // Tool part from AI SDK v5 message
   messageId: string;
+  addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void;
 }
 
 /**
  * Renders a single tool part
  * Handles AI SDK v5 tool call formats
  */
-export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
+export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRendererProps) {
   const { renderTool, hasRenderer } = useToolUI();
 
   const toolState = useMemo(() => {
@@ -109,10 +110,10 @@ export function ToolPartRenderer({ part, messageId }: ToolPartRendererProps) {
 
   // Check if we have a custom renderer
   if (hasRenderer(toolState.toolName)) {
-    return <>{renderTool(toolState)}</>;
+    return <>{renderTool(toolState, { addToolOutput })}</>;
   }
 
   // Default fallback renderer for tools without custom UI
-  return <CompactToolRenderer state={toolState} messageId={messageId} />;
+  return <CompactToolRenderer state={toolState} messageId={messageId} addToolOutput={addToolOutput} />;
 }
 

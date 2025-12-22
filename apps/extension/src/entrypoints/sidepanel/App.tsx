@@ -271,6 +271,7 @@ function AIChatContent() {
         status,
         stop,
         usage,
+        addToolOutput,
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
@@ -544,6 +545,7 @@ function AIChatContent() {
                                 usage={storeUsage || usage}
                                 localPdfInfo={localPdfInfo}
                                 threadId={currentThreadId}
+                                addToolOutput={addToolOutput}
                             />
 
                             {/* Floating Recording Pill - Only in text mode */}
@@ -597,9 +599,9 @@ function AIChatContent() {
 function App() {
     return (
         <WindowVisibilityProvider>
-                <ToolUIProvider>
-                    <AIChatContent />
-                </ToolUIProvider>
+            <ToolUIProvider>
+                <AIChatContent />
+            </ToolUIProvider>
         </WindowVisibilityProvider>
     );
 }

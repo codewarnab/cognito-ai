@@ -18,8 +18,13 @@ export interface ToolUIState {
   errorText?: string;
 }
 
+// Options passed to tool UI renderers (includes addToolOutput for approval flow)
+export interface ToolUIRenderOptions {
+  addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void;
+}
+
 export interface ToolUIRenderer {
-  (state: ToolUIState): ReactNode;
+  (state: ToolUIState, options?: ToolUIRenderOptions): ReactNode;
 }
 
 // Optional custom renderers for tool-specific input/output UI
@@ -31,7 +36,7 @@ export interface CustomInputOutputRenderers {
 interface ToolUIContextType {
   registerToolUI: (toolName: string, renderer: ToolUIRenderer, customRenderers?: CustomInputOutputRenderers) => void;
   unregisterToolUI: (toolName: string) => void;
-  renderTool: (state: ToolUIState) => ReactNode;
+  renderTool: (state: ToolUIState, options?: ToolUIRenderOptions) => ReactNode;
   hasRenderer: (toolName: string) => boolean;
   getCustomRenderers: (toolName: string) => CustomInputOutputRenderers | undefined;
 }
@@ -74,10 +79,10 @@ export function ToolUIProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const renderTool = useCallback((state: ToolUIState): ReactNode => {
+  const renderTool = useCallback((state: ToolUIState, options?: ToolUIRenderOptions): ReactNode => {
     const renderer = renderers.get(state.toolName);
     if (renderer) {
-      return renderer(state);
+      return renderer(state, options);
     }
     return null;
   }, [renderers]);

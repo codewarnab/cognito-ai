@@ -8,6 +8,7 @@ import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 import { createOnStepFinishCallback, createOnFinishCallback } from './streamCallbacks';
+import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
 
 const log = createLogger('StreamExecutor', 'AI_CHAT');
 
@@ -88,6 +89,15 @@ export async function executeStreamText(params: {
         const abortableTools = abortSignal ? (() => {
             const boundTools: Record<string, any> = {};
             Object.entries(tools).forEach(([name, tool]) => {
+                // Human-in-the-loop: Strip execute from tools requiring approval
+                // AI SDK will wait for frontend to call addToolOutput
+                if (TOOLS_REQUIRING_APPROVAL.includes(name)) {
+                    log.info(`🛡️ Tool "${name}" requires human approval - no auto-execute`);
+                    const { execute, ...toolWithoutExecute } = tool as any;
+                    boundTools[name] = toolWithoutExecute;
+                    return;
+                }
+
                 boundTools[name] = {
                     ...tool,
                     execute: async (args: any) => {
@@ -125,6 +135,15 @@ export async function executeStreamText(params: {
             // Also wrap tools without abort signal for consistency
             const boundTools: Record<string, any> = {};
             Object.entries(tools).forEach(([name, tool]) => {
+                // Human-in-the-loop: Strip execute from tools requiring approval
+                // AI SDK will wait for frontend to call addToolOutput
+                if (TOOLS_REQUIRING_APPROVAL.includes(name)) {
+                    log.info(`🛡️ Tool "${name}" requires human approval - no auto-execute`);
+                    const { execute, ...toolWithoutExecute } = tool as any;
+                    boundTools[name] = toolWithoutExecute;
+                    return;
+                }
+
                 boundTools[name] = {
                     ...tool,
                     execute: async (args: any) => {

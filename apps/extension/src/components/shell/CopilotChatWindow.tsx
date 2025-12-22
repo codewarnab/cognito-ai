@@ -40,6 +40,7 @@ interface CopilotChatWindowProps {
     usage?: AppUsage | null;
     localPdfInfo?: LocalPdfInfo | null;
     threadId?: string | null;
+    addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void; // Human-in-the-loop approval
 }
 
 export function CopilotChatWindow({
@@ -68,6 +69,7 @@ export function CopilotChatWindow({
     usage,
     localPdfInfo,
     threadId,
+    addToolOutput,
 }: CopilotChatWindowProps) {
     // Use Zustand stores for model and settings state
     const mode = useModelStore((state: StoreModelState) => state.mode);
@@ -200,6 +202,7 @@ export function CopilotChatWindow({
                         }
                     }, 0);
                 }}
+                addToolOutput={addToolOutput}
             />
 
             <ChatInput
