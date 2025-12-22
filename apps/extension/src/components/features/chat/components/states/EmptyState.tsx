@@ -61,7 +61,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
                         color: 'var(--text-secondary)',
                     }}
                 >
-                    Tip: {currentTip}
+                    💡 {currentTip}
                 </div>
             )}
 

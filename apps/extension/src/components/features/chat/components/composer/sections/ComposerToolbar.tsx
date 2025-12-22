@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
-import { Wrench, Cloud, Key } from 'lucide-react';
+import { Wrench, Cloud, Key, Globe } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
+import { useWebMCPTools } from '@/hooks/webmcp';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
 
@@ -61,6 +62,11 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Get ToolsMode (chat/agent/adaptive/custom) - different from AIProviderMode (local/remote)
     const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
     const isAdaptiveMode = toolsMode === 'adaptive';
+
+    // Get WebMCP tools data including favicon
+    const { tools: webMcpTools } = useWebMCPTools();
+    const webMcpFavicon = webMcpTools[0]?.favicon;
+    const [faviconError, setFaviconError] = useState(false);
 
     // Debug logging for tools display
     log.info('🔧 ComposerToolbar render', {
@@ -125,8 +131,28 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                         >
                             <Wrench size={14} />
                             <span style={{ fontSize: '10px', fontWeight: 400 }}>
-                                {totalEnabledCount}
+                                {totalEnabledCount - webMcpToolsCount}
                             </span>
+                            {webMcpToolsCount > 0 && (
+                                <>
+                                    <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.5, margin: '0 2px' }}>+</span>
+                                    {webMcpFavicon && !faviconError ? (
+                                        <img
+                                            src={webMcpFavicon}
+                                            alt=""
+                                            width={12}
+                                            height={12}
+                                            style={{ opacity: 0.9, borderRadius: '2px' }}
+                                            onError={() => setFaviconError(true)}
+                                        />
+                                    ) : (
+                                        <Globe size={12} style={{ opacity: 0.7 }} />
+                                    )}
+                                    <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.7 }}>
+                                        {webMcpToolsCount}
+                                    </span>
+                                </>
+                            )}
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
