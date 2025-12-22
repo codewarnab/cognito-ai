@@ -154,6 +154,143 @@ export async function extractPageContext(): Promise<PageContext | null> {
                 }
 
                 /**
+                 * SECURITY: 3-Layer sensitive input detection
+                 * 
+                 * LAYER 1: Type, autocomplete, name, id, placeholder pattern matching
+                 * LAYER 2: Password toggle sibling detection (handles "show password" cases)
+                 * LAYER 3: Value-based heuristics (catches edge cases)
+                 * 
+                 * Detects password fields, credit card inputs, SSN, and other PII fields
+                 */
+                function isSensitiveInput(input: HTMLInputElement | HTMLTextAreaElement): boolean {
+                    const type = (input.type || '').toLowerCase();
+                    const name = (input.name || '').toLowerCase();
+                    const id = (input.id || '').toLowerCase();
+                    const autocomplete = (input.autocomplete || '').toLowerCase();
+                    const placeholder = (input.placeholder || '').toLowerCase();
+
+                    // ================================================================
+                    // LAYER 1: Pattern-based detection
+                    // ================================================================
+
+                    // SECURITY: Input types that are inherently sensitive
+                    const sensitiveTypes = ['password'];
+                    if (sensitiveTypes.includes(type)) {
+                        return true;
+                    }
+
+                    // SECURITY: Autocomplete values indicating sensitive data
+                    const sensitiveAutocomplete = [
+                        'cc-number', 'cc-exp', 'cc-exp-month', 'cc-exp-year', 'cc-csc', 'cc-type',
+                        'current-password', 'new-password', 'one-time-code'
+                    ];
+                    if (sensitiveAutocomplete.some(s => autocomplete.includes(s))) {
+                        return true;
+                    }
+
+                    // SECURITY: Patterns in name/id/autocomplete/placeholder that indicate sensitive fields
+                    // LAYER 1 ENHANCEMENT: Added "pass", "pwd" abbreviations
+                    const sensitivePatterns = [
+                        /password/i, /passwd/i, /secret/i, /pass/i, /pwd/i,
+                        /credit.?card/i, /card.?number/i, /cvv/i, /cvc/i, /csc/i,
+                        /ssn/i, /social.?security/i, /tax.?id/i,
+                        /pin/i, /security.?code/i, /routing.?number/i, /account.?number/i
+                    ];
+                    const fieldsToCheck = [name, id, autocomplete, placeholder];
+                    for (const field of fieldsToCheck) {
+                        if (sensitivePatterns.some(pattern => pattern.test(field))) {
+                            return true;
+                        }
+                    }
+
+                    // ================================================================
+                    // LAYER 2: Password toggle sibling detection
+                    // ================================================================
+                    // Handles "show password" cases where type="text" but it's actually a password field
+
+                    if (type === 'text' || !type) {
+                        const togglePatterns = ['toggle', 'eye', 'show', 'hide', 'visibility', 'reveal', 'peek'];
+                        const containerPatterns = ['password', 'pass-field', 'pwd-field', 'password-field', 'password-input', 'password-wrapper'];
+
+                        // Check if input is inside a password container
+                        const parent = input.closest('[class], [id]');
+                        if (parent) {
+                            const parentClass = ((parent as HTMLElement).className || '').toLowerCase();
+                            const parentId = (parent.id || '').toLowerCase();
+                            const combined = parentClass + ' ' + parentId;
+
+                            if (containerPatterns.some(p => combined.includes(p))) {
+                                return true;
+                            }
+                        }
+
+                        // Check for toggle button siblings
+                        const parentContainer = input.parentElement;
+                        if (parentContainer) {
+                            const searchContainers = [parentContainer, parentContainer.parentElement].filter(Boolean) as HTMLElement[];
+
+                            for (const container of searchContainers) {
+                                const allElements = container.querySelectorAll('*');
+                                for (const el of allElements) {
+                                    if (el === input) continue;
+                                    const elClass = ((el as HTMLElement).className || '').toLowerCase();
+                                    const elId = ((el as HTMLElement).id || '').toLowerCase();
+                                    const combined = elClass + ' ' + elId;
+
+                                    if (togglePatterns.some(p => combined.includes(p))) {
+                                        return true;
+                                    }
+                                }
+
+                                // Check for icon selectors (Font Awesome, Material Icons, etc.)
+                                const iconSelectors = ['.fa-eye', '.fa-eye-slash', '[class*="icon-eye"]', 'svg[class*="eye"]'];
+                                for (const iconSelector of iconSelectors) {
+                                    if (container.querySelector(iconSelector)) {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check associated label
+                        if (input.id) {
+                            const label = document.querySelector(`label[for="${input.id}"]`);
+                            if (label) {
+                                const labelText = (label.textContent || '').toLowerCase();
+                                if (/password|pass|secret|pin/i.test(labelText)) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+
+                    // ================================================================
+                    // LAYER 3: Value-based heuristics
+                    // ================================================================
+                    // Catches edge cases where value looks like a password
+
+                    if (type === 'text' || !type) {
+                        const value = input.value || '';
+
+                        // Skip empty or very short/long values
+                        if (value.length >= 8 && value.length <= 128 && !value.includes(' ')) {
+                            const hasLowercase = /[a-z]/.test(value);
+                            const hasUppercase = /[A-Z]/.test(value);
+                            const hasNumbers = /\d/.test(value);
+                            const hasSymbols = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+
+                            // If value has 3+ character types, likely a password
+                            const charTypeCount = [hasLowercase, hasUppercase, hasNumbers, hasSymbols].filter(Boolean).length;
+                            if (charTypeCount >= 3) {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                }
+
+                /**
                  * Extract all input fields
                  */
                 function extractInputs(): Array<any> {
@@ -167,11 +304,15 @@ export async function extractPageContext(): Promise<PageContext | null> {
                     for (const input of inputElements) {
                         if (!isVisible(input)) continue;
 
+                        // SECURITY: Strip sensitive input values (passwords, credit cards, SSN, etc.) to prevent PII leakage to AI
+                        const shouldStripValue = isSensitiveInput(input);
+
                         inputs.push({
                             type: input.type || 'text',
                             label: getInputLabel(input),
                             placeholder: input.placeholder || undefined,
-                            value: input.value || undefined,
+                            // SECURITY: Stripping value from sensitive fields to prevent sending passwords/PII to AI backend
+                            value: shouldStripValue ? undefined : (input.value || undefined),
                             name: input.name || undefined,
                             id: input.id || undefined,
                         });
@@ -334,7 +475,18 @@ export function formatPageContextForAI(context: PageContext): string {
         parts.push(`\n📝 Input Fields (${context.inputs.length}):`);
         context.inputs.slice(0, 15).forEach((input, i) => {
             const label = input.label || input.placeholder || input.name || `Input ${i + 1}`;
-            parts.push(`  • ${input.type}: "${label}"${input.value ? ` (value: "${input.value.substring(0, 30)}")` : ''}`);
+
+            // SECURITY: Defense-in-depth - never include values from sensitive field types in AI output
+            // LAYER 1 patterns expanded with "pass", "pwd" abbreviations
+            const isSensitiveType = input.type === 'password' ||
+                /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin|security.?code/i.test(input.name || '') ||
+                /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin|security.?code/i.test(input.id || '') ||
+                /password|passwd|pass|pwd|secret/i.test(input.placeholder || '') ||
+                /password|pass|pwd|secret|pin/i.test(label);
+
+            // SECURITY: Stripping sensitive field values to prevent PII leakage to AI
+            const valueDisplay = (input.value && !isSensitiveType) ? ` (value: "${input.value.substring(0, 30)}")` : '';
+            parts.push(`  • ${input.type}: "${label}"${valueDisplay}`);
         });
     }
 

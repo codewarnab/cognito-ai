@@ -48,7 +48,7 @@ WORKFLOW OBJECTIVE:
 
 AVAILABLE TOOLS (FULL ACCESS FOR RESEARCH):
 - Navigation: navigateTo, switchTabs, getActiveTab, openTab, getAllTabs
-- Content Extraction: readPageContent, extractText, getSearchResults
+- Content Extraction: readPageContent, getSearchResults
 - Search: chromeSearch, openSearchResult
 - Interaction: clickByText, typeInField, pressKey, scrollPage
 - Tab Management: applyTabGroups, organizeTabsByContext
@@ -96,9 +96,8 @@ ${tabIdExamples}
    Step 7: Save important discoveries
 
 3. CONTENT EXTRACTION:
-   • readPageContent - Extract basic text content from current page
+   • readPageContent - Extract text content from current page
      - MUST call after EVERY switchTabs to get current page context
-   • extractText - Advanced page analysis with structure
    • getActiveTab - Check which tab you're currently on (URL, title)
 
 4. SEARCH RESULT SELECTION CRITERIA:
@@ -261,7 +260,6 @@ export function createResearchWorkflow(settings: ResearchWorkflowSettings): Work
 
          // Content extraction
          'readPageContent',
-         'extractText',
          'getSearchResults',
 
          // Search

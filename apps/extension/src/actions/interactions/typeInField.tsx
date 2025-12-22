@@ -19,24 +19,23 @@ export function useTypeInFieldTool() {
 
         registerTool({
             name: "typeInField",
-            description: `Type text into input fields using natural language descriptions. Handles shadow DOM, iframes, and all input types. USE FOR: Forms, search boxes, text areas, any text input (email, password, comments, etc.) PRECONDITIONS: Page has input/textarea/contentEditable elements. If target specified, field must be findable. If omitted, an input must be focused. PROCESS: Finds input by description (placeholder/label/aria-label/nearby text/position) → scrolls into view → highlights → focuses → clears if requested → types instantly → presses Enter if requested → triggers input/change events (React/Vue compatible) VERIFICATION: use takeScreenshot tool to verify text was entered correctly.(Optional but recommended) LIMITATIONS: Can bypass disabled/readonly fields (will indicate in response when bypassed). May fail on custom widgets (fallback: clickByText + pressKey). Types instantly (may trigger anti-bot). Cannot type special key combinations (use pressKey). EXAMPLE: typeInField(text="React hooks tutorial", target="search box", pressEnter=true)`,
+            description: `Type text into input fields using natural language descriptions. Handles shadow DOM, iframes, and all input types. USE FOR: Forms, search boxes, text areas, any text input (email, password, comments, etc.) PRECONDITIONS: Page has input/textarea/contentEditable elements. If target specified, field must be findable. If omitted, an input must be focused. PROCESS: Finds input by description (placeholder/label/aria-label/nearby text/position) → scrolls into view → highlights → focuses → clears if requested → types instantly → triggers input/change events (React/Vue compatible) VERIFICATION: use takeScreenshot tool to verify text was entered correctly.(Optional but recommended) LIMITATIONS: Can bypass disabled/readonly fields (will indicate in response when bypassed). May fail on custom widgets (fallback: clickByText + pressKey). Types instantly (may trigger anti-bot). Cannot type special key combinations (use pressKey). To press Enter after typing, use the pressKey tool separately. EXAMPLE: typeInField(text="React hooks tutorial", target="search box")`,
             parameters: z.object({
                 text: z.string().describe('Text to type into the field. Can be any string (letters, numbers, symbols). Will be inserted instantly. Examples: "john@example.com", "React hooks tutorial", "Hello world!"'),
                 target: z.string().optional().describe('Natural language description of the input field to find. Examples: "search box", "email field", "password input", "comment box", "first input", "username field". Searches by placeholder, label, aria-label, nearby text, name, id. If omitted, types into currently focused element.'),
-                clearFirst: z.boolean().optional().describe('If true, clears existing field content before typing. Default: false. Use true when replacing content, false when appending.').default(false),
-                pressEnter: z.boolean().optional().describe('If true, presses Enter key after typing to submit form or trigger search. Default: false. Use true for search boxes and single-field forms.').default(false),
+                clearFirst: z.boolean().optional().describe('If true, clears existing field content before typing. Default: true. Use false when appending. ').default(true),
             }),
-            execute: async ({ text, target, clearFirst = false, pressEnter = false }) => {
+            execute: async ({ text, target, clearFirst = true }) => {
                 try {
-                    log.info("TOOL CALL: typeInField", { textLength: text.length, target, clearFirst, pressEnter });
+                    log.info("TOOL CALL: typeInField", { textLength: text.length, target, clearFirst });
                     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
                     if (!tab || !tab.id) return { error: "No active tab" };
 
                     // Ensure arguments are serializable (undefined -> null) when sent to executeScript
                     const results = await chrome.scripting.executeScript({
                         target: { tabId: tab.id, allFrames: true },
-                        args: [text, target ?? null, clearFirst, pressEnter],
-                        func: (txt: string, targetDesc: string | null, clear: boolean, enter: boolean) => {
+                        args: [text, target ?? null, clearFirst],
+                        func: (txt: string, targetDesc: string | null, clear: boolean) => {
                             return new Promise((resolve) => {
                                 // Wait for page to be fully loaded before interacting
                                 const waitForLoad = () => {
@@ -275,23 +274,7 @@ export function useTypeInFieldTool() {
                                         }
                                     }
 
-                                    /**
-                                     * Press Enter key
-                                     */
-                                    function pressEnterKey(element: Element) {
-                                        const enterInit: KeyboardEventInit = {
-                                            key: 'Enter',
-                                            code: 'Enter',
-                                            keyCode: 13,
-                                            which: 13,
-                                            bubbles: true,
-                                            cancelable: true,
-                                        };
 
-                                        element.dispatchEvent(new KeyboardEvent('keydown', enterInit));
-                                        element.dispatchEvent(new KeyboardEvent('keypress', enterInit));
-                                        element.dispatchEvent(new KeyboardEvent('keyup', enterInit));
-                                    }
 
                                     // ===== MAIN EXECUTION =====
 
@@ -365,11 +348,6 @@ export function useTypeInFieldTool() {
                                         // Type text instantly
                                         typeText(targetElement, txt);
 
-                                        // Press Enter if requested
-                                        if (enter) {
-                                            pressEnterKey(targetElement);
-                                        }
-
                                         const elementInfo = {
                                             tagName: targetElement.tagName,
                                             type: (targetElement as HTMLInputElement).type || 'contenteditable',
@@ -388,7 +366,7 @@ export function useTypeInFieldTool() {
                                             target: elementInfo,
                                             bypassedRestriction,
                                             restrictionType: restrictionType || undefined,
-                                            message: `Successfully typed ${txt.length} characters${enter ? ' and pressed Enter' : ''}${bypassWarning ? ` ${bypassWarning}` : ''}`
+                                            message: `Successfully typed ${txt.length} characters${bypassWarning ? ` ${bypassWarning}` : ''}`
                                         });
 
                                     } catch (error) {

@@ -32,3 +32,9 @@ fileMatchPattern: "**/components/**/*.{ts,tsx}"
 ## Comments
 - Never use inline `//` comments inside JSX attributes; use `{/* */}`
 - Keep comments in sync with code; update immediately when implementation changes
+
+## CSS Scoping (CRITICAL)
+- **NEVER write broad CSS selectors** like `.group:hover span` or `.container div` that can match elements across unrelated components
+- Always use unique, specific class names for CSS targeting (e.g., `.my-feature-btn:hover span` instead of `.group:hover span`)
+- Inline `<style>` blocks are especially dangerous—their selectors apply globally and can break other components
+- If you need hover effects, scope them with unique class names that won't collide with Tailwind utilities or other components

@@ -15,8 +15,12 @@ import {
     type TemplateType,
     type ReportTemplate,
     getTemplateByType,
-    getAvailableTemplateTypes
-} from './templates';
+    getAvailableTemplateTypes,
+    getTemplateForSourceCount,
+    isDeepDiveMode,
+    DEEP_DIVE_THRESHOLD
+} from './templates/index';
+import { getMinimumSources } from '@/utils/settings/researchWorkflowSettings';
 
 const log = createLogger('Tool-GetReportTemplate', 'TOOLS_EXECUTION');
 
@@ -41,6 +45,10 @@ function formatTemplateAsMarkdown(template: ReportTemplate, topicName: string): 
             markdown += '\n';
         }
     });
+
+    // Add footer note encouraging open-ended discovery
+    markdown += `---\n\n`;
+    markdown += `> **NOTE:** You are encouraged to add new sections if you find critical information that doesn't fit the template. The template is a guide, not a cage. Follow the data and be creative in your analysis.\n\n`;
 
     return markdown;
 }
@@ -74,13 +82,20 @@ Call this BEFORE starting research to get the proper structure for gathering inf
             }),
             execute: async ({ reportType, topicName }) => {
                 try {
+                    // Fetch minimum sources setting for dynamic template adjustment
+                    const minimumSources = await getMinimumSources();
+                    const isDeepDive = isDeepDiveMode(minimumSources);
+
                     log.info('TOOL CALL: getReportTemplate', {
                         reportType,
-                        topicName
+                        topicName,
+                        minimumSources,
+                        isDeepDive
                     });
 
-                    // Get the template for the specified type
-                    const template = getTemplateByType(reportType as TemplateType);
+                    // Get template with sections adjusted based on minimum sources
+                    // If minimumSources >= DEEP_DIVE_THRESHOLD (6), deep dive sections are merged
+                    const template = getTemplateForSourceCount(reportType as TemplateType, minimumSources);
 
                     // Use provided topic name or generic placeholder
                     const topic = topicName || 'Research Topic';
@@ -91,8 +106,15 @@ Call this BEFORE starting research to get the proper structure for gathering inf
                     log.info('✅ Template selected', {
                         reportType,
                         templateName: template.name,
-                        sectionCount: template.sections.length
+                        sectionCount: template.sections.length,
+                        isDeepDive,
+                        minimumSources
                     });
+
+                    // Build detail level message
+                    const detailLevelInfo = isDeepDive
+                        ? `🔬 **Deep Dive Mode** (${minimumSources} sources configured - includes extended analysis sections)`
+                        : `📊 **Standard Mode** (${minimumSources} sources - use ${DEEP_DIVE_THRESHOLD}+ for deep dive)`;
 
                     return {
                         success: true,
@@ -101,7 +123,9 @@ Call this BEFORE starting research to get the proper structure for gathering inf
                         sections: template.sections,
                         sectionCount: template.sections.length,
                         markdownStructure: templateMarkdown,
-                        message: `📋 Selected template: **${template.name}**\n\nThis template has **${template.sections.length} sections** to guide your research. Follow this structure when gathering information.`
+                        isDeepDive,
+                        minimumSources,
+                        message: `📋 Selected template: **${template.name}**\n\n${detailLevelInfo}\n\nThis template has **${template.sections.length} sections** to guide your research. Follow this structure when gathering information.`
                     };
                 } catch (error) {
                     log.error('[Tool] Error getting report template:', error);

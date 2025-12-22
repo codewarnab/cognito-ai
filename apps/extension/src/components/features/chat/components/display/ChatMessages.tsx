@@ -13,6 +13,7 @@ import { CopyButton } from '../buttons/CopyButton';
 import { UserMessageCopyButton } from '../buttons/UserMessageCopyButton';
 import { getFileIcon, truncateFileName } from '@/utils/files';
 import { StreamdownRenderer } from './StreamdownRenderer';
+import { AudioMessagePlayer } from './AudioMessagePlayer';
 import { XIcon } from '@assets/icons/chat/x';
 import { useInlineCodeEnhancer } from '@/hooks/useInlineCodeEnhancer';
 import { useMessageTextSelection } from '@/hooks/chat';
@@ -338,6 +339,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                             const firstFile = fileParts[0];
                                                             const remainingCount = totalFiles - 1;
                                                             const isImage = firstFile.mediaType?.startsWith('image/');
+                                                            const isAudio = firstFile.mediaType?.startsWith('audio/');
 
                                                             return (
                                                                 <div key={`file-group-${partIndex}`} className="relative inline-block my-2">
@@ -349,6 +351,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                             >
                                                                                 <img src={firstFile.url} alt={firstFile.name || 'Attached image'} className="w-full h-full object-cover block rounded-md cursor-pointer" />
                                                                             </div>
+                                                                        ) : isAudio ? (
+                                                                            <AudioMessagePlayer url={firstFile.url} name={firstFile.name} />
                                                                         ) : (
                                                                             <div className="inline-flex items-center gap-2.5 px-3.5 py-2.5 min-w-[130px] max-w-[220px] bg-[rgba(35,45,65,0.7)] rounded-[10px] border-[1.5px] border-[rgba(100,120,150,0.3)] shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[rgba(45,55,75,0.8)] hover:border-[rgba(120,140,170,0.5)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] hover:-translate-y-px">
                                                                                 <div className="text-[22px] flex-shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">

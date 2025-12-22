@@ -17,6 +17,372 @@ const QUALITY_PRESETS = {
 
 type QualityLevel = keyof typeof QUALITY_PRESETS;
 
+// ============================================================================
+// SECURITY: Blur Sensitive Fields in Screenshots
+// ============================================================================
+// Before capturing screenshots, we blur sensitive input fields to prevent
+// leaking PII (passwords, credit card numbers, SSN, etc.) to the AI model.
+// This is ALWAYS enabled and cannot be disabled for privacy protection.
+// The blur is applied temporarily and removed immediately after capture.
+// ============================================================================
+
+/**
+ * CSS selectors for sensitive input fields that should be blurred in screenshots.
+ * SECURITY: These fields may contain PII and should never be visible in screenshots.
+ * 
+ * LAYER 1: CSS Selector-based detection
+ * These selectors catch the majority of sensitive fields by type, autocomplete,
+ * name, and id attributes.
+ */
+const SENSITIVE_FIELD_SELECTORS = [
+    // Password fields (type-based)
+    'input[type="password"]',
+    'input[autocomplete="current-password"]',
+    'input[autocomplete="new-password"]',
+
+    // Credit card fields
+    'input[autocomplete="cc-number"]',
+    'input[autocomplete="cc-exp"]',
+    'input[autocomplete="cc-exp-month"]',
+    'input[autocomplete="cc-exp-year"]',
+    'input[autocomplete="cc-csc"]',
+    'input[autocomplete="cc-type"]',
+
+    // Sensitive name patterns (case-insensitive)
+    // Full words
+    'input[name*="password" i]',
+    'input[name*="passwd" i]',
+    'input[name*="ssn" i]',
+    'input[name*="social" i]',
+    'input[name*="secret" i]',
+    // Abbreviations - LAYER 1 ENHANCEMENT
+    'input[name*="pass" i]',
+    'input[name*="pwd" i]',
+    // Card-related
+    'input[name*="cvv" i]',
+    'input[name*="cvc" i]',
+    'input[name*="csc" i]',
+    'input[name*="cardnumber" i]',
+    'input[name*="card-number" i]',
+    'input[name*="card_number" i]',
+    'input[name*="creditcard" i]',
+    'input[name*="credit-card" i]',
+    'input[name*="credit_card" i]',
+    'input[name*="securitycode" i]',
+    'input[name*="security-code" i]',
+    'input[name*="security_code" i]',
+    'input[name*="pin" i]',
+
+    // ID-based patterns (case-insensitive)
+    // Full words
+    'input[id*="password" i]',
+    'input[id*="passwd" i]',
+    'input[id*="ssn" i]',
+    'input[id*="secret" i]',
+    // Abbreviations - LAYER 1 ENHANCEMENT
+    'input[id*="pass" i]',
+    'input[id*="pwd" i]',
+    // Card-related
+    'input[id*="cvv" i]',
+    'input[id*="cvc" i]',
+    'input[id*="cardnumber" i]',
+    'input[id*="credit" i]',
+    'input[id*="securitycode" i]',
+
+    // Placeholder-based patterns - LAYER 1 ENHANCEMENT
+    'input[placeholder*="password" i]',
+    'input[placeholder*="pass" i]',
+    'input[placeholder*="pwd" i]',
+    'input[placeholder*="secret" i]',
+    'input[placeholder*="ssn" i]',
+    'input[placeholder*="cvv" i]',
+    'input[placeholder*="cvc" i]',
+    'input[placeholder*="card number" i]',
+    'input[placeholder*="security code" i]',
+].join(',');
+
+/**
+ * Marker attribute to track which elements were blurred by us.
+ * Used to restore original state after screenshot capture.
+ */
+const BLUR_MARKER_ATTR = 'data-cognito-security-blur';
+
+/**
+ * LAYER 2: Password toggle detection patterns.
+ * These are CSS selectors and class/id patterns for "show password" toggle buttons.
+ * If a text input has a sibling matching these patterns, it's likely a password field.
+ */
+const PASSWORD_TOGGLE_PATTERNS = {
+    // Class patterns for password toggle buttons
+    classPatterns: [
+        'toggle', 'eye', 'show', 'hide', 'visibility', 'reveal', 'peek',
+        'password-toggle', 'pass-toggle', 'show-password', 'hide-password',
+        'eye-icon', 'eye-btn', 'visibility-toggle'
+    ],
+    // Container class patterns that indicate a password field wrapper
+    containerPatterns: [
+        'password', 'pass-field', 'pwd-field', 'password-field',
+        'password-input', 'password-wrapper', 'pass-wrapper', 'pwd-wrapper',
+        'password-container', 'pass-container', 'secret-field'
+    ],
+    // Icon patterns (Font Awesome, Material Icons, etc.)
+    iconSelectors: [
+        '.fa-eye', '.fa-eye-slash',              // Font Awesome
+        '.material-icons',                        // Material Icons
+        '[class*="icon-eye"]',                   // Generic icon patterns
+        '[class*="icon-visibility"]',
+        'svg[class*="eye"]',                      // SVG icons
+        'svg[class*="visibility"]'
+    ]
+};
+
+/**
+ * LAYER 3: Value-based heuristics for password detection.
+ * Patterns that suggest a value might be a password.
+ */
+const PASSWORD_VALUE_PATTERNS = {
+    // Minimum length for password detection
+    minLength: 4,
+    // Maximum length (very long values are likely not passwords)
+    maxLength: 128,
+    // Passwords rarely contain spaces
+    noSpaces: true,
+    // Patterns that suggest password content (has mixed chars, symbols, etc.)
+    // We check if the value has characteristics of a password
+};
+
+/**
+ * Injects a script to blur sensitive fields before screenshot capture.
+ * SECURITY: This prevents PII from being visible in screenshots sent to AI.
+ * 
+ * Uses a 3-layer approach:
+ * - LAYER 1: CSS selectors for type, autocomplete, name, id, placeholder
+ * - LAYER 2: JavaScript detection for password toggle siblings (eye icons, show/hide buttons)
+ * - LAYER 3: Value-based heuristics for edge cases
+ * 
+ * @param tabId - The tab ID to inject the blur script into
+ * @returns Number of elements that were blurred
+ */
+async function blurSensitiveFields(tabId: number): Promise<number> {
+    try {
+        const results = await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (
+                selectors: string,
+                markerAttr: string,
+                togglePatterns: typeof PASSWORD_TOGGLE_PATTERNS,
+                valuePatterns: typeof PASSWORD_VALUE_PATTERNS
+            ) => {
+                // ================================================================
+                // SECURITY: Multi-layer sensitive field detection
+                // ================================================================
+                const blurredElements = new Set<HTMLElement>();
+
+                /**
+                 * Apply blur to an element and track it
+                 */
+                function blurElement(el: HTMLElement): boolean {
+                    if (blurredElements.has(el)) return false;
+
+                    // Store original filter value if any
+                    const originalFilter = el.style.filter;
+                    el.setAttribute(markerAttr, originalFilter || '');
+                    // Apply strong blur to hide content
+                    el.style.filter = 'blur(8px)';
+                    blurredElements.add(el);
+                    return true;
+                }
+
+                // ================================================================
+                // LAYER 1: CSS Selector-based detection
+                // ================================================================
+                const selectorMatches = document.querySelectorAll(selectors);
+                selectorMatches.forEach(el => blurElement(el as HTMLElement));
+
+                // ================================================================
+                // LAYER 2: Password toggle sibling detection
+                // ================================================================
+                // Find all text inputs and check if they have password toggle siblings
+                const textInputs = document.querySelectorAll('input[type="text"], input:not([type])');
+
+                textInputs.forEach(input => {
+                    const inputEl = input as HTMLInputElement;
+                    if (blurredElements.has(inputEl)) return; // Already blurred by Layer 1
+
+                    // Check 1: Is input inside a password container?
+                    const parent = inputEl.closest('[class], [id]');
+                    if (parent) {
+                        const parentClass = (parent.className || '').toLowerCase();
+                        const parentId = (parent.id || '').toLowerCase();
+                        const combined = parentClass + ' ' + parentId;
+
+                        const isPasswordContainer = togglePatterns.containerPatterns.some(
+                            pattern => combined.includes(pattern.toLowerCase())
+                        );
+                        if (isPasswordContainer) {
+                            blurElement(inputEl);
+                            return;
+                        }
+                    }
+
+                    // Check 2: Does input have a toggle button sibling?
+                    const parentContainer = inputEl.parentElement;
+                    if (parentContainer) {
+                        // Look for toggle buttons in parent and grandparent
+                        const searchContainers = [
+                            parentContainer,
+                            parentContainer.parentElement
+                        ].filter(Boolean) as HTMLElement[];
+
+                        for (const container of searchContainers) {
+                            // Check for elements with toggle-like classes
+                            const allElements = container.querySelectorAll('*');
+                            let hasToggle = false;
+
+                            for (const el of allElements) {
+                                if (el === inputEl) continue;
+
+                                const elClass = ((el as HTMLElement).className || '').toLowerCase();
+                                const elId = ((el as HTMLElement).id || '').toLowerCase();
+                                const combined = elClass + ' ' + elId;
+
+                                // Check class patterns
+                                if (togglePatterns.classPatterns.some(p => combined.includes(p.toLowerCase()))) {
+                                    hasToggle = true;
+                                    break;
+                                }
+                            }
+
+                            // Check for icon selectors
+                            if (!hasToggle) {
+                                for (const iconSelector of togglePatterns.iconSelectors) {
+                                    if (container.querySelector(iconSelector)) {
+                                        hasToggle = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (hasToggle) {
+                                blurElement(inputEl);
+                                return;
+                            }
+                        }
+                    }
+                });
+
+                // ================================================================
+                // LAYER 3: Value-based heuristics
+                // ================================================================
+                // Scan remaining text inputs for password-like values
+                const remainingInputs = document.querySelectorAll('input[type="text"], input:not([type])');
+
+                remainingInputs.forEach(input => {
+                    const inputEl = input as HTMLInputElement;
+                    if (blurredElements.has(inputEl)) return; // Already blurred
+
+                    const value = inputEl.value || '';
+
+                    // Skip empty or very short values
+                    if (value.length < valuePatterns.minLength) return;
+                    // Skip very long values (probably not passwords)
+                    if (value.length > valuePatterns.maxLength) return;
+
+                    // Heuristic 1: Password-like characteristics
+                    // - No spaces (passwords rarely have spaces)
+                    // - Mix of character types (letters, numbers, symbols)
+                    if (valuePatterns.noSpaces && value.includes(' ')) return;
+
+                    const hasLowercase = /[a-z]/.test(value);
+                    const hasUppercase = /[A-Z]/.test(value);
+                    const hasNumbers = /\d/.test(value);
+                    const hasSymbols = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
+
+                    // Count how many character types are present
+                    const charTypeCount = [hasLowercase, hasUppercase, hasNumbers, hasSymbols]
+                        .filter(Boolean).length;
+
+                    // If value has 3+ character types and reasonable length, likely a password
+                    if (charTypeCount >= 3 && value.length >= 8) {
+                        blurElement(inputEl);
+                        return;
+                    }
+
+                    // Heuristic 2: Input appears right after a password-related label
+                    const labels = document.querySelectorAll(`label[for="${inputEl.id}"]`);
+                    labels.forEach(label => {
+                        const labelText = (label.textContent || '').toLowerCase();
+                        if (
+                            labelText.includes('password') ||
+                            labelText.includes('pass') ||
+                            labelText.includes('secret') ||
+                            labelText.includes('pin')
+                        ) {
+                            blurElement(inputEl);
+                        }
+                    });
+
+                    // Also check preceding sibling text
+                    const prevSibling = inputEl.previousElementSibling;
+                    if (prevSibling) {
+                        const siblingText = (prevSibling.textContent || '').toLowerCase();
+                        if (
+                            siblingText.includes('password') ||
+                            siblingText.includes('pass') ||
+                            siblingText.includes('secret')
+                        ) {
+                            blurElement(inputEl);
+                        }
+                    }
+                });
+
+                return blurredElements.size;
+            },
+            args: [SENSITIVE_FIELD_SELECTORS, BLUR_MARKER_ATTR, PASSWORD_TOGGLE_PATTERNS, PASSWORD_VALUE_PATTERNS]
+        });
+
+        const blurredCount = results[0]?.result || 0;
+        if (blurredCount > 0) {
+            log.info('SECURITY: Blurred sensitive fields before screenshot (3-layer detection)', { count: blurredCount });
+        }
+        return blurredCount;
+    } catch (error) {
+        // If we can't inject (e.g., restricted page), log and continue
+        log.warn('Could not blur sensitive fields', { error: (error as Error).message });
+        return 0;
+    }
+}
+
+/**
+ * Removes blur from sensitive fields after screenshot capture.
+ * Restores original filter values if any were present.
+ * @param tabId - The tab ID to remove blur from
+ */
+async function unblurSensitiveFields(tabId: number): Promise<void> {
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            func: (markerAttr: string) => {
+                // SECURITY: Restore original state after screenshot
+                const blurredElements = document.querySelectorAll(`[${markerAttr}]`);
+
+                blurredElements.forEach(el => {
+                    const htmlEl = el as HTMLElement;
+                    // Restore original filter value
+                    const originalFilter = htmlEl.getAttribute(markerAttr);
+                    htmlEl.style.filter = originalFilter || '';
+                    htmlEl.removeAttribute(markerAttr);
+                });
+            },
+            args: [BLUR_MARKER_ATTR]
+        });
+        log.debug('SECURITY: Restored sensitive fields after screenshot');
+    } catch (error) {
+        // If we can't inject, the page may have navigated away - that's fine
+        log.warn('Could not restore sensitive fields', { error: (error as Error).message });
+    }
+}
+
 /**
  * Compresses a base64 PNG image to JPEG with optional resizing
  * @param dataUrl - Original PNG data URL (data:image/png;base64,...)
@@ -315,7 +681,24 @@ EXAMPLE:
                         }
                     }
 
-                    // Step 5: Capture screenshot (after page load)
+                    // ================================================================
+                    // SECURITY: Step 5 - Blur sensitive fields before capture
+                    // ================================================================
+                    // We blur password fields, credit card inputs, SSN fields, etc.
+                    // to prevent PII from being visible in screenshots sent to AI.
+                    // This is ALWAYS enabled and cannot be disabled.
+                    // ================================================================
+                    let blurredCount = 0;
+                    try {
+                        blurredCount = await blurSensitiveFields(tab.id!);
+                    } catch (blurError) {
+                        // Non-fatal: continue with screenshot even if blur fails
+                        log.warn('SECURITY: Could not blur sensitive fields, proceeding anyway', {
+                            error: (blurError as Error).message
+                        });
+                    }
+
+                    // Step 6: Capture screenshot (after page load, with sensitive fields blurred)
                     let dataUrl: string;
                     try {
                         dataUrl = await chrome.tabs.captureVisibleTab(
@@ -325,6 +708,8 @@ EXAMPLE:
 
                         if (!dataUrl) {
                             log.error('captureVisibleTab returned empty data');
+                            // SECURITY: Restore page state before returning
+                            if (blurredCount > 0) await unblurSensitiveFields(tab.id!).catch(() => { });
                             return {
                                 error: "Screenshot capture returned empty data. The page may not be fully loaded or visible.",
                                 success: false,
@@ -338,6 +723,8 @@ EXAMPLE:
                         // Validate data URL format
                         if (!dataUrl.startsWith('data:image/png;base64,')) {
                             log.error('Invalid screenshot data format', { prefix: dataUrl.substring(0, 50) });
+                            // SECURITY: Restore page state before returning
+                            if (blurredCount > 0) await unblurSensitiveFields(tab.id!).catch(() => { });
                             return {
                                 error: "Screenshot data is in an invalid format. Expected PNG base64 data URL.",
                                 success: false,
@@ -350,6 +737,9 @@ EXAMPLE:
 
                     } catch (captureError) {
                         log.error('Error capturing visible tab:', captureError);
+                        // SECURITY: Restore page state before returning on error
+                        if (blurredCount > 0) await unblurSensitiveFields(tab.id!).catch(() => { });
+
                         const errorMsg = (captureError as Error).message || String(captureError);
 
                         // Provide context-specific error messages
@@ -379,7 +769,24 @@ EXAMPLE:
                         };
                     }
 
-                    // Step 7: Compress screenshot for AI processing
+                    // ================================================================
+                    // SECURITY: Step 7 - Restore sensitive fields after capture
+                    // ================================================================
+                    // Always unblur after capture, regardless of success/failure.
+                    // This ensures the page returns to its original visual state.
+                    // ================================================================
+                    if (blurredCount > 0) {
+                        try {
+                            await unblurSensitiveFields(tab.id!);
+                        } catch (unblurError) {
+                            // Non-fatal: page will return to normal on refresh anyway
+                            log.warn('SECURITY: Could not restore sensitive fields', {
+                                error: (unblurError as Error).message
+                            });
+                        }
+                    }
+
+                    // Step 8: Compress screenshot for AI processing
                     let screenshotForAI = dataUrl;
                     let compressionInfo: { originalSizeKB: number; compressedSizeKB: number; compressionRatio: string } | null = null;
 
@@ -399,7 +806,7 @@ EXAMPLE:
                         // Fall back to original image if compression fails
                     }
 
-                    // Step 8: Get additional metadata
+                    // Step 9: Get additional metadata
                     const viewport = {
                         width: tab.width || null,
                         height: tab.height || null

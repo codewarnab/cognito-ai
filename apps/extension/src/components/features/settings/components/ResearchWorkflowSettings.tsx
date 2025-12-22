@@ -104,7 +104,6 @@ export const ResearchWorkflowSettings: React.FC = () => {
                                         <SelectItem value="5" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">5 sources (default)</SelectItem>
                                         <SelectItem value="7" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">7 sources</SelectItem>
                                         <SelectItem value="10" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">10 sources</SelectItem>
-                                        <SelectItem value="15" className="text-[var(--text-primary)] focus:bg-white/10 focus:text-[var(--text-primary)]">15 sources</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

@@ -105,6 +105,18 @@
 - **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` to prevent regex injection and runtime errors.
 - **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`) to prevent exposure in logs, browser history, and proxy servers.
 
+## DOM Data Extraction Security (CRITICAL)
+When extracting data from the DOM that will be sent to AI or backend:
+- **NEVER capture sensitive input values** (passwords, credit cards, SSN, etc.)
+- Always check if an input is sensitive before reading `input.value`:
+  - Sensitive types: `password`
+  - Sensitive autocomplete: `cc-number`, `cc-exp`, `cc-csc`, `current-password`, `new-password`
+  - Sensitive name/id patterns: `/password|card|cvv|csc|ssn|secret|pin/i`
+- **ALWAYS** add `// SECURITY:` comments when stripping sensitive data
+- Apply defense-in-depth: check at extraction, formatting, AND transport layers
+- Example: `value: isSensitiveInput(input) ? undefined : input.value`
+- See `.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
+
 ## Build Scripts and Node.js Utilities
 - Always validate array bounds before accessing elements; add defensive checks with clear warning messages.
 - Wrap file I/O operations (`fs.copyFileSync`, `fs.writeFileSync`, etc.) in try-catch blocks; log errors with full context and exit with non-zero status code on failure.

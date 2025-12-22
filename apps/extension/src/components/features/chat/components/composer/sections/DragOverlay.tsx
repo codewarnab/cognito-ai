@@ -12,10 +12,10 @@ export const DragOverlay: React.FC<DragOverlayProps> = ({ isDragging }) => {
     if (!isDragging) return null;
 
     return (
-        <div className="drag-overlay">
-            <div className="drag-overlay-content">
-                <UploadIconMinimal size={32} />
-                <p>Drop files to attach</p>
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm rounded-lg flex items-center justify-center z-[100] pointer-events-none">
+            <div className="flex flex-col items-center gap-3 text-white/90">
+                <UploadIconMinimal size={32} className="stroke-[#e8e8e8]/80 animate-bounce" />
+                <p className="text-base font-medium m-0">Drop files to attach</p>
             </div>
         </div>
     );

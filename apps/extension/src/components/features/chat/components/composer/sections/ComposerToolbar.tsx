@@ -165,19 +165,19 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 />
             )}
 
-            {/* Backend Mode Toggle */}
+            {/* Backend Mode Toggle - Icon only, expands on hover */}
             <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
                             type="button"
                             onClick={() => setUseBackendMode(!useBackendMode)}
-                            className="cursor-pointer"
+                            className="cursor-pointer backend-mode-btn"
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '4px 8px',
+                                gap: '0px',
+                                padding: '6px',
                                 borderRadius: '6px',
                                 border: 'none',
                                 background: useBackendMode
@@ -188,20 +188,24 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                                     : 'var(--text-secondary, #9ca3af)',
                                 fontSize: '12px',
                                 fontWeight: 500,
-                                transition: 'all 0.15s',
+                                transition: 'all 0.2s ease',
+                                overflow: 'hidden',
                             }}
                         >
-                            {useBackendMode ? (
-                                <>
-                                    <Cloud size={14} />
-                                    <span>Backend</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Key size={14} />
-                                    <span>BYOK</span>
-                                </>
-                            )}
+                            {useBackendMode ? <Cloud size={14} /> : <Key size={14} />}
+                            <span
+                                className="whitespace-nowrap"
+                                style={{
+                                    display: 'inline-block',
+                                    maxWidth: '0px',
+                                    opacity: 0,
+                                    overflow: 'hidden',
+                                    transition: 'max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease',
+                                    marginLeft: '0px',
+                                }}
+                            >
+                                {useBackendMode ? 'Cloud' : 'BYOK'}
+                            </span>
                         </button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-[200px]">
@@ -217,6 +221,13 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     </TooltipContent>
                 </Tooltip>
             </div>
+            <style>{`
+                .backend-mode-btn:hover span {
+                    max-width: 50px !important;
+                    opacity: 1 !important;
+                    margin-left: 6px !important;
+                }
+            `}</style>
         </div>
     );
 };

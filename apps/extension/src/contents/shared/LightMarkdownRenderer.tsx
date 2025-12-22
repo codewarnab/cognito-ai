@@ -69,13 +69,23 @@ const components: Components = {
             );
         }
         return (
-            <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
+            <code
+                className="px-1.5 py-0.5 rounded text-sm font-mono"
+                style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    color: 'rgba(255, 255, 255, 0.95)'
+                }}
+                {...props}
+            >
                 {children}
             </code>
         );
     },
     pre: ({ children }) => (
-        <pre className="bg-muted rounded-lg p-4 my-2 overflow-x-auto">
+        <pre
+            className="rounded-lg p-4 my-2 overflow-x-auto"
+            style={{ background: 'rgba(0, 0, 0, 0.3)' }}
+        >
             {children}
         </pre>
     ),

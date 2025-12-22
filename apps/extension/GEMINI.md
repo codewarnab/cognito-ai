@@ -253,6 +253,44 @@ import type { ChatMode } from '@/stores/ui/types';
 - Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers
 - **Never modify primitive UI components** (`src/components/ui/primitives/`) directly; always add props for customization and pass them from consuming components
 
+## CSS Scoping (CRITICAL)
+
+**NEVER write broad CSS selectors** that can match elements across unrelated components:
+
+```css
+/* ❌ BAD - Too broad, affects all spans inside any .group element */
+.group:hover span {
+    max-width: 50px;
+}
+
+/* ✅ GOOD - Scoped to specific component */
+.my-feature-btn:hover span {
+    max-width: 50px;
+}
+```
+
+- Inline `<style>` blocks are especially dangerous—their selectors apply globally
+- Always use unique, specific class names that won't collide with Tailwind utilities (like `group`, `container`)
+
+## DOM Data Extraction Security (CRITICAL)
+
+When reading data from the DOM that will be sent to AI or backend:
+
+- **NEVER capture sensitive input values** (passwords, credit cards, SSN, etc.)
+- Always check if an input is sensitive before reading `input.value`:
+  - Sensitive types: `password`
+  - Sensitive autocomplete: `cc-number`, `cc-exp`, `cc-csc`, `current-password`, `new-password`
+  - Sensitive name/id patterns: `/password|card|cvv|csc|ssn|secret|pin/i`
+
+```typescript
+// SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+const value = isSensitiveInput(input) ? undefined : input.value;
+```
+
+- **ALWAYS** add `// SECURITY:` comments when stripping sensitive data
+- Apply defense-in-depth: check at extraction, formatting, AND transport layers
+- See `.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
+
 ## Logger Categories
 
 All `createLogger` calls MUST include a category as the second argument:

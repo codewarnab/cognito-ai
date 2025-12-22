@@ -491,6 +491,239 @@
 }
 
 /* ============================================
+   Responsive Styles - Smaller Windows
+   ============================================ */
+
+/* Medium screens - tablets and small desktop windows */
+@media (max-width: 600px) {
+    .writer-overlay {
+        width: 320px;
+        border-radius: 12px;
+    }
+
+    .writer-header {
+        padding: 10px 12px;
+    }
+
+    .writer-title {
+        font-size: 13px;
+    }
+
+    .writer-close {
+        width: 24px;
+        height: 24px;
+    }
+
+    .writer-input-row {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .writer-input {
+        padding: 8px 10px;
+        font-size: 13px;
+        border-radius: 8px;
+    }
+
+    .writer-send-button {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .writer-send-button svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .writer-tools-row {
+        padding: 6px 12px;
+    }
+
+    .writer-output {
+        padding: 12px;
+        max-height: 200px;
+    }
+
+    .writer-markdown-content {
+        font-size: 13px;
+    }
+
+    .writer-actions {
+        padding: 10px 12px;
+        gap: 6px;
+    }
+
+    .writer-action-button {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .writer-action-button svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .writer-error {
+        margin: 12px;
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .writer-attachment-chip {
+        margin: 6px 12px 0;
+    }
+}
+
+/* Small screens - mobile and very small windows */
+@media (max-width: 480px) {
+    .writer-overlay {
+        width: 280px;
+        border-radius: 10px;
+    }
+
+    .writer-header {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .writer-title {
+        font-size: 12px;
+    }
+
+    .writer-title-icon {
+        width: 14px;
+        height: 14px;
+        margin-right: 4px;
+    }
+
+    .writer-drag-handle {
+        width: 20px;
+        height: 20px;
+    }
+
+    .writer-close {
+        width: 22px;
+        height: 22px;
+        border-radius: 5px;
+    }
+
+    .writer-close svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .writer-input-row {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .writer-input {
+        padding: 7px 8px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .writer-send-button {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+    }
+
+    .writer-send-button svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .writer-attach-button {
+        width: 28px;
+        height: 28px;
+    }
+
+    .writer-tools-row {
+        padding: 5px 10px;
+    }
+
+    .tools-toggle-trigger {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+
+    .tools-toggle-panel {
+        padding: 5px;
+    }
+
+    .tools-toggle-item {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
+
+    .writer-loading,
+    .writer-output {
+        padding: 10px;
+    }
+
+    .writer-output {
+        max-height: 150px;
+    }
+
+    .writer-markdown-content {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .writer-skeleton {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .writer-skeleton-line {
+        height: 10px;
+    }
+
+    .writer-actions {
+        padding: 8px 10px;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .writer-action-button {
+        padding: 5px 8px;
+        font-size: 11px;
+        gap: 4px;
+    }
+
+    .writer-error {
+        margin: 10px;
+        padding: 8px;
+        font-size: 11px;
+        gap: 6px;
+    }
+
+    .writer-error svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .writer-attachment-chip {
+        margin: 5px 10px 0;
+        padding: 2px 5px 2px 6px;
+        gap: 4px;
+    }
+
+    .writer-attachment-chip-name {
+        font-size: 11px;
+        max-width: 100px;
+    }
+
+    .writer-attachment-chip-remove {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* ============================================
    Tools Toggle - Inline Settings
    ============================================ */
 

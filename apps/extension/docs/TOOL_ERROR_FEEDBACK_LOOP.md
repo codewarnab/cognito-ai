@@ -119,9 +119,11 @@ AI: "Here are the 5 most recent posts..."
 ## Code Locations
 
 - **Tool wrapping**: `src/ai/stream/streamExecutor.ts`
-- **Error detection**: `src/ai/core/aiLogic.ts` (onError callback ~lines 460-530)
+- **Error detection (BYOK mode)**: `src/ai/core/aiLogic.ts` (onError callback ~lines 460-530)
+- **Error detection (Backend mode)**: `src/ai/backend/backendChatWithTools.ts` (parseStreamChunk + tool_error handling)
 - **Helper functions**: `src/ai/stream/streamHelpers.ts`
 - **Empty response detection**: `src/ai/stream/streamCallbacks.ts`
+
 
 ## Empty Response Detection
 

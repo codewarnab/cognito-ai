@@ -71,7 +71,7 @@ export interface BackendChatWithToolsParams {
  * - error: Stream error
  */
 function parseStreamChunk(chunk: string): Array<{
-    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'finish' | 'error';
+    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'tool_error' | 'finish' | 'error';
     data: any;
 }> {
     const events: Array<{ type: any; data: any }> = [];
@@ -120,6 +120,24 @@ function parseStreamChunk(chunk: string): Array<{
 
                     case 'tool-output-available':
                         events.push({ type: 'tool_result', data: parsed });
+                        break;
+
+                    case 'tool-input-error':
+                        // Backend reports tool was unavailable/invalid
+                        events.push({
+                            type: 'tool_error',
+                            data: {
+                                id: parsed.toolCallId,
+                                name: parsed.toolName,
+                                input: parsed.input,
+                                errorText: parsed.errorText,
+                            },
+                        });
+                        break;
+
+                    case 'tool-output-error':
+                        // This follows tool-input-error with same info
+                        // tool_error from tool-input-error is sufficient
                         break;
 
                     case 'error':
@@ -252,6 +270,8 @@ export async function streamBackendChatWithTools(
                         const reader = response.body.getReader();
                         const decoder = new TextDecoder();
                         const pendingToolCalls: ToolCall[] = [];
+                        // Track tool errors for feedback loop (extended info for proper messages)
+                        const pendingToolErrors: Array<{ id: string; name: string; input: any; result: string }> = [];
                         let accumulatedText = '';
 
                         // Generate a consistent message ID for this response
@@ -333,6 +353,41 @@ export async function streamBackendChatWithTools(
                                         // These are handled by our manual hasStartedText logic
                                         // Ignore the events from the parser
                                         break;
+
+                                    case 'tool_error':
+                                        // Backend reports tool was unavailable
+                                        const errorData = event.data;
+                                        log.warn('🔧 Backend reports tool error:', {
+                                            toolName: errorData.name,
+                                            errorText: errorData.errorText,
+                                        });
+
+                                        // Write tool events to UI for visual feedback
+                                        writer.write({
+                                            type: 'tool-input-available',
+                                            toolCallId: errorData.id,
+                                            toolName: errorData.name,
+                                            input: errorData.input,
+                                        });
+
+                                        writer.write({
+                                            type: 'tool-output-available',
+                                            toolCallId: errorData.id,
+                                            output: {
+                                                error: true,
+                                                message: errorData.errorText,
+                                                feedback: errorData.errorText,
+                                            },
+                                        });
+
+                                        // Track error for AI feedback loop (include name and input for proper message)
+                                        pendingToolErrors.push({
+                                            id: errorData.id,
+                                            name: errorData.name,
+                                            input: errorData.input,
+                                            result: errorData.errorText,
+                                        });
+                                        break;
                                 }
                             }
                         }
@@ -344,6 +399,46 @@ export async function streamBackendChatWithTools(
                                 type: 'text-end',
                                 id: messageId,
                             });
+                        }
+
+                        // If there are tool errors (and no successful calls), add feedback for AI self-correction
+                        if (pendingToolErrors.length > 0 && pendingToolCalls.length === 0) {
+                            log.info('Adding tool error feedback to conversation for AI self-correction', {
+                                errorCount: pendingToolErrors.length,
+                            });
+
+                            // Build assistant content with attempted tool calls (same pattern as successful calls)
+                            const assistantContent: Array<any> = [];
+                            for (const error of pendingToolErrors) {
+                                assistantContent.push({
+                                    type: 'tool-call',
+                                    toolCallId: error.id,
+                                    toolName: error.name,
+                                    args: error.input || {},
+                                });
+                            }
+
+                            // Add as assistant message that attempted the tool call
+                            conversationMessages.push({
+                                role: 'assistant',
+                                content: assistantContent,
+                            });
+
+                            // Add tool result with error feedback
+                            conversationMessages.push({
+                                role: 'tool',
+                                content: pendingToolErrors.map((error) => ({
+                                    type: 'tool-result' as const,
+                                    toolCallId: error.id,
+                                    toolName: error.name,
+                                    output: { type: 'error-text' as const, value: error.result },
+                                })) as any,
+                            });
+
+                            // Continue loop so AI can retry with correct tools
+                            pendingToolErrors.length = 0; // Clear for next iteration
+                            accumulatedText = '';
+                            continue;
                         }
 
                         // If there are tool calls, execute them and continue

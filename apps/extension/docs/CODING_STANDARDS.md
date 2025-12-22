@@ -268,6 +268,62 @@ When backend rate limits are exceeded, the extension automatically falls back to
 - **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` to prevent regex injection and runtime errors.
 - **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`) to prevent exposure in logs, browser history, and proxy servers.
 
+## DOM Data Extraction Security (CRITICAL)
+
+When extracting data from the DOM that will be sent to AI or any backend, **NEVER capture sensitive input values**:
+
+### Sensitive Input Detection
+- **CRITICAL**: Always check if an input is sensitive before capturing `input.value`
+- Sensitive input types: `password`
+- Sensitive autocomplete values: `cc-number`, `cc-exp`, `cc-exp-month`, `cc-exp-year`, `cc-csc`, `cc-type`, `current-password`, `new-password`, `one-time-code`
+- Sensitive name/id patterns: `/password|passwd|card|cvv|cvc|csc|ssn|social.?security|secret|pin|security.?code|tax.?id|routing.?number|account.?number/i`
+
+### Implementation Pattern
+```typescript
+// SECURITY: Check if input is sensitive before capturing value
+function isSensitiveInput(input: HTMLInputElement): boolean {
+    const type = (input.type || '').toLowerCase();
+    const name = (input.name || '').toLowerCase();
+    const autocomplete = (input.autocomplete || '').toLowerCase();
+    
+    // SECURITY: Input types that are inherently sensitive
+    if (type === 'password') return true;
+    
+    // SECURITY: Autocomplete values indicating sensitive data
+    const sensitiveAutocomplete = ['cc-number', 'cc-exp', 'cc-csc', 'current-password', 'new-password'];
+    if (sensitiveAutocomplete.some(s => autocomplete.includes(s))) return true;
+    
+    // SECURITY: Patterns in name/id that indicate sensitive fields
+    if (/password|card|cvv|cvc|csc|ssn|secret|pin/i.test(name)) return true;
+    
+    return false;
+}
+
+// Usage:
+const data = {
+    type: input.type,
+    name: input.name,
+    // SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+    value: isSensitiveInput(input) ? undefined : (input.value || undefined),
+};
+```
+
+### Security Comments
+- **CRITICAL**: Always add `// SECURITY:` comments when stripping sensitive data
+- Comments must explain why the data is being stripped
+- Example: `// SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI`
+
+### Defense-in-Depth
+Apply security checks at multiple layers:
+1. **Extraction layer**: Strip values when reading from DOM (`extractInputs()`, `detectSearchBars()`)
+2. **Formatting layer**: Re-check before formatting data for AI (`formatPageContextForAI()`)
+3. **Transport layer**: Validate before sending to backend
+
+### Files Requiring Security Checks
+- `src/utils/tabs/pageContextExtractor.ts` - Main page context extraction
+- `src/actions/interactions/text-extraction.tsx` - Search bar detection
+- Any new code that reads `input.value` or form data from the DOM
+
 ## Build Scripts and Node.js Utilities
 - Always validate array bounds before accessing elements; add defensive checks with clear warning messages.
 - Wrap file I/O operations (`fs.copyFileSync`, `fs.writeFileSync`, etc.) in try-catch blocks; log errors with full context and exit with non-zero status code on failure.
@@ -343,6 +399,12 @@ When backend rate limits are exceeded, the extension automatically falls back to
 - **CRITICAL**: All clickable buttons must include `cursor-pointer` class; browsers don't always default to pointer cursor on styled buttons.
 - **CRITICAL**: Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers to apply thin, rounded, semi-transparent scrollbar styling.
 - Use consistent class naming; avoid copy-paste artifacts like `copy-message-button` on download components.
+
+## CSS Scoping
+- **CRITICAL**: Never write broad CSS selectors like `.group:hover span` or `.container div` that can match elements across unrelated components; these cause unpredictable side effects throughout the UI.
+- Always use unique, specific class names for CSS targeting (e.g., `.my-feature-btn:hover span` instead of `.group:hover span`).
+- Inline `<style>` blocks are especially dangerous—their selectors apply globally and can break other components.
+- Avoid selector names that collide with Tailwind utilities (like `group`, `container`, `flex`) in custom CSS rules.
 
 ## Async Message Handling
 - **CRITICAL**: Wrap async switch/case statements in try-catch blocks to ensure response callbacks always execute; unhandled throws leave callers hanging indefinitely.

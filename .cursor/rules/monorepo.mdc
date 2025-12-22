@@ -9,17 +9,19 @@ This is a **pnpm monorepo** with the following packages:
 
 | Package | Path | Tech Stack |
 |---------|------|------------|
-| `@cognito/extension` | `apps/extension/` | Plasmo, React, TypeScript |
-| `@cognito/docs` | `apps/docs/` | Next.js, Fumadocs |
-| `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers, TypeScript |
-| `@cognito/backend-vercel` | `packages/backend-vercel/` | Express.js, Node.js |
+| `@cognito/extension` | `apps/extension/` | WXT, React 19, TypeScript, Tailwind CSS v4 |
+| `@cognito/docs` | `apps/docs/` | Next.js 16, Fumadocs, React 19 |
+| `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers, Wrangler, TypeScript |
+| `@cognito/backend-vercel` | `packages/backend-vercel/` | Express.js, TypeScript, Vercel |
 
-## Package-Specific Rules
+## Package-Specific Documentation
 
-When working in a specific package, refer to that package's AI editor configs:
-- **Extension**: `apps/extension/.cursor/rules/coding-standards.mdc`
-- **Backend Cloudflare**: `packages/backend-cloudflare/.cursor/rules/cloudflare.mdc`
-- **Backend Vercel**: `packages/backend-vercel/.cursor/rules/vercel.mdc`
+Each package has its own `GEMINI.md` file with detailed context:
+- **Extension**: `apps/extension/GEMINI.md`
+- **Backend Cloudflare**: `packages/backend-cloudflare/GEMINI.md`
+- **Backend Vercel**: `packages/backend-vercel/GEMINI.md`
+
+Also see the root `GEMINI.md` for monorepo-wide context.
 
 ## General Monorepo Conventions
 
@@ -28,17 +30,26 @@ When working in a specific package, refer to that package's AI editor configs:
 # Always use pnpm (never npm or yarn)
 pnpm install
 
+# Development
+pnpm dev                              # Extension dev server
+pnpm dev:docs                         # Docs dev server
+pnpm dev:all                          # All packages in parallel
+
+# Building
+pnpm build                            # Build all packages
+pnpm build:extension                  # Build extension only
+
 # Package-specific commands use --filter
 pnpm --filter @cognito/extension dev
 pnpm --filter @cognito/backend-cloudflare deploy
 
 # Add dependencies to specific package
-pnpm --filter @cognito/extension add react-query
+pnpm --filter @cognito/extension add <package-name>
 ```
 
 ### Imports Across Packages
-- Use workspace protocol for internal dependencies: `"@cognito/shared": "workspace:*"`
 - Never use relative imports across package boundaries
+- Currently no shared packages; each package is self-contained
 
 ### Git Commits
 Follow Conventional Commits with package scope:
@@ -54,3 +65,10 @@ Follow Conventional Commits with package scope:
 | `package.json` (root) | Monorepo scripts |
 | `MONOREPO.md` | Architecture & migration guides |
 | `AGENTS.md` | AI agent navigation |
+| `GEMINI.md` | Gemini AI context |
+| `turbo.json` | Turborepo configuration |
+
+## Requirements
+
+- **Node.js**: >= 18.0.0
+- **pnpm**: >= 8.0.0 (currently using 9.15.0)

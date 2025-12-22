@@ -215,6 +215,63 @@ EXAMPLE: extractText(limit=5000, includeStructure=true, detectSearchBar=true)`,
                                         }
                                     }
 
+                                    // ================================================================
+                                    // SECURITY: 3-Layer sensitive field detection
+                                    // ================================================================
+                                    const inputType = (el.type || 'text').toLowerCase();
+                                    const inputName = (el.name || '').toLowerCase();
+                                    const inputId = (el.id || '').toLowerCase();
+                                    const inputPlaceholder = (el.placeholder || '').toLowerCase();
+
+                                    // LAYER 1: Pattern-based detection (expanded with "pass", "pwd")
+                                    let isSensitiveField = inputType === 'password' ||
+                                        /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin/i.test(inputName) ||
+                                        /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin/i.test(inputId) ||
+                                        /password|pass|pwd|secret/i.test(inputPlaceholder);
+
+                                    // LAYER 2: Password toggle sibling detection
+                                    if (!isSensitiveField && (inputType === 'text' || !inputType)) {
+                                        const togglePatterns = ['toggle', 'eye', 'show', 'hide', 'visibility'];
+                                        const containerPatterns = ['password', 'pass-field', 'pwd-field'];
+
+                                        // Check parent container
+                                        const parent = el.closest('[class], [id]');
+                                        if (parent) {
+                                            const combined = ((parent.className || '') + ' ' + (parent.id || '')).toLowerCase();
+                                            if (containerPatterns.some(p => combined.includes(p))) {
+                                                isSensitiveField = true;
+                                            }
+                                        }
+
+                                        // Check for toggle siblings
+                                        if (!isSensitiveField && el.parentElement) {
+                                            const siblings = el.parentElement.querySelectorAll('*');
+                                            for (const sib of siblings) {
+                                                const sibClass = ((sib as HTMLElement).className || '').toLowerCase();
+                                                if (togglePatterns.some(p => sibClass.includes(p))) {
+                                                    isSensitiveField = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // LAYER 3: Value-based heuristics
+                                    if (!isSensitiveField && (inputType === 'text' || !inputType)) {
+                                        const value = el.value || '';
+                                        if (value.length >= 8 && value.length <= 128 && !value.includes(' ')) {
+                                            const charTypes = [
+                                                /[a-z]/.test(value),
+                                                /[A-Z]/.test(value),
+                                                /\d/.test(value),
+                                                /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)
+                                            ].filter(Boolean).length;
+                                            if (charTypes >= 3) {
+                                                isSensitiveField = true;
+                                            }
+                                        }
+                                    }
+
                                     searchBars.push({
                                         selector,
                                         type: el.type || 'text',
@@ -222,7 +279,8 @@ EXAMPLE: extractText(limit=5000, includeStructure=true, detectSearchBar=true)`,
                                         ariaLabel: el.getAttribute('aria-label') || undefined,
                                         id: el.id || undefined,
                                         name: el.name || undefined,
-                                        value: el.value || undefined,
+                                        // SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+                                        value: isSensitiveField ? undefined : (el.value || undefined),
                                         isVisible,
                                         position: {
                                             top: Math.round(rect.top),
@@ -554,6 +612,63 @@ EXAMPLE: findSearchBar(onlyVisible=true) -> [{selector: "#search-input", placeho
                                     }
                                 }
 
+                                // ================================================================
+                                // SECURITY: 3-Layer sensitive field detection
+                                // ================================================================
+                                const inputType = (el.type || 'text').toLowerCase();
+                                const inputName = (el.name || '').toLowerCase();
+                                const inputId = (el.id || '').toLowerCase();
+                                const inputPlaceholder = (el.placeholder || '').toLowerCase();
+
+                                // LAYER 1: Pattern-based detection (expanded with "pass", "pwd")
+                                let isSensitiveField = inputType === 'password' ||
+                                    /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin/i.test(inputName) ||
+                                    /password|passwd|pass|pwd|card|cvv|cvc|csc|ssn|secret|pin/i.test(inputId) ||
+                                    /password|pass|pwd|secret/i.test(inputPlaceholder);
+
+                                // LAYER 2: Password toggle sibling detection
+                                if (!isSensitiveField && (inputType === 'text' || !inputType)) {
+                                    const togglePatterns = ['toggle', 'eye', 'show', 'hide', 'visibility'];
+                                    const containerPatterns = ['password', 'pass-field', 'pwd-field'];
+
+                                    // Check parent container
+                                    const parent = el.closest('[class], [id]');
+                                    if (parent) {
+                                        const combined = ((parent.className || '') + ' ' + (parent.id || '')).toLowerCase();
+                                        if (containerPatterns.some(p => combined.includes(p))) {
+                                            isSensitiveField = true;
+                                        }
+                                    }
+
+                                    // Check for toggle siblings
+                                    if (!isSensitiveField && el.parentElement) {
+                                        const siblings = el.parentElement.querySelectorAll('*');
+                                        for (const sib of siblings) {
+                                            const sibClass = ((sib as HTMLElement).className || '').toLowerCase();
+                                            if (togglePatterns.some(p => sibClass.includes(p))) {
+                                                isSensitiveField = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // LAYER 3: Value-based heuristics
+                                if (!isSensitiveField && (inputType === 'text' || !inputType)) {
+                                    const value = el.value || '';
+                                    if (value.length >= 8 && value.length <= 128 && !value.includes(' ')) {
+                                        const charTypes = [
+                                            /[a-z]/.test(value),
+                                            /[A-Z]/.test(value),
+                                            /\d/.test(value),
+                                            /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)
+                                        ].filter(Boolean).length;
+                                        if (charTypes >= 3) {
+                                            isSensitiveField = true;
+                                        }
+                                    }
+                                }
+
                                 searchBars.push({
                                     selector,
                                     type: el.type || 'text',
@@ -561,7 +676,8 @@ EXAMPLE: findSearchBar(onlyVisible=true) -> [{selector: "#search-input", placeho
                                     ariaLabel: el.getAttribute('aria-label') || undefined,
                                     id: el.id || undefined,
                                     name: el.name || undefined,
-                                    value: el.value || undefined,
+                                    // SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+                                    value: isSensitiveField ? undefined : (el.value || undefined),
                                     isVisible,
                                     position: {
                                         top: Math.round(rect.top),

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import { validateFile, createImagePreview, isImageFile } from '@/utils/files';
+import { validateFile, createImagePreview, isImageFile, isAudioFile, createAudioPreview, getAudioDuration } from '@/utils/files';
 import type { FileAttachmentMeta } from '@/components/features/chat/components/attachments';
 import type { AIMode } from '@/components/features/chat/types';
 import { useAttachmentsStore } from '@/stores';
@@ -42,19 +42,41 @@ export const useFileAttachments = ({ mode, onError }: UseFileAttachmentsOptions)
             }
 
             const id = `${Date.now()}-${Math.random()}`;
-            const type = isImageFile(file) ? 'image' : 'document';
 
-            // Create preview for images
+            // Determine file type
+            let type: 'image' | 'document' | 'audio' = 'document';
+            if (isImageFile(file)) {
+                type = 'image';
+            } else if (isAudioFile(file)) {
+                type = 'audio';
+            }
+
+            // Create preview for images and audio
             let preview: string | undefined;
+            let duration: number | undefined;
+
             if (type === 'image') {
                 try {
                     preview = await createImagePreview(file);
                 } catch (error) {
                     console.error('Failed to create image preview', error);
                 }
+            } else if (type === 'audio') {
+                try {
+                    preview = await createAudioPreview(file);
+                    duration = await getAudioDuration(file);
+                } catch (error) {
+                    console.error('Failed to process audio file', error);
+                    // Still add the file, just without duration
+                    try {
+                        preview = await createAudioPreview(file);
+                    } catch {
+                        // Ignore preview error
+                    }
+                }
             }
 
-            addFileAttachment({ id, file, preview, type, meta });
+            addFileAttachment({ id, file, preview, type, duration, meta });
         }
     }, [addFileAttachment]);
 

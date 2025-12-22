@@ -139,6 +139,19 @@ export const ALLOWED_EXTENSIONS = [
     ".handlebars",
     ".hbs",
     ".coffee",
+
+    // Audio
+    ".mp3",
+    ".wav",
+    ".ogg",
+    ".flac",
+    ".aac",
+    ".m4a",
+    ".wma",
+    ".webm",
+    ".opus",
+    ".aiff",
+    ".aif",
 ];
 
 
@@ -211,6 +224,47 @@ export function createImagePreview(file: File): Promise<string> {
         reader.onload = () => resolve(reader.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Check if file is an audio file
+ */
+export function isAudioFile(file: File): boolean {
+    return file.type.startsWith('audio/');
+}
+
+/**
+ * Create audio preview URL (data URL for playback)
+ */
+export function createAudioPreview(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Get audio duration from a file
+ */
+export function getAudioDuration(file: File): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const audio = new Audio();
+        const url = URL.createObjectURL(file);
+
+        audio.addEventListener('loadedmetadata', () => {
+            URL.revokeObjectURL(url);
+            resolve(audio.duration);
+        });
+
+        audio.addEventListener('error', () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load audio metadata'));
+        });
+
+        audio.src = url;
     });
 }
 
