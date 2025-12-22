@@ -10,6 +10,7 @@ export { defaultFormatter } from './formatters/default';
 import type { ActionFormatterContext, FormattedAction } from './types';
 import { formatters } from './registry';
 import { defaultFormatter } from './formatters/default';
+import { isWebMCPTool, webmcpFormatter } from './formatters/webmcp';
 
 /**
  * Format a tool action into a human-readable description
@@ -17,6 +18,16 @@ import { defaultFormatter } from './formatters/default';
  * @returns Formatted action with optional description
  */
 export function formatToolAction(ctx: ActionFormatterContext): FormattedAction {
+    // Check for WebMCP tools first (dynamic tool names like webmcp_domain_toolname)
+    if (isWebMCPTool(ctx.toolName)) {
+        try {
+            return webmcpFormatter(ctx);
+        } catch (error) {
+            console.error(`Error formatting WebMCP tool action for ${ctx.toolName}:`, error);
+            return defaultFormatter(ctx);
+        }
+    }
+
     const formatter = formatters[ctx.toolName] || defaultFormatter;
     try {
         return formatter(ctx);

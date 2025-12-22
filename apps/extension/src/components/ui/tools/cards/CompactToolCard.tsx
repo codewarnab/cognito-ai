@@ -125,8 +125,25 @@ export function CompactToolCard({
                 {/* Left: Icon + Tool Name */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className={`flex items-center justify-center shrink-0 transition-opacity duration-200 text-[var(--text-secondary)] ${isHovered ? 'opacity-80' : ''}`}>
-                        {/* Use UploadIcon when customIcon is 'upload', otherwise use default tool icon */}
-                        {formattedAction.customIcon === 'upload' ? (
+                        {/* Use favicon for WebMCP tools, UploadIcon for uploads, otherwise default tool icon */}
+                        {formattedAction.faviconUrl ? (
+                            <img
+                                src={formattedAction.faviconUrl}
+                                alt=""
+                                className="w-4 h-4 rounded-sm object-contain"
+                                onError={(e) => {
+                                    // Hide favicon and show fallback icon on error
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextElementSibling;
+                                    if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                                }}
+                            />
+                        ) : null}
+                        {formattedAction.faviconUrl ? (
+                            <div style={{ display: 'none' }}>
+                                <ToolIcon ref={toolIconRef} size={16} />
+                            </div>
+                        ) : formattedAction.customIcon === 'upload' ? (
                             <UploadIcon ref={uploadIconRef} size={16} />
                         ) : (
                             <ToolIcon ref={toolIconRef} size={16} />

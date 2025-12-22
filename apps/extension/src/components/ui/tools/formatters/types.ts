@@ -13,6 +13,7 @@ export interface FormattedAction {
     action: string;
     description?: string;
     customIcon?: 'upload' | string; // Optional custom icon identifier
+    faviconUrl?: string; // Optional favicon URL for WebMCP tools
 }
 
 export type ActionFormatter = (ctx: ActionFormatterContext) => FormattedAction;
