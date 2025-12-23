@@ -4,7 +4,7 @@
  * Exports for backend chat integration.
  */
 
-export { streamBackendChat, type BackendChatParams } from './backendChat';
+// backendChat.ts was deleted - no longer used
 export { streamBackendChatWithTools, type BackendChatWithToolsParams } from './backendChatWithTools';
 export {
     executeToolLocally,

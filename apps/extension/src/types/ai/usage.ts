@@ -11,9 +11,10 @@ import type { LanguageModelUsage } from 'ai';
  * Inherits from AI SDK LanguageModelUsage:
  * - inputTokens: number | undefined
  * - outputTokens: number | undefined  
+ * - outputTokens: number | undefined  
  * - totalTokens: number | undefined
- * - reasoningTokens?: number | undefined
- * - cachedInputTokens?: number | undefined
+ * - inputTokenDetails: { ... } | undefined
+ * - outputTokenDetails: { ... } | undefined
  */
 export interface AppUsage extends LanguageModelUsage {
     /**

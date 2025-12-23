@@ -7,7 +7,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Check, AlertCircle } from 'lucide-react';
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { isSupermemoryReady } from '@/utils/supermemory';
 import { initializeModel } from '@/ai/core/modelFactory';
@@ -157,15 +157,15 @@ async function analyzeAndExtractFacts(
 
   const prompt = buildExtractionPrompt(userMessage, aiResponse);
 
-  const result = await generateObject({
+  const { output } = await generateText({
     model,
-    schema: extractedFactsSchema,
+    output: Output.object({ schema: extractedFactsSchema }),
     prompt,
     temperature: 0.3,
     maxRetries: 2,
   });
 
-  return result.object.facts;
+  return output.facts;
 }
 
 type BrainButtonState = 'idle' | 'analyzing' | 'success' | 'error' | 'no-facts' | 'analyzed';

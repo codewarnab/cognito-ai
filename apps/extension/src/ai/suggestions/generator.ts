@@ -6,7 +6,7 @@
  * Includes caching to avoid regenerating suggestions for the same page
  */
 
-import { generateObject } from 'ai';
+import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import { createLogger } from '~logger';
 import type { PageContext } from '@/utils/tabs';
@@ -258,15 +258,15 @@ async function generateWithRetry(
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-            const result = await generateObject({
+            const { output } = await generateText({
                 model,
-                schema: suggestionSchema,
+                output: Output.object({ schema: suggestionSchema }),
                 prompt,
                 temperature: 0.8, // More creative suggestions
                 maxRetries: 0, // Handle retries manually
             });
 
-            return result.object;
+            return output;
 
         } catch (error: any) {
             lastError = error;

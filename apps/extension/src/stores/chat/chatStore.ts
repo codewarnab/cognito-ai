@@ -129,15 +129,13 @@ export const useChatStore = create<ChatState>()(
 
       // Usage
       setUsage: (usage: AppUsage | null) => {
-        set((state) => {
-          state.usage = usage;
-          if (usage?.totalTokens && usage?.context?.totalMax) {
-            const percent = Math.round((usage.totalTokens / usage.context.totalMax) * 100);
-            state.contextWarningPercent = percent >= 85 ? percent : null;
-          } else {
-            state.contextWarningPercent = null;
-          }
-        });
+        // Use object-based set to avoid TypeScript deep type instantiation issues with Immer
+        const contextWarningPercent = (usage?.totalTokens && usage?.context?.totalMax)
+          ? (Math.round((usage.totalTokens / usage.context.totalMax) * 100) >= 85
+            ? Math.round((usage.totalTokens / usage.context.totalMax) * 100)
+            : null)
+          : null;
+        set({ usage, contextWarningPercent });
       },
 
       resetUsage: () => {

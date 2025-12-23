@@ -19,8 +19,15 @@ export function calculateUsageFromMessages(messages: UIMessage[]): AppUsage | nu
         inputTokens: 0,
         outputTokens: 0,
         totalTokens: 0,
-        cachedInputTokens: 0,
-        reasoningTokens: 0
+        inputTokenDetails: {
+            cacheReadTokens: 0,
+            noCacheTokens: 0,
+            cacheWriteTokens: 0,
+        },
+        outputTokenDetails: {
+            reasoningTokens: 0,
+            textTokens: 0,
+        }
     };
 
     let hasAnyUsage = false;
@@ -33,8 +40,17 @@ export function calculateUsageFromMessages(messages: UIMessage[]): AppUsage | nu
             cumulative.inputTokens = (cumulative.inputTokens || 0) + (msgUsage.inputTokens || 0);
             cumulative.outputTokens = (cumulative.outputTokens || 0) + (msgUsage.outputTokens || 0);
             cumulative.totalTokens = (cumulative.totalTokens || 0) + (msgUsage.totalTokens || 0);
-            cumulative.cachedInputTokens = (cumulative.cachedInputTokens || 0) + (msgUsage.cachedInputTokens || 0);
-            cumulative.reasoningTokens = (cumulative.reasoningTokens || 0) + (msgUsage.reasoningTokens || 0);
+
+            // Sum details if available, or fall back to legacy fields
+            const cacheTokens = (msgUsage.inputTokenDetails?.cacheReadTokens || msgUsage.cachedInputTokens || 0);
+            const reasoningTokens = (msgUsage.outputTokenDetails?.reasoningTokens || msgUsage.reasoningTokens || 0);
+
+            if (cumulative.inputTokenDetails) {
+                cumulative.inputTokenDetails.cacheReadTokens = (cumulative.inputTokenDetails.cacheReadTokens || 0) + cacheTokens;
+            }
+            if (cumulative.outputTokenDetails) {
+                cumulative.outputTokenDetails.reasoningTokens = (cumulative.outputTokenDetails.reasoningTokens || 0) + reasoningTokens;
+            }
 
             // Copy context limits from last message with usage
             if (msgUsage.context) {
