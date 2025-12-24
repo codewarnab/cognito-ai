@@ -22,6 +22,7 @@ import {
 } from '../supermemory';
 import { searchMemories, formatMemoriesForPrompt } from '../supermemory';
 import type { WritePageContext, WriteTone } from '@/types';
+import { PLATFORM_INSTRUCTIONS, TONE_INSTRUCTIONS } from '@cognito/shared';
 
 const log = createLogger('GeminiWriter', 'BACKGROUND');
 
@@ -55,28 +56,7 @@ interface ProviderInfo {
     headers: Record<string, string>;
 }
 
-/**
- * Platform-specific writing instructions
- */
-const PLATFORM_INSTRUCTIONS: Record<string, string> = {
-    Gmail: `You are writing an email. Be clear, professional, and include appropriate greetings/closings when appropriate.`,
-    LinkedIn: `You are writing for a professional network. Be engaging, business-appropriate, and thoughtful.`,
-    Twitter: `You are writing a tweet. Be concise (under 280 chars if possible), engaging, and consider hashtags if appropriate.`,
-    GitHub: `You are writing for developers. Be technical, clear, and follow markdown conventions when helpful.`,
-    Slack: `You are writing a workplace message. Be concise, friendly, and professional.`,
-    Discord: `You are writing a chat message. Be casual and conversational.`,
-    Web: `You are writing general web content. Be clear and helpful.`,
-};
-
-/**
- * Tone-specific instructions
- */
-const TONE_INSTRUCTIONS: Record<WriteTone, string> = {
-    professional: 'Use a professional, business-appropriate tone. Be clear, respectful, and focused.',
-    casual: 'Use a casual, relaxed tone. Be friendly and conversational.',
-    formal: 'Use a formal tone. Be precise, respectful, and proper.',
-    friendly: 'Use a warm, friendly tone. Be approachable and personable.',
-};
+// PLATFORM_INSTRUCTIONS and TONE_INSTRUCTIONS are imported from @cognito/shared
 
 /**
  * Content part for Gemini API request
@@ -150,7 +130,9 @@ export class GeminiWriter {
         const platform = options?.pageContext?.platform || 'Web';
         const tone = options?.tone || 'professional';
 
-        const platformInstruction = PLATFORM_INSTRUCTIONS[platform] || PLATFORM_INSTRUCTIONS['Web'];
+        const platformInstruction = platform in PLATFORM_INSTRUCTIONS
+            ? PLATFORM_INSTRUCTIONS[platform as keyof typeof PLATFORM_INSTRUCTIONS]
+            : PLATFORM_INSTRUCTIONS['Web'];
         const toneInstruction = TONE_INSTRUCTIONS[tone];
 
         let contextInfo = '';

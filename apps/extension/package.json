@@ -14,6 +14,7 @@
         "type:watch": "tsc --noEmit --watch"
     },
     "dependencies": {
+        "@cognito/shared": "workspace:*",
         "@ai-sdk/google": "^3.0.1",
         "@ai-sdk/google-vertex": "^4.0.1",
         "@ai-sdk/mcp": "^1.0.1",

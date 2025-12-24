@@ -22,23 +22,11 @@ import {
 } from '../supermemory';
 import { searchMemories, formatMemoriesForPrompt } from '../supermemory';
 import type { RewritePreset } from '@/types';
+import { PRESET_PROMPTS } from '@cognito/shared';
 
 const log = createLogger('GeminiRewriter', 'BACKGROUND');
 
-/**
- * Preset-specific rewrite instructions
- * All presets include edge case handling: questions/prompts should be transformed, not answered
- */
-const PRESET_PROMPTS: Record<RewritePreset, string> = {
-    shorter: 'Make this text shorter and more concise while preserving the key meaning. If the text is a question or prompt, shorten the question/prompt itself - do NOT answer it',
-    longer: 'Expand this text by adding more detail, context, and elaboration. If the text is a question or prompt, make it a more detailed and comprehensive question/prompt - do NOT answer it',
-    professional: 'Rewrite this in a more professional and formal tone. If the text is a question or prompt, make it more professionally worded - do NOT answer it',
-    casual: 'Rewrite this in a more casual and friendly tone. If the text is a question or prompt, make it sound more casual - do NOT answer it',
-    improve: 'Improve this text by fixing grammar, clarity, and flow. If the text is a question or prompt, improve the question/prompt itself - do NOT answer it',
-    simplify: 'Simplify this text for easier understanding. If the text is a question or prompt, simplify the question/prompt itself - do NOT answer it',
-    enthusiastic: 'Rewrite this in a more enthusiastic and positive tone. If the text is a question or prompt, make it sound more enthusiastic - do NOT answer it',
-    conversational: 'Rewrite this in a more natural, conversational style. If the text is a question or prompt, make it more conversational - do NOT answer it',
-};
+// PRESET_PROMPTS is imported from @cognito/shared
 
 /**
  * Options for text rewriting

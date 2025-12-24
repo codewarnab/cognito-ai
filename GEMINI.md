@@ -10,6 +10,7 @@ cognito-ai/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT + React 19)
 │   └── docs/               # @cognito/docs - Documentation (Next.js + Fumadocs)
 ├── packages/
+│   ├── shared/             # @cognito/shared - Shared types and constants
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy
 │   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts
 └── [root config files]
@@ -20,8 +21,10 @@ cognito-ai/
 | Package | Path | GEMINI.md |
 |---------|------|-----------|
 | Extension | `apps/extension/` | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/extension/GEMINI.md) |
+| Shared | `packages/shared/` | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/shared/GEMINI.md) |
 | Backend Cloudflare | `packages/backend-cloudflare/` | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-cloudflare/GEMINI.md) |
 | Backend Vercel | `packages/backend-vercel/` | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/GEMINI.md) |
+
 
 ## Commands
 

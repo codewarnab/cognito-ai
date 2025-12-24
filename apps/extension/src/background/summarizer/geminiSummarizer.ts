@@ -15,6 +15,7 @@ import { GEMINI_MODELS } from '~/constants';
 import { createLogger } from '~logger';
 import { generateVertexAccessToken } from './vertexAuth';
 import { LRUCache } from '~/utils/cache/LRUCache';
+import { SUMMARY_TYPE_INSTRUCTIONS, SUMMARY_LENGTH_TOKENS } from '@cognito/shared';
 
 const log = createLogger('GeminiSummarizer', 'BACKGROUND');
 
@@ -60,18 +61,7 @@ interface ProviderInfo {
     headers: Record<string, string>;
 }
 
-const SUMMARY_TYPE_INSTRUCTIONS: Record<string, string> = {
-    'key-points': 'Extract the key points from the text as a bulleted list. Focus on the main ideas and important details.',
-    'tl-dr': 'Provide a concise TL;DR summary of the text. Capture the essence in 2-3 sentences.',
-    'headline': 'Create a single headline that captures the main idea of the text.',
-    'teaser': 'Write a brief teaser that would make someone want to read the full text.',
-};
-
-const SUMMARY_LENGTH_TOKENS: Record<string, number> = {
-    'short': 100,
-    'medium': 250,
-    'long': 500,
-};
+// SUMMARY_TYPE_INSTRUCTIONS and SUMMARY_LENGTH_TOKENS are imported from @cognito/shared
 
 export class GeminiSummarizer {
     private model = GEMINI_MODELS.LITE;

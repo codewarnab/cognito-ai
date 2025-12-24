@@ -143,6 +143,20 @@ pnpm --filter @cognito/docs build
 - **Permissions:** The manifest configuration in `wxt.config.ts` lists Chrome extension permissions.
 - **Load Extension:** Load `.output/chrome-mv3` as unpacked extension in Chrome.
 
+## Shared Package (`@cognito/shared`)
+
+The extension uses `@cognito/shared` for shared types and constants with the backend:
+
+```typescript
+// Import types
+import type { WriteTone, RewritePreset, SummaryType } from '@cognito/shared';
+
+// Import constants
+import { TONE_INSTRUCTIONS, PRESET_PROMPTS, SUMMARY_TYPE_INSTRUCTIONS } from '@cognito/shared';
+```
+
+This ensures consistency between the extension and backend for AI content features.
+
 ## Configuration
 
 The extension supports configuration via Environment Variables. Copy `apps/extension/.env.example` to `apps/extension/.env` to customize.

@@ -12,6 +12,7 @@ cognito-ai/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
+│   ├── shared/             # @cognito/shared - Shared types and constants
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
 │   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 └── [root config files]
@@ -32,6 +33,7 @@ Key features:
 | Package | Path | Purpose | CLAUDE.md |
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [CLAUDE.md](apps/extension/CLAUDE.md) |
+| Shared | `packages/shared/` | Shared types/constants | [GEMINI.md](packages/shared/GEMINI.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [CLAUDE.md](packages/backend-cloudflare/CLAUDE.md) |
 | Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [CLAUDE.md](packages/backend-vercel/CLAUDE.md) |
 | Docs | `apps/docs/` | Documentation site | N/A |
@@ -122,32 +124,23 @@ UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
 UPSTASH_REDIS_REST_TOKEN=your_token
 ```
 
-## Creating Shared Code
+## Shared Package (`@cognito/shared`)
 
-To share types/utilities between packages:
+The `@cognito/shared` package provides shared types and constants used by both the extension and backend:
 
-1. **Create shared package**:
-   ```bash
-   mkdir packages/shared
-   cd packages/shared
-   pnpm init
-   ```
+```typescript
+// Import types
+import type { WriteTone, RewritePreset, SummaryType } from '@cognito/shared';
 
-2. **Configure `package.json`**:
-   ```json
-   {
-     "name": "@cognito/shared",
-     "main": "./dist/index.js",
-     "types": "./dist/index.d.ts"
-   }
-   ```
+// Import constants
+import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
+```
 
-3. **Add as dependency**:
-   ```bash
-   pnpm --filter @cognito/extension add @cognito/shared
-   ```
+**Contents:**
+- Types: `WriteTone`, `WritePageContext`, `RewritePreset`, `SummaryType`, `SummaryLength`, `TranscriptResponse`, `AIChatMessage`
+- Constants: `TONE_INSTRUCTIONS`, `PLATFORM_INSTRUCTIONS`, `PRESET_PROMPTS`, `SUMMARY_TYPE_INSTRUCTIONS`, `SUMMARY_LENGTH_TOKENS`
 
-4. **pnpm auto-links workspace packages** - no manual linking needed.
+**Build:** Run `pnpm --filter @cognito/shared build` before using in other packages.
 
 ## Key Documentation Files
 

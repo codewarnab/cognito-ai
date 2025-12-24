@@ -140,6 +140,7 @@ cognito-ai/
 │   │   └── build/              # Build output
 │   └── docs/                   # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
+│   ├── shared/                 # @cognito/shared - Shared types and constants
 │   ├── backend-cloudflare/     # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
 │   └── backend-vercel/         # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 └── [root config files]         # pnpm-workspace.yaml, turbo.json, etc.

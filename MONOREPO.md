@@ -10,6 +10,7 @@ cognito-ai/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
+│   ├── shared/             # @cognito/shared - Shared types and constants
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
 │   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 ├── pnpm-workspace.yaml     # Workspace package definitions
@@ -23,6 +24,7 @@ cognito-ai/
 |---------|----------|------------|---------|
 | `@cognito/extension` | `apps/extension/` | Chrome Web Store | Main browser extension |
 | `@cognito/docs` | `apps/docs/` | Vercel | Documentation website |
+| `@cognito/shared` | `packages/shared/` | N/A (library) | Shared types and constants |
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers | ElevenLabs TTS proxy |
 | `@cognito/backend-vercel` | `packages/backend-vercel/` | Vercel | AI Chat Backend + YouTube transcripts |
 
@@ -266,34 +268,20 @@ See "Merge All Backends into Docs" below.
 
 ---
 
-### 4. Add Shared Package for Common Types
+### 4. Shared Package (`@cognito/shared`)
 
-**Scenario**: Share TypeScript types/utilities between packages.
+**Status**: ✅ **IMPLEMENTED**
 
-1. **Create shared package**:
-   ```bash
-   mkdir packages/shared
-   cd packages/shared
-   pnpm init
-   ```
+The shared package now exists and contains:
 
-2. **Configure package.json**:
-   ```json
-   {
-     "name": "@cognito/shared",
-     "main": "./dist/index.js",
-     "types": "./dist/index.d.ts",
-     "scripts": {
-       "build": "tsc",
-       "dev": "tsc --watch"
-     }
-   }
-   ```
+- **Types**: `WriteTone`, `WritePageContext`, `RewritePreset`, `SummaryType`, `SummaryLength`, `TranscriptResponse`, `AIChatMessage`, etc.
+- **Constants**: `TONE_INSTRUCTIONS`, `PLATFORM_INSTRUCTIONS`, `PRESET_PROMPTS`, `SUMMARY_TYPE_INSTRUCTIONS`, `SUMMARY_LENGTH_TOKENS`
 
-3. **Add as dependency to other packages**:
-   ```bash
-   pnpm --filter @cognito/extension add @cognito/shared
-   ```
+```typescript
+// Usage in extension or backend
+import type { WriteTone, RewritePreset } from '@cognito/shared';
+import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
+```
 
 4. **pnpm will automatically link workspace packages**.
 
@@ -353,7 +341,7 @@ pnpm install --force
 ## Future Considerations
 
 - [ ] Add Turborepo for build caching (`turbo.json`)
-- [ ] Add `packages/shared` for common types
+- [x] ~~Add `packages/shared` for common types~~ ✅ Implemented
 - [ ] Add `packages/ui` for shared React components
 - [ ] Consider Changesets for versioning
 - [ ] Add GitHub Actions for CI/CD per package

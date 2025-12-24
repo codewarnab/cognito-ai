@@ -12,6 +12,7 @@ cognito-ai/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT + React 19)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
+│   ├── shared/             # @cognito/shared - Shared types and constants
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
 │   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 └── [root config files]
@@ -32,6 +33,7 @@ Key features:
 | Package | Path | Purpose | AGENTS.md |
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/extension/AGENTS.md) |
+| Shared | `packages/shared/` | Shared types/constants | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/shared/GEMINI.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-cloudflare/AGENTS.md) |
 | Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/AGENTS.md) |
 | Docs | `apps/docs/` | Documentation site | See `apps/docs/` |
@@ -127,32 +129,23 @@ For local development, each package manages its own `.env` file. For production:
 - **Cloudflare Workers**: Use `wrangler secret put` for secrets
 - **Vercel deployments**: Set in Vercel Dashboard → Project Settings → Environment Variables
 
-## Creating Shared Code
+## Shared Package (`@cognito/shared`)
 
-To share types/utilities between packages:
+The `@cognito/shared` package provides shared types and constants used by both the extension and backend:
 
-1. **Create shared package**:
-   ```bash
-   mkdir packages/shared
-   cd packages/shared
-   pnpm init
-   ```
+```typescript
+// Import types
+import type { WriteTone, RewritePreset, SummaryType } from '@cognito/shared';
 
-2. **Configure `package.json`**:
-   ```json
-   {
-     "name": "@cognito/shared",
-     "main": "./dist/index.js",
-     "types": "./dist/index.d.ts"
-   }
-   ```
+// Import constants
+import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
+```
 
-3. **Add as dependency**:
-   ```bash
-   pnpm --filter @cognito/extension add @cognito/shared
-   ```
+**Contents:**
+- Types: `WriteTone`, `WritePageContext`, `RewritePreset`, `SummaryType`, `SummaryLength`, `TranscriptResponse`, `AIChatMessage`
+- Constants: `TONE_INSTRUCTIONS`, `PLATFORM_INSTRUCTIONS`, `PRESET_PROMPTS`, `SUMMARY_TYPE_INSTRUCTIONS`, `SUMMARY_LENGTH_TOKENS`
 
-4. **pnpm auto-links workspace packages** - no manual linking needed.
+**Build:** Run `pnpm --filter @cognito/shared build` before using in other packages.
 
 ## AI Editor Configurations
 
