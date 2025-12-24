@@ -125,21 +125,23 @@ cognito-ai/
 ├── apps/
 │   ├── extension/              # @cognito/extension - Chrome Extension (WXT)
 │   │   ├── src/
-│   │   │   ├── sidepanel.tsx   # Main UI
-│   │   │   ├── background.ts   # Service worker
-│   │   │   ├── options.tsx     # Options page
-│   │   │   ├── ai/             # AI integration
-│   │   │   ├── actions/        # Browser actions
+│   │   │   ├── entrypoints/    # WXT entrypoints
+│   │   │   │   ├── sidepanel/  # Main side panel React app
+│   │   │   │   ├── background/ # Background Service Worker
+│   │   │   │   └── contents/   # Content scripts
+│   │   │   ├── stores/         # Zustand state management
+│   │   │   ├── ai/             # AI integration (Vercel AI SDK v6)
+│   │   │   ├── actions/        # Browser automation actions
 │   │   │   ├── components/     # React components
-│   │   │   ├── mcp/            # Model Context Protocol
-│   │   │   ├── memory/         # Memory system
+│   │   │   ├── mcp/            # Model Context Protocol client
+│   │   │   ├── db/             # Local database (Dexie/IndexedDB)
 │   │   │   └── workflows/      # Automation workflows
 │   │   ├── assets/             # Icons and graphics
 │   │   └── build/              # Build output
 │   └── docs/                   # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/     # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
-│   └── backend-vercel/         # @cognito/backend-vercel - YouTube transcript API (Express)
+│   └── backend-vercel/         # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 └── [root config files]         # pnpm-workspace.yaml, turbo.json, etc.
 ```
 

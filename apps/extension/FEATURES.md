@@ -94,16 +94,27 @@ Cognito is a powerful Chrome extension that transforms your browser into an inte
 
 ## Technical Architecture
 
-### AI Models
-- **Gemini Pro**: Text-based AI for complex reasoning and task planning
+### AI Framework
+- **Vercel AI SDK v6**: Core AI integration with streaming support
+- **Google Gemini 2.5 Flash**: Default text-based AI for complex reasoning and task planning
 - **ElevenLabs**: Real-time voice conversation with high-quality speech synthesis
-- **Local Models**: Optional local AI processing for privacy-sensitive tasks
+- **Gemini Nano**: Optional local AI processing for privacy-sensitive tasks (Chrome built-in AI)
 
 ### AI Modes
 - **Chat Mode**: Conversational AI without browser automation tools
 - **Agent Mode**: Full access to all browser automation tools
 - **Adaptive Mode**: On-demand tool discovery for efficient, context-aware automation
 - **Custom Mode**: User-configurable tool selection for specific workflows
+
+### Backend Integration
+- **Backend Mode**: Server-side AI processing without requiring API keys (rate-limited)
+- **BYOK Mode**: Bring Your Own Key mode for direct API calls with user's Google AI key
+- **Graceful Degradation**: Automatic fallback from backend to BYOK when rate limits exceeded
+
+### Tool Approval System
+- **Human-in-the-Loop**: Sensitive browser actions require user approval before execution
+- **Auto-Approval Options**: Allow once, allow for session, allow for website, or always allow
+- **Domain-Aware**: Website-specific approvals for contextual security
 
 ### Data Storage
 - **IndexedDB**: Local storage for chat history, settings, and user data

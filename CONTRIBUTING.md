@@ -1,6 +1,6 @@
-# Contributing to Chrome AI
+# Contributing to Cognito AI
 
-Thank you for your interest in contributing to Chrome AI! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to Cognito AI! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -221,7 +221,7 @@ Since this is a monorepo, please specify the scope of the change:
 ### Examples
 
 ```bash
-feat(ai): add support for GPT-4 integration
+feat(ai): add support for new Gemini model
 fix(sidepanel): resolve memory leak in chat component
 docs: update setup instructions
 style: format code with prettier
@@ -293,8 +293,8 @@ If you have questions about contributing:
 
 ## License
 
-By contributing to Chrome AI, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
+By contributing to Cognito AI, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
 
 ---
 
-Thank you for contributing to Chrome AI! 🎉
+Thank you for contributing to Cognito AI! 🎉

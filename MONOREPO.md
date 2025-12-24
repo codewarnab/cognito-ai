@@ -11,7 +11,7 @@ cognito-ai/
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
-│   └── backend-vercel/     # @cognito/backend-vercel - YouTube transcripts (Express)
+│   └── backend-vercel/     # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
 ├── pnpm-workspace.yaml     # Workspace package definitions
 ├── package.json            # Root scripts and monorepo config
 └── MONOREPO.md            # This file
@@ -24,7 +24,7 @@ cognito-ai/
 | `@cognito/extension` | `apps/extension/` | Chrome Web Store | Main browser extension |
 | `@cognito/docs` | `apps/docs/` | Vercel | Documentation website |
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers | ElevenLabs TTS proxy |
-| `@cognito/backend-vercel` | `packages/backend-vercel/` | Vercel | YouTube transcript API |
+| `@cognito/backend-vercel` | `packages/backend-vercel/` | Vercel | AI Chat Backend + YouTube transcripts |
 
 ---
 
