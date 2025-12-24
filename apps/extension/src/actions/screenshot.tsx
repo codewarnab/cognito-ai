@@ -862,8 +862,9 @@ EXAMPLE:
         // Register UI renderer with custom renderers
         registerToolUI(
             'takeScreenshot',
-            (state: ToolUIState) => {
-                return CompactToolRenderer({ state });
+            (state: ToolUIState, options) => {
+                // Pass addToolOutput from options for approval flow
+                return CompactToolRenderer({ state, addToolOutput: options?.addToolOutput });
             },
             {
                 renderInput: () => null, // Hide input section

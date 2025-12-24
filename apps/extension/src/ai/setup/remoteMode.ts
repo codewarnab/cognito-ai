@@ -37,7 +37,14 @@ const WORKFLOW_ONLY_TOOLS = ['generatePDF', 'getReportTemplate'];
  * Tools that require human approval before execution
  * These tools will show Approve/Deny buttons in the UI and wait for user decision
  */
-export const TOOLS_REQUIRING_APPROVAL = ['navigateTo'];
+export const TOOLS_REQUIRING_APPROVAL = [
+    'navigateTo',
+    'executeScript',  // Phase 2: Highest risk - runs arbitrary JavaScript
+    'typeInField',    // Phase 2: Can fill sensitive forms
+    'clickByText',    // Phase 2: Can submit forms, trigger purchases
+    'pressKey',       // Phase 3: Keyboard simulation
+    'takeScreenshot', // Phase 4: Privacy on sensitive pages
+];
 
 /**
  * Setup remote mode with tools

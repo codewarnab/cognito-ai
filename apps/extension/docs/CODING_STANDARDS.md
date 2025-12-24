@@ -196,6 +196,30 @@ function ChildComponent({ inputRef }: ChildProps) {
 - `reportSections.ts` - Report section storage for research features
 - `researchSources.ts` - Research source tracking and management
 
+## AI SDK v6
+
+This extension uses **Vercel AI SDK v6** for all AI interactions.
+
+### Human-in-the-Loop Tool Approval
+
+For sensitive browser actions, the extension implements human-in-the-loop approval:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `TOOLS_REQUIRING_APPROVAL` | `src/ai/setup/remoteMode.ts` | List of tools needing approval |
+| `TOOL_APPROVAL_CONFIG` | `src/ai/tools/approvalConfig.ts` | Per-tool domain extraction |
+| `approvalStore` | `src/stores/approval/` | Approval preferences (Zustand) |
+| `CompactToolRenderer` | `src/ai/tools/components/` | Approval UI rendering |
+
+**CRITICAL**: When registering custom tool UI, always pass `addToolOutput` for approval flow:
+```typescript
+registerToolUI('toolName', (state: ToolUIState, options) => {
+    return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
+});
+```
+
+See [TOOL_APPROVAL_SYSTEM.md](./TOOL_APPROVAL_SYSTEM.md) for full architecture and diagrams.
+
 ## AI Modes
 The extension supports multiple AI operational modes configured via `ToolsMode` (`src/types/settings.ts`):
 

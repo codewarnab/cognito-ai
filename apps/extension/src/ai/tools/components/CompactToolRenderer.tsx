@@ -51,8 +51,32 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
     const requiresApproval = TOOLS_REQUIRING_APPROVAL.includes(toolName);
     const isWaitingForResult = toolState === 'input-available' && !output;
 
+    // State for current tab URL (needed for page interaction tools)
+    const [currentTabUrl, setCurrentTabUrl] = useState<string | null>(null);
+
+    // Fetch current tab URL for page interaction tools that need it for domain extraction
+    // Tools like typeInField, clickByText, executeScript operate on the CURRENT page
+    useEffect(() => {
+        const fetchCurrentTabUrl = async () => {
+            try {
+                const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (tab?.url) {
+                    setCurrentTabUrl(tab.url);
+                }
+            } catch (error) {
+                log.warn('Failed to get current tab URL:', error);
+            }
+        };
+
+        // Only fetch if tool requires approval and is waiting (optimization)
+        if (requiresApproval && isWaitingForResult) {
+            fetchCurrentTabUrl();
+        }
+    }, [requiresApproval, isWaitingForResult]);
+
     // Extract domain for website-specific approval
-    const domain = extractDomainFromInput(toolName, input);
+    // Pass currentTabUrl for page interaction tools (executeScript, typeInField, etc.)
+    const domain = extractDomainFromInput(toolName, input, currentTabUrl ?? undefined);
     const showWebsiteOption = supportsWebsiteApproval(toolName) && !!domain;
 
     // DEBUG: Log website approval option visibility
@@ -61,6 +85,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
             toolName,
             input,
             domain,
+            currentTabUrl,
             supportsWebsite: supportsWebsiteApproval(toolName),
             showWebsiteOption,
         });

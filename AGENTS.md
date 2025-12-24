@@ -17,6 +17,15 @@ cognito-ai/
 └── [root config files]
 ```
 
+## AI Framework
+
+This project uses **Vercel AI SDK v6** for all AI interactions.
+
+Key features:
+- Human-in-the-loop tool approval for sensitive browser actions
+- Frontend tools pattern (tools execute in browser, not backend)
+- See `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md` for tool approval documentation
+
 ## Package Reference
 
 | Package | Path | Purpose | AGENTS.md |

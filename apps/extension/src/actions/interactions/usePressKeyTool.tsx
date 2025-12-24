@@ -98,8 +98,9 @@ EXAMPLE: pressKey(key="Enter") after typeInField to submit search`,
         });
 
         // Use CompactToolRenderer for consistent modern UI
-        registerToolUI('pressKey', (state: ToolUIState) => {
-            return <CompactToolRenderer state={state} />;
+        // Pass addToolOutput from options for approval flow
+        registerToolUI('pressKey', (state: ToolUIState, options) => {
+            return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
         });
 
         log.info('✅ pressKey tool registration complete');

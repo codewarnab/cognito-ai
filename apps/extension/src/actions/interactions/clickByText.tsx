@@ -7,7 +7,7 @@
 import { useEffect } from "react";
 import { z } from "zod";
 import { createLogger } from '~logger';
-import { CompactToolCard } from "@/components/ui/tools/cards";
+import { CompactToolRenderer } from "@/ai/tools/components";
 import { registerTool } from "@/ai/tools";
 import { useToolUI } from "@/ai/tools/components";
 import type { ToolUIState } from "@/ai/tools/components";
@@ -541,41 +541,9 @@ EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
             },
         });
 
-        registerToolUI('clickByText', (state: ToolUIState) => {
-            const { state: toolState, input, output, errorText } = state;
-
-            if (toolState === 'input-streaming' || toolState === 'input-available') {
-                return (
-                    <CompactToolCard
-                        toolName="clickByText"
-                        state="loading"
-                        input={input}
-                    />
-                );
-            }
-            if (toolState === 'output-available' && output) {
-                const cardState = output.error ? 'error' : 'success';
-                return (
-                    <CompactToolCard
-                        toolName="clickByText"
-                        state={cardState}
-                        input={input}
-                        output={output}
-                        errorText={output.error}
-                    />
-                );
-            }
-            if (toolState === 'output-error') {
-                return (
-                    <CompactToolCard
-                        toolName="clickByText"
-                        state="error"
-                        input={input}
-                        errorText={errorText || 'Unknown error'}
-                    />
-                );
-            }
-            return null;
+        // Use CompactToolRenderer for consistent UI with approval flow support
+        registerToolUI('clickByText', (state: ToolUIState, options) => {
+            return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
         });
 
         log.info('✅ clickByText tool registration complete');

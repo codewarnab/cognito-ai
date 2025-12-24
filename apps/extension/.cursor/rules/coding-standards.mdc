@@ -149,6 +149,27 @@ When extracting DOM data that will be sent to AI or backend:
 - **CRITICAL**: Test assertions must throw errors or use assertion libraries when expectations fail
 - **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions
 
+## AI SDK v6 and Tool Approval
+
+This project uses **Vercel AI SDK v6** for AI interactions.
+
+### Human-in-the-Loop Tool Approval
+For sensitive tools, the extension implements human-in-the-loop approval:
+
+- **Approval List**: Defined in `src/ai/setup/remoteMode.ts` as `TOOLS_REQUIRING_APPROVAL`
+- **Approval Config**: Per-tool domain extraction in `src/ai/tools/approvalConfig.ts`
+- **Approval Store**: Zustand store at `src/stores/approval/approvalStore.ts`
+- **Approval UI**: Rendered in `src/ai/tools/components/CompactToolRenderer.tsx`
+
+**CRITICAL**: When registering custom tool UI, always pass `addToolOutput` for approval flow:
+```typescript
+registerToolUI('toolName', (state: ToolUIState, options) => {
+    return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
+});
+```
+
+See `docs/TOOL_APPROVAL_SYSTEM.md` for full architecture and implementation guide.
+
 ## Third-Party DOM Selector Robustness
 - For DOM queries dependent on third-party page structure, implement fallback selector arrays
 - Try selectors in order of reliability: specific class names → generic containers → ARIA attributes → broad fallbacks

@@ -78,51 +78,95 @@ export const TOOL_APPROVAL_CONFIG: Record<string, ToolApprovalConfig> = {
     },
 
     // ═══════════════════════════════════════════════════════════════════════════
-    // EXTENSIBILITY: Add new tools below
+    // PAGE INTERACTION TOOLS
+    // These tools operate on the CURRENT PAGE, so domain is extracted from the
+    // current tab URL (not from tool input like navigateTo)
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * EXAMPLE: clickByText - Click an element by text
-     * Domain would be the CURRENT PAGE (where we're clicking)
-     *
-     * clickByText: {
-     *   supportsWebsiteApproval: true,
-     *   extractDomain: (_input: any, currentTabUrl?: string) => {
-     *     try {
-     *       if (!currentTabUrl) return null;
-     *       return new URL(currentTabUrl).hostname;
-     *     } catch {
-     *       return null;
-     *     }
-     *   },
-     * },
+     * executeScript - Execute arbitrary JavaScript on the page
+     * HIGHEST RISK - Can do anything on the current page
+     * Domain is the CURRENT PAGE (where script runs)
      */
+    executeScript: {
+        supportsWebsiteApproval: true,
+        extractDomain: (_input: any, currentTabUrl?: string) => {
+            try {
+                if (!currentTabUrl) return null;
+                return new URL(currentTabUrl).hostname;
+            } catch {
+                return null;
+            }
+        },
+    },
 
     /**
-     * EXAMPLE: typeInField - Type into an input field
-     * Domain would be the CURRENT PAGE (where we're typing)
-     *
-     * typeInField: {
-     *   supportsWebsiteApproval: true,
-     *   extractDomain: (_input: any, currentTabUrl?: string) => {
-     *     try {
-     *       if (!currentTabUrl) return null;
-     *       return new URL(currentTabUrl).hostname;
-     *     } catch {
-     *       return null;
-     *     }
-     *   },
-     * },
+     * typeInField - Type text into an input field
+     * HIGH RISK - Can fill sensitive forms (passwords, payments)
+     * Domain is the CURRENT PAGE (where typing happens)
      */
+    typeInField: {
+        supportsWebsiteApproval: true,
+        extractDomain: (_input: any, currentTabUrl?: string) => {
+            try {
+                if (!currentTabUrl) return null;
+                return new URL(currentTabUrl).hostname;
+            } catch {
+                return null;
+            }
+        },
+    },
 
     /**
-     * EXAMPLE: groupTabs - Group multiple tabs
-     * Does NOT support website-specific approval (operates on multiple sites)
-     *
-     * groupTabs: {
-     *   supportsWebsiteApproval: false,
-     * },
+     * clickByText - Click an element by its text content
+     * HIGH RISK - Can submit forms, trigger purchases, navigate
+     * Domain is the CURRENT PAGE (where click happens)
      */
+    clickByText: {
+        supportsWebsiteApproval: true,
+        extractDomain: (_input: any, currentTabUrl?: string) => {
+            try {
+                if (!currentTabUrl) return null;
+                return new URL(currentTabUrl).hostname;
+            } catch {
+                return null;
+            }
+        },
+    },
+
+    /**
+     * pressKey - Press a keyboard key on focused element
+     * MEDIUM RISK - Can submit forms, trigger shortcuts
+     * Domain is the CURRENT PAGE (where key press happens)
+     */
+    pressKey: {
+        supportsWebsiteApproval: true,
+        extractDomain: (_input: any, currentTabUrl?: string) => {
+            try {
+                if (!currentTabUrl) return null;
+                return new URL(currentTabUrl).hostname;
+            } catch {
+                return null;
+            }
+        },
+    },
+
+    /**
+     * takeScreenshot - Capture screenshot of the page
+     * LOWER RISK - Privacy concern on sensitive pages
+     * Domain is the CURRENT PAGE (what's being captured)
+     */
+    takeScreenshot: {
+        supportsWebsiteApproval: true,
+        extractDomain: (_input: any, currentTabUrl?: string) => {
+            try {
+                if (!currentTabUrl) return null;
+                return new URL(currentTabUrl).hostname;
+            } catch {
+                return null;
+            }
+        },
+    },
 };
 
 /**
