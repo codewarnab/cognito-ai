@@ -344,7 +344,8 @@ export async function streamAIResponse(params: {
           }
 
           // Convert UI messages to model format
-          const modelMessages = convertToModelMessages(messages);
+          // Note: convertToModelMessages is async in AI SDK 6
+          const modelMessages = await convertToModelMessages(messages);
 
           // Determine step count based on mode and workflow
           // For workflows, use their stepCount; for local mode use 5; for remote mode use user's setting (default 20)

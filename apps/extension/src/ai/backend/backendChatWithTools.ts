@@ -214,7 +214,8 @@ export async function streamBackendChatWithTools(
 
                     // Convert UIMessages to ModelMessages to preserve full history including tool invocations
                     // This fixes the issue where previous tool calls were dropped/malformed
-                    const initialMessages = convertToModelMessages(messages);
+                    // Note: convertToModelMessages is async in AI SDK 6
+                    const initialMessages = await convertToModelMessages(messages);
 
                     // Tool execution loop
                     let conversationMessages: ModelMessage[] = [...initialMessages];

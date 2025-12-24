@@ -2,16 +2,21 @@
  * CompactToolRenderer - Default renderer for tool calls using CompactToolCard
  * Provides consistent, space-efficient UI for all tool executions
  * 
- * Includes human-in-the-loop approval for sensitive tools
+ * Includes human-in-the-loop approval for sensitive tools with auto-approve options:
+ * - Session approval (in-memory, resets on browser restart)
+ * - Website-specific approval (persisted, domain-based)
+ * - Always approval (persisted, permanent)
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CompactToolCard } from '@/components/ui/tools/cards';
 import type { ToolUIState } from './ToolUIContext';
 import { useToolUI } from './ToolUIContext';
 import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
 import { getTool } from '../registryUtils';
 import { createLogger } from '~logger';
+import { useApprovalStore } from '@/stores/approval';
+import { extractDomainFromInput, supportsWebsiteApproval } from '../approvalConfig';
 
 const log = createLogger('CompactToolRenderer', 'TOOLS_EXECUTION');
 
@@ -30,10 +35,57 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
     const [executionResult, setExecutionResult] = useState<any>(null);
     const [executionError, setExecutionError] = useState<string | null>(null);
 
+    // Approval store integration
+    const isAutoApproved = useApprovalStore((s) => s.isAutoApproved);
+    const addSessionApproval = useApprovalStore((s) => s.addSessionApproval);
+    const addWebsiteApproval = useApprovalStore((s) => s.addWebsiteApproval);
+    const addAlwaysApproval = useApprovalStore((s) => s.addAlwaysApproval);
+    const initializeApprovalStore = useApprovalStore((s) => s.initialize);
+
+    // Initialize approval store on mount
+    useEffect(() => {
+        initializeApprovalStore();
+    }, [initializeApprovalStore]);
+
     // Check if this tool requires approval and is waiting for result
     const requiresApproval = TOOLS_REQUIRING_APPROVAL.includes(toolName);
     const isWaitingForResult = toolState === 'input-available' && !output;
-    const isPendingApproval = requiresApproval && isWaitingForResult && approvalState === 'pending';
+
+    // Extract domain for website-specific approval
+    const domain = extractDomainFromInput(toolName, input);
+    const showWebsiteOption = supportsWebsiteApproval(toolName) && !!domain;
+
+    // DEBUG: Log website approval option visibility
+    if (requiresApproval && isWaitingForResult) {
+        log.info('🌐 Website approval check:', {
+            toolName,
+            input,
+            domain,
+            supportsWebsite: supportsWebsiteApproval(toolName),
+            showWebsiteOption,
+        });
+    }
+
+    // Track if we've already auto-executed to prevent double execution
+    const hasAutoExecutedRef = useRef(false);
+
+    // Auto-approve check: if tool is auto-approved, execute immediately
+    useEffect(() => {
+        if (
+            requiresApproval &&
+            isWaitingForResult &&
+            approvalState === 'pending' &&
+            !hasAutoExecutedRef.current &&
+            isAutoApproved(toolName, domain ?? undefined)
+        ) {
+            log.info('🔓 Auto-executing approved tool:', { toolName, domain });
+            hasAutoExecutedRef.current = true;
+            handleApprove();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [requiresApproval, isWaitingForResult, approvalState, toolName, domain]);
+
+    const isPendingApproval = requiresApproval && isWaitingForResult && approvalState === 'pending' && !hasAutoExecutedRef.current;
 
     const handleApprove = async () => {
         if (!toolCallId) {
@@ -99,6 +151,26 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         });
     };
 
+    // Auto-approval handlers (approve + add to preferences)
+    const handleApproveSession = () => {
+        log.info('🔓 User enabled session auto-approval:', { toolName });
+        addSessionApproval(toolName);
+        handleApprove();
+    };
+
+    const handleApproveWebsite = () => {
+        if (!domain) return;
+        log.info('🌐 User enabled website auto-approval:', { toolName, domain });
+        addWebsiteApproval(toolName, domain);
+        handleApprove();
+    };
+
+    const handleApproveAlways = () => {
+        log.info('✅ User enabled always auto-approval:', { toolName });
+        addAlwaysApproval(toolName);
+        handleApprove();
+    };
+
     // Map tool state to UI state
     // Special handling for approval flow and output errors
     const hasError = output && (output.success === false || output.error === true || output.error);
@@ -148,6 +220,12 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
             messageId={messageId}
             onApprove={isPendingApproval ? handleApprove : undefined}
             onDeny={isPendingApproval ? handleDeny : undefined}
+            onApproveSession={isPendingApproval ? handleApproveSession : undefined}
+            onApproveWebsite={isPendingApproval && showWebsiteOption ? handleApproveWebsite : undefined}
+            onApproveAlways={isPendingApproval ? handleApproveAlways : undefined}
+            showWebsiteOption={showWebsiteOption}
+            websiteLabel={domain ?? undefined}
         />
     );
 }
+

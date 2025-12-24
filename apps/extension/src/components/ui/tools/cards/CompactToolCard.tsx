@@ -14,6 +14,7 @@ import { formatToolAction } from '../formatters';
 import { createLogger } from '~logger';
 import type { CustomInputOutputRenderers } from '@/ai/tools/components';
 import { ToolFileAttachment, type ToolFileAttachmentData } from '@/components/features/chat/components/attachments';
+import { ApprovalDropdown, type ApprovalOption } from './ApprovalDropdown';
 
 const log = createLogger('CompactToolCard', 'UI_CHAT');
 
@@ -25,8 +26,15 @@ interface CompactToolCardProps {
     errorText?: string;
     customRenderers?: CustomInputOutputRenderers;
     messageId?: string; // For Blob URL lifecycle management
-    onApprove?: () => void; // Human-in-the-loop approval
+    onApprove?: () => void; // Human-in-the-loop approval (one-time)
     onDeny?: () => void; // Human-in-the-loop denial
+    // Auto-approval callbacks
+    onApproveSession?: () => void; // Auto-approve for this session
+    onApproveWebsite?: () => void; // Auto-approve for this website
+    onApproveAlways?: () => void; // Always auto-approve
+    // Website approval configuration
+    showWebsiteOption?: boolean; // Whether to show "Allow for this website" option
+    websiteLabel?: string; // Domain label for website option (e.g., "youtube.com")
 }
 
 export function CompactToolCard({
@@ -38,7 +46,12 @@ export function CompactToolCard({
     customRenderers,
     messageId,
     onApprove,
-    onDeny
+    onDeny,
+    onApproveSession,
+    onApproveWebsite,
+    onApproveAlways,
+    showWebsiteOption = false,
+    websiteLabel,
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
     useEffect(() => {
@@ -198,34 +211,53 @@ export function CompactToolCard({
                 </div>
             </div>
 
-            {/* Human-in-the-loop Approval Buttons */}
-            {state === 'pending-approval' && (onApprove || onDeny) && (
-                <div className="flex items-center gap-2 mt-2 pl-6 animate-in slide-in-from-top-1 fade-in duration-200">
-                    <span className="text-xs text-[var(--text-secondary)]">
-                        Allow this action?
-                    </span>
-                    {onApprove && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onApprove(); }}
-                            className="px-3 py-1 text-xs font-medium rounded-md 
-                                bg-green-600 hover:bg-green-700 text-white cursor-pointer
-                                transition-colors duration-150 flex items-center gap-1"
-                        >
-                            ✓ Approve
-                        </button>
-                    )}
-                    {onDeny && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onDeny(); }}
-                            className="px-3 py-1 text-xs font-medium rounded-md
-                                bg-red-600 hover:bg-red-700 text-white cursor-pointer
-                                transition-colors duration-150 flex items-center gap-1"
-                        >
-                            ✕ Deny
-                        </button>
-                    )}
-                </div>
-            )}
+            {/* Human-in-the-loop Approval Buttons with Auto-Approve Dropdown */}
+            {state === 'pending-approval' && onApprove && onDeny && (() => {
+                // Build approval options dynamically
+                const approvalOptions: ApprovalOption[] = [];
+
+                if (onApproveSession) {
+                    approvalOptions.push({
+                        id: 'session',
+                        label: 'Auto approve this session',
+                        description: 'Approve until browser restart',
+                        onClick: onApproveSession,
+                    });
+                }
+
+                if (showWebsiteOption && onApproveWebsite) {
+                    approvalOptions.push({
+                        id: 'website',
+                        label: websiteLabel
+                            ? `Allow for ${websiteLabel}`
+                            : 'Allow for this website',
+                        description: 'Approve for this domain only',
+                        onClick: onApproveWebsite,
+                    });
+                }
+
+                if (onApproveAlways) {
+                    approvalOptions.push({
+                        id: 'always',
+                        label: 'Always auto approve',
+                        description: 'Never ask again for this tool',
+                        onClick: onApproveAlways,
+                    });
+                }
+
+                return (
+                    <div className="flex items-center gap-2 mt-2 pl-6 animate-in slide-in-from-top-1 fade-in duration-200">
+                        <span className="text-xs text-[var(--text-secondary)]">
+                            Allow this action?
+                        </span>
+                        <ApprovalDropdown
+                            onApprove={onApprove}
+                            onDeny={onDeny}
+                            options={approvalOptions}
+                        />
+                    </div>
+                );
+            })()}
 
             {/* File Attachment - Always visible when available */}
             {output?.fileData && state === 'success' && (
