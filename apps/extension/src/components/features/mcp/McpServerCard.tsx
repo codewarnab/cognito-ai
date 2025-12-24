@@ -63,8 +63,8 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         const resizeObserver = new ResizeObserver((entries) => {
             for (const entry of entries) {
                 const width = entry.contentRect.width
-                // Switch to icon view when card width is less than 330px
-                setIsNarrowView(width < 330)
+                // Switch to icon view when card width is less than 380px
+                setIsNarrowView(width < 400)
             }
         })
 

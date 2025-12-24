@@ -57,7 +57,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             <div
                 ref={dialogRef}
                 className={cn(
-                    "w-full max-w-md bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-6 shadow-lg",
+                    "w-full max-w-xs bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-6 shadow-lg",
                     "animate-in zoom-in-95 fade-in-0 duration-200"
                 )}
                 onClick={(e) => e.stopPropagation()}

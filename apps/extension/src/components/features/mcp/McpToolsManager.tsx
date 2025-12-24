@@ -41,7 +41,10 @@ export const McpToolsManager: React.FC<McpToolsManagerProps> = ({ serverId, onBa
                     throw new Error(configResponse.error || 'Failed to fetch tool configuration')
                 }
 
-                setTools(toolsResponse.data?.tools || [])
+                // Handle both response formats: data as array directly or data.tools
+                const toolsData = toolsResponse.data
+                const toolsList = Array.isArray(toolsData) ? toolsData : (toolsData?.tools || [])
+                setTools(toolsList)
                 setDisabledTools(configResponse.data || [])
             } catch (err) {
                 console.error('Error fetching tool data:', err)
