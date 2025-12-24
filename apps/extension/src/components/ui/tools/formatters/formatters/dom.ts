@@ -44,6 +44,13 @@ export const analyzeDomFormatter: ActionFormatter = ({ state, input, output }) =
         };
     }
 
+    if (state === 'pending-approval') {
+        return {
+            action: 'Analyze DOM',
+            description: selector ? truncateText(selector, 40) : 'Waiting for approval'
+        };
+    }
+
     return {
         action: 'DOM analysis failed',
         description: output?.error ? truncateText(output.error, 50) : undefined
@@ -102,6 +109,14 @@ export const executeScriptFormatter: ActionFormatter = ({ state, input, output }
         return {
             action: 'Script executed',
             description
+        };
+    }
+
+    if (state === 'pending-approval') {
+        const preview = code ? truncateText(code.trim().split('\n')[0], 40) : 'script';
+        return {
+            action: 'Execute script',
+            description: preview || 'Waiting for approval'
         };
     }
 

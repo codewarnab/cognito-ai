@@ -51,6 +51,13 @@ export const pdfAgentFormatter: ActionFormatter = ({ state, input, output }) => 
         };
     }
 
+    if (state === 'pending-approval') {
+        return {
+            action: 'Analyze PDF',
+            description: question ? truncateText(question, 40) : 'Waiting for approval'
+        };
+    }
+
     return {
         action: 'Analysis failed',
         description: errorMsg ? truncateText(String(errorMsg), 50) : undefined

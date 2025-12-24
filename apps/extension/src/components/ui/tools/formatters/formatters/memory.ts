@@ -20,6 +20,12 @@ export const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
             description: key ? humanizeKey(key) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Save memory',
+            description: key ? humanizeKey(key) : 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to save memory' };
 };
 
@@ -45,6 +51,12 @@ export const getMemoryFormatter: ActionFormatter = ({ state, input, output }) =>
             description: key ? humanizeKey(key) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get memory',
+            description: key ? humanizeKey(key) : 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to retrieve memory' };
 };
 
@@ -63,6 +75,12 @@ export const deleteMemoryFormatter: ActionFormatter = ({ state, input }) => {
             description: key ? humanizeKey(key) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Delete memory',
+            description: key ? humanizeKey(key) : 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to delete memory' };
 };
 
@@ -76,6 +94,9 @@ export const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
             action: 'Found memories',
             description: `${count} items`
         };
+    }
+    if (state === 'pending-approval') {
+        return { action: 'List memories', description: 'Waiting for approval' };
     }
     return { action: 'Failed to list memories' };
 };
@@ -94,6 +115,12 @@ export const cancelReminderFormatter: ActionFormatter = ({ state, input, output 
         return {
             action: 'Reminder cancelled',
             description: title ? truncateText(title, 40) : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Cancel reminder',
+            description: identifier ? truncateText(identifier, 40) : 'Waiting for approval'
         };
     }
     return {

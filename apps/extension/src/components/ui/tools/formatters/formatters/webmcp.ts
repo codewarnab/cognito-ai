@@ -145,6 +145,14 @@ export const webmcpFormatter: ActionFormatter = (ctx: ActionFormatterContext): F
         };
     }
 
+    if (state === 'pending-approval') {
+        return {
+            action: action,
+            description: `${domain} • Waiting for approval`,
+            faviconUrl
+        };
+    }
+
     return {
         action: `${action} failed`,
         description: domain,

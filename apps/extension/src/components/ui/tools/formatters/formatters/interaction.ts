@@ -22,6 +22,12 @@ export const clickElementFormatter: ActionFormatter = ({ state, input, output })
             description: text ? truncateText(text, 40) : selector ? truncateText(selector, 40) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Click element',
+            description: selector ? truncateText(selector, 40) : 'Waiting for approval'
+        };
+    }
     return { action: 'Click failed' };
 };
 
@@ -38,6 +44,12 @@ export const focusElementFormatter: ActionFormatter = ({ state, input }) => {
         return {
             action: 'Element focused',
             description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Focus element',
+            description: selector ? truncateText(selector, 40) : 'Waiting for approval'
         };
     }
     return {
@@ -62,6 +74,12 @@ export const clickByTextFormatter: ActionFormatter = ({ state, input, output }) 
         return {
             action: 'Element clicked',
             description: clickedText ? `"${truncateText(clickedText, 30)}"${matchInfo}` : matchInfo
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Click element',
+            description: searchText ? `"${truncateText(searchText, 40)}"` : 'Waiting for approval'
         };
     }
     return {
@@ -94,6 +112,12 @@ export const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) 
                 : `${typed} chars${pressedEnter ? ' + Enter' : ''}`
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Type in field',
+            description: target ? truncateText(target, 40) : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Typing failed',
         description: target ? truncateText(target, 40) : undefined
@@ -113,6 +137,12 @@ export const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
         return {
             action: 'Pressed key',
             description: key
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Press key',
+            description: key || 'Waiting for approval'
         };
     }
     return { action: 'Key press failed' };
@@ -136,6 +166,12 @@ export const globalTypeTextFormatter: ActionFormatter = ({ state, input, output 
             description: `${typed} characters`
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Type text',
+            description: displayText ? `"${displayText}"` : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Typing failed',
         description: displayText ? `"${displayText}"` : undefined
@@ -157,6 +193,12 @@ export const scrollFormatter: ActionFormatter = ({ state, input }) => {
             description: direction
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Scroll',
+            description: direction || 'Waiting for approval'
+        };
+    }
     return { action: 'Scroll failed' };
 };
 
@@ -173,6 +215,12 @@ export const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
         return {
             action: 'Element found',
             description: selector ? truncateText(selector, 40) : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Wait for element',
+            description: selector ? truncateText(selector, 40) : 'Waiting for approval'
         };
     }
     return { action: 'Wait timeout' };

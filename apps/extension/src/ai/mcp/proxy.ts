@@ -14,8 +14,7 @@
 import { createLogger } from '~logger';
 import { z } from 'zod';
 import { registerToolServer } from '@/utils/mcp';
-// Import debugRegistry directly from the store to avoid cycle or simply because it is available
-import { debugRegistry } from '@/utils/mcp/toolMetadataStore';
+import { debugRegistry, registerMcpToolExecutor } from '@/utils/mcp/toolMetadataStore';
 
 const log = createLogger('MCP-Proxy', 'MCP_EXECUTION');
 
@@ -62,7 +61,9 @@ export async function getMCPToolsFromBackground(): Promise<{
         const toolDefinitions: MCPToolDefinition[] = response.data.tools || [];
         log.info(`📦 Received ${toolDefinitions.length} tools from background`);
 
-        // Convert MCP tool definitions to AI SDK tool format with proxy executors
+        // Convert MCP tool definitions to AI SDK tool format
+        // NOTE: All MCP tools require human approval (HITL pattern)
+        // We strip the execute function so AI SDK waits for addToolOutput
         const tools: Record<string, any> = {};
 
         for (const toolDef of toolDefinitions) {
@@ -70,44 +71,52 @@ export async function getMCPToolsFromBackground(): Promise<{
                 // Convert MCP input schema to Zod schema
                 const zodSchema = convertMCPSchemaToZod(toolDef.inputSchema);
 
-                // Create tool in AI SDK v5 format with proxy executor
-                tools[toolDef.name] = {
-                    description: toolDef.description || `Tool from ${toolDef.serverName}`,
-                    inputSchema: zodSchema, // AI SDK v5: inputSchema instead of parameters
-                    execute: async (input: any) => {
-                        log.info(`🔧 Executing ${toolDef.name} via background proxy`, {
-                            server: toolDef.serverName,
-                            input
-                        });
+                // Create executor function (stored separately, called after approval)
+                const executor = async (input: any) => {
+                    log.info(`🔧 Executing ${toolDef.name} via background proxy`, {
+                        server: toolDef.serverName,
+                        input
+                    });
 
-                        // Execute via background service worker's persistent connection
-                        const result = await chrome.runtime.sendMessage({
-                            type: `mcp/${toolDef.serverId}/tool/call`,
-                            payload: {
-                                name: toolDef.name,
-                                arguments: input
-                            }
-                        });
-
-                        if (!result.success) {
-                            log.error(`❌ Tool execution failed: ${toolDef.name}`, result.error);
-                            throw new Error(result.error || 'Tool execution failed');
+                    // Execute via background service worker's persistent connection
+                    const result = await chrome.runtime.sendMessage({
+                        type: `mcp/${toolDef.serverId}/tool/call`,
+                        payload: {
+                            name: toolDef.name,
+                            arguments: input
                         }
+                    });
 
-                        log.info(`✅ Tool execution successful: ${toolDef.name}`);
-                        return result.data;
+                    if (!result.success) {
+                        log.error(`❌ Tool execution failed: ${toolDef.name}`, result.error);
+                        throw new Error(result.error || 'Tool execution failed');
                     }
+
+                    log.info(`✅ Tool execution successful: ${toolDef.name}`);
+                    return result.data;
                 };
 
-                // Register tool→server mapping for icon resolution
+                // Store executor in global registry (accessible by CompactToolRenderer)
+                registerMcpToolExecutor(toolDef.name, executor);
+
+                // Create tool WITHOUT execute function for HITL pattern
+                // AI SDK will wait for addToolOutput when execute is missing
+                tools[toolDef.name] = {
+                    description: toolDef.description || `Tool from ${toolDef.serverName}`,
+                    inputSchema: zodSchema,
+                    // No execute here - requires approval
+                };
+
+                // Register tool→server mapping for icon resolution and approval
                 registerToolServer(toolDef.name, toolDef.serverId);
 
-                log.info(`✅ Registered proxy tool: ${toolDef.name} (from ${toolDef.serverName})`, {
+                log.info(`✅ Registered MCP tool (HITL): ${toolDef.name} (from ${toolDef.serverName})`, {
                     toolName: toolDef.name,
                     serverId: toolDef.serverId,
                     serverName: toolDef.serverName,
                     hasDescription: !!toolDef.description,
-                    hasInputSchema: !!toolDef.inputSchema
+                    hasInputSchema: !!toolDef.inputSchema,
+                    requiresApproval: true,
                 });
             } catch (error) {
                 log.error(`❌ Failed to register tool ${toolDef.name}:`, error);

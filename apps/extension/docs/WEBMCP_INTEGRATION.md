@@ -11,6 +11,7 @@ This document provides a comprehensive overview of the WebMCP (Browser-based MCP
 5. [Sequence Diagrams](#sequence-diagrams)
 6. [Message Types](#message-types)
 7. [State Management](#state-management)
+8. [Tool Approval System](#tool-approval-system)
 
 ---
 
@@ -425,6 +426,103 @@ interface WebMCPTool extends Tool {
 | `webmcp.tools.disabled` | Array of disabled tool names |
 
 ---
+
+## Tool Approval System
+
+All WebMCP tools require user approval before execution (Human-in-the-Loop pattern). This provides security when executing tools from external websites.
+
+### Why Approval is Required
+
+- **External Code**: WebMCP tools execute code on third-party websites
+- **Security Risk**: Tools could perform unintended actions on user's behalf
+- **Privacy**: Tools may access sensitive page data
+
+### HITL Implementation
+
+WebMCP tools have their `execute` function stripped during registration. The executor is stored separately and only called after user approval.
+
+```typescript
+// In webmcpTools.ts
+const executor = async (args) => { /* ... */ };
+registerWebmcpToolExecutor(toolName, executor);
+
+// Tool WITHOUT execute - AI SDK waits for addToolOutput
+tools[toolName] = {
+    description: `[WebMCP - ${domain}] ${description}`,
+    inputSchema: zodSchema,
+    // No execute here - requires approval
+};
+```
+
+### Approval Options
+
+| Option | Label | Scope | Storage |
+|--------|-------|-------|---------|
+| Single | "Allow" | One execution | None |
+| Domain | "Trust this site" | All tools from domain | Persisted |
+| Tool | "Always allow" | This specific tool | Persisted |
+| Session | "This session only" | Tool only | In-memory |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `mcpApprovalConfig.ts` | Tool detection, domain extraction, option generation |
+| `webmcpTools.ts` | Executor registry, HITL tool creation |
+| `approvalStore.ts` | WebMCP approval preferences |
+| `CompactToolRenderer.tsx` | Approval UI integration |
+
+### Execution Flow with Approval
+
+```
+┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
+│   AI Model   │     │ CompactTool     │     │   Background     │
+│              │     │ Renderer        │     │ Service Worker   │
+└──────┬───────┘     └────────┬────────┘     └────────┬─────────┘
+       │                      │                       │
+       │  1. Tool call        │                       │
+       │  (no execute)        │                       │
+       │─────────────────────▶│                       │
+       │                      │                       │
+       │                      │  2. isWebmcpTool()    │
+       │                      │     = true            │
+       │                      │                       │
+       │                      │  3. Check auto-       │
+       │                      │     approved?         │
+       │                      │                       │
+       │                      │  4. Show approval UI  │
+       │                      │◄── User clicks Allow  │
+       │                      │                       │
+       │                      │  5. getWebmcpTool     │
+       │                      │     Executor()        │
+       │                      │                       │
+       │                      │  6. Execute tool      │
+       │                      │──────────────────────▶│
+       │                      │                       │
+       │                      │  7. Tool result       │
+       │                      │◄──────────────────────│
+       │                      │                       │
+       │  8. addToolOutput()  │                       │
+       │◄─────────────────────│                       │
+       │                      │                       │
+```
+
+### Auto-Approval Checking
+
+```typescript
+// In CompactToolRenderer.tsx
+const isWebmcp = isWebmcpTool(toolName);
+const webmcpDomain = isWebmcp ? getWebmcpDomain(toolName) : null;
+
+if (isWebmcp && webmcpDomain) {
+    isApproved = isWebmcpAutoApproved(toolName);
+    reason = getWebmcpApprovalReason(toolName);
+}
+```
+
+### See Also
+
+- [TOOL_APPROVAL_SYSTEM.md](./TOOL_APPROVAL_SYSTEM.md) - Full approval system documentation
 
 ## Block Diagram: Complete System Overview
 

@@ -9,7 +9,13 @@
 import { useState, useRef, useEffect } from 'react';
 
 export interface ApprovalOption {
-    id: 'session' | 'website' | 'always';
+    id:
+    // Built-in tool options
+    | 'session' | 'website' | 'always'
+    // MCP server tool options
+    | 'mcp-session' | 'mcp-tool' | 'mcp-server'
+    // WebMCP website tool options
+    | 'webmcp-session' | 'webmcp-tool' | 'webmcp-domain';
     label: string;
     description?: string;
     onClick: () => void;

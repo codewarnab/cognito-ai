@@ -22,6 +22,12 @@ export const navigateToFormatter: ActionFormatter = ({ state, input, output }) =
             description: domain ? truncateText(domain, 40) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Navigate to',
+            description: domain ? truncateText(domain, 40) : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Navigation failed',
         description: domain ? truncateText(domain, 40) : undefined

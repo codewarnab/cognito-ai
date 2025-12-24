@@ -21,6 +21,12 @@ export const getHistoryFormatter: ActionFormatter = ({ state, input, output }) =
             description: `${count} results`
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Search history',
+            description: query ? truncateText(query, 30) : 'Waiting for approval'
+        };
+    }
     return { action: 'History search failed' };
 };
 
@@ -38,6 +44,12 @@ export const getRecentHistoryFormatter: ActionFormatter = ({ state, input, outpu
         return {
             action: 'Recent history retrieved',
             description: `${count} pages in ${output?.hours || hours}h`
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get recent history',
+            description: `Last ${hours} hours`
         };
     }
     return { action: 'Failed to get history' };
@@ -58,6 +70,12 @@ export const getUrlVisitsFormatter: ActionFormatter = ({ state, input, output })
         return {
             action: 'Visit details retrieved',
             description: `${count} visits`
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get URL visits',
+            description: domain ? truncateText(domain, 40) : 'Waiting for approval'
         };
     }
     return { action: 'Failed to get visits' };

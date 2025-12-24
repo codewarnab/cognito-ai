@@ -28,13 +28,15 @@ interface CompactToolCardProps {
     messageId?: string; // For Blob URL lifecycle management
     onApprove?: () => void; // Human-in-the-loop approval (one-time)
     onDeny?: () => void; // Human-in-the-loop denial
-    // Auto-approval callbacks
+    // Auto-approval callbacks (for built-in tools)
     onApproveSession?: () => void; // Auto-approve for this session
     onApproveWebsite?: () => void; // Auto-approve for this website
     onApproveAlways?: () => void; // Always auto-approve
-    // Website approval configuration
+    // Website approval configuration (for built-in tools)
     showWebsiteOption?: boolean; // Whether to show "Allow for this website" option
     websiteLabel?: string; // Domain label for website option (e.g., "youtube.com")
+    // Direct approval options (for MCP/WebMCP tools)
+    approvalOptions?: ApprovalOption[]; // Pre-built options from parent
     // Auto-approval indicator
     autoApprovalReason?: string; // Reason why tool was auto-approved (e.g., "youtube.com")
 }
@@ -54,6 +56,7 @@ export function CompactToolCard({
     onApproveAlways,
     showWebsiteOption = false,
     websiteLabel,
+    approvalOptions: passedApprovalOptions,
     autoApprovalReason,
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
@@ -216,36 +219,36 @@ export function CompactToolCard({
 
             {/* Human-in-the-loop Approval Buttons with Auto-Approve Dropdown */}
             {state === 'pending-approval' && onApprove && onDeny && (() => {
-                // Build approval options dynamically
-                const approvalOptions: ApprovalOption[] = [];
+                // Use passed options (MCP/WebMCP) or build from callbacks (built-in tools)
+                let approvalOptions: ApprovalOption[] = passedApprovalOptions || [];
 
-                if (onApproveSession) {
-                    approvalOptions.push({
-                        id: 'session',
-                        label: 'Auto approve this session',
-                        description: 'Approve until browser restart',
-                        onClick: onApproveSession,
-                    });
-                }
+                // If no passed options, build from callbacks (built-in tool flow)
+                if (approvalOptions.length === 0) {
+                    if (onApproveSession) {
+                        approvalOptions.push({
+                            id: 'session',
+                            label: 'This session only',
+                            onClick: onApproveSession,
+                        });
+                    }
 
-                if (showWebsiteOption && onApproveWebsite) {
-                    approvalOptions.push({
-                        id: 'website',
-                        label: websiteLabel
-                            ? `Allow for ${websiteLabel}`
-                            : 'Allow for this website',
-                        description: 'Approve for this domain only',
-                        onClick: onApproveWebsite,
-                    });
-                }
+                    if (showWebsiteOption && onApproveWebsite) {
+                        approvalOptions.push({
+                            id: 'website',
+                            label: websiteLabel
+                                ? `Allow for ${websiteLabel}`
+                                : 'Allow for this website',
+                            onClick: onApproveWebsite,
+                        });
+                    }
 
-                if (onApproveAlways) {
-                    approvalOptions.push({
-                        id: 'always',
-                        label: 'Always auto approve',
-                        description: 'Never ask again for this tool',
-                        onClick: onApproveAlways,
-                    });
+                    if (onApproveAlways) {
+                        approvalOptions.push({
+                            id: 'always',
+                            label: 'Always allow',
+                            onClick: onApproveAlways,
+                        });
+                    }
                 }
 
                 return (

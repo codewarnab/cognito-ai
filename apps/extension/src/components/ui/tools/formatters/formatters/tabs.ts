@@ -17,6 +17,9 @@ export const switchTabsFormatter: ActionFormatter = ({ state, input, output }) =
             description: title ? truncateText(title, 40) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return { action: 'Switch tab', description: 'Waiting for approval' };
+    }
     return { action: 'Tab switch failed' };
 };
 
@@ -32,6 +35,9 @@ export const getActiveTabFormatter: ActionFormatter = ({ state, output }) => {
             description: title ? truncateText(title, 40) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return { action: 'Get active tab', description: 'Waiting for approval' };
+    }
     return { action: 'Failed to get tab' };
 };
 
@@ -45,6 +51,9 @@ export const getAllTabsFormatter: ActionFormatter = ({ state, output }) => {
             action: 'Retrieved all tabs',
             description: `${count} tab${count !== 1 ? 's' : ''}`
         };
+    }
+    if (state === 'pending-approval') {
+        return { action: 'Get all tabs', description: 'Waiting for approval' };
     }
     return { action: 'Failed to get tabs' };
 };
@@ -66,6 +75,12 @@ export const openNewTabFormatter: ActionFormatter = ({ state, input, output }) =
             description: title ? truncateText(title, 40) : domain ? truncateText(domain, 40) : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Open new tab',
+            description: domain ? truncateText(domain, 40) : 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to open tab' };
 };
 
@@ -79,6 +94,12 @@ export const closeTabFormatter: ActionFormatter = ({ state, input }) => {
         return {
             action: 'Tab closed',
             description: title ? truncateText(title, 40) : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Close tab',
+            description: title ? truncateText(title, 40) : 'Waiting for approval'
         };
     }
     return { action: 'Failed to close tab' };
@@ -95,10 +116,13 @@ export const listTabsFormatter: ActionFormatter = ({ state, output }) => {
             description: `${count} open tabs`
         };
     }
+    if (state === 'pending-approval') {
+        return { action: 'List tabs', description: 'Waiting for approval' };
+    }
     return { action: 'Failed to list tabs' };
 };
 
-export const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, output }) => {
+export const organizeTabsByContextFormatter: ActionFormatter = ({ state, output }) => {
     if (state === 'loading') {
         return { action: 'Organizing tabs' };
     }
@@ -123,6 +147,9 @@ export const organizeTabsByContextFormatter: ActionFormatter = ({ state, input, 
         }
         return { action: 'Tabs organized' };
     }
+    if (state === 'pending-approval') {
+        return { action: 'Organize tabs', description: 'Waiting for approval' };
+    }
     return { action: 'Failed to organize tabs' };
 };
 
@@ -140,6 +167,12 @@ export const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output 
         return {
             action: 'Tab groups applied',
             description: groupsCreated > 0 ? `${groupsCreated} groups created` : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Apply tab groups',
+            description: groupCount > 0 ? `${groupCount} groups` : 'Waiting for approval'
         };
     }
     return { action: 'Failed to apply groups' };
@@ -162,6 +195,12 @@ export const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) 
         return {
             action: 'Tabs ungrouped',
             description: ungrouped > 0 ? `${ungrouped} group(s)` : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Ungroup tabs',
+            description: groupCount > 0 ? `${groupCount} group(s)` : 'Waiting for approval'
         };
     }
     return { action: 'Failed to ungroup tabs' };

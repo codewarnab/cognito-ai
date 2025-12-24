@@ -330,6 +330,79 @@ interface ToolApprovalConfig {
 
 ---
 
+## MCP & WebMCP Tool Approvals
+
+In addition to built-in sensitive tools, the approval system extends to **MCP server tools** and **WebMCP website tools**. All tools from external sources require approval by default.
+
+### Tool Types
+
+| Tool Type | Source | Identification | Example |
+|-----------|--------|----------------|---------|
+| **Built-in** | Extension | In `TOOLS_REQUIRING_APPROVAL` | `navigateTo`, `executeScript` |
+| **MCP** | MCP servers | `isMcpTool()` / server registry | `notion_createPage` |
+| **WebMCP** | Active webpage | `isWebmcpTool()` / `webmcp_` prefix | `webmcp_github.com_createIssue` |
+
+### Approval Options by Tool Type
+
+#### MCP Server Tools
+
+| Option | Label | Scope | Storage |
+|--------|-------|-------|---------|
+| Single | "Allow" | One execution | None |
+| Server | "Trust this server" | All tools from this server | Persisted |
+| Tool | "Always allow" | This specific tool | Persisted |
+| Session | "This session only" | Tool only | In-memory |
+
+#### WebMCP Website Tools
+
+| Option | Label | Scope | Storage |
+|--------|-------|-------|---------|
+| Single | "Allow" | One execution | None |
+| Website | "Trust this site" | All tools from this domain | Persisted |
+| Tool | "Always allow" | This specific tool | Persisted |
+| Session | "This session only" | Tool only | In-memory |
+
+### Key Files for MCP/WebMCP Approvals
+
+| File | Purpose |
+|------|---------|
+| `mcpApprovalConfig.ts` | Tool type detection, domain/server extraction, option generation |
+| `proxy.ts` | MCP tool registration (strips `execute` for HITL) |
+| `webmcpTools.ts` | WebMCP tool registration (strips `execute` for HITL) |
+| `toolMetadataStore.ts` | MCP executor registry (stores execute functions separately) |
+
+### How It Works
+
+1. **Tool Registration**: When MCP/WebMCP tools are discovered, their `execute` functions are stripped and stored in a separate registry
+2. **Approval Check**: `CompactToolRenderer` detects tool type and checks appropriate approval store
+3. **Options Generation**: `getMcpApprovalOptions()` or `getWebmcpApprovalOptions()` generates dropdown options
+4. **Execution**: After approval, executor is retrieved from registry and called
+
+```
+MCP Tool Flow:
+┌──────────────┐    ┌────────────────┐    ┌─────────────────┐
+│ proxy.ts     │───▶│ Strip execute  │───▶│ Register in     │
+│ getMCPTools  │    │ Store executor │───▶│ toolMetadata    │
+└──────────────┘    └────────────────┘    └─────────────────┘
+                                                   │
+                                                   ▼
+                           ┌──────────────────────────────────┐
+                           │ CompactToolRenderer:              │
+                           │ 1. isMcpTool() → true            │
+                           │ 2. getMcpServerId() → "notion"   │
+                           │ 3. isMcpAutoApproved() → check   │
+                           │ 4. Show approval UI if needed    │
+                           └──────────────────────────────────┘
+                                                   │
+                           ┌───────────────────────┴───────────┐
+                           │ User approves:                    │
+                           │ getMcpToolExecutor() → execute   │
+                           │ addToolOutput() → continue AI     │
+                           └───────────────────────────────────┘
+```
+
+---
+
 ## File Structure
 
 ```

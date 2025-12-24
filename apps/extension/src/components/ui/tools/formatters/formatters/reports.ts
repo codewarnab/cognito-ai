@@ -27,6 +27,12 @@ export const getReportTemplateFormatter: ActionFormatter = ({ state, input, outp
                     : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get report template',
+            description: query ? truncateText(query, 40) : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Template selection failed',
         description: query ? truncateText(query, 40) : undefined
@@ -50,6 +56,12 @@ export const generatePDFFormatter: ActionFormatter = ({ state, input, output }) 
             description: filename
                 ? `${truncateText(filename, 30)}${formattedSize ? ` (${formattedSize})` : ''} - Click to open and download. File may expire, please save if needed.`
                 : 'Click to open and download. File may expire, please save if needed.'
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Generate PDF',
+            description: filename ? truncateText(filename, 40) : 'Waiting for approval'
         };
     }
     return {

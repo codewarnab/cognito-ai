@@ -95,3 +95,40 @@ export function debugRegistry(): void {
     console.table(mappings);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MCP Tool Executor Registry
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Map of MCP tool name → executor function
+ * Used to execute MCP tools after user approval
+ */
+const mcpToolExecutorMap = new Map<string, (input: any) => Promise<any>>();
+
+/**
+ * Register an executor function for an MCP tool
+ * Called when MCP tools are registered in the proxy (with execute stripped)
+ */
+export function registerMcpToolExecutor(toolName: string, executor: (input: any) => Promise<any>): void {
+    const normalizedName = toolName.toLowerCase();
+    mcpToolExecutorMap.set(normalizedName, executor);
+    log.debug(`Registered MCP executor: ${toolName}`);
+}
+
+/**
+ * Get the executor function for an MCP tool
+ * Used by CompactToolRenderer to execute after user approval
+ */
+export function getMcpToolExecutor(toolName: string): ((input: any) => Promise<any>) | undefined {
+    const normalizedName = toolName.toLowerCase();
+    return mcpToolExecutorMap.get(normalizedName);
+}
+
+/**
+ * Clear all MCP executors
+ */
+export function clearMcpToolExecutors(): void {
+    const size = mcpToolExecutorMap.size;
+    mcpToolExecutorMap.clear();
+    log.info(`Cleared ${size} MCP executors`);
+}

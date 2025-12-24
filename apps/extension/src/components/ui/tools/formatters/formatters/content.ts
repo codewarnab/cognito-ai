@@ -22,6 +22,12 @@ export const readPageContentFormatter: ActionFormatter = ({ state, output }) => 
             description: title ? `${truncateText(title, 30)} (${formattedLength})` : formattedLength
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Read page content',
+            description: 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to read content' };
 };
 
@@ -40,6 +46,12 @@ export const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => 
             };
         }
         return { action: 'No text selected' };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get selected text',
+            description: 'Waiting for approval'
+        };
     }
     return { action: 'Failed to get selection' };
 };

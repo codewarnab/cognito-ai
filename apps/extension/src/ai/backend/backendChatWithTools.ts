@@ -24,6 +24,7 @@ import type { BackendModel } from '@/stores/settings/types';
 import type { ToolMode } from '@/stores/tools/types';
 import { ENV } from '@/utils/env';
 import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
+import { isMcpTool, isWebmcpTool } from '../tools/mcpApprovalConfig';
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT');
 
@@ -429,8 +430,12 @@ export async function streamBackendChatWithTools(
                                         };
 
                                         // Check if tool requires human approval (HITL pattern)
-                                        // If so, don't add to pendingToolCalls - let UI handle via addToolOutput
-                                        const requiresApproval = TOOLS_REQUIRING_APPROVAL.includes(toolCall.name);
+                                        // Built-in tools: check TOOLS_REQUIRING_APPROVAL
+                                        // MCP/WebMCP tools: ALL require approval
+                                        const isMcp = isMcpTool(toolCall.name);
+                                        const isWebmcp = isWebmcpTool(toolCall.name);
+                                        const isBuiltinApproval = TOOLS_REQUIRING_APPROVAL.includes(toolCall.name);
+                                        const requiresApproval = isMcp || isWebmcp || isBuiltinApproval;
 
                                         if (!requiresApproval) {
                                             // Safe tool - add to pending for auto-execution
@@ -439,6 +444,7 @@ export async function streamBackendChatWithTools(
                                             log.info('🛡️ Tool requires human approval:', {
                                                 name: toolCall.name,
                                                 id: toolCall.id,
+                                                reason: isMcp ? 'MCP tool' : isWebmcp ? 'WebMCP tool' : 'built-in approval',
                                             });
                                         }
 

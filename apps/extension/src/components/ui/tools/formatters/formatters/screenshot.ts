@@ -20,6 +20,13 @@ export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output 
         };
     }
 
+    if (state === 'pending-approval') {
+        return {
+            action: 'Take screenshot',
+            description: 'Waiting for approval'
+        };
+    }
+
     if (state === 'success' && hasScreenshot) {
         const viewport = output?.viewport;
         const viewportInfo = viewport?.width && viewport?.height

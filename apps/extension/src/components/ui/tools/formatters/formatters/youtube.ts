@@ -61,6 +61,12 @@ export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, o
                 : `${segmentCount} segments${durationStr ? ', ' + durationStr : ''}`
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Get YouTube transcript',
+            description: videoTitle ? truncateText(videoTitle, 40) : url ? truncateText(url, 40) : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Transcript failed',
         description: videoTitle ? truncateText(videoTitle, 40) : undefined

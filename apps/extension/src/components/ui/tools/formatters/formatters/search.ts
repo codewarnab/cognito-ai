@@ -17,6 +17,9 @@ export const getSearchResultsFormatter: ActionFormatter = ({ state, output }) =>
             description: engine
         };
     }
+    if (state === 'pending-approval') {
+        return { action: 'Get search results', description: 'Waiting for approval' };
+    }
     return { action: 'Search failed' };
 };
 
@@ -48,6 +51,12 @@ export const chromeSearchFormatter: ActionFormatter = ({ state, input, output })
             description: query ? `"${truncateText(query, 30)}": ${description}` : description
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Search Chrome',
+            description: query ? `"${truncateText(query, 40)}"` : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Search failed',
         description: query ? `"${truncateText(query, 40)}"` : undefined
@@ -70,6 +79,12 @@ export const openSearchResultFormatter: ActionFormatter = ({ state, input, outpu
             description: title ? truncateText(title, 40) : rank !== undefined ? `Result #${rank}` : undefined
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Open search result',
+            description: rank !== undefined ? `Result #${rank}` : 'Waiting for approval'
+        };
+    }
     return { action: 'Failed to open result' };
 };
 
@@ -87,6 +102,12 @@ export const webSearchFormatter: ActionFormatter = ({ state, input, output }) =>
         return {
             action: `Found ${count} results`,
             description: query ? `"${truncateText(query, 40)}"` : undefined
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Web search',
+            description: query ? `"${truncateText(query, 40)}"` : 'Waiting for approval'
         };
     }
     return {
@@ -111,6 +132,12 @@ export const retrieveFormatter: ActionFormatter = ({ state, input, output }) => 
             description: title ? truncateText(title, 40) : (url ? truncateText(url, 40) : undefined)
         };
     }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Retrieve content',
+            description: url ? truncateText(url, 40) : 'Waiting for approval'
+        };
+    }
     return {
         action: 'Retrieve failed',
         description: url ? truncateText(url, 40) : undefined
@@ -132,6 +159,12 @@ export const deepWebSearchFormatter: ActionFormatter = ({ state, input, output }
         return {
             action: `Found ${uniqueCount} unique results`,
             description: `${queryCount} queries executed`
+        };
+    }
+    if (state === 'pending-approval') {
+        return {
+            action: 'Deep web search',
+            description: queries ? `${queries.length} queries` : 'Waiting for approval'
         };
     }
     return {
