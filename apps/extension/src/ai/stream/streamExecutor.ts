@@ -31,7 +31,7 @@ export async function executeStreamText(params: {
     onError?: (error: Error) => void;
     prepareStep?: (context: any) => Promise<any>;
     activeTools?: string[];
-}) {
+}): Promise<ReturnType<typeof streamText>> {
     const {
         model,
         modelMessages,
@@ -98,6 +98,14 @@ export async function executeStreamText(params: {
                     return;
                 }
 
+                // Tools without execute (WebMCP, MCP tools) use HITL pattern
+                // Pass them through unchanged - AI SDK will wait for addToolOutput
+                if (typeof (tool as any).execute !== 'function') {
+                    log.info(`🛡️ Tool "${name}" has no execute function (HITL pattern)`);
+                    boundTools[name] = tool;
+                    return;
+                }
+
                 boundTools[name] = {
                     ...tool,
                     execute: async (args: any) => {
@@ -141,6 +149,14 @@ export async function executeStreamText(params: {
                     log.info(`🛡️ Tool "${name}" requires human approval - no auto-execute`);
                     const { execute, ...toolWithoutExecute } = tool as any;
                     boundTools[name] = toolWithoutExecute;
+                    return;
+                }
+
+                // Tools without execute (WebMCP, MCP tools) use HITL pattern
+                // Pass them through unchanged - AI SDK will wait for addToolOutput
+                if (typeof (tool as any).execute !== 'function') {
+                    log.info(`🛡️ Tool "${name}" has no execute function (HITL pattern)`);
+                    boundTools[name] = tool;
                     return;
                 }
 

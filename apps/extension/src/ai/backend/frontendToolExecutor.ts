@@ -8,7 +8,8 @@
 import { createLogger } from '~logger';
 import { getAllTools } from '../tools/registryUtils';
 import { getMCPToolsFromBackground } from '../mcp/proxy';
-import { getWebMCPToolsFromBackground } from '../tools/webmcpTools';
+import { getWebMCPToolsFromBackground, getWebmcpToolExecutor } from '../tools/webmcpTools';
+import { isWebmcpTool } from '../tools/mcpApprovalConfig';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { zodToJsonSchema } from '../utils/toolConverter';
 import { useToolsStore } from '@/stores';
@@ -203,7 +204,20 @@ export async function executeToolLocally(
         }
 
         // Execute the tool
-        const result = await tool.execute(toolCall.arguments, abortSignal);
+        let result: unknown;
+
+        if (isWebmcpTool(toolCall.name)) {
+            // WebMCP tools don't have execute() - they use executor registry
+            const executor = getWebmcpToolExecutor(toolCall.name);
+            if (!executor) {
+                throw new Error(`WebMCP tool executor not found: ${toolCall.name}`);
+            }
+            result = await executor(toolCall.arguments);
+        } else if (typeof tool.execute === 'function') {
+            result = await tool.execute(toolCall.arguments, abortSignal);
+        } else {
+            throw new Error(`Tool "${toolCall.name}" has no execute function`);
+        }
 
         log.info('Tool executed successfully:', {
             id: toolCall.id,
