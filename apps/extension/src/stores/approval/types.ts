@@ -53,6 +53,7 @@ export interface ApprovalState extends ApprovalPreferences {
 
     // Check approvals
     isAutoApproved: (toolName: string, domain?: string) => boolean;
+    getApprovalReason: (toolName: string, domain?: string) => string | null;
 
     // Clear all
     clearSessionApprovals: () => void;

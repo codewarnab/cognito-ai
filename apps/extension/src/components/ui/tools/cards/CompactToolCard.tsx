@@ -35,6 +35,8 @@ interface CompactToolCardProps {
     // Website approval configuration
     showWebsiteOption?: boolean; // Whether to show "Allow for this website" option
     websiteLabel?: string; // Domain label for website option (e.g., "youtube.com")
+    // Auto-approval indicator
+    autoApprovalReason?: string; // Reason why tool was auto-approved (e.g., "youtube.com")
 }
 
 export function CompactToolCard({
@@ -52,6 +54,7 @@ export function CompactToolCard({
     onApproveAlways,
     showWebsiteOption = false,
     websiteLabel,
+    autoApprovalReason,
 }: CompactToolCardProps) {
     // Log tool rendering for debugging
     useEffect(() => {
@@ -258,6 +261,13 @@ export function CompactToolCard({
                     </div>
                 );
             })()}
+
+            {/* Auto-approval indicator - shown after tool executes with auto-approval */}
+            {autoApprovalReason && state === 'success' && (
+                <div className="mt-1 pl-6 text-[10px] text-[var(--text-tertiary)] opacity-50">
+                    Auto approved for {autoApprovalReason}
+                </div>
+            )}
 
             {/* File Attachment - Always visible when available */}
             {output?.fileData && state === 'success' && (

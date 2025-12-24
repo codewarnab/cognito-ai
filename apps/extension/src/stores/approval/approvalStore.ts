@@ -152,6 +152,31 @@ export const useApprovalStore = create<ApprovalState>()(
             return false;
         },
 
+        // Get the reason why a tool is auto-approved (for display in UI)
+        getApprovalReason: (toolName: string, domain?: string): string | null => {
+            const { sessionApprovedTools, websiteApprovedTools, alwaysApprovedTools } = get();
+
+            // Check always approval first
+            if (alwaysApprovedTools.includes(toolName)) {
+                return 'all sites';
+            }
+
+            // Check session approval
+            if (sessionApprovedTools.includes(toolName)) {
+                return 'this session';
+            }
+
+            // Check website approval (if domain provided)
+            if (domain) {
+                const toolDomains = websiteApprovedTools[toolName] || [];
+                if (toolDomains.includes(domain)) {
+                    return domain;
+                }
+            }
+
+            return null;
+        },
+
         // Clear all approvals
         clearAllApprovals: async () => {
             set({

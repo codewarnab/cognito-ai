@@ -41,6 +41,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
     const addWebsiteApproval = useApprovalStore((s) => s.addWebsiteApproval);
     const addAlwaysApproval = useApprovalStore((s) => s.addAlwaysApproval);
     const initializeApprovalStore = useApprovalStore((s) => s.initialize);
+    const getApprovalReason = useApprovalStore((s) => s.getApprovalReason);
 
     // Initialize approval store on mount
     useEffect(() => {
@@ -93,6 +94,8 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
     // Track if we've already auto-executed to prevent double execution
     const hasAutoExecutedRef = useRef(false);
+    // Track auto-approval reason for display
+    const [autoApprovalReason, setAutoApprovalReason] = useState<string | null>(null);
 
     // Auto-approve check: if tool is auto-approved, execute immediately
     useEffect(() => {
@@ -103,7 +106,12 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
             !hasAutoExecutedRef.current &&
             isAutoApproved(toolName, domain ?? undefined)
         ) {
-            log.info('🔓 Auto-executing approved tool:', { toolName, domain });
+            // Get and store the reason for auto-approval
+            const reason = getApprovalReason(toolName, domain ?? undefined);
+            if (reason) {
+                setAutoApprovalReason(reason);
+            }
+            log.info('🔓 Auto-executing approved tool:', { toolName, domain, reason });
             hasAutoExecutedRef.current = true;
             handleApprove();
         }
@@ -250,6 +258,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
             onApproveAlways={isPendingApproval ? handleApproveAlways : undefined}
             showWebsiteOption={showWebsiteOption}
             websiteLabel={domain ?? undefined}
+            autoApprovalReason={autoApprovalReason ?? undefined}
         />
     );
 }
