@@ -10,6 +10,7 @@ import { ChevronRightIcon, type ChevronRightIconHandle } from '@assets/icons/cha
 import { ChevronDownIcon, type ChevronDownIconHandle } from '@assets/icons/chat/chevrown-down';
 import { UploadIcon, type UploadIconHandle } from '@/components/shared/icons/UploadIcon';
 import { getToolIcon } from '../icons/ToolIconMapper';
+import { McpServerIcon } from '../icons/McpIconMapper';
 import { formatToolAction } from '../formatters';
 import { createLogger } from '~logger';
 import type { CustomInputOutputRenderers } from '@/ai/tools/components';
@@ -148,7 +149,7 @@ export function CompactToolCard({
                 {/* Left: Icon + Tool Name */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     <div className={`flex items-center justify-center shrink-0 transition-opacity duration-200 text-[var(--text-secondary)] ${isHovered ? 'opacity-80' : ''}`}>
-                        {/* Use favicon for WebMCP tools, UploadIcon for uploads, otherwise default tool icon */}
+                        {/* Use favicon for WebMCP tools, MCP server icon for MCP tools, UploadIcon for uploads, otherwise default tool icon */}
                         {formattedAction.faviconUrl ? (
                             <img
                                 src={formattedAction.faviconUrl}
@@ -161,12 +162,14 @@ export function CompactToolCard({
                                     if (fallback) (fallback as HTMLElement).style.display = 'flex';
                                 }}
                             />
+                        ) : formattedAction.mcpServerId ? (
+                            <McpServerIcon serverId={formattedAction.mcpServerId} size={16} />
                         ) : null}
                         {formattedAction.faviconUrl ? (
                             <div style={{ display: 'none' }}>
                                 <ToolIcon ref={toolIconRef} size={16} />
                             </div>
-                        ) : formattedAction.customIcon === 'upload' ? (
+                        ) : formattedAction.mcpServerId ? null : formattedAction.customIcon === 'upload' ? (
                             <UploadIcon ref={uploadIconRef} size={16} />
                         ) : (
                             <ToolIcon ref={toolIconRef} size={16} />

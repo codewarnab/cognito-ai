@@ -11,6 +11,7 @@ import type { ActionFormatterContext, FormattedAction } from './types';
 import { formatters } from './registry';
 import { defaultFormatter } from './formatters/default';
 import { isWebMCPTool, webmcpFormatter } from './formatters/webmcp';
+import { getToolServerId } from '@/utils/mcp/toolMetadataStore';
 
 /**
  * Format a tool action into a human-readable description
@@ -30,7 +31,15 @@ export function formatToolAction(ctx: ActionFormatterContext): FormattedAction {
 
     const formatter = formatters[ctx.toolName] || defaultFormatter;
     try {
-        return formatter(ctx);
+        const result = formatter(ctx);
+        
+        // Check if this is an MCP tool and add server ID
+        const mcpServerId = getToolServerId(ctx.toolName);
+        if (mcpServerId) {
+            result.mcpServerId = mcpServerId;
+        }
+        
+        return result;
     } catch (error) {
         console.error(`Error formatting tool action for ${ctx.toolName}:`, error);
         return defaultFormatter(ctx);

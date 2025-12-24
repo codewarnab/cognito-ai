@@ -102,9 +102,12 @@ export async function streamAIResponse(params: {
 
     log.info('📡 Backend mode using model:', { selectedModel, toolsMode: backendMode, maxSteps: userMaxSteps });
 
-    // TODO: Pass search mode settings (searchEnabled, searchDepth) when implementing search with backend
-    // TODO: Pass workflowId for workflow-specific behavior on backend
-    // TODO: Handle adaptive mode dynamic tool discovery on backend
+    // Check if search mode should be enabled for backend
+    // When searchEnabled is true, backend will add and execute webSearch tool server-side
+    const searchSettings = await getSearchSettings();
+    const searchEnabled = searchSettings.enabled;
+
+    log.info('🔍 Backend search mode:', { searchEnabled, searchProvider: searchSettings.defaultProvider });
 
     return streamBackendChatWithTools({
       messages,
@@ -116,6 +119,7 @@ export async function streamAIResponse(params: {
       onError,
       onFinishCallback,
       initialPageContext, // Pass page context for page-aware conversations
+      searchEnabled, // Tell backend to add webSearch tool
       onToolCall: (tc) => log.info('Tool call:', { name: tc.name, id: tc.id }),
       onToolResult: (tr) => log.info('Tool result:', { id: tr.id, isError: tr.isError }),
     });

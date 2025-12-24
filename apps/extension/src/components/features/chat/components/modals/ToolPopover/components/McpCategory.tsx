@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import { HighlightedText } from '../utils/highlightText';
+import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
 import type { McpCategoryProps } from '../types';
 
 export const McpCategory: React.FC<McpCategoryProps> = ({
@@ -55,6 +56,7 @@ export const McpCategory: React.FC<McpCategoryProps> = ({
                     ) : (
                         <ChevronRight size={12} style={{ color: 'var(--text-tertiary, #6b7280)', flexShrink: 0 }} />
                     )}
+                    <McpServerIcon serverId={serverId} size={14} />
                     <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-primary, #3b82f6)' }}>
                         {serverName}
                     </span>

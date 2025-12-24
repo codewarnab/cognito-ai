@@ -13,6 +13,7 @@ import { createLogger } from '~logger';
 import {
     executeToolLocally,
     getToolSchemas,
+    SERVER_EXECUTED_TOOLS,
     type ToolCall,
     type ToolResult,
 } from './frontendToolExecutor';
@@ -153,8 +154,12 @@ export interface BackendChatWithToolsParams {
      * Formatted string from formatPageContextForAI()
      */
     initialPageContext?: string;
-    // TODO: Add search mode support - pass searchEnabled and searchDepth to backend
-    // TODO: Add workflow support - pass workflowId for workflow-specific prompts
+    /**
+     * Whether search mode is enabled.
+     * When true, backend will add webSearch tool and execute it server-side.
+     * Frontend will NOT send webSearch in tool schemas.
+     */
+    searchEnabled?: boolean;
 }
 
 /**
@@ -282,6 +287,7 @@ export async function streamBackendChatWithTools(
         onToolCall,
         onToolResult,
         initialPageContext,
+        searchEnabled, // NEW: Whether search mode is enabled
     } = params;
 
     log.info('Starting backend chat with tools', {
@@ -290,6 +296,7 @@ export async function streamBackendChatWithTools(
         mode,
         hasPageContext: !!initialPageContext,
         pageContextLength: initialPageContext?.length || 0,
+        searchEnabled: !!searchEnabled,
     });
 
     // Create abort controller for this request
@@ -297,9 +304,10 @@ export async function streamBackendChatWithTools(
 
     try {
         // Get tool schemas to send to backend
-        const toolSchemas = await getToolSchemas();
+        // Exclude server-executed tools when searchEnabled (backend will add them)
+        const toolSchemas = await getToolSchemas(searchEnabled);
         const toolCount = Object.keys(toolSchemas).length;
-        log.info('Tool schemas prepared', { toolCount });
+        log.info('Tool schemas prepared', { toolCount, searchEnabled: !!searchEnabled });
 
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
@@ -356,7 +364,8 @@ export async function streamBackendChatWithTools(
                                     maxSteps: 1, // One step at a time for tool execution
                                     // Only send page context on first request, not on tool result follow-ups
                                     pageContext: stepCount === 1 ? initialPageContext : undefined,
-                                    // TODO: Add searchEnabled, searchDepth for search mode
+                                    // Tell backend to add and execute webSearch tool
+                                    searchEnabled: searchEnabled,
                                 }),
                                 signal: abortSignal || controller.signal,
                             }
@@ -429,6 +438,26 @@ export async function streamBackendChatWithTools(
                                             arguments: event.data.arguments,
                                         };
 
+                                        // Check if this is a server-executed tool (backend handles execution)
+                                        const isServerExecuted = searchEnabled && SERVER_EXECUTED_TOOLS.includes(toolCall.name);
+
+                                        if (isServerExecuted) {
+                                            // Server-executed tool - backend will send tool-output-available
+                                            // Just show in UI, don't add to pendingToolCalls
+                                            log.info('🔄 Server-executed tool (backend will send result):', {
+                                                name: toolCall.name,
+                                                id: toolCall.id,
+                                            });
+                                            onToolCall?.(toolCall);
+                                            writer.write({
+                                                type: 'tool-input-available',
+                                                toolCallId: toolCall.id,
+                                                toolName: toolCall.name,
+                                                input: toolCall.arguments,
+                                            });
+                                            break;
+                                        }
+
                                         // Check if tool requires human approval (HITL pattern)
                                         // Built-in tools: check TOOLS_REQUIRING_APPROVAL
                                         // MCP/WebMCP tools: ALL require approval
@@ -474,6 +503,32 @@ export async function streamBackendChatWithTools(
 
                                     case 'finish':
                                         log.info('Stream finished signal received');
+                                        break;
+
+                                    case 'tool_result':
+                                        // Server-executed tool result from backend
+                                        // Forward to UI so the tool card updates (spinner stops)
+                                        const resultData = event.data;
+                                        log.info('🔄 Server tool result received:', {
+                                            toolCallId: resultData.toolCallId,
+                                            hasOutput: !!resultData.output,
+                                        });
+
+                                        // Write tool-output-available to UI stream
+                                        writer.write({
+                                            type: 'tool-output-available',
+                                            toolCallId: resultData.toolCallId,
+                                            output: resultData.output,
+                                        });
+
+                                        // Also notify callback if provided
+                                        if (onToolResult) {
+                                            onToolResult({
+                                                id: resultData.toolCallId,
+                                                result: resultData.output,
+                                                isError: false,
+                                            });
+                                        }
                                         break;
 
                                     case 'text_start':

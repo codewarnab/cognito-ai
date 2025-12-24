@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
@@ -9,8 +9,10 @@ import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
+import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
+import type { McpToolWithServer } from '@/stores/tools/types';
 
 const log = createLogger('ComposerToolbar', 'AI_CHAT');
 
@@ -63,6 +65,23 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
     const isAdaptiveMode = toolsMode === 'adaptive';
 
+    // Get MCP tools data for server icons
+    const mcpTools = useToolsStore((s: ToolsState) => s.mcpTools);
+    const mcpDisabledTools = useToolsStore((s: ToolsState) => s.mcpDisabledTools);
+
+    // Get unique enabled MCP server IDs
+    const enabledMcpServers = useMemo(() => {
+        const serverMap = new Map<string, { serverId: string; serverName: string }>();
+        mcpTools.forEach((tool: McpToolWithServer) => {
+            // Only include servers that have at least one enabled tool
+            const disabledList = mcpDisabledTools[tool.serverId] || [];
+            if (!disabledList.includes(tool.name)) {
+                serverMap.set(tool.serverId, { serverId: tool.serverId, serverName: tool.serverName });
+            }
+        });
+        return Array.from(serverMap.values());
+    }, [mcpTools, mcpDisabledTools]);
+
     // Get WebMCP tools data including favicon
     const { tools: webMcpTools } = useWebMCPTools();
     const webMcpFavicon = webMcpTools[0]?.favicon;
@@ -73,6 +92,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         totalEnabledCount,
         mcpToolsCount,
         webMcpToolsCount,
+        enabledMcpServers: enabledMcpServers.map(s => s.serverId),
         activeWorkflow: activeWorkflow?.name || null,
         isAdaptiveMode,
         toolsMode,
@@ -82,6 +102,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Backend mode state
     const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
     const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
+
+    // Hide model picker when toolbar is crowded (MCP servers + WebMCP taking space)
+    const shouldHideModelPicker = enabledMcpServers.length > 0 || webMcpToolsCount > 0;
 
     const getTooltipText = () => {
         if (activeWorkflow) return "Tools are managed by the active workflow";
@@ -131,8 +154,37 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                         >
                             <Wrench size={14} />
                             <span style={{ fontSize: '10px', fontWeight: 400 }}>
-                                {totalEnabledCount - webMcpToolsCount}
+                                {totalEnabledCount - webMcpToolsCount - mcpToolsCount}
                             </span>
+                            {/* MCP Server Icons */}
+                            {enabledMcpServers.length > 0 && (
+                                <>
+                                    <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.5, margin: '0 2px' }}>+</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                                        {enabledMcpServers.slice(0, 3).map((server) => (
+                                            <Tooltip key={server.serverId}>
+                                                <TooltipTrigger asChild>
+                                                    <span style={{ display: 'flex', alignItems: 'center' }}>
+                                                        <McpServerIcon serverId={server.serverId} size={12} />
+                                                    </span>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">
+                                                    {server.serverName}
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        ))}
+                                        {enabledMcpServers.length > 3 && (
+                                            <span style={{ fontSize: '9px', fontWeight: 400, opacity: 0.6 }}>
+                                                +{enabledMcpServers.length - 3}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.7 }}>
+                                        {mcpToolsCount}
+                                    </span>
+                                </>
+                            )}
+                            {/* WebMCP Section */}
                             {webMcpToolsCount > 0 && (
                                 <>
                                     <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.5, margin: '0 2px' }}>+</span>
@@ -183,8 +235,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 isAdaptiveMode={isAdaptiveMode}
             />
 
-            {/* Model Selector - Gemini icon with model popover */}
-            {!HIDE_MODEL_SELECTOR && (
+            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded) */}
+            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && (
                 <ModelSelectorPopover
                     isOpen={isModelSelectorOpen}
                     onOpenChange={setIsModelSelectorOpen}

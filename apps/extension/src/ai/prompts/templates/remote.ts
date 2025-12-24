@@ -264,7 +264,9 @@ CURRENT CONTEXT: You can read the current page content when users ask about what
 - Analyze YouTube video transcripts
 - Answer questions from your knowledge
 
-NOTE: This is Chat mode with limited tools. For browser automation (clicking, typing, navigating, form filling), suggest the user switch to Agent mode.`);
+MCP TOOLS: Chat mode can have MCP (Model Context Protocol) tools enabled. When MCP servers are connected, you may have access to additional tools provided by external integrations. Check for any MCP tools in your available tools list and use them when relevant to the user's request.
+
+NOTE: This is Chat mode with limited browser automation tools. For full browser automation (clicking, typing, navigating, form filling), suggest the user switch to Agent mode.`);
 
   return sections.join('\n\n');
 }

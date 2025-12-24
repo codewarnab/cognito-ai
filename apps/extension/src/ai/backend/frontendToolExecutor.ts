@@ -246,10 +246,20 @@ export async function executeToolLocally(
 }
 
 /**
+ * Tools that are executed on the backend when search is enabled (in backend mode).
+ * These should NOT be included in schemas sent to backend when excludeServerTools is true.
+ */
+export const SERVER_EXECUTED_TOOLS = ['webSearch', 'retrieve', 'deepWebSearch'];
+
+/**
  * Get tool schemas for sending to backend
  * Extracts just the schema (no execute function) for each tool
+ * 
+ * @param excludeServerTools - If true, exclude tools that execute on the backend (used in backend mode + search enabled)
  */
-export async function getToolSchemas(): Promise<
+export async function getToolSchemas(
+    excludeServerTools = false
+): Promise<
     Record<string, { description: string; parameters: Record<string, unknown> }>
 > {
     // Refresh tools cache
@@ -258,6 +268,12 @@ export async function getToolSchemas(): Promise<
     const schemas: Record<string, { description: string; parameters: Record<string, unknown> }> = {};
 
     for (const [name, tool] of Object.entries(cachedTools)) {
+        // Skip server-executed tools when requested (backend will add them)
+        if (excludeServerTools && SERVER_EXECUTED_TOOLS.includes(name)) {
+            log.info(`Excluding server-executed tool from schemas: ${name}`);
+            continue;
+        }
+
         if (!tool) continue;
 
         try {
@@ -282,6 +298,7 @@ export async function getToolSchemas(): Promise<
     log.info('Tool schemas prepared for backend:', {
         count: Object.keys(schemas).length,
         names: Object.keys(schemas).slice(0, 10),
+        excludedServerTools: excludeServerTools,
     });
 
     return schemas;

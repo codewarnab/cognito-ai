@@ -492,6 +492,31 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
   });
 }
 
+// Listen for MCP server status changes and reload tools
+// This ensures ComposerToolbar updates immediately when servers are enabled/disabled
+if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+  let mcpReloadTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  chrome.runtime.onMessage.addListener((message: { type?: string; payload?: unknown }) => {
+    // Match MCP status update messages (e.g., 'mcp/server-id/status/update')
+    const match = message.type?.match(/^mcp\/([^/]+)\/status\/update$/);
+    if (match) {
+      const store = useToolsStore.getState();
+      if (store.isInitialized) {
+        // Debounce to prevent multiple rapid reloads
+        if (mcpReloadTimeout) {
+          clearTimeout(mcpReloadTimeout);
+        }
+        mcpReloadTimeout = setTimeout(() => {
+          log.info('MCP server status changed, reloading tools');
+          store.loadMcpTools();
+          mcpReloadTimeout = null;
+        }, 100);
+      }
+    }
+  });
+}
+
 // Selectors for optimized subscriptions
 export const selectEnabledMap = (state: ToolsState) => state.enabledMap;
 export const selectCurrentMode = (state: ToolsState) => state.currentMode;
