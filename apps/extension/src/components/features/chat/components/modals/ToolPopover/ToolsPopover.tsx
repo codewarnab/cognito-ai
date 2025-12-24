@@ -172,7 +172,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                                 {Object.keys(mcpServerGroups).length > 0 && (
                                     <>
                                         <div className="text-[10px] font-medium text-[var(--text-tertiary,#6b7280)] px-2 pt-2.5 pb-1.5 uppercase tracking-wide flex items-center gap-1.5">
-                                            {(Server as any)({ size: 10 })}
+                                            <Server size={10} />
                                             <span>MCP ({Object.keys(mcpServerGroups).length})</span>
                                         </div>
                                         <div className="flex flex-wrap gap-1 px-1">

@@ -15,6 +15,7 @@ import { getFileIcon, truncateFileName } from '@/utils/files';
 import { StreamdownRenderer } from './StreamdownRenderer';
 import { AudioMessagePlayer } from './AudioMessagePlayer';
 import { XIcon } from '@assets/icons/chat/x';
+import { ExternalLink } from 'lucide-react';
 import { useInlineCodeEnhancer } from '@/hooks/useInlineCodeEnhancer';
 import { useMessageTextSelection } from '@/hooks/chat';
 import { QuotePopover } from './QuotePopover';
@@ -529,13 +530,31 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                                         ) : isAudio ? (
                                                                             <AudioMessagePlayer url={firstFile.url} name={firstFile.name} />
                                                                         ) : (
-                                                                            <div className="inline-flex items-center gap-2.5 px-3.5 py-2.5 min-w-[130px] max-w-[220px] bg-[rgba(35,45,65,0.7)] rounded-[10px] border-[1.5px] border-[rgba(100,120,150,0.3)] shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[rgba(45,55,75,0.8)] hover:border-[rgba(120,140,170,0.5)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] hover:-translate-y-px">
+                                                                            <div
+                                                                                className="relative group/file inline-flex items-center gap-2.5 px-3.5 py-2.5 min-w-[130px] max-w-[220px] bg-[rgba(35,45,65,0.7)] rounded-[10px] border-[1.5px] border-[rgba(100,120,150,0.3)] shadow-[0_2px_8px_rgba(0,0,0,0.3)] transition-all duration-200 hover:bg-[rgba(45,55,75,0.8)] hover:border-[rgba(120,140,170,0.5)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.4)] hover:-translate-y-px"
+                                                                            >
                                                                                 <div className="text-[22px] flex-shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                                                                                     {getFileIcon(firstFile.name || 'file', 24)}
                                                                                 </div>
                                                                                 <span className="text-[13px] text-white/90 whitespace-nowrap overflow-hidden text-ellipsis flex-1 font-medium" title={firstFile.name}>
                                                                                     {truncateFileName(firstFile.name)}
                                                                                 </span>
+                                                                                {totalFiles === 1 && (firstFile.mediaType === 'application/pdf' || firstFile.name?.toLowerCase().endsWith('.pdf')) && (
+                                                                                    <div
+                                                                                        onClick={(e) => {
+                                                                                            e.stopPropagation();
+                                                                                            if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+                                                                                                chrome.tabs.create({ url: firstFile.url, active: true });
+                                                                                            } else {
+                                                                                                window.open(firstFile.url, '_blank', 'noopener,noreferrer');
+                                                                                            }
+                                                                                        }}
+                                                                                        className="hidden group-hover/file:flex items-center justify-center text-white/60 hover:text-white/95 transition-colors absolute right-2 bg-[rgba(45,55,75,0.9)] rounded-md p-1 shadow-sm cursor-pointer"
+                                                                                        title="Open PDF in new tab"
+                                                                                    >
+                                                                                        <ExternalLink size={14} />
+                                                                                    </div>
+                                                                                )}
                                                                             </div>
                                                                         )}
                                                                     </div>

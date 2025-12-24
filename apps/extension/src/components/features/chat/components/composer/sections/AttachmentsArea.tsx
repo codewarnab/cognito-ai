@@ -29,13 +29,19 @@ export const AttachmentsArea: React.FC = () => {
             {/* File Attachments Preview */}
             {fileAttachments.length > 0 && (
                 <div className="flex flex-wrap gap-[10px] p-2 pb-2 border-b border-white/10">
-                    {fileAttachments.map((attachment) => (
-                        <FileAttachment
-                            key={attachment.id}
-                            attachment={attachment}
-                            onRemove={removeFileAttachment}
-                        />
-                    ))}
+                    {fileAttachments.map((attachment) => {
+                        const isSinglePdf = fileAttachments.length === 1 &&
+                            (attachment.file.type === 'application/pdf' || attachment.file.name.toLowerCase().endsWith('.pdf'));
+
+                        return (
+                            <FileAttachment
+                                key={attachment.id}
+                                attachment={attachment}
+                                onRemove={removeFileAttachment}
+                                showOpenButton={isSinglePdf}
+                            />
+                        );
+                    })}
                 </div>
             )}
         </>

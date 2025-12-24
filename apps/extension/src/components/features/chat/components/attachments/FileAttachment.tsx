@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getFileIcon, truncateFileName } from '@/utils/files';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
@@ -29,9 +29,10 @@ export interface FileAttachmentData {
 interface FileAttachmentProps {
     attachment: FileAttachmentData;
     onRemove: (id: string) => void;
+    showOpenButton?: boolean;
 }
 
-export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRemove }) => {
+export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRemove, showOpenButton }) => {
     const [showPreview, setShowPreview] = useState(false);
     const [thumbnailError, setThumbnailError] = useState(false);
 
@@ -44,6 +45,23 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
     const handleTogglePreview = () => {
         if (attachment.type === 'image') {
             setShowPreview(!showPreview);
+        }
+    };
+
+    const handleOpen = () => {
+        if (attachment.file) {
+            const url = URL.createObjectURL(attachment.file);
+
+            // Try to use Chrome Tabs API first (more reliable for extensions)
+            if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
+                chrome.tabs.create({ url, active: true });
+            } else {
+                // Fallback for non-extension environments
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
+
+            // Clean up the URL object after a delay to allow the new tab to load
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
     };
 
@@ -143,17 +161,32 @@ export const FileAttachment: React.FC<FileAttachmentProps> = ({ attachment, onRe
                         <span className="text-[13px] text-white/90 whitespace-nowrap overflow-hidden text-ellipsis flex-1 font-medium" title={attachment.file.name}>
                             {truncateFileName(attachment.file.name)}
                         </span>
-                        <button
-                            type="button"
-                            className="relative bg-transparent border-none rounded-full w-5 h-5 flex items-center justify-center cursor-pointer text-white/60 opacity-60 transition-all duration-200 p-0 ml-auto group-hover/file:opacity-100 hover:bg-[rgba(255,50,50,0.3)] hover:text-white/95 hover:!opacity-100"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemove(attachment.id);
-                            }}
-                            aria-label="Remove attachment"
-                        >
-                            <X size={14} />
-                        </button>
+                        <div className="flex items-center ml-auto gap-1">
+                            {showOpenButton && (
+                                <button
+                                    type="button"
+                                    className="relative bg-transparent border-none rounded-full w-5 h-5 flex items-center justify-center cursor-pointer text-white/60 opacity-60 transition-all duration-200 p-0 group-hover/file:opacity-100 hover:bg-[rgba(59,130,246,0.3)] hover:text-white/95 hover:!opacity-100"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpen();
+                                    }}
+                                    title="Open PDF in new tab"
+                                >
+                                    <ExternalLink size={14} />
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="relative bg-transparent border-none rounded-full w-5 h-5 flex items-center justify-center cursor-pointer text-white/60 opacity-60 transition-all duration-200 p-0 group-hover/file:opacity-100 hover:bg-[rgba(255,50,50,0.3)] hover:text-white/95 hover:!opacity-100"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(attachment.id);
+                                }}
+                                aria-label="Remove attachment"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
