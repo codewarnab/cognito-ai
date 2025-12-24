@@ -32,13 +32,13 @@ export function formatToolAction(ctx: ActionFormatterContext): FormattedAction {
     const formatter = formatters[ctx.toolName] || defaultFormatter;
     try {
         const result = formatter(ctx);
-        
+
         // Check if this is an MCP tool and add server ID
         const mcpServerId = getToolServerId(ctx.toolName);
         if (mcpServerId) {
             result.mcpServerId = mcpServerId;
         }
-        
+
         return result;
     } catch (error) {
         console.error(`Error formatting tool action for ${ctx.toolName}:`, error);
