@@ -1,6 +1,6 @@
 # Tool Approval System - Human-in-the-Loop for Sensitive Actions
 
-This document describes how the tool approval system works in Cognito AI, providing a human-in-the-loop mechanism for sensitive browser automation tools.
+This document describes how the tool approval system works in Cognito AI, providing a human-in-the-loop (HITL) mechanism for sensitive browser automation tools.
 
 ## Overview
 
@@ -9,6 +9,15 @@ The Tool Approval System implements a security mechanism that requires explicit 
 - Submit forms with sensitive data
 - Execute arbitrary JavaScript
 - Capture screenshots of sensitive content
+
+### Modes of Operation
+
+The approval system works in **both** API modes:
+
+| Mode | Description | Tool Execution | HITL Handling |
+|------|-------------|----------------|---------------|
+| **BYOK** | Direct Google AI API | Frontend (Vercel AI SDK) | AI SDK's `sendAutomaticallyWhen` |
+| **Backend** | Hosted Vercel backend | Backend loop + Frontend HITL | Streaming-aware auto-send |
 
 ---
 
@@ -123,7 +132,50 @@ export const TOOLS_REQUIRING_APPROVAL = [
 ];
 ```
 
-### 2. `streamExecutor.ts`
+### 2. Backend Mode Handling (`backendChatWithTools.ts`)
+
+In backend mode, tools are handled differently:
+
+- **Auto-executed tools** (not in approval list): Executed in the backend's internal tool loop
+- **HITL tools** (in approval list): NOT executed by backend loop, wait for frontend approval
+
+```typescript
+// In backendChatWithTools.ts
+const requiresApproval = TOOLS_REQUIRING_APPROVAL.includes(toolCall.name);
+
+if (!requiresApproval) {
+    // Safe tool - add to pending for auto-execution by backend loop
+    pendingToolCalls.push(toolCall);
+} else {
+    // HITL tool - stream to UI, let frontend handle approval
+    log.info('🛡️ Tool requires human approval:', { name: toolCall.name });
+}
+```
+
+### 3. Streaming-Aware Auto-Send (`useAIChat.ts`)
+
+In backend mode, `sendAutomaticallyWhen` uses a streaming status ref to prevent double-loops:
+
+```typescript
+sendAutomaticallyWhen: useBackendMode
+  ? (args) => {
+      // Block during streaming (backend loop handles auto-executed tools)
+      if (isStreamingRef.current) return false;
+      // Allow for HITL tools (stream finished, user approved)
+      return lastAssistantMessageIsCompleteWithToolCalls(args);
+    }
+  : lastAssistantMessageIsCompleteWithToolCalls
+```
+
+**Behavior by Scenario:**
+
+| Scenario | Status | Auto-Send |
+|----------|--------|----------|
+| Backend loop executing tool | `streaming` | **Blocked** |
+| HITL tool waiting for approval | `ready` | **Blocked** (no results yet) |
+| HITL tool approved + executed | `ready` + results | **Allowed** |
+
+### 4. `streamExecutor.ts` (BYOK Mode)
 
 Strips the `execute` function from tools requiring approval:
 
@@ -137,9 +189,9 @@ if (TOOLS_REQUIRING_APPROVAL.includes(name)) {
 
 This leverages Vercel AI SDK v6's human-in-the-loop pattern where tools without an `execute` function will wait for the frontend to call `addToolOutput`.
 
-### 3. `CompactToolRenderer.tsx`
+### 5. `CompactToolRenderer.tsx`
 
-The core approval UI logic:
+The core approval UI logic (works in both BYOK and Backend modes):
 
 ```
                     ┌─────────────────────────┐
@@ -168,7 +220,7 @@ The core approval UI logic:
                                 ▼                       ▼
                     ┌─────────────────┐   ┌─────────────────┐
                     │Execute Immediately│   │Show Approval UI │
-                    └─────────────────┘   └───────────┬─────┘
+                    └─────────────────┘   └─────────┬───────┘
                                                       │
                                     ┌─────────────────┼─────────────────┐
                                     │                 │                 │
@@ -181,7 +233,7 @@ The core approval UI logic:
                           └──────────────┘ └──────────────────┘ └───────────────┘
 ```
 
-### 4. `approvalStore.ts`
+### 6. `approvalStore.ts`
 
 Zustand store managing approval preferences:
 
@@ -191,7 +243,7 @@ Zustand store managing approval preferences:
 | Website | chrome.storage.local | Tool + Domain | Permanent |
 | Always | chrome.storage.local | Tool only | Permanent |
 
-### 5. `approvalConfig.ts`
+### 7. `approvalConfig.ts`
 
 Per-tool configuration for website-specific approvals:
 
@@ -283,18 +335,22 @@ interface ToolApprovalConfig {
 ```
 apps/extension/src/
 ├── ai/
+│   ├── backend/
+│   │   └── backendChatWithTools.ts  # Backend mode tool handling
+│   ├── hooks/
+│   │   └── useAIChat.ts             # Streaming-aware auto-send
 │   ├── setup/
-│   │   └── remoteMode.ts          # TOOLS_REQUIRING_APPROVAL list
+│   │   └── remoteMode.ts            # TOOLS_REQUIRING_APPROVAL list
 │   ├── stream/
-│   │   └── streamExecutor.ts      # Strips execute for HITL tools
+│   │   └── streamExecutor.ts        # Strips execute for HITL tools (BYOK)
 │   └── tools/
-│       ├── approvalConfig.ts      # Per-tool domain extraction config
+│       ├── approvalConfig.ts        # Per-tool domain extraction config
 │       └── components/
 │           └── CompactToolRenderer.tsx  # Approval UI logic
 ├── stores/
 │   └── approval/
-│       ├── approvalStore.ts       # Zustand store
-│       └── types.ts               # TypeScript interfaces
+│       ├── approvalStore.ts         # Zustand store
+│       └── types.ts                 # TypeScript interfaces
 └── components/
     └── ui/
         └── tools/

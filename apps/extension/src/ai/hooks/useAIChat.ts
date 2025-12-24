@@ -19,7 +19,7 @@ import { debounce } from '@/utils/general';
 import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
 import { useWindowVisibility } from '../../contexts/WindowVisibilityContext';
 import { playNotificationSound } from '@/utils/notifications';
-import { useChatStore, type ChatState } from '@/stores';
+import { useChatStore, type ChatState, useSettingsStore, type SettingsState } from '@/stores';
 
 const log = createLogger('useAIChat');
 
@@ -41,6 +41,11 @@ export function useAIChat(options: UseAIChatOptions) {
   // Get window visibility state for notification sound
   const { isUserAway } = useWindowVisibility();
 
+  // Get backend mode state - used to conditionally disable auto-send
+  // In backend mode, the tool execution loop is handled internally by streamBackendChatWithTools
+  // so we should NOT auto-send when tool results are available (would cause double-loop)
+  const useBackendMode = useSettingsStore((state: SettingsState) => state.useBackendMode);
+
   // Get chat store actions for syncing state
   const setStoreStatus = useChatStore((state: ChatState) => state.setStatus);
   const setStoreMessages = useChatStore((state: ChatState) => state.setMessages);
@@ -59,6 +64,12 @@ export function useAIChat(options: UseAIChatOptions) {
 
   // Store messages ref for notification preview
   const messagesRef = useRef<UIMessage[]>([]);
+
+  // Track streaming status for conditional auto-send
+  // This ref is used by sendAutomaticallyWhen to distinguish between:
+  // 1. Tool results added during backend's internal loop (streaming = true, don't auto-send)
+  // 2. Tool results added via HITL approval (streaming = false, do auto-send)
+  const isStreamingRef = useRef<boolean>(false);
 
   // Create transport instance (memoized)
   const transport = useMemo(() => new SimpleFrontendTransport(), []);
@@ -237,7 +248,20 @@ export function useAIChat(options: UseAIChatOptions) {
     id: threadId,
     transport,
     // Auto-send when all tool results are available (for human-in-the-loop approval flow)
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    // In backend mode, we only auto-send when NOT streaming.
+    // - During streaming: backend's internal loop handles auto-executed tools, don't auto-send
+    // - When ready: user approved an HITL tool, auto-send to get AI's response
+    sendAutomaticallyWhen: useBackendMode
+      ? (args) => {
+        // Block auto-send while actively streaming (backend loop is handling tools)
+        if (isStreamingRef.current) {
+          log.info('🚫 Blocking auto-send during streaming');
+          return false;
+        }
+        // Allow auto-send for HITL tools (stream finished, user approved)
+        return lastAssistantMessageIsCompleteWithToolCalls(args);
+      }
+      : lastAssistantMessageIsCompleteWithToolCalls, // BYOK mode: Always use standard logic
     onError: handleError,
     onFinish: (finishResult) => {
       // Add null safety check for message - may not exist in all stream modes
@@ -252,9 +276,13 @@ export function useAIChat(options: UseAIChatOptions) {
     },
   });
 
-  // Sync chat status to store
+  // Sync chat status to store AND update streaming ref
   useEffect(() => {
     const status = chat.status;
+
+    // Update streaming ref - critical for conditional auto-send in backend mode
+    isStreamingRef.current = (status === 'submitted' || status === 'streaming');
+
     if (status === 'submitted' || status === 'streaming') {
       setStoreStatus(status);
     } else if (status === 'ready') {

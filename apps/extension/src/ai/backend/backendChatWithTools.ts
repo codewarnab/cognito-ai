@@ -23,11 +23,110 @@ import { APIError, NetworkError } from '../../errors/errorTypes';
 import type { BackendModel } from '@/stores/settings/types';
 import type { ToolMode } from '@/stores/tools/types';
 import { ENV } from '@/utils/env';
+import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT');
 
 // Backend API URL from centralized ENV
 const BACKEND_URL = ENV.BACKEND_API_URL;
+
+/**
+ * Sanitize messages to fix malformed conversation structure.
+ * 
+ * Problem: When UIMessages are converted to ModelMessages, an assistant message may contain
+ * both tool-calls AND text responses that were generated AFTER the tool result was received.
+ * If the tool result is in a separate 'tool' role message at the end, this creates an invalid
+ * structure where the AI thinks it already responded to the tool result, causing a loop.
+ * 
+ * Solution: If the last message is a 'tool' role message (pending tool result), remove any
+ * text content from the preceding assistant message that appears AFTER tool-call parts.
+ * This ensures the AI sees: user -> assistant(tool-call) -> tool(result)
+ * Instead of: user -> assistant(tool-call + text + text + text) -> tool(result)
+ */
+function sanitizeMessagesForBackend(messages: ModelMessage[]): ModelMessage[] {
+    if (messages.length < 2) return messages;
+
+    const lastMessage = messages[messages.length - 1];
+    const secondLastMessage = messages[messages.length - 2];
+
+    // Null safety checks
+    if (!lastMessage || !secondLastMessage) return messages;
+
+    // Check if we have the problematic pattern:
+    // secondLastMessage is 'assistant' with tool-calls AND text
+    // lastMessage is 'tool' (pending tool result)
+    if (lastMessage.role !== 'tool' || secondLastMessage.role !== 'assistant') {
+        return messages;
+    }
+
+    // Check if assistant message has content array
+    const assistantContent = secondLastMessage.content;
+    if (!Array.isArray(assistantContent)) {
+        return messages;
+    }
+
+    // Find if there are both tool-calls and text parts
+    const hasToolCalls = assistantContent.some((part: any) => part.type === 'tool-call');
+    const hasTextAfterToolCall = (() => {
+        let seenToolCall = false;
+        for (const part of assistantContent as any[]) {
+            if (part.type === 'tool-call') {
+                seenToolCall = true;
+            } else if (part.type === 'text' && seenToolCall) {
+                return true;
+            }
+        }
+        return false;
+    })();
+
+    if (!hasToolCalls || !hasTextAfterToolCall) {
+        return messages;
+    }
+
+    log.warn('🔧 Detected malformed message structure - removing text after tool-calls from assistant message', {
+        originalPartCount: assistantContent.length,
+    });
+
+    // Filter out text parts that come AFTER tool-call parts
+    let seenToolCall = false;
+    const cleanedContent = (assistantContent as any[]).filter((part: any) => {
+        if (part.type === 'tool-call') {
+            seenToolCall = true;
+            return true;
+        }
+        // Keep text parts that come BEFORE the first tool-call
+        if (part.type === 'text' && !seenToolCall) {
+            return true;
+        }
+        // Remove text parts that come AFTER tool-calls
+        if (part.type === 'text' && seenToolCall) {
+            log.info('🗑️ Removing post-tool-call text from assistant message:', {
+                textLength: part.text?.length || 0,
+                preview: (part.text || '').substring(0, 50) + '...',
+            });
+            return false;
+        }
+        // Keep other part types
+        return true;
+    });
+
+    log.info('✅ Cleaned message structure', {
+        originalPartCount: assistantContent.length,
+        cleanedPartCount: cleanedContent.length,
+    });
+
+    // Return sanitized messages - cast to ModelMessage to ensure type safety
+    const cleanedAssistantMessage: ModelMessage = {
+        ...secondLastMessage,
+        content: cleanedContent,
+    } as ModelMessage;
+
+    return [
+        ...messages.slice(0, -2),
+        cleanedAssistantMessage,
+        lastMessage,
+    ];
+}
 
 export interface BackendChatWithToolsParams {
     messages: UIMessage[];
@@ -215,7 +314,12 @@ export async function streamBackendChatWithTools(
                     // Convert UIMessages to ModelMessages to preserve full history including tool invocations
                     // This fixes the issue where previous tool calls were dropped/malformed
                     // Note: convertToModelMessages is async in AI SDK 6
-                    const initialMessages = await convertToModelMessages(messages);
+                    const rawMessages = await convertToModelMessages(messages);
+
+                    // Sanitize messages to fix malformed conversation structure
+                    // This handles cases where assistant messages contain both tool-calls AND text
+                    // responses that were generated AFTER the tool result was received
+                    const initialMessages = sanitizeMessagesForBackend(rawMessages);
 
                     // Tool execution loop
                     let conversationMessages: ModelMessage[] = [...initialMessages];
@@ -249,7 +353,8 @@ export async function streamBackendChatWithTools(
                                     model, // Use selected model
                                     mode, // Send mode so backend can use appropriate prompt
                                     maxSteps: 1, // One step at a time for tool execution
-                                    pageContext: initialPageContext, // Page context for page-aware conversations
+                                    // Only send page context on first request, not on tool result follow-ups
+                                    pageContext: stepCount === 1 ? initialPageContext : undefined,
                                     // TODO: Add searchEnabled, searchDepth for search mode
                                 }),
                                 signal: abortSignal || controller.signal,
@@ -322,15 +427,31 @@ export async function streamBackendChatWithTools(
                                             name: event.data.name,
                                             arguments: event.data.arguments,
                                         };
-                                        pendingToolCalls.push(toolCall);
+
+                                        // Check if tool requires human approval (HITL pattern)
+                                        // If so, don't add to pendingToolCalls - let UI handle via addToolOutput
+                                        const requiresApproval = TOOLS_REQUIRING_APPROVAL.includes(toolCall.name);
+
+                                        if (!requiresApproval) {
+                                            // Safe tool - add to pending for auto-execution
+                                            pendingToolCalls.push(toolCall);
+                                        } else {
+                                            log.info('🛡️ Tool requires human approval:', {
+                                                name: toolCall.name,
+                                                id: toolCall.id,
+                                            });
+                                        }
+
                                         onToolCall?.(toolCall);
 
                                         log.info('Tool call received:', {
                                             id: toolCall.id,
                                             name: toolCall.name,
+                                            requiresApproval,
                                         });
 
                                         // Write structured tool-input-available event for proper UI rendering
+                                        // This is written for ALL tools so UI can display them
                                         writer.write({
                                             type: 'tool-input-available',
                                             toolCallId: toolCall.id,
