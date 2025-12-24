@@ -169,6 +169,7 @@ registerToolUI('toolName', (state: ToolUIState, options) => {
 ```
 
 See `docs/TOOL_APPROVAL_SYSTEM.md` for full architecture and implementation guide.
+See `docs/SERVER_TOOLS_ARCHITECTURE.md` for server-side tools architecture.
 
 ## Third-Party DOM Selector Robustness
 - For DOM queries dependent on third-party page structure, implement fallback selector arrays

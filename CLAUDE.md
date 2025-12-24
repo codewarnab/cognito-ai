@@ -25,6 +25,7 @@ Key features:
 - Human-in-the-loop tool approval system (see `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md`)
 - Frontend tools pattern for browser automation
 - Graceful degradation from backend mode to BYOK (Bring Your Own Key)
+- Server-side tools architecture (see `apps/extension/docs/SERVER_TOOLS_ARCHITECTURE.md`)
 
 ## Package Reference
 

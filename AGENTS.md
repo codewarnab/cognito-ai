@@ -25,6 +25,7 @@ Key features:
 - Human-in-the-loop tool approval for sensitive browser actions
 - Frontend tools pattern (tools execute in browser, not backend)
 - See `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md` for tool approval documentation
+- See `apps/extension/docs/SERVER_TOOLS_ARCHITECTURE.md` for backend tools architecture
 
 ## Package Reference
 
