@@ -9,6 +9,47 @@ interface EmptyStateProps {
     onConfigureApiKey?: () => void;
 }
 
+// Regex to match URLs (including chrome:// URLs)
+const URL_REGEX = /(https?:\/\/[^\s]+|chrome:\/\/[^\s]+)/g;
+
+// Parse tip text and convert URLs to clickable elements
+const renderTipWithLinks = (tip: string): React.ReactNode => {
+    const parts = tip.split(URL_REGEX);
+    const matches: string[] = tip.match(URL_REGEX) ?? [];
+
+    if (matches.length === 0) {
+        return tip;
+    }
+
+    const result: React.ReactNode[] = [];
+
+    parts.forEach((part, index) => {
+        if (part && matches.includes(part)) {
+            result.push(
+                <button
+                    key={`link-${index}`}
+                    onClick={() => {
+                        if (part.startsWith('chrome://')) {
+                            // Chrome internal URLs need to be opened via chrome.tabs API
+                            chrome.tabs.create({ url: part });
+                        } else {
+                            window.open(part, '_blank', 'noopener,noreferrer');
+                        }
+                    }}
+                    className="bg-transparent border-none cursor-pointer underline p-0 text-[inherit] font-medium hover:opacity-80 inline"
+                    style={{ color: '#4a9eff' }}
+                >
+                    {part}
+                </button>
+            );
+        } else if (part) {
+            result.push(<span key={`text-${index}`}>{part}</span>);
+        }
+    });
+
+    return result;
+};
+
 export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigureApiKey }) => {
     const [currentTip, setCurrentTip] = useState<string>('');
     const [greeting, setGreeting] = useState<string>('');
@@ -61,7 +102,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
                         color: 'var(--text-secondary)',
                     }}
                 >
-                    💡 {currentTip}
+                    💡 {renderTipWithLinks(currentTip)}
                 </div>
             )}
 

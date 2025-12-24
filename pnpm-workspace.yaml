@@ -3,6 +3,35 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Shared dependency versions across all packages
+# Use with `catalog:` prefix in package.json, e.g., "ai": "catalog:"
+catalog:
+  # AI SDK packages - keep in sync across extension and backend
+  ai: ^6.0.3
+  "@ai-sdk/google": ^3.0.1
+  "@ai-sdk/google-vertex": ^4.0.1
+  "@ai-sdk/mcp": ^1.0.1
+  "@ai-sdk/react": ^3.0.3
+  
+  # UI & Design System (shadcn/ui core)
+  lucide-react: ^0.556.0
+  class-variance-authority: ^0.7.1
+  clsx: ^2.1.1
+  tailwind-merge: ^3.3.0
+
+
+  # Next.js ecosystem - keep in sync across docs and webapp
+  next: 16.0.8
+  react: ^19.2.1
+  react-dom: ^19.2.1
+  typescript: ^5.9.3
+  tailwindcss: ^4.1.17
+  "@tailwindcss/postcss": ^4.1.17
+  postcss: ^8.5.6
+  
+  # Other shared dependencies
+  zod: ^4.2.1
+
 # Only build these native dependencies when explicitly needed
 onlyBuiltDependencies:
   - '@parcel/watcher'

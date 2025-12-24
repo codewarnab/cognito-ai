@@ -4,6 +4,60 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@ai-sdk/google':
+      specifier: ^3.0.1
+      version: 3.0.1
+    '@ai-sdk/google-vertex':
+      specifier: ^4.0.1
+      version: 4.0.1
+    '@ai-sdk/mcp':
+      specifier: ^1.0.1
+      version: 1.0.1
+    '@ai-sdk/react':
+      specifier: ^3.0.3
+      version: 3.0.3
+    '@tailwindcss/postcss':
+      specifier: ^4.1.17
+      version: 4.1.17
+    ai:
+      specifier: ^6.0.3
+      version: 6.0.3
+    class-variance-authority:
+      specifier: ^0.7.1
+      version: 0.7.1
+    clsx:
+      specifier: ^2.1.1
+      version: 2.1.1
+    lucide-react:
+      specifier: ^0.556.0
+      version: 0.556.0
+    next:
+      specifier: 16.0.8
+      version: 16.0.8
+    postcss:
+      specifier: ^8.5.6
+      version: 8.5.6
+    react:
+      specifier: ^19.2.1
+      version: 19.2.1
+    react-dom:
+      specifier: ^19.2.1
+      version: 19.2.1
+    tailwind-merge:
+      specifier: ^3.3.0
+      version: 3.4.0
+    tailwindcss:
+      specifier: ^4.1.17
+      version: 4.1.18
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
+    zod:
+      specifier: ^4.2.1
+      version: 4.2.1
+
 importers:
 
   .:
@@ -43,25 +97,25 @@ importers:
         version: 14.1.0(fumadocs-core@16.2.4(@types/react@19.2.7)(lucide-react@0.556.0(react@19.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(zod@4.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react@19.2.1)(vite@7.2.7(@types/node@24.10.3)(jiti@2.6.1)(less@4.4.2)(lightningcss@1.30.2)(sass@1.94.2)(tsx@4.21.0)(yaml@2.8.2))
       fumadocs-ui:
         specifier: 16.2.4
-        version: 16.2.4(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(lucide-react@0.556.0(react@19.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(tailwindcss@4.1.17)(zod@4.2.1)
+        version: 16.2.4(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(lucide-react@0.556.0(react@19.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(tailwindcss@4.1.18)(zod@4.2.1)
       lucide-react:
-        specifier: ^0.556.0
+        specifier: 'catalog:'
         version: 0.556.0(react@19.2.1)
       next:
-        specifier: 16.0.8
+        specifier: 'catalog:'
         version: 16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2)
       react:
-        specifier: ^19.2.1
+        specifier: 'catalog:'
         version: 19.2.1
       react-dom:
-        specifier: ^19.2.1
+        specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.3.8
         version: 2.3.8
       '@tailwindcss/postcss':
-        specifier: ^4.1.17
+        specifier: 'catalog:'
         version: 4.1.17
       '@types/mdx':
         specifier: ^2.0.13
@@ -76,28 +130,28 @@ importers:
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.7)
       postcss:
-        specifier: ^8.5.6
+        specifier: 'catalog:'
         version: 8.5.6
       tailwindcss:
-        specifier: ^4.1.17
-        version: 4.1.17
+        specifier: 'catalog:'
+        version: 4.1.18
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
 
   apps/extension:
     dependencies:
       '@ai-sdk/google':
-        specifier: ^3.0.1
+        specifier: 'catalog:'
         version: 3.0.1(zod@4.2.1)
       '@ai-sdk/google-vertex':
-        specifier: ^4.0.1
+        specifier: 'catalog:'
         version: 4.0.1(zod@4.2.1)
       '@ai-sdk/mcp':
-        specifier: ^1.0.1
+        specifier: 'catalog:'
         version: 1.0.1(zod@4.2.1)
       '@ai-sdk/react':
-        specifier: ^3.0.3
+        specifier: 'catalog:'
         version: 3.0.3(react@19.2.1)(zod@4.2.1)
       '@built-in-ai/core':
         specifier: 3.0.0-beta.0
@@ -157,16 +211,16 @@ importers:
         specifier: ^8.15.0
         version: 8.15.0
       ai:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3(zod@4.2.1)
       chrono-node:
         specifier: ^2.9.0
         version: 2.9.0
       class-variance-authority:
-        specifier: ^0.7.1
+        specifier: 'catalog:'
         version: 0.7.1
       clsx:
-        specifier: ^2.1.1
+        specifier: 'catalog:'
         version: 2.1.1
       cmdk:
         specifier: ^1.1.1
@@ -187,19 +241,19 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4
       lucide-react:
-        specifier: ^0.546.0
-        version: 0.546.0(react@19.2.1)
+        specifier: 'catalog:'
+        version: 0.556.0(react@19.2.1)
       ogl:
         specifier: ^1.0.11
         version: 1.0.11
       react:
-        specifier: ^19.2.1
+        specifier: 'catalog:'
         version: 19.2.1
       react-day-picker:
         specifier: ^9.12.0
         version: 9.12.0(react@19.2.1)
       react-dom:
-        specifier: ^19.2.1
+        specifier: 'catalog:'
         version: 19.2.1(react@19.2.1)
       react-markdown:
         specifier: ^10.1.0
@@ -208,16 +262,16 @@ importers:
         specifier: ^1.6.9
         version: 1.6.9(@types/mdast@4.0.4)(micromark-util-types@2.0.2)(micromark@4.0.2)(react@19.2.1)
       tailwind-merge:
-        specifier: ^3.3.0
+        specifier: 'catalog:'
         version: 3.4.0
       tailwindcss:
-        specifier: ^4.0.9
-        version: 4.1.17
+        specifier: 'catalog:'
+        version: 4.1.18
       three:
         specifier: ^0.176.0
         version: 0.176.0
       zod:
-        specifier: ^4.2.1
+        specifier: 'catalog:'
         version: 4.2.1
       zustand:
         specifier: ^5.0.9
@@ -278,8 +332,8 @@ importers:
         specifier: ^1.2.9
         version: 1.4.0
       typescript:
-        specifier: 5.3.3
-        version: 5.3.3
+        specifier: 'catalog:'
+        version: 5.9.3
       url:
         specifier: ^0.11.0
         version: 0.11.4
@@ -308,8 +362,8 @@ importers:
   packages/backend-vercel:
     dependencies:
       '@ai-sdk/google':
-        specifier: ^3.0.1
-        version: 3.0.1(zod@4.1.13)
+        specifier: 'catalog:'
+        version: 3.0.1(zod@4.2.1)
       '@cognito/shared':
         specifier: workspace:*
         version: link:../shared
@@ -320,8 +374,8 @@ importers:
         specifier: ^1.34.3
         version: 1.35.7
       ai:
-        specifier: ^6.0.3
-        version: 6.0.3(zod@4.1.13)
+        specifier: 'catalog:'
+        version: 6.0.3(zod@4.2.1)
       axios:
         specifier: ^1.8.4
         version: 1.13.2
@@ -341,8 +395,8 @@ importers:
         specifier: ^1.17.1
         version: 1.17.1
       zod:
-        specifier: ^4.1.13
-        version: 4.1.13
+        specifier: 'catalog:'
+        version: 4.2.1
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17
@@ -4951,11 +5005,6 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  lucide-react@0.546.0:
-    resolution: {integrity: sha512-Z94u6fKT43lKeYHiVyvyR8fT7pwCzDu7RyMPpTvh054+xahSgj4HFQ+NmflvzdXsoAjYGdCguGaFKYuvq0ThCQ==}
-    peerDependencies:
-      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-
   lucide-react@0.556.0:
     resolution: {integrity: sha512-iOb8dRk7kLaYBZhR2VlV1CeJGxChBgUthpSP8wom9jfj79qovgG6qcSdiy6vkoREKPnbUYzJsCn4o4PtG3Iy+A==}
     peerDependencies:
@@ -6505,11 +6554,6 @@ packages:
   typedarray@0.0.6:
     resolution: {integrity: sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==}
 
-  typescript@5.3.3:
-    resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
@@ -6951,9 +6995,6 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zod@4.1.13:
-    resolution: {integrity: sha512-AvvthqfqrAhNH9dnfmrfKzX5upOdjUVJYFqNSlkmGf64gRaTzlPwz99IHYnVs28qYAybvAlBV+H7pn0saFY4Ig==}
-
   zod@4.2.1:
     resolution: {integrity: sha512-0wZ1IRqGGhMP76gLqz8EyfBXKk0J2qo2+H3fi4mcUP/KtTocoX08nmIAHl1Z2kJIZbZee8KOpBCSNPRgauucjw==}
 
@@ -7006,13 +7047,6 @@ snapshots:
       '@vercel/oidc': 3.0.5
       zod: 4.2.1
 
-  '@ai-sdk/gateway@3.0.2(zod@4.1.13)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
-      '@vercel/oidc': 3.0.5
-      zod: 4.1.13
-
   '@ai-sdk/gateway@3.0.2(zod@4.2.1)':
     dependencies:
       '@ai-sdk/provider': 3.0.0
@@ -7030,12 +7064,6 @@ snapshots:
       zod: 4.2.1
     transitivePeerDependencies:
       - supports-color
-
-  '@ai-sdk/google@3.0.1(zod@4.1.13)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
-      zod: 4.1.13
 
   '@ai-sdk/google@3.0.1(zod@4.2.1)':
     dependencies:
@@ -7069,13 +7097,6 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.0.6
       zod: 4.2.1
-
-  '@ai-sdk/provider-utils@4.0.1(zod@4.1.13)':
-    dependencies:
-      '@ai-sdk/provider': 3.0.0
-      '@standard-schema/spec': 1.1.0
-      eventsource-parser: 3.0.6
-      zod: 4.1.13
 
   '@ai-sdk/provider-utils@4.0.1(zod@4.2.1)':
     dependencies:
@@ -9338,14 +9359,6 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       zod: 4.2.1
 
-  ai@6.0.3(zod@4.1.13):
-    dependencies:
-      '@ai-sdk/gateway': 3.0.2(zod@4.1.13)
-      '@ai-sdk/provider': 3.0.0
-      '@ai-sdk/provider-utils': 4.0.1(zod@4.1.13)
-      '@opentelemetry/api': 1.9.0
-      zod: 4.1.13
-
   ai@6.0.3(zod@4.2.1):
     dependencies:
       '@ai-sdk/gateway': 3.0.2(zod@4.2.1)
@@ -10817,7 +10830,7 @@ snapshots:
       unist-util-remove-position: 5.0.0
       unist-util-visit: 5.0.0
       vfile: 6.0.3
-      zod: 4.1.13
+      zod: 4.2.1
     optionalDependencies:
       next: 16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2)
       react: 19.2.1
@@ -10825,7 +10838,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-ui@16.2.4(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(lucide-react@0.556.0(react@19.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(tailwindcss@4.1.17)(zod@4.2.1):
+  fumadocs-ui@16.2.4(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(lucide-react@0.556.0(react@19.2.1))(next@16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(tailwindcss@4.1.18)(zod@4.2.1):
     dependencies:
       '@radix-ui/react-accordion': 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-collapsible': 1.1.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -10850,7 +10863,7 @@ snapshots:
     optionalDependencies:
       '@types/react': 19.2.7
       next: 16.0.8(@opentelemetry/api@1.9.0)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(sass@1.94.2)
-      tailwindcss: 4.1.17
+      tailwindcss: 4.1.18
     transitivePeerDependencies:
       - '@mixedbread/sdk'
       - '@orama/core'
@@ -11707,10 +11720,6 @@ snapshots:
       yallist: 3.1.1
 
   lucide-react@0.542.0(react@19.2.1):
-    dependencies:
-      react: 19.2.1
-
-  lucide-react@0.546.0(react@19.2.1):
     dependencies:
       react: 19.2.1
 
@@ -13872,8 +13881,6 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typescript@5.3.3: {}
-
   typescript@5.9.3: {}
 
   ufo@1.6.1: {}
@@ -14421,8 +14428,6 @@ snapshots:
   zod@3.22.3: {}
 
   zod@3.25.76: {}
-
-  zod@4.1.13: {}
 
   zod@4.2.1: {}
 
