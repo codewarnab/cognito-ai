@@ -1,6 +1,6 @@
 /**
  * YouTube to Notion Agent Tool Registration
- * Migrated to AI SDK v5 tool format
+ * Migrated to AI SDK v6 tool format
  * 
  * Registers the youtubeToNotionAgent tool for converting YouTube videos
  * into beautifully structured Notion notes
@@ -27,7 +27,7 @@ export function useYouTubeToNotionAgent() {
     useEffect(() => {
         log.info('🔧 Registering youtubeToNotionAgent tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'youtubeToNotionAgent',
             description: `Convert YouTube videos into beautifully structured Notion notes.

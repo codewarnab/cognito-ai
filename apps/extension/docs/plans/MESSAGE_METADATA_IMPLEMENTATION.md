@@ -13,7 +13,7 @@ interface MessageMetadata {
 
 ## Overview
 
-The AI SDK v5 supports message metadata via the `UIMessage<T>` generic type. This allows attaching arbitrary data at the message level (not as content). We need to:
+The AI SDK v6 supports message metadata via the `UIMessage<T>` generic type. This allows attaching arbitrary data at the message level (not as content). We need to:
 
 1. Define the metadata type
 2. Send metadata from both BYOK and Backend modes
@@ -386,7 +386,7 @@ const dbMessages: ChatMessage[] = result.messages
 
 ## Dependencies
 
-- AI SDK v5 (already installed)
+- AI SDK v6 (already installed)
 - No new dependencies required
 
 ---

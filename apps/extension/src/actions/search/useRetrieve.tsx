@@ -2,7 +2,7 @@
  * URL Retrieve Tool
  * Allows AI to retrieve and extract content from a specific URL
  * 
- * AI SDK v5: Uses inputSchema (not parameters) for tool definition
+ * AI SDK v6: Uses inputSchema (not parameters) for tool definition
  */
 
 import { useEffect } from 'react';
@@ -79,7 +79,7 @@ async function fetchJinaReaderData(url: string): Promise<SearchResults | null> {
 
 /**
  * Execute URL content retrieval.
- * AI SDK v5: Input is typed from retrieveSchema (RetrieveParams)
+ * AI SDK v6: Input is typed from retrieveSchema (RetrieveParams)
  */
 async function executeRetrieve(input: RetrieveParams): Promise<SearchResults> {
     const { url } = input;
@@ -126,7 +126,7 @@ export function useRetrieve(): void {
     useEffect(() => {
         log.info('Registering retrieve tool');
 
-        // AI SDK v5: Use inputSchema instead of parameters
+        // AI SDK v6: Use inputSchema instead of parameters
         registerTool({
             name: RETRIEVE_TOOL_NAME,
             description: TOOL_DESCRIPTION,

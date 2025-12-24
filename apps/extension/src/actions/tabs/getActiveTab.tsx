@@ -1,6 +1,6 @@
 /**
- * GetActiveTab Tool for AI SDK v5
- * Migrated from CopilotKit useFrontendTool to AI SDK v5 tool format
+ * GetActiveTab Tool for AI SDK v6
+ * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Gets information about the currently active browser tab
  */
@@ -24,7 +24,7 @@ export function useGetActiveTab() {
     useEffect(() => {
         log.info('🔧 Registering getActiveTab tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'getActiveTab',
             description: `Gets active tab info (id, url, title). Use before page-specific tools or to verify navigation.

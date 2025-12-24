@@ -791,7 +791,7 @@ export { RateLimitCard } from './RateLimitCard';
 
 ## Dependencies
 
-- **AI SDK v5**: `createUIMessageStream`, `createUIMessageStreamResponse` (already available)
+- **AI SDK v6**: `createUIMessageStream`, `createUIMessageStreamResponse` (already available)
 - **Framer Motion**: For card animations (already installed)
 - **Lucide React**: For icons (already installed)
 

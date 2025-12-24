@@ -86,6 +86,22 @@ export function handleAPIError(error: Error): ErrorToastState | null {
         }
     }
 
+    // Priority 0.8: Check for Quota Exceeded specifically
+    if (errorCode === ErrorType.API_QUOTA_EXCEEDED || errorMessage.toLowerCase().includes('quota exceeded')) {
+        log.info('Quota exceeded error detected');
+        shouldShowToast = true;
+        // Specific message requested by user
+        displayMessage = "⚠️ Rate limit reached. Consider upgrading or switch to BYOK mode.";
+
+        if (displayMessage) {
+            log.info('Showing quota error toast:', displayMessage.substring(0, 100));
+            return {
+                message: displayMessage,
+                details: errorObj?.technicalDetails || error.stack
+            };
+        }
+    }
+
     // Priority 1: Check specific HTTP status codes (most reliable)
     if (statusCode) {
         switch (statusCode) {

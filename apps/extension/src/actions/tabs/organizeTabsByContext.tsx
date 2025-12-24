@@ -1,6 +1,6 @@
 /**
- * OrganizeTabsByContext Tool for AI SDK v5
- * Migrated from CopilotKit useFrontendTool to AI SDK v5 tool format
+ * OrganizeTabsByContext Tool for AI SDK v6
+ * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Intelligently organize tabs by analyzing their content and context.
  * Groups related tabs together even if they're from different websites.
@@ -26,7 +26,7 @@ export function useOrganizeTabsByContextTool() {
     useEffect(() => {
         log.info('🔧 Registering organizeTabsByContext tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'organizeTabsByContext',
             description: `Organize tabs by analyzing content/context. Groups related tabs even from different sites.

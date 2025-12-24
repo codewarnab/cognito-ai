@@ -1,5 +1,5 @@
 /**
- * Text Extraction Tool for AI SDK v5
+ * Text Extraction Tool for AI SDK v6
  * Handles text extraction from the page and scrolling elements into view
  * Enhanced with semantic structure information and page type detection
  */

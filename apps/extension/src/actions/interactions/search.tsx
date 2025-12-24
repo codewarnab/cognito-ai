@@ -1,5 +1,5 @@
 /**
- * Chrome Search Tool for AI SDK v5
+ * Chrome Search Tool for AI SDK v6
  * Uses Chrome's search API to search across bookmarks, history, and open tabs
  */
 
@@ -22,7 +22,7 @@ export function useChromeSearchTool() {
     useEffect(() => {
         log.info('🔧 Registering chromeSearch tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'chromeSearch',
             description: `Search Chrome bookmarks, history (30 days), and open tabs by title/URL. USE WHEN: User asks "find page about X", "do I have tab for Y?", "search bookmarks for Z". WORKFLOW: Searches tabs→bookmarks→history, deduplicates by URL, returns combined results with type. LIMITS: Max 100 results, no page content search, only titles/URLs. EXAMPLE: chromeSearch(query="react hooks", maxResults=20)`,

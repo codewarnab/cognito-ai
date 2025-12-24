@@ -263,7 +263,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     }, [messages, isLoading]);
 
     // Pre-process messages to:
-    // 1. Deduplicate consecutive assistant messages with the same toolCallId (AI SDK v5 bug workaround)
+    // 1. Deduplicate consecutive assistant messages with the same toolCallId (AI SDK v6 bug workaround)
     //    The bug: AbstractChat.makeRequest generates a new message ID at line 9363, ignoring the
     //    messageId parameter passed from addToolOutput. This causes pushMessage instead of replaceMessage.
     // NOTE: We no longer merge user tool-result messages - that was causing issues with subsequent tool calls
@@ -372,7 +372,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
             // Only deduplicate assistant messages with tool calls
             if (msg.role === 'assistant' && hasToolCallsResult) {
-                // Look ahead for potential duplicates (AI SDK v5 bug creates duplicate assistant messages)
+                // Look ahead for potential duplicates (AI SDK v6 bug creates duplicate assistant messages)
                 if (i + 1 < messages.length) {
                     const nextMsg = messages[i + 1];
 

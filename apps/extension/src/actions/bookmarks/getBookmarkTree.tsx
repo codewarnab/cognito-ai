@@ -153,7 +153,7 @@ export function useGetBookmarkTree() {
     useEffect(() => {
         log.info('🔧 Registering getBookmarkTree tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'getBookmarkTree',
             description: `Get complete bookmark folder structure with hierarchical organization. Use when user asks "show my bookmark folders", "what's my bookmark organization", "list folder structure", "how are my bookmarks organized", or "show me all bookmark folders and subfolders". Returns a tree structure showing all folders, subfolders, and optionally individual bookmarks. Each folder includes bookmark count. This tool provides a comprehensive overview of the user's entire bookmark organization system, making it easy to understand the folder hierarchy and locate where bookmarks are stored. Default behavior shows only folders with bookmark counts for performance, but can include individual bookmarks if requested. The tree includes special folders like "Bookmarks bar" (ID: 1) and "Other bookmarks" (ID: 2). Use this when the user needs to understand their bookmark structure before performing other bookmark operations like moving, organizing, or searching within specific folders.`,

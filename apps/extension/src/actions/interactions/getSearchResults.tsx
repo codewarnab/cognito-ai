@@ -1,5 +1,5 @@
 /**
- * GetSearchResults Tool for AI SDK v5
+ * GetSearchResults Tool for AI SDK v6
  * Parse current Google/Bing search results page and return a structured ranked list with metadata
  */
 
@@ -40,7 +40,7 @@ export function useGetSearchResultsTool() {
     useEffect(() => {
         log.info('🔧 Registering getSearchResults tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'getSearchResults',
             description: `Parse Google/Bing SERP and return structured list with rank, title, URL, hostname, snippet. USE: After navigating to search page, researching topics, before openSearchResult. REQUIRES: Must be on google.com/search or bing.com/search. WORKFLOW: 1) Verify search page 2) Call getSearchResults 3) Analyze results 4) Use openSearchResult with rank numbers 5) Use readPageContent on opened tabs. LIMITS: Google/Bing only, max 50 results (default 10), doesn't open results. Example: getSearchResults(maxResults=10) -> [{rank:1, title:"React Docs", href:"https://react.dev", hostname:"react.dev", snippet:"..."}]`,

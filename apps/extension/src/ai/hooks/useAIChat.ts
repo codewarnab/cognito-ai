@@ -1,5 +1,5 @@
 /**
- * Custom React hook for AI chat using AI SDK v5
+ * Custom React hook for AI chat using AI SDK v6
  * Uses SimpleFrontendTransport to call AI logic directly from the frontend
  * 
  * Syncs with useChatStore for centralized state management.
@@ -116,70 +116,7 @@ export function useAIChat(options: UseAIChatOptions) {
     [threadId, onContextWarning, setStoreUsage]
   );
 
-  // Set up usage update callback
-  useEffect(() => {
-    transport.setOnUsageUpdate((usage: AppUsage) => {
-      log.info('Usage update received from stream', {
-        totalTokens: usage.totalTokens,
-        modelId: usage.modelId,
-        threadId
-      });
 
-      // Use debounced update
-      debouncedUsageUpdate(usage);
-    });
-
-    // Set up finish callback for notification sound AND Chrome notification
-    transport.setOnFinishCallback(() => {
-      log.info('🔔 AI response completed, checking if user is away', { isUserAway });
-
-      // Only trigger notifications if user is away (viewing another window)
-      if (isUserAway) {
-        log.info('🔊 User is away, playing notification sound');
-        playNotificationSound().catch(err => {
-          log.warn('Failed to play notification sound:', err);
-        });
-
-        // Send message to background to create Chrome notification
-        log.info('📬 Sending notification request to background', { threadId });
-
-        // Get the last assistant message for preview
-        const messages = messagesRef.current;
-        const lastAssistantMessage = messages
-          .slice()
-          .reverse()
-          .find((msg: any) => msg.role === 'assistant');
-
-        let messagePreview = 'Response complete. Click to view or continue.';
-        if (lastAssistantMessage) {
-          // Extract text content from the message parts
-          const parts = (lastAssistantMessage as any).parts;
-          if (parts && Array.isArray(parts)) {
-            const textPart = parts.find((part: any) => part.type === 'text');
-            if (textPart && textPart.text) {
-              const text = textPart.text;
-              messagePreview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
-            }
-          }
-        }
-
-        // Send notification creation message to background
-        chrome.runtime.sendMessage({
-          type: 'ai/notification/create',
-          payload: {
-            threadId,
-            title: 'AI Assistant Finished',
-            message: messagePreview,
-            timestamp: Date.now(),
-          },
-        }).catch(err => {
-          log.warn('Failed to send notification message to background:', err);
-        });
-      } else {
-        log.info('👀 User is viewing extension, skipping notifications');
-      }
-    });
-  }, [transport, threadId, debouncedUsageUpdate, isUserAway]);
 
   // Reset usage state when thread changes (for new threads)
   // Actual usage calculation happens from messages in the effect below
@@ -242,6 +179,63 @@ export function useAIChat(options: UseAIChatOptions) {
     // via writeErrorToStream(), so it will appear in the message
     // This callback is mainly for additional error handling (toasts, etc.)
   }, [onError]);
+
+  // Set up transport listeners
+  useEffect(() => {
+    transport.setOnUsageUpdate(debouncedUsageUpdate);
+    transport.setOnErrorCallback(handleError);
+
+    // Set up finish callback for notification sound AND Chrome notification
+    transport.setOnFinishCallback(() => {
+      log.info('🔔 AI response completed, checking if user is away', { isUserAway });
+
+      // Only trigger notifications if user is away (viewing another window)
+      if (isUserAway) {
+        log.info('🔊 User is away, playing notification sound');
+        playNotificationSound().catch(err => {
+          log.warn('Failed to play notification sound:', err);
+        });
+
+        // Send message to background to create Chrome notification
+        log.info('📬 Sending notification request to background', { threadId });
+
+        // Get the last assistant message for preview
+        const messages = messagesRef.current;
+        const lastAssistantMessage = messages
+          .slice()
+          .reverse()
+          .find((msg: any) => msg.role === 'assistant');
+
+        let messagePreview = 'Response complete. Click to view or continue.';
+        if (lastAssistantMessage) {
+          // Extract text content from the message parts
+          const parts = (lastAssistantMessage as any).parts;
+          if (parts && Array.isArray(parts)) {
+            const textPart = parts.find((part: any) => part.type === 'text');
+            if (textPart && textPart.text) {
+              const text = textPart.text;
+              messagePreview = text.substring(0, 100) + (text.length > 100 ? '...' : '');
+            }
+          }
+        }
+
+        // Send notification creation message to background
+        chrome.runtime.sendMessage({
+          type: 'ai/notification/create',
+          payload: {
+            threadId,
+            title: 'AI Assistant Finished',
+            message: messagePreview,
+            timestamp: Date.now(),
+          },
+        }).catch(err => {
+          log.warn('Failed to send notification message to background:', err);
+        });
+      } else {
+        log.info('👀 User is viewing extension, skipping notifications');
+      }
+    });
+  }, [transport, debouncedUsageUpdate, handleError, isUserAway, threadId]);
 
   // Use AI SDK's useChat hook with simple frontend transport
   const chat = useChat({

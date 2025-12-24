@@ -158,7 +158,7 @@ export interface BackendChatWithToolsParams {
 }
 
 /**
- * Parse AI SDK v5 UI Message Stream format (SSE only)
+ * Parse AI SDK v6 UI Message Stream format (SSE only)
  * 
  * Format: data: {"type":"...", ...}
  * 
@@ -180,7 +180,7 @@ function parseStreamChunk(chunk: string): Array<{
     for (const line of lines) {
         if (!line.trim()) continue;
 
-        // AI SDK v5 SSE format: "data: {...}"
+        // AI SDK v6 SSE format: "data: {...}"
         if (line.startsWith('data: ')) {
             const dataContent = line.slice(6);
 
@@ -611,7 +611,7 @@ export async function streamBackendChatWithTools(
                                     type: 'tool-call',
                                     toolCallId: tc.id,
                                     toolName: tc.name,
-                                    args: tc.arguments, // Using args as AI SDK v5 convertToModelMessages uses args for tool calls usually
+                                    args: tc.arguments, // Using args as AI SDK v6 convertToModelMessages uses args for tool calls usually
                                 });
                             }
 
@@ -621,7 +621,7 @@ export async function streamBackendChatWithTools(
                             });
 
                             // Add tool results as tool messages
-                            // AI SDK v5: ToolResultPart uses 'output' with LanguageModelV2ToolResultOutput format
+                            // AI SDK v6: ToolResultPart uses 'output' with LanguageModelV2ToolResultOutput format
                             conversationMessages.push({
                                 role: 'tool',
                                 content: toolResults.map((result) => {
@@ -631,7 +631,7 @@ export async function streamBackendChatWithTools(
                                         ? result.result
                                         : JSON.stringify(result.result);
 
-                                    // AI SDK v5 ToolResultPart format with LanguageModelV2ToolResultOutput
+                                    // AI SDK v6 ToolResultPart format with LanguageModelV2ToolResultOutput
                                     return {
                                         type: 'tool-result' as const,
                                         toolCallId: result.id,

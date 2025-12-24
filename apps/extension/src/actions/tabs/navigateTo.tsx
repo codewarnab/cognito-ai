@@ -1,6 +1,6 @@
 /**
- * NavigateTo Tool for AI SDK v5
- * Migrated from CopilotKit useFrontendTool to AI SDK v5 tool format
+ * NavigateTo Tool for AI SDK v6
+ * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Opens a URL in a new tab or current tab (without switching/redirecting)
  * For switching to existing tabs, use the switchTabs tool instead
@@ -29,7 +29,7 @@ export function useNavigateToTool() {
     useEffect(() => {
         log.info('🔧 Registering navigateTo tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'navigateTo',
             description: `Navigate to URL by opening in new/current tab. Use when user asks to "go to", "open", "visit" a website or load search results, docs, articles. Auto-adds https:// if missing. Opens in background (no focus steal). Returns tabId & URL. Does NOT switch to existing tabs (use switchTabs), wait for load (use takeScreenshot/readPageContent after), or open multiple URLs at once. Cannot access chrome:// pages. Example: navigateTo(url="github.com/facebook/react", newTab=true)`,

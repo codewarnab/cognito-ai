@@ -1,5 +1,5 @@
 /**
- * Tool UI Context for AI SDK v5
+ * Tool UI Context for AI SDK v6
  * Provides a way for tools to register their UI rendering components
  */
 

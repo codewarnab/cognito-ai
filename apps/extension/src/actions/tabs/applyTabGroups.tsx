@@ -1,6 +1,6 @@
 /**
- * ApplyTabGroups Tool for AI SDK v5
- * Migrated from CopilotKit useFrontendTool to AI SDK v5 tool format
+ * ApplyTabGroups Tool for AI SDK v6
+ * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Apply AI-suggested tab groups. This is called after organizeTabsByContext
  * with the AI's grouping suggestions.
@@ -25,7 +25,7 @@ export function useApplyTabGroups() {
     useEffect(() => {
         log.info('🔧 Registering applyTabGroups tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'applyTabGroups',
             description: `Apply AI-suggested tab groups after organizeTabsByContext. Creates named, colored tab groups (collapsed by default).

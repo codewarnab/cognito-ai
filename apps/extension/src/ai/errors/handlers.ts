@@ -104,6 +104,11 @@ export async function parseGeminiErrorAsync(error: any): Promise<APIError> {
 
     // Handle specific status codes
     if (statusCode === 429) {
+      // Check if it's quota exceeded (sometimes 429 is used for quota issues)
+      if (message.toLowerCase().includes('quota') || details?.toLowerCase().includes('quota')) {
+        return APIError.quotaExceeded(details);
+      }
+
       // Rate limit - check for Retry-After header
       const retryAfter = error?.headers?.['retry-after'] ||
         error?.response?.headers?.['retry-after'];
@@ -273,6 +278,11 @@ export function parseGeminiError(error: any): APIError {
     });
 
     if (statusCode === 429) {
+      // Check if it's quota exceeded (sometimes 429 is used for quota issues)
+      if (message.toLowerCase().includes('quota') || details?.toLowerCase().includes('quota')) {
+        return APIError.quotaExceeded(details);
+      }
+
       const retryAfter = error?.headers?.['retry-after'] ||
         error?.response?.headers?.['retry-after'];
       const retryAfterMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : undefined;

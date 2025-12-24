@@ -1,7 +1,7 @@
 /**
  * Tool system types
  * 
- * AI SDK v5 Changes:
+ * AI SDK v6 Changes:
  * - `parameters` → `inputSchema` for tool definitions
  * - `args` → `input` for tool execute function
  * - Added `outputSchema` for output validation
@@ -16,11 +16,11 @@ export interface ToolDefinition<
 > {
     name: TName;
     description: string;
-    /** AI SDK v5: inputSchema replaces parameters */
+    /** AI SDK v6: inputSchema replaces parameters */
     inputSchema: TInput;
-    /** AI SDK v5: Optional output schema for validation */
+    /** AI SDK v6: Optional output schema for validation */
     outputSchema?: z.ZodType<TOutput>;
-    /** AI SDK v5: input replaces args */
+    /** AI SDK v6: input replaces args */
     execute: (input: z.infer<TInput>, abortSignal?: AbortSignal) => Promise<TOutput> | TOutput;
     category?: ToolCategory;
     requiresPermission?: string[];

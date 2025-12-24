@@ -1,5 +1,5 @@
 /**
- * Simple Frontend Transport for AI SDK v5
+ * Simple Frontend Transport for AI SDK v6
  * Calls AI logic directly from the frontend
  * No service worker communication needed
  */
@@ -24,6 +24,7 @@ export class SimpleFrontendTransport {
   private abortControllers = new Map<string, AbortController>();
   private onUsageUpdate?: (usage: AppUsage) => void;
   private onFinishCallback?: () => void;
+  private onErrorCallback?: (error: Error) => void;
 
   /**
    * Set the usage update callback
@@ -37,6 +38,13 @@ export class SimpleFrontendTransport {
    */
   setOnFinishCallback(callback: () => void) {
     this.onFinishCallback = callback;
+  }
+
+  /**
+   * Set the error callback (called when AI stream encounters an error)
+   */
+  setOnErrorCallback(callback: (error: Error) => void) {
+    this.onErrorCallback = callback;
   }
 
   /**
@@ -293,6 +301,10 @@ export class SimpleFrontendTransport {
             errorType: error?.constructor?.name,
             errorStack: error instanceof Error ? error.stack?.substring(0, 200) : undefined
           });
+          // Propagate error to listener (for UI toasts, etc.)
+          if (this.onErrorCallback) {
+            this.onErrorCallback(error);
+          }
         },
         onUsageUpdate: this.onUsageUpdate, // Pass usage callback
         onFinishCallback: this.onFinishCallback, // Pass finish callback for notifications

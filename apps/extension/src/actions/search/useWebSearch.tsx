@@ -2,7 +2,7 @@
  * Web Search Tool
  * Allows AI to search the web for current information
  * 
- * AI SDK v5: Uses inputSchema (not parameters) for tool definition
+ * AI SDK v6: Uses inputSchema (not parameters) for tool definition
  */
 
 import { useEffect } from 'react';
@@ -51,7 +51,7 @@ IMPORTANT: Always cite sources in your response using [Source Title](url) format
 
 /**
  * Execute web search using configured provider.
- * AI SDK v5: Input is typed from searchSchema (SearchParams)
+ * AI SDK v6: Input is typed from searchSchema (SearchParams)
  */
 async function executeWebSearch(input: SearchParams): Promise<SearchResults> {
     // Destructure input with defaults from schema
@@ -150,7 +150,7 @@ export function useWebSearch(): void {
     useEffect(() => {
         log.info('Registering web search tool');
 
-        // AI SDK v5: Use inputSchema instead of parameters
+        // AI SDK v6: Use inputSchema instead of parameters
         registerTool({
             name: WEB_SEARCH_TOOL_NAME,
             description: TOOL_DESCRIPTION,

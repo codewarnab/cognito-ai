@@ -123,7 +123,7 @@ export function getSearchOnlyTools(): string[] {
 
 /**
  * Gets the list of active tools based on search mode.
- * Used with AI SDK v5's activeTools parameter to limit available tools.
+ * Used with AI SDK v6's activeTools parameter to limit available tools.
  * 
  * @param searchEnabled - Whether search mode is enabled
  * @returns Array of active search tool names, or empty array if disabled

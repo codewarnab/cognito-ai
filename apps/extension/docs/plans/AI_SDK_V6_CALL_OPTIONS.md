@@ -3,7 +3,7 @@
 > ⚠️ **PREREQUISITE**: This implementation plan is only applicable **AFTER upgrading to AI SDK v6**.
 > The `callOptionsSchema` and `prepareCall` features are part of the new `ToolLoopAgent` class in AI SDK v6.
 > 
-> **Current Status**: Using AI SDK v5 with `streamText`/`generateText`
+> **Current Status**: Using AI SDK v6 with `streamText`/`generateText`
 > 
 > **Upgrade Tracking**: Monitor [AI SDK v6 Release](https://github.com/vercel/ai) for stable release.
 

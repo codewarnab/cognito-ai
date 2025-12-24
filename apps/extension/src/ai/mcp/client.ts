@@ -1,5 +1,5 @@
 /**
- * MCP Client Manager for AI SDK v5
+ * MCP Client Manager for AI SDK v6
  * Handles dynamic MCP server connections and tool integration
  * 
  * Enhanced with comprehensive error handling:

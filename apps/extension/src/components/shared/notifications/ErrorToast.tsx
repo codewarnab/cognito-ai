@@ -40,7 +40,7 @@ export const ErrorToast: React.FC<ErrorToastProps> = ({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -20, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed top-5 right-5 z-[10000] max-w-[400px] bg-amber-400/15 border border-amber-400/40 rounded-xl shadow-[0_8px_24px_rgba(218,165,32,0.3),0_0_40px_rgba(255,215,0,0.15)] backdrop-blur-[12px] overflow-hidden"
+                    className="fixed top-5 right-1 z-[10000] max-w-[380px] bg-amber-400/15 border border-amber-400/40 rounded-xl shadow-[0_8px_24px_rgba(218,165,32,0.3),0_0_40px_rgba(255,215,0,0.15)] backdrop-blur-[12px] overflow-hidden"
                 >
                     <div className="flex items-start gap-3 px-4 py-3.5">
                         <div className="shrink-0 text-amber-400 flex items-center justify-center w-7 h-7 bg-amber-400/20 rounded-lg">

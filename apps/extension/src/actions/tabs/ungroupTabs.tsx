@@ -1,6 +1,6 @@
 /**
- * UngroupTabs Tool for AI SDK v5
- * Migrated from CopilotKit useFrontendTool to AI SDK v5 tool format
+ * UngroupTabs Tool for AI SDK v6
+ * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Ungroup tabs by removing them from their tab groups.
  * Can ungroup all tabs, specific groups by name/ID, or tabs from multiple groups at once.
@@ -26,7 +26,7 @@ export function useUngroupTabs() {
     useEffect(() => {
         log.info('🔧 Registering ungroupTabs tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'ungroupTabs',
             description: `Remove tabs from their groups while keeping tabs open. Can ungroup all groups or specific groups by name/ID.

@@ -3,7 +3,7 @@
  * 
  * Migrated from src/sidepanel.tsx
  * Contains the main side panel UI logic including:
- * - AI Chat interface with AI SDK v5
+ * - AI Chat interface with AI SDK v6
  * - Thread management
  * - Voice mode
  * - MCP Manager
@@ -69,7 +69,7 @@ import { useSandbox } from "@/hooks/sandbox";
 import { handleAPIError } from "@/utils/errors";
 
 /**
- * Inner component that uses AI SDK v5
+ * Inner component that uses AI SDK v6
  */
 function AIChatContent() {
     const log = createLogger("SidePanel-AI-SDK");
@@ -178,7 +178,7 @@ function AIChatContent() {
         },
     });
 
-    // Use AI SDK v5 chat hook
+    // Use AI SDK v6 chat hook
     const aiChat = useAIChat({
         threadId: currentThreadId || 'default',
         onError: (error) => {

@@ -1,5 +1,5 @@
 /**
- * GetAllTabs Tool for AI SDK v5
+ * GetAllTabs Tool for AI SDK v6
  * 
  * Gets information about all open browser tabs
  */
@@ -24,7 +24,7 @@ export function useGetAllTabs() {
     useEffect(() => {
         log.info('🔧 Registering getAllTabs tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'getAllTabs',
             description: `Get all open tabs across browser windows with titles, URLs, IDs, and active status.

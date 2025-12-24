@@ -1,7 +1,7 @@
 # Research Workflow Memory Optimization - Corrections & Issues
 
 ## Date: December 8, 2025
-## Reviewer: AI SDK v5 Documentation Validation
+## Reviewer: AI SDK v6 Documentation Validation
 
 ---
 
@@ -10,7 +10,7 @@
 ### 1. **PrepareStep Signature** ✅
 **Status**: Now corrected in main plan
 
-**Correct AI SDK v5 Signature**:
+**Correct AI SDK v6 Signature**:
 ```typescript
 type PrepareStepFunction<TOOLS extends Record<string, Tool>> = (options: {
   steps: Array<StepResult<TOOLS>>;
@@ -191,7 +191,7 @@ export function useReadPageContentTool() {
 // In workflow systemPrompt or initialization
 system: `[RESEARCH_WORKFLOW_ACTIVE]\nYou are a Research Workflow Agent...`
 
-// Or use experimental_context (AI SDK v5 feature)
+// Or use experimental_context (AI SDK v6 feature)
 experimental_context: { workflowType: 'research' }
 
 // Then in tool:
@@ -299,7 +299,7 @@ const result = await generateText({
 ---
 
 ### 2. **Use `experimental_context` for Workflow Detection**
-**AI SDK v5 Feature**:
+**AI SDK v6 Feature**:
 ```typescript
 // In generateText call:
 experimental_context: {
@@ -373,7 +373,7 @@ return {
 ### Phase 4: Background Cleanup ✅ (Already corrected to 30min)
 
 ### Phase 5: PrepareStep Implementation
-- [ ] **Fix signature to match AI SDK v5**
+- [ ] **Fix signature to match AI SDK v6**
 - [ ] **Use `steps` array instead of `toolResults`**
 - [ ] **Simplify step counting logic**
 - [ ] **Consider using `onStepFinish` for tracking**
@@ -384,7 +384,7 @@ return {
 - [ ] **Update to mention auto-storage behavior**
 
 ### Phase 7: Testing
-- [ ] **Test with AI SDK v5 `experimental_context`**
+- [ ] **Test with AI SDK v6 `experimental_context`**
 - [ ] **Verify step counting logic**
 - [ ] **Check message truncation works**
 
@@ -445,10 +445,10 @@ const result = await generateText({
 
 **All Issues Fixed**: ✅
 - Updated main implementation plan
-- Corrected AI SDK v5 types
+- Corrected AI SDK v6 types
 - Simplified architecture
 
 **Ready for Implementation**: ✅
 - Follow updated plan in `RESEARCH_WORKFLOW_MEMORY_OPTIMIZATION.md`
 - Use corrections from this document
-- Test with AI SDK v5 types
+- Test with AI SDK v6 types

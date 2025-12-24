@@ -259,7 +259,7 @@ export function useOrganizeBookmarks() {
     useEffect(() => {
         log.info('🔧 Registering organizeBookmarks tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'organizeBookmarks',
             description: `Analyze bookmarks and provide intelligent organization suggestions using pattern detection and AI analysis. Use when user asks "organize my bookmarks", "clean up bookmarks", "suggest bookmark folders", "how should I organize my bookmarks", "find duplicate bookmarks", or "help me structure my bookmarks better". This tool performs comprehensive analysis including: (1) Domain-based grouping - identifies bookmarks from the same website that should be grouped together, (2) Keyword pattern detection - finds bookmarks with similar titles/topics (tutorials, documentation, blogs, tools, etc.) that could be organized into category folders, (3) Duplicate detection - finds exact duplicate URLs saved multiple times, (4) Folder distribution analysis - shows how bookmarks are currently distributed and suggests improvements. Returns actionable suggestions for creating new folders, moving bookmarks to better locations, and removing duplicates. Does NOT automatically make changes unless 'autoCreate' is true - requires user consent. Each suggestion includes reasoning and affected bookmark counts. Use this when user wants to improve their bookmark organization but isn't sure how. The tool analyzes the entire bookmark collection (or specific folder) and provides a comprehensive organization plan. Particularly useful for users with 50+ bookmarks who have lost track of their structure.`,

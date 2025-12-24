@@ -1,8 +1,8 @@
 /**
- * Tool Registry for AI SDK v5
+ * Tool Registry for AI SDK v6
  * Manages tool definitions and execution for Chrome Extension actions
  * 
- * AI SDK v5 Changes:
+ * AI SDK v6 Changes:
  * - `parameters` → `inputSchema` for tool definitions
  * - `args` → `input` for tool call arguments
  * - `result` → `output` for tool call results
@@ -19,9 +19,9 @@ export interface ToolDefinition<TInput = unknown, TOutput = unknown> {
   name: string;
   /** Description for the AI model to understand tool usage */
   description: string;
-  /** Input schema (AI SDK v5 - replaces 'parameters') */
+  /** Input schema (AI SDK v6 - replaces 'parameters') */
   inputSchema: z.ZodSchema<TInput>;
-  /** Optional output schema for validation (AI SDK v5) */
+  /** Optional output schema for validation (AI SDK v6) */
   outputSchema?: z.ZodSchema<TOutput>;
   /** Execute function - receives validated input */
   execute: (input: TInput, abortSignal?: AbortSignal) => Promise<TOutput>;
@@ -43,12 +43,12 @@ export interface LegacyToolDefinition {
 }
 
 /**
- * Global tool registry - stores tools in AI SDK v5 format
+ * Global tool registry - stores tools in AI SDK v6 format
  */
 const tools = new Map<string, ToolDefinition<any, any>>();
 
 /**
- * Normalize tool definition to AI SDK v5 format.
+ * Normalize tool definition to AI SDK v6 format.
  * Accepts either the new inputSchema or legacy parameters property.
  */
 function normalizeToolDefinition(
@@ -69,8 +69,8 @@ function normalizeToolDefinition(
 }
 
 /**
- * Register a tool with the AI SDK v5
- * Accepts both AI SDK v5 format (inputSchema) and legacy format (parameters)
+ * Register a tool with the AI SDK v6
+ * Accepts both AI SDK v6 format (inputSchema) and legacy format (parameters)
  */
 export function registerTool(definition: ToolDefinition<any, any> | LegacyToolDefinition) {
   if (tools.has(definition.name)) {
@@ -85,7 +85,7 @@ export function registerTool(definition: ToolDefinition<any, any> | LegacyToolDe
 }
 
 /**
- * AI SDK v5 tool format returned by getAllTools
+ * AI SDK v6 tool format returned by getAllTools
  */
 export interface AISDKv5Tool {
   description: string;
@@ -95,7 +95,7 @@ export interface AISDKv5Tool {
 }
 
 /**
- * Get all registered tools in AI SDK v5 format
+ * Get all registered tools in AI SDK v6 format
  * Tools are already stored with inputSchema, this wraps execute with abort handling
  */
 export function getAllTools(abortSignal?: AbortSignal): Record<string, AISDKv5Tool> {

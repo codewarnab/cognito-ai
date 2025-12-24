@@ -14,8 +14,6 @@ export interface ToolCardProps {
 }
 
 export function ToolCard({ title, subtitle, state, icon, children }: ToolCardProps) {
-  const stateClass = state === 'loading' ? 'tool-card-loading' :
-    state === 'success' ? 'tool-card-success' : 'tool-card-error';
 
   return (
     <div className={`rounded-[var(--radius-md)] p-[var(--spacing-md)] my-[var(--spacing-sm)] border border-[var(--color-border)] bg-[var(--color-background)] transition-all duration-200 ease-out 

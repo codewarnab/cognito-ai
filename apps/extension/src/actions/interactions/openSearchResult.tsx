@@ -1,5 +1,5 @@
 /**
- * OpenSearchResult Tool for AI SDK v5
+ * OpenSearchResult Tool for AI SDK v6
  * Open specific search results by rank from the current Google/Bing search results page
  * Supports opening single or multiple results in new tabs
  */
@@ -41,7 +41,7 @@ export function useOpenSearchResultTool() {
     useEffect(() => {
         log.info('🔧 Registering openSearchResult tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'openSearchResult',
             description: `Open search result(s) from Google/Bing by rank. Opens in background tabs, returns tabIds for switching.

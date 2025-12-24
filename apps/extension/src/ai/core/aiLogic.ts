@@ -1,6 +1,6 @@
 /**
  * Frontend AI Logic
- * Direct AI backend integration using AI SDK v5
+ * Direct AI backend integration using AI SDK v6
  * Runs directly in the UI thread, no service worker needed
  */
 

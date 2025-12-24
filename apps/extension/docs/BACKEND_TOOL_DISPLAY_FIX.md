@@ -28,7 +28,7 @@ Because the `writer` receives `text-delta` events, the `ChatMessages` component 
 
 ## Proposed Fix
 
-To fix this, `apps/extension/src/ai/backend/backendChatWithTools.ts` must be updated to emit structured events that the AI SDK v5 frontend hooks recognize.
+To fix this, `apps/extension/src/ai/backend/backendChatWithTools.ts` must be updated to emit structured events that the AI SDK v6 frontend hooks recognize.
 
 ### 1. Update Tool Call Handling
 Replace the text delta emission with a `tool-call` event.

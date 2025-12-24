@@ -13,7 +13,7 @@ console.log();
 console.log('📋 Test Overview:');
 console.log('  1. Retrieve all registered extension tools');
 console.log('  2. Filter out MCP tools (voice mode uses extension tools only)');
-console.log('  3. Convert tools from AI SDK v5 format to Live API format');
+console.log('  3. Convert tools from AI SDK v6 format to Live API format');
 console.log('  4. Validate all converted tool declarations');
 console.log('  5. Verify tool execute functions are available');
 console.log();

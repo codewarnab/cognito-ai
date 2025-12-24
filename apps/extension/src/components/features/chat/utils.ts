@@ -1,6 +1,6 @@
 import type { Message } from './types';
 
-// Helper to extract text content from AI SDK v5 parts array
+// Helper to extract text content from AI SDK v6 parts array
 export const getMessageContent = (message: Message): string => {
     try {
         if (!message || !message.parts || message.parts.length === 0) return '';

@@ -1,5 +1,5 @@
 /**
- * SwitchTabs Tool for AI SDK v5
+ * SwitchTabs Tool for AI SDK v6
  * Handles switching focus to an existing tab by URL or tab ID
  * This is separate from openTab which only opens new/current tabs
  */
@@ -27,7 +27,7 @@ export function useSwitchTabsTool() {
     useEffect(() => {
         log.info('🔧 Registering switchTabs tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'switchTabs',
             description: `Switch focus to an already-open tab by URL or tab ID.

@@ -1,6 +1,6 @@
 /**
  * Tool Converter for Gemini API
- * Converts AI SDK v5 tool format (with Zod schemas) to Gemini API format
+ * Converts AI SDK v6 tool format (with Zod schemas) to Gemini API format
  */
 
 import { z } from 'zod';
@@ -318,7 +318,7 @@ export function zodToGeminiAPISchema(schema: z.ZodSchema, parentContext?: string
 }
 
 /**
- * Convert a tool definition from AI SDK v5 format to Gemini API format
+ * Convert a tool definition from AI SDK v6 format to Gemini API format
  */
 export function convertToolToGeminiAPIFormat(
     toolName: string,
@@ -327,7 +327,7 @@ export function convertToolToGeminiAPIFormat(
     try {
         log.info(`🔄 Converting tool: ${toolName}`);
 
-        // AI SDK v5: Use inputSchema instead of parameters
+        // AI SDK v6: Use inputSchema instead of parameters
         const inputSchema = toolDef.inputSchema;
 
         // Log the input schema for debugging
@@ -427,11 +427,11 @@ export function convertAllTools(
                 log.warn(`⚠️ Tool ${toolName} has no description, using fallback`);
             }
 
-            // Convert to ToolDefinition format (AI SDK v5: inputSchema)
+            // Convert to ToolDefinition format (AI SDK v6: inputSchema)
             const normalizedTool: ToolDefinition = {
                 name: toolName,
                 description: toolDef.description || `Tool: ${toolName}`,
-                inputSchema: toolDef.inputSchema, // AI SDK v5: inputSchema
+                inputSchema: toolDef.inputSchema, // AI SDK v6: inputSchema
                 execute: toolDef.execute,
             };
 

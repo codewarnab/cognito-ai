@@ -25,7 +25,7 @@ export function useCreateBookmark() {
     useEffect(() => {
         log.info('🔧 Registering createBookmark tool...');
 
-        // Register the tool with AI SDK v5
+        // Register the tool with AI SDK v6
         registerTool({
             name: 'createBookmark',
             description: `Save a bookmark to Chrome bookmarks. Use when user wants to "bookmark this", "save page", "add to bookmarks". Can specify folder (default: "Other bookmarks"). Returns bookmark ID and location. REQUIRES CONSENT: Ask "Want me to bookmark this?" first. Cannot bookmark chrome:// pages.`,

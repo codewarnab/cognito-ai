@@ -1,8 +1,8 @@
 /**
- * Tool Call Renderer for AI SDK v5
+ * Tool Call Renderer for AI SDK v6
  * Renders tool calls from AI messages using registered tool UI renderers
  * 
- * IMPORTANT: This component handles the AI SDK v5 tool execution flow:
+ * IMPORTANT: This component handles the AI SDK v6 tool execution flow:
  * - tool-call part: Tool invocation (input available, waiting for result)
  * - tool-result part: Tool completion (output available)
  * 
@@ -19,14 +19,14 @@ import { CompactToolRenderer } from './CompactToolRenderer';
 const log = createLogger('ToolPartRenderer', 'UI_CHAT');
 
 interface ToolPartRendererProps {
-  part: any; // Tool part from AI SDK v5 message
+  part: any; // Tool part from AI SDK v6 message
   messageId: string;
   addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void;
 }
 
 /**
  * Renders a single tool part
- * Handles AI SDK v5 tool call formats
+ * Handles AI SDK v6 tool call formats
  */
 export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRendererProps) {
   const { renderTool, hasRenderer } = useToolUI();
@@ -40,8 +40,8 @@ export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRen
       let output: any;
       let state: 'input-streaming' | 'input-available' | 'output-available' | 'output-error' = 'input-available';
 
-      // Handle AI SDK v5 tool-call parts (tool is executing, no result yet)
-      // Supports both 'tool-call' (legacy) and 'tool-input-available' (AI SDK v5)
+      // Handle AI SDK v6 tool-call parts (tool is executing, no result yet)
+      // Supports both 'tool-call' (legacy) and 'tool-input-available' (AI SDK v6)
       if (part.type === 'tool-call' || part.type === 'tool-input-available') {
         toolName = part.toolName;
         toolCallId = part.toolCallId;
@@ -51,7 +51,7 @@ export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRen
         state = 'input-available'; // This means "executing/loading"
       }
       // Handle tool-result parts (tool execution completed)
-      // Supports both 'tool-result' (legacy) and 'tool-output-available' (AI SDK v5)
+      // Supports both 'tool-result' (legacy) and 'tool-output-available' (AI SDK v6)
       else if (part.type === 'tool-result' || part.type === 'tool-output-available') {
         toolName = part.toolName;
         toolCallId = part.toolCallId;
