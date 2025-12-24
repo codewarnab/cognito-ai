@@ -11,6 +11,11 @@ import type { Reminder } from "./types";
 
 const log = createLogger("Actions-Reminders-Create");
 
+/**
+ * Registers the 'createReminder' tool.
+ * This tool enables the AI to schedule browser notifications for the user.
+ * It requires a specific date/time and uses AI-generated titles and descriptions.
+ */
 export function useCreateReminderAction() {
     const { registerToolUI, unregisterToolUI } = useToolUI();
 

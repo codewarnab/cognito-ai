@@ -29,10 +29,17 @@ export const useModelStore = create<ModelState>()(
     isHydrated: false,
 
     // Actions
+    /**
+     * Sets the current AI mode (local, remote, agent, adaptive).
+     * Also updates the conversation start mode.
+     */
     setMode: (mode: AIMode) => {
       set({ mode, conversationStartMode: mode });
     },
 
+    /**
+     * Sets the selected remote model (e.g., gemini-1.5-pro, claude-3-sonnet).
+     */
     setRemoteModel: (remoteModel: RemoteModel) => {
       set({ remoteModel });
     },
@@ -45,6 +52,10 @@ export const useModelStore = create<ModelState>()(
       set({ conversationStartMode: null });
     },
 
+    /**
+     * Checks if a valid API key is configured for the current provider.
+     * Updates the `hasApiKey` state.
+     */
     refreshApiKeyStatus: async () => {
       try {
         const result = await chrome.storage.local.get('ai_provider_config');

@@ -43,6 +43,10 @@ export const useChatStore = create<ChatState>()(
         set({ currentThreadId: id });
       },
 
+      /**
+       * Creates a new chat thread and sets it as active.
+       * Resets local message state.
+       */
       createNewThread: async () => {
         const { createThread, setLastActiveThreadId } = await import('@/db');
         const thread = await createThread();
@@ -60,6 +64,10 @@ export const useChatStore = create<ChatState>()(
         return thread.id;
       },
 
+      /**
+       * Selects an existing thread and loads its messages.
+       * @param threadId - ID of the thread to load
+       */
       selectThread: async (threadId: string) => {
         const { loadThreadMessages, setLastActiveThreadId } = await import('@/db');
         const storedMessages = await loadThreadMessages(threadId);
@@ -79,6 +87,9 @@ export const useChatStore = create<ChatState>()(
         await setLastActiveThreadId(threadId);
       },
 
+      /**
+       * Clears all messages from the current thread.
+       */
       clearChat: async () => {
         const threadId = get().currentThreadId;
         if (!threadId) return;

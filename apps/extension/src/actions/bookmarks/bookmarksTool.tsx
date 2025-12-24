@@ -61,6 +61,10 @@ type SimplifiedNode = {
   bookmarkCount?: number;
 };
 
+/**
+ * Recursively simplifies the bookmark tree for AI consumption.
+ * limits depth and removes unnecessary fields to reduce token usage.
+ */
 function simplifyTree(node: chrome.bookmarks.BookmarkTreeNode, includeBookmarks: boolean): SimplifiedNode {
   const isFolder = !node.url;
   const simplified: SimplifiedNode = {
@@ -82,6 +86,9 @@ function simplifyTree(node: chrome.bookmarks.BookmarkTreeNode, includeBookmarks:
   return simplified;
 }
 
+/**
+ * Recursively counts the total number of bookmarks within a node and its children.
+ */
 function countBookmarksInNode(node: chrome.bookmarks.BookmarkTreeNode): number {
   if (!node.children) return node.url ? 1 : 0;
   return node.children.reduce((count, child) => count + (child.url ? 1 : countBookmarksInNode(child)), 0);
@@ -146,6 +153,10 @@ async function getAllBookmarks(): Promise<BookmarkInfo[]> {
   return bookmarks;
 }
 
+/**
+ * Analyzes the bookmark tree to find duplicates, empty folders, and long lists.
+ * Used for the 'organize' action to suggest cleanups.
+ */
 function analyzeBookmarkPatterns(bookmarks: BookmarkInfo[]) {
   const newFolders: { name: string; reason: string; bookmarkCount: number; domains: string[] }[] = [];
   const moves: { bookmarkId: string; bookmarkTitle: string; currentFolder: string; suggestedFolder: string; reason: string }[] = [];
@@ -201,6 +212,13 @@ const paramsSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('organize'), folderId: z.string().optional().describe('Folder ID to analyze'), autoCreate: z.boolean().optional().default(false).describe('Auto-create suggested folders'), minGroupSize: z.number().optional().default(3).describe('Minimum size for new folder suggestions') })
 ]);
 
+/**
+ * Registers the 'bookmarksTool'.
+ * This comprehensive tool allows the AI to manage bookmarks, including:
+ * - Creating, deleting, and searching bookmarks
+ * - Listing the bookmark tree (with simplified/depth-limited views)
+ * - Removing duplicates and organizing folders
+ */
 export function useBookmarksTool() {
   const { registerToolUI, unregisterToolUI } = useToolUI();
   useEffect(() => {

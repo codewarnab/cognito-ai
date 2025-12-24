@@ -6,6 +6,10 @@ import { useToolUI } from "@/ai/tools/components";
 
 const log = createLogger("Actions-Interactions-Click");
 
+/**
+ * Registers the 'clickElement' tool.
+ * This tool allows the AI to click on elements within the active tab using CSS selectors.
+ */
 export function useClickElementTool() {
     const { registerToolUI, unregisterToolUI } = useToolUI();
 

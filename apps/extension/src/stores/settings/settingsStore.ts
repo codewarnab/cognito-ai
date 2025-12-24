@@ -55,6 +55,10 @@ export const useSettingsStore = create<SettingsState>()(
     isHydrated: false,
 
     // Actions
+    /**
+     * Sets the API key for a specific AI provider (google, anthropic, openai).
+     * Also updates legacy storage for backward compatibility.
+     */
     setApiKey: async (provider, key) => {
       const keyField = `${provider}ApiKey` as keyof SettingsState;
       const state = get();
@@ -81,6 +85,9 @@ export const useSettingsStore = create<SettingsState>()(
 
     setPreferredMode: (mode) => set({ preferredMode: mode }),
 
+    /**
+     * Toggles a built-in tool on or off in the user's preferences.
+     */
     toggleTool: (toolId, enabled) => {
       const tools = [...get().enabledBuiltInTools];
       const index = tools.indexOf(toolId);
@@ -108,6 +115,10 @@ export const useSettingsStore = create<SettingsState>()(
 
     setBackendModel: (model) => set({ backendModel: model }),
 
+    /**
+     * Loads settings from Chrome storage, including migration from legacy keys.
+     * Called automatically on store initialization.
+     */
     loadFromStorage: async () => {
       // Load from legacy storage locations for migration
       const [providerConfig, modelConfig] = await Promise.all([
