@@ -4,14 +4,17 @@ This document explains how **server-executed tools** work in the Cognito AI exte
 
 ## Overview
 
-In backend mode, certain tools (like `webSearch`, `retrieve`, `deepWebSearch`) are executed on the server rather than in the browser. This is controlled by the `searchEnabled` flag.
+In backend mode, certain tools are executed on the server rather than in the browser:
 
-| Mode | Search Enabled | Tool Execution | API Keys |
-|------|---------------|----------------|----------|
-| Backend | ✅ Yes | Server-side | Backend manages |
-| Backend | ❌ No | N/A (no search) | N/A |
-| BYOK | ✅ Yes | Frontend (local) | User provides |
-| BYOK | ❌ No | N/A (no search) | N/A |
+- **Search Tools** (`webSearch`, `retrieve`, `deepWebSearch`) - Controlled by the `searchEnabled` flag
+- **YouTube Tool** (`getYouTubeTranscript`) - Controlled by the `youtubeEnabled` flag
+
+| Mode | Feature Enabled | Tool Execution | API Keys |
+|------|----------------|----------------|----------|
+| Backend | ✅ searchEnabled | Server-side (Tavily/Jina) | Backend manages |
+| Backend | ✅ youtubeEnabled | Server-side (Supadata) | Backend manages |
+| Backend | ❌ Disabled | N/A | N/A |
+| BYOK | ✅ Enabled | Frontend (local) | User provides |
 
 ---
 
@@ -223,11 +226,25 @@ case 'tool_result':
 
 ## Available Server Tools
 
+### Search Tools (searchEnabled)
+
 | Tool | Description | External API | Environment Variable |
 |------|-------------|--------------|---------------------|
 | `webSearch` | Single query web search | Tavily | `TAVILY_API_KEY` |
 | `retrieve` | Extract content from URL | Jina Reader | `JINA_API_KEY` |
 | `deepWebSearch` | Parallel multi-query search | Tavily | `TAVILY_API_KEY` |
+
+### YouTube Tool (youtubeEnabled)
+
+| Tool | Description | External API | Environment Variable |
+|------|-------------|--------------|---------------------|
+| `getYouTubeTranscript` | Fetch video transcript and metadata | Supadata | `SUPADATA_API_KEY` |
+
+**Benefits of server-side YouTube transcript:**
+- Redis caching (24h TTL) - faster responses for frequently requested videos
+- No client-side API tokens needed
+- Centralized rate limiting
+- Consistent response format across users
 
 ---
 
@@ -340,6 +357,7 @@ export const SERVER_EXECUTED_TOOLS = [
     'webSearch', 
     'retrieve', 
     'deepWebSearch',
+    'getYouTubeTranscript',
     'myTool',  // Add your tool name
 ];
 ```

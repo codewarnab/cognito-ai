@@ -249,7 +249,7 @@ export async function executeToolLocally(
  * Tools that are executed on the backend when search is enabled (in backend mode).
  * These should NOT be included in schemas sent to backend when excludeServerTools is true.
  */
-export const SERVER_EXECUTED_TOOLS = ['webSearch', 'retrieve', 'deepWebSearch'];
+export const SERVER_EXECUTED_TOOLS = ['webSearch', 'retrieve', 'deepWebSearch', 'getYouTubeTranscript'];
 
 /**
  * Get tool schemas for sending to backend

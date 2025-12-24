@@ -32,7 +32,7 @@ import { parseProviderError } from '../errors/handlers';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../setup';
 import { streamBackendChatWithTools } from '../backend';
-import { useSettingsStore } from '@/stores';
+import { useSettingsStore, useToolsStore } from '@/stores';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
 
@@ -109,6 +109,12 @@ export async function streamAIResponse(params: {
 
     log.info('🔍 Backend search mode:', { searchEnabled, searchProvider: searchSettings.defaultProvider });
 
+    // Check if YouTube transcript tool is enabled - if so, execute it server-side for better caching
+    const enabledMap = useToolsStore.getState().enabledMap;
+    const youtubeEnabled = enabledMap['getYouTubeTranscript'] === true;
+
+    log.info('📺 Backend YouTube mode:', { youtubeEnabled });
+
     return streamBackendChatWithTools({
       messages,
       systemPrompt: undefined, // Backend will use mode-appropriate prompt
@@ -120,6 +126,7 @@ export async function streamAIResponse(params: {
       onFinishCallback,
       initialPageContext, // Pass page context for page-aware conversations
       searchEnabled, // Tell backend to add webSearch tool
+      youtubeEnabled, // Tell backend to add getYouTubeTranscript tool
       onToolCall: (tc) => log.info('Tool call:', { name: tc.name, id: tc.id }),
       onToolResult: (tr) => log.info('Tool result:', { id: tr.id, isError: tr.isError }),
     });

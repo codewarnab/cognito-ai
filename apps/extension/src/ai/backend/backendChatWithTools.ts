@@ -160,6 +160,12 @@ export interface BackendChatWithToolsParams {
      * Frontend will NOT send webSearch in tool schemas.
      */
     searchEnabled?: boolean;
+    /**
+     * Whether YouTube transcript tool should be executed on the server.
+     * When true, backend will add getYouTubeTranscript tool and execute it server-side.
+     * This allows the backend to use Supadata API without exposing tokens to the client.
+     */
+    youtubeEnabled?: boolean;
 }
 
 /**
@@ -287,7 +293,8 @@ export async function streamBackendChatWithTools(
         onToolCall,
         onToolResult,
         initialPageContext,
-        searchEnabled, // NEW: Whether search mode is enabled
+        searchEnabled, // Whether search mode is enabled
+        youtubeEnabled, // Whether YouTube transcript should be server-executed
     } = params;
 
     log.info('Starting backend chat with tools', {
@@ -364,8 +371,9 @@ export async function streamBackendChatWithTools(
                                     maxSteps: 1, // One step at a time for tool execution
                                     // Only send page context on first request, not on tool result follow-ups
                                     pageContext: stepCount === 1 ? initialPageContext : undefined,
-                                    // Tell backend to add and execute webSearch tool
+                                    // Tell backend to add and execute server-side tools
                                     searchEnabled: searchEnabled,
+                                    youtubeEnabled: youtubeEnabled,
                                 }),
                                 signal: abortSignal || controller.signal,
                             }
