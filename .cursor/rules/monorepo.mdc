@@ -9,7 +9,7 @@ This is a **pnpm monorepo** with the following packages:
 
 | Package | Path | Tech Stack |
 |---------|------|------------|
-| `@cognito/extension` | `apps/extension/` | WXT, React 19, TypeScript, Tailwind CSS v4 |
+| `@cognito/extension` | `apps/extension/` | WXT, React 19, TypeScript, Tailwind CSS v4 , Ai sdk v6 |
 | `@cognito/docs` | `apps/docs/` | Next.js 16, Fumadocs, React 19 |
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers, Wrangler, TypeScript |
 | `@cognito/backend-vercel` | `packages/backend-vercel/` | Express.js, TypeScript, Vercel |

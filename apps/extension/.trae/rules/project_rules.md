@@ -7,18 +7,14 @@
 - Do not log secrets, API keys, or personally identifiable information.
 
 ## TypeScript Configuration
-- Strictness: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess` (`/c:/Users/User/code/hackathons/chrome-ai/tsconfig.json:46-61`).
-- Module resolution: `moduleResolution: bundler`, `resolveJsonModule: true` (`/c:/Users/User/code/hackathons/chrome-ai/tsconfig.json:64-65`).
+- Strictness: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess` (`tsconfig.json:46-61`).
+- Module resolution: `moduleResolution: bundler`, `resolveJsonModule: true` (`tsconfig.json:64-65`).
 - **CRITICAL**: Always use path aliases instead of relative paths; see canonical source at `.cursor/rules/coding-standards.mdc` for the complete import guide.
-- Path aliases (configured in `tsconfig.json:18-48`):
+- Path aliases (configured in `tsconfig.json`):
   - `~*` → `./src/*` (e.g., `import { something } from '~/utils/helper';`)
-  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';`)
+  - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler';` or `import { Button } from '@/components/ui/Button';`)
   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png';`)
   - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger';`)
-  - `@components` → `./src/components` (e.g., `import { Button } from '@components';`)
-  - `@components/*` → `./src/components/*` (e.g., `import { Button } from '@components/ui/Button';`)
-  - `@ai` → `./src/ai` (e.g., `import { ModelSetup } from '@ai';`)
-  - `@ai/*` → `./src/ai/*` (e.g., `import { ModelSetup } from '@ai/core/modelSetup';`)
 
 ## Imports and Modules
 - **CRITICAL**: Always use path aliases instead of deep relative paths; never use `../../` or `../../../` patterns.
@@ -26,20 +22,53 @@
 - Always use path aliases configured in `tsconfig.json`:
   - Logger: `import { createLogger } from '~logger';` (not `import { createLogger } from '../../logger';`)
   - Utils: `import { handleAPIError } from '@/utils/apiErrorHandler';` (not `import { handleAPIError } from '../utils/apiErrorHandler';`)
-  - Components: `import { Button } from '@components/ui/Button';` (not `import { Button } from '../../components/ui/Button';`)
+  - Components: `import { Button } from '@/components/ui/Button';` (not `import { Button } from '../../components/ui/Button';`)
   - Constants: `import { API_ENDPOINTS } from '@/constants/api';` (not `import { API_ENDPOINTS } from '../constants/api';`)
-  - AI: `import { ModelSetup } from '@ai/core/modelSetup';` (not `import { ModelSetup } from '../../ai/core/modelSetup';`)
+  - AI: `import { ModelSetup } from '@/ai/core/modelSetup';` (not `import { ModelSetup } from '../../ai/core/modelSetup';`)
   - Assets: `import icon from '@assets/icon.png';` (not `import icon from '../../assets/icon.png';`)
 - Group and sort imports consistently; rely on the Prettier sort-imports plugin.
 - Prefer named exports; avoid default exports for shared utilities.
 - **CRITICAL**: All import statements must be grouped at the top of the file; never define functions or constants between import blocks.
 - **CRITICAL**: Remove duplicate imports of the same identifier; consolidate into single import statement.
 
+## Environment Variables
+- **CRITICAL**: Always use the centralized `ENV` module from `@/utils/env` instead of directly accessing `import.meta.env` or `process.env`.
+- The `ENV` module provides typed access to all WXT environment variables with sensible defaults.
+- Examples:
+  ```typescript
+  // ✅ CORRECT - Use centralized ENV module
+  import { ENV } from '@/utils/env';
+  const workerUrl = ENV.ELEVENLABS_WORKER_URL;
+  const backendUrl = ENV.BACKEND_API_URL;
+  
+  // ❌ WRONG - Never access directly
+  const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
+  const backendUrl = process.env.WXT_BACKEND_API_URL;
+  ```
+- See `src/utils/env.ts` for all available environment variables with their default values.
+
 ## Logger Usage
 - Initialize a module-scoped logger and reuse it:
-  - `const log = createLogger('FeatureName');` or with context `createLogger('FeatureName', 'CONTEXT')` (`src/ai/core/modelSetup.ts:36`).
+  - `const log = createLogger('FeatureName', 'CATEGORY');` (`src/ai/core/modelSetup.ts:36`).
 - Levels: use `debug` for verbose state, `info` for normal operation, `warn` for recoverable issues, `error` for failures.
 - Do not include API keys or secrets in logs; sanitize error objects.
+
+## Logger Categories
+All `createLogger` calls MUST include a category as the second argument:
+
+```typescript
+import { createLogger } from '~logger';
+const log = createLogger('FeatureName', 'CATEGORY');
+```
+
+**Available Categories:**
+- **MCP**: `MCP_CLIENT`, `MCP_TOOLS`, `MCP_EXECUTION`, `MCP_AUTH`, `MCP_SSE`, `WEBMCP`
+- **Tools**: `TOOLS_REGISTRY`, `TOOLS_EXECUTION`, `TOOLS_VALIDATION`, `TOOLS_INTEGRATION`
+- **AI**: `AI_CHAT`, `AI_PROMPTS`, `AI_VOICE`, `AI_WEBSITE_DETECTION`
+- **Voice**: `VOICE_RECORDING`, `VOICE_CLIENT`, `VOICE_UI`, `VOICE_AUDIO`
+- **Memory**: `MEMORY_OPERATIONS`, `MEMORY_SUGGESTIONS`
+- **UI**: `UI_CHAT`, `UI_VOICE`, `UI_SETTINGS`, `UI_THREADS`, `UI_SIDEPANEL`, `UI_REMINDERS`
+- **System**: `BACKGROUND`, `STORAGE`, `UTILS`, `NOTIFICATIONS`, `CREDENTIALS`, `SEARCH`, `SETTINGS`, `WORKFLOW`, `BROWSER`, `ATTACHMENTS`, `CONTENT_SCRIPTS`
 
 ## Error Handling
 - Use standardized error types and helpers:
@@ -62,6 +91,7 @@
 - Derive UI state via hooks; avoid global mutable state.
 - Keep side effects inside `useEffect` with correct dependencies; guard async flows.
 - Expose callbacks with clear names (`onSendMessage`, `onError`, `onFinish`).
+- **CRITICAL (Zustand)**: Always use **selective subscriptions** when accessing Zustand stores in components. Never subscribe to the entire store with `useStore()` as it causes re-renders on ANY state change, leading to infinite update loops. Always use selectors: `useStore((s) => s.specificValue)` for each piece of state needed.
 - **CRITICAL**: Always include dependency arrays in `useImperativeHandle` (e.g., `[controls]`) to prevent unnecessary re-renders and stale closures.
 - For controlled/uncontrolled components: set control flags inside imperative methods, not in hook initialization, to preserve default behavior.
 - **CRITICAL**: Always call prop event handlers (onMouseEnter/onMouseLeave/etc.) unconditionally, even when internal control logic branches; only conditionally trigger internal animations to maintain React's prop contract.
@@ -71,7 +101,131 @@
 - **CRITICAL**: Observer pattern (subscribe/publish) should send real current state to new subscribers, not synthetic dummy triggers; if no current state exists, don't call callback immediately or document that it's notification-only.
 - **CRITICAL**: Use refs for values that need to stay current across closure boundaries in event handlers; closures capture variable values at creation time, causing stale state bugs when accessing state variables directly in callbacks registered during component initialization.
 
-## Component Best Practices (from Batch 2 Review)
+## React 19 Patterns
+This extension uses **React 19** with the following important patterns:
+
+### `ref` as a Prop (Preferred)
+In React 19, `ref` is passed as a regular prop instead of using `forwardRef`:
+
+```typescript
+// ✅ React 19 - ref as a regular prop
+interface MyComponentProps {
+  ref?: React.RefObject<HTMLDivElement | null>;
+  className?: string;
+}
+
+function MyComponent({ ref, className }: MyComponentProps) {
+  return <div ref={ref} className={className} />;
+}
+
+// ❌ Old React 18 pattern (still works but not preferred for new code)
+const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  return <div ref={ref} {...props} />;
+});
+```
+
+### `useRef` Null Handling
+`useRef<T>(null)` now returns `RefObject<T | null>` instead of `RefObject<T>`. Always include `| null` in the type:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+const containerRef = useRef<HTMLDivElement | null>(null);
+
+// ❌ Old pattern - no longer compatible
+const inputRef = useRef<HTMLInputElement>(null);
+```
+
+### Component Props Accepting Refs
+When defining component props that accept refs, always include `| null` in the RefObject type:
+
+```typescript
+// ✅ Correct - includes null for React 19 compatibility
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  submitButtonRef?: React.RefObject<HTMLButtonElement | null>;
+}
+
+// ❌ Incorrect - will cause type errors in React 19
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+}
+```
+
+## State Management (Zustand Stores)
+
+The extension uses Zustand for centralized state management with Chrome storage sync.
+
+**CRITICAL: Selective Subscriptions Required**
+
+Never subscribe to the entire store. Always use selectors to subscribe to specific state slices:
+
+```typescript
+// ❌ BAD - Causes infinite re-render loops
+const store = useToolsStore();
+
+// ✅ GOOD - Selective subscriptions
+const showModal = useToolsStore((s) => s.showModal);
+const setShowModal = useToolsStore((s) => s.setShowModal);
+const itemCount = useToolsStore((s) => s.itemCount);
+```
+
+| Store | Purpose |
+|-------|---------|
+| `useSettingsStore` | API keys, preferences, feature flags |
+| `useUINavigationStore` | Panel navigation, overlays, chat mode |
+| `useModelStore` | AI mode and model selection |
+| `useChatStore` | Messages, threads, usage tracking |
+| `useAttachmentsStore` | File, tab, PDF, YouTube attachments |
+| `useToolsStore` | Tool enabled states and counts |
+| `useVoiceModeStore` | Voice recording and ElevenLabs state |
+| `useMcpStore` | MCP server connections and status |
+
+**Usage Pattern:**
+```typescript
+import { useChatStore, type ChatState } from '@/stores';
+
+// Always type the state parameter in selectors
+const messages = useChatStore((state: ChatState) => state.messages);
+```
+
+See `src/stores/README.md` for detailed documentation.
+
+## Mode Architecture
+
+The extension uses 4 distinct "mode" concepts. Don't confuse them:
+
+| Type | Values | Purpose | Store |
+|------|--------|---------|-------|
+| `AIProviderMode` | `local`/`remote` | WHERE AI runs | `useModelStore.mode` |
+| `ToolsMode` | `chat`/`agent`/`adaptive`/`custom` | WHICH TOOLS available | `useToolsStore.currentMode` |
+| `ChatMode` | `text`/`voice` | User INPUT METHOD | `useUINavigationStore.chatMode` |
+| Backend Mode | `boolean` | HOW remote API is called | `useSettingsStore.useBackendMode` |
+
+### How Modes Interact
+
+```
+AIProviderMode = 'local'  → Chrome built-in AI (Gemini Nano)
+AIProviderMode = 'remote' → Check Backend Mode:
+  └─ useBackendMode = true  → Vercel backend (no key)
+  └─ useBackendMode = false → BYOK (direct Google AI API)
+```
+
+### Type Imports
+
+```typescript
+// AIProviderMode / AIMode
+import type { AIProviderMode, AIMode } from '@/stores/chat/types';
+
+// ToolsMode / ToolMode
+import type { ToolsMode } from '@/types/settings';
+import type { ToolMode } from '@/stores/tools/types';
+
+// ChatMode
+import type { ChatMode } from '@/stores/ui/types';
+```
+
+## Component Best Practices
 - Always define TypeScript interfaces for component props, even for simple components with single props like `size?: number`.
 - Never use inline `//` comments inside JSX attributes; use `{/* */}` JSX comments or move comments outside tags.
 - Export names must follow consistent naming conventions: use `Icon` suffix for all icon exports (e.g., `XMLIcon`, not `XML`).
@@ -89,8 +243,106 @@
 - **CRITICAL**: Tool counting functions must apply the same filtering logic as tool selection functions; count only enabled tools and exclude disabled/workflow-only tools to ensure accurate counts match actual available tools.
 
 ## Storage and Data
-- Use `@plasmohq/storage` for extension storage; avoid direct `localStorage` (`src/memory/store.ts:12`).
-- Maintain indices for efficient queries; update index on CRUD (`src/memory/store.ts:37`, `src/memory/store.ts:68`).
+- Use Chrome storage APIs (`chrome.storage.local`, `chrome.storage.sync`) for user settings and preferences.
+- Use Dexie (IndexedDB wrapper) for structured data like messages, threads, and usage tracking (`src/db/`).
+- Avoid direct `localStorage` in extension code; prefer Chrome storage APIs or Dexie for the data type.
+- Maintain indices for efficient queries; define Dexie schemas with appropriate indices (`src/db/database.ts`).
+- The extension is built with [WXT](https://wxt.dev/), not Plasmo; use WXT conventions for entrypoints and configuration.
+
+## Database Directory Structure (`src/db/`)
+- `database.ts` - Core Dexie database setup, schema definitions, and database instance
+- `index.ts` - Barrel export file for all database operations
+- `management.ts` - Database management utilities (clear, reset, migrations)
+- `messages.ts` - Message CRUD operations and queries
+- `threads.ts` - Thread management (create, update, delete, list)
+- `settings.ts` - Persistent settings storage via IndexedDB
+- `usage.ts` - Token usage tracking and aggregation
+- `types.ts` - TypeScript interfaces for database entities
+- `reportSections.ts` - Report section storage for research features
+- `researchSources.ts` - Research source tracking and management
+
+## AI SDK v6
+
+This extension uses **Vercel AI SDK v6** for all AI interactions.
+
+### Human-in-the-Loop Tool Approval
+
+For sensitive browser actions, the extension implements human-in-the-loop approval:
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `TOOLS_REQUIRING_APPROVAL` | `src/ai/setup/remoteMode.ts` | List of tools needing approval |
+| `TOOL_APPROVAL_CONFIG` | `src/ai/tools/approvalConfig.ts` | Per-tool domain extraction |
+| `approvalStore` | `src/stores/approval/` | Approval preferences (Zustand) |
+| `CompactToolRenderer` | `src/ai/tools/components/` | Approval UI rendering |
+
+**CRITICAL**: When registering custom tool UI, always pass `addToolOutput` for approval flow:
+```typescript
+registerToolUI('toolName', (state: ToolUIState, options) => {
+    return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
+});
+```
+
+See `docs/TOOL_APPROVAL_SYSTEM.md` for full architecture and diagrams.
+
+## AI Modes
+The extension supports multiple AI operational modes configured via `ToolsMode` (`src/types/settings.ts`):
+
+| Mode | Description | Prompt Used |
+|------|-------------|-------------|
+| `chat` | Conversational mode without tool execution | `chatModeSystemPrompt` |
+| `agent` | Full agentic mode with all tools pre-loaded | `agentModeSystemPrompt` |
+| `adaptive` | On-demand tool discovery mode for context efficiency | `adaptiveSystemPrompt` |
+| `custom` | User-defined tool selection | Varies |
+
+### Adaptive Mode
+Adaptive mode (`src/ai/prompts/templates/adaptivePrompt.ts`) enables efficient tool usage by:
+1. Loading only a lightweight **tool index** (name + description) instead of full tool definitions
+2. Using `discoverTools("keyword")` to search and retrieve full details for specific tools
+3. Using `executeTools` to orchestrate tool execution via JavaScript code
+4. Pre-loading common tools (readPageContent, takeScreenshot, getActiveTab) for direct access
+
+**Key Rules:**
+- Tools CANNOT be called directly by name in adaptive mode (except pre-loaded tools)
+- Always use `discoverTools` → `executeTools` workflow for non-pre-loaded tools
+- Verify task completion by reading page state after actions
+
+## Backend Integration
+
+The extension supports two modes for AI processing configured via `useSettingsStore.useBackendMode`:
+
+| Mode | Description | API Key Required |
+|------|-------------|------------------|
+| **Backend Mode** | Routes AI through hosted Vercel backend | No |
+| **BYOK Mode** | Direct calls to Google AI from extension | Yes |
+
+### Backend Module (`src/ai/backend/`)
+- `backendChat.ts` - Simple backend chat (no tools)
+- `backendChatWithTools.ts` - Full tool execution loop with frontend tools pattern
+- `frontendToolExecutor.ts` - Execute tools locally from backend `tool_call` events
+- `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
+
+### Frontend Tools Pattern
+When using backend mode with tools:
+1. Extension sends tool schemas to backend
+2. Backend streams `tool_call` events back
+3. Extension executes tools locally via `frontendToolExecutor`
+4. Results are sent back to backend to continue generation
+
+### Mode Toggling
+```typescript
+import { useSettingsStore } from '@/stores';
+
+// Check current mode
+const useBackendMode = useSettingsStore.getState().useBackendMode;
+
+// Switch modes
+useSettingsStore.getState().setUseBackendMode(true);  // Backend mode
+useSettingsStore.getState().setUseBackendMode(false); // BYOK mode
+```
+
+### Graceful Degradation
+When backend rate limits are exceeded, the extension automatically falls back to BYOK mode if the user has an API key configured. See `src/ai/backend/gracefulDegradation.ts`.
 
 ## Performance and UX
 - Avoid heavy operations on the UI thread; use offscreen where applicable (`public/offscreen.js:1`).
@@ -102,20 +354,64 @@
 - Never embed secrets in code or logs.
 - Validate user inputs and tool parameters.
 - Respect Chrome MV3 permissions and protected pages; handle injection failures gracefully (`src/errors/errorTypes.ts:535`).
-- **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')` to prevent regex injection and runtime errors.
+- **CRITICAL**: Escape regex metacharacters in user-provided strings before using them in `RegExp` constructors; use `.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')` to prevent regex injection and runtime errors.
 - **CRITICAL**: Never pass API keys in URL query parameters; always use request headers (e.g., `X-Goog-Api-Key`) to prevent exposure in logs, browser history, and proxy servers.
 
 ## DOM Data Extraction Security (CRITICAL)
-When extracting data from the DOM that will be sent to AI or backend:
-- **NEVER capture sensitive input values** (passwords, credit cards, SSN, etc.)
-- Always check if an input is sensitive before reading `input.value`:
-  - Sensitive types: `password`
-  - Sensitive autocomplete: `cc-number`, `cc-exp`, `cc-csc`, `current-password`, `new-password`
-  - Sensitive name/id patterns: `/password|card|cvv|csc|ssn|secret|pin/i`
-- **ALWAYS** add `// SECURITY:` comments when stripping sensitive data
-- Apply defense-in-depth: check at extraction, formatting, AND transport layers
-- Example: `value: isSensitiveInput(input) ? undefined : input.value`
-- See `.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
+
+When extracting data from the DOM that will be sent to AI or any backend, **NEVER capture sensitive input values**:
+
+### Sensitive Input Detection
+- **CRITICAL**: Always check if an input is sensitive before capturing `input.value`
+- Sensitive input types: `password`
+- Sensitive autocomplete values: `cc-number`, `cc-exp`, `cc-exp-month`, `cc-exp-year`, `cc-csc`, `cc-type`, `current-password`, `new-password`, `one-time-code`
+- Sensitive name/id patterns: `/password|passwd|card|cvv|cvc|csc|ssn|social.?security|secret|pin|security.?code|tax.?id|routing.?number|account.?number/i`
+
+### Implementation Pattern
+```typescript
+// SECURITY: Check if input is sensitive before capturing value
+function isSensitiveInput(input: HTMLInputElement): boolean {
+    const type = (input.type || '').toLowerCase();
+    const name = (input.name || '').toLowerCase();
+    const autocomplete = (input.autocomplete || '').toLowerCase();
+    
+    // SECURITY: Input types that are inherently sensitive
+    if (type === 'password') return true;
+    
+    // SECURITY: Autocomplete values indicating sensitive data
+    const sensitiveAutocomplete = ['cc-number', 'cc-exp', 'cc-csc', 'current-password', 'new-password'];
+    if (sensitiveAutocomplete.some(s => autocomplete.includes(s))) return true;
+    
+    // SECURITY: Patterns in name/id that indicate sensitive fields
+    if (/password|card|cvv|cvc|csc|ssn|secret|pin/i.test(name)) return true;
+    
+    return false;
+}
+
+// Usage:
+const data = {
+    type: input.type,
+    name: input.name,
+    // SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+    value: isSensitiveInput(input) ? undefined : (input.value || undefined),
+};
+```
+
+### Security Comments
+- **CRITICAL**: Always add `// SECURITY:` comments when stripping sensitive data
+- Comments must explain why the data is being stripped
+- Example: `// SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI`
+
+### Defense-in-Depth
+Apply security checks at multiple layers:
+1. **Extraction layer**: Strip values when reading from DOM (`extractInputs()`, `detectSearchBars()`)
+2. **Formatting layer**: Re-check before formatting data for AI (`formatPageContextForAI()`)
+3. **Transport layer**: Validate before sending to backend
+
+### Files Requiring Security Checks
+- `src/utils/tabs/pageContextExtractor.ts` - Main page context extraction
+- `src/actions/interactions/text-extraction.tsx` - Search bar detection
+- Any new code that reads `input.value` or form data from the DOM
 
 ## Build Scripts and Node.js Utilities
 - Always validate array bounds before accessing elements; add defensive checks with clear warning messages.
@@ -176,17 +472,6 @@ When extracting data from the DOM that will be sent to AI or backend:
 - Avoid double semicolons and other syntax redundancies; use single semicolon at statement ends.
 - **CRITICAL**: All CSS numeric values with units must include the unit identifier (px, %, em, etc.); unitless values are invalid except for specific properties like line-height, z-index, or opacity.
 
-## Tailwind CSS Styling
-- **CRITICAL**: Use Tailwind CSS utility classes for all component styling; avoid raw CSS files for new components.
-- **CRITICAL**: Follow spacing standards in `TAILWIND_MIGRATION_GUIDE.md`; use `px-6`/`py-6` (24px) for main containers, not `px-4`/`py-4`.
-- Use CSS variables from `styles/core/variables.css` for colors and custom values.
-- Keep these files as raw CSS (do NOT migrate to Tailwind):
-  - `styles/core/variables.css` - CSS custom properties
-  - `styles/core/animations.css` - @keyframes definitions
-  - `styles/fonts.css` - @font-face declarations
-  - Voice orb components (`VoicePoweredOrb.css`, `AudioOrb3D.css`, `VoiceModeUI.css`)
-- Content script styles remain in their respective CSS files when Shadow DOM isolation is needed.
-
 ## TypeScript Type Safety
 - **CRITICAL**: Maintain type consistency across related interfaces; if external APIs return a type (e.g., `string`), use that type consistently throughout the codebase rather than converting arbitrarily.
 - Prefer `unknown` over `any` for generic parameters, callbacks, and unvalidated data; `unknown` forces type checking before use.
@@ -200,7 +485,15 @@ When extracting data from the DOM that will be sent to AI or backend:
 - **CRITICAL**: Use `type="button"` on all buttons that shouldn't submit forms; omitting this defaults to `type="submit"` and triggers unintended form submissions.
 - **CRITICAL**: Add keyboard accessibility to clickable non-button elements; include `role="button"`, `tabIndex={0}`, and `onKeyDown` handlers for Enter/Space keys.
 - **CRITICAL**: Always append units to numeric displays (%, px, ms) for clarity; "75" should be "75%" for percentages.
+- **CRITICAL**: All clickable buttons must include `cursor-pointer` class; browsers don't always default to pointer cursor on styled buttons.
+- **CRITICAL**: Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers to apply thin, rounded, semi-transparent scrollbar styling.
 - Use consistent class naming; avoid copy-paste artifacts like `copy-message-button` on download components.
+
+## CSS Scoping (CRITICAL)
+- **CRITICAL**: Never write broad CSS selectors like `.group:hover span` or `.container div` that can match elements across unrelated components; these cause unpredictable side effects throughout the UI.
+- Always use unique, specific class names for CSS targeting (e.g., `.my-feature-btn:hover span` instead of `.group:hover span`).
+- Inline `<style>` blocks are especially dangerous—their selectors apply globally and can break other components.
+- Avoid selector names that collide with Tailwind utilities (like `group`, `container`, `flex`) in custom CSS rules.
 
 ## Async Message Handling
 - **CRITICAL**: Wrap async switch/case statements in try-catch blocks to ensure response callbacks always execute; unhandled throws leave callers hanging indefinitely.
@@ -258,7 +551,7 @@ When extracting data from the DOM that will be sent to AI or backend:
 - Logger import:
   ```ts
   import { createLogger } from '~logger';
-  const log = createLogger('SettingsPage');
+  const log = createLogger('SettingsPage', 'UI_SETTINGS');
   log.info('Loaded');
   ```
 - Utils import:
