@@ -175,6 +175,14 @@ export default defineConfig({
             pages: ["sandbox-executor.html"]
         },
 
+        externally_connectable: {
+            matches: [
+                "https://app.cognito.ai/*",
+                "https://*.cognito.ai/*",
+                "http://localhost:3002/*"
+            ]
+        },
+
         // Web accessible resources - files that can be accessed from web pages
         web_accessible_resources: [
             {

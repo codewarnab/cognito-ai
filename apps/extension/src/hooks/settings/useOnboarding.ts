@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
+import { WEBAPP_ROUTES } from '@/constants/webapp';
 
 const log = createLogger('useOnboarding', 'SETTINGS');
 
@@ -10,7 +11,7 @@ export function useOnboarding() {
     const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
     const [showChatInterface, setShowChatInterface] = useState(false);
 
-    // Check onboarding status on mount
+    // Check onboarding status on mount and listen for changes
     useEffect(() => {
         const checkOnboardingStatus = async () => {
             try {
@@ -25,42 +26,37 @@ export function useOnboarding() {
                 } else {
                     setShowOnboarding(true);
                     setShowChatInterface(false);
-                    log.info('Onboarding not completed, showing onboarding');
+                    // Only redirect if this is likely the initial check or triggered by storage change to false (unlikely)
+                    // But for now, we just log redirect intent. The actual redirect should happen maybe once per session?
+                    // Re-opening the sidepanel triggers this effect.
+                    log.info('Onboarding not completed, redirecting to webapp');
+
+                    // Open webapp for onboarding
+                    chrome.tabs.create({ url: WEBAPP_ROUTES.ONBOARDING });
                 }
             } catch (error) {
                 log.error('Failed to check onboarding status', error);
+                // In case of error, default to showing chat interface to avoid blocking user
                 setShowOnboarding(false);
                 setShowChatInterface(true);
             }
         };
+
         checkOnboardingStatus();
+
+        const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
+            if (areaName === 'local' && changes.onboarding_completed) {
+                log.info('Onboarding status changed in storage, re-checking');
+                checkOnboardingStatus();
+            }
+        };
+
+        chrome.storage.onChanged.addListener(handleStorageChange);
+
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChange);
+        };
     }, []);
-
-    const handleOnboardingComplete = async () => {
-        try {
-            await chrome.storage.local.set({ onboarding_completed: true });
-            setShowOnboarding(false);
-            setShowChatInterface(true);
-            log.info('Onboarding completed, showing chat interface');
-        } catch (error) {
-            log.error('Failed to save onboarding status', error);
-            setShowOnboarding(false);
-            setShowChatInterface(true);
-        }
-    };
-
-    const handleOnboardingSkip = async () => {
-        try {
-            await chrome.storage.local.set({ onboarding_completed: true });
-            setShowOnboarding(false);
-            setShowChatInterface(true);
-            log.info('Onboarding skipped, showing chat interface');
-        } catch (error) {
-            log.error('Failed to save onboarding skip status', error);
-            setShowOnboarding(false);
-            setShowChatInterface(true);
-        }
-    };
 
     const resetOnboarding = async () => {
         try {
@@ -78,8 +74,6 @@ export function useOnboarding() {
         showChatInterface,
         setShowOnboarding,
         setShowChatInterface,
-        handleOnboardingComplete,
-        handleOnboardingSkip,
         resetOnboarding,
     };
 }

@@ -10,7 +10,7 @@ interface EmptyStateProps {
 }
 
 // Regex to match URLs (including chrome:// URLs)
-const URL_REGEX = /(https?:\/\/[^\s]+|chrome:\/\/[^\s]+)/g;
+const URL_REGEX = /(https?:\/\/[^\s]+?(?=[.,;:!?)}\]]*(?:\s|$))|chrome:\/\/[^\s]+?(?=[.,;:!?)}\]]*(?:\s|$)))/g;
 
 // Parse tip text and convert URLs to clickable elements
 const renderTipWithLinks = (tip: string): React.ReactNode => {

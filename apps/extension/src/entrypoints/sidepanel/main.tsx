@@ -19,15 +19,6 @@ import App from './App';
 // These are imported from src/styles/ directory
 import '../../styles/features/copilot/index.css';
 
-
-
-
-
-
-import '../../styles/features/onboarding/index.css';
-
-
-
 // Core Styles (Moved from sidepanel.css)
 import '../../styles/fonts.css';
 import '../../styles/core/variables.css';

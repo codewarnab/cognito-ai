@@ -111,7 +111,7 @@ EXAMPLE: getAllTabs() -> {count: 15, tabs: [{id: 123, title: "GitHub", url: "...
                                     flexDirection: 'column',
                                     gap: '3px'
                                 }}>
-                                    {output.tabs.slice(0, 3).map((tab: any, i: number) => (
+                                    {output.tabs.slice(0, 3).map((tab: any) => (
                                         <div key={tab.id} style={{
                                             padding: '5px 8px',
                                             background: 'var(--bg-tertiary)',

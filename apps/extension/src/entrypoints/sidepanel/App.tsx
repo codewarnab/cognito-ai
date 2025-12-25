@@ -16,15 +16,12 @@ import { motion } from 'framer-motion';
 // UI Components
 import { CopilotChatWindow } from "@/components/shell";
 import { McpManager } from "@/components/features/mcp";
-import { Troubleshooting } from "@/components/features/help/Troubleshooting";
-import { Features } from "@/components/features/help/Features";
-import { ProviderSetup } from "@/components/features/help/ProviderSetup";
+import { Troubleshooting, Features, ProviderSetup } from "@/components/features/help";
 import { ToolUIProvider } from "@/ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
 import { ReminderPanel } from "@/components/features/reminders";
-import { SettingsPage } from "@/components/features/settings/SettingsPage";
-import { LoggerPanel } from "@/components/features/settings/LoggerPanel";
-import { OnboardingScreen } from "@/components/features/onboarding";
+import { SettingsPage, LoggerPanel } from "@/components/features/settings";
+// import { OnboardingScreen } from "@/components/features/onboarding";
 import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
 import { VoiceRecordingPill } from "@/components/shared/inputs";
@@ -67,6 +64,9 @@ import { useSandbox } from "@/hooks/sandbox";
 
 // Utils
 import { handleAPIError } from "@/utils/errors";
+
+// Constants
+import { WEBAPP_ROUTES } from "@/constants/webapp";
 
 /**
  * Inner component that uses AI SDK v6
@@ -136,8 +136,6 @@ function AIChatContent() {
     const {
         showOnboarding,
         setShowOnboarding,
-        handleOnboardingComplete,
-        handleOnboardingSkip,
         resetOnboarding,
     } = useOnboarding();
 
@@ -462,13 +460,20 @@ function AIChatContent() {
 
     // Show onboarding screen if enabled
     if (showOnboarding) {
-        log.info('Rendering onboarding screen', { showOnboarding });
+        log.info('Rendering onboarding screen replacement', { showOnboarding });
         return (
-            <OnboardingScreen
-                onComplete={handleOnboardingComplete}
-                onSkip={handleOnboardingSkip}
-                showSkip={true}
-            />
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center space-y-4">
+                <div className="space-y-2">
+                    <h2 className="text-xl font-semibold">Welcome to Cognito</h2>
+                    <p className="text-sm text-muted-foreground">Please complete the setup in your browser to continue.</p>
+                </div>
+                <button
+                    onClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.ONBOARDING })}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                    Complete Setup
+                </button>
+            </div>
         );
     }
 
