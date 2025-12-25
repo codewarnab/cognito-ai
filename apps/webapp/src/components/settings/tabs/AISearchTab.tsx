@@ -3,7 +3,8 @@ import {
     AIConfigSettings,
     SearchSettingsWithKeys,
     ResearchWorkflowSettings,
-    TTSSettings
+    TTSSettings,
+    WEB_SEARCH_SELF_API_KEY_HIDDEN,
 } from "@cognito/shared";
 import { extensionAPI } from "@/lib/extension-api";
 import { SettingNumberInput } from "@/components/settings/shared/SettingNumberInput";
@@ -116,37 +117,39 @@ export function AISearchTab({
                     onToggle={() => handleToggle('web-search')}
                 >
                     <div className="space-y-3">
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <Label className="text-sm font-medium">
-                                    <HighlightedText text="Tavily API Key" searchQuery={searchQuery} />
-                                </Label>
-                                <a
-                                    href="https://app.tavily.com/home"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    Get your API key
-                                </a>
+                        {!WEB_SEARCH_SELF_API_KEY_HIDDEN && (
+                            <div>
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium">
+                                        <HighlightedText text="Tavily API Key" searchQuery={searchQuery} />
+                                    </Label>
+                                    <a
+                                        href="https://app.tavily.com/home"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        Get your API key
+                                    </a>
+                                </div>
+                                <Input
+                                    type="password"
+                                    placeholder="Enter your Tavily API key"
+                                    value={searchSettings.apiKeys?.tavily || ""}
+                                    onChange={(e) => {
+                                        const newApiKeys = { ...searchSettings.apiKeys, tavily: e.target.value };
+                                        setSearchSettings({ ...searchSettings, apiKeys: newApiKeys });
+                                    }}
+                                    onBlur={() => {
+                                        updateSetting(
+                                            () => extensionAPI.setSearchSettings({ apiKeys: searchSettings.apiKeys }),
+                                            () => { }
+                                        );
+                                    }}
+                                    className="mt-1.5"
+                                />
                             </div>
-                            <Input
-                                type="password"
-                                placeholder="Enter your Tavily API key"
-                                value={searchSettings.apiKeys?.tavily || ""}
-                                onChange={(e) => {
-                                    const newApiKeys = { ...searchSettings.apiKeys, tavily: e.target.value };
-                                    setSearchSettings({ ...searchSettings, apiKeys: newApiKeys });
-                                }}
-                                onBlur={() => {
-                                    updateSetting(
-                                        () => extensionAPI.setSearchSettings({ apiKeys: searchSettings.apiKeys }),
-                                        () => { }
-                                    );
-                                }}
-                                className="mt-1.5"
-                            />
-                        </div>
+                        )}
                         <div className="grid grid-cols-2 gap-4">
                             <SettingNumberInput
                                 label="Maximum Results"

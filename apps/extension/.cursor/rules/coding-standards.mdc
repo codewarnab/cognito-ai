@@ -8,6 +8,7 @@ alwaysApply: true
 - Prefer `const` over `let`; avoid `var`
 - Keep modules small and single-responsibility; co-locate related hooks/components
 - Never log secrets, API keys, or personally identifiable information
+- **Note**: Settings, onboarding, reminders, and other standalone pages are in `apps/webapp/` (Next.js), not the extension
 
 ## TypeScript and Imports
  - Use strict TypeScript: `strict`, `noImplicitAny`, `strictNullChecks`, `noImplicitReturns`, `noUncheckedIndexedAccess`

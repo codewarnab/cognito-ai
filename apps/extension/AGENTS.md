@@ -16,6 +16,18 @@ This document helps AI coding assistants understand the Chrome extension.
 - **YouTube Integration**: Video transcript extraction
 - **Backend Mode**: Server-side AI processing (no API key required)
 
+## Webapp (`apps/webapp/`)
+
+Several UI pages have been moved from the extension to a separate Next.js webapp:
+- **Settings**: User preferences and configuration
+- **Onboarding**: First-time user setup flow
+- **Reminders**: Reminder management UI
+- **Features**: Feature showcase pages
+- **Troubleshooting**: Help and debugging tools
+- **Changelog**: Version history and updates
+
+The extension opens these pages in new tabs via `chrome.tabs.create()`. See `apps/webapp/` for the webapp codebase.
+
 ## Architecture
 
 ```text

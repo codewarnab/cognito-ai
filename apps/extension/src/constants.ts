@@ -100,11 +100,14 @@ export const WEB_SEARCH_API_URL =
 
 /**
  * Web Search Self API Key Hidden Configuration
+ * Re-exported from @cognito/shared for backward compatibility.
  * When enabled, the extension uses the backend's Tavily API key instead of requiring
  * users to configure their own. This hides the API key input in settings and enables
  * web search by default.
+ * 
+ * Can be overridden via environment variable WXT_WEB_SEARCH_SELF_API_KEY_HIDDEN
  */
-export const WEB_SEARCH_SELF_API_KEY_HIDDEN = import.meta.env.WXT_WEB_SEARCH_SELF_API_KEY_HIDDEN === 'true';
+export { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@cognito/shared';
 
 /**
  * Logging Presets - Quick configurations for common scenarios

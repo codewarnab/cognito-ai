@@ -4,66 +4,107 @@ import { motion } from 'motion/react';
 /**
  * Skeleton loading component displayed while chat store is hydrating
  * Shows a placeholder UI to prevent flash of empty content
+ * Matches the actual ChatHeader and ChatInput layout
  */
 export const ChatLoadingSkeleton: React.FC = () => {
     return (
         <div className="flex flex-col h-screen w-full m-0 p-0 bg-[#0a0e1a] text-[#e4e6eb] fixed inset-0">
-            {/* Header Skeleton */}
-            <div className="flex-shrink-0 px-3 py-2 border-b border-white/5">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {/* Logo placeholder */}
-                        <div className="w-6 h-6 rounded bg-white/5 animate-pulse" />
-                        {/* Title placeholder */}
-                        <div className="w-20 h-4 rounded bg-white/5 animate-pulse" />
+            {/* Header Skeleton - matches ChatHeader layout */}
+            <div className="flex-shrink-0 pt-2 px-3 bg-[#0a0e1a]/80 backdrop-blur-md min-h-[32px]">
+                <div className="flex items-center justify-between gap-2 w-full">
+                    {/* Left: Sidebar toggle */}
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <div className="w-8 h-8 rounded-md bg-white/5 animate-pulse" />
                     </div>
-                    <div className="flex items-center gap-1">
-                        {/* Action buttons placeholder */}
-                        <div className="w-8 h-8 rounded bg-white/5 animate-pulse" />
-                        <div className="w-8 h-8 rounded bg-white/5 animate-pulse" />
-                        <div className="w-8 h-8 rounded bg-white/5 animate-pulse" />
+                    {/* Right: New chat, wrench, kebab menu */}
+                    <div className="flex items-center gap-1 shrink-0 ml-auto">
+                        <div className="w-8 h-8 rounded-md bg-white/5 animate-pulse" />
+                        <div className="w-8 h-8 rounded-md bg-white/5 animate-pulse" />
+                        <div className="w-8 h-8 rounded-md bg-white/5 animate-pulse" />
                     </div>
                 </div>
             </div>
 
-            {/* Messages Area Skeleton */}
-            <div className="flex-1 overflow-hidden p-4 space-y-4">
-                {/* Simulate loading state with animated placeholders */}
-                <motion.div
-                    initial={{ opacity: 0.3 }}
-                    animate={{ opacity: [0.3, 0.6, 0.3] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="flex justify-center items-center py-8"
-                >
-                    <div className="flex flex-col items-center gap-3">
-                        {/* Cognito logo shimmer */}
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-white/10 to-white/5 animate-pulse" />
+            {/* Messages Area Skeleton - shows placeholder message bubbles */}
+            <div className="flex-1 overflow-hidden px-4 py-6 space-y-4">
+                {/* User message placeholder (right-aligned) */}
+                <div className="flex justify-end">
+                    <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-[rgba(99,102,241,0.15)] animate-pulse">
+                        <div className="h-4 w-32 rounded bg-white/10" />
+                    </div>
+                </div>
 
-                        {/* Loading text */}
-                        <div className="flex items-center gap-2 text-white/40 text-sm">
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full"
-                            />
-                            <span>Loading chat...</span>
+                {/* Assistant message placeholder (left-aligned) */}
+                <div className="flex justify-start">
+                    <div className="max-w-[85%] space-y-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            {/* Avatar placeholder */}
+                            <div className="w-6 h-6 rounded-full bg-white/10 animate-pulse" />
+                        </div>
+                        <div className="space-y-2 animate-pulse">
+                            <div className="h-4 w-64 rounded bg-white/8" />
+                            <div className="h-4 w-48 rounded bg-white/8" />
+                            <div className="h-4 w-56 rounded bg-white/8" />
                         </div>
                     </div>
-                </motion.div>
+                </div>
+
+                {/* Another user message placeholder */}
+                <div className="flex justify-end">
+                    <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-[rgba(99,102,241,0.15)] animate-pulse">
+                        <div className="h-4 w-44 rounded bg-white/10" />
+                    </div>
+                </div>
+
+                {/* Assistant typing indicator */}
+                <div className="flex justify-start">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-white/10 animate-pulse" />
+                        <div className="flex gap-1 px-3 py-2">
+                            <motion.div
+                                animate={{ opacity: [0.3, 1, 0.3] }}
+                                transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                                className="w-2 h-2 rounded-full bg-white/30"
+                            />
+                            <motion.div
+                                animate={{ opacity: [0.3, 1, 0.3] }}
+                                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                                className="w-2 h-2 rounded-full bg-white/30"
+                            />
+                            <motion.div
+                                animate={{ opacity: [0.3, 1, 0.3] }}
+                                transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                                className="w-2 h-2 rounded-full bg-white/30"
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Input Area Skeleton */}
-            <div className="flex-shrink-0 p-3 border-t border-white/5">
-                <div className="flex flex-col gap-2">
-                    {/* Toolbar placeholder */}
-                    <div className="flex items-center gap-1 px-2">
-                        <div className="w-7 h-7 rounded bg-white/5 animate-pulse" />
-                        <div className="w-7 h-7 rounded bg-white/5 animate-pulse" />
-                        <div className="w-7 h-7 rounded bg-white/5 animate-pulse" />
-                    </div>
-                    {/* Input field placeholder */}
-                    <div className="relative">
-                        <div className="w-full h-[44px] rounded-xl bg-white/5 animate-pulse" />
+            {/* Input Area Skeleton - matches ChatInput/Composer layout */}
+            <div className="flex-shrink-0 px-4 pb-2 bg-[rgba(10,14,26,0.85)] backdrop-blur-[20px]">
+                {/* Composer container */}
+                <div className="flex flex-col p-2 bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] rounded-xl">
+                    {/* Input placeholder */}
+                    <div className="w-full h-[44px] rounded-lg bg-transparent" />
+
+                    {/* Bottom toolbar row */}
+                    <div className="flex items-end justify-between gap-3 mt-1">
+                        {/* Left toolbar: mode, tools, search, model icons */}
+                        <div className="flex items-center gap-1">
+                            <div className="w-7 h-7 rounded-md bg-white/5 animate-pulse" />
+                            <div className="w-7 h-7 rounded-md bg-white/5 animate-pulse" />
+                            <div className="w-7 h-7 rounded-md bg-white/5 animate-pulse" />
+                            {/* Separator */}
+                            <div className="w-px h-4 bg-white/10 mx-1" />
+                            <div className="w-7 h-7 rounded-md bg-white/5 animate-pulse" />
+                        </div>
+
+                        {/* Right actions: attachments, send */}
+                        <div className="flex items-center gap-1">
+                            <div className="w-7 h-7 rounded-md bg-white/5 animate-pulse" />
+                            <div className="w-8 h-8 rounded-lg bg-white/5 animate-pulse" />
+                        </div>
                     </div>
                 </div>
             </div>

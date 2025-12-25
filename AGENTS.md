@@ -10,6 +10,7 @@ Cognito AI is a **pnpm monorepo** containing multiple packages:
 cognito-ai/
 ├── apps/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT + React 19)
+│   ├── webapp/             # @cognito/webapp - Settings & onboarding pages (Next.js)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── shared/             # @cognito/shared - Shared types and constants
@@ -33,6 +34,7 @@ Key features:
 | Package | Path | Purpose | AGENTS.md |
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/extension/AGENTS.md) |
+| Webapp | `apps/webapp/` | Settings, onboarding, reminders UI | See `apps/webapp/` |
 | Shared | `packages/shared/` | Shared types/constants | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/shared/GEMINI.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-cloudflare/AGENTS.md) |
 | Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/AGENTS.md) |

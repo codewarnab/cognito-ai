@@ -12,6 +12,18 @@
 - **YouTube Integration:** Dedicated API for fetching video transcripts.
 - **Backend Mode:** Optional server-side AI processing without requiring user API keys.
 
+## Webapp (`apps/webapp/`)
+
+Several UI pages have been moved from the extension to a separate Next.js webapp:
+- **Settings**: User preferences and configuration
+- **Onboarding**: First-time user setup flow
+- **Reminders**: Reminder management UI
+- **Features**: Feature showcase pages
+- **Troubleshooting**: Help and debugging tools
+- **Changelog**: Version history and updates
+
+The extension opens these pages in new tabs via `chrome.tabs.create()`. See `apps/webapp/` for the webapp codebase.
+
 ## Extension Structure
 
 ```text

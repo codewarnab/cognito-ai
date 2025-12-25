@@ -11,3 +11,5 @@ export {
     SUMMARY_LENGTH_TOKENS,
     SUGGESTION_CAPABILITIES,
 } from './prompts.js';
+
+export { WEB_SEARCH_SELF_API_KEY_HIDDEN } from './featureFlags.js';

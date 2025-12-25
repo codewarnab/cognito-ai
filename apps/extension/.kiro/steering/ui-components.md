@@ -5,6 +5,8 @@ fileMatchPattern: "**/components/**/*.{ts,tsx}"
 
 # UI Components Standards
 
+> **Note**: Settings, onboarding, reminders, features, troubleshooting, and changelog pages are in `apps/webapp/` (Next.js), not the extension. The extension only contains the side panel chat UI.
+
 ## Primitive Components
 - **CRITICAL**: Never modify primitive UI components (`src/components/ui/primitives/`) directly
 - Always add props for customization and pass them from consuming components
