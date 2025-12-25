@@ -8,6 +8,7 @@ This document describes the monorepo structure, development workflows, and migra
 cognito-ai/
 ├── apps/
 │   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
+│   ├── webapp/             # @cognito/webapp - Settings & onboarding (Next.js)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── shared/             # @cognito/shared - Shared types and constants
@@ -22,8 +23,7 @@ cognito-ai/
 
 | Package | Location | Deployment | Purpose |
 |---------|----------|------------|---------|
-| `@cognito/extension` | `apps/extension/` | Chrome Web Store | Main browser extension |
-| `@cognito/docs` | `apps/docs/` | Vercel | Documentation website |
+| `@cognito/extension` | `apps/extension/` | Chrome Web Store | Main browser extension || `@cognito/webapp` | `apps/webapp/` | Vercel | Settings, onboarding & reminders UI || `@cognito/docs` | `apps/docs/` | Vercel | Documentation website |
 | `@cognito/shared` | `packages/shared/` | N/A (library) | Shared types and constants |
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers | ElevenLabs TTS proxy |
 | `@cognito/backend-vercel` | `packages/backend-vercel/` | Vercel | AI Chat Backend + YouTube transcripts |
@@ -82,6 +82,20 @@ pnpm build:extension
 pnpm package:extension
 # Output: apps/extension/build/chrome-mv3-prod
 ```
+
+### Webapp (`@cognito/webapp`)
+
+Deployed to Vercel. Configure in Vercel dashboard:
+- **Root Directory**: `apps/webapp`
+- **Build Command**: `pnpm build`
+- **Output Directory**: `.next`
+
+The webapp hosts:
+- **Settings page**: Extension configuration UI
+- **Onboarding**: New user setup flow
+- **Reminders**: Reminder management interface
+- **Troubleshooting**: Help & diagnostics
+- **Changelog**: Version history
 
 ### Documentation (`@cognito/docs`)
 
