@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Logo } from './Logo';
 import { Navigation } from './Navigation';
+import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -61,6 +62,7 @@ export function Header({
 
                 <div className="ml-auto flex items-center gap-6">
                     {showNav && <Navigation />}
+                    <ThemeToggle />
                     {children}
                 </div>
             </div>

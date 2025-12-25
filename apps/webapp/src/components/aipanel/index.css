@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant dark (&:where(.dark *, [data-theme=dark], [data-theme=dark] *));
 
 @theme {
 	--color-std-50: oklch(98.5% 0 0);
@@ -39,15 +39,44 @@
 	--color-border-light: oklch(from var(--color-std-400) l c h / 0.1);
 }
 
-/* 
- * Removed automatic dark mode overrides since the user requested a single light theme.
- * This ensures consistency across the application.
- */
+/* Dark mode support for both .dark class (next-themes) and data-theme attribute */
+.dark,
 [data-theme='dark'] {
-	/* Keeping these just in case, but they shouldn't be automatically applied if we control the theme */
-	--color-std-white: #fff;
-	/* Force white background even if dark theme is triggered */
-	/* We can restore true dark mode later if requested */
+	/* Invert the grayscale for dark mode */
+	--color-std-50: oklch(13% 0 0);
+	--color-std-100: oklch(17% 0 0);
+	--color-std-200: oklch(21% 0 0);
+	--color-std-300: oklch(27% 0 0);
+	--color-std-400: oklch(37% 0 0);
+	--color-std-500: oklch(50% 0 0);
+	--color-std-600: oklch(63% 0 0);
+	--color-std-700: oklch(75% 0 0);
+	--color-std-800: oklch(87% 0 0);
+	--color-std-900: oklch(95% 0 0);
+	--color-std-950: oklch(98% 0 0);
+	--color-std-white: oklch(13% 0 0);
+	--color-std-black: #fff;
+
+	/* Semantic colors for dark mode */
+	--color-dark: oklch(from var(--color-std-900) l c h / 0.9);
+	--color-solid: oklch(from var(--color-std-900) l c h / 0.7);
+	--color-gray: oklch(from var(--color-std-700) l c h / 0.6);
+	--color-light: oklch(from var(--color-std-600) l c h / 0.85);
+	--color-soft: oklch(from var(--color-std-600) l c h / 0.7);
+	--color-softlight: oklch(from var(--color-std-700) l c h / 0.5);
+
+	/* Background colors for dark mode */
+	--color-bg-main: oklch(from var(--color-std-100) l c h / 0.8);
+	--color-bg-main-hover: oklch(from var(--color-std-300) l c h / 0.3);
+	--color-bg-main-active: oklch(from var(--color-std-400) l c h / 0.2);
+	--color-bg-hover: oklch(from var(--color-std-400) l c h / 0.2);
+	--color-bg-active: oklch(from var(--color-std-500) l c h / 0.2);
+
+	/* Border colors - more visible in dark mode */
+	--color-border-solid: oklch(from var(--color-std-500) l c h / 0.4);
+	--color-border-solid-active: oklch(from var(--color-std-600) l c h / 0.6);
+	--color-border-gray: oklch(from var(--color-std-500) l c h / 0.3);
+	--color-border-light: oklch(from var(--color-std-500) l c h / 0.25);
 }
 
 @utility clickable {

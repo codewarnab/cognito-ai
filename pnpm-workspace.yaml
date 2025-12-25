@@ -22,7 +22,7 @@ catalog:
 
 
   # Next.js ecosystem - keep in sync across docs and webapp
-  next: 16.0.8
+  next: 16.1.1
   react: ^19.2.1
   react-dom: ^19.2.1
   typescript: ^5.9.3

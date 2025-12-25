@@ -3,6 +3,7 @@ import { Inter, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import "./globals.css";
 import { Footer } from "@/components/shared/Footer";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,16 +26,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" data-theme="dark">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <NuqsAdapter>
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </NuqsAdapter>
+        <ThemeProvider>
+          <NuqsAdapter>
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </NuqsAdapter>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -48,7 +48,7 @@
 }
 
 :root {
-  /* AI-SDK-Panel Neutral Grayscale (Light Theme) */
+  /* AI-SDK-Panel Neutral Grayscale (Light Theme - Vercel Style) */
   --std-50: oklch(98.5% 0 0);
   --std-100: oklch(96.7% 0 0);
   --std-200: oklch(92.8% 0 0);
@@ -67,6 +67,7 @@
   --bg-tertiary: oklch(from var(--std-200) l c h / 0.4);
   --text-primary: oklch(from var(--std-900) l c h / 0.9);
   --text-secondary: oklch(from var(--std-600) l c h / 0.6);
+  --text-tertiary: oklch(from var(--std-500) l c h / 0.5);
   --border-color: oklch(from var(--std-900) l c h / 0.1);
 
   /* Hover/Active states */
@@ -107,7 +108,69 @@
   --sidebar-ring: var(--std-400);
 }
 
-/* Single light theme - no dark mode overrides needed */
+/* Vercel-style Dark Theme */
+.dark {
+  /* Dark theme neutral grayscale (Vercel-inspired) */
+  --std-50: oklch(13% 0 0);
+  --std-100: oklch(17% 0 0);
+  --std-200: oklch(21% 0 0);
+  --std-300: oklch(27% 0 0);
+  --std-400: oklch(37% 0 0);
+  --std-500: oklch(50% 0 0);
+  --std-600: oklch(63% 0 0);
+  --std-700: oklch(75% 0 0);
+  --std-800: oklch(87% 0 0);
+  --std-900: oklch(95% 0 0);
+  --std-950: oklch(98% 0 0);
+
+  /* Semantic colors - inverted for dark mode */
+  --bg-primary: oklch(9% 0 0);
+  --bg-secondary: oklch(from var(--std-100) l c h / 0.6);
+  --bg-tertiary: oklch(from var(--std-200) l c h / 0.4);
+  --text-primary: oklch(from var(--std-900) l c h / 0.9);
+  --text-secondary: oklch(from var(--std-700) l c h / 0.85);
+  --text-tertiary: oklch(from var(--std-500) l c h / 0.7);
+  --border-color: oklch(from var(--std-300) l c h / 0.3);
+
+  /* Hover/Active states - adjusted for dark */
+  --bg-hover: oklch(from var(--std-300) l c h / 0.1);
+  --bg-active: oklch(from var(--std-400) l c h / 0.1);
+
+  --background: oklch(9% 0 0);
+  --foreground: oklch(95% 0 0);
+  --card: oklch(13% 0 0);
+  --card-foreground: oklch(95% 0 0);
+  --popover: oklch(13% 0 0);
+  --popover-foreground: oklch(95% 0 0);
+  --primary: oklch(95% 0 0);
+  --primary-foreground: oklch(13% 0 0);
+  --secondary: oklch(17% 0 0);
+  --secondary-foreground: oklch(95% 0 0);
+  --muted: oklch(17% 0 0);
+  --muted-foreground: oklch(63% 0 0);
+  --accent: oklch(17% 0 0);
+  --accent-foreground: oklch(95% 0 0);
+  --destructive: oklch(0.65 0.2 25);
+  --border: oklch(30% 0 0);
+  --input: oklch(27% 0 0);
+  --ring: oklch(50% 0 0);
+  --chart-1: oklch(0.75 0.18 40);
+  --chart-2: oklch(0.7 0.12 185);
+  --chart-3: oklch(0.55 0.08 227);
+  --chart-4: oklch(0.85 0.15 85);
+  --chart-5: oklch(0.8 0.15 70);
+  --sidebar: oklch(9% 0 0);
+  --sidebar-foreground: oklch(95% 0 0);
+  --sidebar-primary: oklch(95% 0 0);
+  --sidebar-primary-foreground: oklch(13% 0 0);
+  --sidebar-accent: oklch(17% 0 0);
+  --sidebar-accent-foreground: oklch(95% 0 0);
+  --sidebar-border: oklch(30% 0 0);
+  --sidebar-ring: oklch(50% 0 0);
+
+  /* Dark mode semantic colors with better visible borders */
+  --border-color: oklch(from var(--std-500) l c h / 0.35);
+}
 
 @layer base {
   * {
