@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Settings, RefreshCw, Trash2, Play, AlertCircle, CheckCircle, X } from "lucide-react";
+import { RefreshCw, AlertCircle, CheckCircle, X } from "lucide-react";
+import { ChatCircle, MagnifyingGlass, SpeakerHigh, Lightning, GearSix } from "@phosphor-icons/react";
 import { extensionAPI } from "@/lib/extension-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import Link from "next/link";
+import { Header } from "@/components/shared/Header";
+import { AnimatedTabs, type AnimatedTab } from "@/components/ui/animated-tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useExtension } from "@/hooks/useExtension";
 import type {
     AIConfigSettings,
     SearchSettingsWithKeys,
@@ -23,109 +23,19 @@ import type {
     ResearchWorkflowSettings,
     TTSSettings,
     VoiceSettings,
-    VoiceName,
 } from "@cognito/shared";
 
-// ============================================================================
-// Setting Item Components
-// ============================================================================
-
-interface SettingSwitchProps {
-    label: string;
-    description?: string;
-    checked: boolean;
-    onCheckedChange: (checked: boolean) => void;
-    disabled?: boolean;
-}
-
-function SettingSwitch({ label, description, checked, onCheckedChange, disabled }: SettingSwitchProps) {
-    return (
-        <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-                <Label className="text-sm font-medium">{label}</Label>
-                {description && <p className="text-xs text-muted-foreground">{description}</p>}
-            </div>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
-        </div>
-    );
-}
-
-interface SettingNumberInputProps {
-    label: string;
-    description?: string;
-    value: number;
-    onChange: (value: number) => void;
-    min?: number;
-    max?: number;
-    disabled?: boolean;
-}
-
-function SettingNumberInput({ label, description, value, onChange, min, max, disabled }: SettingNumberInputProps) {
-    return (
-        <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-                <Label className="text-sm font-medium">{label}</Label>
-                {description && <p className="text-xs text-muted-foreground">{description}</p>}
-            </div>
-            <Input
-                type="number"
-                value={value}
-                onChange={(e) => onChange(parseInt(e.target.value, 10))}
-                min={min}
-                max={max}
-                disabled={disabled}
-                className="w-24"
-            />
-        </div>
-    );
-}
-
-// ============================================================================
-// Settings Section Components
-// ============================================================================
-
-interface SettingsSectionProps {
-    title: string;
-    description?: string;
-    children: React.ReactNode;
-    defaultOpen?: boolean;
-}
-
-function SettingsSection({ title, description, children, defaultOpen = false }: SettingsSectionProps) {
-    const [open, setOpen] = useState(defaultOpen);
-
-    return (
-        <Collapsible open={open} onOpenChange={setOpen}>
-            <Card>
-                <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-base">{title}</CardTitle>
-                                {description && <CardDescription>{description}</CardDescription>}
-                            </div>
-                            <span className="text-muted-foreground text-sm">{open ? "−" : "+"}</span>
-                        </div>
-                    </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                    <CardContent className="pt-0">
-                        {children}
-                    </CardContent>
-                </CollapsibleContent>
-            </Card>
-        </Collapsible>
-    );
-}
-
-// ============================================================================
-// Main Settings Page
-// ============================================================================
+// Import Tab Components
+import { AIConversationTab } from "@/components/settings/tabs/AIConversationTab";
+import { WebSearchTab } from "@/components/settings/tabs/WebSearchTab";
+import { VoiceTTSTab } from "@/components/settings/tabs/VoiceTTSTab";
+import { FeaturesTab } from "@/components/settings/tabs/FeaturesTab";
+import { AdvancedTab } from "@/components/settings/tabs/AdvancedTab";
 
 export default function SettingsPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(true);
-    const [isInstalled, setIsInstalled] = useState(false);
+    const { isInstalled, isLoading: extensionLoading } = useExtension();
+    const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -148,7 +58,7 @@ export default function SettingsPage() {
     const loadSettings = useCallback(async () => {
         if (!isInstalled) return;
 
-        setIsLoading(true);
+        setSettingsLoading(true);
         setError(null);
 
         try {
@@ -190,22 +100,11 @@ export default function SettingsPage() {
             setError("Failed to load settings from extension");
             console.error(err);
         } finally {
-            setIsLoading(false);
+            setSettingsLoading(false);
         }
     }, [isInstalled]);
 
-    // Check installation and load settings
-    useEffect(() => {
-        const checkInstallation = async () => {
-            const installed = await extensionAPI.isInstalled();
-            setIsInstalled(installed);
-            if (!installed) {
-                setIsLoading(false);
-            }
-        };
-        checkInstallation();
-    }, []);
-
+    // Load settings when extension is ready
     useEffect(() => {
         if (isInstalled) {
             loadSettings();
@@ -286,596 +185,273 @@ export default function SettingsPage() {
             console.error(err);
         }
     };
+    // Show skeleton while checking extension status
+    if (extensionLoading) {
+        return (
+            <div className="min-h-screen bg-[var(--bg-primary)]">
+                <Header title="Settings" />
+                <div className="container mx-auto max-w-4xl py-8 px-4">
+                    {/* Skeleton for Notice Banner */}
+                    <Card className="mb-8 border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                        <CardContent className="flex items-center justify-between p-6">
+                            <div className="flex-1">
+                                <Skeleton className="h-6 w-48 mb-2" />
+                                <Skeleton className="h-4 w-80" />
+                            </div>
+                            <Skeleton className="h-9 w-32" />
+                        </CardContent>
+                    </Card>
 
+                    {/* Skeleton for Preferences Header */}
+                    <div className="flex items-center justify-between mb-6">
+                        <Skeleton className="h-8 w-32" />
+                        <Skeleton className="h-9 w-24" />
+                    </div>
+
+                    {/* Skeleton for Tabs */}
+                    <div className="space-y-6">
+                        <Skeleton className="h-12 w-full" />
+                        <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                            <CardContent className="p-6 space-y-4">
+                                <Skeleton className="h-5 w-40" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-5 w-48 mt-6" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-10 w-full" />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Show extension not installed message only after we've confirmed it's not installed
     if (!isInstalled) {
         return (
-            <div className="container mx-auto max-w-4xl py-8 px-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-yellow-500" />
-                            Extension Not Installed
-                        </CardTitle>
-                        <CardDescription>
-                            The Cognito AI extension must be installed to configure settings.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button onClick={() => router.push("/")}>Go to Home</Button>
-                    </CardContent>
-                </Card>
+            <div className="min-h-screen bg-[var(--bg-primary)]">
+                <Header title="Settings" />
+                <div className="container mx-auto max-w-4xl py-8 px-4">
+                    <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
+                                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                                Extension Not Installed
+                            </CardTitle>
+                            <CardDescription className="text-[var(--text-secondary)]">
+                                The Cognito AI extension must be installed to configure settings.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button onClick={() => router.push("/")}>Go to Home</Button>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="container mx-auto max-w-4xl py-8 px-4">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <div>
-                        <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Settings className="h-6 w-6" />
-                            Settings
-                        </h1>
-                        <p className="text-muted-foreground">Configure your Cognito AI preferences</p>
-                    </div>
-                </div>
-                <Button variant="outline" onClick={loadSettings} disabled={isLoading}>
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-                    Refresh
-                </Button>
-            </div>
+        <div className="min-h-screen bg-[var(--bg-primary)]">
+            <Header title="Settings" />
 
-            {/* Alerts */}
-            {error && (
-                <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        {error}
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setError(null)}>
-                        <X className="h-4 w-4" />
-                    </Button>
-                </div>
-            )}
-
-            {successMessage && (
-                <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2 text-green-600">
-                    <CheckCircle className="h-4 w-4" />
-                    {successMessage}
-                </div>
-            )}
-
-            {/* Settings Sections */}
-            <div className="space-y-4">
-                {/* AI Configuration */}
-                <SettingsSection title="AI Configuration" description="Configure AI behavior and limits" defaultOpen>
-                    <SettingNumberInput
-                        label="Maximum Tool Calls"
-                        description="Limit how many tool calls (steps) the AI can make per response (1-50)"
-                        value={aiConfig.maxToolCallLimit}
-                        onChange={(value) => {
-                            const clamped = Math.max(1, Math.min(50, value));
-                            setAIConfig({ ...aiConfig, maxToolCallLimit: clamped });
-                            updateSetting(
-                                () => extensionAPI.setAIConfig({ maxToolCallLimit: clamped }),
-                                () => { }
-                            );
-                        }}
-                        min={1}
-                        max={50}
-                    />
-                </SettingsSection>
-
-                {/* Search Settings */}
-                {searchSettings && (
-                    <SettingsSection title="Web Search" description="Configure Tavily web search integration">
-                        <SettingSwitch
-                            label="Enable Web Search"
-                            description="Allow AI to search the web for information"
-                            checked={searchSettings.enabled}
-                            onCheckedChange={(checked) => {
-                                setSearchSettings({ ...searchSettings, enabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSearchSettings({ enabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">Tavily API Key</Label>
-                            <Input
-                                type="password"
-                                placeholder="Enter your Tavily API key"
-                                value={searchSettings.apiKeys?.tavily || ""}
-                                onChange={(e) => {
-                                    const newApiKeys = { ...searchSettings.apiKeys, tavily: e.target.value };
-                                    setSearchSettings({ ...searchSettings, apiKeys: newApiKeys });
-                                }}
-                                onBlur={() => {
-                                    updateSetting(
-                                        () => extensionAPI.setSearchSettings({ apiKeys: searchSettings.apiKeys }),
-                                        () => { }
-                                    );
-                                }}
-                                className="mt-2"
-                            />
+            <div className="container mx-auto max-w-4xl py-8 px-4">
+                {/* Notice Banner */}
+                <Card className="mb-8 border-[var(--border-color)] bg-[var(--bg-secondary)]">
+                    <CardContent className="flex items-center justify-between p-6">
+                        <div>
+                            <h3 className="font-semibold text-lg mb-1 text-[var(--text-primary)]">Configure AI Provider</h3>
+                            <p className="text-[var(--text-secondary)] text-sm">Set up your Google AI or Vertex AI credentials to enable chat capabilities.</p>
                         </div>
-                        <Separator />
-                        <SettingNumberInput
-                            label="Maximum Results"
-                            description="Number of search results to return"
-                            value={searchSettings.maxResults}
-                            onChange={(value) => {
-                                setSearchSettings({ ...searchSettings, maxResults: value });
-                                updateSetting(
-                                    () => extensionAPI.setSearchSettings({ maxResults: value }),
-                                    () => { }
-                                );
-                            }}
-                            min={1}
-                            max={20}
-                        />
-                        <Separator />
-                        <SettingSwitch
-                            label="Include Images"
-                            description="Include image results in search"
-                            checked={searchSettings.includeImages}
-                            onCheckedChange={(checked) => {
-                                setSearchSettings({ ...searchSettings, includeImages: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSearchSettings({ includeImages: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                    </SettingsSection>
-                )}
+                        <Link href="/providers">
+                            <Button>Manage Providers</Button>
+                        </Link>
+                    </CardContent>
+                </Card>
 
-                {/* Text Summarizer */}
-                {summarizerSettings && (
-                    <SettingsSection title="Text Summarizer" description="Configure text selection summarization">
-                        <SettingSwitch
-                            label="Enable Summarizer"
-                            description="Show summarize option when text is selected"
-                            checked={summarizerSettings.enabled}
-                            onCheckedChange={(checked) => {
-                                setSummarizerSettings({ ...summarizerSettings, enabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSummarizerSettings({ enabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">Summary Type</Label>
-                            <Select
-                                value={summarizerSettings.summaryType}
-                                onValueChange={(value) => {
-                                    const newValue = value as TextSummarizerSettings["summaryType"];
-                                    setSummarizerSettings({ ...summarizerSettings, summaryType: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setSummarizerSettings({ summaryType: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="key-points">Key Points</SelectItem>
-                                    <SelectItem value="tl-dr">TL;DR</SelectItem>
-                                    <SelectItem value="headline">Headline</SelectItem>
-                                    <SelectItem value="teaser">Teaser</SelectItem>
-                                </SelectContent>
-                            </Select>
+                {/* Alerts */}
+                {error && (
+                    <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            {error}
                         </div>
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">Summary Length</Label>
-                            <Select
-                                value={summarizerSettings.summaryLength}
-                                onValueChange={(value) => {
-                                    const newValue = value as TextSummarizerSettings["summaryLength"];
-                                    setSummarizerSettings({ ...summarizerSettings, summaryLength: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setSummarizerSettings({ summaryLength: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="short">Short</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="long">Long</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Separator />
-                        <SettingNumberInput
-                            label="Minimum Text Length"
-                            description="Minimum characters needed to trigger summarizer"
-                            value={summarizerSettings.minTextLength}
-                            onChange={(value) => {
-                                setSummarizerSettings({ ...summarizerSettings, minTextLength: value });
-                                updateSetting(
-                                    () => extensionAPI.setSummarizerSettings({ minTextLength: value }),
-                                    () => { }
-                                );
-                            }}
-                            min={10}
-                            max={1000}
-                        />
-                    </SettingsSection>
-                )}
-
-                {/* Text Rewriter */}
-                {rewriterSettings && (
-                    <SettingsSection title="Text Rewriter" description="Configure text rewriting options">
-                        <SettingSwitch
-                            label="Enable Rewriter"
-                            description="Show rewrite option when text is selected"
-                            checked={rewriterSettings.enabled}
-                            onCheckedChange={(checked) => {
-                                setRewriterSettings({ ...rewriterSettings, enabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setRewriterSettings({ enabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <SettingSwitch
-                            label="Show Preset Buttons"
-                            description="Show quick preset buttons (Shorten, Expand, etc.)"
-                            checked={rewriterSettings.showPresets}
-                            onCheckedChange={(checked) => {
-                                setRewriterSettings({ ...rewriterSettings, showPresets: checked });
-                                updateSetting(
-                                    () => extensionAPI.setRewriterSettings({ showPresets: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <SettingSwitch
-                            label="Enable Google Search"
-                            description="Allow AI to search Google for context"
-                            checked={rewriterSettings.enableGoogleSearch}
-                            onCheckedChange={(checked) => {
-                                setRewriterSettings({ ...rewriterSettings, enableGoogleSearch: checked });
-                                updateSetting(
-                                    () => extensionAPI.setRewriterSettings({ enableGoogleSearch: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                    </SettingsSection>
-                )}
-
-                {/* Write Command */}
-                {writeSettings && (
-                    <SettingsSection title="Write Command" description="Configure /write command behavior">
-                        <SettingSwitch
-                            label="Enable Write Command"
-                            description="Allow using /write command in chat"
-                            checked={writeSettings.enabled}
-                            onCheckedChange={(checked) => {
-                                setWriteSettings({ ...writeSettings, enabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setWriteSettings({ enabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">Default Tone</Label>
-                            <Select
-                                value={writeSettings.defaultTone}
-                                onValueChange={(value) => {
-                                    const newValue = value as WriteCommandSettings["defaultTone"];
-                                    setWriteSettings({ ...writeSettings, defaultTone: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setWriteSettings({ defaultTone: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="professional">Professional</SelectItem>
-                                    <SelectItem value="casual">Casual</SelectItem>
-                                    <SelectItem value="formal">Formal</SelectItem>
-                                    <SelectItem value="friendly">Friendly</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Separator />
-                        <SettingSwitch
-                            label="Include Page Context"
-                            description="Include current page content for context"
-                            checked={writeSettings.includePageContext}
-                            onCheckedChange={(checked) => {
-                                setWriteSettings({ ...writeSettings, includePageContext: checked });
-                                updateSetting(
-                                    () => extensionAPI.setWriteSettings({ includePageContext: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                    </SettingsSection>
-                )}
-
-                {/* Voice & Audio */}
-                {ttsSettings && voiceSettings && (
-                    <SettingsSection title="Voice & Audio" description="Configure voice and text-to-speech settings">
-                        <SettingSwitch
-                            label="Show Suggestions"
-                            description="Show AI-suggested actions in chat"
-                            checked={ttsSettings.suggestionsEnabled}
-                            onCheckedChange={(checked) => {
-                                setTTSSettings({ ...ttsSettings, suggestionsEnabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setTTSSettings({ suggestionsEnabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">TTS Provider</Label>
-                            <Select
-                                value={ttsSettings.ttsProvider}
-                                onValueChange={(value) => {
-                                    const newValue = value as TTSSettings["ttsProvider"];
-                                    setTTSSettings({ ...ttsSettings, ttsProvider: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setTTSSettings({ ttsProvider: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="gemini">Gemini</SelectItem>
-                                    <SelectItem value="web-native">Web Native</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">Gemini Voice</Label>
-                            <p className="text-xs text-muted-foreground">Voice for Gemini Live conversations</p>
-                            <div className="flex gap-2 mt-2">
-                                <Select
-                                    value={voiceSettings.voiceName}
-                                    onValueChange={(value) => {
-                                        const newValue = value as VoiceName;
-                                        setVoiceSettings({ ...voiceSettings, voiceName: newValue });
-                                        updateSetting(
-                                            () => extensionAPI.setVoiceSettings({ voiceName: newValue }),
-                                            () => { }
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger className="flex-1">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Aoede">Aoede</SelectItem>
-                                        <SelectItem value="Charon">Charon</SelectItem>
-                                        <SelectItem value="Fenrir">Fenrir</SelectItem>
-                                        <SelectItem value="Kore">Kore</SelectItem>
-                                        <SelectItem value="Orion">Orion</SelectItem>
-                                        <SelectItem value="Orus">Orus</SelectItem>
-                                        <SelectItem value="Puck">Puck</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    variant="outline"
-                                    onClick={handlePreviewVoice}
-                                    disabled={isPreviewingVoice}
-                                >
-                                    <Play className={`h-4 w-4 ${isPreviewingVoice ? "animate-pulse" : ""}`} />
-                                </Button>
-                            </div>
-                        </div>
-                    </SettingsSection>
-                )}
-
-                {/* Research Workflow */}
-                {researchSettings && (
-                    <SettingsSection title="Research Workflow" description="Configure research automation settings">
-                        <SettingNumberInput
-                            label="Minimum Sources"
-                            description="Minimum sources to visit before completing research"
-                            value={researchSettings.minimumSources}
-                            onChange={(value) => {
-                                setResearchSettings({ ...researchSettings, minimumSources: value });
-                                updateSetting(
-                                    () => extensionAPI.setResearchSettings({ minimumSources: value }),
-                                    () => { }
-                                );
-                            }}
-                            min={1}
-                            max={20}
-                        />
-                        <Separator />
-                        <SettingNumberInput
-                            label="Maximum Steps"
-                            description="Maximum steps allowed for research"
-                            value={researchSettings.stepCount}
-                            onChange={(value) => {
-                                setResearchSettings({ ...researchSettings, stepCount: value });
-                                updateSetting(
-                                    () => extensionAPI.setResearchSettings({ stepCount: value }),
-                                    () => { }
-                                );
-                            }}
-                            min={5}
-                            max={100}
-                        />
-                    </SettingsSection>
-                )}
-
-                {/* Supermemory Integration */}
-                {supermemorySettings && (
-                    <SettingsSection title="Supermemory" description="Configure persistent memory integration">
-                        <SettingSwitch
-                            label="Enable Supermemory"
-                            description="Enable persistent memory across conversations"
-                            checked={supermemorySettings.enabled}
-                            onCheckedChange={(checked) => {
-                                setSupermemorySettings({ ...supermemorySettings, enabled: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSupermemorySettings({ enabled: checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        <Separator />
-                        <div className="py-3">
-                            <Label className="text-sm font-medium">API Key</Label>
-                            <Input
-                                type="password"
-                                placeholder="Enter your Supermemory API key"
-                                value={supermemorySettings.apiKey || ""}
-                                onChange={(e) => {
-                                    setSupermemorySettings({ ...supermemorySettings, apiKey: e.target.value });
-                                }}
-                                onBlur={() => {
-                                    updateSetting(
-                                        () => extensionAPI.setSupermemorySettings({ apiKey: supermemorySettings.apiKey }),
-                                        () => { }
-                                    );
-                                }}
-                                className="mt-2"
-                            />
-                        </div>
-                        <Separator />
-                        <SettingSwitch
-                            label="Auto-Extract Insights"
-                            description="Automatically learn from your conversations"
-                            checked={supermemorySettings.autoExtraction}
-                            onCheckedChange={(checked) => {
-                                setSupermemorySettings({ ...supermemorySettings, autoExtraction: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSupermemorySettings({ autoExtraction: checked }),
-                                    () => { }
-                                );
-                            }}
-                            disabled={!supermemorySettings.enabled}
-                        />
-                        <Separator />
-                        <SettingSwitch
-                            label="Content Memory"
-                            description="Learn from summarizer, writer, and rewriter usage"
-                            checked={supermemorySettings.contentMemory}
-                            onCheckedChange={(checked) => {
-                                setSupermemorySettings({ ...supermemorySettings, contentMemory: checked });
-                                updateSetting(
-                                    () => extensionAPI.setSupermemorySettings({ contentMemory: checked }),
-                                    () => { }
-                                );
-                            }}
-                            disabled={!supermemorySettings.enabled}
-                        />
-                    </SettingsSection>
-                )}
-
-                {/* Ask AI Button */}
-                {askAISettings && (
-                    <SettingsSection title="Ask AI Button" description="Configure floating AI button visibility">
-                        <SettingSwitch
-                            label="Enable Globally"
-                            description="Show the Ask AI button on all websites"
-                            checked={!askAISettings.permanentlyHidden}
-                            onCheckedChange={(checked) => {
-                                setAskAISettings({ ...askAISettings, permanentlyHidden: !checked });
-                                updateSetting(
-                                    () => extensionAPI.setAskAISettings({ permanentlyHidden: !checked }),
-                                    () => { }
-                                );
-                            }}
-                        />
-                        {askAISettings.hiddenDomains.length > 0 && (
-                            <>
-                                <Separator />
-                                <div className="py-3">
-                                    <Label className="text-sm font-medium">Hidden Domains</Label>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                        Domains where the button is hidden
-                                    </p>
-                                    <div className="space-y-2">
-                                        {askAISettings.hiddenDomains.map((domain) => (
-                                            <div key={domain} className="flex items-center justify-between bg-muted/50 p-2 rounded">
-                                                <span className="text-sm">{domain}</span>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        const newDomains = askAISettings.hiddenDomains.filter(d => d !== domain);
-                                                        setAskAISettings({ ...askAISettings, hiddenDomains: newDomains });
-                                                        updateSetting(
-                                                            () => extensionAPI.setAskAISettings({ action: "removeDomain", domain }),
-                                                            () => { }
-                                                        );
-                                                    }}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="mt-2"
-                                        onClick={() => {
-                                            setAskAISettings({ ...askAISettings, hiddenDomains: [] });
-                                            updateSetting(
-                                                () => extensionAPI.setAskAISettings({ action: "clearAllDomains" }),
-                                                () => { }
-                                            );
-                                        }}
-                                    >
-                                        Clear All Hidden Domains
-                                    </Button>
-                                </div>
-                            </>
-                        )}
-                    </SettingsSection>
-                )}
-
-                {/* Data Management */}
-                <SettingsSection title="Data Management" description="Manage your data and chat history">
-                    <div className="py-3">
-                        <Label className="text-sm font-medium">Delete All Chats</Label>
-                        <p className="text-xs text-muted-foreground mb-2">
-                            Permanently delete all chat messages and threads
-                        </p>
-                        <Button variant="destructive" onClick={handleDeleteAllChats}>
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete All Chats
+                        <Button variant="ghost" size="icon" onClick={() => setError(null)}>
+                            <X className="h-4 w-4" />
                         </Button>
                     </div>
-                </SettingsSection>
+                )}
+
+                {successMessage && (
+                    <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2 text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        {successMessage}
+                    </div>
+                )}
+
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">Preferences</h2>
+                    <Button variant="outline" onClick={loadSettings} disabled={settingsLoading}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${settingsLoading ? "animate-spin" : ""}`} />
+                        Refresh
+                    </Button>
+                </div>
+
+                <SettingsTabs
+                    aiConfig={aiConfig}
+                    setAIConfig={setAIConfig}
+                    searchSettings={searchSettings}
+                    setSearchSettings={setSearchSettings}
+                    ttsSettings={ttsSettings}
+                    setTTSSettings={setTTSSettings}
+                    voiceSettings={voiceSettings}
+                    setVoiceSettings={setVoiceSettings}
+                    summarizerSettings={summarizerSettings}
+                    setSummarizerSettings={setSummarizerSettings}
+                    rewriterSettings={rewriterSettings}
+                    setRewriterSettings={setRewriterSettings}
+                    writeSettings={writeSettings}
+                    setWriteSettings={setWriteSettings}
+                    researchSettings={researchSettings}
+                    setResearchSettings={setResearchSettings}
+                    supermemorySettings={supermemorySettings}
+                    setSupermemorySettings={setSupermemorySettings}
+                    updateSetting={updateSetting}
+                    handlePreviewVoice={handlePreviewVoice}
+                    isPreviewingVoice={isPreviewingVoice}
+                    handleDeleteAllChats={handleDeleteAllChats}
+                />
             </div>
         </div>
     );
+}
+
+// Separated tabs component to use useMemo for tabs array
+interface SettingsTabsProps {
+    aiConfig: AIConfigSettings;
+    setAIConfig: React.Dispatch<React.SetStateAction<AIConfigSettings>>;
+    searchSettings: SearchSettingsWithKeys | null;
+    setSearchSettings: React.Dispatch<React.SetStateAction<SearchSettingsWithKeys | null>>;
+    ttsSettings: TTSSettings | null;
+    setTTSSettings: React.Dispatch<React.SetStateAction<TTSSettings | null>>;
+    voiceSettings: VoiceSettings | null;
+    setVoiceSettings: React.Dispatch<React.SetStateAction<VoiceSettings | null>>;
+    summarizerSettings: TextSummarizerSettings | null;
+    setSummarizerSettings: React.Dispatch<React.SetStateAction<TextSummarizerSettings | null>>;
+    rewriterSettings: TextRewriterSettings | null;
+    setRewriterSettings: React.Dispatch<React.SetStateAction<TextRewriterSettings | null>>;
+    writeSettings: WriteCommandSettings | null;
+    setWriteSettings: React.Dispatch<React.SetStateAction<WriteCommandSettings | null>>;
+    researchSettings: ResearchWorkflowSettings | null;
+    setResearchSettings: React.Dispatch<React.SetStateAction<ResearchWorkflowSettings | null>>;
+    supermemorySettings: SupermemorySettings | null;
+    setSupermemorySettings: React.Dispatch<React.SetStateAction<SupermemorySettings | null>>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    handlePreviewVoice: () => Promise<void>;
+    isPreviewingVoice: boolean;
+    handleDeleteAllChats: () => Promise<void>;
+}
+
+function SettingsTabs({
+    aiConfig,
+    setAIConfig,
+    searchSettings,
+    setSearchSettings,
+    ttsSettings,
+    setTTSSettings,
+    voiceSettings,
+    setVoiceSettings,
+    summarizerSettings,
+    setSummarizerSettings,
+    rewriterSettings,
+    setRewriterSettings,
+    writeSettings,
+    setWriteSettings,
+    researchSettings,
+    setResearchSettings,
+    supermemorySettings,
+    setSupermemorySettings,
+    updateSetting,
+    handlePreviewVoice,
+    isPreviewingVoice,
+    handleDeleteAllChats,
+}: SettingsTabsProps) {
+    const tabs: AnimatedTab[] = useMemo(() => [
+        {
+            name: "AI Conversation",
+            icon: <ChatCircle size={18} weight="duotone" />,
+            content: (
+                <AIConversationTab
+                    aiConfig={aiConfig}
+                    setAIConfig={setAIConfig}
+                    updateSetting={updateSetting}
+                />
+            ),
+        },
+        {
+            name: "Web Search",
+            icon: <MagnifyingGlass size={18} weight="duotone" />,
+            content: (
+                <WebSearchTab
+                    searchSettings={searchSettings}
+                    setSearchSettings={setSearchSettings}
+                    updateSetting={updateSetting}
+                />
+            ),
+        },
+        {
+            name: "Voice & Audio",
+            icon: <SpeakerHigh size={18} weight="duotone" />,
+            content: (
+                <VoiceTTSTab
+                    ttsSettings={ttsSettings}
+                    setTTSSettings={setTTSSettings}
+                    voiceSettings={voiceSettings}
+                    setVoiceSettings={setVoiceSettings}
+                    updateSetting={updateSetting}
+                    handlePreviewVoice={handlePreviewVoice}
+                    isPreviewingVoice={isPreviewingVoice}
+                />
+            ),
+        },
+        {
+            name: "Features",
+            icon: <Lightning size={18} weight="duotone" />,
+            content: (
+                <FeaturesTab
+                    summarizerSettings={summarizerSettings}
+                    setSummarizerSettings={setSummarizerSettings}
+                    rewriterSettings={rewriterSettings}
+                    setRewriterSettings={setRewriterSettings}
+                    writeSettings={writeSettings}
+                    setWriteSettings={setWriteSettings}
+                    researchSettings={researchSettings}
+                    setResearchSettings={setResearchSettings}
+                    updateSetting={updateSetting}
+                />
+            ),
+        },
+        {
+            name: "Advanced",
+            icon: <GearSix size={18} weight="duotone" />,
+            content: (
+                <AdvancedTab
+                    supermemorySettings={supermemorySettings}
+                    setSupermemorySettings={setSupermemorySettings}
+                    updateSetting={updateSetting}
+                    handleDeleteAllChats={handleDeleteAllChats}
+                />
+            ),
+        },
+    ], [
+        aiConfig, setAIConfig, searchSettings, setSearchSettings,
+        ttsSettings, setTTSSettings, voiceSettings, setVoiceSettings,
+        summarizerSettings, setSummarizerSettings, rewriterSettings, setRewriterSettings,
+        writeSettings, setWriteSettings, researchSettings, setResearchSettings,
+        supermemorySettings, setSupermemorySettings, updateSetting,
+        handlePreviewVoice, isPreviewingVoice, handleDeleteAllChats
+    ]);
+
+    return <AnimatedTabs tabs={tabs} />;
 }
