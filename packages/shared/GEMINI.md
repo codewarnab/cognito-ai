@@ -12,7 +12,6 @@ This package ensures:
 
 ### Structure
 
-```text
 packages/shared/
 ├── src/
 │   ├── types/
@@ -21,15 +20,24 @@ packages/shared/
 │   │   ├── rewriter.ts        # RewritePreset, RewritePageContext
 │   │   ├── summarizer.ts      # SummaryType, SummaryLength, SummaryPageContext
 │   │   ├── transcript.ts      # TranscriptSegment, TranscriptResponse, VideoInfo
-│   │   └── chat.ts            # AIChatMessage, AIChatRequestBody, ChatMode
+│   │   ├── chat.ts            # AIChatMessage, AIChatRequestBody, ChatMode
+│   │   ├── logger.ts          # LogEntry, LogSeverity, LogCategory
+│   │   ├── settings.ts        # UserSettings, AIProvider settings
+│   │   ├── messaging.ts       # Message passing types
+│   │   ├── provider.ts        # AI Provider interfaces
+│   │   └── reminder.ts        # Reminder types
 │   ├── constants/
 │   │   ├── index.ts           # Re-exports all constants
-│   │   └── prompts.ts         # TONE_INSTRUCTIONS, PLATFORM_INSTRUCTIONS, etc.
+│   │   ├── prompts.ts         # TONE_INSTRUCTIONS, PLATFORM_INSTRUCTIONS
+│   │   ├── logger.ts          # Log categories and defaults
+│   │   └── featureFlags.ts    # Feature flags configuration
+│   ├── storage/
+│   │   ├── index.ts           # Re-exports storage utilities
+│   │   └── loggerStorage.ts   # IndexedDB storage for logs
 │   └── index.ts               # Main entry point
 ├── package.json
 ├── tsconfig.json
 └── README.md
-```
 
 ### Usage in Other Packages
 

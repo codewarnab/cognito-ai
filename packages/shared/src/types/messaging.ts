@@ -1,6 +1,7 @@
 import type { AIProvider, ProviderConfig, VertexCredentials } from './provider.js';
 import type { AIProviderConfig, ConfigProvider } from './providers.js';
 import type { UpdateReminderPayload, Reminder } from './reminder.js';
+import type { LoggerConfig } from './logger.js';
 
 // Re-export reminder types for convenience
 export type { UpdateReminderPayload, Reminder } from './reminder.js';
@@ -61,6 +62,11 @@ export type DataOperationsMessageType =
     | 'DELETE_ALL_CHATS'
     | 'PREVIEW_VOICE';
 
+// Logger config sync (webapp → extension)
+export type LoggerMessageType =
+    | 'LOGGER_CONFIG_UPDATE'
+    | 'LOGGER_CONFIG_REQUEST';
+
 export type ExternalMessageType =
     | LifecycleMessageType
     | OnboardingMessageType
@@ -68,7 +74,8 @@ export type ExternalMessageType =
     | ProviderMessageType
     | ReminderMessageType
     | FeatureSettingsMessageType
-    | DataOperationsMessageType;
+    | DataOperationsMessageType
+    | LoggerMessageType;
 
 export interface ExternalMessage<T = unknown> {
     type: ExternalMessageType;
@@ -142,6 +149,17 @@ export interface DeleteReminderPayload {
     id: string;
 }
 
+// Logger config sync payloads
+/** Payload for LOGGER_CONFIG_UPDATE message */
+export interface LoggerConfigUpdatePayload {
+    config: LoggerConfig;
+}
+
+/** Response for LOGGER_CONFIG_REQUEST message */
+export interface LoggerConfigResponse {
+    config: LoggerConfig;
+}
+
 // Re-export specific settings types if needed, or define AllSettingsPayload here
 // For now, using 'unknown' or 'any' in GET_ALL_SETTINGS response inside the implementation is fine,
 // but defining a strict type is better.
@@ -152,3 +170,4 @@ export interface DeleteReminderPayload {
 // The plan says "Phase 1: ... TypeScript types added to @cognito/shared".
 // It lists many interfaces in "Complete Storage Key Inventory".
 // I should probably add them to `settings.ts` in shared and import them here.
+

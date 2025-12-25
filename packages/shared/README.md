@@ -60,6 +60,10 @@ import { TONE_INSTRUCTIONS } from '@cognito/shared/constants';
 | `AIChatMessage` | Chat message structure |
 | `AIChatErrorResponse` | Error response structure |
 | `ChatMode` | Chat modes: chat, agent, adaptive |
+| `LogEntry` | Structure for application logs |
+| `LogSeverity` | Log levels: debug, info, warn, error |
+| `UserSettings` | User configuration interface |
+| `Reminder` | Structure for user reminders |
 
 ### Constants
 
@@ -71,6 +75,9 @@ import { TONE_INSTRUCTIONS } from '@cognito/shared/constants';
 | `SUMMARY_TYPE_INSTRUCTIONS` | Instructions for each summary type |
 | `SUMMARY_LENGTH_TOKENS` | Token limits for summary lengths |
 | `SUGGESTION_CAPABILITIES` | AI suggestion capabilities list |
+| `LOG_CATEGORIES` | Available logging categories |
+| `DEFAULT_SETTINGS` | Default user settings |
+| `FEATURE_FLAGS` | System feature flags |
 
 ## Development
 

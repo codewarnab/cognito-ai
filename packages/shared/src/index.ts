@@ -11,3 +11,6 @@ export * from './types/index.js';
 
 // Re-export all constants
 export * from './constants/index.js';
+
+// Re-export storage interfaces
+export * from './storage/index.js';

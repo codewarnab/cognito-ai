@@ -13,3 +13,12 @@ export {
 } from './prompts.js';
 
 export { WEB_SEARCH_SELF_API_KEY_HIDDEN } from './featureFlags.js';
+
+// Logger presets and utilities
+export {
+    LOG_PRESETS,
+    LOGGER_GROUP_LABELS,
+    LOGGER_PRESET_NAMES,
+    matchesPreset,
+    getDefaultLoggerConfig,
+} from './logger.js';

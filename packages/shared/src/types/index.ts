@@ -69,6 +69,8 @@ export type {
     SetProvidersConfigPayload,
     TestProviderConnectionPayload,
     TestProviderConnectionResponse,
+    LoggerConfigUpdatePayload,
+    LoggerConfigResponse,
 } from './messaging.js';
 
 // Reminder types
@@ -77,6 +79,15 @@ export type {
     Reminder,
     UpdateReminderPayload,
 } from './reminder.js';
+
+// Logger types
+export type {
+    LogCategory,
+    LoggerConfig,
+    LoggerPresetName,
+    LoggerCategoryGroup,
+} from './logger.js';
+export { LOGGER_CONFIG_KEY, LOGGER_CATEGORY_GROUPS } from './logger.js';
 
 // Settings types (for webapp <-> extension communication)
 export type {
