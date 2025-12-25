@@ -2,8 +2,8 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { ArrowLeft, ChevronDown, AlertTriangle, Search, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useLoggerConfig } from '@/hooks/settings/useLoggerConfig';
-import type { LogCategory, LoggerPresetName } from '@/types/logger';
-import { LOGGER_CATEGORY_GROUPS } from '@/types/logger';
+import type { LogCategory, LoggerPresetName } from '@cognito/shared';
+import { LOGGER_CATEGORY_GROUPS } from '@cognito/shared';
 import { createLogger } from '~logger';
 
 const log = createLogger('LoggerPanel', 'SETTINGS');
