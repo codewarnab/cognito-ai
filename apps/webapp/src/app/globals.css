@@ -70,6 +70,14 @@
   --text-tertiary: oklch(from var(--std-500) l c h / 0.5);
   --border-color: oklch(from var(--std-900) l c h / 0.1);
 
+  /* Additional semantic colors */
+  --bg-quaternary: oklch(from var(--std-200) l c h / 0.5);
+  --glass-bg: oklch(from var(--std-200) l c h / 0.3);
+  --glass-bg-hover: oklch(from var(--std-300) l c h / 0.4);
+  --color-secondary: var(--primary);
+  --color-warning: oklch(0.75 0.18 85);
+  --border-color-hover: oklch(from var(--std-400) l c h / 0.3);
+
   /* Hover/Active states */
   --bg-hover: oklch(from var(--std-300) l c h / 0.15);
   --bg-active: oklch(from var(--std-400) l c h / 0.15);
@@ -131,6 +139,14 @@
   --text-secondary: oklch(from var(--std-700) l c h / 0.85);
   --text-tertiary: oklch(from var(--std-500) l c h / 0.7);
   --border-color: oklch(from var(--std-300) l c h / 0.3);
+
+  /* Additional semantic colors - dark mode */
+  --bg-quaternary: oklch(from var(--std-200) l c h / 0.5);
+  --glass-bg: oklch(from var(--std-200) l c h / 0.2);
+  --glass-bg-hover: oklch(from var(--std-300) l c h / 0.3);
+  --color-secondary: var(--primary);
+  --color-warning: oklch(0.80 0.16 85);
+  --border-color-hover: oklch(from var(--std-400) l c h / 0.4);
 
   /* Hover/Active states - adjusted for dark */
   --bg-hover: oklch(from var(--std-300) l c h / 0.1);

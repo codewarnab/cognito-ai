@@ -269,6 +269,18 @@ class ExtensionAPI {
     async deleteAllChats() {
         return this.sendMessage<DeleteAllChatsResponse>({ type: 'DELETE_ALL_CHATS' });
     }
+
+    // =================================================================
+    // Logger Config Sync
+    // =================================================================
+    async getLoggerConfig() {
+        return this.sendMessage<{ config: import('@cognito/shared').LoggerConfig }>({ type: 'LOGGER_CONFIG_REQUEST' });
+    }
+
+    async updateLoggerConfig(config: import('@cognito/shared').LoggerConfig) {
+        return this.sendMessage({ type: 'LOGGER_CONFIG_UPDATE', payload: { config } });
+    }
 }
 
 export const extensionAPI = ExtensionAPI.getInstance();
+
