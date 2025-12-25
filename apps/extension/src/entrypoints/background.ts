@@ -31,10 +31,12 @@ import {
     initializeWriterPortListener,
     initializeRewriterPortListener
 } from '@/background/messaging/router';
+import { initializeExternalMessageRouter } from '@/background/messaging/externalHandler';
 import { initializeRewriterContextMenu } from '@/background/contextMenu';
 import { recoverExtractionQueue } from '@/background/supermemory/extraction/startup';
 import { recoverContentMemoryQueue } from '@/background/supermemory/contentMemory/startup';
 import { initializeWebMCPManager } from '@/background/webmcp/manager';
+import { WEBAPP_ROUTES } from '@/constants/webapp';
 
 // Initialize LoggerConfigManager early to load dynamic config from storage
 // This ensures logging respects user preferences before any logs are emitted
@@ -51,6 +53,13 @@ export default defineBackground(() => {
     // Core Initialization
     // ============================================================================
 
+    // Set uninstall URL for user feedback collection
+    try {
+        chrome.runtime.setUninstallURL(WEBAPP_ROUTES.UNINSTALLED);
+    } catch (err: unknown) {
+        log.warn('Failed to set uninstall URL:', err);
+    }
+
     // Initialize OAuth redirect URI immediately when service worker loads
     initializeOAuthRedirectURI();
 
@@ -61,6 +70,7 @@ export default defineBackground(() => {
     // Initialize all modular event listeners
     initializeLifecycleEventListeners();
     initializeMessageRouter();
+    initializeExternalMessageRouter();
     initializeSummarizerPortListener();
     initializeWriterPortListener();
     initializeRewriterPortListener();
