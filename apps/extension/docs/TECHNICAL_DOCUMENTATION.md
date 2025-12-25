@@ -59,7 +59,7 @@
 - TypeScript, React, WXT MV3 (`package.json`, `wxt.config.ts`).
 - AI SDK (`ai` v6), `@ai-sdk/google`, `@google/genai`, local `@built-in-ai/core` (`package.json`, `src/ai/core/modelSetup.ts`).
 - Storage: IndexedDB/Dexie (`src/db/`), Chrome storage APIs, Zustand stores (`src/stores/`).
-- UI: Radix UI, framer-motion, lucide-react (`package.json:27`, `package.json:37`, `package.json:40`).
+- UI: Radix UI, motion, lucide-react (`package.json:27`, `package.json:37`, `package.json:40`).
 - Chrome APIs: `sidePanel`, `tabs`, `tabGroups`, `alarms`, `history`, `notifications`, `omnibox`, `offscreen` (`package.json:84`, `build/chrome-mv3-prod/manifest.json:1`).
 - MCP: `@modelcontextprotocol/sdk` (`package.json:23`).
 

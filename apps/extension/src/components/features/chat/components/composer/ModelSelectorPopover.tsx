@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Gemini } from '@assets/brands/integrations/Gemini';
 import { getModelConfig, setModelConfig } from '@/utils/ai/modelSettings';
 import { createLogger } from '~logger';

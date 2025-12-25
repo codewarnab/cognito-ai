@@ -1,4 +1,4 @@
-import { motion, useAnimation, type Variants } from 'framer-motion';
+import { motion, useAnimation, type Variants } from 'motion/react';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
 import { createLogger } from '~logger';

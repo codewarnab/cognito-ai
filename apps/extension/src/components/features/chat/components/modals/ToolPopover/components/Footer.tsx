@@ -1,6 +1,6 @@
 import React from 'react';
 import { Info, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface FooterProps {
     totalEnabledCount: number;

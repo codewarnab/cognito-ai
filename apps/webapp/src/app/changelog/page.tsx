@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { Header } from '@/components/shared/Header';
 import { cn } from '@/lib/utils';
 

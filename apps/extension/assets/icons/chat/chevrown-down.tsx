@@ -1,5 +1,5 @@
-import type { Transition } from 'framer-motion';
-import { motion, useAnimation } from 'framer-motion';
+import type { Transition } from 'motion/react';
+import { motion, useAnimation } from 'motion/react';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 

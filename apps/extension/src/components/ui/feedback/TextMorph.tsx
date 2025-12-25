@@ -1,6 +1,6 @@
 import React, { useMemo, useId } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import type { Transition, Variants } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
+import type { Transition, Variants } from 'motion/react';
 
 export type TextMorphProps = {
     children: string;

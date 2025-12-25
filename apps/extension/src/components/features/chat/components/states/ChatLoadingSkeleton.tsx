@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 /**
  * Skeleton loading component displayed while chat store is hydrating

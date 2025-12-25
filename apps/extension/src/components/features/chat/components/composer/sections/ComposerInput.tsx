@@ -1,5 +1,5 @@
 import React from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { MentionInput } from '@/components/shared/inputs';
 import type { FileAttachmentData } from '../../attachments/FileAttachment';
 import type { WorkflowDefinition } from '@/workflows/types';
@@ -87,7 +87,7 @@ export const ComposerInput: React.FC<ComposerInputProps> = ({
                             layout="position"
                             className="pointer-events-none absolute top-0 left-0 -z-10 flex min-h-[24px] w-full items-center overflow-hidden break-words pt-[10px] pl-2"
                             layoutId={`message-${nextMessageId}`}
-                            transition={{ type: 'easeOut', duration: 0.2 }}
+                            transition={{ ease: 'easeOut', duration: 0.2 }}
                             initial={{ opacity: 0.6, zIndex: -1 }}
                             animate={{ opacity: 0.6, zIndex: -1 }}
                             exit={{ opacity: 1, zIndex: 1 }}

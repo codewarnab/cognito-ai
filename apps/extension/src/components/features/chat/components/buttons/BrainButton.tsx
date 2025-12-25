@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Brain, Check, AlertCircle } from 'lucide-react';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';

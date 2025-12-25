@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Settings2, X, Search } from 'lucide-react';
 import { createLogger } from '~logger';
 import { ALL_TOOLS, getEnabledTools, setEnabledTools } from '@/services/elevenlabs/settings';

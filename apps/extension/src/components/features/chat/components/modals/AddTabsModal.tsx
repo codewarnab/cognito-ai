@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { XIcon } from '@/components/shared/icons/XIcon';
 import { useUINavigationStore, type UINavigationState } from '@/stores';
 

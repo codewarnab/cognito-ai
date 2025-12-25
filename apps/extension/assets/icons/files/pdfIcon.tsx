@@ -1,4 +1,4 @@
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation } from 'motion/react';
 
 export const PDFIcon = ({ size = 24 }) => {
     const controls = useAnimation();

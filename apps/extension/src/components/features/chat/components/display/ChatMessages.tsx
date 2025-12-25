@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import '@/styles/components/chat-scrollbar.css';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { renderTextWithMentions } from '@/components/shared/inputs';
 import { ToolPartRenderer } from '@/ai/tools/components';
 import { CollapsibleUserMessage } from './CollapsibleUserMessage';
@@ -450,7 +450,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                     key={message.id || index}
                                     layout="position"
                                     layoutId={isPendingMessage ? `message-${pendingMessageId}` : undefined}
-                                    transition={{ type: 'easeOut', duration: 0.2 }}
+                                    transition={{ ease: 'easeOut', duration: 0.2 }}
                                     initial={isPendingMessage ? { opacity: 0 } : undefined}
                                     animate={isPendingMessage ? { opacity: 1 } : undefined}
                                     className={`flex gap-3 max-w-full group ${message.role === 'user' ? 'justify-end items-start gap-3 ml-auto pr-1' : 'justify-start items-start pr-2'}`}

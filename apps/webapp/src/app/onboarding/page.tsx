@@ -13,6 +13,10 @@ import type { OnboardingMessageType } from "@cognito/shared";
 import { Button } from "@/components/ui/button";
 import { useOnboardingContext } from "@/components/onboarding/OnboardingProvider";
 
+interface OnboardingStatusResponse {
+    completed: boolean;
+}
+
 export default function OnboardingPage() {
     const router = useRouter();
     const { step, nextStep, prevStep, completeOnboarding } = useOnboardingContext();
@@ -31,7 +35,7 @@ export default function OnboardingPage() {
             }
 
             try {
-                const response = await sendMessage({ type: 'GET_ONBOARDING_STATUS' as OnboardingMessageType });
+                const response = await sendMessage<OnboardingStatusResponse>({ type: 'GET_ONBOARDING_STATUS' as OnboardingMessageType });
                 if (response.success && response.data?.completed) {
                     setIsCompleted(true);
                     router.replace('/settings');

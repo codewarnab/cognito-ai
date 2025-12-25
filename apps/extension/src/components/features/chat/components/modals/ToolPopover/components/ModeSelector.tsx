@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquare, Bot, Sparkles, Info } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import type { ToolMode } from '../types';
 
 interface ModeSelectorProps {

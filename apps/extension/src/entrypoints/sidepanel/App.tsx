@@ -11,7 +11,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 // UI Components
 import { CopilotChatWindow } from "@/components/shell";

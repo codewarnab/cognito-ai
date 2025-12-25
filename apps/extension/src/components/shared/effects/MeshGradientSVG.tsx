@@ -1,4 +1,4 @@
-import { motion } from "framer-motion"
+import { motion } from 'motion/react'
 import { useState, useEffect } from "react"
 
 interface MeshGradientSVGProps {

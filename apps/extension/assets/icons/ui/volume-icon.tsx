@@ -1,5 +1,5 @@
 
-import { motion } from "framer-motion";
+import { motion } from 'motion/react';
 
 interface AnimatedVolumeIconProps {
     size?: number;
@@ -11,7 +11,7 @@ const AnimatedVolumeIcon = ({ size = 18 }: AnimatedVolumeIconProps) => {
             scale: 1.1,
             transition: {
                 duration: 0.3,
-                ease: "easeOut",
+                ease: "easeOut" as const,
             },
         },
         initial: {},
@@ -28,7 +28,7 @@ const AnimatedVolumeIcon = ({ size = 18 }: AnimatedVolumeIconProps) => {
             transition: {
                 repeat: Infinity,
                 duration: 1,
-                ease: "easeInOut",
+                ease: "easeInOut" as const,
             },
         },
     };

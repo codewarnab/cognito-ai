@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { CaretDown } from "@phosphor-icons/react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 

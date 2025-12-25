@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import logoImage from '@assets/images/logo.png';
 
 interface LoadingScreenProps {

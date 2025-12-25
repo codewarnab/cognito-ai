@@ -1,7 +1,7 @@
-import type { Variants } from 'framer-motion';
+import type { Variants } from 'motion/react';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import { motion, useAnimation } from 'motion/react';
 import { cn } from '@/utils/ui';
 
 export interface XIconHandle {

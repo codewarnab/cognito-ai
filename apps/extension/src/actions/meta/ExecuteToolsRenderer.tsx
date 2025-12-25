@@ -2,14 +2,14 @@
  * Custom renderer for executeTools that displays each sub-tool call
  * using CompactToolCard, making them look identical to normal tool calls.
  * 
- * Phase 5: Enhanced with framer-motion animations for smooth transitions
+ * Phase 5: Enhanced with motion animations for smooth transitions
  * - Loading state with animated indicator
  * - Staggered animation for tool cards appearing
  * - Smooth transitions between states
  */
 
 import { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { CompactToolCard } from '@/components/ui/tools/cards';
 import { LoadingCheckIcon, type LoadingCheckIconHandle } from '@assets/icons/chat/loading-check';
 import type { ToolUIState } from '@/ai/tools/components';
@@ -33,18 +33,18 @@ const containerVariants = {
 
 // Animation variants for individual tool cards
 const cardVariants = {
-    hidden: { 
-        opacity: 0, 
+    hidden: {
+        opacity: 0,
         y: -8,
         scale: 0.95,
     },
-    visible: { 
-        opacity: 1, 
+    visible: {
+        opacity: 1,
         y: 0,
         scale: 1,
         transition: {
             duration: 0.25,
-            ease: [0.25, 0.46, 0.45, 0.94], // Custom easing for smooth feel
+            ease: [0.25, 0.46, 0.45, 0.94] as const, // Custom easing for smooth feel
         },
     },
 };
@@ -52,15 +52,15 @@ const cardVariants = {
 // Animation variants for loading state
 const loadingVariants = {
     initial: { opacity: 0, y: -4 },
-    animate: { 
-        opacity: 1, 
+    animate: {
+        opacity: 1,
         y: 0,
-        transition: { duration: 0.2, ease: 'easeOut' },
+        transition: { duration: 0.2, ease: 'easeOut' as const },
     },
-    exit: { 
-        opacity: 0, 
+    exit: {
+        opacity: 0,
         y: -4,
-        transition: { duration: 0.15, ease: 'easeIn' },
+        transition: { duration: 0.15, ease: 'easeIn' as const },
     },
 };
 

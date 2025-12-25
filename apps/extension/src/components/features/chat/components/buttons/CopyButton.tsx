@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { CopyIcon, type CopyIconHandle } from '@/components/shared/icons/CopyIcon';
 import { VoiceButton } from './VoiceButton';
 import { DownloadButton } from './DownloadButton';

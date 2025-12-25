@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import { motion, useAnimation, type Variants } from 'framer-motion';
+import { motion, useAnimation, type Variants } from 'motion/react';
 
 export interface CameraIconHandle {
     startAnimation: () => void;

@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Settings2, Check, X } from 'lucide-react';
 import { createLogger } from '~logger';
 import { ALL_TOOLS, getEnabledTools, setEnabledTools } from '@/services/elevenlabs/settings';

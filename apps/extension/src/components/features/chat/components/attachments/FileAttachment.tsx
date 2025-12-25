@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ExternalLink } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { getFileIcon, truncateFileName } from '@/utils/files';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 import { AudioAttachment } from './AudioAttachment';

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { DeleteIcon } from '@assets/icons/ui/trash';
 import type { DeleteIconHandle } from '@assets/icons/ui/trash';
 

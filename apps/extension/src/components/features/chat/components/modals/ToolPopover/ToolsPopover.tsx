@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Server } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToolsPopover } from './useToolsPopover';
 import { SearchBar } from './components/SearchBar';
 import { ModeSelector } from './components/ModeSelector';

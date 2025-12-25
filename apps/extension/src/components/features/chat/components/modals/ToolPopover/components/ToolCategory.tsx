@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import { SUPERMEMORY_TOOLS } from '@/constants/toolDescriptions';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';

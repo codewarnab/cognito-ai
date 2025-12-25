@@ -5,7 +5,7 @@ import React, {
     useImperativeHandle,
     useRef,
 } from 'react';
-import { motion, useAnimation, type Variants } from 'framer-motion';
+import { motion, useAnimation, type Variants } from 'motion/react';
 import { cn } from '@/utils/ui';
 
 export interface IconHandle {

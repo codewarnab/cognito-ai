@@ -388,7 +388,7 @@ export type CognitoUIMessage = UIMessage<MessageMetadata>;
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Clock, Key, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { hasApiKeyForFallback, switchToBYOKMode } from '@/ai/backend/gracefulDegradation';
 import type { RateLimitData } from '@/ai/types';
 import './RateLimitCard.css';

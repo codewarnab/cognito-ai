@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Download, CheckCircle, AlertCircle } from 'lucide-react';
 import type { ModelDownloadProgress } from '@/utils/ai';
 import { createLogger } from '~logger';

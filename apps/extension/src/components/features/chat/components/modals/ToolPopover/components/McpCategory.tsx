@@ -1,6 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Toggle } from '@/components/shared/inputs/Toggle';
 import { HighlightedText } from '../utils/highlightText';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';

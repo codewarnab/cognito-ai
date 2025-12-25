@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useLayoutEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDownIcon } from '@assets/icons/chat/chevrown-down';
 import { COLLAPSIBLE_MESSAGE_CONFIG } from '~/constants';
 
