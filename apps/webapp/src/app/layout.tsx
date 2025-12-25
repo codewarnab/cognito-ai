@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import "./globals.css";
 import { Footer } from "@/components/shared/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-theme="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
+        className={`${inter.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <NuqsAdapter>
           <main className="flex-1">

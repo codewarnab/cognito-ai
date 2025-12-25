@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { Logo } from './Logo';
+import { Navigation } from './Navigation';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -10,6 +11,7 @@ interface HeaderProps {
     title?: string;
     backHref?: string;
     showLogo?: boolean;
+    showNav?: boolean;
 }
 
 export function Header({
@@ -18,6 +20,7 @@ export function Header({
     title,
     backHref,
     showLogo = true,
+    showNav = true,
 }: HeaderProps) {
     return (
         <header
@@ -26,7 +29,7 @@ export function Header({
                 className
             )}
         >
-            <div className="container flex h-16 items-center px-4 md:px-6">
+            <div className="container flex h-16 items-center px-8 md:px-24">
                 <div className="flex items-center gap-4">
                     {backHref ? (
                         <Link
@@ -56,8 +59,12 @@ export function Header({
                     )}
                 </div>
 
-                <div className="ml-auto flex items-center gap-4">{children}</div>
+                <div className="ml-auto flex items-center gap-6">
+                    {showNav && <Navigation />}
+                    {children}
+                </div>
             </div>
         </header>
     );
 }
+

@@ -27,7 +27,7 @@ export function Logo({ className, size = 'md', showText = false }: LogoProps) {
                 priority
             />
             {showText && (
-                <span className={cn('font-bold tracking-tight text-white', text)}>
+                <span className={cn('font-bold tracking-tight text-[var(--text-primary)]', text)}>
                     Cognito AI
                 </span>
             )}

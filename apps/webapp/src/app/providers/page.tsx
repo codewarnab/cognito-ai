@@ -168,7 +168,7 @@ export default function ProvidersPage() {
     // Show skeleton while checking extension status
     if (extensionLoading || isLoading) {
         return (
-            <div className="min-h-screen bg-[var(--bg-primary)]" data-theme="dark">
+            <div className="min-h-screen bg-[var(--bg-primary)]">
                 <Header title="AI Providers" />
                 <div className="container mx-auto max-w-3xl py-8 px-4">
                     <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
@@ -191,7 +191,7 @@ export default function ProvidersPage() {
     // Show extension not installed message
     if (!isInstalled) {
         return (
-            <div className="min-h-screen bg-[var(--bg-primary)]" data-theme="dark">
+            <div className="min-h-screen bg-[var(--bg-primary)]">
                 <Header title="AI Providers" />
                 <div className="container mx-auto max-w-3xl py-8 px-4">
                     <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
@@ -214,7 +214,7 @@ export default function ProvidersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[var(--bg-primary)]" data-theme="dark">
+        <div className="min-h-screen bg-[var(--bg-primary)]">
             <Header title="AI Providers">
                 {isSaving && (
                     <div className="flex items-center text-sm text-[var(--text-secondary)]">

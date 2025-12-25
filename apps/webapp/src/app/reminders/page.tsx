@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, Trash2, Calendar, Copy, Check, Edit2, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { Clock, Trash2, Calendar, Copy, Check, Edit2 } from 'lucide-react';
 import { extensionAPI } from '@/lib/extension-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import type { Reminder } from '@cognito/shared';
 import { EditReminderDialog } from '@/components/reminders/EditReminderDialog';
 import { ExtensionStatus } from '@/components/extension/ExtensionStatus';
 import { useExtension } from '@/hooks/useExtension';
+import { Header } from '@/components/shared/Header';
 
 // Example suggestions for creating reminders
 const REMINDER_SUGGESTIONS = [
@@ -126,8 +126,11 @@ export default function RemindersPage() {
 
     if (extensionLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
-                <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+            <div className="min-h-screen bg-[var(--bg-primary)]">
+                <Header title="Reminders" />
+                <div className="flex items-center justify-center py-16">
+                    <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
+                </div>
             </div>
         );
     }
@@ -137,41 +140,30 @@ export default function RemindersPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
-            <div className="container mx-auto max-w-3xl px-4 py-12">
-                {/* Header */}
-                <div className="mb-8">
-                    <Link
-                        href="/"
-                        className="inline-flex items-center gap-2 text-white/60 hover:text-white transition-colors mb-6"
-                    >
-                        <ArrowLeft size={16} />
-                        <span className="text-sm">Back to Home</span>
-                    </Link>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl">
-                            <Clock size={24} className="text-blue-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold">Reminders</h1>
-                            <p className="text-white/60 text-sm">Manage your scheduled reminders</p>
-                        </div>
+        <div className="min-h-screen bg-[var(--bg-primary)]">
+            <Header title="Reminders" />
+            <div className="container mx-auto max-w-2xl py-8 px-4">
+                {/* Page Description */}
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-2.5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl">
+                        <Clock size={24} className="text-blue-400" />
                     </div>
+                    <p className="text-[var(--text-secondary)] text-sm">Manage your scheduled reminders</p>
                 </div>
 
                 {/* Content */}
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-16 gap-5">
                         <div className="w-10 h-10 border-2 border-white/10 border-t-white/80 rounded-full animate-spin" />
-                        <p className="text-sm text-white/60">Loading reminders...</p>
+                        <p className="text-sm text-[var(--text-secondary)]">Loading reminders...</p>
                     </div>
                 ) : reminders.length === 0 ? (
-                    <Card className="bg-white/[0.03] border-white/[0.06]">
+                    <Card className="bg-[var(--bg-secondary)] border-[var(--border-color)]">
                         <CardContent className="flex flex-col items-center py-12 gap-5">
-                            <Clock size={48} className="text-white/25" />
+                            <Clock size={48} className="text-[var(--text-tertiary)]" />
                             <div className="text-center">
-                                <CardTitle className="text-lg text-white/90 mb-2">No active reminders</CardTitle>
-                                <CardDescription className="text-white/50">
+                                <CardTitle className="text-lg text-[var(--text-primary)] mb-2">No active reminders</CardTitle>
+                                <CardDescription className="text-[var(--text-secondary)]">
                                     Ask Cognito to create reminders for you using natural language.
                                     <br />
                                     Try one of these examples to get started:
@@ -183,14 +175,14 @@ export default function RemindersPage() {
                                 {REMINDER_SUGGESTIONS.map((suggestion, index) => (
                                     <div
                                         key={index}
-                                        className="group flex items-center gap-3 p-3 bg-white/[0.03] border border-white/[0.06] rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/[0.06] hover:border-white/[0.1]"
+                                        className="group flex items-center gap-3 p-3 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-lg cursor-pointer transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--border-hover)]"
                                         onClick={() => handleCopySuggestion(suggestion, index)}
                                     >
-                                        <span className="flex-1 text-sm text-white/70">
+                                        <span className="flex-1 text-sm text-[var(--text-secondary)]">
                                             {suggestion}
                                         </span>
                                         <button
-                                            className="p-1.5 text-white/30 rounded transition-all duration-200 group-hover:text-white/60 hover:!text-white hover:!bg-white/10"
+                                            className="p-1.5 text-[var(--text-tertiary)] rounded transition-all duration-200 group-hover:text-[var(--text-secondary)] hover:!text-[var(--text-primary)] hover:!bg-[var(--bg-hover)]"
                                             title="Copy to clipboard"
                                         >
                                             {copiedIndex === index ? (
@@ -209,20 +201,20 @@ export default function RemindersPage() {
                         {reminders.map((reminder) => (
                             <Card
                                 key={reminder.id}
-                                className="bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
+                                className="bg-[var(--bg-secondary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)] hover:border-[var(--border-hover)] transition-all"
                             >
                                 <CardContent className="p-4">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1">
-                                            <h3 className="text-sm font-semibold text-white mb-1">
+                                            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
                                                 {reminder.generatedTitle || reminder.title}
                                             </h3>
                                             {reminder.generatedDescription && (
-                                                <p className="text-sm text-white/70 mb-2">
+                                                <p className="text-sm text-[var(--text-secondary)] mb-2">
                                                     {reminder.generatedDescription}
                                                 </p>
                                             )}
-                                            <div className="flex items-center gap-1.5 text-xs text-white/50">
+                                            <div className="flex items-center gap-1.5 text-xs text-[var(--text-tertiary)]">
                                                 <Calendar size={14} />
                                                 <span>{formatDateTime(reminder.when)}</span>
                                                 {reminder.repeat && reminder.repeat !== 'none' && (
@@ -241,7 +233,7 @@ export default function RemindersPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-8 w-8 p-0 text-white/40 hover:text-white hover:bg-white/10"
+                                                className="h-8 w-8 p-0 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                                                 onClick={() => handleEditClick(reminder)}
                                             >
                                                 <Edit2 size={16} />
@@ -249,7 +241,7 @@ export default function RemindersPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="h-8 w-8 p-0 text-white/40 hover:text-red-400 hover:bg-red-500/10"
+                                                className="h-8 w-8 p-0 text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-500/10"
                                                 onClick={() => handleDeleteReminder(reminder.id)}
                                             >
                                                 <Trash2 size={16} />

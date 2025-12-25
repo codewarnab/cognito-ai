@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, X } from "lucide-react";
-import { MagnifyingGlass, SpeakerHigh, PencilSimple, Brain, GearSix } from "@phosphor-icons/react";
+import { AlertCircle, X, Trash2 } from "lucide-react";
+import { MagnifyingGlass, SpeakerHigh, PencilSimple, Brain } from "@phosphor-icons/react";
 import { extensionAPI } from "@/lib/extension-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Header } from "@/components/shared/Header";
-import { AnimatedTabs, type AnimatedTab } from "@/components/ui/animated-tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExtension } from "@/hooks/useExtension";
 import type {
@@ -31,11 +30,24 @@ import { VoiceTTSTab } from "@/components/settings/tabs/VoiceTTSTab";
 import { WritingToolsTab } from "@/components/settings/tabs/FeaturesTab";
 import { AdvancedTab } from "@/components/settings/tabs/AdvancedTab";
 
+// Import Search Components
+import { SettingsSearch } from "@/components/settings/shared/SettingsSearch";
+import { HighlightedText } from "@/components/shared/HighlightedText";
+import { findMatchingAccordions, sectionHasVisibleAccordions } from "@/components/settings/shared/settingsSearchData";
+
 export default function SettingsPage() {
     const router = useRouter();
     const { isInstalled, isLoading: extensionLoading } = useExtension();
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Compute force-open accordion sections based on search
+    const forcedOpenSections = useMemo(() => {
+        return findMatchingAccordions(searchQuery);
+    }, [searchQuery]);
 
     // Settings state
     const [aiConfig, setAIConfig] = useState<AIConfigSettings>({ maxToolCallLimit: 20 });
@@ -184,36 +196,48 @@ export default function SettingsPage() {
         return (
             <div className="min-h-screen bg-[var(--bg-primary)]">
                 <Header title="Settings" />
-                <div className="container mx-auto max-w-4xl py-8 px-4">
-                    {/* Skeleton for Notice Banner */}
-                    <Card className="mb-8 border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <CardContent className="flex items-center justify-between p-6">
-                            <div className="flex-1">
-                                <Skeleton className="h-6 w-48 mb-2" />
-                                <Skeleton className="h-4 w-80" />
-                            </div>
-                            <Skeleton className="h-9 w-32" />
-                        </CardContent>
-                    </Card>
+                <div className="container mx-auto max-w-2xl py-8 px-4 space-y-12">
+                    {/* Search Bar Skeleton */}
+                    <Skeleton className="h-10 w-full mb-6 rounded-md" />
 
-                    {/* Skeleton for Preferences Header */}
-                    <div className="flex items-center justify-between mb-6">
-                        <Skeleton className="h-8 w-32" />
+                    {/* AI & Search Section Skeleton */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-6 w-32" />
+                        </div>
+                        <div className="space-y-3">
+                            <Skeleton className="h-[76px] w-full rounded-xl" />
+                            <Skeleton className="h-[76px] w-full rounded-xl" />
+                            <Skeleton className="h-[76px] w-full rounded-xl" />
+                        </div>
                     </div>
 
-                    {/* Skeleton for Tabs */}
-                    <div className="space-y-6">
-                        <Skeleton className="h-12 w-full" />
-                        <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                            <CardContent className="p-6 space-y-4">
-                                <Skeleton className="h-5 w-40" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                                <Skeleton className="h-5 w-48 mt-6" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-10 w-full" />
-                            </CardContent>
-                        </Card>
+                    {/* Voice & Audio Section Skeleton */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-6 w-32" />
+                        </div>
+                        <Skeleton className="h-[76px] w-full rounded-xl" />
+                    </div>
+
+                    {/* Writing Tools Section Skeleton */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-6 w-32" />
+                        </div>
+                        <Skeleton className="h-[76px] w-full rounded-xl" />
+                    </div>
+
+                    {/* Memory Section Skeleton */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-6 w-32" />
+                        </div>
+                        <Skeleton className="h-[76px] w-full rounded-xl" />
                     </div>
                 </div>
             </div>
@@ -249,25 +273,7 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-[var(--bg-primary)]">
             <Header title="Settings" />
 
-            <div className="container mx-auto max-w-4xl py-8 px-4">
-                {/* Notice Banner - Minimal */}
-                <div className="mb-6 flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-[var(--bg-secondary)]/60 border border-[var(--border-color)] backdrop-blur-sm">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-500/10">
-                            <GearSix size={16} weight="duotone" className="text-blue-400" />
-                        </div>
-                        <span className="text-sm text-[var(--text-secondary)]">
-                            <span className="font-medium text-[var(--text-primary)]">Configure AI Provider</span>
-                            <span className="hidden sm:inline"> — Set up your credentials to enable chat</span>
-                        </span>
-                    </div>
-                    <Link href="/providers">
-                        <Button size="sm" variant="outline" className="text-xs h-7 px-3">
-                            Manage Providers
-                        </Button>
-                    </Link>
-                </div>
-
+            <div className="container mx-auto max-w-2xl py-8 px-4 space-y-12">
                 {/* Alerts */}
                 {error && (
                     <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center justify-between">
@@ -281,153 +287,130 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Preferences</h2>
-
-                <SettingsTabs
-                    aiConfig={aiConfig}
-                    setAIConfig={setAIConfig}
-                    searchSettings={searchSettings}
-                    setSearchSettings={setSearchSettings}
-                    ttsSettings={ttsSettings}
-                    setTTSSettings={setTTSSettings}
-                    voiceSettings={voiceSettings}
-                    setVoiceSettings={setVoiceSettings}
-                    summarizerSettings={summarizerSettings}
-                    setSummarizerSettings={setSummarizerSettings}
-                    rewriterSettings={rewriterSettings}
-                    setRewriterSettings={setRewriterSettings}
-                    writeSettings={writeSettings}
-                    setWriteSettings={setWriteSettings}
-                    researchSettings={researchSettings}
-                    setResearchSettings={setResearchSettings}
-                    supermemorySettings={supermemorySettings}
-                    setSupermemorySettings={setSupermemorySettings}
-                    updateSetting={updateSetting}
-                    handlePreviewVoice={handlePreviewVoice}
-                    isPreviewingVoice={isPreviewingVoice}
-                    handleDeleteAllChats={handleDeleteAllChats}
+                {/* Search Bar */}
+                <SettingsSearch
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Search settings..."
+                    className="mb-6"
                 />
+
+                {/* AI & Search Section */}
+                {sectionHasVisibleAccordions('ai-search', searchQuery) && (
+                    <section className="space-y-4">
+                        <div className="flex items-center gap-2 text-[var(--text-primary)] mb-2">
+                            <MagnifyingGlass size={20} weight="duotone" className="text-[var(--blue-stride)]" />
+                            <h2 className="text-lg font-semibold">AI & Search</h2>
+                        </div>
+                        <AISearchTab
+                            aiConfig={aiConfig}
+                            setAIConfig={setAIConfig}
+                            searchSettings={searchSettings}
+                            setSearchSettings={setSearchSettings}
+                            researchSettings={researchSettings}
+                            setResearchSettings={setResearchSettings}
+                            updateSetting={updateSetting}
+                            handleDeleteAllChats={handleDeleteAllChats}
+                            ttsSettings={ttsSettings}
+                            setTTSSettings={setTTSSettings}
+                            searchQuery={searchQuery}
+                            forcedOpenSections={forcedOpenSections}
+                        />
+                    </section>
+                )}
+
+                {/* Voice & Audio Section */}
+                {sectionHasVisibleAccordions('voice', searchQuery) && (
+                    <section className="space-y-4">
+                        <div className="flex items-center gap-2 text-[var(--text-primary)] mb-2">
+                            <SpeakerHigh size={20} weight="duotone" className="text-[var(--purple-flow)]" />
+                            <h2 className="text-lg font-semibold">Voice & Audio</h2>
+                        </div>
+                        <VoiceTTSTab
+                            ttsSettings={ttsSettings}
+                            setTTSSettings={setTTSSettings}
+                            voiceSettings={voiceSettings}
+                            setVoiceSettings={setVoiceSettings}
+                            updateSetting={updateSetting}
+                            handlePreviewVoice={handlePreviewVoice}
+                            isPreviewingVoice={isPreviewingVoice}
+                            searchQuery={searchQuery}
+                            forcedOpenSections={forcedOpenSections}
+                        />
+                    </section>
+                )}
+
+                {/* Writing Tools Section */}
+                {sectionHasVisibleAccordions('writing', searchQuery) && (
+                    <section className="space-y-4">
+                        <div className="flex items-center gap-2 text-[var(--text-primary)] mb-2">
+                            <PencilSimple size={20} weight="duotone" className="text-[var(--green-pulse)]" />
+                            <h2 className="text-lg font-semibold">Writing Tools</h2>
+                        </div>
+                        <WritingToolsTab
+                            summarizerSettings={summarizerSettings}
+                            setSummarizerSettings={setSummarizerSettings}
+                            rewriterSettings={rewriterSettings}
+                            setRewriterSettings={setRewriterSettings}
+                            writeSettings={writeSettings}
+                            setWriteSettings={setWriteSettings}
+                            updateSetting={updateSetting}
+                            searchQuery={searchQuery}
+                            forcedOpenSections={forcedOpenSections}
+                        />
+                    </section>
+                )}
+
+                {/* Memory Section */}
+                {sectionHasVisibleAccordions('memory', searchQuery) && (
+                    <section className="space-y-4">
+                        <div className="flex items-center gap-2 text-[var(--text-primary)] mb-2">
+                            <Brain size={20} weight="duotone" className="text-[var(--orange-spark)]" />
+                            <h2 className="text-lg font-semibold">Memory</h2>
+                        </div>
+                        <AdvancedTab
+                            supermemorySettings={supermemorySettings}
+                            setSupermemorySettings={setSupermemorySettings}
+                            updateSetting={updateSetting}
+                            searchQuery={searchQuery}
+                            forcedOpenSections={forcedOpenSections}
+                        />
+                    </section>
+                )}
+
+                {/* Danger Zone */}
+                {sectionHasVisibleAccordions('danger', searchQuery) && (
+                    <div className="rounded-lg border border-destructive/30 overflow-hidden">
+                        <div className="bg-destructive/5 px-5 py-3 border-b border-destructive/20">
+                            <h3 className="text-sm font-medium text-destructive flex items-center gap-2">
+                                <Trash2 className="h-4 w-4" />
+                                <HighlightedText text="Danger Zone" searchQuery={searchQuery} />
+                            </h3>
+                        </div>
+                        <div className="p-5 bg-[var(--bg-secondary)]/50">
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <h4 className="text-sm font-medium text-[var(--text-primary)]">
+                                        <HighlightedText text="Delete All Data" searchQuery={searchQuery} />
+                                    </h4>
+                                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                                        Permanently remove all chat history and local data
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={handleDeleteAllChats}
+                                    className="shrink-0"
+                                >
+                                    Delete All
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-// Separated tabs component to use useMemo for tabs array
-interface SettingsTabsProps {
-    aiConfig: AIConfigSettings;
-    setAIConfig: React.Dispatch<React.SetStateAction<AIConfigSettings>>;
-    searchSettings: SearchSettingsWithKeys | null;
-    setSearchSettings: React.Dispatch<React.SetStateAction<SearchSettingsWithKeys | null>>;
-    ttsSettings: TTSSettings | null;
-    setTTSSettings: React.Dispatch<React.SetStateAction<TTSSettings | null>>;
-    voiceSettings: VoiceSettings | null;
-    setVoiceSettings: React.Dispatch<React.SetStateAction<VoiceSettings | null>>;
-    summarizerSettings: TextSummarizerSettings | null;
-    setSummarizerSettings: React.Dispatch<React.SetStateAction<TextSummarizerSettings | null>>;
-    rewriterSettings: TextRewriterSettings | null;
-    setRewriterSettings: React.Dispatch<React.SetStateAction<TextRewriterSettings | null>>;
-    writeSettings: WriteCommandSettings | null;
-    setWriteSettings: React.Dispatch<React.SetStateAction<WriteCommandSettings | null>>;
-    researchSettings: ResearchWorkflowSettings | null;
-    setResearchSettings: React.Dispatch<React.SetStateAction<ResearchWorkflowSettings | null>>;
-    supermemorySettings: SupermemorySettings | null;
-    setSupermemorySettings: React.Dispatch<React.SetStateAction<SupermemorySettings | null>>;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
-    handlePreviewVoice: () => Promise<void>;
-    isPreviewingVoice: boolean;
-    handleDeleteAllChats: () => Promise<void>;
-}
-
-function SettingsTabs({
-    aiConfig,
-    setAIConfig,
-    searchSettings,
-    setSearchSettings,
-    ttsSettings,
-    setTTSSettings,
-    voiceSettings,
-    setVoiceSettings,
-    summarizerSettings,
-    setSummarizerSettings,
-    rewriterSettings,
-    setRewriterSettings,
-    writeSettings,
-    setWriteSettings,
-    researchSettings,
-    setResearchSettings,
-    supermemorySettings,
-    setSupermemorySettings,
-    updateSetting,
-    handlePreviewVoice,
-    isPreviewingVoice,
-    handleDeleteAllChats,
-}: SettingsTabsProps) {
-    const tabs: AnimatedTab[] = useMemo(() => [
-        {
-            name: "AI & Search",
-            icon: <MagnifyingGlass size={18} weight="duotone" />,
-            content: (
-                <AISearchTab
-                    aiConfig={aiConfig}
-                    setAIConfig={setAIConfig}
-                    searchSettings={searchSettings}
-                    setSearchSettings={setSearchSettings}
-                    researchSettings={researchSettings}
-                    setResearchSettings={setResearchSettings}
-                    updateSetting={updateSetting}
-                    handleDeleteAllChats={handleDeleteAllChats}
-                />
-            ),
-        },
-        {
-            name: "Voice & Audio",
-            icon: <SpeakerHigh size={18} weight="duotone" />,
-            content: (
-                <VoiceTTSTab
-                    ttsSettings={ttsSettings}
-                    setTTSSettings={setTTSSettings}
-                    voiceSettings={voiceSettings}
-                    setVoiceSettings={setVoiceSettings}
-                    updateSetting={updateSetting}
-                    handlePreviewVoice={handlePreviewVoice}
-                    isPreviewingVoice={isPreviewingVoice}
-                />
-            ),
-        },
-        {
-            name: "Writing Tools",
-            icon: <PencilSimple size={18} weight="duotone" />,
-            content: (
-                <WritingToolsTab
-                    summarizerSettings={summarizerSettings}
-                    setSummarizerSettings={setSummarizerSettings}
-                    rewriterSettings={rewriterSettings}
-                    setRewriterSettings={setRewriterSettings}
-                    writeSettings={writeSettings}
-                    setWriteSettings={setWriteSettings}
-                    updateSetting={updateSetting}
-                />
-            ),
-        },
-        {
-            name: "Memory",
-            icon: <Brain size={18} weight="duotone" />,
-            content: (
-                <AdvancedTab
-                    supermemorySettings={supermemorySettings}
-                    setSupermemorySettings={setSupermemorySettings}
-                    updateSetting={updateSetting}
-                />
-            ),
-        },
-    ], [
-        aiConfig, setAIConfig, searchSettings, setSearchSettings,
-        ttsSettings, setTTSSettings, voiceSettings, setVoiceSettings,
-        summarizerSettings, setSummarizerSettings, rewriterSettings, setRewriterSettings,
-        writeSettings, setWriteSettings, researchSettings, setResearchSettings,
-        supermemorySettings, setSupermemorySettings, updateSetting,
-        handlePreviewVoice, isPreviewingVoice, handleDeleteAllChats
-    ]);
-
-    return <AnimatedTabs tabs={tabs} />;
-}
