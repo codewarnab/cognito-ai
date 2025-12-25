@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 import { WEBAPP_ROUTES } from '@/constants/webapp';
 
@@ -10,6 +10,8 @@ const log = createLogger('useOnboarding', 'SETTINGS');
 export function useOnboarding() {
     const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
     const [showChatInterface, setShowChatInterface] = useState(false);
+
+    const hasOpenedOnboarding = useRef(false);
 
     // Check onboarding status on mount and listen for changes
     useEffect(() => {
@@ -31,8 +33,11 @@ export function useOnboarding() {
                     // Re-opening the sidepanel triggers this effect.
                     log.info('Onboarding not completed, redirecting to webapp');
 
-                    // Open webapp for onboarding
-                    chrome.tabs.create({ url: WEBAPP_ROUTES.ONBOARDING });
+                    // Open webapp for onboarding if not already opened in this session
+                    if (!hasOpenedOnboarding.current) {
+                        hasOpenedOnboarding.current = true;
+                        chrome.tabs.create({ url: WEBAPP_ROUTES.ONBOARDING });
+                    }
                 }
             } catch (error) {
                 log.error('Failed to check onboarding status', error);

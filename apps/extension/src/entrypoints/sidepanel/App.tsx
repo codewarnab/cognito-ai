@@ -20,7 +20,7 @@ import { Troubleshooting, Features, ProviderSetup } from "@/components/features/
 import { ToolUIProvider } from "@/ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
 import { ReminderPanel } from "@/components/features/reminders";
-import { SettingsPage, LoggerPanel } from "@/components/features/settings";
+import { LoggerPanel } from "@/components/features/settings";
 // import { OnboardingScreen } from "@/components/features/onboarding";
 import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
@@ -445,14 +445,7 @@ function AIChatContent() {
         return <ProviderSetup onBack={() => navigateTo('chat')} />;
     }
 
-    if (activePanel === 'settings') {
-        return (
-            <SettingsPage
-                onBack={() => navigateTo('chat')}
-                onProviderSetupClick={() => navigateTo('providerSetup')}
-            />
-        );
-    }
+
 
     if (activePanel === 'loggerPanel') {
         return <LoggerPanel onBack={() => navigateTo('chat')} />;
@@ -532,7 +525,7 @@ function AIChatContent() {
                                 onKeyDown={handleKeyPress}
                                 onClearChat={handleClearChat}
                                 onSettingsClick={() => navigateTo('mcp')}
-                                onGeneralSettingsClick={() => navigateTo('settings')}
+                                onGeneralSettingsClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.SETTINGS })}
                                 onThreadsClick={() => openOverlay('threads')}
                                 onRemindersClick={() => openOverlay('reminders')}
                                 onTroubleshootingClick={() => navigateTo('troubleshooting')}

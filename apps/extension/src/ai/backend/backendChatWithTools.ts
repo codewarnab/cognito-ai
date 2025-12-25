@@ -366,7 +366,9 @@ export async function streamBackendChatWithTools(
                                     messages: conversationMessages,
                                     system: systemPrompt,
                                     tools: toolSchemas,
-                                    model, // Use selected model
+                                    // Sanitize model name if it contains provider prefix (e.g. google_gemini:gemini-1.5-pro -> gemini-1.5-pro)
+                                    // The backend currently only supports Google models and expects direct model IDs.
+                                    model: model?.includes(':') ? model.split(':')[1] : model,
                                     mode, // Send mode so backend can use appropriate prompt
                                     maxSteps: 1, // One step at a time for tool execution
                                     // Only send page context on first request, not on tool result follow-ups

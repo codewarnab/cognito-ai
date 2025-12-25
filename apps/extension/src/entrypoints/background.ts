@@ -64,6 +64,22 @@ export default defineBackground(() => {
     initializeOAuthRedirectURI();
 
     // ============================================================================
+    // Lifecycle Event Listeners
+    // ============================================================================
+
+    // Handle extension installation
+    chrome.runtime.onInstalled.addListener(async (details) => {
+        if (details.reason === 'install') {
+            log.info('Extension installed - opening onboarding');
+            try {
+                await chrome.tabs.create({ url: WEBAPP_ROUTES.ONBOARDING });
+            } catch (error) {
+                log.error('Failed to open onboarding page:', error);
+            }
+        }
+    });
+
+    // ============================================================================
     // Event Listener Initialization
     // ============================================================================
 
