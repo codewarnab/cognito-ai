@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cognito Webapp
+
+**@cognito/webapp** is a Next.js 16 application providing UI pages for the Cognito Chrome extension.
+
+## Pages
+
+| Route | Purpose |
+|-------|---------|
+| `/settings` | User preferences and configuration |
+| `/onboarding` | First-time user setup flow |
+| `/reminders` | Reminder management |
+| `/providers` | AI provider setup |
+| `/features` | Feature showcase |
+| `/troubleshooting` | Help and debugging |
+| `/changelog` | Version history |
+| `/uninstalled` | Uninstall feedback |
+| `/dev/logger` | Dev-only logger panel |
+
+## Technology Stack
+
+- **Next.js 16** with App Router
+- **React 19**
+- **Tailwind CSS** for styling
+- **shadcn/ui** components
+- **Lucide** icons
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
+# Development
+pnpm dev:webapp
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm --filter @cognito/webapp dev
+
+# Build
+pnpm --filter @cognito/webapp build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3002](http://localhost:3002) with your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```text
+apps/webapp/
+├── src/
+│   ├── app/               # Next.js App Router pages
+│   ├── components/
+│   │   ├── ui/            # shadcn/ui primitives
+│   │   ├── shared/        # Reusable components
+│   │   └── [feature]/     # Feature-specific components
+│   └── lib/               # Utilities
+├── public/                # Static assets
+└── docs/                  # Implementation docs
+```
 
-## Learn More
+## Shared Package
 
-To learn more about Next.js, take a look at the following resources:
+```typescript
+import type { WriteTone } from '@cognito/shared';
+import { TONE_INSTRUCTIONS } from '@cognito/shared';
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment Variables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+WXT_BACKEND_API_URL=https://your-backend.vercel.app
+```
+
+## Related Documentation
+
+- [Monorepo Guide](../../MONOREPO.md)
+- [Contributing Guide](../../CONTRIBUTING.md)
+- [AI Agents Guide](./AGENTS.md)
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The webapp is deployed on Vercel. See [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for details.

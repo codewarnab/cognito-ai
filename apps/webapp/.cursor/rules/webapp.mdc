@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+---
+# Cognito Webapp - Coding Standards
+
+## Technology Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Next.js 16 | React framework (App Router) |
+| React 19 | UI library |
+| Tailwind CSS | Styling |
+| shadcn/ui | UI components |
+| Lucide | Icons |
+
+## Project Structure
+
+```text
+apps/webapp/
+├── src/
+│   ├── app/                    # Next.js App Router pages
+│   ├── components/
+│   │   ├── ui/                 # shadcn/ui primitives (DO NOT MODIFY)
+│   │   ├── shared/             # Reusable components
+│   │   └── [feature]/          # Feature-specific components
+│   └── lib/                    # Utilities
+├── public/                     # Static assets
+└── docs/                       # Implementation docs
+```
+
+## Key Conventions
+
+### Component Structure
+
+- **Never modify primitives** in `src/components/ui/` directly
+- Add props for customization and pass from consuming components
+- Use React 19 patterns (`ref` as prop instead of `forwardRef`)
+
+### Styling
+
+- All clickable buttons must include `cursor-pointer`
+- Use `mcp-scrollable` class for scrollable containers
+- Avoid broad CSS selectors that can affect unrelated components
+
+### Commands
+
+```bash
+pnpm dev:webapp                 # Start dev server
+pnpm --filter @cognito/webapp dev
+pnpm --filter @cognito/webapp build
+```
+
+### Git Commits
+
+```bash
+feat(webapp): add new feature
+fix(webapp): resolve issue
+```
+
+## Shared Package
+
+```typescript
+import type { WriteTone } from '@cognito/shared';
+import { TONE_INSTRUCTIONS } from '@cognito/shared';
+```
