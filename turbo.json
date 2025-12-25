@@ -8,7 +8,16 @@
             "outputs": [
                 "build/**",
                 "dist/**",
-                ".next/**"
+                ".next/**",
+                ".output/**"
+            ]
+        },
+        "package": {
+            "dependsOn": [
+                "build"
+            ],
+            "outputs": [
+                ".output/**"
             ]
         },
         "dev": {
@@ -20,7 +29,11 @@
                 "^build"
             ]
         },
-        "lint": {},
+        "lint": {
+            "dependsOn": [
+                "^build"
+            ]
+        },
         "deploy": {
             "dependsOn": [
                 "build"
