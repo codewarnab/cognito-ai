@@ -28,3 +28,64 @@ export type {
     AIChatErrorResponse,
     ChatMode,
 } from './chat.js';
+
+// Provider types
+export type {
+    AIProvider,
+    VertexCredentials,
+    ProviderConfig,
+} from './provider.js';
+
+// Messaging types
+export type {
+    ExternalMessageType,
+    ExternalMessage,
+    ExternalResponse,
+    SetProviderPayload,
+    GetProviderConfigResponse,
+    ClearProviderPayload,
+    CreateReminderPayload,
+    DeleteReminderPayload,
+    LifecycleMessageType,
+    OnboardingMessageType,
+    SettingsMessageType,
+    ProviderMessageType,
+    ReminderMessageType,
+    FeatureSettingsMessageType,
+    DataOperationsMessageType,
+} from './messaging.js';
+
+// Reminder types
+export type {
+    RepeatFrequency,
+    Reminder,
+    UpdateReminderPayload,
+} from './reminder.js';
+
+// Settings types (for webapp <-> extension communication)
+export type {
+    VoiceName,
+    TTSProvider,
+    VoiceSettings,
+    TTSSettings,
+    SearchProviderType,
+    SearchDepth,
+    SearchSettings,
+    SearchApiKeys,
+    SearchSettingsWithKeys,
+    AskAIButtonSettings,
+    SummaryTypeOption,
+    SummaryLengthOption,
+    TextSummarizerSettings,
+    RewritePresetOption,
+    TextRewriterSettings,
+    WriteToneOption,
+    WriteCommandSettings,
+    SupermemorySettings,
+    ResearchWorkflowSettings,
+    AIConfigSettings,
+    PreviewVoicePayload,
+    PreviewVoiceResponse,
+    DeleteAllChatsResponse,
+} from './settings.js';
+
