@@ -4,6 +4,7 @@ export default {
 		anthropic: 'Anthropic',
 		google_gemini: 'Google',
 		xai: 'Grok',
+		vertex: 'Vertex AI',
 		deepseek: 'Deepseek',
 		openrouter: 'OpenRouter',
 		ollama: 'Ollama',
@@ -27,7 +28,13 @@ export default {
 		custom: 'Custom',
 		disabled: 'Disabled'
 	},
-	custom_fields: {},
+	custom_fields: {
+		projectId: 'Project ID',
+		location: 'Location',
+		clientEmail: 'Client Email',
+		privateKey: 'Private Key',
+		privateKeyId: 'Private Key ID',
+	},
 	upload: {
 		validate_error_prefix: '[Validate error]: ',
 		validate_error: '{{property}} is not correct',
@@ -52,7 +59,7 @@ export default {
 			name_required: 'Model name is required'
 		},
 		model_form: {
-			input: 'Input ',
+			input: 'Enter ',
 			model_id: 'model ID',
 			model_name: 'model name',
 			output_fee: 'output fee',

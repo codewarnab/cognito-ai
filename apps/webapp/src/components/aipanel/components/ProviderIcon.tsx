@@ -69,38 +69,32 @@ const OllamaIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
 	</svg>
 )
 
-// Custom Vertex AI / Google Cloud icon component that matches the official branding
+// Monochrome Vertex AI icon - hexagon with V shape
 const VertexAIIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
 		viewBox="0 0 24 24"
-		fill="none"
+		fill="currentColor"
 		width="1em"
 		height="1em"
 		{...props}
 	>
-		{/* Google Cloud Platform inspired Vertex AI icon */}
-		{/* Red bar left */}
-		<rect x="4" y="4" width="2" height="10" rx="1" fill="#EA4335" />
-		{/* Green bar */}
-		<rect x="8" y="6" width="2" height="12" rx="1" fill="#34A853" />
-		{/* Blue bar center */}
-		<rect x="12" y="3" width="2" height="11" rx="1" fill="#4285F4" />
-		{/* Yellow bar right */}
-		<rect x="16" y="8" width="2" height="8" rx="1" fill="#FBBC05" />
-		{/* Arrow/chevron at bottom */}
+		{/* Hexagon outline */}
 		<path
-			d="M6 17L12 21L18 17"
-			stroke="#FBBC05"
+			d="M12 2L21.5 7.5V16.5L12 22L2.5 16.5V7.5L12 2Z"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.5"
+		/>
+		{/* V shape inside */}
+		<path
+			d="M7 8L12 16L17 8"
+			fill="none"
+			stroke="currentColor"
 			strokeWidth="2"
 			strokeLinecap="round"
 			strokeLinejoin="round"
-			fill="none"
 		/>
-		{/* Small dots representing data points */}
-		<circle cx="5" cy="16" r="0.75" fill="#EA4335" />
-		<circle cx="9" cy="19" r="0.75" fill="#34A853" />
-		<circle cx="13" cy="15" r="0.75" fill="#4285F4" />
 	</svg>
 )
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQueryState } from 'nuqs';
 import { Providers, type Config, type PresetProvider, type SpecialProvider, type ConfigProvider } from '@/components/aipanel';
 import '@/components/aipanel/index.css';
 import { cognitoProviders } from '@/lib/providers/presets';
@@ -60,6 +61,36 @@ export default function ProvidersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+    // URL state for selected provider
+    const [selectedProvider, setSelectedProvider] = useQueryState('provider', {
+        defaultValue: '',
+        shallow: false,
+    });
+
+    // Calculate initial tab index from URL provider name
+    const initialTab = useMemo(() => {
+        if (!selectedProvider || !config.providers) return 0;
+
+        // Get enabled providers in order
+        const enabledProviders = config.providers.filter(p => p.enabled);
+        const providerIndex = enabledProviders.findIndex(p => p.name === selectedProvider);
+
+        // Check for special tabs
+        if (selectedProvider === 'custom') {
+            return enabledProviders.length;
+        }
+        if (selectedProvider === 'disabled') {
+            return enabledProviders.length + 1;
+        }
+
+        return providerIndex >= 0 ? providerIndex : 0;
+    }, [selectedProvider, config.providers]);
+
+    // Handle tab change - update URL
+    const handleTabChange = useCallback((tabIndex: number, providerName: string) => {
+        setSelectedProvider(providerName);
+    }, [setSelectedProvider]);
 
     // Auto-dismiss success notifications
     useEffect(() => {
@@ -212,6 +243,8 @@ export default function ProvidersPage() {
                     tab="between"
                     width="100%"
                     locales={cognitoLocales}
+                    initialTab={initialTab}
+                    onTabChange={handleTabChange}
                     onChange={handleChange}
                     onTest={handleTest}
                 />

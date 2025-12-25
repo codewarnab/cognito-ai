@@ -25,7 +25,7 @@ const Index = (props: IPropsFormCustomFields) => {
 					border-border-gray
 					${styles.input_wrap} ${styles.input}
 				`}
-				placeholder={`Input field ${key}`}
+				placeholder={`Enter ${locales.custom_fields[key as keyof typeof locales.custom_fields] || key}`}
 				autoComplete='off'
 				{...register(`custom_fields.${key}`)}
 			/>

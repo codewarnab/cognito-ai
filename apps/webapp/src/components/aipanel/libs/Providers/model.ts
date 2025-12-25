@@ -23,7 +23,8 @@ export default class Index {
 		locales_upload: {} as ProvidersLocales['upload'],
 		timer_test: null as NodeJS.Timeout | null,
 		onChange: null as unknown as IPropsProviders['onChange'],
-		onTest: null as unknown as IPropsProviders['onTest']
+		onTest: null as unknown as IPropsProviders['onTest'],
+		onTabChange: null as unknown as IPropsProviders['onTabChange']
 	})
 
 	get providers() {
@@ -52,13 +53,19 @@ export default class Index {
 	}
 
 	init(args: ArgsInit) {
-		const { locales_upload, config, onChange, onTest } = args
+		const { locales_upload, config, onChange, onTest, initialTab, onTabChange } = args
 
 		this.config = deepClone(config)
+
+		// Set initial tab if provided
+		if (typeof initialTab === 'number' && initialTab >= 0) {
+			this.current_tab = initialTab
+		}
 
 		this.refs.locales_upload = locales_upload
 		this.refs.onChange = onChange
 		this.refs.onTest = onTest
+		this.refs.onTabChange = onTabChange
 
 		autoBind(this)
 	}
@@ -74,6 +81,11 @@ export default class Index {
 		this.current_model = null
 		this.adding_model = false
 		this.current_tab = v
+
+		// Notify parent of tab change
+		if (this.refs.onTabChange && this.tabs[v]) {
+			this.refs.onTabChange(v, this.tabs[v])
+		}
 	}
 
 	onChangeProvider(v: Index['provider']) {

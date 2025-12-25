@@ -13,11 +13,13 @@ export interface IPropsProviders {
 	width?: number | string
 	locales?: DeepPartial<ProvidersLocales>
 	icons?: Record<string, ExoticComponent<any>>
+	initialTab?: number
+	onTabChange?: (tabIndex: number, providerName: string) => void
 	onChange: (v: Config) => void
 	onTest?: (provider: PresetProvider | SpecialProvider) => Promise<boolean>
 }
 
-export interface ArgsInit extends Pick<IPropsProviders, 'config' | 'onChange' | 'onTest'> {
+export interface ArgsInit extends Pick<IPropsProviders, 'config' | 'onChange' | 'onTest' | 'initialTab' | 'onTabChange'> {
 	locales_upload: ProvidersLocales['upload']
 }
 
@@ -96,7 +98,7 @@ export interface IPropsFormModelForm {
 	register: UseFormRegister<IPropsForm['provider']> | UseFormRegister<Model>
 }
 
-export interface IPropsFormModelFormFeatures {}
+export interface IPropsFormModelFormFeatures { }
 
 export interface IPropsCustom {
 	custom_providers: Config['custom_providers']
@@ -174,12 +176,12 @@ export interface Features {
 
 export type DeepPartial<T> = T extends object
 	? {
-			[P in keyof T]?: DeepPartial<T[P]>
-		}
+		[P in keyof T]?: DeepPartial<T[P]>
+	}
 	: T
 
 export type DeepRequired<T> = T extends object
 	? {
-			[P in keyof T]-?: DeepRequired<T[P]>
-		}
+		[P in keyof T]-?: DeepRequired<T[P]>
+	}
 	: T

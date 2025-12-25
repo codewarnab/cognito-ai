@@ -26,7 +26,7 @@ import type {
 } from './types'
 
 const Index = (props: IPropsProviders) => {
-	const { config, tab, width, locales, icons, onChange, onTest } = props
+	const { config, tab, width, locales, icons, initialTab, onTabChange, onChange, onTest } = props
 	const state = useRef(proxy(new Model()))
 	const x = useProxy(state.current)
 
@@ -38,8 +38,8 @@ const Index = (props: IPropsProviders) => {
 	useLayoutEffect(() => {
 		if (deepEqual(config, x.config)) return
 
-		x.init({ locales_upload, config, onChange, onTest })
-	}, [locales_upload, config, onChange, onTest])
+		x.init({ locales_upload, config, onChange, onTest, initialTab, onTabChange })
+	}, [locales_upload, config, onChange, onTest, initialTab, onTabChange])
 
 	const props_tab: IPropsTab = {
 		tab,
@@ -94,6 +94,7 @@ const Index = (props: IPropsProviders) => {
 						visible={x.upload_error !== ''}
 						initial={{ opacity: 0, width: 0 }}
 						animate={{ opacity: 1, width: 'auto' }}
+						exit={{ opacity: 0, width: 0 }}
 					>
 						{x.upload_error}
 					</Show>
