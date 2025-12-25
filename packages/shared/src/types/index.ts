@@ -36,6 +36,18 @@ export type {
     ProviderConfig,
 } from './provider.js';
 
+// New Provider types (multi-provider support)
+export type {
+    AIProviderConfig,
+    ConfigProvider,
+    Provider,
+    PresetProvider,
+    SpecialProvider,
+    Model,
+    Features,
+    ProviderName,
+} from './providers.js';
+
 // Messaging types
 export type {
     ExternalMessageType,
@@ -53,6 +65,10 @@ export type {
     ReminderMessageType,
     FeatureSettingsMessageType,
     DataOperationsMessageType,
+    GetProvidersConfigResponse,
+    SetProvidersConfigPayload,
+    TestProviderConnectionPayload,
+    TestProviderConnectionResponse,
 } from './messaging.js';
 
 // Reminder types

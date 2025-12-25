@@ -1,4 +1,5 @@
 import type { AIProvider, ProviderConfig, VertexCredentials } from './provider.js';
+import type { AIProviderConfig, ConfigProvider } from './providers.js';
 import type { UpdateReminderPayload, Reminder } from './reminder.js';
 
 // Re-export reminder types for convenience
@@ -20,7 +21,10 @@ export type ProviderMessageType =
     | 'GET_PROVIDER_CONFIG'
     | 'SET_PROVIDER_CONFIG'
     | 'CLEAR_PROVIDER_CONFIG'
-    | 'VALIDATE_API_KEY';
+    | 'VALIDATE_API_KEY'
+    | 'GET_PROVIDERS_CONFIG'
+    | 'SET_PROVIDERS_CONFIG'
+    | 'TEST_PROVIDER_CONNECTION';
 
 // Reminders
 export type ReminderMessageType =
@@ -100,6 +104,30 @@ export interface SetProviderPayload {
 /** Payload for CLEAR_PROVIDER_CONFIG */
 export interface ClearProviderPayload {
     provider: AIProvider;
+}
+
+/** Response payload for GET_PROVIDERS_CONFIG */
+export interface GetProvidersConfigResponse {
+    config: AIProviderConfig;
+}
+
+/** Payload for SET_PROVIDERS_CONFIG */
+export type SetProvidersConfigPayload = AIProviderConfig;
+
+/** Payload for TEST_PROVIDER_CONNECTION */
+export interface TestProviderConnectionPayload {
+    providerName: string; // Just the name, extension looks up config? Or pass config?
+    // The plan says "Test provider API key" in 4.1. "const result = await extensionAPI.testProviderConnection(provider.name);"
+    // But 4.3 says "testProviderConnection(provider)" passing the whole object?
+    // "testProviderConnection(provider.name)" implies backend looks it up? But if I am editing it, it might not be saved yet?
+    // Usually "Test Connection" tests the *current input values*.
+    // So passing the provider config to test is safer.
+    provider: ConfigProvider;
+}
+
+export interface TestProviderConnectionResponse {
+    success: boolean;
+    error?: string;
 }
 
 export interface CreateReminderPayload {
