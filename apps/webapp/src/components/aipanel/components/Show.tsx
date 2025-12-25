@@ -25,7 +25,11 @@ const Index = (props: IProps) => {
 					initial={mounted ? initial : false}
 					animate={animate}
 					exit={exit || (initial as Exclude<MotionNodeAnimationOptions['initial'], boolean>)}
-					transition={{ duration: 0.18, ease: 'easeInOut' }}
+					transition={{
+						type: 'spring',
+						stiffness: 180,
+						damping: 26,
+					}}
 					onClick={onClick}
 				>
 					{children}

@@ -23,8 +23,8 @@
 	--color-dark: oklch(from var(--color-std-900) l c h / 0.9);
 	--color-solid: oklch(from var(--color-std-900) l c h / 0.7);
 	--color-gray: oklch(from var(--color-std-900) l c h / 0.4);
-	--color-light: oklch(from var(--color-std-600) l c h / 0.6);
-	--color-soft: oklch(from var(--color-std-600) l c h / 0.4);
+	--color-light: oklch(from var(--color-std-600) l c h / 0.85);
+	--color-soft: oklch(from var(--color-std-600) l c h / 0.7);
 	--color-softlight: oklch(from var(--color-std-900) l c h / 0.3);
 
 	--color-bg-main: oklch(from var(--color-std-white) l c h / 0.6);
@@ -39,27 +39,15 @@
 	--color-border-light: oklch(from var(--color-std-400) l c h / 0.1);
 }
 
+/* 
+ * Removed automatic dark mode overrides since the user requested a single light theme.
+ * This ensures consistency across the application.
+ */
 [data-theme='dark'] {
-	/* Cognito Dark Blue Theme (#0a0e1a base) */
-	/* Generated scale based on hue 265 (Blue) */
-	--color-std-50: oklch(0.15 0.03 265);
-	/* #0a0e1a (approx) - bg-primary */
-	--color-std-100: oklch(0.18 0.03 265);
-	/* #0f1420 (approx) - bg-secondary */
-	--color-std-200: oklch(0.22 0.04 260);
-	/* #141f30 (approx) - bg-tertiary */
-	--color-std-300: oklch(0.35 0.05 260);
-	--color-std-400: oklch(0.45 0.06 260);
-	--color-std-500: oklch(0.55 0.07 260);
-	--color-std-600: oklch(0.65 0.06 260);
-	--color-std-700: oklch(0.75 0.05 260);
-	--color-std-800: oklch(0.85 0.03 260);
-	--color-std-900: oklch(0.95 0.01 260);
-	--color-std-950: oklch(0.99 0.00 260);
-
-	--color-std-black: #fff;
-	--color-std-white: #0a0e1a;
-	/* Background primary */
+	/* Keeping these just in case, but they shouldn't be automatically applied if we control the theme */
+	--color-std-white: #fff;
+	/* Force white background even if dark theme is triggered */
+	/* We can restore true dark mode later if requested */
 }
 
 @utility clickable {

@@ -17,10 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+    SelectOption,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -165,17 +162,18 @@ export function EditReminderDialog({
                     {/* When Section */}
                     <div className="flex flex-col gap-2">
                         <Label className="text-white/70">When</Label>
-                        <Select value={repeat} onValueChange={(value) => setRepeat(value as RepeatFrequency)}>
-                            <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                                <SelectValue placeholder="Repeat" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10">
-                                <SelectItem value="none" className="text-white hover:bg-white/10">Doesn&apos;t repeat</SelectItem>
-                                <SelectItem value="daily" className="text-white hover:bg-white/10">Daily</SelectItem>
-                                <SelectItem value="weekly" className="text-white hover:bg-white/10">Weekly</SelectItem>
-                                <SelectItem value="monthly" className="text-white hover:bg-white/10">Monthly</SelectItem>
-                                <SelectItem value="yearly" className="text-white hover:bg-white/10">Yearly</SelectItem>
-                            </SelectContent>
+                        <Select
+                            value={repeat}
+                            setValue={(value) => setRepeat(value as RepeatFrequency)}
+                            className="bg-white/5 border-white/10 text-white w-full"
+                            popoverClassName="bg-slate-900 border-white/10"
+                            placeholder="Repeat"
+                        >
+                            <SelectOption value="none" className="text-white hover:bg-white/10">Doesn&apos;t repeat</SelectOption>
+                            <SelectOption value="daily" className="text-white hover:bg-white/10">Daily</SelectOption>
+                            <SelectOption value="weekly" className="text-white hover:bg-white/10">Weekly</SelectOption>
+                            <SelectOption value="monthly" className="text-white hover:bg-white/10">Monthly</SelectOption>
+                            <SelectOption value="yearly" className="text-white hover:bg-white/10">Yearly</SelectOption>
                         </Select>
 
                         <div className="flex gap-2">
