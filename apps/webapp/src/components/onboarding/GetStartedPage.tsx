@@ -25,18 +25,18 @@ export function GetStartedPage({ onBack, onComplete }: GetStartedPageProps) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 animate-in fade-in slide-in-from-right-10 duration-500 max-w-6xl mx-auto w-full px-4">
             <div className="text-center space-y-4 max-w-2xl">
-                <h2 className="text-3xl font-bold tracking-tight lg:text-4xl text-white">You're All Set!</h2>
+                <h2 className="text-3xl font-bold tracking-tight lg:text-4xl text-foreground">You're All Set!</h2>
                 <p className="text-muted-foreground text-lg">Ready to experience the future of browsing?</p>
             </div>
 
-            <Card className="w-full max-w-md bg-[#0f1420]/60 backdrop-blur-sm border-white/10 shadow-xl">
+            <Card className="w-full max-w-md bg-card/60 backdrop-blur-sm border-border shadow-xl">
                 <CardContent className="pt-8 flex flex-col items-center text-center space-y-8">
                     <div className="w-24 h-24 rounded-full bg-[#C6FE1E]/10 flex items-center justify-center animate-bounce duration-1000">
                         <CheckCircle2 className="w-12 h-12 text-[#C6FE1E]" />
                     </div>
 
                     <div className="space-y-3">
-                        <p className="text-xl font-medium text-white">Extension Installed & Ready</p>
+                        <p className="text-xl font-medium text-foreground">Extension Installed & Ready</p>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                             Click the button below to open the side panel and start your first conversation.
                         </p>

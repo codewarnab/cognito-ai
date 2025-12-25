@@ -14,7 +14,7 @@ export function WelcomePage({ onNext }: WelcomePageProps) {
                 <img src="/onboarding/logo.png" alt="Cognito" className="w-24 h-24 object-contain" />
 
                 <div className="space-y-4">
-                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-white">
+                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl text-foreground">
                         Welcome to <span className="text-[#1264FF]">Cognito</span>
                     </h1>
                     <p className="text-xl text-muted-foreground max-w-md">
@@ -22,14 +22,14 @@ export function WelcomePage({ onNext }: WelcomePageProps) {
                     </p>
                 </div>
 
-                <div className="hidden lg:block relative w-full h-64 mt-8 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black/50 backdrop-blur-sm">
+                <div className="hidden lg:block relative w-full h-64 mt-8 rounded-xl overflow-hidden border border-border shadow-2xl bg-card/50 backdrop-blur-sm">
                     <img src="/onboarding/agent.png" alt="AI Agent" className="w-full h-full object-cover opacity-80" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                 </div>
             </div>
 
             {/* Right side: Steps/Action */}
-            <Card className="w-full max-w-md border-white/10 bg-[#0f1420]/80 backdrop-blur-xl shadow-xl lg:w-1/2">
+            <Card className="w-full max-w-md border-border bg-card/80 backdrop-blur-xl shadow-xl lg:w-1/2">
                 <CardHeader>
                     <CardTitle className="text-xl">Getting Started</CardTitle>
                     <CardDescription>
@@ -41,21 +41,21 @@ export function WelcomePage({ onNext }: WelcomePageProps) {
                         <li className="flex items-start gap-4">
                             <span className="flex-shrink-0 bg-[#1264FF]/20 text-[#1264FF] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#1264FF]/30">1</span>
                             <div className="space-y-1">
-                                <span className="font-medium text-white">Explore Features</span>
+                                <span className="font-medium text-foreground">Explore Features</span>
                                 <p className="text-sm text-muted-foreground">Discover what Cognito can do for you.</p>
                             </div>
                         </li>
                         <li className="flex items-start gap-4">
                             <span className="flex-shrink-0 bg-[#1264FF]/20 text-[#1264FF] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#1264FF]/30">2</span>
                             <div className="space-y-1">
-                                <span className="font-medium text-white">Privacy First</span>
+                                <span className="font-medium text-foreground">Privacy First</span>
                                 <p className="text-sm text-muted-foreground">Understand how your data stays secure.</p>
                             </div>
                         </li>
                         <li className="flex items-start gap-4">
                             <span className="flex-shrink-0 bg-[#1264FF]/20 text-[#1264FF] rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold border border-[#1264FF]/30">3</span>
                             <div className="space-y-1">
-                                <span className="font-medium text-white">Connect Providers</span>
+                                <span className="font-medium text-foreground">Connect Providers</span>
                                 <p className="text-sm text-muted-foreground">Link your preferred AI models.</p>
                             </div>
                         </li>
