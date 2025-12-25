@@ -11,6 +11,13 @@ import type {
     SetProviderPayload,
     ClearProviderPayload,
     GetProviderConfigResponse,
+    GetProvidersConfigResponse,
+    SetProvidersConfigPayload,
+    TestProviderConnectionPayload,
+    TestProviderConnectionResponse,
+    TestProviderConnectionResponse as TestResponse, // Alias if needed, or just use TestProviderConnectionResponse
+    ConfigProvider,
+    AIProviderConfig,
     AIProvider,
     // Settings types
     AIConfigSettings,
@@ -106,7 +113,22 @@ class ExtensionAPI {
         return this.sendMessage({ type: 'CLEAR_PROVIDER_CONFIG' as ProviderMessageType, payload });
     }
 
-    // Convenience methods - Reminders
+    // New Multi-Provider Methods
+    async getProvidersConfig() {
+        return this.sendMessage<GetProvidersConfigResponse>({ type: 'GET_PROVIDERS_CONFIG' });
+    }
+
+    async setProvidersConfig(config: AIProviderConfig) {
+        return this.sendMessage({ type: 'SET_PROVIDERS_CONFIG', payload: config as SetProvidersConfigPayload });
+    }
+
+    async testProviderConnection(provider: ConfigProvider) {
+        return this.sendMessage<TestProviderConnectionResponse>({
+            type: 'TEST_PROVIDER_CONNECTION',
+            payload: { provider } as TestProviderConnectionPayload
+        });
+    }
+
     async getReminders() {
         return this.sendMessage<Reminder[]>({ type: 'GET_REMINDERS' });
     }
