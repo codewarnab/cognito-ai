@@ -1,6 +1,6 @@
 // Lightweight logger with levels and prefix; respects NODE_ENV
 import { LOG_PRESETS } from '@/constants';
-import type { LogCategory } from '@/types/logger';
+import type { LogCategory } from '@cognito/shared';
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 

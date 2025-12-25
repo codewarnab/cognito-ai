@@ -4,8 +4,8 @@
  * Provides functions to read/write logger configuration to Chrome storage.
  */
 import { LOG_PRESETS } from '@/constants';
-import type { LogCategory, LoggerConfig, LoggerPresetName } from '@/types/logger';
-import { LOGGER_CONFIG_KEY } from '@/types/logger';
+import type { LogCategory, LoggerConfig, LoggerPresetName } from '@cognito/shared';
+import { LOGGER_CONFIG_KEY } from '@cognito/shared';
 
 /**
  * Get the current logger configuration from storage

@@ -5,8 +5,8 @@
  * Provides real-time sync across all extension contexts.
  */
 import { useState, useEffect, useCallback } from 'react';
-import type { LogCategory, LoggerConfig, LoggerPresetName } from '@/types/logger';
-import { LOGGER_CONFIG_KEY } from '@/types/logger';
+import type { LogCategory, LoggerConfig, LoggerPresetName } from '@cognito/shared';
+import { LOGGER_CONFIG_KEY } from '@cognito/shared';
 import {
   getLoggerConfig,
   updateLoggerCategory,
