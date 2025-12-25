@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PanelRightOpen, Plus, Wrench, MoreHorizontal } from 'lucide-react';
-import { ClockIcon } from '@assets/icons/chat/clock';
 import { StreamingWarningDialog } from '../../context/StreamingWarningDialog';
+import { openWebappRoute } from '@/constants/webapp';
 
 interface ChatHeaderProps {
     onSettingsClick?: () => void;
     onGeneralSettingsClick?: () => void;
     onThreadsClick?: () => void;
     onNewThreadClick?: (forceCreate?: boolean) => void;
-    onRemindersClick?: () => void;
     onTroubleshootingClick?: () => void;
     onFeaturesClick?: () => void;
     onProviderSetupClick?: () => void;
@@ -76,7 +75,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
     onGeneralSettingsClick,
     onThreadsClick,
     onNewThreadClick,
-    onRemindersClick,
     onTroubleshootingClick,
     onFeaturesClick,
     onProviderSetupClick,
@@ -160,17 +158,6 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                             <Wrench size={16} />
                         </button>
                     )}
-                    {/* Reminders (Clock) */}
-                    {onRemindersClick && (
-                        <button
-                            className={headerButtonClasses}
-                            onClick={onRemindersClick}
-                            title="Reminders"
-                            aria-label="Open reminders"
-                        >
-                            <ClockIcon size={16} />
-                        </button>
-                    )}
 
                     {/* Kebab Menu (Three dots) */}
                     <div className="relative ml-auto" ref={menuRef}>
@@ -206,6 +193,14 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 <MenuItem
                                     onClick={() => {
                                         setShowHeaderMenu(false);
+                                        openWebappRoute('REMINDERS');
+                                    }}
+                                >
+                                    Reminders
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        setShowHeaderMenu(false);
                                         onProviderSetupClick?.();
                                     }}
                                     glow={needsProviderSetup}
@@ -228,7 +223,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
                                 >
                                     Features
                                 </MenuItem>
-                                {true  && (
+                                {true && (
                                     <MenuItem
                                         onClick={() => {
                                             setShowHeaderMenu(false);

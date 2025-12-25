@@ -1,2 +1,3 @@
-// ReminderPanel now shows preview and redirects to webapp for full management
-export { ReminderPanel } from './ReminderPanelRedirect';
+// Reminders are now managed directly in the webapp at /reminders
+// The extension opens the webapp route via openWebappRoute('REMINDERS')
+export { };

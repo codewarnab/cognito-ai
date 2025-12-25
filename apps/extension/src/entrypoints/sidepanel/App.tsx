@@ -19,7 +19,6 @@ import { McpManager } from "@/components/features/mcp";
 import { Troubleshooting, Features, ProviderSetup } from "@/components/features/help";
 import { ToolUIProvider } from "@/ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
-import { ReminderPanel } from "@/components/features/reminders";
 import { LoggerPanel } from "@/components/features/settings";
 // import { OnboardingScreen } from "@/components/features/onboarding";
 import { AudioLinesIcon } from "@/components/shared/icons";
@@ -27,6 +26,7 @@ import { VoiceModeUI } from "@/components/features/voice";
 import { VoiceRecordingPill } from "@/components/shared/inputs";
 import { ContextWarning } from "@/components/features/chat/context/ContextWarning";
 import { ErrorToast } from "@/components/shared/notifications";
+import { ChatLoadingSkeleton } from "@/components/features/chat/components/states";
 
 // Types
 import type { VoiceInputHandle } from "@/audio/VoiceInput";
@@ -91,7 +91,6 @@ function AIChatContent() {
         activePanel,
         navigateTo,
         isThreadsPanelOpen,
-        isRemindersPanelOpen,
         openOverlay,
         closeOverlay,
         chatMode,
@@ -114,6 +113,7 @@ function AIChatContent() {
     const clearChat = useChatStore((state: ChatState) => state.clearChat);
     const storeMessages = useChatStore((state: ChatState) => state.messages);
     const storeUsage = useChatStore((state: ChatState) => state.usage);
+    const isHydrated = useChatStore((state: ChatState) => state.isHydrated);
 
     // Model Store - initialize on mount
     const initializeModelStore = useModelStore((state: ModelState) => state.initialize);
@@ -451,6 +451,12 @@ function AIChatContent() {
         return <LoggerPanel onBack={() => navigateTo('chat')} />;
     }
 
+    // Show skeleton loading while chat store is hydrating
+    // This prevents flash of empty content when sidepanel opens
+    if (!isHydrated) {
+        return <ChatLoadingSkeleton />;
+    }
+
     // Show onboarding screen if enabled
     if (showOnboarding) {
         log.info('Rendering onboarding screen replacement', { showOnboarding });
@@ -495,9 +501,6 @@ function AIChatContent() {
                 />
             )}
 
-            {/* Reminder Panel - Side panel overlay */}
-            <ReminderPanel isOpen={isRemindersPanelOpen} onClose={() => closeOverlay('reminders')} />
-
             {/* Thread List Side Panel */}
             <ThreadListSidePanel
                 isOpen={isThreadsPanelOpen}
@@ -527,7 +530,6 @@ function AIChatContent() {
                                 onSettingsClick={() => navigateTo('mcp')}
                                 onGeneralSettingsClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.SETTINGS })}
                                 onThreadsClick={() => openOverlay('threads')}
-                                onRemindersClick={() => openOverlay('reminders')}
                                 onTroubleshootingClick={() => navigateTo('troubleshooting')}
                                 onFeaturesClick={() => navigateTo('features')}
                                 onProviderSetupClick={() => navigateTo('providerSetup')}
