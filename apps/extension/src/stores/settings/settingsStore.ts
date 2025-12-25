@@ -1,9 +1,9 @@
 /**
- * Settings Store
- * 
- * Centralized settings management with Chrome storage sync.
- * Replaces scattered chrome.storage calls and useApiKey hook.
- */
+* Settings Store
+* 
+* Centralized settings management with Chrome storage sync.
+* Replaces scattered chrome.storage calls and useApiKey hook.
+*/
 import { create } from 'zustand';
 import { chromeStorageSync } from '../middleware/chromeStorageSync';
 import type { SettingsState } from './types';
@@ -29,6 +29,7 @@ export const useSettingsStore = create<SettingsState>()(
       'compactMode',
       'useBackendMode',
       'backendModel',
+      'providersConfig',
     ],
     onHydrate: () => {
       // Mark as hydrated after loading from storage
@@ -52,6 +53,7 @@ export const useSettingsStore = create<SettingsState>()(
     compactMode: false,
     useBackendMode: false,
     backendModel: 'gemini-2.0-flash',
+    providersConfig: { providers: [] },
     isHydrated: false,
 
     // Actions
@@ -114,6 +116,8 @@ export const useSettingsStore = create<SettingsState>()(
     setUseBackendMode: (value) => set({ useBackendMode: value }),
 
     setBackendModel: (model) => set({ backendModel: model }),
+
+    setProvidersConfig: (config) => set({ providersConfig: config }),
 
     /**
      * Loads settings from Chrome storage, including migration from legacy keys.

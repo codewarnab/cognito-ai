@@ -1,14 +1,11 @@
+import type { AIProviderConfig } from '@cognito/shared/types';
+
 /**
  * Settings Store Types
  */
 
 /** Available backend models - Must match RemoteModelType from @/ai/types/types.ts */
-export type BackendModel =
-  | 'gemini-3-flash-preview'
-  | 'gemini-3-pro-preview'
-  | 'gemini-2.5-pro'
-  | 'gemini-2.5-flash'
-  | 'gemini-2.0-flash';
+export type BackendModel = string;
 
 /** Backend model options for UI */
 export const BACKEND_MODEL_OPTIONS: Array<{
@@ -53,6 +50,7 @@ export interface SettingsState {
   // Backend mode settings
   useBackendMode: boolean;
   backendModel: BackendModel;
+  providersConfig: AIProviderConfig;
 
   // Hydration state
   isHydrated: boolean;
@@ -69,6 +67,7 @@ export interface SettingsState {
   setEnableNotificationSound: (enabled: boolean) => void;
   setUseBackendMode: (value: boolean) => void;
   setBackendModel: (model: BackendModel) => void;
+  setProvidersConfig: (config: AIProviderConfig) => void;
   loadFromStorage: () => Promise<void>;
 
   // Computed helpers

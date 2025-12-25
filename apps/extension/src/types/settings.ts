@@ -1,22 +1,25 @@
 /**
- * Settings types for user-configurable preferences
- * 
+ * Settings types for user - configurable preferences
+ */
+import type { AIProviderConfig } from '@cognito/shared/types';
+
+/**
  * ## Mode Taxonomy in the Extension
  * 
  * The extension uses 4 distinct "mode" concepts:
  * 
  * | Type | Values | Purpose | Store |
- * |------|--------|---------|-------|
- * | `AIProviderMode` | local/remote | Where AI inference runs | `useModelStore.mode` |
- * | `ToolsMode` | chat/agent/adaptive/custom | Which tools available | `useToolsStore.currentMode` |
- * | `ChatMode` | text/voice | User input method | `useUINavigationStore.chatMode` |
- * | Backend Mode | true/false | Use hosted Vercel API | `useSettingsStore.useBackendMode` |
+ * | ------| --------| ---------| -------|
+ * | `AIProviderMode` | local / remote | Where AI inference runs | `useModelStore.mode` |
+ * | `ToolsMode` | chat / agent / adaptive / custom | Which tools available | `useToolsStore.currentMode` |
+ * | `ChatMode` | text / voice | User input method | `useUINavigationStore.chatMode` |
+ * | Backend Mode | true / false | Use hosted Vercel API | `useSettingsStore.useBackendMode` |
  * 
  * ## How Modes Interact
  * 
- * - **AIProviderMode** + **Backend Mode**: When remote, useBackendMode determines API routing
- * - **ToolsMode**: Independent - controls tool availability regardless of provider
- * - **ChatMode**: Independent - controls input method (text vs voice)
+ * - ** AIProviderMode ** + ** Backend Mode **: When remote, useBackendMode determines API routing
+ * - ** ToolsMode **: Independent - controls tool availability regardless of provider
+ * - ** ChatMode **: Independent - controls input method(text vs voice)
  * 
  * @see `@/components/features/chat/types.ts` for detailed mode documentation
  * @see `@/stores/tools/types.ts` for ToolMode alias
@@ -88,6 +91,11 @@ export interface UserSettings {
    * Default: 4 (at least 2 user + 2 assistant messages)
    */
   autoMemoryMinMessages?: number;
+  /**
+   * Configuration for AI providers (Google, OpenAI, Anthropic, etc.)
+   * Stores API keys and model preferences.
+   */
+  providersConfig?: AIProviderConfig;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -104,6 +112,5 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   toolsMode: 'agent',
   autoMemoryExtraction: false,
   autoMemoryMinMessages: 4,
+  providersConfig: undefined,
 };
-
-

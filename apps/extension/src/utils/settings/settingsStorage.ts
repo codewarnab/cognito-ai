@@ -126,4 +126,94 @@ export async function setToolsMode(mode: ToolsMode): Promise<UserSettings> {
   return updateSettings({ toolsMode: mode });
 }
 
+// AI Providers config helpers
+// Legacy storage key
+const LEGACY_STORAGE_KEY = 'ai_provider_config';
+
+async function migrateLegacyConfig(): Promise<import('@cognito/shared/types').AIProviderConfig | undefined> {
+  const result = await chrome.storage.local.get(LEGACY_STORAGE_KEY);
+  const legacy = result[LEGACY_STORAGE_KEY] as import('@cognito/shared/types').ProviderConfig | undefined;
+
+  if (!legacy) return undefined;
+
+  const providers: import('@cognito/shared/types').ConfigProvider[] = [];
+
+  if (legacy.googleApiKey) {
+    providers.push({
+      name: 'google_gemini',
+      enabled: legacy.provider === 'google',
+      api_key: legacy.googleApiKey,
+      models: [
+        {
+          enabled: true,
+          id: 'gemini-1.5-pro',
+          name: 'Gemini 1.5 Pro',
+          features: {
+            function_calling: true,
+            structured_output: true,
+            reasoning: true,
+            web_search: true
+          }
+        },
+        {
+          enabled: true,
+          id: 'gemini-1.5-flash',
+          name: 'Gemini 1.5 Flash',
+          features: {
+            function_calling: true,
+            structured_output: true,
+            reasoning: true,
+            web_search: true
+          }
+        }
+      ] // Basic default models
+    });
+  }
+
+  if (legacy.vertexCredentials) {
+    providers.push({
+      name: 'vertex',
+      enabled: legacy.provider === 'vertex',
+      custom_fields: legacy.vertexCredentials as unknown as Record<string, string>,
+      models: [
+        {
+          enabled: true,
+          id: 'gemini-1.5-pro',
+          name: 'Gemini 1.5 Pro',
+          features: {
+            function_calling: true,
+            structured_output: true,
+            reasoning: true,
+            web_search: true
+          }
+        }
+      ]
+    });
+  }
+
+  if (providers.length === 0) return undefined;
+
+  const newConfig: import('@cognito/shared/types').AIProviderConfig = {
+    providers
+  };
+
+  // Save to new storage
+  await setProvidersConfig(newConfig);
+  return newConfig;
+}
+
+export async function getProvidersConfig(): Promise<import('@cognito/shared/types').AIProviderConfig | undefined> {
+  const settings = await getSettings();
+  if (settings.providersConfig) {
+    return settings.providersConfig;
+  }
+
+  // Try migration
+  return migrateLegacyConfig();
+}
+
+export async function setProvidersConfig(config: import('@cognito/shared/types').AIProviderConfig): Promise<UserSettings> {
+  return updateSettings({ providersConfig: config });
+}
+
 

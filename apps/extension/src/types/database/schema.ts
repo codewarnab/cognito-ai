@@ -4,6 +4,7 @@
 
 import type { AppUsage } from '../ai/usage';
 import type { UIMessage } from 'ai';
+import type { AIProviderConfig } from '@cognito/shared/types';
 
 export interface SettingRecord<T = unknown> {
     key: string;
@@ -21,6 +22,7 @@ export interface SettingsTypeMap {
     maxTokens: number;
     temperature: number;
     // Add more typed settings here as needed
+    providersConfig: AIProviderConfig;
 }
 
 export type SettingKey = keyof SettingsTypeMap;
