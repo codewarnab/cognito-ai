@@ -48,101 +48,66 @@
 }
 
 :root {
-  /* Extension Brand Colors */
-  --green-pulse: #C6FE1E;
-  --blue-stride: #1264FF;
-  --bg-primary: #0a0e1a;
-  --bg-secondary: #0f1420;
-  --bg-tertiary: #141f30;
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.6);
-  --border-color: rgba(255, 255, 255, 0.08);
+  /* AI-SDK-Panel Neutral Grayscale (Light Theme) */
+  --std-50: oklch(98.5% 0 0);
+  --std-100: oklch(96.7% 0 0);
+  --std-200: oklch(92.8% 0 0);
+  --std-300: oklch(87.2% 0 0);
+  --std-400: oklch(70.7% 0 0);
+  --std-500: oklch(55.1% 0 0);
+  --std-600: oklch(44.6% 0 0);
+  --std-700: oklch(37.3% 0 0);
+  --std-800: oklch(27.8% 0 0);
+  --std-900: oklch(21% 0 0);
+  --std-950: oklch(13% 0 0);
+
+  /* Semantic colors derived from std palette */
+  --bg-primary: var(--std-50);
+  --bg-secondary: oklch(from var(--std-100) l c h / 0.6);
+  --bg-tertiary: oklch(from var(--std-200) l c h / 0.4);
+  --text-primary: oklch(from var(--std-900) l c h / 0.9);
+  --text-secondary: oklch(from var(--std-600) l c h / 0.6);
+  --border-color: oklch(from var(--std-900) l c h / 0.1);
+
+  /* Hover/Active states */
+  --bg-hover: oklch(from var(--std-300) l c h / 0.15);
+  --bg-active: oklch(from var(--std-400) l c h / 0.15);
 
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --background: var(--std-50);
+  --foreground: var(--std-900);
+  --card: #ffffff;
+  --card-foreground: var(--std-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--std-900);
+  --primary: var(--std-900);
+  --primary-foreground: var(--std-50);
+  --secondary: var(--std-100);
+  --secondary-foreground: var(--std-900);
+  --muted: var(--std-100);
+  --muted-foreground: var(--std-500);
+  --accent: var(--std-100);
+  --accent-foreground: var(--std-900);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--std-200);
+  --input: var(--std-200);
+  --ring: var(--std-400);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: var(--std-50);
+  --sidebar-foreground: var(--std-900);
+  --sidebar-primary: var(--std-900);
+  --sidebar-primary-foreground: var(--std-50);
+  --sidebar-accent: var(--std-100);
+  --sidebar-accent-foreground: var(--std-900);
+  --sidebar-border: var(--std-200);
+  --sidebar-ring: var(--std-400);
 }
 
-.dark {
-  /* Inherit custom brand variables from root, but we can override if needed */
-
-  /* Map shadcn variables to our brand colors 
-     Note: converting hex to oklch or just using the hex values if tailwind 4 supports it directly in vars.
-     For now, we will use the approximate oklch or just direct hex values if the mechanism allows.
-     Since this is a CSS file, we can just use the vars we defined above.
-  */
-  --background: var(--bg-primary);
-  --foreground: var(--text-primary);
-
-  --card: var(--bg-secondary);
-  --card-foreground: var(--text-primary);
-
-  --popover: var(--bg-secondary);
-  --popover-foreground: var(--text-primary);
-
-  --primary: var(--blue-stride);
-  --primary-foreground: #ffffff;
-
-  --secondary: var(--bg-tertiary);
-  --secondary-foreground: var(--text-primary);
-
-  --muted: var(--bg-tertiary);
-  --muted-foreground: var(--text-secondary);
-
-  --accent: var(--bg-tertiary);
-  --accent-foreground: var(--text-primary);
-
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-
-  --border: var(--border-color);
-  --input: var(--border-color);
-  --ring: var(--blue-stride);
-
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-
-  --sidebar: var(--bg-secondary);
-  --sidebar-foreground: var(--text-primary);
-  --sidebar-primary: var(--blue-stride);
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: var(--bg-tertiary);
-  --sidebar-accent-foreground: var(--text-primary);
-  --sidebar-border: var(--border-color);
-  --sidebar-ring: var(--blue-stride);
-}
+/* Single light theme - no dark mode overrides needed */
 
 @layer base {
   * {
@@ -171,14 +136,17 @@
     opacity: 0;
     transform: translateX(4px);
   }
+
   15% {
     opacity: 1;
     transform: translateX(0);
   }
+
   85% {
     opacity: 1;
     transform: translateX(0);
   }
+
   100% {
     opacity: 0;
     transform: translateX(-4px);

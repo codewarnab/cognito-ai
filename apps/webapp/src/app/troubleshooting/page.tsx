@@ -1,19 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { HelpCircle, Search, ArrowLeft } from 'lucide-react';
+import { HelpCircle, Search, ArrowLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
-import {
-    Accordion,
-    AccordionItem,
-    AccordionTrigger,
-    AccordionContent,
-} from '@/components/ui/accordion';
 import { troubleshootingData } from '@/lib/troubleshootingData';
+import { cn } from '@/lib/utils';
 
 export default function TroubleshootingPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [openId, setOpenId] = useState<string | null>(null);
 
     const filteredItems = troubleshootingData.filter((item) =>
         item.issue.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -63,60 +60,54 @@ export default function TroubleshootingPage() {
                         <p className="text-white/40 text-sm mt-2">Try a different search term.</p>
                     </div>
                 ) : (
-                    <Accordion type="single" collapsible className="space-y-3">
+                    <div className="space-y-3">
                         {filteredItems.map((item) => (
-                            <AccordionItem
+                            <TroubleshootingAccordion
                                 key={item.id}
-                                value={item.id}
-                                className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 data-[state=open]:bg-white/[0.05] transition-colors"
+                                title={item.issue}
+                                isOpen={openId === item.id}
+                                onToggle={() => setOpenId(prev => prev === item.id ? null : item.id)}
                             >
-                                <AccordionTrigger className="text-left hover:no-underline py-4">
-                                    <span className="text-sm font-medium text-white pr-4">
-                                        {item.issue}
-                                    </span>
-                                </AccordionTrigger>
-                                <AccordionContent className="pb-4">
-                                    {/* Causes */}
-                                    <div className="mb-4">
-                                        <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-                                            Possible Causes
-                                        </h4>
-                                        <ul className="space-y-1.5">
-                                            {item.causes.map((cause, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="text-sm text-white/70 flex items-start gap-2"
-                                                >
-                                                    <span className="text-orange-400/60 mt-0.5">•</span>
-                                                    {cause}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
+                                {/* Causes */}
+                                <div className="mb-4">
+                                    <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+                                        Possible Causes
+                                    </h4>
+                                    <ul className="space-y-1.5">
+                                        {item.causes.map((cause, index) => (
+                                            <li
+                                                key={index}
+                                                className="text-sm text-white/70 flex items-start gap-2"
+                                            >
+                                                <span className="text-orange-400/60 mt-0.5">•</span>
+                                                {cause}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
 
-                                    {/* Solutions */}
-                                    <div>
-                                        <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
-                                            Solutions
-                                        </h4>
-                                        <ul className="space-y-2">
-                                            {item.solutions.map((solution, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="text-sm text-white/80 flex items-start gap-2 bg-white/[0.02] p-2.5 rounded-lg"
-                                                >
-                                                    <span className="text-green-400 font-medium shrink-0">
-                                                        {index + 1}.
-                                                    </span>
-                                                    <span>{solution}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
+                                {/* Solutions */}
+                                <div>
+                                    <h4 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+                                        Solutions
+                                    </h4>
+                                    <ul className="space-y-2">
+                                        {item.solutions.map((solution, index) => (
+                                            <li
+                                                key={index}
+                                                className="text-sm text-white/80 flex items-start gap-2 bg-white/[0.02] p-2.5 rounded-lg"
+                                            >
+                                                <span className="text-green-400 font-medium shrink-0">
+                                                    {index + 1}.
+                                                </span>
+                                                <span>{solution}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </TroubleshootingAccordion>
                         ))}
-                    </Accordion>
+                    </div>
                 )}
 
                 {/* Help Footer */}
@@ -127,5 +118,69 @@ export default function TroubleshootingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function TroubleshootingAccordion({
+    children,
+    title,
+    isOpen,
+    onToggle,
+}: {
+    title: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: React.ReactNode;
+}) {
+    return (
+        <motion.div
+            layout
+            className={cn(
+                "bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden transition-colors",
+                isOpen && "bg-white/[0.05]"
+            )}
+        >
+            <div className="p-4">
+                <button
+                    className="flex items-center justify-between w-full text-left cursor-pointer"
+                    onClick={onToggle}
+                    aria-expanded={isOpen}
+                >
+                    <span className="text-sm font-medium text-white pr-4">{title}</span>
+                    <motion.span
+                        animate={{ rotate: isOpen ? 90 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-white/50 shrink-0"
+                    >
+                        <ChevronRight size={16} />
+                    </motion.span>
+                </button>
+                <AnimatePresence initial={false}>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 180,
+                                damping: 26,
+                            }}
+                            className="overflow-hidden"
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, y: 4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 4 }}
+                                transition={{ duration: 0.2 }}
+                                className="pt-4"
+                            >
+                                {children}
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </motion.div>
     );
 }
