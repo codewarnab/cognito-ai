@@ -57,8 +57,13 @@ export function SettingNumberInput({ label, description, value, onChange, min, m
                 )}
                 <Input
                     type="number"
-                    value={value}
-                    onChange={(e) => handleChange(parseInt(e.target.value, 10))}
+                    value={isNaN(value) ? '' : value}
+                    onChange={(e) => {
+                        const parsed = parseInt(e.target.value, 10);
+                        if (!isNaN(parsed)) {
+                            handleChange(parsed);
+                        }
+                    }}
                     min={min}
                     max={max}
                     disabled={disabled}

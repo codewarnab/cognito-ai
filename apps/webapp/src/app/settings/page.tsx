@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, AlertCircle, X } from "lucide-react";
-import { ChatCircle, MagnifyingGlass, SpeakerHigh, Lightning, GearSix } from "@phosphor-icons/react";
+import { AlertCircle, X } from "lucide-react";
+import { MagnifyingGlass, SpeakerHigh, PencilSimple, Brain, GearSix } from "@phosphor-icons/react";
 import { extensionAPI } from "@/lib/extension-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,10 +26,9 @@ import type {
 } from "@cognito/shared";
 
 // Import Tab Components
-import { AIConversationTab } from "@/components/settings/tabs/AIConversationTab";
-import { WebSearchTab } from "@/components/settings/tabs/WebSearchTab";
+import { AISearchTab } from "@/components/settings/tabs/AISearchTab";
 import { VoiceTTSTab } from "@/components/settings/tabs/VoiceTTSTab";
-import { FeaturesTab } from "@/components/settings/tabs/FeaturesTab";
+import { WritingToolsTab } from "@/components/settings/tabs/FeaturesTab";
 import { AdvancedTab } from "@/components/settings/tabs/AdvancedTab";
 
 export default function SettingsPage() {
@@ -200,7 +199,6 @@ export default function SettingsPage() {
                     {/* Skeleton for Preferences Header */}
                     <div className="flex items-center justify-between mb-6">
                         <Skeleton className="h-8 w-32" />
-                        <Skeleton className="h-9 w-24" />
                     </div>
 
                     {/* Skeleton for Tabs */}
@@ -283,15 +281,7 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-
-
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">Preferences</h2>
-                    <Button variant="outline" onClick={loadSettings} disabled={settingsLoading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${settingsLoading ? "animate-spin" : ""}`} />
-                        Refresh
-                    </Button>
-                </div>
+                <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Preferences</h2>
 
                 <SettingsTabs
                     aiConfig={aiConfig}
@@ -374,24 +364,18 @@ function SettingsTabs({
 }: SettingsTabsProps) {
     const tabs: AnimatedTab[] = useMemo(() => [
         {
-            name: "AI Conversation",
-            icon: <ChatCircle size={18} weight="duotone" />,
-            content: (
-                <AIConversationTab
-                    aiConfig={aiConfig}
-                    setAIConfig={setAIConfig}
-                    updateSetting={updateSetting}
-                />
-            ),
-        },
-        {
-            name: "Web Search",
+            name: "AI & Search",
             icon: <MagnifyingGlass size={18} weight="duotone" />,
             content: (
-                <WebSearchTab
+                <AISearchTab
+                    aiConfig={aiConfig}
+                    setAIConfig={setAIConfig}
                     searchSettings={searchSettings}
                     setSearchSettings={setSearchSettings}
+                    researchSettings={researchSettings}
+                    setResearchSettings={setResearchSettings}
                     updateSetting={updateSetting}
+                    handleDeleteAllChats={handleDeleteAllChats}
                 />
             ),
         },
@@ -411,31 +395,28 @@ function SettingsTabs({
             ),
         },
         {
-            name: "Features",
-            icon: <Lightning size={18} weight="duotone" />,
+            name: "Writing Tools",
+            icon: <PencilSimple size={18} weight="duotone" />,
             content: (
-                <FeaturesTab
+                <WritingToolsTab
                     summarizerSettings={summarizerSettings}
                     setSummarizerSettings={setSummarizerSettings}
                     rewriterSettings={rewriterSettings}
                     setRewriterSettings={setRewriterSettings}
                     writeSettings={writeSettings}
                     setWriteSettings={setWriteSettings}
-                    researchSettings={researchSettings}
-                    setResearchSettings={setResearchSettings}
                     updateSetting={updateSetting}
                 />
             ),
         },
         {
-            name: "Advanced",
-            icon: <GearSix size={18} weight="duotone" />,
+            name: "Memory",
+            icon: <Brain size={18} weight="duotone" />,
             content: (
                 <AdvancedTab
                     supermemorySettings={supermemorySettings}
                     setSupermemorySettings={setSupermemorySettings}
                     updateSetting={updateSetting}
-                    handleDeleteAllChats={handleDeleteAllChats}
                 />
             ),
         },
