@@ -1,3 +1,4 @@
-export { Features } from './Features';
-export { Troubleshooting } from './Troubleshooting';
-export { ProviderSetup } from './ProviderSetup';
+// Help components now redirect to webapp
+export { Features } from './FeaturesRedirect';
+export { Troubleshooting } from './TroubleshootingRedirect';
+export { ProviderSetup } from './ProviderSetupRedirect';
