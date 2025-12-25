@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Providers, type Config, type PresetProvider, type SpecialProvider } from '@/components/aipanel';
+import { Providers, type Config, type PresetProvider, type SpecialProvider, type ConfigProvider } from '@/components/aipanel';
 import '@/components/aipanel/index.css';
 import { cognitoProviders } from '@/lib/providers/presets';
 import { cognitoLocales } from '@/lib/providers/locales';
@@ -16,6 +16,42 @@ import { useRouter } from 'next/navigation';
 import { useDebounceFn } from 'ahooks';
 import { useExtension } from '@/hooks/useExtension';
 import { Header } from '@/components/shared/Header';
+
+/**
+ * Merge stored config with default providers.
+ * Ensures all preset providers are present while preserving stored API keys and enabled status.
+ */
+function mergeConfigWithDefaults(storedConfig: Config | null): Config {
+    const defaultConfig: Config = { providers: cognitoProviders };
+
+    if (!storedConfig || !storedConfig.providers) {
+        return defaultConfig;
+    }
+
+    // Create a map of stored providers by name for quick lookup
+    const storedProviderMap = new Map<string, ConfigProvider>();
+    storedConfig.providers.forEach(p => storedProviderMap.set(p.name, p));
+
+    // Merge: use stored provider data if exists, otherwise use default
+    const mergedProviders = cognitoProviders.map(defaultProvider => {
+        const stored = storedProviderMap.get(defaultProvider.name);
+        if (stored) {
+            // Merge stored settings with default (stored takes priority)
+            return {
+                ...defaultProvider,
+                ...stored,
+                // Keep default models if stored has none
+                models: stored.models?.length ? stored.models : defaultProvider.models,
+            };
+        }
+        return defaultProvider;
+    });
+
+    return {
+        ...storedConfig,
+        providers: mergedProviders,
+    };
+}
 
 export default function ProvidersPage() {
     const router = useRouter();
@@ -48,9 +84,9 @@ export default function ProvidersPage() {
             try {
                 const response = await extensionAPI.getProvidersConfig();
                 if (response.success && response.data) {
-                    if (response.data.config) {
-                        setConfig(response.data.config);
-                    }
+                    // Merge stored config with defaults to ensure all preset providers are visible
+                    const mergedConfig = mergeConfigWithDefaults(response.data.config);
+                    setConfig(mergedConfig);
                 }
             } catch (error) {
                 console.error('Failed to load config:', error);

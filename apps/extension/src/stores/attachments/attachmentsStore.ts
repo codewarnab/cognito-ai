@@ -129,11 +129,13 @@ export const useAttachmentsStore = create<AttachmentsState>()(
     // Actions - Selected Text
     setSelectedTextInfo: (info) =>
       set((state) => {
-        state.selectedTextInfo = info;
-        // Reset dismissed state when text changes
-        if (info) {
+        // Only reset dismissed state when text actually changes
+        // This prevents the suggestion from reappearing after adding as attachment
+        const textChanged = info?.text !== state.selectedTextInfo?.text;
+        if (info && textChanged) {
           state.isSelectedTextDismissed = false;
         }
+        state.selectedTextInfo = info;
       }),
 
     setIsAttachingSelectedText: (isAttaching) => set({ isAttachingSelectedText: isAttaching }),

@@ -21,7 +21,7 @@ interface FeaturesTabProps {
     setWriteSettings: (settings: WriteCommandSettings) => void;
     researchSettings: ResearchWorkflowSettings | null;
     setResearchSettings: (settings: ResearchWorkflowSettings) => void;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
 }
 
 export function FeaturesTab({
@@ -44,9 +44,9 @@ export function FeaturesTab({
                         label="Enable Summarizer"
                         description="Show summarize option when text is selected"
                         checked={summarizerSettings.enabled}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setSummarizerSettings({ ...summarizerSettings, enabled: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setSummarizerSettings({ enabled: checked }),
                                 () => { }
                             );
@@ -106,9 +106,9 @@ export function FeaturesTab({
                         label="Minimum Text Length"
                         description="Minimum characters needed to trigger summarizer"
                         value={summarizerSettings.minTextLength}
-                        onChange={(value) => {
+                        onChange={async (value) => {
                             setSummarizerSettings({ ...summarizerSettings, minTextLength: value });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setSummarizerSettings({ minTextLength: value }),
                                 () => { }
                             );
@@ -126,9 +126,9 @@ export function FeaturesTab({
                         label="Enable Rewriter"
                         description="Show rewrite option when text is selected"
                         checked={rewriterSettings.enabled}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setRewriterSettings({ ...rewriterSettings, enabled: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setRewriterSettings({ enabled: checked }),
                                 () => { }
                             );
@@ -139,9 +139,9 @@ export function FeaturesTab({
                         label="Show Preset Buttons"
                         description="Show quick preset buttons (Shorten, Expand, etc.)"
                         checked={rewriterSettings.showPresets}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setRewriterSettings({ ...rewriterSettings, showPresets: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setRewriterSettings({ showPresets: checked }),
                                 () => { }
                             );
@@ -152,9 +152,9 @@ export function FeaturesTab({
                         label="Enable Google Search"
                         description="Allow AI to search Google for context"
                         checked={rewriterSettings.enableGoogleSearch}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setRewriterSettings({ ...rewriterSettings, enableGoogleSearch: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setRewriterSettings({ enableGoogleSearch: checked }),
                                 () => { }
                             );
@@ -170,9 +170,9 @@ export function FeaturesTab({
                         label="Enable Write Command"
                         description="Allow using /write command in chat"
                         checked={writeSettings.enabled}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setWriteSettings({ ...writeSettings, enabled: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setWriteSettings({ enabled: checked }),
                                 () => { }
                             );
@@ -208,9 +208,9 @@ export function FeaturesTab({
                         label="Include Page Context"
                         description="Include current page content for context"
                         checked={writeSettings.includePageContext}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setWriteSettings({ ...writeSettings, includePageContext: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setWriteSettings({ includePageContext: checked }),
                                 () => { }
                             );
@@ -226,9 +226,9 @@ export function FeaturesTab({
                         label="Minimum Sources"
                         description="Minimum sources to visit before completing research"
                         value={researchSettings.minimumSources}
-                        onChange={(value) => {
+                        onChange={async (value) => {
                             setResearchSettings({ ...researchSettings, minimumSources: value });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setResearchSettings({ minimumSources: value }),
                                 () => { }
                             );
@@ -241,9 +241,9 @@ export function FeaturesTab({
                         label="Maximum Steps"
                         description="Maximum steps allowed for research"
                         value={researchSettings.stepCount}
-                        onChange={(value) => {
+                        onChange={async (value) => {
                             setResearchSettings({ ...researchSettings, stepCount: value });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setResearchSettings({ stepCount: value }),
                                 () => { }
                             );

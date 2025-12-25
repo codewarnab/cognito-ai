@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react'
 
 import type { Icon } from '@phosphor-icons/react'
+import { SparklesIcon } from './SparklesIcon'
 
 // Custom SVG icon components matching brand identities
 
@@ -41,19 +42,6 @@ const AnthropicIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
 	</svg>
 )
 
-const GeminiIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
-	<svg
-		xmlns="http://www.w3.org/2000/svg"
-		viewBox="0 0 24 24"
-		fill="currentColor"
-		width="1em"
-		height="1em"
-		{...props}
-	>
-		<path d="M12 0C5.352 0 0 6.072 0 12s6.072 12 12 12 12-5.352 12-12S18.648 0 12 0zm.12 21.552c-5.28 0-9.552-4.272-9.552-9.552S6.84 2.448 12.12 2.448c5.28 0 9.552 4.272 9.552 9.552s-4.272 9.552-9.552 9.552z" />
-		<path d="M12.12 4.8c-3.984 0-7.2 3.216-7.2 7.2s3.216 7.2 7.2 7.2 7.2-3.216 7.2-7.2-3.216-7.2-7.2-7.2zm0 12c-2.64 0-4.8-2.16-4.8-4.8s2.16-4.8 4.8-4.8 4.8 2.16 4.8 4.8-2.16 4.8-4.8 4.8z" />
-	</svg>
-)
 
 const GrokIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
 	<svg
@@ -118,7 +106,7 @@ const VertexAIIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
 
 // Map providers to proper brand icons
 export const module_icon = {
-	google_gemini: GeminiIcon,
+	google_gemini: SparklesIcon,
 	anthropic: AnthropicIcon,
 	ollama: OllamaIcon,
 	openai: OpenAIIcon,
@@ -126,7 +114,7 @@ export const module_icon = {
 	vertex: VertexAIIcon,
 	custom: CirclesFour,
 	disabled: EyeClosed
-} as Record<string, Icon | FC<SVGProps<SVGSVGElement>>>
+} as Record<string, any>
 
 interface IProps {
 	name: string

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { RefreshCw, AlertCircle, CheckCircle, X } from "lucide-react";
+import { RefreshCw, AlertCircle, X } from "lucide-react";
 import { ChatCircle, MagnifyingGlass, SpeakerHigh, Lightning, GearSix } from "@phosphor-icons/react";
 import { extensionAPI } from "@/lib/extension-api";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,6 @@ export default function SettingsPage() {
     const { isInstalled, isLoading: extensionLoading } = useExtension();
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     // Settings state
     const [aiConfig, setAIConfig] = useState<AIConfigSettings>({ maxToolCallLimit: 20 });
@@ -111,30 +110,26 @@ export default function SettingsPage() {
         }
     }, [isInstalled, loadSettings]);
 
-    // Auto-hide success message
-    useEffect(() => {
-        if (successMessage) {
-            const timeout = setTimeout(() => setSuccessMessage(null), 3000);
-            return () => clearTimeout(timeout);
-        }
-    }, [successMessage]);
 
-    // Helper to update a setting
+
+    // Helper to update a setting - returns true on success for local feedback
     const updateSetting = async <T,>(
         apiCall: () => Promise<{ success: boolean; error?: string }>,
         onSuccess: () => void
-    ) => {
+    ): Promise<boolean> => {
         try {
             const result = await apiCall();
             if (result.success) {
                 onSuccess();
-                setSuccessMessage("Setting saved");
+                return true;
             } else {
                 setError(result.error || "Failed to save setting");
+                return false;
             }
         } catch (err) {
             setError("Failed to save setting");
             console.error(err);
+            return false;
         }
     };
 
@@ -176,7 +171,7 @@ export default function SettingsPage() {
         try {
             const result = await extensionAPI.deleteAllChats();
             if (result.success && result.data) {
-                setSuccessMessage(`Deleted ${result.data.messagesDeleted} messages and ${result.data.threadsDeleted} threads`);
+                alert(`Deleted ${result.data.messagesDeleted} messages and ${result.data.threadsDeleted} threads`);
             } else {
                 setError(result.error || "Failed to delete chats");
             }
@@ -257,18 +252,23 @@ export default function SettingsPage() {
             <Header title="Settings" />
 
             <div className="container mx-auto max-w-4xl py-8 px-4">
-                {/* Notice Banner */}
-                <Card className="mb-8 border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                    <CardContent className="flex items-center justify-between p-6">
-                        <div>
-                            <h3 className="font-semibold text-lg mb-1 text-[var(--text-primary)]">Configure AI Provider</h3>
-                            <p className="text-[var(--text-secondary)] text-sm">Set up your Google AI or Vertex AI credentials to enable chat capabilities.</p>
+                {/* Notice Banner - Minimal */}
+                <div className="mb-6 flex items-center justify-between gap-4 px-4 py-2.5 rounded-lg bg-[var(--bg-secondary)]/60 border border-[var(--border-color)] backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-7 h-7 rounded-md bg-blue-500/10">
+                            <GearSix size={16} weight="duotone" className="text-blue-400" />
                         </div>
-                        <Link href="/providers">
-                            <Button>Manage Providers</Button>
-                        </Link>
-                    </CardContent>
-                </Card>
+                        <span className="text-sm text-[var(--text-secondary)]">
+                            <span className="font-medium text-[var(--text-primary)]">Configure AI Provider</span>
+                            <span className="hidden sm:inline"> — Set up your credentials to enable chat</span>
+                        </span>
+                    </div>
+                    <Link href="/providers">
+                        <Button size="sm" variant="outline" className="text-xs h-7 px-3">
+                            Manage Providers
+                        </Button>
+                    </Link>
+                </div>
 
                 {/* Alerts */}
                 {error && (
@@ -283,12 +283,7 @@ export default function SettingsPage() {
                     </div>
                 )}
 
-                {successMessage && (
-                    <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2 text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        {successMessage}
-                    </div>
-                )}
+
 
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-[var(--text-primary)]">Preferences</h2>
@@ -347,7 +342,7 @@ interface SettingsTabsProps {
     setResearchSettings: React.Dispatch<React.SetStateAction<ResearchWorkflowSettings | null>>;
     supermemorySettings: SupermemorySettings | null;
     setSupermemorySettings: React.Dispatch<React.SetStateAction<SupermemorySettings | null>>;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
     handlePreviewVoice: () => Promise<void>;
     isPreviewingVoice: boolean;
     handleDeleteAllChats: () => Promise<void>;

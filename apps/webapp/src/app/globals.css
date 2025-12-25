@@ -164,3 +164,27 @@
     cursor: pointer;
   }
 }
+
+/* Local save indicator animation */
+@keyframes fade-in-out {
+  0% {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  15% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  85% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-out 2s ease-in-out forwards;
+}

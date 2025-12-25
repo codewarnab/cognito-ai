@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 interface WebSearchTabProps {
     searchSettings: SearchSettingsWithKeys | null;
     setSearchSettings: (settings: SearchSettingsWithKeys) => void;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
 }
 
 export function WebSearchTab({ searchSettings, setSearchSettings, updateSetting }: WebSearchTabProps) {
@@ -22,9 +22,9 @@ export function WebSearchTab({ searchSettings, setSearchSettings, updateSetting 
                 label="Enable Web Search"
                 description="Allow AI to search the web for information"
                 checked={searchSettings.enabled}
-                onCheckedChange={(checked) => {
+                onCheckedChange={async (checked) => {
                     setSearchSettings({ ...searchSettings, enabled: checked });
-                    updateSetting(
+                    return updateSetting(
                         () => extensionAPI.setSearchSettings({ enabled: checked }),
                         () => { }
                     );
@@ -55,9 +55,9 @@ export function WebSearchTab({ searchSettings, setSearchSettings, updateSetting 
                 label="Maximum Results"
                 description="Number of search results to return"
                 value={searchSettings.maxResults}
-                onChange={(value) => {
+                onChange={async (value) => {
                     setSearchSettings({ ...searchSettings, maxResults: value });
-                    updateSetting(
+                    return updateSetting(
                         () => extensionAPI.setSearchSettings({ maxResults: value }),
                         () => { }
                     );
@@ -70,9 +70,9 @@ export function WebSearchTab({ searchSettings, setSearchSettings, updateSetting 
                 label="Include Images"
                 description="Include image results in search"
                 checked={searchSettings.includeImages}
-                onCheckedChange={(checked) => {
+                onCheckedChange={async (checked) => {
                     setSearchSettings({ ...searchSettings, includeImages: checked });
-                    updateSetting(
+                    return updateSetting(
                         () => extensionAPI.setSearchSettings({ includeImages: checked }),
                         () => { }
                     );

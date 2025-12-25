@@ -13,7 +13,7 @@ interface VoiceTTSTabProps {
     setTTSSettings: (settings: TTSSettings) => void;
     voiceSettings: VoiceSettings | null;
     setVoiceSettings: (settings: VoiceSettings) => void;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
     handlePreviewVoice: () => void;
     isPreviewingVoice: boolean;
 }
@@ -35,9 +35,9 @@ export function VoiceTTSTab({
                 label="Show Suggestions"
                 description="Show AI-suggested actions in chat"
                 checked={ttsSettings.suggestionsEnabled}
-                onCheckedChange={(checked) => {
+                onCheckedChange={async (checked) => {
                     setTTSSettings({ ...ttsSettings, suggestionsEnabled: checked });
-                    updateSetting(
+                    return updateSetting(
                         () => extensionAPI.setTTSSettings({ suggestionsEnabled: checked }),
                         () => { }
                     );

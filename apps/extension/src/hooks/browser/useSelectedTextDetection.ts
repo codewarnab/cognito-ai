@@ -67,6 +67,20 @@ export function useSelectedTextDetection(): SelectedTextDetection {
 
     const clearSelection = useCallback(() => {
         setSelectedTextInfo(null);
+
+        // Also clear selection in the browser to prevent polling from picking it up again
+        chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+            if (tab?.id) {
+                chrome.scripting.executeScript({
+                    target: { tabId: tab.id },
+                    func: () => {
+                        window.getSelection()?.removeAllRanges();
+                    }
+                }).catch(err => {
+                    log.debug('Failed to clear browser selection', err);
+                });
+            }
+        });
     }, []);
 
     useEffect(() => {

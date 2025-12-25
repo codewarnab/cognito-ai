@@ -6,7 +6,7 @@ import { SettingsSection } from "@/components/settings/shared/SettingsSection";
 interface AIConversationTabProps {
     aiConfig: AIConfigSettings;
     setAIConfig: (config: AIConfigSettings) => void;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
 }
 
 export function AIConversationTab({ aiConfig, setAIConfig, updateSetting }: AIConversationTabProps) {
@@ -16,10 +16,10 @@ export function AIConversationTab({ aiConfig, setAIConfig, updateSetting }: AICo
                 label="Maximum Tool Calls"
                 description="Limit how many tool calls (steps) the AI can make per response (1-50)"
                 value={aiConfig.maxToolCallLimit}
-                onChange={(value) => {
+                onChange={async (value) => {
                     const clamped = Math.max(1, Math.min(50, value));
                     setAIConfig({ ...aiConfig, maxToolCallLimit: clamped });
-                    updateSetting(
+                    return updateSetting(
                         () => extensionAPI.setAIConfig({ maxToolCallLimit: clamped }),
                         () => { }
                     );

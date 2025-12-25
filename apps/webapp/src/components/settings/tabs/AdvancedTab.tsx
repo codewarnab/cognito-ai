@@ -11,7 +11,7 @@ import { Trash2 } from "lucide-react";
 interface AdvancedTabProps {
     supermemorySettings: SupermemorySettings | null;
     setSupermemorySettings: (settings: SupermemorySettings) => void;
-    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<void>;
+    updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
     handleDeleteAllChats: () => void;
 }
 
@@ -30,11 +30,11 @@ export function AdvancedTab({
                         label="Enable Supermemory"
                         description="Enable persistent memory across conversations"
                         checked={supermemorySettings.enabled}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setSupermemorySettings({ ...supermemorySettings, enabled: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setSupermemorySettings({ enabled: checked }),
-                                () => {}
+                                () => { }
                             );
                         }}
                     />
@@ -51,7 +51,7 @@ export function AdvancedTab({
                             onBlur={() => {
                                 updateSetting(
                                     () => extensionAPI.setSupermemorySettings({ apiKey: supermemorySettings.apiKey }),
-                                    () => {}
+                                    () => { }
                                 );
                             }}
                             className="mt-2"
@@ -62,11 +62,11 @@ export function AdvancedTab({
                         label="Auto-Extract Insights"
                         description="Automatically learn from your conversations"
                         checked={supermemorySettings.autoExtraction}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             setSupermemorySettings({ ...supermemorySettings, autoExtraction: checked });
-                            updateSetting(
+                            return updateSetting(
                                 () => extensionAPI.setSupermemorySettings({ autoExtraction: checked }),
-                                () => {}
+                                () => { }
                             );
                         }}
                     />
