@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Clock, Trash2, Calendar, Copy, Check, Edit2 } from 'lucide-react';
+import { Trash2, Calendar, Copy, Check, Edit2 } from 'lucide-react';
+import { Clock } from '@phosphor-icons/react';
 import { extensionAPI } from '@/lib/extension-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -145,8 +146,8 @@ export default function RemindersPage() {
             <div className="container mx-auto max-w-2xl py-8 px-4">
                 {/* Page Description */}
                 <div className="flex items-center gap-3 mb-8">
-                    <div className="p-2.5 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl">
-                        <Clock size={24} className="text-blue-400" />
+                    <div className="p-2.5 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
+                        <Clock size={24} weight="duotone" className="text-[var(--blue-stride)]" />
                     </div>
                     <p className="text-[var(--text-secondary)] text-sm">Manage your scheduled reminders</p>
                 </div>
@@ -160,7 +161,7 @@ export default function RemindersPage() {
                 ) : reminders.length === 0 ? (
                     <Card className="bg-[var(--bg-secondary)] border-[var(--border-color)]">
                         <CardContent className="flex flex-col items-center py-12 gap-5">
-                            <Clock size={48} className="text-[var(--text-tertiary)]" />
+                            <Clock size={48} weight="duotone" className="text-[var(--text-tertiary)]" />
                             <div className="text-center">
                                 <CardTitle className="text-lg text-[var(--text-primary)] mb-2">No active reminders</CardTitle>
                                 <CardDescription className="text-[var(--text-secondary)]">

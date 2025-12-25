@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { HelpCircle, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
+import { Question } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input';
 import { troubleshootingData } from '@/lib/troubleshootingData';
 import { Header } from '@/components/shared/Header';
@@ -25,7 +26,7 @@ export default function TroubleshootingPage() {
                 <div className="mb-8">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
-                            <HelpCircle size={24} className="text-orange-500" />
+                            <Question size={24} weight="duotone" className="text-[var(--orange-spark)]" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-[var(--text-primary)]">Troubleshooting</h1>
