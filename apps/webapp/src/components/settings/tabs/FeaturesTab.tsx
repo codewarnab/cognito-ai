@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import {
     TextSummarizerSettings,
     TextRewriterSettings,
@@ -6,9 +7,11 @@ import {
 import { extensionAPI } from "@/lib/extension-api";
 import { SettingSwitch } from "@/components/settings/shared/SettingSwitch";
 import { SettingNumberInput } from "@/components/settings/shared/SettingNumberInput";
-import { SettingsSection } from "@/components/settings/shared/SettingsSection";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectOption } from "@/components/ui/select";
+import { AnimatedAccordion } from "@/components/shared/AnimatedAccordion";
+import { HighlightedText } from "@/components/shared/HighlightedText";
+import { accordionMatchesQuery } from "@/components/settings/shared/settingsSearchData";
 
 interface WritingToolsTabProps {
     summarizerSettings: TextSummarizerSettings | null;
@@ -18,6 +21,8 @@ interface WritingToolsTabProps {
     writeSettings: WriteCommandSettings | null;
     setWriteSettings: (settings: WriteCommandSettings) => void;
     updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
+    searchQuery?: string;
+    forcedOpenSections?: Set<string>;
 }
 
 export function WritingToolsTab({
@@ -27,13 +32,37 @@ export function WritingToolsTab({
     setRewriterSettings,
     writeSettings,
     setWriteSettings,
-    updateSetting
+    updateSetting,
+    searchQuery = '',
+    forcedOpenSections = new Set()
 }: WritingToolsTabProps) {
+    const [manualOpenSection, setManualOpenSection] = useState<string | null>(null);
+
+    // Check if accordion should be visible based on search
+    const isAccordionVisible = (accordionId: string) => {
+        return accordionMatchesQuery(accordionId, searchQuery);
+    };
+
+    // Determine if an accordion is open (either manually or forced by search)
+    const isAccordionOpen = (accordionId: string) => {
+        if (searchQuery && forcedOpenSections.has(accordionId)) return true;
+        return manualOpenSection === accordionId;
+    };
+
+    const handleToggle = (accordionId: string) => {
+        setManualOpenSection(prev => prev === accordionId ? null : accordionId);
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             {/* Text Summarizer */}
-            {summarizerSettings && (
-                <SettingsSection title="Text Summarizer" description="Configure text selection summarization">
+            {summarizerSettings && isAccordionVisible('summarizer') && (
+                <AnimatedAccordion
+                    title="Text Summarizer"
+                    description="Configure text selection summarization"
+                    isOpen={isAccordionOpen('summarizer')}
+                    onToggle={() => handleToggle('summarizer')}
+                >
                     <div className="space-y-4">
                         <SettingSwitch
                             label="Enable Summarizer"
@@ -46,53 +75,52 @@ export function WritingToolsTab({
                                     () => { }
                                 );
                             }}
+                            searchQuery={searchQuery}
                         />
-                        <div>
-                            <Label className="text-sm font-medium">Summary Type</Label>
-                            <Select
-                                value={summarizerSettings.summaryType}
-                                onValueChange={(value) => {
-                                    const newValue = value as TextSummarizerSettings["summaryType"];
-                                    setSummarizerSettings({ ...summarizerSettings, summaryType: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setSummarizerSettings({ summaryType: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-1.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="key-points">Key Points</SelectItem>
-                                    <SelectItem value="tl-dr">TL;DR</SelectItem>
-                                    <SelectItem value="headline">Headline</SelectItem>
-                                    <SelectItem value="teaser">Teaser</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label className="text-sm font-medium">Summary Length</Label>
-                            <Select
-                                value={summarizerSettings.summaryLength}
-                                onValueChange={(value) => {
-                                    const newValue = value as TextSummarizerSettings["summaryLength"];
-                                    setSummarizerSettings({ ...summarizerSettings, summaryLength: newValue });
-                                    updateSetting(
-                                        () => extensionAPI.setSummarizerSettings({ summaryLength: newValue }),
-                                        () => { }
-                                    );
-                                }}
-                            >
-                                <SelectTrigger className="mt-1.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="short">Short</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="long">Long</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label className="text-sm font-medium">
+                                    <HighlightedText text="Summary Type" searchQuery={searchQuery} />
+                                </Label>
+                                <Select
+                                    value={summarizerSettings.summaryType}
+                                    placeholder="Select type"
+                                    setValue={(value) => {
+                                        const newValue = value as TextSummarizerSettings["summaryType"];
+                                        setSummarizerSettings({ ...summarizerSettings, summaryType: newValue });
+                                        updateSetting(
+                                            () => extensionAPI.setSummarizerSettings({ summaryType: newValue }),
+                                            () => { }
+                                        );
+                                    }}
+                                >
+                                    <SelectOption value="key-points">Key Points</SelectOption>
+                                    <SelectOption value="tl-dr">TL;DR</SelectOption>
+                                    <SelectOption value="headline">Headline</SelectOption>
+                                    <SelectOption value="teaser">Teaser</SelectOption>
+                                </Select>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium">
+                                    <HighlightedText text="Summary Length" searchQuery={searchQuery} />
+                                </Label>
+                                <Select
+                                    value={summarizerSettings.summaryLength}
+                                    placeholder="Select length"
+                                    setValue={(value) => {
+                                        const newValue = value as TextSummarizerSettings["summaryLength"];
+                                        setSummarizerSettings({ ...summarizerSettings, summaryLength: newValue });
+                                        updateSetting(
+                                            () => extensionAPI.setSummarizerSettings({ summaryLength: newValue }),
+                                            () => { }
+                                        );
+                                    }}
+                                >
+                                    <SelectOption value="short">Short</SelectOption>
+                                    <SelectOption value="medium">Medium</SelectOption>
+                                    <SelectOption value="long">Long</SelectOption>
+                                </Select>
+                            </div>
                         </div>
                         <SettingNumberInput
                             label="Minimum Text Length"
@@ -107,14 +135,20 @@ export function WritingToolsTab({
                             }}
                             min={10}
                             max={1000}
+                            searchQuery={searchQuery}
                         />
                     </div>
-                </SettingsSection>
+                </AnimatedAccordion>
             )}
 
             {/* Text Rewriter */}
-            {rewriterSettings && (
-                <SettingsSection title="Text Rewriter" description="Configure text rewriting options">
+            {rewriterSettings && isAccordionVisible('rewriter') && (
+                <AnimatedAccordion
+                    title="Text Rewriter"
+                    description="Configure text rewriting options"
+                    isOpen={isAccordionOpen('rewriter')}
+                    onToggle={() => handleToggle('rewriter')}
+                >
                     <div className="space-y-4">
                         <SettingSwitch
                             label="Enable Rewriter"
@@ -127,6 +161,7 @@ export function WritingToolsTab({
                                     () => { }
                                 );
                             }}
+                            searchQuery={searchQuery}
                         />
                         <SettingSwitch
                             label="Show Preset Buttons"
@@ -139,14 +174,20 @@ export function WritingToolsTab({
                                     () => { }
                                 );
                             }}
+                            searchQuery={searchQuery}
                         />
                     </div>
-                </SettingsSection>
+                </AnimatedAccordion>
             )}
 
             {/* Write Command */}
-            {writeSettings && (
-                <SettingsSection title="Write Command" description="Configure /write command behavior">
+            {writeSettings && isAccordionVisible('write') && (
+                <AnimatedAccordion
+                    title="Write Command"
+                    description="Configure /write command behavior"
+                    isOpen={isAccordionOpen('write')}
+                    onToggle={() => handleToggle('write')}
+                >
                     <div className="space-y-4">
                         <SettingSwitch
                             label="Enable Write Command"
@@ -159,12 +200,16 @@ export function WritingToolsTab({
                                     () => { }
                                 );
                             }}
+                            searchQuery={searchQuery}
                         />
                         <div>
-                            <Label className="text-sm font-medium">Default Tone</Label>
+                            <Label className="text-sm font-medium">
+                                <HighlightedText text="Default Tone" searchQuery={searchQuery} />
+                            </Label>
                             <Select
                                 value={writeSettings.defaultTone}
-                                onValueChange={(value) => {
+                                placeholder="Select tone"
+                                setValue={(value) => {
                                     const newValue = value as WriteCommandSettings["defaultTone"];
                                     setWriteSettings({ ...writeSettings, defaultTone: newValue });
                                     updateSetting(
@@ -173,15 +218,10 @@ export function WritingToolsTab({
                                     );
                                 }}
                             >
-                                <SelectTrigger className="mt-1.5">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="professional">Professional</SelectItem>
-                                    <SelectItem value="casual">Casual</SelectItem>
-                                    <SelectItem value="formal">Formal</SelectItem>
-                                    <SelectItem value="friendly">Friendly</SelectItem>
-                                </SelectContent>
+                                <SelectOption value="professional">Professional</SelectOption>
+                                <SelectOption value="casual">Casual</SelectOption>
+                                <SelectOption value="formal">Formal</SelectOption>
+                                <SelectOption value="friendly">Friendly</SelectOption>
                             </Select>
                         </div>
                         <SettingSwitch
@@ -195,9 +235,10 @@ export function WritingToolsTab({
                                     () => { }
                                 );
                             }}
+                            searchQuery={searchQuery}
                         />
                     </div>
-                </SettingsSection>
+                </AnimatedAccordion>
             )}
         </div>
     );

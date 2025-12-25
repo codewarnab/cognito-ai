@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Check } from "lucide-react";
+import { HighlightedText } from "@/components/shared/HighlightedText";
 
 interface SettingSwitchProps {
     label: string;
@@ -9,9 +10,10 @@ interface SettingSwitchProps {
     checked: boolean;
     onCheckedChange: (checked: boolean) => Promise<boolean> | void;
     disabled?: boolean;
+    searchQuery?: string;
 }
 
-export function SettingSwitch({ label, description, checked, onCheckedChange, disabled }: SettingSwitchProps) {
+export function SettingSwitch({ label, description, checked, onCheckedChange, disabled, searchQuery }: SettingSwitchProps) {
     const [showSaved, setShowSaved] = useState(false);
     const [saveKey, setSaveKey] = useState(0);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -41,10 +43,16 @@ export function SettingSwitch({ label, description, checked, onCheckedChange, di
     }, [onCheckedChange]);
 
     return (
-        <div className="flex items-center justify-between py-3">
-            <div className="space-y-0.5">
-                <Label className="text-sm font-medium">{label}</Label>
-                {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        <div className="flex items-center justify-between py-2">
+            <div className="space-y-0">
+                <Label className="text-sm font-medium">
+                    <HighlightedText text={label} searchQuery={searchQuery} />
+                </Label>
+                {description && (
+                    <p className="text-xs text-muted-foreground">
+                        <HighlightedText text={description} searchQuery={searchQuery} />
+                    </p>
+                )}
             </div>
             <div className="flex items-center gap-2">
                 {showSaved && (

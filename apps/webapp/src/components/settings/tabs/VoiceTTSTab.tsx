@@ -1,11 +1,13 @@
+import { useState, useMemo } from "react";
 import { TTSSettings, VoiceSettings, VoiceName } from "@cognito/shared";
 import { extensionAPI } from "@/lib/extension-api";
-import { SettingSwitch } from "@/components/settings/shared/SettingSwitch";
-import { SettingsSection } from "@/components/settings/shared/SettingsSection";
+import { AnimatedAccordion } from "@/components/shared/AnimatedAccordion";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectOption } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
+import { HighlightedText } from "@/components/shared/HighlightedText";
+import { accordionMatchesQuery } from "@/components/settings/shared/settingsSearchData";
 
 interface VoiceTTSTabProps {
     ttsSettings: TTSSettings | null;
@@ -15,6 +17,8 @@ interface VoiceTTSTabProps {
     updateSetting: <T>(apiCall: () => Promise<{ success: boolean; error?: string }>, onSuccess: () => void) => Promise<boolean>;
     handlePreviewVoice: () => void;
     isPreviewingVoice: boolean;
+    searchQuery?: string;
+    forcedOpenSections?: Set<string>;
 }
 
 export function VoiceTTSTab({
@@ -24,34 +28,39 @@ export function VoiceTTSTab({
     setVoiceSettings,
     updateSetting,
     handlePreviewVoice,
-    isPreviewingVoice
+    isPreviewingVoice,
+    searchQuery = '',
+    forcedOpenSections = new Set()
 }: VoiceTTSTabProps) {
+    const [manualOpen, setManualOpen] = useState(false);
+
+    const isVisible = accordionMatchesQuery('tts', searchQuery);
+
+    const isOpen = useMemo(() => {
+        if (searchQuery && forcedOpenSections.has('tts')) return true;
+        return manualOpen;
+    }, [forcedOpenSections, manualOpen, searchQuery]);
+
     if (!ttsSettings || !voiceSettings) return null;
+    if (!isVisible) return null;
 
     return (
         <div className="space-y-6">
-            <SettingsSection title="Chat Options" description="Configure chat experience settings">
-                <SettingSwitch
-                    label="Show Suggestions"
-                    description="Show AI-suggested actions in chat"
-                    checked={ttsSettings.suggestionsEnabled}
-                    onCheckedChange={async (checked) => {
-                        setTTSSettings({ ...ttsSettings, suggestionsEnabled: checked });
-                        return updateSetting(
-                            () => extensionAPI.setTTSSettings({ suggestionsEnabled: checked }),
-                            () => { }
-                        );
-                    }}
-                />
-            </SettingsSection>
-
-            <SettingsSection title="Text-to-Speech" description="Configure voice output settings">
+            <AnimatedAccordion
+                title="Text-to-Speech"
+                description="Configure voice output settings"
+                isOpen={isOpen}
+                onToggle={() => setManualOpen(!manualOpen)}
+            >
                 <div className="space-y-4">
                     <div>
-                        <Label className="text-sm font-medium">TTS Provider</Label>
+                        <Label className="text-sm font-medium">
+                            <HighlightedText text="TTS Provider" searchQuery={searchQuery} />
+                        </Label>
                         <Select
                             value={ttsSettings.ttsProvider}
-                            onValueChange={(value) => {
+                            placeholder="Select provider"
+                            setValue={(value) => {
                                 const newValue = value as TTSSettings["ttsProvider"];
                                 setTTSSettings({ ...ttsSettings, ttsProvider: newValue });
                                 updateSetting(
@@ -60,22 +69,23 @@ export function VoiceTTSTab({
                                 );
                             }}
                         >
-                            <SelectTrigger className="mt-1.5">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="gemini">Gemini</SelectItem>
-                                <SelectItem value="web-native">Web Native</SelectItem>
-                            </SelectContent>
+                            <SelectOption value="gemini">Gemini</SelectOption>
+                            <SelectOption value="web-native">Web Native</SelectOption>
                         </Select>
                     </div>
                     <div>
-                        <Label className="text-sm font-medium">Gemini Voice</Label>
-                        <p className="text-xs text-muted-foreground">Voice for Gemini Live conversations</p>
+                        <Label className="text-sm font-medium">
+                            <HighlightedText text="Gemini Voice" searchQuery={searchQuery} />
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                            <HighlightedText text="Voice for Gemini Live conversations" searchQuery={searchQuery} />
+                        </p>
                         <div className="flex gap-2 mt-1.5">
                             <Select
+                                className="flex-1" // Added className to replace SelectTrigger logic
+                                placeholder="Select voice"
                                 value={voiceSettings.voiceName}
-                                onValueChange={(value) => {
+                                setValue={(value) => {
                                     const newValue = value as VoiceName;
                                     setVoiceSettings({ ...voiceSettings, voiceName: newValue });
                                     updateSetting(
@@ -84,18 +94,13 @@ export function VoiceTTSTab({
                                     );
                                 }}
                             >
-                                <SelectTrigger className="flex-1">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Aoede">Aoede</SelectItem>
-                                    <SelectItem value="Charon">Charon</SelectItem>
-                                    <SelectItem value="Fenrir">Fenrir</SelectItem>
-                                    <SelectItem value="Kore">Kore</SelectItem>
-                                    <SelectItem value="Orion">Orion</SelectItem>
-                                    <SelectItem value="Orus">Orus</SelectItem>
-                                    <SelectItem value="Puck">Puck</SelectItem>
-                                </SelectContent>
+                                <SelectOption value="Aoede">Aoede</SelectOption>
+                                <SelectOption value="Charon">Charon</SelectOption>
+                                <SelectOption value="Fenrir">Fenrir</SelectOption>
+                                <SelectOption value="Kore">Kore</SelectOption>
+                                <SelectOption value="Orion">Orion</SelectOption>
+                                <SelectOption value="Orus">Orus</SelectOption>
+                                <SelectOption value="Puck">Puck</SelectOption>
                             </Select>
                             <Button
                                 variant="outline"
@@ -109,7 +114,7 @@ export function VoiceTTSTab({
                         </div>
                     </div>
                 </div>
-            </SettingsSection>
+            </AnimatedAccordion>
         </div>
     );
 }
