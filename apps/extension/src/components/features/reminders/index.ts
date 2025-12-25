@@ -1,3 +1,2 @@
-export { ReminderPanel } from './ReminderPanel';
-export { ReminderTimePicker } from './ReminderTimePicker';
-export { EditReminderDialog } from './EditReminderDialog';
+// ReminderPanel now shows preview and redirects to webapp for full management
+export { ReminderPanel } from './ReminderPanelRedirect';
