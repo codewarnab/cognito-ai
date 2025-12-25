@@ -22,7 +22,15 @@ import {
     DeleteReminderPayload,
     UpdateReminderPayload,
     Reminder,
+    GetProvidersConfigResponse,
+    SetProvidersConfigPayload,
+    TestProviderConnectionPayload,
 } from '@cognito/shared/types';
+import {
+    getProvidersConfig,
+    setProvidersConfig,
+    testProviderConnection,
+} from '@/services/providerService';
 import { openSidePanel, openSidePanelForTab } from '@/background/sidepanelUtils';
 import {
     getProviderConfig,
@@ -365,6 +373,64 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
                     success: false,
                     error: error instanceof Error ? error.message : 'Failed to clear provider config'
                 };
+            }
+        }
+
+        case 'GET_PROVIDERS_CONFIG': {
+            try {
+                const config = await getProvidersConfig();
+                // If config is undefined, provide a default structure or let frontend handle it?
+                // Shared types say AIProviderConfig, so we should structure it correctly.
+                const response: GetProvidersConfigResponse = {
+                    config: config || { providers: [], custom_providers: [] }
+                };
+                return { success: true, data: response };
+            } catch (error) {
+                log.error('Failed to get providers config', error);
+                return { success: false, error: 'Failed to get providers config' };
+            }
+        }
+
+        case 'SET_PROVIDERS_CONFIG': {
+            try {
+                const payload = message.payload as SetProvidersConfigPayload;
+                // Payload IS the config based on shared types
+                if (!payload) {
+                    return { success: false, error: 'Missing payload' };
+                }
+
+                await setProvidersConfig(payload);
+                return { success: true };
+            } catch (error) {
+                log.error('Failed to set providers config', error);
+                return { success: false, error: 'Failed to set providers config' };
+            }
+        }
+
+        case 'TEST_PROVIDER_CONNECTION': {
+            try {
+                const payload = message.payload as TestProviderConnectionPayload;
+                if (!payload || !payload.provider) {
+                    return { success: false, error: 'Missing payload or provider' };
+                }
+
+                const result = await testProviderConnection(payload);
+                return { success: true, data: result }; // result has success/error inside data? No, ExternalResponse structure.
+                // Wait, ExternalResponse has success/data/error at top level.
+                // testProviderConnection returns { success: boolean, error?: string }
+                // So if result.success is true, we return { success: true }.
+                // If result.success is false, we return { success: false, error: result.error }.
+
+                // Let's map it correctly:
+                if (result.success) {
+                    return { success: true };
+                } else {
+                    return { success: false, error: result.error };
+                }
+
+            } catch (error) {
+                log.error('Failed to test provider connection', error);
+                return { success: false, error: 'Failed to test provider connection' };
             }
         }
 
