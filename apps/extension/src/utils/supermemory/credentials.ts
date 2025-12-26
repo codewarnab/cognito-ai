@@ -72,14 +72,18 @@ export async function hasSupermemoryApiKey(): Promise<boolean> {
     return !!apiKey && apiKey.trim().length > 0;
 }
 
-/**
- * Checks if Supermemory is enabled by the user.
- * 
- * @returns Promise<boolean> - True if Supermemory is enabled
- */
 export async function isSupermemoryEnabled(): Promise<boolean> {
     try {
-        const storage = await chrome.storage.local.get(ENABLED_STORAGE_KEY);
+        const [storage, hasKey] = await Promise.all([
+            chrome.storage.local.get(ENABLED_STORAGE_KEY),
+            hasSupermemoryApiKey()
+        ]);
+        
+        // Even if enabled in storage, return false if no API key
+        if (!hasKey) {
+            return false;
+        }
+
         return storage[ENABLED_STORAGE_KEY] === true;
     } catch (error) {
         log.error('Failed to check Supermemory enabled state', {
