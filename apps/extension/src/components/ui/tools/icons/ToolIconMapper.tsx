@@ -13,6 +13,7 @@ import { CursorClickIcon } from '@assets/icons/chat/click';
 import { CompassIcon } from '@assets/icons/chat/navigate-to';
 import { HardDriveDownloadIcon } from '@assets/icons/chat/save-memory';
 import { SearchIcon } from '@assets/icons/chat/search';
+import { SelectOptionIcon } from '@assets/icons/chat/select-option';
 import { KeyboardIcon } from '@assets/icons/chat/keyboard-type';
 import { ArrowBigDownDashIcon } from '@assets/icons/chat/scroll';
 import { LinkIcon } from '@assets/icons/chat/link';
@@ -73,6 +74,7 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     clickByText: CursorClickIcon,
     focusElement: CursorClickIcon,
     typeInField: KeyboardIcon,
+    selectOption: SelectOptionIcon,
     pressKey: KeyboardIcon,
     globalTypeText: KeyboardIcon,
     scroll: ArrowBigDownDashIcon,

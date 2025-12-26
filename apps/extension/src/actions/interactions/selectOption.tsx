@@ -134,44 +134,38 @@ export function useSelectOptionTool() {
                                     // CASE 2: Custom Dropdown (Radix, etc.)
                                     // Assume element is the trigger. We need to click it, wait for menu, find option, click it.
                                     try {
+                                        // Click trigger
                                         (element as HTMLElement).click();
 
-                                        // Wait a bit for the menu to open. 
-                                        // We can try to guess the menu ID from aria-controls
-                                        const controlsId = element.getAttribute('aria-controls');
-
-                                        // Retry loop to find the option in the DOM
-                                        let attempts = 0;
-                                        const maxAttempts = 10; // 2 seconds approx (200ms * 10)
+                                        // Wait for the menu to open. 
+                                        const now = Date.now();
+                                        const maxWait = 2000;
 
                                         const interval = setInterval(() => {
-                                            attempts++;
-
-                                            // Look for listbox/menu items globally or inside controlled element
-                                            let potentialOptions: HTMLElement[] = [];
-
-                                            if (controlsId) {
-                                                const menu = document.getElementById(controlsId);
-                                                if (menu) {
-                                                    potentialOptions = Array.from(menu.querySelectorAll('[role="option"], [role="menuitem"], li, div'));
-                                                }
+                                            if (Date.now() - now > maxWait) {
+                                                clearInterval(interval);
+                                                resolve({ success: false, error: `Opened dropdown but count not find option matching "${valueText}" within timeout.` });
+                                                return;
                                             }
 
-                                            // Fallback: search entire body for newly visible elements with role option/menuitem
-                                            if (potentialOptions.length === 0) {
-                                                potentialOptions = Array.from(document.querySelectorAll('[role="option"], [role="menuitem"], .select-item, .dropdown-item'));
-                                            }
+                                            // Strategy: Radix and others often render the content in a portal at the end of body.
+                                            // We look for elements with role="option" or "menuitem" that are currently visible.
+                                            let potentialOptions = Array.from(document.querySelectorAll('[role="option"], [role="menuitem"], .select-item, .dropdown-item, li'));
 
-                                            // Filter for visibility and match
-                                            let match: HTMLElement | null = null;
-                                            for (const opt of potentialOptions) {
-                                                // Must be visible
+                                            // Filter for visibility
+                                            potentialOptions = potentialOptions.filter(opt => {
                                                 const r = opt.getBoundingClientRect();
-                                                if (r.width === 0 || r.height === 0) continue;
+                                                return r.width > 0 && r.height > 0;
+                                            });
 
-                                                const txt = (opt.textContent || '').trim().toLowerCase();
-                                                if (txt.includes(valueText.toLowerCase())) {
-                                                    match = opt;
+                                            // Find match
+                                            let match: HTMLElement | null = null;
+                                            const searchLower = valueText.toLowerCase().trim();
+
+                                            for (const opt of potentialOptions) {
+                                                const text = (opt.textContent || '').toLowerCase().trim();
+                                                if (text === searchLower || text.includes(searchLower)) {
+                                                    match = opt as HTMLElement;
                                                     break;
                                                 }
                                             }
@@ -179,14 +173,18 @@ export function useSelectOptionTool() {
                                             if (match) {
                                                 clearInterval(interval);
                                                 highlightElement(match);
+
+                                                // Radix UI and some modern libs rely on Pointer Events
+                                                const opts = { bubbles: true, cancelable: true, view: window };
+                                                match.dispatchEvent(new PointerEvent('pointerdown', opts));
+                                                match.dispatchEvent(new MouseEvent('mousedown', opts));
+                                                match.dispatchEvent(new PointerEvent('pointerup', opts));
+                                                match.dispatchEvent(new MouseEvent('mouseup', opts));
                                                 match.click();
-                                                resolve({ success: true, message: `Clicked option "${match.textContent?.trim()}" in custom dropdown` });
-                                            } else if (attempts >= maxAttempts) {
-                                                clearInterval(interval);
-                                                // Try to close it back if we failed? Maybe not, better leave it open for user to see.
-                                                resolve({ success: false, error: `Opened dropdown but could not find option matching "${valueText}"` });
+
+                                                resolve({ success: true, message: `Selected "${match.textContent?.trim()}" (Custom Dropdown)` });
                                             }
-                                        }, 200);
+                                        }, 100);
 
                                     } catch (e) {
                                         resolve({ success: false, error: `Failed to interact with custom dropdown: ${String(e)}` });

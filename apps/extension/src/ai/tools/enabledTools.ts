@@ -54,6 +54,7 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
 
   // Interaction Tools
   'typeInField',
+  'selectOption',
   'clickByText',
   'pressKey',
   'focusElement',

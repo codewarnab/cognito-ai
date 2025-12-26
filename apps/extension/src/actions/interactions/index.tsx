@@ -1,5 +1,6 @@
 
 // Import new enhanced tools
+import { useTypeInFieldTool } from "./typeInField";
 import { useSelectOptionTool } from "./selectOption";
 import { useClickByTextTool } from "./clickByText";
 import { usePressKeyTool } from "./usePressKeyTool";
