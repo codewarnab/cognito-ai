@@ -14,7 +14,7 @@ import { markGoogleApiKeyValid } from '@/utils/credentials';
 // Helper function for compatibility
 const markApiKeyValid = markGoogleApiKeyValid;
 
-const log = createLogger('StreamCallbacks', 'AI_CHAT');
+const log = createLogger('StreamCallbacks', 'AI_CHAT_STREAM');
 
 /**
  * Tracks empty response occurrences for feedback loop

@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { createLogger } from '~logger';
 import type { WebMCPTool } from '@/types/webmcp';
 
-const log = createLogger('WebMCP-Tools', 'WEBMCP');
+const log = createLogger('WebMCP-Tools', 'WEBMCP_TOOLS');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // WebMCP Executor Registry

@@ -12,7 +12,7 @@ import type {
 import { createLogger } from '~logger';
 import { requestMicrophoneWithUI } from './micPermission';
 
-const log = createLogger('SpeechRecognition', 'VOICE_RECORDING');
+const log = createLogger('SpeechRecognition', 'VOICE_RECORDING_CAPTURE');
 
 const DEFAULT_OPTIONS: SpeechRecognitionOptions = {
   lang: 'en-US',

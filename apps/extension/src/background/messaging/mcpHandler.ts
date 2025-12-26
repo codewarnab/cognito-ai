@@ -14,7 +14,7 @@ import { enableMcpServer, disableMcpServer } from '../mcp/manager';
 import { performHealthCheck, getAllMCPTools, getServerTools, callServerTool, getMCPServerConfigs } from '../mcp/tools';
 
 const backgroundLog = createLogger('Background-MCP-Handler', 'BACKGROUND');
-const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
+const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT_CONNECTION');
 
 /**
  * Get current MCP server status

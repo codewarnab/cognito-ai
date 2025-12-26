@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { registerToolServer } from '@/utils/mcp';
 import { debugRegistry, registerMcpToolExecutor } from '@/utils/mcp/toolMetadataStore';
 
-const log = createLogger('MCP-Proxy', 'MCP_EXECUTION');
+const log = createLogger('MCP-Proxy', 'MCP_EXECUTION_PROXY');
 
 /**
  * Tool definition from MCP server

@@ -13,7 +13,7 @@ import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
 import { writeErrorToStream } from '../stream/streamHelpers';
 import type { WorkflowDefinition } from '../../workflows/types';
 
-const log = createLogger('LocalMode', 'AI_CHAT');
+const log = createLogger('LocalMode', 'AI_CHAT_SETUP');
 
 export interface LocalModeSetup {
     model: any;

@@ -16,7 +16,7 @@ import { MCPError, NetworkError } from '../../errors';
 import { buildUserMessage } from '../../errors/errorMessages';
 import { createLogger } from '~logger';
 
-const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
+const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT_CONNECTION');
 
 // Forward declarations to avoid circular dependencies
 // These will be set by auth.ts after it loads

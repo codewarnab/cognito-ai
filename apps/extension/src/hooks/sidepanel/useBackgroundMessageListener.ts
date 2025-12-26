@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useBackgroundMessageListener', 'UI_SIDEPANEL');
+const log = createLogger('useBackgroundMessageListener', 'UI_SIDEPANEL_HOOKS');
 
 export interface UseBackgroundMessageListenerProps {
     currentThreadId: string | null;

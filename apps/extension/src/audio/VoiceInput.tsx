@@ -9,7 +9,7 @@ import { checkMicrophonePermission, openMicrophoneSettings } from './micPermissi
 import { createLogger } from '~logger';
 import './voice.css';
 
-const log = createLogger('VoiceInput', 'VOICE_RECORDING');
+const log = createLogger('VoiceInput', 'VOICE_RECORDING_CAPTURE');
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void;

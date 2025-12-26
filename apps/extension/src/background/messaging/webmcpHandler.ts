@@ -13,7 +13,7 @@ import {
 } from '../webmcp/manager';
 import { WEBMCP_DISABLED_TOOLS_KEY, type WebMCPTool } from '@/types/webmcp';
 
-const log = createLogger('WebMCP-Handler', 'WEBMCP');
+const log = createLogger('WebMCP-Handler', 'WEBMCP_TOOLS');
 
 /**
  * Get list of disabled WebMCP tool names from storage

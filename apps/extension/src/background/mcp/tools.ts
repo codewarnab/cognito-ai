@@ -12,7 +12,7 @@ import { MCP_OAUTH_CONFIG } from '@/constants';
 import { MCP_SERVERS } from '@/constants/mcpServers';
 import { createLogger } from '~logger';
 
-const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
+const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT_CONNECTION');
 const backgroundLog = createLogger('Background', 'BACKGROUND');
 
 /**

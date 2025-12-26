@@ -19,7 +19,7 @@ import { McpManager } from "@/components/features/mcp";
 import { Troubleshooting, Features, ProviderSetup } from "@/components/features/help";
 import { ToolUIProvider } from "@/ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
-import { LoggerPanel } from "@/components/features/settings";
+
 // import { OnboardingScreen } from "@/components/features/onboarding";
 import { AudioLinesIcon } from "@/components/shared/icons";
 import { VoiceModeUI } from "@/components/features/voice";
@@ -447,9 +447,7 @@ function AIChatContent() {
 
 
 
-    if (activePanel === 'loggerPanel') {
-        return <LoggerPanel onBack={() => navigateTo('chat')} />;
-    }
+
 
     // Show skeleton loading while chat store is hydrating
     // This prevents flash of empty content when sidepanel opens
@@ -533,7 +531,7 @@ function AIChatContent() {
                                 onTroubleshootingClick={() => navigateTo('troubleshooting')}
                                 onFeaturesClick={() => navigateTo('features')}
                                 onProviderSetupClick={() => navigateTo('providerSetup')}
-                                onLoggerPanelClick={() => navigateTo('loggerPanel')}
+                                onLoggerPanelClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.LOGGER })}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}

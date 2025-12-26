@@ -8,7 +8,7 @@ import { createLogger } from '~logger';
 import { createRetryManager, RetryPresets } from '../../errors/retryManager';
 import { formatRetryCountdown } from '../../errors/errorMessages';
 
-const log = createLogger('AI-RetrySetup', 'AI_CHAT');
+const log = createLogger('AI-RetrySetup', 'AI_CHAT_SETUP');
 
 const MAX_RETRY_ATTEMPTS = 3;
 

@@ -20,6 +20,7 @@ export const WEBAPP_ROUTES = {
     TROUBLESHOOTING: `${WEBAPP_BASE_URL}/troubleshooting`,
     CHANGELOG: `${WEBAPP_BASE_URL}/changelog`,
     UNINSTALLED: `${WEBAPP_BASE_URL}/uninstalled`,
+    LOGGER: `${WEBAPP_BASE_URL}/dev/logger`,
 } as const;
 
 /**

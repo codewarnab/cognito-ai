@@ -44,7 +44,7 @@
 import { createLogger } from '~logger';
 import type { WebMCPTool, WebMCPToolsState } from '@/types/webmcp';
 
-const log = createLogger('WebMCP-Manager', 'WEBMCP');
+const log = createLogger('WebMCP-Manager', 'WEBMCP_MANAGER');
 
 // In-memory state for active tab's WebMCP tools
 let state: WebMCPToolsState = {

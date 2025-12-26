@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('MicPermission', 'VOICE_RECORDING');
+const log = createLogger('MicPermission', 'VOICE_RECORDING_PERMISSIONS');
 
 export interface MicPermissionResult {
   granted: boolean;

@@ -17,7 +17,7 @@ import { HIDE_LOCAL_MODE } from '@/constants';
 import { LRUCache } from '~/utils/cache/LRUCache';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 
-const log = createLogger('SuggestionGenerator', 'AI_PROMPTS');
+const log = createLogger('SuggestionGenerator', 'AI_PROMPTS_SUGGESTIONS');
 
 // ============================================================================
 // Suggestions Cache - 10-minute TTL, max 20 pages

@@ -28,8 +28,8 @@ import { createLogger } from '~logger';
 import { disconnectMcpServer, connectMcpServer, registerAuthHandlers } from './manager';
 import { updateKeepAliveState } from '../keepAlive';
 
-const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT');
-const authLog = createLogger('Background-Auth', 'MCP_AUTH');
+const mcpLog = createLogger('Background-MCP', 'MCP_CLIENT_CONNECTION');
+const authLog = createLogger('Background-Auth', 'MCP_AUTH_OAUTH');
 
 // Register auth handlers with manager to avoid circular dependency issues
 registerAuthHandlers(handleTokenExpiry, handleInvalidToken);

@@ -8,7 +8,7 @@ import { ENV } from '@/utils/env';
 import type { PageContext } from '@/utils/tabs';
 import type { Suggestion } from './generator';
 
-const log = createLogger('BackendSuggestions', 'AI_PROMPTS');
+const log = createLogger('BackendSuggestions', 'AI_PROMPTS_SUGGESTIONS');
 
 // Use centralized ENV for backend URL
 const BACKEND_URL = ENV.BACKEND_API_URL;

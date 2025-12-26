@@ -7,7 +7,7 @@
 import { createLogger } from '~logger';
 import type { PageContext } from '@/utils/tabs';
 
-const log = createLogger('LocalSuggestionGenerator', 'AI_PROMPTS');
+const log = createLogger('LocalSuggestionGenerator', 'AI_PROMPTS_SUGGESTIONS');
 
 export type Suggestion = {
     title: string;

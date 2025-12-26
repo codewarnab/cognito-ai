@@ -8,7 +8,7 @@ import { createLogger } from '~logger';
 import type { WebMCPTool, WebMCPToolsState } from '@/types/webmcp';
 import { WEBMCP_DISABLED_TOOLS_KEY } from '@/types/webmcp';
 
-const log = createLogger('useWebMCPTools', 'WEBMCP');
+const log = createLogger('useWebMCPTools', 'WEBMCP_TOOLS');
 
 interface UseWebMCPToolsReturn {
   /** WebMCP tools from the active tab */

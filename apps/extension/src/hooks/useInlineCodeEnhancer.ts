@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('InlineCodeEnhancer', 'UI_CHAT');
+const log = createLogger('InlineCodeEnhancer', 'UI_CHAT_HOOKS');
 
 /**
  * URL detection regex pattern

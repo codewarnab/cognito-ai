@@ -9,7 +9,7 @@ import { formatErrorInline } from '../../errors/errorMessages';
 import { isRetryableError, APIError, NetworkError } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 
-const log = createLogger('StreamHelpers', 'AI_CHAT');
+const log = createLogger('StreamHelpers', 'AI_CHAT_STREAM');
 
 /**
  * Write error message to stream with formatting

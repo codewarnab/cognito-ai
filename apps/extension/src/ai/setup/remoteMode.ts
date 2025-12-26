@@ -19,7 +19,7 @@ import { getSupermemoryApiKey, isSupermemoryReady, getSupermemoryUserId } from '
 import type { WorkflowDefinition } from '../../workflows/types';
 import type { AIProvider } from '@/utils/credentials';
 
-const log = createLogger('RemoteMode', 'AI_CHAT');
+const log = createLogger('RemoteMode', 'AI_CHAT_SETUP');
 
 export interface RemoteModeSetup {
     model: any;

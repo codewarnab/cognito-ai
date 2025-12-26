@@ -7,7 +7,7 @@ import { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('ToolUIContext', 'UI_CHAT');
+const log = createLogger('ToolUIContext', 'UI_CHAT_COMPONENTS');
 
 export interface ToolUIState {
   toolCallId: string;

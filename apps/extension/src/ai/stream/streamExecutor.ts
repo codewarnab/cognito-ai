@@ -10,7 +10,7 @@ import { parseGeminiError } from '../errors/handlers';
 import { createOnStepFinishCallback, createOnFinishCallback } from './streamCallbacks';
 import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
 
-const log = createLogger('StreamExecutor', 'AI_CHAT');
+const log = createLogger('StreamExecutor', 'AI_CHAT_STREAM');
 
 /**
  * Execute streamText with proper configuration
