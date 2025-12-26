@@ -12,7 +12,7 @@ import { getModelConfig, setModelConfig } from '@/utils/ai/modelSettings';
 import { createLogger } from '~logger';
 import type { RemoteModelType } from '@/ai/types/types';
 
-const log = createLogger('ModelSelectorPopover', 'UI_CHAT');
+const log = createLogger('ModelSelectorPopover', 'UI_CHAT_COMPONENTS');
 
 interface ModelOption {
     id: RemoteModelType;

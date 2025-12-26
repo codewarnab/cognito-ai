@@ -18,7 +18,7 @@ import { useWebMCPTools } from '@/hooks/webmcp';
 import { ADAPTIVE_ONLY_TOOLS } from './constants';
 import type { ToolMode, McpToolWithServer } from './types';
 
-const log = createLogger('ToolsPopover', 'UI_CHAT');
+const log = createLogger('ToolsPopover', 'UI_CHAT_HOOKS');
 
 export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   // Store state

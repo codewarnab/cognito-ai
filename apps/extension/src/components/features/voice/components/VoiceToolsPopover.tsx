@@ -67,7 +67,7 @@ const HighlightedText: React.FC<{
     );
 };
 
-const log = createLogger('VoiceToolsPopover', 'UI_VOICE');
+const log = createLogger('VoiceToolsPopover', 'UI_VOICE_COMPONENTS');
 
 interface VoiceToolsPopoverProps {
     isOpen: boolean;

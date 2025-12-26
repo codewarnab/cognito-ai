@@ -3,7 +3,7 @@ import { Renderer, Program, Mesh, Triangle, Vec3 } from "ogl";
 import { createLogger } from '~logger';
 import '../styles/VoicePoweredOrb.css';
 
-const log = createLogger('VoicePoweredOrb', 'VOICE_AUDIO');
+const log = createLogger('VoicePoweredOrb', 'VOICE_AUDIO_PROCESSING');
 
 interface VoicePoweredOrbProps {
     className?: string;

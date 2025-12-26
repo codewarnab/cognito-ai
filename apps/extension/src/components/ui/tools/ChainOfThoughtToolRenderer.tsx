@@ -24,7 +24,7 @@ import {
     ChainOfThoughtBadge
 } from './ChainOfThought';
 
-const log = createLogger('ChainOfThoughtToolRenderer', 'UI_CHAT');
+const log = createLogger('ChainOfThoughtToolRenderer', 'UI_CHAT_COMPONENTS');
 
 interface ChainOfThoughtToolRendererProps {
     state: ToolUIState;

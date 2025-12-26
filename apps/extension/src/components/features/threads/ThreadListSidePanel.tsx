@@ -4,7 +4,7 @@ import type { ChatThread } from '../../../db';
 import { getAllThreads, deleteThread } from '../../../db';
 import { createLogger } from '~logger';
 
-const log = createLogger('ThreadListSidePanel', 'UI_THREADS');
+const log = createLogger('ThreadListSidePanel', 'UI_THREADS_COMPONENTS');
 
 function cleanTitle(title: string): string {
     return title.replace(/^(User:|Assistant:)\s*/gi, '').trim();

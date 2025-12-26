@@ -21,7 +21,7 @@ import { createLogger } from '~logger';
 import type { VoiceModeStatus } from '../types';
 import '../styles/VoiceModeUI.css';
 
-const log = createLogger('ElevenLabsVoiceModeUI', 'VOICE_UI');
+const log = createLogger('ElevenLabsVoiceModeUI', 'VOICE_UI_PANEL');
 
 interface ElevenLabsVoiceModeUIProps {
   onBack?: () => void;

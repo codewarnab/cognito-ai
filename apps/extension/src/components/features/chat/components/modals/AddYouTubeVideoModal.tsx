@@ -7,7 +7,7 @@ import { createLogger } from '~logger';
 import { fetchTranscriptDirect, processTranscriptForAI } from '@/ai/agents/youtubeToNotion/transcript';
 import type { ProcessFileOptions } from '@/hooks/attachments/useFileAttachments';
 
-const log = createLogger('AddYouTubeVideoModal', 'UI_CHAT');
+const log = createLogger('AddYouTubeVideoModal', 'UI_CHAT_COMPONENTS');
 
 /**
  * Regex pattern to validate YouTube URLs

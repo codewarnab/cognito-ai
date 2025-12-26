@@ -17,7 +17,7 @@ import type { CustomInputOutputRenderers } from '@/ai/tools/components';
 import { ToolFileAttachment, type ToolFileAttachmentData } from '@/components/features/chat/components/attachments';
 import { ApprovalDropdown, type ApprovalOption } from './ApprovalDropdown';
 
-const log = createLogger('CompactToolCard', 'UI_CHAT');
+const log = createLogger('CompactToolCard', 'UI_CHAT_COMPONENTS');
 
 interface CompactToolCardProps {
     toolName: string;

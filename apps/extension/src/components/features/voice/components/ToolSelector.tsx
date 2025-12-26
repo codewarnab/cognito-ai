@@ -9,7 +9,7 @@ import { createLogger } from '~logger';
 import { ALL_TOOLS, getEnabledTools, setEnabledTools } from '@/services/elevenlabs/settings';
 import '../styles/ToolSelector.css';
 
-const log = createLogger('ToolSelector', 'UI_VOICE');
+const log = createLogger('ToolSelector', 'UI_VOICE_COMPONENTS');
 
 interface ToolSelectorProps {
   isOpen: boolean;

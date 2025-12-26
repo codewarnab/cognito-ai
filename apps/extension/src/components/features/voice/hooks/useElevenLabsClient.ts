@@ -11,7 +11,7 @@ import { getSelectedVoiceId, getVoiceSettings } from '@/services/elevenlabs/sett
 import { buildDynamicVariables } from '@/services/elevenlabs/dynamicVariables';
 import { buildClientTools } from '@/services/elevenlabs/clientTools';
 
-const log = createLogger('useElevenLabsClient', 'VOICE_CLIENT');
+const log = createLogger('useElevenLabsClient', 'VOICE_CLIENT_CONNECTION');
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

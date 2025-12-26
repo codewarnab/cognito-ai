@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import type { McpServerStatus, McpExtensionMessage, McpExtensionResponse } from "../../../../mcp/types"
 import { createLogger } from '~logger'
 
-const log = createLogger('useMcpServer', 'MCP_CLIENT')
+const log = createLogger('useMcpServer', 'MCP_CLIENT_UI')
 
 interface UseMcpServerOptions {
     id: string

@@ -37,10 +37,7 @@ export const AGENT_MODE_TOOLS: string[] = [
     'getSearchResults',
     'openSearchResult',
     // History (removed - consolidated in search.tsx)
-    // Reminders
-    'createReminder',
-    'listReminders',
-    'cancelReminder',
+    // Reminders (disabled by default - can be enabled via custom mode)
     // Agent Tools
     'getYouTubeTranscript',
 ];

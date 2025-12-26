@@ -5,7 +5,7 @@ import { cn } from "@/utils/ui";
 import { createLogger } from '~logger';
 import { useUINavigationStore, type UINavigationState } from '@/stores';
 
-const log = createLogger('ContextIndicator', 'UI_CHAT');
+const log = createLogger('ContextIndicator', 'UI_CHAT_COMPONENTS');
 
 interface ContextIndicatorProps {
     usage: AppUsage | null;
@@ -29,7 +29,7 @@ export function ContextIndicator({ usage, className, onWarning }: ContextIndicat
 
     // Hide voice-mode-fab when showing details
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
-    
+
     useEffect(() => {
         setVoiceFabVisibility(!showDetails);
     }, [showDetails, setVoiceFabVisibility]);

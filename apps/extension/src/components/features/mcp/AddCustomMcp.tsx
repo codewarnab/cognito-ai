@@ -13,7 +13,7 @@ import { MCP_SERVERS } from "@/constants/mcpServers"
 import { sendMcpStaticMessage } from "@/lib/messaging"
 import { createLogger } from "~logger"
 
-const log = createLogger('AddCustomMcp', 'MCP_CLIENT')
+const log = createLogger('AddCustomMcp', 'MCP_CLIENT_UI')
 
 interface AddCustomMcpProps {
   onBack: () => void
