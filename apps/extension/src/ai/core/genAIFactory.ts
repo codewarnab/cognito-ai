@@ -12,7 +12,7 @@ import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/credentials';
 import type { AIProvider } from '@/utils/credentials';
 
-const log = createLogger('GenAIFactory', 'AI_CHAT');
+const log = createLogger('GenAIFactory', 'AI_CHAT_SETUP');
 
 /**
  * Initialize GoogleGenAI client respecting user's provider selection

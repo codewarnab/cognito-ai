@@ -56,7 +56,7 @@ import { StreamProcessor } from './streamProcessor';
 import { TransportDetector } from './transportDetector';
 import { ConnectionManager } from './connectionManager';
 
-const log = createLogger('MCP-SSE', 'MCP_SSE');
+const log = createLogger('MCP-SSE', 'MCP_SSE_TRANSPORT');
 
 /**
  * Generic MCP SSE Client for any MCP server

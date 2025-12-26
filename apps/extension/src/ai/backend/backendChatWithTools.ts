@@ -27,7 +27,7 @@ import { ENV } from '@/utils/env';
 import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
 import { isMcpTool, isWebmcpTool } from '../tools/mcpApprovalConfig';
 
-const log = createLogger('BackendChatWithTools', 'AI_CHAT');
+const log = createLogger('BackendChatWithTools', 'AI_CHAT_BACKEND');
 
 // Backend API URL from centralized ENV
 const BACKEND_URL = ENV.BACKEND_API_URL;

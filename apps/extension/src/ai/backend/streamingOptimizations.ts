@@ -8,7 +8,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('StreamOptimizer', 'AI_CHAT');
+const log = createLogger('StreamOptimizer', 'AI_CHAT_STREAM');
 
 // Keep-alive connection for backend
 let backendController: AbortController | null = null;

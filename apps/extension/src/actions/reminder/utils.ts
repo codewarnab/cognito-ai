@@ -3,7 +3,7 @@ import type { Reminder } from './types';
 import { saveReminder } from './storage';
 import { createLogger } from '~logger';
 
-const log = createLogger('ReminderUtils', 'UI_REMINDERS');
+const log = createLogger('ReminderUtils', 'UI_REMINDERS_HOOKS');
 
 /**
  * Parse natural language date/time string to epoch milliseconds

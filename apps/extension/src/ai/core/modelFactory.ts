@@ -37,7 +37,7 @@ async function validateAndGetApiKey(): Promise<string> {
     return apiKey;
 }
 
-const log = createLogger('ModelFactory', 'AI_CHAT');
+const log = createLogger('ModelFactory', 'AI_CHAT_SETUP');
 
 /**
  * Wraps a model with Supermemory if configured and enabled

@@ -24,7 +24,7 @@ import { storeOAuthEndpoints, getStoredOAuthEndpoints } from './oauth';
 import { MCPError } from '../errors';
 import { buildUserMessage } from '../errors/errorMessages';
 
-const log = createLogger('Background-AuthHelpers', 'MCP_AUTH');
+const log = createLogger('Background-AuthHelpers', 'MCP_AUTH_OAUTH');
 
 /**
  * Schedule automatic token refresh before expiration

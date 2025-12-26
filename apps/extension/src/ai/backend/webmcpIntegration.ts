@@ -9,7 +9,7 @@
 import { createLogger } from '~logger';
 import { getToolSchemas as getBuiltinSchemas } from './frontendToolExecutor';
 
-const log = createLogger('WebMCPBackend', 'WEBMCP');
+const log = createLogger('WebMCPBackend', 'WEBMCP_BACKEND');
 
 interface WebMCPTool {
     name: string;

@@ -7,7 +7,7 @@
 import { createLogger } from '~logger';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 
-const log = createLogger('GracefulDegradation', 'AI_CHAT');
+const log = createLogger('GracefulDegradation', 'AI_CHAT_BACKEND');
 
 export interface RateLimitError {
     status: number;

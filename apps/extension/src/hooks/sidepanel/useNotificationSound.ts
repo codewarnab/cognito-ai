@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { initializeNotificationSound } from '@/utils/notifications';
 import { createLogger } from '~logger';
 
-const log = createLogger('useNotificationSound', 'UI_SIDEPANEL');
+const log = createLogger('useNotificationSound', 'UI_SIDEPANEL_HOOKS');
 
 /**
  * Hook to handle notification sound initialization on first user interaction
