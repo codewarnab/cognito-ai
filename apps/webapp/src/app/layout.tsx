@@ -4,6 +4,8 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import "./globals.css";
 import { Footer } from "@/components/shared/Footer";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
+import WebMcpProvider from "@/components/providers/WebMcpProvider";
+import { WebMcpTools } from "@/components/webmcp";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -31,15 +33,17 @@ export default function RootLayout({
         className={`${inter.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
         <ThemeProvider>
-          <NuqsAdapter>
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </NuqsAdapter>
+          <WebMcpProvider>
+            <NuqsAdapter>
+              <WebMcpTools />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </NuqsAdapter>
+          </WebMcpProvider>
         </ThemeProvider>
       </body>
     </html>
   );
 }
-

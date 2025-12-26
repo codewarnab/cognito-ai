@@ -15,6 +15,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@lobehub/icons-static-svg": "^1.77.0",
+    "@mcp-b/global": "^1.2.1",
+    "@mcp-b/react-webmcp": "^0.2.3",
     "@phosphor-icons/react": "^2.1.10",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-collapsible": "^1.1.12",
@@ -49,7 +51,8 @@
     "tailwind-merge": "catalog:",
     "tailwindcss-animate": "^1.0.7",
     "valtio": "^2.2.0",
-    "valtio-reactive": "^0.1.2"
+    "valtio-reactive": "^0.1.2",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
