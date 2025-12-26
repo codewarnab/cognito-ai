@@ -198,7 +198,7 @@ export function Button({ label, onClick, disabled = false }: ButtonProps) {
 import { createLogger } from '~logger';
 
 // Always include category as second argument (see Logger Categories below)
-const logger = createLogger('MyComponent', 'UI_CHAT');
+const logger = createLogger('MyComponent', 'UI_CHAT_COMPONENTS');
 
 try {
   await someAsyncOperation();

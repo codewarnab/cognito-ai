@@ -247,7 +247,7 @@ Always use path aliases instead of relative imports:
 ```typescript
 // ✅ Correct
 import { createLogger } from '~logger';
-const log = createLogger('MyComponent', 'UI_CHAT');
+const log = createLogger('MyComponent', 'UI_CHAT_COMPONENTS');
 import { Button } from '@/components/ui/Button';
 import { handleAPIError } from '@/utils/apiErrorHandler';
 import icon from '@assets/icon.png';
