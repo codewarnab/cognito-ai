@@ -88,13 +88,14 @@ import {
     setVoiceName,
     getMaxToolCallLimit,
     setMaxToolCallLimit,
-    getSupermemoryApiKey,
-    setSupermemoryApiKey,
-    getSupermemoryEnabled,
-    setSupermemoryEnabled,
+    setMaxToolCallLimit,
 } from '@/utils/settings/settingsStorage';
 // Supermemory specific settings
 import {
+    getSupermemoryApiKey,
+    setSupermemoryApiKey,
+    isSupermemoryEnabled,
+    setSupermemoryEnabled,
     isAutoExtractionEnabled,
     setAutoExtractionEnabled,
     isContentMemoryEnabled,
@@ -627,7 +628,8 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
         case 'GET_SUPERMEMORY_SETTINGS': {
             try {
                 const apiKey = await getSupermemoryApiKey() || '';
-                const enabled = await getSupermemoryEnabled();
+                // mapped to isSupermemoryEnabled in imports
+                const enabled = await isSupermemoryEnabled();
                 const autoExtraction = await isAutoExtractionEnabled();
                 const contentMemory = await isContentMemoryEnabled();
 
