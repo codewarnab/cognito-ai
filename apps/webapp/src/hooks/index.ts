@@ -6,5 +6,3 @@
 
 export { useExtension } from './useExtension';
 export { useLoggerConfig } from './useLoggerConfig';
-export { useExtensionLoggerSync } from './useExtensionLoggerSync';
-

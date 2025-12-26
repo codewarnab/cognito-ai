@@ -3,7 +3,6 @@
  *
  * React hook for managing logger configuration with localStorage persistence.
  * Provides real-time sync across browser tabs via StorageEvent.
- * Automatically syncs to Chrome extension when installed.
  *
  * This is the webapp equivalent of the extension's useLoggerConfig hook,
  * using localStorage instead of Chrome storage.
@@ -11,13 +10,12 @@
  * @example
  * ```tsx
  * function LoggerSettings() {
- *   const { config, isLoading, isExtensionConnected, setCategory, setPreset, isPresetActive, reset } = useLoggerConfig();
+ *   const { config, isLoading, setCategory, setPreset, isPresetActive, reset } = useLoggerConfig();
  *
  *   if (isLoading) return <Spinner />;
  *
  *   return (
  *     <div>
- *       <span>{isExtensionConnected ? 'Syncing to extension' : 'Local only'}</span>
  *       <button onClick={() => setPreset('DEBUG_MCP')}>Debug MCP</button>
  *       <Toggle
  *         checked={config?.AI_CHAT}
@@ -30,11 +28,10 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { LogCategory, LoggerConfig, LoggerPresetName } from '@cognito/shared';
 import { LOG_PRESETS, matchesPreset } from '@cognito/shared';
 import { localStorageLoggerAdapter } from '@/lib/logger';
-import { useExtensionLoggerSync } from './useExtensionLoggerSync';
 
 /**
  * Return type for useLoggerConfig hook
@@ -44,8 +41,6 @@ interface UseLoggerConfigReturn {
     config: LoggerConfig | null;
     /** Whether the config is still loading from storage */
     isLoading: boolean;
-    /** Whether the extension is connected and syncing */
-    isExtensionConnected: boolean;
     /** Set a single category's enabled state */
     setCategory: (category: LogCategory, enabled: boolean) => Promise<void>;
     /** Apply a preset configuration */
@@ -62,17 +57,12 @@ interface UseLoggerConfigReturn {
  * Features:
  * - Loads config from localStorage on mount
  * - Syncs changes across browser tabs via StorageEvent
- * - Automatically syncs to Chrome extension when connected
  * - Provides preset management and category toggles
  * - Falls back to DEVELOPMENT preset if storage is empty
  */
 export function useLoggerConfig(): UseLoggerConfigReturn {
     const [config, setConfig] = useState<LoggerConfig | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const { isExtensionConnected, syncToExtension } = useExtensionLoggerSync();
-
-    // Track previous config to detect changes for extension sync
-    const prevConfigRef = useRef<LoggerConfig | null>(null);
 
     // Load initial config from localStorage
     useEffect(() => {
@@ -100,18 +90,6 @@ export function useLoggerConfig(): UseLoggerConfigReturn {
 
         return unsubscribe;
     }, []);
-
-    // Auto-sync to extension when config changes
-    useEffect(() => {
-        if (!config || isLoading) return;
-
-        // Only sync if config actually changed (not on initial load)
-        if (prevConfigRef.current !== null && config !== prevConfigRef.current) {
-            syncToExtension(config);
-        }
-
-        prevConfigRef.current = config;
-    }, [config, isLoading, syncToExtension]);
 
     /**
      * Update a single log category's enabled state
@@ -184,11 +162,9 @@ export function useLoggerConfig(): UseLoggerConfigReturn {
     return {
         config,
         isLoading,
-        isExtensionConnected,
         setCategory,
         setPreset,
         isPresetActive,
         reset,
     };
 }
-
