@@ -70,8 +70,8 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
     const showWarning = totalToolCount > TOOLS_WARNING_THRESHOLD
 
     // Convert custom servers to ServerConfig format
-    const customServerConfigs = useMemo(() => 
-        customServers.map(customServerToConfig), 
+    const customServerConfigs = useMemo(() =>
+        customServers.map(customServerToConfig),
         [customServers]
     )
 
@@ -293,6 +293,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                                     requiresAuth={server.requiresAuthentication}
                                     paid={server.paid}
                                     isCustom={server.isCustom}
+                                    authConfig={server.authConfig}
                                     onManageTools={handleManageTools}
                                     onDelete={server.isCustom ? handleDeleteServer : undefined}
                                 />

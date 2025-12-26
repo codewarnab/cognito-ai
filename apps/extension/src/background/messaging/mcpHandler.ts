@@ -9,7 +9,7 @@ import type { McpExtensionResponse } from '../../mcp/types';
 import { getServerState, loadCustomServersCache } from '../../mcp/state';
 import { getDisabledTools, setDisabledTools } from '../../mcp/toolsConfig';
 import { refreshServerToken } from '../../mcp/authHelpers';
-import { startOAuthFlow, disconnectServerAuth } from '../mcp/auth';
+import { startOAuthFlow, disconnectServerAuth, startPatAuth } from '../mcp/auth';
 import { enableMcpServer, disableMcpServer } from '../mcp/manager';
 import { performHealthCheck, getAllMCPTools, getServerTools, callServerTool, getMCPServerConfigs } from '../mcp/tools';
 
@@ -98,6 +98,10 @@ export async function handleMcpMessage(
         switch (action) {
             case 'auth/start':
                 response = await startOAuthFlow(serverId);
+                break;
+
+            case 'auth/start-pat':
+                response = await startPatAuth(serverId, message.payload?.token);
                 break;
 
             case 'enable':

@@ -15,8 +15,10 @@ import {
     storeClientCredentials,
     clearClientCredentials,
     storeOAuthEndpoints,
-    clearOAuthEndpoints
+    clearOAuthEndpoints,
+    storePat
 } from '../../mcp/oauth';
+import { validatePat } from '../../mcp/validation';
 import { discoverOAuthEndpoints } from '../../mcp/discovery';
 import { selectScopes, updateGrantedScopes, clearScopeData } from '../../mcp/scopeHandler';
 import type { McpExtensionResponse, OAuthEndpoints } from '../../mcp/types';
@@ -388,4 +390,81 @@ export async function handleInvalidToken(serverId: string): Promise<void> {
 
     await chrome.storage.local.set({ [`mcp.${serverId}.enabled`]: false });
     broadcastStatusUpdate(serverId, state.status);
+}
+
+/**
+ * Start PAT (Personal Access Token) authentication flow for an MCP server
+ * 
+ * Validates the token against the configured validation URL and stores it
+ * if validation succeeds.
+ * 
+ * @param serverId - The unique identifier for the MCP server
+ * @param token - The PAT to validate and store
+ * @returns Success response with user data, or error response
+ */
+export async function startPatAuth(
+    serverId: string,
+    token: string
+): Promise<McpExtensionResponse> {
+    const serverConfig = getServerConfig(serverId);
+    const state = getServerState(serverId);
+
+    if (!serverConfig) {
+        return { success: false, error: `Server config not found for ${serverId}` };
+    }
+
+    if (!serverConfig.authConfig?.patConfig) {
+        return { success: false, error: 'Server does not support PAT authentication' };
+    }
+
+    if (!token || token.trim() === '') {
+        return { success: false, error: 'Token is required' };
+    }
+
+    try {
+        authLog.info(`[${serverId}] Starting PAT authentication`);
+
+        // Update status to show validation in progress
+        state.status = { ...state.status, state: 'connecting' };
+        broadcastStatusUpdate(serverId, state.status);
+
+        // Validate the token
+        const validation = await validatePat(serverConfig.authConfig.patConfig, token.trim());
+
+        if (!validation.valid) {
+            authLog.warn(`[${serverId}] PAT validation failed:`, validation.error);
+            state.status = {
+                serverId,
+                state: 'error',
+                error: validation.error || 'Token validation failed'
+            };
+            broadcastStatusUpdate(serverId, state.status);
+            return { success: false, error: validation.error || 'Token validation failed' };
+        }
+
+        // Store the PAT
+        await storePat(serverId, token.trim());
+
+        // Update state to authenticated
+        state.status = { serverId, state: 'authenticated' };
+        broadcastStatusUpdate(serverId, state.status);
+
+        authLog.info(`[${serverId}] PAT authentication successful`);
+
+        return {
+            success: true,
+            data: {
+                state: 'authenticated',
+                userData: validation.userData
+            }
+        };
+    } catch (error) {
+        authLog.error(`[${serverId}] PAT authentication error:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
+
+        state.status = { serverId, state: 'error', error: errorMessage };
+        broadcastStatusUpdate(serverId, state.status);
+
+        return { success: false, error: errorMessage };
+    }
 }

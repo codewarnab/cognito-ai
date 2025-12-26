@@ -224,6 +224,37 @@ export const useMcpServer = ({
         }
     }
 
+    /**
+     * Handle PAT-based authentication
+     * @param token - The Personal Access Token to use for authentication
+     * @returns Object with success status and optional error message
+     */
+    const handlePatAuthenticate = async (token: string): Promise<{ success: boolean; error?: string }> => {
+        setIsLoading(true)
+        try {
+            const response = await sendMessage({
+                type: `mcp/${id}/auth/start-pat`,
+                payload: { token }
+            })
+            if (response.success) {
+                await loadStatus()
+                return { success: true }
+            } else {
+                await loadStatus()
+                return { success: false, error: response.error || 'Authentication failed' }
+            }
+        } catch (error) {
+            log.error(`PAT auth error:`, error)
+            await loadStatus()
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Authentication failed'
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     const handleLogout = async () => {
         setIsLoading(true)
         try {
@@ -274,6 +305,7 @@ export const useMcpServer = ({
         handleToggle,
         handleHealthCheck,
         handleAuthenticate,
+        handlePatAuthenticate,
         handleLogout,
         handleDisable,
         getBadgeState

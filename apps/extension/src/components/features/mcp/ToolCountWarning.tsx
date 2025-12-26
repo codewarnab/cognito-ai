@@ -64,7 +64,7 @@ export const ToolCountWarning: React.FC<ToolCountWarningProps> = ({
                 >
                     Details
                 </PopoverTrigger>
-                <PopoverContent align="end" sideOffset={8}>
+                <PopoverContent align="end" sideOffset={8} style={{ maxWidth: '280px' }}>
                     <div style={{
                         display: 'flex',
                         flexDirection: 'column',

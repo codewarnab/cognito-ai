@@ -15,6 +15,7 @@ import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
 import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
 import context7Image from '@assets/brands/integrations/context7.png';
 import livekitImage from '@assets/brands/integrations/livekit.png';
+import { GitHub } from "@assets/brands/integrations/GitHub"
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
 
@@ -24,6 +25,30 @@ import livekitImage from '@assets/brands/integrations/livekit.png';
 export interface KeyValuePair {
     key: string
     value: string
+}
+
+/** Configuration for Personal Access Token authentication */
+export interface PatConfig {
+    /** Display label for the token input (e.g. "GitHub Personal Access Token") */
+    label: string
+    /** Placeholder text for the token input (e.g. "ghp_...") */
+    placeholder: string
+    /** URL to documentation on creating a token */
+    helpUrl?: string
+    /** URL to validate the token against (e.g. https://api.github.com/user) */
+    validationUrl?: string
+    /** HTTP method for validation (defaults to GET) */
+    validationMethod?: 'GET' | 'POST'
+    /** Additional headers required for validation */
+    validationHeaders?: Record<string, string>
+}
+
+/** Authentication configuration for MCP servers */
+export interface AuthConfig {
+    /** Authentication type: oauth, pat, or hybrid (user chooses) */
+    type: 'oauth' | 'pat' | 'hybrid'
+    /** PAT configuration (required for pat/hybrid types) */
+    patConfig?: PatConfig
 }
 
 export interface ServerConfig {
@@ -41,6 +66,9 @@ export interface ServerConfig {
     headers?: KeyValuePair[]
     /** Base64 image data for custom server icons */
     imageData?: string
+
+    /** Authentication configuration (PAT, OAuth, or hybrid) */
+    authConfig?: AuthConfig
 
     // OAuth configuration (optional - will use discovery if not provided)
     oauth?: {
@@ -130,16 +158,25 @@ export const MCP_SERVERS: ServerConfig[] = [
     //     description: "Figma is a design tool for creating beautiful designs.",
     //     requiresAuthentication: true
     // },
-    // {
-    //     id: "github",
-    //     name: "GitHub",
-    //     icon: <GitHub />,
-    //     initialEnabled: false,
-    //     initialAuthenticated: false,
-    //     url: "https://api.githubcopilot.com/mcp/",
-    //     description: "GitHub is a code hosting platform for version control and collaboration.",
-    //     requiresAuthentication: true
-    // },
+    {
+        id: "github",
+        name: "GitHub",
+        icon: <GitHub />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://api.githubcopilot.com/mcp/",
+        description: "GitHub is a code hosting platform for version control and collaboration.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "GitHub Personal Access Token",
+                placeholder: "ghp_...",
+                helpUrl: "https://github.com/settings/tokens",
+                validationUrl: "https://api.github.com/user"
+            }
+        }
+    },
     {
         id: "huggingface",
         name: "Hugging Face",

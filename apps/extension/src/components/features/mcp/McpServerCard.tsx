@@ -3,6 +3,9 @@ import { ConfirmDialog } from "../../ui/primitives/dialog"
 import { McpServerCardHeader } from "./McpServerCardHeader"
 import { McpServerCardFooter } from "./McpServerCardFooter"
 import { useMcpServer } from "./hooks/useMcpServer"
+import { PatAuthDialog } from "./PatAuthDialog"
+import { AuthMethodDialog } from "./AuthMethodDialog"
+import type { AuthConfig } from "@/constants/mcpServers"
 
 interface McpServerCardProps {
     id: string
@@ -14,6 +17,7 @@ interface McpServerCardProps {
     requiresAuth?: boolean
     paid?: boolean
     isCustom?: boolean
+    authConfig?: AuthConfig
     onManageTools?: (serverId: string) => void
     onDelete?: (serverId: string) => void
 }
@@ -28,12 +32,16 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
     requiresAuth = true,
     paid = false,
     isCustom = false,
+    authConfig,
     onManageTools,
     onDelete
 }) => {
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
     const [showDisableConfirm, setShowDisableConfirm] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    const [showAuthMethodDialog, setShowAuthMethodDialog] = useState(false)
+    const [showPatDialog, setShowPatDialog] = useState(false)
+    const [patError, setPatError] = useState<string | undefined>()
     const [isNarrowView, setIsNarrowView] = useState(false)
     const cardRef = useRef<HTMLDivElement>(null)
 
@@ -47,6 +55,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         handleToggle,
         handleHealthCheck,
         handleAuthenticate,
+        handlePatAuthenticate,
         handleLogout,
         handleDisable,
         getBadgeState
@@ -105,6 +114,47 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
         setShowDeleteConfirm(false)
     }
 
+    // Handle authentication based on authConfig type
+    const onAuthenticate = () => {
+        if (authConfig?.type === 'hybrid') {
+            // Show method selection dialog for hybrid auth
+            setShowAuthMethodDialog(true)
+        } else if (authConfig?.type === 'pat' && authConfig.patConfig) {
+            // Show PAT dialog directly for PAT-only servers
+            setPatError(undefined)
+            setShowPatDialog(true)
+        } else {
+            // Default to OAuth
+            handleAuthenticate()
+        }
+    }
+
+    const handleSelectOAuth = () => {
+        setShowAuthMethodDialog(false)
+        handleAuthenticate()
+    }
+
+    const handleSelectPat = () => {
+        setShowAuthMethodDialog(false)
+        setPatError(undefined)
+        setShowPatDialog(true)
+    }
+
+    const handlePatSubmit = async (token: string) => {
+        const result = await handlePatAuthenticate(token)
+        if (result.success) {
+            setShowPatDialog(false)
+            setPatError(undefined)
+        } else {
+            setPatError(result.error)
+        }
+    }
+
+    const handlePatDialogClose = () => {
+        setShowPatDialog(false)
+        setPatError(undefined)
+    }
+
     return (
         <>
             <div className="flex flex-col bg-[#111827]/90 backdrop-blur-sm border border-[rgba(255,255,255,0.08)] rounded-xl overflow-hidden" ref={cardRef}>
@@ -136,7 +186,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                     badgeState={getBadgeState()}
                     onManageTools={onManageTools}
                     onHealthCheck={handleHealthCheck}
-                    onAuthenticate={handleAuthenticate}
+                    onAuthenticate={onAuthenticate}
                     onLogout={onLogout}
                 />
             </div>
@@ -173,6 +223,29 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
                 onConfirm={confirmDelete}
                 onCancel={() => setShowDeleteConfirm(false)}
             />
+
+            {/* Auth method selection dialog for hybrid servers */}
+            <AuthMethodDialog
+                isOpen={showAuthMethodDialog}
+                onClose={() => setShowAuthMethodDialog(false)}
+                onSelectOAuth={handleSelectOAuth}
+                onSelectPat={handleSelectPat}
+                serverName={name}
+            />
+
+            {/* PAT authentication dialog */}
+            {authConfig?.patConfig && (
+                <PatAuthDialog
+                    isOpen={showPatDialog}
+                    onClose={handlePatDialogClose}
+                    onSubmit={handlePatSubmit}
+                    patConfig={authConfig.patConfig}
+                    serverName={name}
+                    isLoading={isLoading}
+                    error={patError}
+                />
+            )}
         </>
     )
 }
+

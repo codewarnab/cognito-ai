@@ -364,6 +364,29 @@ export async function clearTokens(serverId: string): Promise<void> {
 }
 
 /**
+ * Store a Personal Access Token as an OAuth token structure
+ * 
+ * Uses the same storage format as OAuth tokens to reuse existing transport logic.
+ * PAT tokens are stored with a long expiry (1 year) since they don't expire
+ * automatically like OAuth tokens.
+ * 
+ * @param serverId - The unique identifier for the MCP server
+ * @param token - The PAT to store
+ */
+export async function storePat(serverId: string, token: string): Promise<void> {
+    const tokens: McpOAuthTokens = {
+        access_token: token,
+        token_type: 'Bearer',
+        scope: 'pat',
+        // PATs don't expire like OAuth tokens, set to 1 year
+        expires_at: Date.now() + (365 * 24 * 60 * 60 * 1000),
+        created_at: Date.now()
+    };
+    await storeTokens(serverId, tokens);
+    authLog.info(`[${serverId}] PAT stored as OAuth-compatible token`);
+}
+
+/**
  * Store dynamic client credentials in chrome.storage.local
  */
 export async function storeClientCredentials(serverId: string, credentials: DynamicClientCredentials): Promise<void> {
