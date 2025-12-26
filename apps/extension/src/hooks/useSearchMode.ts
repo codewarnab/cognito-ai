@@ -16,7 +16,7 @@ import {
 import type { SearchDepth } from '@/search/types';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
-const log = createLogger('useSearchMode', 'SETTINGS');
+const log = createLogger('useSearchMode', 'SETTINGS_STORE');
 
 export interface UseSearchModeResult {
     /** Whether search mode is enabled */

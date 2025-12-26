@@ -1,7 +1,7 @@
 import { createLogger } from '~logger';
 import { ErrorType } from "@/errors/errorTypes";
 
-const log = createLogger("APIErrorHandler", 'UTILS');
+const log = createLogger("APIErrorHandler", 'UTILS_HELPER');
 
 export interface ErrorToastState {
     message: string;

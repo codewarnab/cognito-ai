@@ -2,7 +2,7 @@ import { createLogger } from '~logger';
 import { BaseSearchProvider } from './base';
 import type { SearchResults, SearchDepth, SearchResultImage } from '../types';
 
-const log = createLogger('TavilySearch', 'SEARCH');
+const log = createLogger('TavilySearch', 'SEARCH_PROVIDER');
 
 /** Tavily API endpoint */
 const TAVILY_API_URL = 'https://api.tavily.com/search';

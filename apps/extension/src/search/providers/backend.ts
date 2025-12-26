@@ -3,7 +3,7 @@ import { BaseSearchProvider } from './base';
 import type { SearchResults, SearchDepth, SearchResultImage } from '../types';
 import { WEB_SEARCH_API_URL } from '@/constants';
 
-const log = createLogger('BackendSearch', 'SEARCH');
+const log = createLogger('BackendSearch', 'SEARCH_PROVIDER');
 
 /**
  * Backend search provider implementation.

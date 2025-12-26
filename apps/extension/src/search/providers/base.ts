@@ -1,7 +1,7 @@
 import { createLogger } from '~logger';
 import type { SearchResults, SearchDepth } from '../types';
 
-const log = createLogger('SearchProvider', 'SEARCH');
+const log = createLogger('SearchProvider', 'SEARCH_PROVIDER');
 
 /**
  * Interface that all search providers must implement.

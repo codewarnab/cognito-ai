@@ -7,7 +7,7 @@ import type { YouTubeVideoInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
 import type { ProcessFileOptions } from './useFileAttachments';
 
-const log = createLogger('useYouTubeVideoAttachment', 'ATTACHMENTS');
+const log = createLogger('useYouTubeVideoAttachment', 'ATTACHMENTS_UI');
 
 interface UseYouTubeVideoAttachmentOptions {
     youtubeVideoInfo?: YouTubeVideoInfo | null;

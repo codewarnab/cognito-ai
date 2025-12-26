@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 import type { TabContext } from '../../types/sidepanel';
 
-const log = createLogger('useTabContext', 'BROWSER');
+const log = createLogger('useTabContext', 'BROWSER_TABS');
 
 /**
  * Hook to track current Chrome tab context using events

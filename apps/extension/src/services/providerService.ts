@@ -2,7 +2,7 @@ import { getSetting, setSetting } from '@/db/settings';
 import type { AIProviderConfig, TestProviderConnectionPayload, TestProviderConnectionResponse } from '@cognito/shared/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('ProviderService', 'BACKGROUND');
+const log = createLogger('ProviderService', 'BACKGROUND_SERVICE');
 
 export const getProvidersConfig = async (): Promise<AIProviderConfig | undefined> => {
     return await getSetting('providersConfig');

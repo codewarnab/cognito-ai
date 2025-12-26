@@ -12,7 +12,7 @@ import { createLogger } from '~logger';
 export const storeLogger = <T extends object>(
   storeName: string
 ) => {
-  const log = createLogger(`Store:${storeName}`, 'STORAGE');
+  const log = createLogger(`Store:${storeName}`, 'STORAGE_SYNC');
 
   return (f: StateCreator<T, [], []>): StateCreator<T, [], []> =>
     (set, get, store) => {

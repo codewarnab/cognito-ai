@@ -6,7 +6,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('SupermemoryUserId', 'UTILS');
+const log = createLogger('SupermemoryUserId', 'CREDENTIALS_STORAGE');
 
 const STORAGE_KEY = 'supermemory:userId';
 

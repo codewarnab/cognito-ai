@@ -11,7 +11,7 @@ import { isSupermemoryReady } from '@/utils/supermemory/credentials';
 import { isAutoExtractionEnabled, getAutoExtractionMinMessages } from './autoExtraction';
 import { sendMessage } from '@/lib/messaging';
 
-const log = createLogger('ExtractionTrigger', 'UTILS');
+const log = createLogger('ExtractionTrigger', 'UTILS_HELPER');
 
 const META_STORAGE_KEY = 'supermemory:threadExtractionMeta';
 const RE_EXTRACTION_THRESHOLD = 10; // New messages needed to re-extract

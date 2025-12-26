@@ -13,7 +13,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('LRUCache', 'UTILS');
+const log = createLogger('LRUCache', 'UTILS_HELPER');
 
 /**
  * Node in the doubly-linked list

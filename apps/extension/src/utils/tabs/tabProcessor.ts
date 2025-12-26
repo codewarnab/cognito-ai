@@ -2,7 +2,7 @@ import { captureTabSnapshot } from './tabSnapshot';
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import { createLogger } from '~logger';
 
-const log = createLogger('TabProcessor', 'UTILS');
+const log = createLogger('TabProcessor', 'BROWSER_TABS');
 
 /**
  * Processed tab data ready for AI consumption

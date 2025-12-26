@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 import { getGoogleApiKey } from '@/utils/credentials';
 
-const log = createLogger('useApiKey', 'SETTINGS');
+const log = createLogger('useApiKey', 'SETTINGS_STORE');
 
 /**
  * Hook to manage Gemini API key from Chrome storage

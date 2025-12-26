@@ -7,7 +7,7 @@
 
 import { createLogger } from '~logger';
 
-const storageLog = createLogger('PDFDismissals', 'STORAGE');
+const storageLog = createLogger('PDFDismissals', 'STORAGE_LOCAL');
 
 const STORAGE_KEY = 'dismissed-pdf-suggestions';
 const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours

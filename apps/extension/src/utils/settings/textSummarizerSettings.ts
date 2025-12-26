@@ -4,7 +4,7 @@
  */
 import { createLogger } from '~logger';
 
-const log = createLogger('TextSummarizerSettings', 'STORAGE');
+const log = createLogger('TextSummarizerSettings', 'SETTINGS_STORE');
 
 export const TEXT_SUMMARIZER_STORAGE_KEY = 'textSummarizerSettings';
 

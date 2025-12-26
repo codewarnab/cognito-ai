@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 import { WEBAPP_ROUTES } from '@/constants/webapp';
 
-const log = createLogger('useOnboarding', 'SETTINGS');
+const log = createLogger('useOnboarding', 'SETTINGS_STORE');
 
 /**
  * Hook to manage onboarding state and persistence

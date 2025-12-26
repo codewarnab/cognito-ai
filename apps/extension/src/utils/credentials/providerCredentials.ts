@@ -8,8 +8,8 @@ import { APIError, ErrorType } from '@/errors/errorTypes';
 import type { AIProvider, ProviderConfig, VertexCredentials } from './providerTypes';
 import { createLogger } from '~logger';
 
-const credentialsLog = createLogger('Credentials', 'CREDENTIALS');
-const storageLog = createLogger('Credentials-Storage', 'STORAGE');
+const credentialsLog = createLogger('Credentials', 'CREDENTIALS_AUTH');
+const storageLog = createLogger('Credentials-Storage', 'CREDENTIALS_STORAGE');
 
 const STORAGE_KEY = 'ai_provider_config';
 

@@ -6,7 +6,7 @@
 import type { TabMention } from '@/utils/chat/mentionUtils';
 import { createLogger } from '~logger';
 
-const log = createLogger('TabSnapshot', 'UTILS');
+const log = createLogger('TabSnapshot', 'BROWSER_TABS');
 
 export interface TabSnapshotResult {
     url: string | null;

@@ -9,7 +9,7 @@ import { getResearchWorkflowWithSettings, researchWorkflow } from './definitions
 import { youtubeToNotionWorkflow } from './definitions/youtubeToNotionWorkflow';
 import { createLogger } from '~logger';
 
-const log = createLogger('Workflow-Registration', 'WORKFLOW');
+const log = createLogger('Workflow-Registration', 'WORKFLOW_ENGINE');
 
 /**
  * Register all workflow definitions

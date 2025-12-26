@@ -4,7 +4,7 @@
  */
 import { createLogger } from '~logger';
 
-const log = createLogger('WriteCommandSettings', 'STORAGE');
+const log = createLogger('WriteCommandSettings', 'SETTINGS_STORE');
 
 export const WRITE_COMMAND_STORAGE_KEY = 'writeCommandSettings';
 

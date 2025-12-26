@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('SupermemoryCredentials', 'UTILS');
+const log = createLogger('SupermemoryCredentials', 'CREDENTIALS_STORAGE');
 
 const API_KEY_STORAGE_KEY = 'supermemory:apiKey';
 const ENABLED_STORAGE_KEY = 'supermemory:enabled';

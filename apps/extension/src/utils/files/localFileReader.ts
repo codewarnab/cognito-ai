@@ -11,7 +11,7 @@
 import { FileAccessError } from '@/errors';
 import { createLogger } from '~logger';
 
-const log = createLogger('FileReader', 'UTILS');
+const log = createLogger('FileReader', 'UTILS_HELPER');
 
 /**
  * Read a local file from the filesystem using file:/// URL

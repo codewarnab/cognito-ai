@@ -10,7 +10,7 @@ import { immer } from 'zustand/middleware/immer';
 import { createLogger } from '~logger';
 import type { AttachmentsState } from './types';
 
-const log = createLogger('attachmentsStore', 'STORAGE');
+const log = createLogger('attachmentsStore', 'ATTACHMENTS_STORAGE');
 
 export const useAttachmentsStore = create<AttachmentsState>()(
   immer((set) => ({

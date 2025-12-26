@@ -1,7 +1,7 @@
 import { createLogger } from '~logger';
 import type { SearchProviderType, SearchDepth } from '@/search/types';
 
-const log = createLogger('SearchSettings', 'SETTINGS');
+const log = createLogger('SearchSettings', 'SETTINGS_STORE');
 
 export const SEARCH_SETTINGS_STORAGE_KEY = 'searchSettings';
 export const SEARCH_API_KEYS_STORAGE_KEY = 'searchApiKeys';

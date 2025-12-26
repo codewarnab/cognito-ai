@@ -1,6 +1,6 @@
 
 // Import new enhanced tools
-import { useTypeInFieldTool } from "./typeInField";
+import { useSelectOptionTool } from "./selectOption";
 import { useClickByTextTool } from "./clickByText";
 import { usePressKeyTool } from "./usePressKeyTool";
 
@@ -17,6 +17,7 @@ import { useOpenSearchResultTool } from "./openSearchResult";
 export function registerInteractionActions() {
     // NEW: Enhanced interaction tools
     useTypeInFieldTool();       // Type in any input field by description
+    useSelectOptionTool();      // Select from dropdowns
     useClickByTextTool();       // Click any element by text search
     usePressKeyTool();          // Press special keys (Enter, Tab, etc.)
 

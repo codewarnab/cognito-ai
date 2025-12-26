@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('PageGlow', 'UTILS');
+const log = createLogger('PageGlow', 'UTILS_HELPER');
 
 const GLOW_ID = 'ai-reading-glow';
 const GLOW_STYLE_ID = 'ai-reading-glow-style';

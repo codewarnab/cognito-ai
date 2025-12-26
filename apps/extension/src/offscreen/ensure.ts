@@ -7,7 +7,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('Background-Offscreen', 'BACKGROUND');
+const log = createLogger('Background-Offscreen', 'BACKGROUND_SERVICE');
 
 /**
  * Ensure a single offscreen document exists

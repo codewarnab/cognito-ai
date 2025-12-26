@@ -6,7 +6,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('PageContextExtractor', 'UTILS');
+const log = createLogger('PageContextExtractor', 'BROWSER_TABS');
 
 export interface PageContext {
     url: string;

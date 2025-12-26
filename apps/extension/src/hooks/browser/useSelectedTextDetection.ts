@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useSelectedTextDetection', 'BROWSER');
+const log = createLogger('useSelectedTextDetection', 'BROWSER_TABS');
 
 /**
  * Information about selected text on a page

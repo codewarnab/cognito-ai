@@ -8,7 +8,7 @@ import type { NotificationOptions, ParsedNotificationId } from '@/types/notifica
 import { createLogger } from '~logger';
 import { APP_ICON } from '@/constants';
 
-const notificationLog = createLogger('Notifications', 'NOTIFICATIONS');
+const notificationLog = createLogger('Notifications', 'NOTIFICATIONS_CREATE');
 
 /**
  * Base64 encoded logo for notifications

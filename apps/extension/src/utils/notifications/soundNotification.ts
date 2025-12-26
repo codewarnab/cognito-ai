@@ -6,7 +6,7 @@
 import { AUDIO_PATHS, AUDIO_CONFIG } from '@/constants/audio';
 import { createLogger } from '~logger';
 
-const soundLog = createLogger('Sound', 'NOTIFICATIONS');
+const soundLog = createLogger('Sound', 'NOTIFICATIONS_ACTION');
 
 // Memoized audio instance
 let audioInstance: HTMLAudioElement | null = null;

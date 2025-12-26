@@ -2,7 +2,7 @@ import { createLogger } from '~logger';
 import type { SearchResults } from './types';
 import { LRUCache } from '~/utils/cache/LRUCache';
 
-const log = createLogger('SearchCache', 'SEARCH');
+const log = createLogger('SearchCache', 'SEARCH_RESULTS');
 
 /** Cache entry with metadata */
 interface CacheEntry {

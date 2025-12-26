@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useActiveTabDetection', 'BROWSER');
+const log = createLogger('useActiveTabDetection', 'BROWSER_TABS');
 
 /**
  * Information about a detected local PDF file

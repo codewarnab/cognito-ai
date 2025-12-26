@@ -7,7 +7,7 @@
 
 import { createLogger } from '~logger';
 
-const log = createLogger('AskAI Visibility', 'SETTINGS');
+const log = createLogger('AskAI Visibility', 'SETTINGS_STORE');
 
 export interface VisibilitySettings {
     hiddenDomains: string[];           // Domains where button is hidden

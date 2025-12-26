@@ -5,7 +5,7 @@ import { BackendSearchProvider } from './backend';
 import type { SearchProviderType } from '../types';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 
-const log = createLogger('SearchProviderFactory', 'SEARCH');
+const log = createLogger('SearchProviderFactory', 'SEARCH_PROVIDER');
 
 export type { SearchProvider };
 export { TavilySearchProvider, BackendSearchProvider };

@@ -13,7 +13,7 @@
 import { createLogger } from '~logger';
 import type { WorkflowDefinition } from './types';
 
-const log = createLogger('Workflow-Session', 'WORKFLOW');
+const log = createLogger('Workflow-Session', 'WORKFLOW_ENGINE');
 
 interface WorkflowSession {
     threadId: string;

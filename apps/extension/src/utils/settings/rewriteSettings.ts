@@ -5,7 +5,7 @@
 import { createLogger } from '~logger';
 import type { RewritePreset } from '@/types';
 
-const log = createLogger('RewriteSettings', 'STORAGE');
+const log = createLogger('RewriteSettings', 'SETTINGS_STORE');
 
 export const REWRITE_STORAGE_KEY = 'rewriteSettings';
 

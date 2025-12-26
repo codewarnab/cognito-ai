@@ -12,7 +12,7 @@
 import type { WorkflowDefinition } from '../types';
 import { createLogger } from '~logger';
 
-const log = createLogger('YouTubeToNotionWorkflow', 'WORKFLOW');
+const log = createLogger('YouTubeToNotionWorkflow', 'WORKFLOW_ENGINE');
 
 /**
  * Check if Notion MCP is enabled in storage

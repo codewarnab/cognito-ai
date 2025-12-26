@@ -123,6 +123,41 @@ export type LogCategory =
     | 'BROWSER'
     | 'ATTACHMENTS'
     | 'CONTENT_SCRIPTS'
+    // System Sub-categories
+    | 'BACKGROUND_LIFECYCLE'
+    | 'BACKGROUND_MESSAGING'
+    | 'BACKGROUND_SERVICE'
+    | 'STORAGE_LOCAL'
+    | 'STORAGE_SYNC'
+    | 'STORAGE_SESSION'
+    | 'STORAGE_DB'
+    | 'UTILS_FORMAT'
+    | 'UTILS_VALIDATION'
+    | 'UTILS_HELPER'
+    | 'NOTIFICATIONS_CREATE'
+    | 'NOTIFICATIONS_CLEAR'
+    | 'NOTIFICATIONS_ACTION'
+    | 'CREDENTIALS_VALIDATION'
+    | 'CREDENTIALS_STORAGE'
+    | 'CREDENTIALS_AUTH'
+    | 'SEARCH_PROVIDER'
+    | 'SEARCH_RESULTS'
+    | 'SEARCH_QUERY'
+    | 'SETTINGS_SYNC'
+    | 'SETTINGS_MIGRATION'
+    | 'SETTINGS_STORE'
+    | 'WORKFLOW_ENGINE'
+    | 'WORKFLOW_STEP'
+    | 'WORKFLOW_ACTION'
+    | 'BROWSER_TABS'
+    | 'BROWSER_WINDOWS'
+    | 'BROWSER_NAVIGATION'
+    | 'ATTACHMENTS_PROCESS'
+    | 'ATTACHMENTS_STORAGE'
+    | 'ATTACHMENTS_UI'
+    | 'CONTENT_SCRIPTS_INJECT'
+    | 'CONTENT_SCRIPTS_MESSAGE'
+    | 'CONTENT_SCRIPTS_DOM'
     // Debug
     | 'DEBUG'
     | 'PERFORMANCE'
@@ -231,6 +266,61 @@ export type UIThreadsSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
 export type UISidepanelSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
 
 /**
+ * Sub-categories for BACKGROUND
+ */
+export type BackgroundSubCategory = 'LIFECYCLE' | 'MESSAGING' | 'SERVICE';
+
+/**
+ * Sub-categories for STORAGE
+ */
+export type StorageSubCategory = 'LOCAL' | 'SYNC' | 'SESSION' | 'DB';
+
+/**
+ * Sub-categories for UTILS
+ */
+export type UtilsSubCategory = 'FORMAT' | 'VALIDATION' | 'HELPER';
+
+/**
+ * Sub-categories for NOTIFICATIONS
+ */
+export type NotificationsSubCategory = 'CREATE' | 'CLEAR' | 'ACTION';
+
+/**
+ * Sub-categories for CREDENTIALS
+ */
+export type CredentialsSubCategory = 'VALIDATION' | 'STORAGE' | 'AUTH';
+
+/**
+ * Sub-categories for SEARCH
+ */
+export type SearchSubCategory = 'PROVIDER' | 'RESULTS' | 'QUERY';
+
+/**
+ * Sub-categories for SETTINGS
+ */
+export type SettingsSubCategory = 'SYNC' | 'MIGRATION' | 'STORE';
+
+/**
+ * Sub-categories for WORKFLOW
+ */
+export type WorkflowSubCategory = 'ENGINE' | 'STEP' | 'ACTION';
+
+/**
+ * Sub-categories for BROWSER
+ */
+export type BrowserSubCategory = 'TABS' | 'WINDOWS' | 'NAVIGATION';
+
+/**
+ * Sub-categories for ATTACHMENTS
+ */
+export type AttachmentsSubCategory = 'PROCESS' | 'STORAGE' | 'UI';
+
+/**
+ * Sub-categories for CONTENT_SCRIPTS
+ */
+export type ContentScriptsSubCategory = 'INJECT' | 'MESSAGE' | 'DOM';
+
+/**
  * Sub-categories for UI_REMINDERS
  */
 export type UIRemindersSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
@@ -260,7 +350,19 @@ export type LogSubCategory =
     | UISettingsSubCategory
     | UIThreadsSubCategory
     | UISidepanelSubCategory
-    | UIRemindersSubCategory;
+    | UISidepanelSubCategory
+    | UIRemindersSubCategory
+    | BackgroundSubCategory
+    | StorageSubCategory
+    | UtilsSubCategory
+    | NotificationsSubCategory
+    | CredentialsSubCategory
+    | SearchSubCategory
+    | SettingsSubCategory
+    | WorkflowSubCategory
+    | BrowserSubCategory
+    | AttachmentsSubCategory
+    | ContentScriptsSubCategory;
 
 /**
  * Sub-category groups per main category
@@ -293,6 +395,18 @@ export const LOGGER_SUBCATEGORY_GROUPS = {
     UI_THREADS: ['UI_THREADS_COMPONENTS', 'UI_THREADS_HOOKS', 'UI_THREADS_STATE'] as const,
     UI_SIDEPANEL: ['UI_SIDEPANEL_COMPONENTS', 'UI_SIDEPANEL_HOOKS', 'UI_SIDEPANEL_STATE'] as const,
     UI_REMINDERS: ['UI_REMINDERS_COMPONENTS', 'UI_REMINDERS_HOOKS', 'UI_REMINDERS_STATE'] as const,
+    // System sub-categories
+    BACKGROUND: ['BACKGROUND_LIFECYCLE', 'BACKGROUND_MESSAGING', 'BACKGROUND_SERVICE'] as const,
+    STORAGE: ['STORAGE_LOCAL', 'STORAGE_SYNC', 'STORAGE_SESSION', 'STORAGE_DB'] as const,
+    UTILS: ['UTILS_FORMAT', 'UTILS_VALIDATION', 'UTILS_HELPER'] as const,
+    NOTIFICATIONS: ['NOTIFICATIONS_CREATE', 'NOTIFICATIONS_CLEAR', 'NOTIFICATIONS_ACTION'] as const,
+    CREDENTIALS: ['CREDENTIALS_VALIDATION', 'CREDENTIALS_STORAGE', 'CREDENTIALS_AUTH'] as const,
+    SEARCH: ['SEARCH_PROVIDER', 'SEARCH_RESULTS', 'SEARCH_QUERY'] as const,
+    SETTINGS: ['SETTINGS_SYNC', 'SETTINGS_MIGRATION', 'SETTINGS_STORE'] as const,
+    WORKFLOW: ['WORKFLOW_ENGINE', 'WORKFLOW_STEP', 'WORKFLOW_ACTION'] as const,
+    BROWSER: ['BROWSER_TABS', 'BROWSER_WINDOWS', 'BROWSER_NAVIGATION'] as const,
+    ATTACHMENTS: ['ATTACHMENTS_PROCESS', 'ATTACHMENTS_STORAGE', 'ATTACHMENTS_UI'] as const,
+    CONTENT_SCRIPTS: ['CONTENT_SCRIPTS_INJECT', 'CONTENT_SCRIPTS_MESSAGE', 'CONTENT_SCRIPTS_DOM'] as const,
 } as const;
 
 /**

@@ -32,7 +32,7 @@ import {
 } from '@/components/features/chat/components/modals/ToolPopover/constants';
 import type { ToolsState, ToolMode, McpToolWithServer } from './types';
 
-const log = createLogger('toolsStore', 'STORAGE');
+const log = createLogger('toolsStore', 'STORAGE_SYNC');
 
 // Mode tool presets imported from constants
 

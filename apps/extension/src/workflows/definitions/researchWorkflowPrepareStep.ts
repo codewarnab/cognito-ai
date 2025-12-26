@@ -18,7 +18,7 @@ import { listResearchSources, getCurrentResearchSessionId } from '@/db';
 import { getOriginalUserRequest, getResearchMetadata } from '../researchContext';
 import type { WorkflowStepResult, PrepareStepContext, PrepareStepResult } from '../types';
 
-const log = createLogger('ResearchPrepareStep', 'WORKFLOW');
+const log = createLogger('ResearchPrepareStep', 'WORKFLOW_STEP');
 
 /**
  * Track which sourceIds have had their content truncated

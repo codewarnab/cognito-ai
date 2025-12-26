@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 
-const log = createLogger('useYouTubeVideoDetection', 'BROWSER');
+const log = createLogger('useYouTubeVideoDetection', 'BROWSER_TABS');
 
 /**
  * Information about a detected YouTube video

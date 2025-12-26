@@ -4,7 +4,7 @@
  */
 import { createLogger } from '~logger';
 
-const log = createLogger('ResearchWorkflowSettings', 'STORAGE');
+const log = createLogger('ResearchWorkflowSettings', 'SETTINGS_STORE');
 
 export const RESEARCH_WORKFLOW_STORAGE_KEY = 'researchWorkflowSettings';
 

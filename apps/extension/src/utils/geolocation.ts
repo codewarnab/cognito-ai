@@ -5,7 +5,7 @@
 import { createLogger } from '~logger';
 import { sendMessage } from '@/lib/messaging';
 
-const log = createLogger('Geolocation', 'BROWSER');
+const log = createLogger('Geolocation', 'BROWSER_NAVIGATION');
 
 export interface GeoLocation {
     latitude: number;

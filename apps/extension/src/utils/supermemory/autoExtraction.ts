@@ -6,7 +6,7 @@
 import { createLogger } from '~logger';
 import type { ContentMemorySource } from '@/background/supermemory/contentMemory/types';
 
-const log = createLogger('AutoExtractionSettings', 'UTILS');
+const log = createLogger('AutoExtractionSettings', 'UTILS_HELPER');
 
 const AUTO_EXTRACTION_ENABLED_KEY = 'supermemory:autoExtraction';
 const AUTO_EXTRACTION_MIN_MESSAGES_KEY = 'supermemory:autoExtractionMinMessages';

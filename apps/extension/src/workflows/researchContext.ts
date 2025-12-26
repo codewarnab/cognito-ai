@@ -18,7 +18,7 @@ import {
 } from '@/db';
 import { resetTruncatedSources, resetSynthesisPhaseFlag } from './definitions/researchWorkflowPrepareStep';
 
-const log = createLogger('ResearchContext', 'WORKFLOW');
+const log = createLogger('ResearchContext', 'WORKFLOW_ENGINE');
 
 /**
  * Research context state

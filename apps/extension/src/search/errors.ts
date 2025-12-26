@@ -1,6 +1,6 @@
 import { createLogger } from '~logger';
 
-const log = createLogger('SearchErrors', 'SEARCH');
+const log = createLogger('SearchErrors', 'SEARCH_PROVIDER');
 
 /** Search-specific error types */
 export type SearchErrorCode =
@@ -111,7 +111,7 @@ export function createSearchErrorFromResponse(
     }
 
     const messages = ERROR_MESSAGES[code];
-    const technicalMessage = body 
+    const technicalMessage = body
         ? `${messages.technical}: ${status} ${statusText} - ${body}`
         : `${messages.technical}: ${status} ${statusText}`;
 
@@ -129,7 +129,7 @@ export function createSearchErrorFromException(error: unknown): SearchError {
     }
 
     let code: SearchErrorCode = 'UNKNOWN';
-    
+
     if (error instanceof TypeError && error.message.includes('fetch')) {
         code = 'NETWORK_ERROR';
     } else if (error instanceof DOMException && error.name === 'AbortError') {
