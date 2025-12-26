@@ -14,6 +14,7 @@ The Cognito webapp (`@cognito/webapp`) is a **Next.js 16** application providing
 - **Troubleshooting**: Help and debugging tools
 - **Changelog**: Version history and updates
 - **Dev Routes**: Development-only tools (logger panel)
+- **Web MCP**: Integrated Model Context Protocol client for programmatic control
 
 ## Technology Stack
 

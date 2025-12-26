@@ -36,6 +36,11 @@ apps/webapp/
 - Add props for customization and pass from consuming components
 - Use React 19 patterns (`ref` as prop instead of `forwardRef`)
 
+### Web MCP
+
+- Place all MCP tool implementations in `src/mcp/tools/`
+- Register new tools in `src/mcp/registry.ts`
+
 ### Styling
 
 - All clickable buttons must include `cursor-pointer`

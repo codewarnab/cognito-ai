@@ -2,7 +2,7 @@
 
 ## Overview
 
-Next.js 16 webapp providing UI pages for the Chrome extension.
+Next.js 16 webapp providing UI pages for the Chrome extension. Includes Web MCP integration for agentic control.
 
 ## Pages
 

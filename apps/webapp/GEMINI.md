@@ -57,6 +57,14 @@ import type { WriteTone } from '@cognito/shared';
 import { TONE_INSTRUCTIONS } from '@cognito/shared';
 ```
 
+
+## Web MCP Integration
+
+The webapp integrates **Web MCP** to expose internal tools to AI agents.
+
+- **Path**: `src/mcp/`
+- **Tools**: Navigation, Settings, Providers
+
 ## Environment Variables
 
 ```env

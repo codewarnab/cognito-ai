@@ -92,6 +92,15 @@ feat(webapp): add new settings section
 fix(webapp): resolve onboarding flow issue
 ```
 
+
+## Web MCP Integration
+
+The webapp includes an MCP (Model Context Protocol) client that allows AI agents to interact with webapp features.
+
+- **Location**: `src/mcp/`
+- **Capabilities**: Navigation, Settings Management, AI Provider Configuration
+- **Registry**: `src/mcp/registry.ts` registers available tools.
+
 ## Related Documentation
 
 | File | Purpose |

@@ -206,10 +206,17 @@ export function CategoryGroup({
 
     return (
         <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl overflow-hidden">
-            <button
-                type="button"
+            <div
                 className="flex items-center justify-between p-3 w-full cursor-pointer bg-transparent border-none text-[var(--text-primary)] transition-colors duration-200 hover:bg-[var(--glass-bg)]"
                 onClick={() => setIsExpanded(!isExpanded)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setIsExpanded(!isExpanded);
+                    }
+                }}
+                role="button"
+                tabIndex={0}
                 aria-expanded={isExpanded}
             >
                 <div className="flex items-center gap-2">
@@ -247,7 +254,7 @@ export function CategoryGroup({
                         All Off
                     </button>
                 </div>
-            </button>
+            </div>
             {isExpanded && (
                 <div className="border-t border-[var(--border-color)]">
                     {categories.map((category) => (
