@@ -60,7 +60,7 @@ export * from './rewriteCommand';
 // Keep existing sidepanel types
 export * from './sidepanel';
 
-// Logger types
-export * from './logger';
+// Logger types are exported from @cognito/shared, not from a local module
+// Use: import type { LogCategory, LoggerConfig } from '@cognito/shared';
 
 // assets.d.ts contains ambient module declarations and doesn't need to be re-exported
