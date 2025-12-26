@@ -77,11 +77,11 @@ export function SettingNumberInput({ label, description, value, onChange, min, m
                     className="flex flex-col items-start gap-1"
                 >
                     <NumberField.Group className="flex">
-                        <NumberField.Decrement className="flex size-7 items-center justify-center rounded-l-md border border-[var(--std-200)] bg-[var(--std-50)] text-[var(--std-700)] select-none hover:bg-[var(--std-100)] active:bg-[var(--std-200)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <NumberField.Decrement className="flex size-7 items-center justify-center rounded-l-md border border-border bg-muted text-muted-foreground select-none hover:bg-accent hover:text-accent-foreground active:bg-accent/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             <MinusIcon />
                         </NumberField.Decrement>
-                        <NumberField.Input className="h-7 w-12 border-t border-b border-[var(--std-200)] text-center text-sm text-[var(--std-900)] tabular-nums bg-white focus:z-10 focus:outline focus:outline-2 focus:-outline-offset-1 focus:outline-[var(--std-400)] disabled:opacity-50" />
-                        <NumberField.Increment className="flex size-7 items-center justify-center rounded-r-md border border-[var(--std-200)] bg-[var(--std-50)] text-[var(--std-700)] select-none hover:bg-[var(--std-100)] active:bg-[var(--std-200)] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                        <NumberField.Input className="h-7 w-12 border-t border-b border-border text-center text-sm text-foreground tabular-nums bg-background focus:z-10 focus:outline focus:outline-2 focus:-outline-offset-1 focus:outline-ring disabled:opacity-50" />
+                        <NumberField.Increment className="flex size-7 items-center justify-center rounded-r-md border border-border bg-muted text-muted-foreground select-none hover:bg-accent hover:text-accent-foreground active:bg-accent/80 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                             <PlusIcon />
                         </NumberField.Increment>
                     </NumberField.Group>

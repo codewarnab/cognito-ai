@@ -34,8 +34,8 @@ const Index = (props: IPropsFormModelForm) => {
 						{...(adding_model
 							? (register as UseFormRegister<Model>)('id')
 							: (register as UseFormRegister<IPropsForm['provider']>)(
-									`models.${index}.id`
-								))}
+								`models.${index}.id`
+							))}
 					/>
 				</AutoLabel>
 				<AutoLabel label={locales.form.model_form.model_name} valued={name || adding_model}>
@@ -51,14 +51,14 @@ const Index = (props: IPropsFormModelForm) => {
 						{...(adding_model
 							? (register as UseFormRegister<Model>)('name')
 							: (register as UseFormRegister<IPropsForm['provider']>)(
-									`models.${index}.name`
-								))}
+								`models.${index}.name`
+							))}
 					/>
 				</AutoLabel>
 				<AutoLabel
 					className='border-r'
 					label={locales.form.model_form.output_fee}
-					valued={fee?.output || adding_model}
+					valued={fee?.output !== undefined || adding_model}
 				>
 					<input
 						className={`
@@ -73,14 +73,15 @@ const Index = (props: IPropsFormModelForm) => {
 							locales.form.model_form.output_fee + locales.form.model_form.per_million
 						}
 						autoComplete='off'
+						defaultValue={fee?.output}
 						{...(adding_model
-							? (register as UseFormRegister<Model>)('fee.output')
+							? (register as UseFormRegister<Model>)('fee.output', { valueAsNumber: true })
 							: (register as UseFormRegister<IPropsForm['provider']>)(
-									`models.${index}.fee.output`
-								))}
+								`models.${index}.fee.output`, { valueAsNumber: true }
+							))}
 					/>
 				</AutoLabel>
-				<AutoLabel label={locales.form.model_form.input_fee} valued={fee?.input || adding_model}>
+				<AutoLabel label={locales.form.model_form.input_fee} valued={fee?.input !== undefined || adding_model}>
 					<input
 						className={`
 							w-full h-full
@@ -94,11 +95,12 @@ const Index = (props: IPropsFormModelForm) => {
 							locales.form.model_form.input_fee + locales.form.model_form.per_million
 						}
 						autoComplete='off'
+						defaultValue={fee?.input}
 						{...(adding_model
-							? (register as UseFormRegister<Model>)('fee.input')
+							? (register as UseFormRegister<Model>)('fee.input', { valueAsNumber: true })
 							: (register as UseFormRegister<IPropsForm['provider']>)(
-									`models.${index}.fee.input`
-								))}
+								`models.${index}.fee.input`, { valueAsNumber: true }
+							))}
 					/>
 				</AutoLabel>
 				<AutoLabel
@@ -118,8 +120,8 @@ const Index = (props: IPropsFormModelForm) => {
 						{...(adding_model
 							? (register as UseFormRegister<Model>)('desc')
 							: (register as UseFormRegister<IPropsForm['provider']>)(
-									`models.${index}.desc`
-								))}
+								`models.${index}.desc`
+							))}
 					/>
 				</AutoLabel>
 			</div>
