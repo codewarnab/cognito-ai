@@ -28,6 +28,9 @@ import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
 import wixImage from '@assets/brands/integrations/wix.webp';
 import exaImage from '@assets/brands/integrations/exa-color.svg';
 import mcpGenericImage from '@assets/brands/integrations/mcp-server-stroke-rounded.svg';
+import twentyFirstDevImage from '@assets/brands/integrations/21stdev.png';
+// Adding new MCP server? Also add image import here and entry to MCP_SERVER_IMAGES below
+import jinaImage from '@assets/brands/integrations/jina.png';
 
 interface McpIconProps {
     size?: number;
@@ -77,6 +80,8 @@ const MCP_SERVER_IMAGES: Record<string, string> = {
     'coingecko': coingeckoImage,
     'deepwiki': deepwikiImage,
     'wix': wixImage,
+    'magic-mcp': twentyFirstDevImage,
+    'jina': jinaImage,
 };
 
 /**
@@ -104,7 +109,12 @@ export function getMcpServerIcon(serverId?: string): React.ComponentType<any> | 
                 width={size}
                 height={size}
                 className={className}
-                style={{ objectFit: 'contain' }}
+                style={{
+                    objectFit: 'contain',
+                    maxWidth: size,
+                    maxHeight: size,
+                    flexShrink: 0,
+                }}
             />
         );
     }

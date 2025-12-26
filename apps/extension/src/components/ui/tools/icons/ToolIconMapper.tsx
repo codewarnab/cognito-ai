@@ -165,11 +165,12 @@ function looksLikeMcpTool(toolName: string): boolean {
     const lower = toolName.toLowerCase();
 
     // Check for known MCP server names in the tool name
+    // Adding new MCP server? Also add to this list for heuristic detection
     const mcpServerHints = [
         'notion', 'linear', 'github', 'figma', 'supabase',
         'netlify', 'sentry', 'paypal', 'webflow', 'ahrefs',
         'context7', 'deepwiki', 'coingecko', 'fetch', 'sequential',
-        'edgeone', 'parallel', 'mcp'
+        'edgeone', 'parallel', 'mcp', 'jina'
     ];
 
     // If tool name contains any MCP server hint

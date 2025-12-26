@@ -71,6 +71,10 @@ export function useAIChat(options: UseAIChatOptions) {
   // 2. Tool results added via HITL approval (streaming = false, do auto-send)
   const isStreamingRef = useRef<boolean>(false);
 
+  // Track active request cycle to prevent double auto-send
+  // Set to true BEFORE addToolOutput is called, reset when stream finishes
+  const isInRequestCycleRef = useRef<boolean>(false);
+
   // Create transport instance (memoized)
   const transport = useMemo(() => new SimpleFrontendTransport(), []);
 
@@ -252,12 +256,27 @@ export function useAIChat(options: UseAIChatOptions) {
           log.info('🚫 Blocking auto-send during streaming');
           return false;
         }
-        // Allow auto-send for HITL tools (stream finished, user approved)
-        return lastAssistantMessageIsCompleteWithToolCalls(args);
+        // Block if we're already in a request cycle (prevents double auto-send race condition)
+        // This fixes the loop issue with MCP/stdio tools where addToolOutput triggers
+        // sendAutomaticallyWhen before status updates to 'streaming'
+        if (isInRequestCycleRef.current) {
+          log.info('🚫 Blocking auto-send - already in request cycle');
+          return false;
+        }
+        // Check if should auto-send, and if so, mark that we're starting a request cycle
+        const shouldSend = lastAssistantMessageIsCompleteWithToolCalls(args);
+        if (shouldSend) {
+          log.info('✅ Auto-sending - marking request cycle active');
+          isInRequestCycleRef.current = true;
+        }
+        return shouldSend;
       }
       : lastAssistantMessageIsCompleteWithToolCalls, // BYOK mode: Always use standard logic
     onError: handleError,
     onFinish: (finishResult) => {
+      // Reset request cycle tracking - stream is complete
+      isInRequestCycleRef.current = false;
+
       // Add null safety check for message - may not exist in all stream modes
       log.info('AI response finished', {
         messageId: finishResult?.message?.id || 'unknown',

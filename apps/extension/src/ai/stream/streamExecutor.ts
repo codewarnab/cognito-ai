@@ -9,8 +9,33 @@ import { APIError, ErrorType } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 import { createOnStepFinishCallback, createOnFinishCallback } from './streamCallbacks';
 import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
+import { sanitizeToolName } from '@/utils/mcp/toolNameSanitizer';
 
 const log = createLogger('StreamExecutor', 'AI_CHAT_STREAM');
+
+/**
+ * Sanitize all tool names in a tools record
+ * Returns the sanitized tools and a mapping from sanitized names back to original names
+ */
+function sanitizeToolNames(tools: Record<string, any>): {
+    sanitizedTools: Record<string, any>;
+    nameMapping: Map<string, string>; // sanitized -> original
+} {
+    const sanitizedTools: Record<string, any> = {};
+    const nameMapping = new Map<string, string>();
+
+    for (const [originalName, tool] of Object.entries(tools)) {
+        const sanitizedName = sanitizeToolName(originalName);
+        sanitizedTools[sanitizedName] = tool;
+        nameMapping.set(sanitizedName, originalName);
+
+        if (originalName !== sanitizedName) {
+            log.info(`🔧 Sanitized tool name: ${originalName} -> ${sanitizedName}`);
+        }
+    }
+
+    return { sanitizedTools, nameMapping };
+}
 
 /**
  * Execute streamText with proper configuration
@@ -51,15 +76,25 @@ export async function executeStreamText(params: {
     } = params;
 
     try {
-        // Get list of available tool names for error feedback
+        // Sanitize tool names for Gemini compatibility (must start with letter/underscore)
+        // This mirrors the backend sanitization - e.g., "21st_magic_component" -> "fn_21st_magic_component"
+        const { sanitizedTools, nameMapping } = sanitizeToolNames(tools);
+
+        // Also sanitize activeTools if they exist, so they match the keys in sanitizedTools
+        const sanitizedActiveTools = activeTools?.map(name => sanitizeToolName(name));
+
+        // Get list of available tool names for error feedback (show original names for debugging)
         const availableToolNames = Object.keys(tools);
+        const sanitizedToolNames = Object.keys(sanitizedTools);
         log.info('🔧 Available tools for this session:', {
             count: availableToolNames.length,
-            tools: availableToolNames,
+            originalTools: availableToolNames,
+            sanitizedTools: sanitizedToolNames,
+            sanitizedCount: nameMapping.size,
             activeToolsParam: activeTools,
-            webSearchAvailable: 'webSearch' in tools,
-            retrieveAvailable: 'retrieve' in tools,
-            deepWebSearchAvailable: 'deepWebSearch' in tools,
+            webSearchAvailable: 'webSearch' in sanitizedTools,
+            retrieveAvailable: 'retrieve' in sanitizedTools,
+            deepWebSearchAvailable: 'deepWebSearch' in sanitizedTools,
         });
 
         /**
@@ -86,9 +121,10 @@ export async function executeStreamText(params: {
         };
 
         // Create tools with abort signal binding AND error feedback handling
+        // Use sanitizedTools to ensure Gemini-compatible names
         const abortableTools = abortSignal ? (() => {
             const boundTools: Record<string, any> = {};
-            Object.entries(tools).forEach(([name, tool]) => {
+            Object.entries(sanitizedTools).forEach(([name, tool]) => {
                 // Human-in-the-loop: Strip execute from tools requiring approval
                 // AI SDK will wait for frontend to call addToolOutput
                 if (TOOLS_REQUIRING_APPROVAL.includes(name)) {
@@ -142,7 +178,7 @@ export async function executeStreamText(params: {
         })() : (() => {
             // Also wrap tools without abort signal for consistency
             const boundTools: Record<string, any> = {};
-            Object.entries(tools).forEach(([name, tool]) => {
+            Object.entries(sanitizedTools).forEach(([name, tool]) => {
                 // Human-in-the-loop: Strip execute from tools requiring approval
                 // AI SDK will wait for frontend to call addToolOutput
                 if (TOOLS_REQUIRING_APPROVAL.includes(name)) {
@@ -188,6 +224,11 @@ export async function executeStreamText(params: {
             return boundTools;
         })();
 
+
+        if (sanitizedActiveTools) {
+            log.info('🔧 Active tools sanitized:', { original: activeTools, sanitized: sanitizedActiveTools });
+        }
+
         return await streamText({
             model,
             messages: modelMessages,
@@ -195,7 +236,7 @@ export async function executeStreamText(params: {
             system: enhancedPrompt,
             ...(abortSignal && { abortSignal }),
             ...(prepareStep && { prepareStep }),
-            ...(activeTools && { activeTools }),
+            ...(sanitizedActiveTools && { activeTools: sanitizedActiveTools }),
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools

@@ -1,3 +1,15 @@
+/**
+ * MCP Servers Configuration
+ * 
+ * When adding a new MCP server, also update the following files:
+ * 1. Add icon image to: @assets/brands/integrations/
+ * 2. Update McpIconMapper: src/components/ui/tools/icons/McpIconMapper.tsx
+ *    - Add import for the icon image
+ *    - Add entry to MCP_SERVER_IMAGES or MCP_SERVER_ICONS
+ * 3. Update ToolIconMapper: src/components/ui/tools/icons/ToolIconMapper.tsx
+ *    - Add server name to mcpServerHints array for heuristic detection
+ */
+
 import React from "react"
 import { Globe, Workflow, Download, LucideSearch } from "lucide-react"
 import { Ahrefs } from "@assets/brands/integrations/Ahrefs"
@@ -16,8 +28,9 @@ import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
 import context7Image from '@assets/brands/integrations/context7.png';
 import livekitImage from '@assets/brands/integrations/livekit.png';
 import exaImage from '@assets/brands/integrations/exa-color.svg';
+import twentyFirstDevImage from '@assets/brands/integrations/21stdev.png';
+import jinaImage from '@assets/brands/integrations/jina.png';
 import { GitHub } from "@assets/brands/integrations/GitHub"
-import { McpServerIcon } from "../components/ui/tools/icons/McpIconMapper";
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
 
@@ -172,7 +185,7 @@ export const MCP_SERVERS: ServerConfig[] = [
     {
         id: "magic-mcp",
         name: "Magic MCP",
-        icon: <McpServerIcon serverId="magic-mcp" />, // We'll need to mapping or use generic
+        icon: <img src={twentyFirstDevImage} alt="21st.dev" style={{ width: 24, height: 24 }} />, // 21st.dev Magic MCP
         initialEnabled: false,
         initialAuthenticated: false,
         url: "stdio://magic-mcp", // Pseudo-URL
@@ -208,6 +221,24 @@ export const MCP_SERVERS: ServerConfig[] = [
                 placeholder: "ghp_...",
                 helpUrl: "https://github.com/settings/tokens",
                 validationUrl: "https://api.github.com/user"
+            }
+        }
+    },
+    {
+        id: "jina",
+        name: "Jina AI",
+        icon: <img src={jinaImage} alt="Jina AI" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.jina.ai/sse",
+        description: "Jina AI provides powerful web reading, content extraction, and search capabilities for AI agents.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Jina API Key",
+                placeholder: "jina_...",
+                helpUrl: "https://jina.ai/api-dashboard/key-management"
             }
         }
     },

@@ -7,6 +7,7 @@
  */
 
 import { createLogger } from '~logger';
+import { sanitizeToolName } from './toolNameSanitizer';
 
 const log = createLogger('ToolMetadataStore', 'MCP_TOOLS_METADATA');
 
@@ -23,6 +24,15 @@ const toolToServerMap = new Map<string, string>();
 export function registerToolServer(toolName: string, serverId: string): void {
     const normalizedName = toolName.toLowerCase();
     toolToServerMap.set(normalizedName, serverId);
+
+    // Also register the sanitized variant (e.g., fn_21st_magic -> 21st_magic)
+    // This ensures lookup works whether AI returns original or sanitized name
+    const sanitizedName = sanitizeToolName(toolName).toLowerCase();
+    if (sanitizedName !== normalizedName) {
+        toolToServerMap.set(sanitizedName, serverId);
+        log.debug(`Registered sanitized variant: ${sanitizedName} → ${serverId}`);
+    }
+
     log.debug(`Registered tool→server mapping: ${toolName} (normalized: ${normalizedName}) → ${serverId}`);
 }
 
@@ -112,6 +122,14 @@ const mcpToolExecutorMap = new Map<string, (input: any) => Promise<any>>();
 export function registerMcpToolExecutor(toolName: string, executor: (input: any) => Promise<any>): void {
     const normalizedName = toolName.toLowerCase();
     mcpToolExecutorMap.set(normalizedName, executor);
+
+    // Also register the sanitized variant for lookup consistency
+    const sanitizedName = sanitizeToolName(toolName).toLowerCase();
+    if (sanitizedName !== normalizedName) {
+        mcpToolExecutorMap.set(sanitizedName, executor);
+        log.debug(`Registered sanitized executor variant: ${sanitizedName}`);
+    }
+
     log.debug(`Registered MCP executor: ${toolName}`);
 }
 
