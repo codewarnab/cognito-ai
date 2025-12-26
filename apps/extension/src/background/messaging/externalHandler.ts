@@ -25,7 +25,11 @@ import {
     GetProvidersConfigResponse,
     SetProvidersConfigPayload,
     TestProviderConnectionPayload,
-} from '@cognito/shared/types';
+    LoggerConfigUpdatePayload,
+    LoggerConfigResponse,
+    LOGGER_CONFIG_KEY,
+    LOG_PRESETS,
+} from '@cognito/shared';
 import {
     getProvidersConfig,
     setProvidersConfig,
@@ -854,6 +858,37 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
             } catch (error) {
                 log.error('Failed to preview voice', error);
                 return { success: false, error: error instanceof Error ? error.message : 'Failed to preview voice' };
+            }
+        }
+
+        // =================================================================
+        // Logger Config Sync Messages (Webapp → Extension)
+        // =================================================================
+        case 'LOGGER_CONFIG_UPDATE': {
+            try {
+                const payload = message.payload as LoggerConfigUpdatePayload;
+                if (!payload?.config) {
+                    return { success: false, error: 'Missing config in payload' };
+                }
+
+                await chrome.storage.local.set({ [LOGGER_CONFIG_KEY]: payload.config });
+                log.info('Logger config updated from webapp');
+                return { success: true };
+            } catch (error) {
+                log.error('Failed to update logger config', error);
+                return { success: false, error: 'Failed to update logger config' };
+            }
+        }
+
+        case 'LOGGER_CONFIG_REQUEST': {
+            try {
+                const result = await chrome.storage.local.get([LOGGER_CONFIG_KEY]);
+                const config = result[LOGGER_CONFIG_KEY] || LOG_PRESETS.DEVELOPMENT;
+                const response: LoggerConfigResponse = { config };
+                return { success: true, data: response };
+            } catch (error) {
+                log.error('Failed to get logger config', error);
+                return { success: false, error: 'Failed to get logger config' };
             }
         }
 

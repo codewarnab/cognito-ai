@@ -83,11 +83,29 @@ export type {
 // Logger types
 export type {
     LogCategory,
+    LogSubCategory,
+    MCPClientSubCategory,
+    MCPToolsSubCategory,
+    MCPExecutionSubCategory,
+    MCPAuthSubCategory,
+    MCPSSESubCategory,
+    WEBMCPSubCategory,
+    ToolsRegistrySubCategory,
+    ToolsExecutionSubCategory,
+    ToolsValidationSubCategory,
+    ToolsIntegrationSubCategory,
+    AIChatSubCategory,
+    AIPromptsSubCategory,
+    VoiceRecordingSubCategory,
+    VoiceClientSubCategory,
+    VoiceUISubCategory,
+    VoiceAudioSubCategory,
     LoggerConfig,
     LoggerPresetName,
     LoggerCategoryGroup,
+    CategoryWithSubCategories,
 } from './logger.js';
-export { LOGGER_CONFIG_KEY, LOGGER_CATEGORY_GROUPS } from './logger.js';
+export { LOGGER_CONFIG_KEY, LOGGER_CATEGORY_GROUPS, LOGGER_SUBCATEGORY_GROUPS, hasSubCategories } from './logger.js';
 
 // Settings types (for webapp <-> extension communication)
 export type {
