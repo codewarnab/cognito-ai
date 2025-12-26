@@ -92,6 +92,25 @@ export type LogCategory =
     | 'UI_THREADS'
     | 'UI_SIDEPANEL'
     | 'UI_REMINDERS'
+    // UI Sub-categories
+    | 'UI_CHAT_COMPONENTS'
+    | 'UI_CHAT_HOOKS'
+    | 'UI_CHAT_STATE'
+    | 'UI_VOICE_COMPONENTS'
+    | 'UI_VOICE_HOOKS'
+    | 'UI_VOICE_STATE'
+    | 'UI_SETTINGS_COMPONENTS'
+    | 'UI_SETTINGS_HOOKS'
+    | 'UI_SETTINGS_STATE'
+    | 'UI_THREADS_COMPONENTS'
+    | 'UI_THREADS_HOOKS'
+    | 'UI_THREADS_STATE'
+    | 'UI_SIDEPANEL_COMPONENTS'
+    | 'UI_SIDEPANEL_HOOKS'
+    | 'UI_SIDEPANEL_STATE'
+    | 'UI_REMINDERS_COMPONENTS'
+    | 'UI_REMINDERS_HOOKS'
+    | 'UI_REMINDERS_STATE'
     // System
     | 'BACKGROUND'
     | 'STORAGE'
@@ -187,6 +206,36 @@ export type VoiceUISubCategory = 'PANEL' | 'CONTROLS' | 'FEEDBACK';
 export type VoiceAudioSubCategory = 'PLAYBACK' | 'PROCESSING' | 'LEVELS';
 
 /**
+ * Sub-categories for UI_CHAT
+ */
+export type UIChatSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
+ * Sub-categories for UI_VOICE
+ */
+export type UIVoiceSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
+ * Sub-categories for UI_SETTINGS
+ */
+export type UISettingsSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
+ * Sub-categories for UI_THREADS
+ */
+export type UIThreadsSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
+ * Sub-categories for UI_SIDEPANEL
+ */
+export type UISidepanelSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
+ * Sub-categories for UI_REMINDERS
+ */
+export type UIRemindersSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
+
+/**
  * All sub-category types combined
  */
 export type LogSubCategory =
@@ -205,7 +254,13 @@ export type LogSubCategory =
     | VoiceRecordingSubCategory
     | VoiceClientSubCategory
     | VoiceUISubCategory
-    | VoiceAudioSubCategory;
+    | VoiceAudioSubCategory
+    | UIChatSubCategory
+    | UIVoiceSubCategory
+    | UISettingsSubCategory
+    | UIThreadsSubCategory
+    | UISidepanelSubCategory
+    | UIRemindersSubCategory;
 
 /**
  * Sub-category groups per main category
@@ -231,6 +286,13 @@ export const LOGGER_SUBCATEGORY_GROUPS = {
     VOICE_CLIENT: ['VOICE_CLIENT_CONNECTION', 'VOICE_CLIENT_EVENTS', 'VOICE_CLIENT_STATE'] as const,
     VOICE_UI: ['VOICE_UI_PANEL', 'VOICE_UI_CONTROLS', 'VOICE_UI_FEEDBACK'] as const,
     VOICE_AUDIO: ['VOICE_AUDIO_PLAYBACK', 'VOICE_AUDIO_PROCESSING', 'VOICE_AUDIO_LEVELS'] as const,
+    // UI sub-categories
+    UI_CHAT: ['UI_CHAT_COMPONENTS', 'UI_CHAT_HOOKS', 'UI_CHAT_STATE'] as const,
+    UI_VOICE: ['UI_VOICE_COMPONENTS', 'UI_VOICE_HOOKS', 'UI_VOICE_STATE'] as const,
+    UI_SETTINGS: ['UI_SETTINGS_COMPONENTS', 'UI_SETTINGS_HOOKS', 'UI_SETTINGS_STATE'] as const,
+    UI_THREADS: ['UI_THREADS_COMPONENTS', 'UI_THREADS_HOOKS', 'UI_THREADS_STATE'] as const,
+    UI_SIDEPANEL: ['UI_SIDEPANEL_COMPONENTS', 'UI_SIDEPANEL_HOOKS', 'UI_SIDEPANEL_STATE'] as const,
+    UI_REMINDERS: ['UI_REMINDERS_COMPONENTS', 'UI_REMINDERS_HOOKS', 'UI_REMINDERS_STATE'] as const,
 } as const;
 
 /**
