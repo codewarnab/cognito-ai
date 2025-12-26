@@ -151,3 +151,9 @@ export type {
     DeleteAllChatsResponse,
 } from './settings.js';
 
+// MCP types
+export type {
+    StdioMcpConfig,
+    McpDiscoveryRequest,
+    McpDiscoveryResponse,
+} from './mcp.js';

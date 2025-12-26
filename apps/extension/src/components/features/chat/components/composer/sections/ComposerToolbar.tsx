@@ -69,6 +69,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const mcpTools = useToolsStore((s: ToolsState) => s.mcpTools);
     const mcpDisabledTools = useToolsStore((s: ToolsState) => s.mcpDisabledTools);
 
+    // Backend mode state
+    const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
+
     // Get unique enabled MCP server IDs
     const enabledMcpServers = useMemo(() => {
         const serverMap = new Map<string, { serverId: string; serverName: string }>();
@@ -99,8 +102,6 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         aiProviderMode: modelState.mode
     });
 
-    // Backend mode state
-    const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
     const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
 
     // Hide model picker when toolbar is crowded (MCP servers + WebMCP taking space)

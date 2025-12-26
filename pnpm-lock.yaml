@@ -220,6 +220,9 @@ importers:
       ai:
         specifier: 'catalog:'
         version: 6.0.3(zod@4.2.1)
+      ajv:
+        specifier: ^8.17.1
+        version: 8.17.1
       chrono-node:
         specifier: ^2.9.0
         version: 2.9.0
@@ -537,6 +540,9 @@ importers:
       '@ai-sdk/google':
         specifier: 'catalog:'
         version: 3.0.1(zod@4.2.1)
+      '@ai-sdk/mcp':
+        specifier: ^1.0.1
+        version: 1.0.1(zod@4.2.1)
       '@cognito/shared':
         specifier: workspace:*
         version: link:../shared
@@ -573,6 +579,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.2.1
+      zod-to-json-schema:
+        specifier: ^3.25.0
+        version: 3.25.0(zod@4.2.1)
     devDependencies:
       '@types/cors':
         specifier: ^2.8.17

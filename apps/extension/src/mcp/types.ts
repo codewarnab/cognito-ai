@@ -23,6 +23,18 @@
  */
 
 /**
+ * Common interface for MCP Clients (SSE, StdIO/Backend)
+ */
+export interface McpClient {
+    connect(): Promise<void>;
+    disconnect(): void;
+    getStatus(): McpServerStatus;
+    initialize(): Promise<void>;
+    listTools(): Promise<{ tools: any[] }>;
+    callTool(name: string, args?: Record<string, any>): Promise<any>;
+}
+
+/**
  * MCP Server connection states
  */
 export type McpConnectionState =

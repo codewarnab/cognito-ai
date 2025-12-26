@@ -88,7 +88,6 @@ import {
     setVoiceName,
     getMaxToolCallLimit,
     setMaxToolCallLimit,
-    setMaxToolCallLimit,
 } from '@/utils/settings/settingsStorage';
 // Supermemory specific settings
 import {
@@ -654,7 +653,7 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
                 }
 
                 if (payload.apiKey !== undefined) {
-                    await setSupermemoryApiKey(payload.apiKey || undefined);
+                    await setSupermemoryApiKey(payload.apiKey || '');
                 }
                 if (payload.enabled !== undefined) {
                     await setSupermemoryEnabled(payload.enabled);

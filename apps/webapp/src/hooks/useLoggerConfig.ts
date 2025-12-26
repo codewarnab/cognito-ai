@@ -41,6 +41,8 @@ interface UseLoggerConfigReturn {
     config: LoggerConfig | null;
     /** Whether the config is still loading from storage */
     isLoading: boolean;
+    /** Whether the extension is connected for config sync (always false in webapp) */
+    isExtensionConnected: boolean;
     /** Set a single category's enabled state */
     setCategory: (category: LogCategory, enabled: boolean) => Promise<void>;
     /** Apply a preset configuration */
@@ -162,6 +164,7 @@ export function useLoggerConfig(): UseLoggerConfigReturn {
     return {
         config,
         isLoading,
+        isExtensionConnected: false, // Webapp uses localStorage, not extension sync
         setCategory,
         setPreset,
         isPresetActive,

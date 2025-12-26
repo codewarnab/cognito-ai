@@ -5,6 +5,7 @@
  */
 
 import { McpSSEClient } from '../../mcp/sseClient';
+import { McpBackendClient } from './McpBackendClient';
 import type { McpExtensionResponse } from '../../mcp/types';
 import { getServerState, getServerConfig } from '../../mcp/state';
 import { broadcastStatusUpdate } from '../../mcp/events';
@@ -100,37 +101,47 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
             mcpLog.info(`[${serverId}] Using ${serverConfig.headers.length} custom headers`);
         }
 
-        // Create SSE client with error handling callbacks
-        state.client = new McpSSEClient(
-            serverId,
-            serverConfig.url,
-            accessToken,
-            {
-                onStatusChange: (status) => {
-                    state.status = status;
-                    broadcastStatusUpdate(serverId, status);
+        // Create Client based on type
+        if (serverConfig.isBackendOnly) {
+            mcpLog.info(`[${serverId}] Creating Backend StdIO Client`);
+            state.client = new McpBackendClient(
+                serverId,
+                serverConfig,
+                accessToken
+            );
+        } else {
+            // Create SSE client with error handling callbacks
+            state.client = new McpSSEClient(
+                serverId,
+                serverConfig.url,
+                accessToken,
+                {
+                    onStatusChange: (status) => {
+                        state.status = status;
+                        broadcastStatusUpdate(serverId, status);
 
-                    // Handle token expiry (but not format errors)
-                    if (status.state === 'needs-auth' && handleTokenExpiry) {
-                        handleTokenExpiry(serverId);
-                    } else if (status.state === 'invalid-token' && handleInvalidToken) {
-                        // Token format is invalid - clear tokens and require re-auth
-                        handleInvalidToken(serverId);
+                        // Handle token expiry (but not format errors)
+                        if (status.state === 'needs-auth' && handleTokenExpiry) {
+                            handleTokenExpiry(serverId);
+                        } else if (status.state === 'invalid-token' && handleInvalidToken) {
+                            // Token format is invalid - clear tokens and require re-auth
+                            handleInvalidToken(serverId);
+                        }
+                    },
+                    onMessage: (message) => {
+                        mcpLog.info(`[${serverId}] MCP message:`, message);
                     }
                 },
-                onMessage: (message) => {
-                    mcpLog.info(`[${serverId}] MCP message:`, message);
+                {
+                    reconnectMinDelay: MCP_OAUTH_CONFIG.RECONNECT_MIN_DELAY,
+                    reconnectMaxDelay: MCP_OAUTH_CONFIG.RECONNECT_MAX_DELAY,
+                    reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER,
+                    maxReconnectAttempts: 5,
+                    requestTimeout: 30000,
+                    customHeaders, // Pass custom headers for non-OAuth servers
                 }
-            },
-            {
-                reconnectMinDelay: MCP_OAUTH_CONFIG.RECONNECT_MIN_DELAY,
-                reconnectMaxDelay: MCP_OAUTH_CONFIG.RECONNECT_MAX_DELAY,
-                reconnectMultiplier: MCP_OAUTH_CONFIG.RECONNECT_MULTIPLIER,
-                maxReconnectAttempts: 5,
-                requestTimeout: 30000,
-                customHeaders, // Pass custom headers for non-OAuth servers
-            }
-        );
+            );
+        }
 
         // Connect with timeout
         const connectionPromise = state.client.connect();
@@ -157,6 +168,14 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
         await Promise.race([initPromise, initTimeoutPromise]);
 
         mcpLog.info(`[${serverId}] Successfully connected and initialized`);
+
+        // For Backend Client, we need to manually update state since it doesn't use callbacks
+        if (serverConfig.isBackendOnly && state.client) {
+            state.status = state.client.getStatus();
+            broadcastStatusUpdate(serverId, state.status);
+            mcpLog.info(`[${serverId}] Updated state with discovered tools: ${state.status.tools?.length || 0}`);
+        }
+
         return { success: true, data: state.client.getStatus() };
 
     } catch (error) {

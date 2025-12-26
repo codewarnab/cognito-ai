@@ -7,7 +7,7 @@
 
 import type { McpOAuthTokens, McpServerStatus, OAuthEndpoints, OAuthState } from './types';
 import type { DynamicClientCredentials } from './oauth';
-import type { McpSSEClient } from './sseClient';
+import type { McpClient } from './types';
 import { MCP_SERVERS, type ServerConfig } from '@/constants/mcpServers';
 import { createLogger } from '~logger';
 
@@ -17,8 +17,8 @@ const log = createLogger('MCP-State', 'MCP_CLIENT_STATE');
  * State for each MCP server
  */
 export interface ServerState {
-    /** SSE client instance for this server */
-    client: McpSSEClient | null;
+    /** Client instance for this server */
+    client: McpClient | null;
     /** OAuth tokens for authentication */
     tokens: McpOAuthTokens | null;
     /** Dynamic client credentials from registration */

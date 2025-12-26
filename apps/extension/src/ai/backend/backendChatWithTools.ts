@@ -275,6 +275,18 @@ function parseStreamChunk(chunk: string): Array<{
     return events;
 }
 
+// Helper to sanitize tool names for Gemini (matches backend logic)
+function sanitizeToolName(name: string): string {
+    // If starts with digit, prefix with tool_
+    let sanitized = name;
+    if (/^[0-9]/.test(sanitized)) {
+        sanitized = `tool_${sanitized}`;
+    }
+    // Replace invalid chars with underscore (allowed: a-z, A-Z, 0-9, _, ., -, :)
+    sanitized = sanitized.replace(/[^a-zA-Z0-9_.:-]/g, '_');
+    return sanitized;
+}
+
 /**
  * Stream AI response through backend with frontend tool execution
  */
@@ -313,7 +325,23 @@ export async function streamBackendChatWithTools(
         // Get tool schemas to send to backend
         // Exclude server-executed tools when searchEnabled (backend will add them)
         const toolSchemas = await getToolSchemas(searchEnabled);
-        const toolCount = Object.keys(toolSchemas).length;
+
+        // Sanitize tool names for Gemini compatibility
+        // Create a mapping to reverse the sanitization when receiving tool calls
+        const sanitizedSchemas: Record<string, any> = {};
+        const toolNameMapping: Record<string, string> = {}; // sanitized -> original
+
+        for (const [name, schema] of Object.entries(toolSchemas)) {
+            const sanitized = sanitizeToolName(name);
+            sanitizedSchemas[sanitized] = schema;
+            toolNameMapping[sanitized] = name;
+
+            if (name !== sanitized) {
+                log.info('🔧 Sanitized tool name for backend:', { original: name, sanitized });
+            }
+        }
+
+        const toolCount = Object.keys(sanitizedSchemas).length;
         log.info('Tool schemas prepared', { toolCount, searchEnabled: !!searchEnabled });
 
         const stream = createUIMessageStream({
@@ -365,7 +393,7 @@ export async function streamBackendChatWithTools(
                                 body: JSON.stringify({
                                     messages: conversationMessages,
                                     system: systemPrompt,
-                                    tools: toolSchemas,
+                                    tools: sanitizedSchemas, // Send sanitized schemas
                                     // Sanitize model name if it contains provider prefix (e.g. google_gemini:gemini-1.5-pro -> gemini-1.5-pro)
                                     // The backend currently only supports Google models and expects direct model IDs.
                                     model: model?.includes(':') ? model.split(':')[1] : model,
@@ -442,9 +470,17 @@ export async function streamBackendChatWithTools(
                                         break;
 
                                     case 'tool_call':
+                                        // Map sanitized name back to original name for execution
+                                        const receivedName = event.data.name;
+                                        const originalName = toolNameMapping[receivedName] || receivedName;
+
+                                        if (receivedName !== originalName) {
+                                            log.info('🔧 Mapping tool call name back:', { receivedName, originalName });
+                                        }
+
                                         const toolCall: ToolCall = {
                                             id: event.data.id,
-                                            name: event.data.name,
+                                            name: originalName,
                                             arguments: event.data.arguments,
                                         };
 
@@ -550,8 +586,12 @@ export async function streamBackendChatWithTools(
                                     case 'tool_error':
                                         // Backend reports tool was unavailable
                                         const errorData = event.data;
+
+                                        // Map name back for consistent UI
+                                        const errOriginalName = toolNameMapping[errorData.name] || errorData.name;
+
                                         log.warn('🔧 Backend reports tool error:', {
-                                            toolName: errorData.name,
+                                            toolName: errOriginalName,
                                             errorText: errorData.errorText,
                                         });
 
@@ -559,7 +599,7 @@ export async function streamBackendChatWithTools(
                                         writer.write({
                                             type: 'tool-input-available',
                                             toolCallId: errorData.id,
-                                            toolName: errorData.name,
+                                            toolName: errOriginalName,
                                             input: errorData.input,
                                         });
 
@@ -576,7 +616,7 @@ export async function streamBackendChatWithTools(
                                         // Track error for AI feedback loop (include name and input for proper message)
                                         pendingToolErrors.push({
                                             id: errorData.id,
-                                            name: errorData.name,
+                                            name: errOriginalName,
                                             input: errorData.input,
                                             result: errorData.errorText,
                                         });
@@ -675,7 +715,7 @@ export async function streamBackendChatWithTools(
                                 assistantContent.push({
                                     type: 'tool-call',
                                     toolCallId: tc.id,
-                                    toolName: tc.name,
+                                    toolName: tc.name, // Will be original name
                                     args: tc.arguments, // Using args as AI SDK v6 convertToModelMessages uses args for tool calls usually
                                 });
                             }

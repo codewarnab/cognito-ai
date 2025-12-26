@@ -17,12 +17,15 @@ import context7Image from '@assets/brands/integrations/context7.png';
 import livekitImage from '@assets/brands/integrations/livekit.png';
 import exaImage from '@assets/brands/integrations/exa-color.svg';
 import { GitHub } from "@assets/brands/integrations/GitHub"
+import { McpServerIcon } from "../components/ui/tools/icons/McpIconMapper";
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
 
 
-// http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
+//http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
 //https://discord.com/channels/1312302100125843476/1336755085841137808 find  more relevent mcps here and add them here 
+
+import type { StdioMcpConfig } from "@cognito/shared";
 export interface KeyValuePair {
     key: string
     value: string
@@ -67,6 +70,12 @@ export interface ServerConfig {
     headers?: KeyValuePair[]
     /** Base64 image data for custom server icons */
     imageData?: string
+
+    /** Whether this server runs on the backend (StdIO) */
+    isBackendOnly?: boolean
+    /** Configuration for StdIO execution */
+    stdioConfig?: StdioMcpConfig
+
 
     /** Authentication configuration (PAT, OAuth, or hybrid) */
     authConfig?: AuthConfig
@@ -158,7 +167,31 @@ export const MCP_SERVERS: ServerConfig[] = [
     //     url: "https://mcp.figma.com/mcp",
     //     description: "Figma is a design tool for creating beautiful designs.",
     //     requiresAuthentication: true
+    //     requiresAuthentication: true
     // },
+    {
+        id: "magic-mcp",
+        name: "Magic MCP",
+        icon: <McpServerIcon serverId="magic-mcp" />, // We'll need to mapping or use generic
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "stdio://magic-mcp", // Pseudo-URL
+        description: "Magic MCP server (Backend StdIO)",
+        requiresAuthentication: true,
+        isBackendOnly: true,
+        stdioConfig: {
+            command: "npx",
+            args: ["-y", "@21st-dev/magic@latest"]
+        },
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Magic API Key",
+                placeholder: "Enter your API Key",
+                // envVarName: "API_KEY" // We need to handle this mapping in the frontend discovery logic
+            }
+        }
+    },
     {
         id: "github",
         name: "GitHub",
