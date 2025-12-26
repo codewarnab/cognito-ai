@@ -15,6 +15,7 @@ import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
 import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
 import context7Image from '@assets/brands/integrations/context7.png';
 import livekitImage from '@assets/brands/integrations/livekit.png';
+import exaImage from '@assets/brands/integrations/exa-color.svg';
 import { GitHub } from "@assets/brands/integrations/GitHub"
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
@@ -354,6 +355,16 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialAuthenticated: false,
         url: "https://docs.livekit.io/mcp",
         description: "LiveKit documentation MCP server with tools for AI coding assistants to browse and search the docs site for voice, video, and physical AI agents.",
+        requiresAuthentication: false
+    },
+    {
+        id: "exa",
+        name: "Exa",
+        icon: <img src={exaImage} alt="Exa" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.exa.ai/mcp",
+        description: "Exa is a search engine for AI.",
         requiresAuthentication: false
     }
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access

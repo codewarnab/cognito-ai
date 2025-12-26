@@ -26,7 +26,8 @@ import context7Image from '@assets/brands/integrations/context7.png';
 import coingeckoImage from '@assets/brands/integrations/coingecko.webp';
 import deepwikiImage from '@assets/brands/integrations/deepwiki.webp';
 import wixImage from '@assets/brands/integrations/wix.webp';
-import mcpGenericImage from '@assets/images/mcp.png';
+import exaImage from '@assets/brands/integrations/exa-color.svg';
+import mcpGenericImage from '@assets/brands/integrations/mcp-server-stroke-rounded.svg';
 
 interface McpIconProps {
     size?: number;
@@ -56,6 +57,15 @@ const MCP_SERVER_ICONS: Record<string, React.ComponentType<any>> = {
     'supermemory': Supermemory,
     'vercel': Vercel,
     'webflow': Webflow,
+    'exa': ({ size = 24, className }) => (
+        <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className={className}>
+            <img
+                src={exaImage}
+                alt="Exa"
+                style={{ width: '70%', height: '70%', objectFit: 'contain' }}
+            />
+        </div>
+    ),
 };
 
 /**
