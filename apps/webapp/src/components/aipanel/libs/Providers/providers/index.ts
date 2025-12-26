@@ -20,6 +20,7 @@ import siliconflow from './siliconflow'
 import tencent_hunyuan from './tencent_hunyuan'
 import together from './together'
 import vercel from './vercel'
+import vertex from './vertex'
 import volcengine from './volcengine'
 import xai from './xai'
 import zhipu from './zhipu'
@@ -30,6 +31,7 @@ export const all_providers = [
 	openai,
 	anthropic,
 	google_gemini,
+	vertex,
 	xai,
 	deepseek,
 	openrouter,
@@ -57,6 +59,7 @@ export {
 	openai,
 	anthropic,
 	google_gemini,
+	vertex,
 	xai,
 	deepseek,
 	openrouter,
