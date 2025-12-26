@@ -325,6 +325,7 @@ export function LoggerPanel() {
                                         config={config}
                                         onToggleCategory={handleToggleCategory}
                                         isOverridden={isOverridden}
+                                        searchQuery={searchQuery}
                                     />
                                 ))}
                         </div>
