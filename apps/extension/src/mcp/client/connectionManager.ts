@@ -12,7 +12,7 @@ import type { TransportDetector } from './transportDetector';
 import type { StreamProcessor } from './streamProcessor';
 import type { MessageHandler } from './messageHandler';
 
-const log = createLogger('MCP-SSE', 'MCP_SSE');
+const log = createLogger('MCP-SSE', 'MCP_SSE_TRANSPORT');
 
 export interface ConnectionManagerCallbacks {
     updateStatus: (state: McpConnectionState, error?: string) => void;

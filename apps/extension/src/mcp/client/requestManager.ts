@@ -10,7 +10,7 @@ import type { SSEClientConfig } from './config';
 import type { MessageHandler } from './messageHandler';
 import type { ErrorHandler } from './errorHandler';
 
-const log = createLogger('MCP-SSE', 'MCP_SSE');
+const log = createLogger('MCP-SSE', 'MCP_SSE_MESSAGE');
 
 export interface RequestManagerDeps {
     serverId: string;

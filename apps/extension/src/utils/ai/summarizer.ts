@@ -9,7 +9,7 @@ import { createLogger } from '~logger';
 import { HIDE_LOCAL_MODE } from '@/constants';
 import { sendMessage } from '@/lib/messaging';
 
-const log = createLogger('Summarizer', 'AI_PROMPTS');
+const log = createLogger('Summarizer', 'AI_PROMPTS_SUMMARIZER');
 
 /**
  * Availability status for the Summarizer API

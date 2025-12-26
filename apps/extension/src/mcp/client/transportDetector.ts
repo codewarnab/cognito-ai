@@ -9,7 +9,7 @@ import type { TransportType } from './streamProcessor';
 import type { MessageHandler, PendingRequest } from './messageHandler';
 import type { ErrorHandler } from './errorHandler';
 
-const log = createLogger('MCP-SSE', 'MCP_SSE');
+const log = createLogger('MCP-SSE', 'MCP_SSE_TRANSPORT');
 
 export interface TransportDetectorDeps {
     serverId: string;

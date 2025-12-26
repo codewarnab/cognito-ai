@@ -7,7 +7,7 @@ import { buildUserMessage } from '../../errors/errorMessages';
 import { createLogger } from '~logger';
 import type { McpConnectionState } from '../types';
 
-const authLog = createLogger('MCP-Auth', 'MCP_AUTH');
+const authLog = createLogger('MCP-Auth', 'MCP_AUTH_OAUTH');
 
 export interface ErrorHandlerCallbacks {
     updateStatus: (state: McpConnectionState, error?: string) => void;

@@ -9,7 +9,7 @@ import { create } from 'zustand';
 import { createLogger } from '~logger';
 import type { VoiceModeState } from './types';
 
-const log = createLogger('VoiceModeStore', 'VOICE_UI');
+const log = createLogger('VoiceModeStore', 'VOICE_UI_CONTROLS');
 
 export const useVoiceModeStore = create<VoiceModeState>((set) => ({
   // Recording state (text mode voice input)

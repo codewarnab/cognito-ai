@@ -11,7 +11,7 @@ import type { McpSSEClient } from './sseClient';
 import { MCP_SERVERS, type ServerConfig } from '@/constants/mcpServers';
 import { createLogger } from '~logger';
 
-const log = createLogger('MCP-State', 'MCP_CLIENT');
+const log = createLogger('MCP-State', 'MCP_CLIENT_STATE');
 
 /**
  * State for each MCP server

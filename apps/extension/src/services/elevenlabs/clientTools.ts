@@ -11,7 +11,7 @@ import { getAllTools } from '@/ai/tools/registryUtils';
 import { getEnabledTools } from './settings';
 import * as youtubeAgent from '@/ai/agents/youtube';
 
-const log = createLogger('ElevenLabs-ClientTools', 'VOICE_CLIENT');
+const log = createLogger('ElevenLabs-ClientTools', 'VOICE_CLIENT_EVENTS');
 
 /**
  * Internal tool result type - used internally before serialization

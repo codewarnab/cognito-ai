@@ -11,7 +11,7 @@ import type {
     OAuthEndpoints
 } from './types';
 
-const log = createLogger('Discovery', 'MCP_AUTH');
+const log = createLogger('Discovery', 'MCP_AUTH_DISCOVERY');
 
 const DISCOVERY_TIMEOUT = 10000; // 10 seconds
 

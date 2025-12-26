@@ -7,7 +7,7 @@ import { createLogger } from '~logger';
 import type { ScopeChallenge, McpServerOAuthConfig } from './types';
 import { parseScopeChallenge } from './discovery';
 
-const log = createLogger('ScopeHandler', 'MCP_AUTH');
+const log = createLogger('ScopeHandler', 'MCP_AUTH_SCOPE');
 
 /**
  * Storage key for challenged scopes

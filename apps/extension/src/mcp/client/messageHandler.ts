@@ -5,7 +5,7 @@
 import type { McpMessage } from '../types';
 import { createLogger } from '~logger';
 
-const log = createLogger('MCP-SSE', 'MCP_SSE');
+const log = createLogger('MCP-SSE', 'MCP_SSE_MESSAGE');
 
 export interface PendingRequest {
     resolve: (value: any) => void;

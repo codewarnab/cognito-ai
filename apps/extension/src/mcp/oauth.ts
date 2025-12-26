@@ -7,7 +7,7 @@
 import type { McpOAuthTokens } from './types';
 import { createLogger } from '~logger';
 
-const authLog = createLogger('MCP-OAuth', 'MCP_AUTH');
+const authLog = createLogger('MCP-OAuth', 'MCP_AUTH_OAUTH');
 
 /**
  * Dynamic client credentials from registration
