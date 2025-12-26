@@ -9,7 +9,7 @@ This document helps AI coding assistants understand the Chrome extension.
 ## Key Features
 
 - **AI Side Panel**: Chat interface accessible via `Ctrl+Shift+H`
-- **Model Context Protocol (MCP)**: Connects to external MCP servers for extended capabilities
+- **Model Context Protocol (MCP)**: Connects to external MCP servers for extended capabilities (see `docs/MCP_STDIO_ARCHITECTURE.md` for stdio, `docs/REMOTE_MCP_INTEGRATION.md` for SSE/HTTP)
 - **Privacy-First Memory**: Local storage with Dexie (IndexedDB)
 - **Voice Mode**: ElevenLabs integration for conversational AI
 - **Browser Automation**: Smart Actions and workflows

@@ -171,6 +171,8 @@ registerToolUI('toolName', (state: ToolUIState, options) => {
 
 See `docs/TOOL_APPROVAL_SYSTEM.md` for full architecture and implementation guide.
 See `docs/SERVER_TOOLS_ARCHITECTURE.md` for server-side tools architecture.
+See `docs/MCP_STDIO_ARCHITECTURE.md` for backend-proxied stdio MCP servers.
+See `docs/REMOTE_MCP_INTEGRATION.md` for Remote MCP integration (SSE/HTTP with OAuth).
 
 ## Third-Party DOM Selector Robustness
 - For DOM queries dependent on third-party page structure, implement fallback selector arrays
