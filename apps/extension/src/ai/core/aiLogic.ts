@@ -154,7 +154,7 @@ export async function streamAIResponse(params: {
   let model: any;
   let tools: Record<string, any>;
   let systemPrompt: string;
-  let provider: 'local' | 'google' | 'vertex' = 'local'; // Track provider for error handling
+  let provider: 'local' | 'google' | 'vertex' | 'openai' | 'anthropic' = 'local'; // Track provider for error handling
   let initialActiveTools: string[] | undefined; // For dynamic mode switching via prepareStep
   let isSearchModeActive = false; // Track initial search mode state for prepareStep comparison
 

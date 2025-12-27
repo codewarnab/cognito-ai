@@ -1,9 +1,9 @@
 /**
  * Type definitions for AI Provider configuration
- * Supports both Google Generative AI and Vertex AI providers
+ * Supports Google Generative AI, Vertex AI, and OpenAI providers
  */
 
-export type AIProvider = 'google' | 'vertex';
+export type AIProvider = 'google' | 'vertex' | 'openai' | 'anthropic';
 
 /**
  * Vertex AI service account credentials
@@ -25,6 +25,8 @@ export interface ProviderConfig {
     provider: AIProvider;
     googleApiKey?: string;
     vertexCredentials?: VertexCredentials;
+    openaiApiKey?: string;
+    anthropicApiKey?: string;
 }
 
 /**
@@ -33,3 +35,4 @@ export interface ProviderConfig {
 export interface ProviderStorageSchema {
     ai_provider_config?: ProviderConfig;
 }
+

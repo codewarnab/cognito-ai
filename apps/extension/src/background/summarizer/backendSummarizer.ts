@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import type { SummarizerOptions } from './geminiSummarizer';
+import type { SummarizerOptions } from './summarizer';
 import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendSummarizer', 'BACKGROUND');

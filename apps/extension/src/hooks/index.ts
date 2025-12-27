@@ -37,3 +37,6 @@ export * from './workflows';
 
 // WebMCP hooks
 export * from './webmcp';
+
+// Provider capabilities hooks
+export { useProviderCapabilities, useCapability, getCapabilityUnavailableReason } from './useProviderCapabilities';

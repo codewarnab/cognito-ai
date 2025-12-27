@@ -6,7 +6,7 @@
 /**
  * Supported AI providers
  */
-export type AIProvider = 'google' | 'vertex';
+export type AIProvider = 'google' | 'vertex' | 'openai' | 'anthropic';
 
 /**
  * Vertex AI service account credentials
@@ -35,4 +35,9 @@ export interface ProviderConfig {
     googleApiKey?: string;
     /** Vertex AI service account credentials */
     vertexCredentials?: VertexCredentials;
+    /** OpenAI API key */
+    openaiApiKey?: string;
+    /** Anthropic API key */
+    anthropicApiKey?: string;
 }
+

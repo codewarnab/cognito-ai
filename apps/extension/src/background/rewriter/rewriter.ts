@@ -1,18 +1,17 @@
 /**
- * Gemini Rewriter Client
- * Non-streaming text rewriting using Gemini API with optional tools (URL Context, Google Search)
- * Supports AI-driven memory search via function calling (Phase 6)
+ * Rewriter Client
+ * Non-streaming text rewriting using the modular provider architecture
+ * Supports AI-driven memory search via function calling (Gemini only)
  */
 
-import {
-    getGoogleApiKey,
-    getVertexCredentials,
-    hasGoogleApiKey,
-    hasVertexCredentials,
-} from '@/utils/credentials';
-import { GEMINI_MODELS } from '~/constants';
+import { getActiveProvider } from '@/utils/credentials';
 import { createLogger } from '~logger';
-import { generateVertexAccessToken } from '../summarizer/vertexAuth';
+import {
+    getProvider,
+    generateWithProvider,
+    performWebSearch,
+    enrichPromptWithSearch,
+} from '../providers';
 import {
     getMemorySearchTool,
     hasFunctionCall,
@@ -24,7 +23,7 @@ import { searchMemories, formatMemoriesForPrompt } from '../supermemory';
 import type { RewritePreset } from '@/types';
 import { PRESET_PROMPTS } from '@cognito/shared';
 
-const log = createLogger('GeminiRewriter', 'BACKGROUND');
+const log = createLogger('Rewriter', 'BACKGROUND');
 
 // PRESET_PROMPTS is imported from @cognito/shared
 
@@ -40,74 +39,11 @@ export interface RewriterOptions {
     enableSupermemorySearch?: boolean;
 }
 
-/**
- * Provider configuration for API calls
- */
-interface ProviderInfo {
-    type: 'google' | 'vertex';
-    url: string;
-    headers: Record<string, string>;
-}
-
-export class GeminiRewriter {
-    private model = GEMINI_MODELS.LITE;
-
-    // Gemini API (Google AI) base URL
-    private googleBaseUrl = 'https://generativelanguage.googleapis.com/v1beta';
-
-    // Vertex AI base URL template
-    private vertexBaseUrlTemplate = 'https://{location}-aiplatform.googleapis.com/v1';
-
-    /**
-     * Get provider info for API calls
-     * Priority: Google AI (API key) > Vertex AI (service account)
-     */
-    private async getProviderInfo(): Promise<ProviderInfo> {
-        // Check Google AI first (preferred)
-        if (await hasGoogleApiKey()) {
-            const apiKey = await getGoogleApiKey();
-            log.debug('Using Google AI (Gemini API) provider');
-            return {
-                type: 'google',
-                url: `${this.googleBaseUrl}/models/${this.model}:generateContent?key=${apiKey}`,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            };
-        }
-
-        // Fall back to Vertex AI
-        if (await hasVertexCredentials()) {
-            const credentials = await getVertexCredentials();
-            if (!credentials) {
-                throw new Error('Vertex credentials not found');
-            }
-
-            const accessToken = await generateVertexAccessToken(credentials);
-            const vertexBaseUrl = this.vertexBaseUrlTemplate.replace('{location}', credentials.location);
-
-            log.debug('Using Vertex AI provider', { location: credentials.location });
-            return {
-                type: 'vertex',
-                url: `${vertexBaseUrl}/projects/${credentials.projectId}/locations/${credentials.location}/publishers/google/models/${this.model}:generateContent`,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-            };
-        }
-
-        throw new Error('No AI provider configured. Please add your Google API key in settings.');
-    }
-
+export class Rewriter {
     /**
      * Non-streaming rewrite generation
      * Uses single API call with optional Gemini tools
-     * Supports AI-driven memory search via function calling loop
-     * 
-     * Note: Gemini API limitation - built-in tools (google_search, url_context) cannot
-     * be mixed with function calling. When built-in tools are enabled, we pre-search
-     * memories and include them in the prompt instead of using function calling.
+     * Supports AI-driven memory search via function calling loop (Gemini only currently)
      */
     async rewrite(text: string, options: RewriterOptions = {}): Promise<string> {
         const { preset, instruction, enableUrlContext, enableGoogleSearch, enableSupermemorySearch } = options;
@@ -131,6 +67,48 @@ export class GeminiRewriter {
         - Add markdown (bold, lists, code) only if it genuinely improves clarity
         - For 'longer' preset: structure with bullets/paragraphs as needed
         - For 'simplify' preset: minimal formatting, focus on plain language`;
+
+        const activeProvider = await getActiveProvider();
+
+        // -------------------------------------------------------------------------
+        // OpenAI Implementation - with web search support
+        // -------------------------------------------------------------------------
+        if (activeProvider === 'openai') {
+            const maxTokens = Math.max(text.length * 2, 500);
+            let enrichedPrompt = prompt;
+
+            // Handle web search for OpenAI (using Responses API pre-search)
+            if (enableGoogleSearch) {
+                log.info('Using OpenAI web search for rewrite');
+                const webSearchResult = await performWebSearch('openai', text);
+                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                    enrichedPrompt = enrichPromptWithSearch(prompt, webSearchResult.result);
+                    log.debug('Enriched rewrite prompt with web search results', {
+                        citationCount: webSearchResult.result.citations.length,
+                    });
+                }
+            }
+
+            // Note: URL context is NOT available for OpenAI - Gemini-specific feature
+            if (enableUrlContext) {
+                log.warn('URL context not available for OpenAI provider - feature will be skipped');
+            }
+
+            log.info('Making OpenAI rewrite call', {
+                hasWebSearch: !!enableGoogleSearch,
+            });
+            return generateWithProvider(systemPrompt, enrichedPrompt, {
+                maxTokens,
+                temperature: 0.7,
+                topP: 0.95,
+            });
+        }
+
+        // -------------------------------------------------------------------------
+        // Gemini / Vertex Implementation - supports advanced features
+        // -------------------------------------------------------------------------
+        const provider = await getProvider();
+        const config = await provider.getConfig(false);
 
         // Check if built-in tools are enabled
         const hasBuiltInTools = enableUrlContext || enableGoogleSearch;
@@ -156,7 +134,7 @@ export class GeminiRewriter {
         if (enableSupermemorySearch && hasBuiltInTools) {
             log.info('Using pre-search for memories in rewrite (built-in tools detected)');
             const searchResult = await searchMemories({
-                query: text, // Search based on the text being rewritten
+                query: text,
                 limit: 5,
                 threshold: 0.5,
             });
@@ -169,9 +147,6 @@ export class GeminiRewriter {
                 });
             }
         }
-
-        // Get API configuration
-        const provider = await this.getProviderInfo();
 
         // Build initial conversation contents
         const contents: Array<{ role: string; parts: GeminiContentPart[] }> = [
@@ -196,27 +171,26 @@ export class GeminiRewriter {
             textLength: text.length,
             preset,
             hasInstruction: !!instruction,
-            provider: provider.type,
+            provider: config.type,
             tools: tools.length > 0 ? tools.map(t => Object.keys(t)[0]) : undefined,
             memoryMode: useMemoryFunctionCalling ? 'function-calling' : (enableSupermemorySearch ? 'pre-search' : 'disabled'),
         });
 
         // Function calling loop - only used when memory function calling is enabled
-        // (i.e., no built-in tools are active)
         const MAX_FUNCTION_CALLS = 3;
         let functionCallCount = 0;
 
         while (functionCallCount < MAX_FUNCTION_CALLS) {
-            const response = await fetch(provider.url, {
+            const response = await fetch(config.url, {
                 method: 'POST',
-                headers: provider.headers,
+                headers: config.headers,
                 body: JSON.stringify({ ...baseBody, contents }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 log.error('API error', { status: response.status, error: errorText });
-                throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+                throw new Error(`${config.type} API error: ${response.status} - ${errorText}`);
             }
 
             const data = await response.json();
@@ -258,7 +232,6 @@ export class GeminiRewriter {
                         resultLength: result.formattedResult.length,
                     });
 
-                    // Continue the loop to get the model's final response
                     continue;
                 }
             }
@@ -290,15 +263,15 @@ export class GeminiRewriter {
             ...(finalTools.length > 0 ? { tools: finalTools } : {}),
         };
 
-        const finalResponse = await fetch(provider.url, {
+        const finalResponse = await fetch(config.url, {
             method: 'POST',
-            headers: provider.headers,
+            headers: config.headers,
             body: JSON.stringify(finalBody),
         });
 
         if (!finalResponse.ok) {
             const errorText = await finalResponse.text();
-            throw new Error(`Gemini API error: ${finalResponse.status} - ${errorText}`);
+            throw new Error(`${config.type} API error: ${finalResponse.status} - ${errorText}`);
         }
 
         const finalData = await finalResponse.json();
@@ -313,4 +286,8 @@ export class GeminiRewriter {
 }
 
 // Export singleton instance
-export const geminiRewriter = new GeminiRewriter();
+export const rewriter = new Rewriter();
+
+// Backward compatibility aliases
+export const geminiRewriter = rewriter;
+export const GeminiRewriter = Rewriter;

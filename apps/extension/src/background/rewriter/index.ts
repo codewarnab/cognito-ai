@@ -3,8 +3,13 @@
  * Exports all rewriter-related functionality
  */
 
-export { geminiRewriter, GeminiRewriter } from './geminiRewriter';
-export type { RewriterOptions } from './geminiRewriter';
+// Primary exports (new names)
+export { rewriter, Rewriter } from './rewriter';
+export type { RewriterOptions } from './rewriter';
+
+// Backward compatibility aliases
+export { geminiRewriter, GeminiRewriter } from './rewriter';
+
 export { handleRewriteRequest } from './handler';
 
 // Backend rewriter exports

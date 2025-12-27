@@ -8,6 +8,7 @@ import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getRewriteSettings, updateRewriteSetting } from '@/utils/settings/rewriteSettings';
 import { trySendMessage } from '@/lib/messaging';
+import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks';
 import type { RewritePreset } from '@/types';
 
 interface RewriterTooltipProps {
@@ -83,6 +84,13 @@ export function RewriterTooltip({
     const [enableGoogleSearch, setEnableGoogleSearch] = useState(false);
     const [enableSupermemorySearch, setEnableSupermemorySearch] = useState(false);
     const [supermemoryConfigured, setSupermemoryConfigured] = useState(false);
+
+    // Provider capabilities for feature gating
+    const { provider, capabilities } = useProviderCapabilities();
+    const urlContextAvailable = capabilities?.urlContext ?? true;
+    const webSearchAvailable = capabilities?.webSearch ?? true;
+    const urlContextUnavailableReason = getCapabilityUnavailableReason(provider, 'urlContext');
+    const webSearchUnavailableReason = getCapabilityUnavailableReason(provider, 'webSearch');
 
     // Load tool settings on mount
     useEffect(() => {
@@ -308,6 +316,10 @@ export function RewriterTooltip({
                     onSupermemorySearchChange={handleSupermemorySearchChange}
                     supermemoryConfigured={supermemoryConfigured}
                     disabled={isProcessing}
+                    urlContextAvailable={urlContextAvailable}
+                    webSearchAvailable={webSearchAvailable}
+                    urlContextUnavailableReason={urlContextUnavailableReason}
+                    webSearchUnavailableReason={webSearchUnavailableReason}
                 />
             </div>
 

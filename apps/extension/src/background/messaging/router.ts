@@ -16,6 +16,8 @@ import { handleGeolocationRequest } from './geolocationHandler';
 
 import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
 import { queueThreadForExtraction } from '../supermemory/extraction/queue';
+import { getActiveProvider } from '@/utils/credentials';
+import { getProviderCapabilities } from '../providers/capabilities';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -31,6 +33,29 @@ export function initializeMessageRouter(): void {
         if (message.type === 'GET_CURRENT_TAB_ID') {
             sendResponse({ tabId: sender.tab?.id });
             return false; // Synchronous response
+        }
+
+        // Handle GET_PROVIDER_CAPABILITIES request
+        if (message.type === 'GET_PROVIDER_CAPABILITIES') {
+            getActiveProvider().then((provider) => {
+                const capabilities = getProviderCapabilities(provider);
+                sendResponse({ provider, capabilities });
+            }).catch((error) => {
+                backgroundLog.error('Failed to get provider capabilities:', error);
+                // Return default capabilities on error
+                sendResponse({
+                    provider: 'unknown',
+                    capabilities: {
+                        functionCalling: false,
+                        webSearch: false,
+                        urlContext: false,
+                        multimodal: false,
+                        streaming: true,
+                        memoryFunctionCalling: false,
+                    },
+                });
+            });
+            return true; // Will respond asynchronously
         }
 
         // Route WebMCP messages (before MCP to avoid conflicts)

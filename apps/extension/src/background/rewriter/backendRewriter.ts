@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import type { RewriterOptions } from './geminiRewriter';
+import type { RewriterOptions } from './rewriter';
 import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendRewriter', 'BACKGROUND');

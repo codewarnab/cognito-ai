@@ -1,16 +1,18 @@
 /**
  * Model Factory
  * Centralized model initialization logic for all AI providers
- * Supports local (Gemini Nano), Google Generative AI, and Vertex AI
+ * Supports local (Gemini Nano), Google Generative AI, Vertex AI, and OpenAI
  */
 
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { withSupermemory } from '@supermemory/tools/ai-sdk';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
-import { getActiveProvider, getVertexCredentials, getGoogleApiKey } from '@/utils/credentials';
+import { getActiveProvider, getVertexCredentials, getGoogleApiKey, getOpenAIApiKey, getAnthropicApiKey } from '@/utils/credentials';
 import {
     isSupermemoryReady,
     getSupermemoryApiKey,
@@ -124,11 +126,25 @@ export async function initializeModel(
 
     log.info('🚀 Using provider:', activeProvider, 'with model:', modelName);
 
-    // Initialize base model
-    if (activeProvider === 'vertex') {
-        return await initializeVertexModel(modelName);
-    } else {
-        return await initializeGoogleModel(modelName);
+    // Initialize base model based on provider
+    switch (activeProvider) {
+        case 'vertex':
+            return await initializeVertexModel(modelName);
+        case 'google':
+            return await initializeGoogleModel(modelName);
+        case 'openai':
+            return await initializeOpenAIModel(modelName);
+        case 'anthropic':
+            return await initializeAnthropicModel(modelName);
+        default:
+            throw new APIError({
+                message: `Unsupported provider: ${activeProvider}`,
+                statusCode: 400,
+                retryable: false,
+                userMessage: `Provider "${activeProvider}" is not yet supported.`,
+                technicalDetails: 'Provider not implemented in modelFactory',
+                errorCode: ErrorType.API_GENERIC_ERROR,
+            });
     }
 }
 
@@ -272,6 +288,130 @@ async function initializeGoogleModel(modelName: string): Promise<ModelInitResult
 }
 
 /**
+ * Initialize OpenAI model with API key
+ * 
+ * @param modelName - OpenAI model name (e.g., 'gpt-5', 'gpt-5-mini', 'gpt-4.1')
+ * @returns Model initialization result for OpenAI
+ * @throws {APIError} If API key is not configured or invalid
+ */
+async function initializeOpenAIModel(modelName: string): Promise<ModelInitResult> {
+    log.info('🔧 Initializing OpenAI model:', modelName);
+
+    // Get OpenAI API key
+    const apiKey = await getOpenAIApiKey();
+    if (!apiKey) {
+        const error = new APIError({
+            message: 'OpenAI API key not configured',
+            statusCode: 401,
+            retryable: false,
+            userMessage: 'Please configure your OpenAI API key in settings.',
+            technicalDetails: 'No OpenAI API key found in storage',
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+        log.error('❌ OpenAI API key missing:', error);
+        throw error;
+    }
+
+    try {
+        // Create OpenAI client
+        const openai = createOpenAI({
+            apiKey,
+        });
+        const model = await wrapModelWithSupermemory(openai(modelName));
+
+        log.info('✅ OpenAI model initialized successfully:', modelName);
+
+        return {
+            model,
+            provider: 'openai',
+            modelName,
+            providerInstance: openai, // Return provider instance for tool access
+        };
+    } catch (error) {
+        log.error('❌ Failed to initialize OpenAI model:', error);
+        throw new APIError({
+            message: 'Failed to initialize OpenAI',
+            statusCode: 500,
+            retryable: false,
+            userMessage: 'Could not initialize OpenAI. Please verify your API key and try again.',
+            technicalDetails: error instanceof Error ? error.message : String(error),
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+    }
+}
+
+/**
+ * Initialize Anthropic model with API key
+ * 
+ * Features:
+ * - Prompt caching for cost efficiency (cache_control with ephemeral type)
+ * - Full streaming and tool calling support
+ * - Supermemory integration
+ * 
+ * @param modelName - Anthropic model name (e.g., 'claude-sonnet-4-5', 'claude-haiku-4-5', 'claude-opus-4-5')
+ * @returns Model initialization result for Anthropic
+ * @throws {APIError} If API key is not configured or invalid
+ * 
+ * @see https://platform.claude.com/docs/en/build-with-claude/prompt-caching
+ */
+async function initializeAnthropicModel(modelName: string): Promise<ModelInitResult> {
+    log.info('🔧 Initializing Anthropic model:', modelName);
+
+    // Get Anthropic API key
+    const apiKey = await getAnthropicApiKey();
+    if (!apiKey) {
+        const error = new APIError({
+            message: 'Anthropic API key not configured',
+            statusCode: 401,
+            retryable: false,
+            userMessage: 'Please configure your Anthropic API key in settings.',
+            technicalDetails: 'No Anthropic API key found in storage',
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+        log.error('❌ Anthropic API key missing:', error);
+        throw error;
+    }
+
+    try {
+        // Create Anthropic client with prompt caching enabled
+        // The AI SDK Anthropic provider automatically handles:
+        // - Prompt caching via cacheControl: 'ephemeral' on messages
+        // - The anthropic-beta header for extended caching
+        const anthropic = createAnthropic({
+            apiKey,
+        });
+
+        // Create model with prompt caching enabled for cost efficiency
+        // Prompt caching reduces costs by caching large system prompts and context
+        const model = await wrapModelWithSupermemory(
+            anthropic(modelName)
+        );
+
+        log.info('✅ Anthropic model initialized successfully:', {
+            modelName,
+            cacheControlEnabled: true,
+        });
+
+        return {
+            model,
+            provider: 'anthropic',
+            modelName,
+            providerInstance: anthropic, // Return provider instance for tool access (e.g., web search)
+        };
+    } catch (error) {
+        log.error('❌ Failed to initialize Anthropic model:', error);
+        throw new APIError({
+            message: 'Failed to initialize Anthropic',
+            statusCode: 500,
+            retryable: false,
+            userMessage: 'Could not initialize Anthropic. Please verify your API key and try again.',
+            technicalDetails: error instanceof Error ? error.message : String(error),
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+    }
+}
+
+/**
  * Get the currently active provider without initializing a model
  * Useful for UI display and logging
  * 
@@ -296,13 +436,20 @@ export async function isProviderAvailable(provider: AIProvider): Promise<boolean
         if (provider === 'google') {
             const apiKey = await getGoogleApiKey();
             return !!apiKey && apiKey.trim().length > 0;
-        } else {
+        } else if (provider === 'vertex') {
             const credentials = await getVertexCredentials();
             return !!credentials &&
                 !!credentials.projectId &&
                 !!credentials.clientEmail &&
                 !!credentials.privateKey;
+        } else if (provider === 'openai') {
+            const apiKey = await getOpenAIApiKey();
+            return !!apiKey && apiKey.trim().length > 0;
+        } else if (provider === 'anthropic') {
+            const apiKey = await getAnthropicApiKey();
+            return !!apiKey && apiKey.trim().length > 0;
         }
+        return false;
     } catch (error) {
         log.error('Error checking provider availability:', error);
         return false;

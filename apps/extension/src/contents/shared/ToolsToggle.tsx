@@ -1,7 +1,9 @@
 /**
  * Minimal Tool Settings Toggle
- * Compact inline toggle for enabling/disabling Gemini tools (URL Context, Google Search, Supermemory)
+ * Compact inline toggle for enabling/disabling AI tools (URL Context, Web Search, Supermemory)
  * Used in Writer Overlay and Rewriter Tooltip
+ *
+ * Supports capability gating for provider-specific feature availability
  */
 import React, { useState, useCallback } from 'react';
 
@@ -14,6 +16,16 @@ interface ToolsToggleProps {
     onSupermemorySearchChange: (enabled: boolean) => void;
     supermemoryConfigured: boolean;
     disabled?: boolean;
+
+    // Capability gating props
+    /** Whether URL context is available for current provider (defaults to true) */
+    urlContextAvailable?: boolean;
+    /** Whether Web Search is available for current provider (defaults to true) */
+    webSearchAvailable?: boolean;
+    /** Reason URL context is unavailable (shown in tooltip) */
+    urlContextUnavailableReason?: string;
+    /** Reason Web Search is unavailable (shown in tooltip) */
+    webSearchUnavailableReason?: string;
 }
 
 // Info icon for tooltip trigger
@@ -82,6 +94,11 @@ export function ToolsToggle({
     onSupermemorySearchChange,
     supermemoryConfigured,
     disabled = false,
+    // Capability gating props with defaults
+    urlContextAvailable = true,
+    webSearchAvailable = true,
+    urlContextUnavailableReason = 'URL context is not available for your current AI provider',
+    webSearchUnavailableReason = 'Web search is not available for your current AI provider',
 }: ToolsToggleProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -94,18 +111,20 @@ export function ToolsToggle({
     const handleUrlContextToggle = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!disabled) {
+        // Only allow toggle if not disabled and capability is available
+        if (!disabled && urlContextAvailable) {
             onUrlContextChange(!enableUrlContext);
         }
-    }, [disabled, enableUrlContext, onUrlContextChange]);
+    }, [disabled, urlContextAvailable, enableUrlContext, onUrlContextChange]);
 
     const handleGoogleSearchToggle = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!disabled) {
+        // Only allow toggle if not disabled and capability is available
+        if (!disabled && webSearchAvailable) {
             onGoogleSearchChange(!enableGoogleSearch);
         }
-    }, [disabled, enableGoogleSearch, onGoogleSearchChange]);
+    }, [disabled, webSearchAvailable, enableGoogleSearch, onGoogleSearchChange]);
 
     const handleSupermemorySearchToggle = useCallback((e: React.MouseEvent) => {
         e.preventDefault();
@@ -142,13 +161,23 @@ export function ToolsToggle({
                 <div className="tools-toggle-panel">
                     <button
                         type="button"
-                        className={`tools-toggle-item ${enableUrlContext ? 'tools-toggle-item--active' : ''}`}
+                        className={`tools-toggle-item ${enableUrlContext ? 'tools-toggle-item--active' : ''} ${!urlContextAvailable ? 'tools-toggle-item--gated' : ''}`}
                         onClick={handleUrlContextToggle}
-                        disabled={disabled}
+                        disabled={disabled || !urlContextAvailable}
                     >
                         <span className="tools-toggle-item-icon"><GlobeIcon /></span>
-                        <span className="tools-toggle-item-label">URL Context</span>
-                        <span className="tools-toggle-item-info" title="Analyze linked web pages to provide contextual information">
+                        <span className="tools-toggle-item-label">
+                            URL Context
+                            {!urlContextAvailable && (
+                                <span className="tools-toggle-item-warning"><AlertIcon /></span>
+                            )}
+                        </span>
+                        <span
+                            className="tools-toggle-item-info"
+                            title={urlContextAvailable
+                                ? "Analyze linked web pages to provide contextual information"
+                                : urlContextUnavailableReason}
+                        >
                             <InfoIcon />
                         </span>
                         <span className={`tools-toggle-item-switch ${enableUrlContext ? 'tools-toggle-item-switch--on' : ''}`}>
@@ -157,13 +186,23 @@ export function ToolsToggle({
                     </button>
                     <button
                         type="button"
-                        className={`tools-toggle-item ${enableGoogleSearch ? 'tools-toggle-item--active' : ''}`}
+                        className={`tools-toggle-item ${enableGoogleSearch ? 'tools-toggle-item--active' : ''} ${!webSearchAvailable ? 'tools-toggle-item--gated' : ''}`}
                         onClick={handleGoogleSearchToggle}
-                        disabled={disabled}
+                        disabled={disabled || !webSearchAvailable}
                     >
                         <span className="tools-toggle-item-icon"><SearchIcon /></span>
-                        <span className="tools-toggle-item-label">Google Search</span>
-                        <span className="tools-toggle-item-info" title="Search the web for real-time information and current events">
+                        <span className="tools-toggle-item-label">
+                            Web Search
+                            {!webSearchAvailable && (
+                                <span className="tools-toggle-item-warning"><AlertIcon /></span>
+                            )}
+                        </span>
+                        <span
+                            className="tools-toggle-item-info"
+                            title={webSearchAvailable
+                                ? "Search the web for real-time information and current events"
+                                : webSearchUnavailableReason}
+                        >
                             <InfoIcon />
                         </span>
                         <span className={`tools-toggle-item-switch ${enableGoogleSearch ? 'tools-toggle-item-switch--on' : ''}`}>

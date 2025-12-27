@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import { geminiRewriter, type RewriterOptions } from './geminiRewriter';
+import { rewriter, type RewriterOptions } from './rewriter';
 import { rewriteWithBackend } from './backendRewriter';
 import { queueContentMemoryForRewriter } from '../supermemory/contentMemory/hooks';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
@@ -122,8 +122,8 @@ export async function handleRewriteRequest(
             });
             rewrittenText = result.text;
         } else {
-            // Use BYOK mode - direct Gemini API
-            // Build options - AI-driven memory search is handled within geminiRewriter
+            // Use BYOK mode - direct API
+            // Build options - AI-driven memory search is handled within rewriter
             // via function calling when enableSupermemorySearch is true
             const options: RewriterOptions = {
                 preset,
@@ -135,7 +135,7 @@ export async function handleRewriteRequest(
             };
 
             // Generate complete rewrite (non-streaming)
-            rewrittenText = await geminiRewriter.rewrite(selectedText, options);
+            rewrittenText = await rewriter.rewrite(selectedText, options);
         }
 
         log.info('Rewrite complete', { outputLength: rewrittenText.length });
@@ -155,7 +155,7 @@ export async function handleRewriteRequest(
                     preset,
                     customInstruction: instruction,
                     pageContext: undefined, // Page context not available in rewriter
-                }).catch(() => {}); // Fire and forget
+                }).catch(() => { }); // Fire and forget
             } catch (postError) {
                 log.error('Failed to post message', postError);
             }

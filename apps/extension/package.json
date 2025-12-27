@@ -14,9 +14,11 @@
         "type:watch": "tsc --noEmit --watch"
     },
     "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.1",
         "@ai-sdk/google": "catalog:",
         "@ai-sdk/google-vertex": "catalog:",
         "@ai-sdk/mcp": "catalog:",
+        "@ai-sdk/openai": "^3.0.1",
         "@ai-sdk/react": "catalog:",
         "@built-in-ai/core": "3.0.0-beta.0",
         "@cognito/shared": "workspace:*",

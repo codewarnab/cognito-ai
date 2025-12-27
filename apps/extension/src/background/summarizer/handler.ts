@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import { geminiSummarizer, type SummarizerOptions } from './geminiSummarizer';
+import { summarizer, type SummarizerOptions } from './summarizer';
 import { summarizeWithBackend } from './backendSummarizer';
 import { queueContentMemoryForSummarizer } from '../supermemory/contentMemory/hooks';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
@@ -121,7 +121,7 @@ export async function handleSummarizeRequest(
         // Choose streaming source based on mode
         const streamSource = (useBackendMode && !hasApiKey)
             ? summarizeWithBackend(text, options)
-            : geminiSummarizer.summarizeStream(text, options);
+            : summarizer.summarizeStream(text, options);
 
         if (useBackendMode && !hasApiKey) {
             log.info('Using backend mode for summarization');
@@ -167,7 +167,7 @@ export async function handleSummarizeRequest(
                     summary: fullSummary,
                     summaryType: options.summaryType || 'tl-dr',
                     pageContext: pageContext || { title: '', url: '', domain: '' },
-                }).catch(() => {}); // Fire and forget
+                }).catch(() => { }); // Fire and forget
             } catch {
                 log.debug('Failed to send completion message');
             }

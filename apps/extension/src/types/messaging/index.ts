@@ -47,6 +47,22 @@ export interface MessageRegistry {
     /** Get the current tab ID */
     GET_CURRENT_TAB_ID: MessageDefinition<undefined, { tabId: number | undefined }>;
 
+    /** Get provider capabilities for the active AI provider */
+    GET_PROVIDER_CAPABILITIES: MessageDefinition<
+        undefined,
+        {
+            provider: string;
+            capabilities: {
+                functionCalling: boolean;
+                webSearch: boolean;
+                urlContext: boolean;
+                multimodal: boolean;
+                streaming: boolean;
+                memoryFunctionCalling: boolean;
+            };
+        }
+    >;
+
     // -------------------------------------------------------------------------
     // Memory / Supermemory Messages
     // -------------------------------------------------------------------------

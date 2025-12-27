@@ -336,6 +336,15 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
     },
 
     // Generic
+    [ErrorType.API_GENERIC_ERROR]: {
+        userMessage: 'An API error occurred. Please try again.',
+        technicalTemplate: 'Generic API error. Details: {details}',
+        suggestions: [
+            'Try the action again',
+            'Check your API configuration',
+            'If the problem persists, please report it',
+        ],
+    },
     [ErrorType.UNKNOWN_ERROR]: {
         userMessage: 'An unexpected error occurred. Please try again.',
         technicalTemplate: 'Unknown error. Details: {details}',

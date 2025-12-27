@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import type { WriterOptions } from './geminiWriter';
+import type { WriterOptions } from './writer';
 import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendWriter', 'BACKGROUND');

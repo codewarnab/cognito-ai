@@ -148,6 +148,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: ^3.0.1
+        version: 3.0.1(zod@4.2.1)
       '@ai-sdk/google':
         specifier: 'catalog:'
         version: 3.0.1(zod@4.2.1)
@@ -157,6 +160,9 @@ importers:
       '@ai-sdk/mcp':
         specifier: 'catalog:'
         version: 1.0.1(zod@4.2.1)
+      '@ai-sdk/openai':
+        specifier: ^3.0.1
+        version: 3.0.1(zod@4.2.1)
       '@ai-sdk/react':
         specifier: 'catalog:'
         version: 3.0.3(react@19.2.1)(zod@4.2.1)
@@ -666,6 +672,12 @@ packages:
 
   '@ai-sdk/openai@2.0.75':
     resolution: {integrity: sha512-ThDHg1+Jes7S0AOXa01EyLBSzZiZwzB5do9vAlufNkoiRHGTH1BmoShrCyci/TUsg4ky1HwbK4hPK+Z0isiE6g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/openai@3.0.1':
+    resolution: {integrity: sha512-P+qxz2diOrh8OrpqLRg+E+XIFVIKM3z2kFjABcCJGHjGbXBK88AJqmuKAi87qLTvTe/xn1fhZBjklZg9bTyigw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -8323,6 +8335,12 @@ snapshots:
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@ai-sdk/provider-utils': 3.0.18(zod@4.2.1)
+      zod: 4.2.1
+
+  '@ai-sdk/openai@3.0.1(zod@4.2.1)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.0
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
       zod: 4.2.1
 
   '@ai-sdk/provider-utils@3.0.18(zod@4.2.1)':

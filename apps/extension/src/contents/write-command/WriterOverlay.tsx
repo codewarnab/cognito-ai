@@ -11,6 +11,7 @@ import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
 import { trySendMessage } from '@/lib/messaging';
+import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks';
 import type { WritePosition, WriteAttachmentPayload } from '@/types';
 
 interface WriterOverlayProps {
@@ -118,6 +119,13 @@ export function WriterOverlay({
     const [enableGoogleSearch, setEnableGoogleSearch] = useState(false);
     const [enableSupermemorySearch, setEnableSupermemorySearch] = useState(false);
     const [supermemoryConfigured, setSupermemoryConfigured] = useState(false);
+
+    // Provider capabilities for feature gating
+    const { provider, capabilities } = useProviderCapabilities();
+    const urlContextAvailable = capabilities?.urlContext ?? true;
+    const webSearchAvailable = capabilities?.webSearch ?? true;
+    const urlContextUnavailableReason = getCapabilityUnavailableReason(provider, 'urlContext');
+    const webSearchUnavailableReason = getCapabilityUnavailableReason(provider, 'webSearch');
 
     const inputRef = useRef<HTMLInputElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
@@ -597,6 +605,10 @@ export function WriterOverlay({
                     onSupermemorySearchChange={handleSupermemorySearchChange}
                     supermemoryConfigured={supermemoryConfigured}
                     disabled={isGenerating}
+                    urlContextAvailable={urlContextAvailable}
+                    webSearchAvailable={webSearchAvailable}
+                    urlContextUnavailableReason={urlContextUnavailableReason}
+                    webSearchUnavailableReason={webSearchUnavailableReason}
                 />
             </div>
 

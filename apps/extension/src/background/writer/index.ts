@@ -3,8 +3,13 @@
  * Exports all writer-related functionality
  */
 
-export { geminiWriter, GeminiWriter } from './geminiWriter';
-export type { WriterOptions } from './geminiWriter';
+// Primary exports (new names)
+export { writer, Writer } from './writer';
+export type { WriterOptions } from './writer';
+
+// Backward compatibility aliases
+export { geminiWriter, GeminiWriter } from './writer';
+
 export { handleWriteGenerate } from './handler';
 export {
     detectPlatform,

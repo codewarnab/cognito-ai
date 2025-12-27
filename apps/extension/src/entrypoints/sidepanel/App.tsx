@@ -16,7 +16,6 @@ import { motion } from 'motion/react';
 // UI Components
 import { CopilotChatWindow } from "@/components/shell";
 import { McpManager } from "@/components/features/mcp";
-import { Troubleshooting, Features, ProviderSetup } from "@/components/features/help";
 import { ToolUIProvider } from "@/ai/tools/components";
 import { ThreadListSidePanel } from "@/components/features/threads";
 
@@ -66,7 +65,8 @@ import { useSandbox } from "@/hooks/sandbox";
 import { handleAPIError } from "@/utils/errors";
 
 // Constants
-import { WEBAPP_ROUTES } from "@/constants/webapp";
+// Constants
+import { WEBAPP_ROUTES, openWebappRoute } from "@/constants/webapp";
 
 /**
  * Inner component that uses AI SDK v6
@@ -430,20 +430,6 @@ function AIChatContent() {
         return <McpManager onBack={() => navigateTo('chat')} />;
     }
 
-    if (activePanel === 'troubleshooting') {
-        return <Troubleshooting onBack={() => navigateTo('chat')} />;
-    }
-
-    if (activePanel === 'features') {
-        return <Features onBack={() => navigateTo('chat')} onPromptClick={(prompt) => {
-            setStoreInput(prompt);
-            navigateTo('chat');
-        }} />;
-    }
-
-    if (activePanel === 'providerSetup') {
-        return <ProviderSetup onBack={() => navigateTo('chat')} />;
-    }
 
 
 
@@ -526,12 +512,12 @@ function AIChatContent() {
                                 onKeyDown={handleKeyPress}
                                 onClearChat={handleClearChat}
                                 onSettingsClick={() => navigateTo('mcp')}
-                                onGeneralSettingsClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.SETTINGS })}
+                                onGeneralSettingsClick={() => openWebappRoute('SETTINGS')}
                                 onThreadsClick={() => openOverlay('threads')}
-                                onTroubleshootingClick={() => navigateTo('troubleshooting')}
-                                onFeaturesClick={() => navigateTo('features')}
-                                onProviderSetupClick={() => navigateTo('providerSetup')}
-                                onLoggerPanelClick={() => chrome.tabs.create({ url: WEBAPP_ROUTES.LOGGER })}
+                                onTroubleshootingClick={() => openWebappRoute('TROUBLESHOOTING')}
+                                onFeaturesClick={() => openWebappRoute('FEATURES')}
+                                onProviderSetupClick={() => openWebappRoute('PROVIDERS')}
+                                onLoggerPanelClick={() => openWebappRoute('LOGGER')}
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}

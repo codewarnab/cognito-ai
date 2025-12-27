@@ -5,7 +5,7 @@
  */
 
 import { createLogger } from '~logger';
-import { geminiWriter, type WriterOptions } from './geminiWriter';
+import { writer, type WriterOptions } from './writer';
 import { generateWithBackend } from './backendWriter';
 import { queueContentMemoryForWriter } from '../supermemory/contentMemory/hooks';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
@@ -165,10 +165,10 @@ export async function handleWriteGenerate(
                 });
             }
         } else {
-            // Use BYOK mode - direct Gemini API
+            // Use BYOK mode - direct API
             // Generate complete response (non-streaming)
-            // AI-driven memory search is handled within geminiWriter via function calling
-            text = await geminiWriter.generate(prompt, options);
+            // AI-driven memory search is handled within writer via function calling
+            text = await writer.generate(prompt, options);
 
             log.info('Generation complete (BYOK)', { textLength: text.length });
 
@@ -208,7 +208,7 @@ export async function handleWriteGenerate(
                 fieldType: pageContext.fieldType,
             } : undefined,
             hasAttachment: !!attachment,
-        }).catch(() => {}); // Fire and forget
+        }).catch(() => { }); // Fire and forget
     } catch (error) {
         log.error('Write generation failed', error);
 

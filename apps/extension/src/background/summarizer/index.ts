@@ -3,8 +3,13 @@
  * Exports all summarizer-related functionality
  */
 
-export { geminiSummarizer, GeminiSummarizer } from './geminiSummarizer';
-export type { SummarizerOptions } from './geminiSummarizer';
+// Primary exports (new names)
+export { summarizer, Summarizer } from './summarizer';
+export type { SummarizerOptions } from './summarizer';
+
+// Backward compatibility aliases
+export { geminiSummarizer, GeminiSummarizer } from './summarizer';
+
 export { handleSummarizeRequest } from './handler';
 export { generateVertexAccessToken } from './vertexAuth';
 
