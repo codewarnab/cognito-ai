@@ -106,7 +106,6 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
             mcpLog.info(`[${serverId}] Creating Backend StdIO Client`);
             state.client = new McpBackendClient(
                 serverId,
-                serverConfig,
                 accessToken
             );
         } else {

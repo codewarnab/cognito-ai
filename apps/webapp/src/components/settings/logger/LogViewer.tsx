@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useLogStream } from '@/hooks/useLogStream';
 import type { LogEntry } from '@cognito/shared';
 import { cn } from '@/lib/utils';
-import { Search, Trash2, PauseCircle, PlayCircle, X } from 'lucide-react';
+import { Search, Trash2, PauseCircle, PlayCircle, X, Copy, Check, ClipboardCopy } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import {
     Tooltip,
@@ -34,6 +34,40 @@ export function LogViewer() {
     const [autoScroll, setAutoScroll] = useState(true);
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+
+    // Format a single log entry as a string for copying
+    const formatLogForCopy = useCallback((log: LogEntry): string => {
+        const parts = [
+            `[${log.timestamp}]`,
+            `[${log.level.toUpperCase()}]`,
+            log.prefix ? `[${log.prefix}]` : '',
+            log.category ? `[${log.category}]` : '',
+            typeof log.message === 'string' ? log.message : JSON.stringify(log.message),
+        ].filter(Boolean);
+
+        if (log.args.length > 0) {
+            parts.push('\n  Args:', ...log.args.map((arg, i) => `\n    [${i}]: ${typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)}`));
+        }
+        return parts.join(' ');
+    }, []);
+
+    // Copy text to clipboard with feedback
+    const copyToClipboard = useCallback(async (text: string, id: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedId(id);
+            setTimeout(() => setCopiedId(null), 2000);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    }, []);
+
+    // Copy a single log entry
+    const copyLog = useCallback((log: LogEntry, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        copyToClipboard(formatLogForCopy(log), log.id);
+    }, [copyToClipboard, formatLogForCopy]);
 
     // Filter logs
     const filteredLogs = useMemo(() => {
@@ -52,6 +86,12 @@ export function LogViewer() {
             return true;
         });
     }, [logs, levelFilter, searchQuery]);
+
+    // Copy all visible logs
+    const copyAllLogs = useCallback(() => {
+        const text = filteredLogs.map(formatLogForCopy).join('\n\n');
+        copyToClipboard(text, 'all');
+    }, [filteredLogs, formatLogForCopy, copyToClipboard]);
 
     const toggleLevel = (level: string) => {
         setLevelFilter(prev =>
@@ -77,10 +117,11 @@ export function LogViewer() {
 
     const LogRow = ({ log }: { log: LogEntry }) => {
         const isSelected = selectedLogId === log.id;
+        const isCopied = copiedId === log.id;
 
         return (
             <div className={cn(
-                "flex flex-col border-b border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors",
+                "flex flex-col border-b border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] transition-colors group/row",
                 isSelected ? "bg-[var(--bg-tertiary)]" : ""
             )}>
                 {/* Log Header Row */}
@@ -107,14 +148,48 @@ export function LogViewer() {
                             </span>
                         )}
                     </div>
+                    {/* Copy button - visible on hover */}
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={(e) => copyLog(log, e)}
+                                    className={cn(
+                                        "p-1 rounded transition-all shrink-0",
+                                        isCopied
+                                            ? "text-green-400 bg-green-500/10"
+                                            : "text-[var(--text-tertiary)] opacity-0 group-hover/row:opacity-100 hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)]"
+                                    )}
+                                    aria-label="Copy log"
+                                >
+                                    {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{isCopied ? 'Copied!' : 'Copy log'}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
 
                 {/* Expanded Details */}
                 {isSelected && (
                     <div className="p-3 bg-black/20 ml-12 text-[var(--text-secondary)] overflow-x-auto">
                         {typeof log.message !== 'string' && (
-                            <div className="mb-2">
-                                <div className="text-[10px] uppercase opacity-50 mb-1">Message Detail</div>
+                            <div className="mb-2 group/detail">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-[10px] uppercase opacity-50 mb-1">Message Detail</div>
+                                    <button
+                                        onClick={() => copyToClipboard(renderValue(log.message), `${log.id}-msg`)}
+                                        className={cn(
+                                            "p-1 rounded transition-all text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)]",
+                                            copiedId === `${log.id}-msg` ? "text-green-400 bg-green-500/10" : ""
+                                        )}
+                                        title="Copy message"
+                                    >
+                                        {copiedId === `${log.id}-msg` ? <Check size={10} /> : <Copy size={10} />}
+                                    </button>
+                                </div>
                                 <pre className="whitespace-pre-wrap">{renderValue(log.message)}</pre>
                             </div>
                         )}
@@ -122,14 +197,40 @@ export function LogViewer() {
                             <div>
                                 <div className="text-[10px] uppercase opacity-50 mb-1">Arguments ({log.args.length})</div>
                                 {log.args.map((arg, i) => (
-                                    <div key={i} className="mb-2 border-l-2 border-[var(--border-color)] pl-2">
-                                        <pre className="whitespace-pre-wrap">{renderValue(arg)}</pre>
+                                    <div key={i} className="mb-2 border-l-2 border-[var(--border-color)] pl-2 group/arg relative">
+                                        <button
+                                            onClick={() => copyToClipboard(renderValue(arg), `${log.id}-arg-${i}`)}
+                                            className={cn(
+                                                "absolute right-0 top-0 p-1 rounded transition-all opacity-0 group-hover/arg:opacity-100",
+                                                copiedId === `${log.id}-arg-${i}`
+                                                    ? "text-green-400 bg-green-500/10 opacity-100"
+                                                    : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)]"
+                                            )}
+                                            title={`Copy argument ${i}`}
+                                        >
+                                            {copiedId === `${log.id}-arg-${i}` ? <Check size={10} /> : <Copy size={10} />}
+                                        </button>
+                                        <pre className="whitespace-pre-wrap pr-6">{renderValue(arg)}</pre>
                                     </div>
                                 ))}
                             </div>
                         )}
-                        <div className="mt-2 pt-2 border-t border-[var(--border-color)] opacity-50 text-[10px]">
-                            ID: {log.id} | TS: {log.timestamp}
+                        <div className="mt-2 pt-2 border-t border-[var(--border-color)] flex items-center justify-between">
+                            <span className="opacity-50 text-[10px]">
+                                ID: {log.id} | TS: {log.timestamp}
+                            </span>
+                            <button
+                                onClick={() => copyLog(log)}
+                                className={cn(
+                                    "flex items-center gap-1 px-2 py-1 rounded text-[10px] transition-all",
+                                    isCopied
+                                        ? "text-green-400 bg-green-500/10"
+                                        : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-quaternary)]"
+                                )}
+                            >
+                                {isCopied ? <Check size={10} /> : <ClipboardCopy size={10} />}
+                                {isCopied ? 'Copied!' : 'Copy Full Log'}
+                            </button>
                         </div>
                     </div>
                 )}
@@ -194,6 +295,28 @@ export function LogViewer() {
                 </div>
 
                 <div className="flex items-center gap-2 border-l border-[var(--border-color)] pl-3">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    onClick={copyAllLogs}
+                                    disabled={filteredLogs.length === 0}
+                                    className={cn(
+                                        "p-1.5 rounded-md transition-colors",
+                                        copiedId === 'all'
+                                            ? "text-green-400 bg-green-500/10"
+                                            : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed"
+                                    )}
+                                    title="Copy all visible logs"
+                                >
+                                    {copiedId === 'all' ? <Check size={16} /> : <ClipboardCopy size={16} />}
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{copiedId === 'all' ? 'Copied!' : `Copy all ${filteredLogs.length} logs`}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <button
                         onClick={() => setAutoScroll(!autoScroll)}
                         className={cn(

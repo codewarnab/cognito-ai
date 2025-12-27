@@ -8,6 +8,13 @@
  *    - Add entry to MCP_SERVER_IMAGES or MCP_SERVER_ICONS
  * 3. Update ToolIconMapper: src/components/ui/tools/icons/ToolIconMapper.tsx
  *    - Add server name to mcpServerHints array for heuristic detection
+ * 
+ * SECURITY: For StdIO/Backend MCP servers (isBackendOnly: true):
+ * 4. **CRITICAL**: Add entry to the backend registry:
+ *    packages/shared/src/constants/mcpRegistry.ts
+ *    - The server ID here MUST match the registry ID
+ *    - The command/args are defined ONLY in the registry (not in this file)
+ *    - This prevents arbitrary command execution attacks
  */
 
 import React from "react"
@@ -183,25 +190,24 @@ export const MCP_SERVERS: ServerConfig[] = [
     //     requiresAuthentication: true
     // },
     {
+        // SECURITY: Command/args defined in backend registry: @cognito/shared/constants/mcpRegistry.ts
+        // Only serverId is sent to backend - see MCP_SERVER_REGISTRY['magic-mcp']
         id: "magic-mcp",
         name: "Magic MCP",
         icon: <img src={twentyFirstDevImage} alt="21st.dev" style={{ width: 24, height: 24 }} />, // 21st.dev Magic MCP
         initialEnabled: false,
         initialAuthenticated: false,
-        url: "stdio://magic-mcp", // Pseudo-URL
+        url: "stdio://magic-mcp", // Pseudo-URL indicating backend stdio
         description: "Magic MCP server (Backend StdIO)",
         requiresAuthentication: true,
         isBackendOnly: true,
-        stdioConfig: {
-            command: "npx",
-            args: ["-y", "@21st-dev/magic@latest"]
-        },
+        // NOTE: stdioConfig is NOT defined here for security reasons.
+        // The actual command/args are in packages/shared/src/constants/mcpRegistry.ts
         authConfig: {
             type: 'pat',
             patConfig: {
                 label: "Magic API Key",
                 placeholder: "Enter your API Key",
-                // envVarName: "API_KEY" // We need to handle this mapping in the frontend discovery logic
             }
         }
     },

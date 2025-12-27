@@ -419,13 +419,8 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
                 }
 
                 const result = await testProviderConnection(payload);
-                return { success: true, data: result }; // result has success/error inside data? No, ExternalResponse structure.
-                // Wait, ExternalResponse has success/data/error at top level.
-                // testProviderConnection returns { success: boolean, error?: string }
-                // So if result.success is true, we return { success: true }.
-                // If result.success is false, we return { success: false, error: result.error }.
 
-                // Let's map it correctly:
+                // Map the internal result to ExternalResponse format
                 if (result.success) {
                     return { success: true };
                 } else {

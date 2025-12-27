@@ -17,7 +17,11 @@ export const testProviderConnection = async (payload: TestProviderConnectionPayl
     const { provider } = payload;
     const { name, api_key } = provider as any; // Cast to access common fields
 
+    // DEBUG: Trace the exact payload received during provider test
+    log.info('[DEBUG] testProviderConnection called', { name, api_key: api_key ? `${api_key.substring(0, 5)}...` : 'EMPTY', provider });
+
     if (!api_key && name !== 'ollama') { // Ollama might not need a key, others usually do
+        log.info('[DEBUG] Failing validation - API key is missing');
         return { success: false, error: 'API key is missing' };
     }
 

@@ -15,6 +15,8 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
 2. The backend spawns the MCP server process and executes tools
 3. Both BYOK (Bring Your Own Key) and Cloud Mode use the backend for StdIO tool execution
 
+> **SECURITY**: Commands are stored in a secure server-side registry (`@cognito/shared/constants/mcpRegistry.ts`), NOT sent from the frontend. The frontend only sends `serverId` + `credentials`. This prevents arbitrary command execution attacks.
+
 ## Architecture Overview
 
 ```
@@ -32,8 +34,10 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
 │  │  Server Config (mcpServers.tsx)                                      │   │
 │  │  ├── id: "magic-mcp"                                                 │   │
 │  │  ├── isBackendOnly: true ◄── Indicates StdIO server                  │   │
-│  │  ├── stdioConfig: { command: "npx", args: [...] }                    │   │
 │  │  └── authConfig: { type: 'pat', ... }                                │   │
+│  │                                                                      │   │
+│  │  SECURITY: Commands are in backend registry, NOT in frontend config  │   │
+│  │  └── Backend Registry: @cognito/shared/constants/mcpRegistry.ts      │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────────────────┘
                                        │
@@ -80,8 +84,9 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
 
 | Type | Package | Purpose |
 |------|---------|---------|
-| StdioMcpConfig | `@cognito/shared` | StdIO server configuration |
-| McpDiscoveryRequest | `@cognito/shared` | Tool discovery request payload |
+| MCP_SERVER_REGISTRY | `@cognito/shared` | Secure server command registry |
+| McpStdioRequest | `@cognito/shared` | Discovery/execute request (serverId + credentials) |
+| McpExecuteRequest | `@cognito/shared` | Tool execution request payload |
 | McpDiscoveryResponse | `@cognito/shared` | Tool discovery response payload |
 
 ---
@@ -129,8 +134,14 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
     │              │──────────────────►│                    │                 │
     │              │                   │                    │                 │
     │              │                   │ POST /api/ai/mcp/discover            │
-    │              │                   │ { command, args, env }               │
+    │              │                   │ { serverId, credentials }            │
     │              │                   │───────────────────►│                 │
+    │              │                   │                    │                 │
+    │              │                   │                    │ Validate server │
+    │              │                   │                    │ in registry     │
+    │              │                   │                    │────────┐        │
+    │              │                   │                    │        │        │
+    │              │                   │                    │◄───────┘        │
     │              │                   │                    │                 │
     │              │                   │                    │ Check Redis     │
     │              │                   │                    │ cache           │
@@ -271,12 +282,12 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
 └───────┬────────┘     └─────┬─────┘     └──────┬───────┘     └─────┬─────┘
         │                    │                  │                   │
         │ POST /api/ai/mcp/execute              │                   │
-        │ { command, args, env,                 │                   │
-        │   toolName, toolArgs }                │                   │
+        │ { serverId, credentials,               │                   │
+        │   toolName, toolArgs }                 │                   │
         │───────────────────►│                  │                   │
         │                    │                  │                   │
-        │                    │ Validate request │                   │
-        │                    │ (Zod)            │                   │
+        │                    │ Validate server  │                   │
+        │                    │ in registry      │                   │
         │                    │────────┐         │                   │
         │                    │        │         │                   │
         │                    │◄───────┘         │                   │
@@ -534,11 +545,8 @@ interface ServerConfig {
     
     // StdIO-specific fields
     isBackendOnly?: boolean;           // Indicates StdIO server
-    stdioConfig?: {
-        command: string;               // e.g., "npx"
-        args?: string[];               // e.g., ["-y", "@21st-dev/magic@latest"]
-        env?: Record<string, string>;  // Environment variables
-    };
+    // NOTE: stdioConfig is NOT stored here for security.
+    // Commands are in: @cognito/shared/constants/mcpRegistry.ts
     
     authConfig?: {
         type: 'pat' | 'oauth' | 'hybrid';
@@ -555,10 +563,14 @@ interface ServerConfig {
 ```typescript
 // apps/extension/src/background/mcp/McpBackendClient.ts
 
+/**
+ * SECURITY: This client sends only serverId + credentials to the backend.
+ * The backend resolves the actual command from its secure registry.
+ * This prevents arbitrary command execution attacks.
+ */
 export class McpBackendClient implements McpClient {
     constructor(
         serverId: string,
-        config: ServerConfig,
         accessToken: string | null
     );
     
@@ -581,14 +593,17 @@ export class McpBackendClient implements McpClient {
 ```typescript
 // packages/backend-vercel/src/routes/ai/mcp.ts
 
+// SECURITY: Frontend sends only serverId + credentials.
+// Backend resolves command from MCP_SERVER_REGISTRY.
+
 // Tool Discovery
 POST /api/ai/mcp/discover
-Request:  { command: string, args?: string[], env?: Record<string, string> }
+Request:  { serverId: string, credentials?: { apiKey?: string } }
 Response: { tools: Array<{ name, description, inputSchema }> }
 
 // Tool Execution
 POST /api/ai/mcp/execute
-Request:  { command, args?, env?, toolName: string, toolArgs: object }
+Request:  { serverId, credentials?, toolName: string, toolArgs: object }
 Response: { result: any }
 ```
 
@@ -777,6 +792,8 @@ A mapping is maintained to reverse sanitization when receiving tool calls from t
 // apps/extension/src/constants/mcpServers.tsx
 
 {
+    // SECURITY: Command/args defined in backend registry:
+    // @cognito/shared/constants/mcpRegistry.ts
     id: "magic-mcp",
     name: "Magic MCP",
     icon: <McpServerIcon serverId="magic-mcp" />,
@@ -786,10 +803,7 @@ A mapping is maintained to reverse sanitization when receiving tool calls from t
     description: "Magic MCP server (Backend StdIO)",
     requiresAuthentication: true,
     isBackendOnly: true,
-    stdioConfig: {
-        command: "npx",
-        args: ["-y", "@21st-dev/magic@latest"]
-    },
+    // NOTE: stdioConfig is NOT here - see MCP_SERVER_REGISTRY
     authConfig: {
         type: 'pat',
         patConfig: {

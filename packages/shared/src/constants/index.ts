@@ -22,3 +22,11 @@ export {
     matchesPreset,
     getDefaultLoggerConfig,
 } from './logger.js';
+
+// MCP Server Registry (security-critical)
+export {
+    MCP_SERVER_REGISTRY,
+    type McpServerRegistryEntry,
+    type McpStdioRequest,
+    type McpExecuteRequest,
+} from './mcpRegistry.js';

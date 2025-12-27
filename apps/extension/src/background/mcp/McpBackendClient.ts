@@ -1,18 +1,23 @@
 
 import { createLogger } from '~logger';
 import type { McpClient, McpServerStatus, McpTool } from '../../mcp/types';
-import type { ServerConfig } from '@/constants/mcpServers';
 import { ENV } from '@/utils/env';
-import type { McpDiscoveryResponse, StdioMcpConfig } from '@cognito/shared';
+import type { McpDiscoveryResponse, McpStdioRequest, McpExecuteRequest } from '@cognito/shared';
 
 const log = createLogger('MCP-Backend', 'MCP_CLIENT');
 
+/**
+ * MCP client for backend-proxied stdio servers.
+ * 
+ * SECURITY: This client sends only serverId + credentials to the backend.
+ * The backend resolves the actual command from its secure registry.
+ * This prevents arbitrary command execution attacks.
+ */
 export class McpBackendClient implements McpClient {
     private currentStatus: McpServerStatus;
 
     constructor(
         private serverId: string,
-        private config: ServerConfig,
         private accessToken: string | null
     ) {
         this.currentStatus = {
@@ -36,43 +41,27 @@ export class McpBackendClient implements McpClient {
     }
 
     private async discoverTools(): Promise<void> {
-        if (!this.config.stdioConfig) {
-            throw new Error('StdIO config missing');
-        }
-
         const backendUrl = ENV.BACKEND_API_URL;
         log.info(`[${this.serverId}] Discovering tools via backend: ${backendUrl}`);
 
-        const payload: StdioMcpConfig = {
-            command: this.config.stdioConfig.command,
-            args: this.config.stdioConfig.args,
-            env: {
-                // Map frontend auth/env vars to backend env
-                // For 'pat' auth (Magic MCP), likely mapped to API_KEY
-                // Implementation detail for specific mapping needed?
-                // For now pass basic env if configured
-                ...(this.config.stdioConfig.env || {}),
-                ...(this.accessToken ? { API_KEY: this.accessToken } : {})
-                // Inject API Key if present in storage or state?
-                // Auth handling is usually done before connect.
-                // Manager passes 'accessToken' but here we handle it differently.
-            }
+        // SECURITY: Send only serverId + credentials, NOT command/args
+        const payload: McpStdioRequest = {
+            serverId: this.serverId,
+            credentials: this.accessToken ? { apiKey: this.accessToken } : undefined,
         };
 
-
-        try {   
+        try {
             const response = await fetch(`${backendUrl}/api/ai/mcp/discover`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Pass current user auth if backend requires it (e.g. Rate Limit)
-                    // The backend might need identification.
                 },
                 body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
-                throw new Error(`Backend discovery failed: ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Backend discovery failed: ${response.statusText}`);
             }
 
             const data: McpDiscoveryResponse = await response.json();
@@ -101,13 +90,10 @@ export class McpBackendClient implements McpClient {
         const backendUrl = ENV.BACKEND_API_URL;
         log.info(`[${this.serverId}] Executing tool on backend: ${name}`);
 
-        const payload = {
-            command: this.config.stdioConfig?.command,
-            args: this.config.stdioConfig?.args,
-            env: {
-                ...(this.config.stdioConfig?.env || {}),
-                ...(this.accessToken ? { API_KEY: this.accessToken } : {})
-            },
+        // SECURITY: Send only serverId + credentials, NOT command/args
+        const payload: McpExecuteRequest = {
+            serverId: this.serverId,
+            credentials: this.accessToken ? { apiKey: this.accessToken } : undefined,
             toolName: name,
             toolArgs: args || {}
         };
@@ -143,3 +129,4 @@ export class McpBackendClient implements McpClient {
         this.currentStatus.state = 'disconnected';
     }
 }
+
