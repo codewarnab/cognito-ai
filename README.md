@@ -164,6 +164,9 @@ Cognito requires the following permissions:
 
 For AI features, you may need to configure API keys in the extension options.
 
+- **BYOK Mode**: Model-agnostic (supports any model when using your own key)
+- **Backend Mode**: Uses fixed `gemini-2.5-flash` model (no key required)
+
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.

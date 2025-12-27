@@ -44,7 +44,13 @@ pnpm build:extension        # Build extension only
 # Package-specific
 pnpm --filter @cognito/extension dev
 pnpm --filter @cognito/backend-cloudflare deploy
+pnpm --filter @cognito/backend-cloudflare deploy
 ```
+
+## AI Models
+
+- **BYOK Mode**: Model-agnostic (supports any model when using your own key)
+- **Backend Mode**: Uses fixed `gemini-2.5-flash` model
 
 ## Git Commits
 

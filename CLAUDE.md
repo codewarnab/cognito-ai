@@ -26,7 +26,12 @@ Key features:
 - Human-in-the-loop tool approval system (see `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md`)
 - Frontend tools pattern for browser automation
 - Graceful degradation from backend mode to BYOK (Bring Your Own Key)
+- Graceful degradation from backend mode to BYOK (Bring Your Own Key)
 - Server-side tools architecture (see `apps/extension/docs/SERVER_TOOLS_ARCHITECTURE.md`)
+
+### Model Selection
+- **BYOK Mode**: Model-agnostic (supports any model when using your own key)
+- **Backend Mode**: Uses fixed `gemini-2.5-flash` model
 
 ## Package Reference
 

@@ -28,6 +28,8 @@ cognito-ai/
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers | ElevenLabs TTS proxy |
 | `@cognito/backend-vercel` | `packages/backend-vercel/` | Vercel | AI Chat Backend + YouTube transcripts |
 
+> **Note**: `@cognito/backend-vercel` enforces `gemini-2.5-flash` for backend-mode requests, while the extension's BYOK mode is model-agnostic.
+
 ---
 
 ## Development Workflow

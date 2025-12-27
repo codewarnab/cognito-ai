@@ -29,6 +29,10 @@ Key features:
 - See `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md` for tool approval documentation
 - See `apps/extension/docs/SERVER_TOOLS_ARCHITECTURE.md` for backend tools architecture
 
+### Model Selection
+- **BYOK Mode**: Model-agnostic (supports any model when using your own key)
+- **Backend Mode**: Uses fixed `gemini-2.5-flash` model
+
 ## Package Reference
 
 | Package | Path | Purpose | AGENTS.md |
