@@ -21,7 +21,6 @@ import { createBackendController, clearBackendController } from './streamingOpti
 import { writeErrorToStream } from '../stream/streamHelpers';
 import { parseGeminiError } from '../errors/handlers';
 import { APIError, NetworkError } from '../../errors/errorTypes';
-import type { BackendModel } from '@/stores/settings/types';
 import type { ToolMode } from '@/stores/tools/types';
 import { ENV } from '@/utils/env';
 import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
@@ -133,7 +132,7 @@ function sanitizeMessagesForBackend(messages: ModelMessage[]): ModelMessage[] {
 export interface BackendChatWithToolsParams {
     messages: UIMessage[];
     systemPrompt?: string;
-    model?: BackendModel;
+    // Note: model is NOT accepted - backend uses a fixed model (gemini-2.5-flash)
     /** 
      * AI mode: 'chat' (minimal tools), 'agent' (all tools), or 'adaptive' (dynamic discovery)
      * Backend uses this to select appropriate system prompt
@@ -296,7 +295,7 @@ export async function streamBackendChatWithTools(
     const {
         messages,
         systemPrompt,
-        model = 'gemini-2.5-flash',
+        // Note: model is NOT extracted - backend uses fixed model (gemini-2.5-flash)
         mode = 'agent', // Default to agent mode for full tool access
         maxSteps: userMaxSteps = 20, // Default to 10 if not specified
         abortSignal,
@@ -311,7 +310,7 @@ export async function streamBackendChatWithTools(
 
     log.info('Starting backend chat with tools', {
         messageCount: messages.length,
-        model,
+        // model is fixed by backend (gemini-2.5-flash)
         mode,
         hasPageContext: !!initialPageContext,
         pageContextLength: initialPageContext?.length || 0,
@@ -394,9 +393,7 @@ export async function streamBackendChatWithTools(
                                     messages: conversationMessages,
                                     system: systemPrompt,
                                     tools: sanitizedSchemas, // Send sanitized schemas
-                                    // Sanitize model name if it contains provider prefix (e.g. google_gemini:gemini-1.5-pro -> gemini-1.5-pro)
-                                    // The backend currently only supports Google models and expects direct model IDs.
-                                    model: model?.includes(':') ? model.split(':')[1] : model,
+                                    // Note: model is NOT sent - backend uses fixed model (gemini-2.5-flash)
                                     mode, // Send mode so backend can use appropriate prompt
                                     maxSteps: 1, // One step at a time for tool execution
                                     // Only send page context on first request, not on tool result follow-ups
