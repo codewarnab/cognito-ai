@@ -202,7 +202,10 @@ The extension supports two modes for AI processing:
 | Mode | Description | Requirements |
 |------|-------------|-------------|
 | **Backend Mode** | Uses hosted Vercel backend | No API key needed |
+| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
 | **BYOK Mode** | Direct API calls with user's key | Google API Key |
+
+> **Note**: BYOK Mode is model-agnostic (supports any model). Backend Mode uses fixed `gemini-2.5-flash`.
 
 ### Backend Module (`src/ai/backend/`)
 
