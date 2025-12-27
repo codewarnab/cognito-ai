@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useLogStream } from '@/hooks/useLogStream';
-import type { LogEntry } from '@cognito/shared';
+import { useLoggerConfig } from '@/hooks/useLoggerConfig';
+import type { LogEntry, LogCategory } from '@cognito/shared';
 import { cn } from '@/lib/utils';
 import { Search, Trash2, PauseCircle, PlayCircle, X, Copy, Check, ClipboardCopy } from 'lucide-react';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
@@ -29,6 +30,7 @@ const LEVEL_BG = {
 
 export function LogViewer() {
     const { logs, isConnected, clearLogs } = useLogStream();
+    const { config } = useLoggerConfig();
     const [searchQuery, setSearchQuery] = useState('');
     const [levelFilter, setLevelFilter] = useState<string[]>(['debug', 'info', 'warn', 'error']);
     const [autoScroll, setAutoScroll] = useState(true);
@@ -69,10 +71,29 @@ export function LogViewer() {
         copyToClipboard(formatLogForCopy(log), log.id);
     }, [copyToClipboard, formatLogForCopy]);
 
-    // Filter logs
+    // Filter logs based on config settings and UI filters
     const filteredLogs = useMemo(() => {
         return logs.filter(log => {
+            // Apply config-based filtering (respects ERRORS_ONLY and category settings)
+            if (config) {
+                // ERRORS_ONLY: only show error-level logs
+                if (config.ERRORS_ONLY && log.level !== 'error') {
+                    return false;
+                }
+
+                // If not SHOW_ALL and not ERRORS_ONLY, check category
+                if (!config.SHOW_ALL && !config.ERRORS_ONLY && log.category) {
+                    const categoryEnabled = config[log.category as LogCategory];
+                    if (categoryEnabled === false) {
+                        return false;
+                    }
+                }
+            }
+
+            // Apply UI-level filter buttons (D, I, W, E)
             if (!levelFilter.includes(log.level)) return false;
+
+            // Apply search query
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
                 const content = [
@@ -85,7 +106,7 @@ export function LogViewer() {
             }
             return true;
         }).reverse();
-    }, [logs, levelFilter, searchQuery]);
+    }, [logs, levelFilter, searchQuery, config]);
 
     // Auto-scroll logic for "Newest at Top"
     React.useEffect(() => {

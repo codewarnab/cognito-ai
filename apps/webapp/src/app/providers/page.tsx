@@ -77,11 +77,8 @@ export default function ProvidersPage() {
         const providerIndex = enabledProviders.findIndex(p => p.name === selectedProvider);
 
         // Check for special tabs
-        if (selectedProvider === 'custom') {
-            return enabledProviders.length;
-        }
         if (selectedProvider === 'disabled') {
-            return enabledProviders.length + 1;
+            return enabledProviders.length;
         }
 
         return providerIndex >= 0 ? providerIndex : 0;
