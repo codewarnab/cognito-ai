@@ -11,7 +11,7 @@ import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getWriteCommandSettings, updateWriteCommandSetting } from '@/utils/settings';
 import { trySendMessage } from '@/lib/messaging';
-import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks';
+import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks/useProviderCapabilities';
 import type { WritePosition, WriteAttachmentPayload } from '@/types';
 
 interface WriterOverlayProps {

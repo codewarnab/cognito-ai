@@ -8,7 +8,7 @@ import { ToolsToggle } from '../shared/ToolsToggle';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 import { getRewriteSettings, updateRewriteSetting } from '@/utils/settings/rewriteSettings';
 import { trySendMessage } from '@/lib/messaging';
-import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks';
+import { useProviderCapabilities, getCapabilityUnavailableReason } from '@/hooks/useProviderCapabilities';
 import type { RewritePreset } from '@/types';
 
 interface RewriterTooltipProps {
