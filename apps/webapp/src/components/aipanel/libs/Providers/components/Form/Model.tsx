@@ -11,10 +11,13 @@ import { TrashIcon } from '@phosphor-icons/react'
 import { useGlobalState } from '../../context'
 
 import type { IPropsFormModel } from '../../types'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const Index = (props: IPropsFormModel) => {
-	const { index, item, control, desc_keys, custom, editing, onChangeCurrentModel, remove } = props
+	const { index, item, control, desc_keys, custom, editing, onChangeCurrentModel, remove, activeModel, activeProvider, providerName } = props
 	const { id, name, desc } = item
+
+	const isActive = activeModel && activeProvider && item.id === activeModel && providerName === activeProvider
 
 	const { locales } = useGlobalState()
 
@@ -68,9 +71,26 @@ const Index = (props: IPropsFormModel) => {
 						<TrashIcon className='text-base' />
 					</button>
 				)}
-				<Controller name={`models.${index}.enabled`} control={control}>
-					<Switch />
-				</Controller>
+				{isActive ? (
+					<TooltipProvider>
+						<Tooltip delayDuration={0}>
+							<TooltipTrigger asChild>
+								<div className="cursor-not-allowed opacity-50">
+									<Controller name={`models.${index}.enabled`} control={control}>
+										<Switch disabled={true} />
+									</Controller>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent className="bg-secondary text-secondary-foreground">
+								<p>Cannot disable the currently active model</p>
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				) : (
+					<Controller name={`models.${index}.enabled`} control={control}>
+						<Switch />
+					</Controller>
+				)}
 			</div>
 		</div>
 	)

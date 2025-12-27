@@ -41,7 +41,9 @@ const Index = (props: IPropsForm) => {
 		onChangeCurrentModel,
 		toggleAddingModel,
 		onDisableProvider,
-		onRemoveProvider
+		onRemoveProvider,
+		activeModel,
+		activeProvider
 	} = props
 	const { locales } = useGlobalState()
 
@@ -190,7 +192,10 @@ const Index = (props: IPropsForm) => {
 							register,
 							remove,
 							onChangeCurrentModel,
-							onDragModel
+							onDragModel,
+							activeModel,
+							activeProvider,
+							providerName: name
 						}}
 					/>
 				</div>

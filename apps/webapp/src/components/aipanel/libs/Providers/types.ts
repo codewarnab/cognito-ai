@@ -17,6 +17,8 @@ export interface IPropsProviders {
 	onTabChange?: (tabIndex: number, providerName: string) => void
 	onChange: (v: Config) => void
 	onTest?: (provider: PresetProvider | SpecialProvider) => Promise<boolean>
+	activeModel?: string
+	activeProvider?: string
 }
 
 export interface ArgsInit extends Pick<IPropsProviders, 'config' | 'onChange' | 'onTest' | 'initialTab' | 'onTabChange'> {
@@ -52,6 +54,8 @@ export interface IPropsForm {
 	toggleAddingModel: () => void
 	onDisableProvider?: () => void
 	onRemoveProvider?: () => void
+	activeModel?: string
+	activeProvider?: string
 }
 
 export interface IPropsFormAPIKey extends Pick<IPropsForm, 'test' | 'onTest'> {
@@ -80,6 +84,9 @@ export interface IPropsFormModels extends Pick<IPropsForm, 'current_model' | 'on
 	remove: UseFieldArrayRemove
 	register: UseFormRegister<IPropsForm['provider']>
 	onDragModel: (args: DragEndEvent) => void
+	activeModel?: string
+	activeProvider?: string
+	providerName: string
 }
 
 export interface IPropsFormModel extends Pick<IPropsFormModels, 'control' | 'onChangeCurrentModel' | 'remove'> {
@@ -88,6 +95,9 @@ export interface IPropsFormModel extends Pick<IPropsFormModels, 'control' | 'onC
 	desc_keys: Array<string>
 	custom?: boolean
 	editing?: boolean
+	activeModel?: string
+	activeProvider?: string
+	providerName: string
 }
 
 export interface IPropsFormModelForm {

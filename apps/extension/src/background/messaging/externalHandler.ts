@@ -38,6 +38,7 @@ import {
     hasGoogleApiKey,
     hasVertexCredentials,
 } from '@/utils/credentials';
+import { getModelConfig } from '@/utils/ai/modelSettings';
 // Settings utilities
 import {
     getSearchSettings,
@@ -325,12 +326,19 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
         case 'GET_PROVIDERS_CONFIG': {
             try {
                 const config = await getProvidersConfig();
-                // Get currently selected model from Chrome storage
-                const { ai_model_config } = await chrome.storage.local.get('ai_model_config');
+                // Get currently selected model using utility to handle defaults
+                const ai_model_config = await getModelConfig();
+
+                // Default provider to google_gemini if not set or if google (matching ModelSelectorPopover logic)
+                let selectedProvider = ai_model_config.remoteProvider;
+                if (!selectedProvider || selectedProvider === 'google') {
+                    selectedProvider = 'google_gemini'; // Webapp uses google_gemini
+                }
+
                 const response: GetProvidersConfigResponse = {
                     config: config || { providers: [], custom_providers: [] },
-                    selectedModel: ai_model_config?.remoteModel,
-                    selectedProvider: ai_model_config?.remoteProvider,
+                    selectedModel: ai_model_config.remoteModel, // Default is handled by getModelConfig
+                    selectedProvider: selectedProvider,
                 };
                 return { success: true, data: response };
             } catch (error) {

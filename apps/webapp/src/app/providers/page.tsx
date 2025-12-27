@@ -61,6 +61,8 @@ export default function ProvidersPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+    const [selectedModel, setSelectedModel] = useState<string | undefined>();
+    const [selectedProviderName, setSelectedProviderName] = useState<string | undefined>();
 
     // URL state for selected provider
     const [selectedProvider, setSelectedProvider] = useQueryState('provider', {
@@ -98,33 +100,80 @@ export default function ProvidersPage() {
     }, [notification]);
 
     // Load existing config from extension
-    useEffect(() => {
-        const loadConfig = async () => {
-            // Wait for extension check to complete
-            if (extensionLoading) return;
+    const loadConfig = useCallback(async () => {
+        console.log('[ProvidersPage] loadConfig called'); // DEBUG LOG
+        // Wait for extension check to complete
+        if (extensionLoading) {
+            console.log('[ProvidersPage] extensionLoading is true, waiting...');
+            return;
+        }
 
-            // If extension not installed, stop loading
-            if (!isInstalled) {
-                setIsLoading(false);
-                return;
+        // If extension not installed, stop loading
+        if (!isInstalled) {
+            console.log('[ProvidersPage] Extension not installed');
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            console.log('[ProvidersPage] Sending GET_PROVIDERS_CONFIG to extension...');
+            const response = await extensionAPI.getProvidersConfig();
+            console.log('[ProvidersPage] Extension response:', response); // DEBUG LOG
+
+            if (response.success && response.data) {
+                // Merge stored config with defaults to ensure all preset providers are visible
+                const mergedConfig = mergeConfigWithDefaults(response.data.config);
+                setConfig(mergedConfig);
+
+                let activeProvider = response.data.selectedProvider;
+                if (activeProvider === 'google') activeProvider = 'google_gemini';
+
+                console.log('[ProvidersPage] Setting active state:', { model: response.data.selectedModel, provider: activeProvider }); // DEBUG LOG
+                setSelectedModel(response.data.selectedModel);
+                setSelectedProviderName(activeProvider);
+            } else {
+                console.warn('[ProvidersPage] Response not success or missing data');
             }
+        } catch (error) {
+            console.error('Failed to load config:', error);
+            setNotification({ type: 'error', message: 'Failed to load existing configuration' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [extensionLoading, isInstalled]);
 
-            try {
-                const response = await extensionAPI.getProvidersConfig();
-                if (response.success && response.data) {
-                    // Merge stored config with defaults to ensure all preset providers are visible
-                    const mergedConfig = mergeConfigWithDefaults(response.data.config);
-                    setConfig(mergedConfig);
-                }
-            } catch (error) {
-                console.error('Failed to load config:', error);
-                setNotification({ type: 'error', message: 'Failed to load existing configuration' });
-            } finally {
-                setIsLoading(false);
+    // Initial load, visibility listener, and polling
+    useEffect(() => {
+        loadConfig();
+
+        // 1. Handle tab visibility changes (user switches tabs)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                console.log('[ProvidersPage] Tab became visible, reloading config...');
+                loadConfig();
             }
         };
-        loadConfig();
-    }, [extensionLoading, isInstalled]);
+
+        // 2. Poll for changes every 2 seconds while visible
+        // This ensures that if the user changes settings in the popup (active on top of this page)
+        // or sidepanel, we catch it without a tab switch.
+        const intervalId = setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                // We don't log this every time to avoid spamming unless you strictly need it
+                // console.log('[ProvidersPage] Polling config...'); 
+                loadConfig();
+            }
+        }, 2000);
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', loadConfig); // Keep focus for window switching
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', loadConfig);
+            clearInterval(intervalId);
+        };
+    }, [loadConfig]);
 
     // Save config changes
     const saveConfig = async (newConfig: Config) => {
@@ -278,6 +327,8 @@ export default function ProvidersPage() {
                     onTabChange={handleTabChange}
                     onChange={handleChange}
                     onTest={handleTest}
+                    activeModel={selectedModel}
+                    activeProvider={selectedProviderName}
                 />
             </div>
         </div>

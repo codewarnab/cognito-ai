@@ -13,7 +13,7 @@ import ModelForm from './ModelForm'
 import type { IPropsFormModels } from '../../types'
 
 const Index = (props: IPropsFormModels) => {
-	const { models, control, current_model, custom, register, remove, onChangeCurrentModel, onDragModel } = props
+	const { models, control, current_model, custom, register, remove, onChangeCurrentModel, onDragModel, activeModel, activeProvider, providerName } = props
 
 	const { locales } = useGlobalState()
 
@@ -61,7 +61,10 @@ const Index = (props: IPropsFormModels) => {
 									desc_keys,
 									custom,
 									onChangeCurrentModel,
-									remove
+									remove,
+									activeModel,
+									activeProvider,
+									providerName
 								}}
 							/>
 							<Show

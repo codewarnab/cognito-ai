@@ -26,7 +26,7 @@ import type {
 } from './types'
 
 const Index = (props: IPropsProviders) => {
-	const { config, tab, width, locales, icons, initialTab, onTabChange, onChange, onTest } = props
+	const { config, tab, width, locales, icons, initialTab, onTabChange, onChange, onTest, activeModel, activeProvider } = props
 	const state = useRef(proxy(new Model()))
 	const x = useProxy(state.current)
 
@@ -62,7 +62,9 @@ const Index = (props: IPropsProviders) => {
 			x.current_model = v === x.current_model ? null : v
 		}),
 		toggleAddingModel: useMemoizedFn(() => (x.adding_model = !x.adding_model)),
-		onDisableProvider: x.onToggleProvider
+		onDisableProvider: x.onToggleProvider,
+		activeModel,
+		activeProvider
 	}
 
 	const props_custom: IPropsCustom = {

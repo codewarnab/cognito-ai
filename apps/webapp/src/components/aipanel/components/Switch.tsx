@@ -3,8 +3,8 @@ import { Switch } from '@base-ui-components/react/switch'
 
 import type { ControllerRenderProps } from 'react-hook-form'
 
-const Index = (props: Partial<ControllerRenderProps>) => {
-	const { name, value, ref, onChange } = props as ControllerRenderProps
+const Index = (props: Partial<ControllerRenderProps> & { disabled?: boolean }) => {
+	const { name, value, ref, onChange, disabled } = props as ControllerRenderProps & { disabled?: boolean }
 
 	return (
 		<div onClick={e => e.stopPropagation()}>
@@ -17,9 +17,12 @@ const Index = (props: Partial<ControllerRenderProps>) => {
 					transition-[background]
 					rounded-full
 					data-[checked]:bg-solid
+					data-[disabled]:opacity-50
+					data-[disabled]:cursor-not-allowed
 				'
 				name={name}
 				checked={value}
+				disabled={disabled}
 				inputRef={ref}
 				onCheckedChange={onChange}
 			>
