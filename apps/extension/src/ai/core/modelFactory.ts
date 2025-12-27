@@ -8,11 +8,12 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createAnthropic } from '@ai-sdk/anthropic';
+import { createXai } from '@ai-sdk/xai';
 import { withSupermemory } from '@supermemory/tools/ai-sdk';
 import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
-import { getActiveProvider, getVertexCredentials, getGoogleApiKey, getOpenAIApiKey, getAnthropicApiKey } from '@/utils/credentials';
+import { getActiveProvider, getVertexCredentials, getGoogleApiKey, getOpenAIApiKey, getAnthropicApiKey, getXaiApiKey } from '@/utils/credentials';
 import {
     isSupermemoryReady,
     getSupermemoryApiKey,
@@ -136,6 +137,8 @@ export async function initializeModel(
             return await initializeOpenAIModel(modelName);
         case 'anthropic':
             return await initializeAnthropicModel(modelName);
+        case 'xai':
+            return await initializeXaiModel(modelName);
         default:
             throw new APIError({
                 message: `Unsupported provider: ${activeProvider}`,
@@ -448,11 +451,68 @@ export async function isProviderAvailable(provider: AIProvider): Promise<boolean
         } else if (provider === 'anthropic') {
             const apiKey = await getAnthropicApiKey();
             return !!apiKey && apiKey.trim().length > 0;
+        } else if (provider === 'xai') {
+            const apiKey = await getXaiApiKey();
+            return !!apiKey && apiKey.trim().length > 0;
         }
         return false;
     } catch (error) {
         log.error('Error checking provider availability:', error);
         return false;
+    }
+}
+
+/**
+ * Initialize xAI model with API key
+ * 
+ * @param modelName - xAI model name (e.g., 'grok-2-1212', 'grok-2-vision-1212')
+ * @returns Model initialization result for xAI
+ * @throws {APIError} If API key is not configured or invalid
+ */
+async function initializeXaiModel(modelName: string): Promise<ModelInitResult> {
+    log.info('🔧 Initializing xAI model:', modelName);
+
+    // Get xAI API key
+    const apiKey = await getXaiApiKey();
+    if (!apiKey) {
+        const error = new APIError({
+            message: 'xAI API key not configured',
+            statusCode: 401,
+            retryable: false,
+            userMessage: 'Please configure your xAI API key in settings.',
+            technicalDetails: 'No xAI API key found in storage',
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
+        log.error('❌ xAI API key missing:', error);
+        throw error;
+    }
+
+    try {
+        // Create xAI client
+        const xai = createXai({
+            apiKey,
+        });
+
+        const model = await wrapModelWithSupermemory(xai(modelName));
+
+        log.info('✅ xAI model initialized successfully:', modelName);
+
+        return {
+            model,
+            provider: 'xai',
+            modelName,
+            providerInstance: xai, // Return provider instance for tool access
+        };
+    } catch (error) {
+        log.error('❌ Failed to initialize xAI model:', error);
+        throw new APIError({
+            message: 'Failed to initialize xAI',
+            statusCode: 500,
+            retryable: false,
+            userMessage: 'Could not initialize xAI. Please verify your API key and try again.',
+            technicalDetails: error instanceof Error ? error.message : String(error),
+            errorCode: ErrorType.API_AUTH_FAILED,
+        });
     }
 }
 

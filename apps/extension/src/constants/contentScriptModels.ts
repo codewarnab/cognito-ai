@@ -33,12 +33,12 @@ export const CONTENT_SCRIPT_MODELS = {
         name: 'Claude Haiku 4.5',
         apiEndpoint: 'https://api.anthropic.com/v1',
     },
-    // Future providers (uncomment when adding support):
-    // xai: {
-    //     model: 'grok-4-fast-non-reasoning',
-    //     name: 'Grok 4 Fast',
-    //     apiEndpoint: 'https://api.x.ai/v1',
-    // },
+    /** xAI - Grok 2 for high performance background tasks */
+    xai: {
+        model: 'grok-2-1212',
+        name: 'Grok 2',
+        apiEndpoint: 'https://api.x.ai/v1',
+    },
 } as const;
 
 /** Type union of supported providers for content scripts */

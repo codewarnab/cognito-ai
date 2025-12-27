@@ -334,6 +334,18 @@ export function getProviderInstructions(provider: AIProvider): string {
 
 **Note:** Ensure your GCP project has the Vertex AI API enabled.
         `.trim();
+    } else if (provider === 'xai') {
+        return `
+**How to get an xAI API Key:**
+
+1. Visit [xAI Console](https://console.x.ai/)
+2. Sign up or log in to your account
+3. Navigate to the API Keys section
+4. Create a new API Key
+5. Copy the key and paste it below
+
+**Note:** xAI offers generous free credits for new users.
+        `.trim();
     } else {
         return `Please configure your ${provider} API key in the AI Providers settings.`;
     }

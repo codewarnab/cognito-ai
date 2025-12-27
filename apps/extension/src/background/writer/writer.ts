@@ -261,8 +261,8 @@ Important guidelines:
             options?.attachment;
 
         // For simple generation without advanced features, use the provider abstraction
-        if (!hasAdvancedFeatures && activeProvider === 'openai') {
-            log.info('Using OpenAI provider for simple generation', { model: config.modelName });
+        if (!hasAdvancedFeatures && (activeProvider === 'openai' || activeProvider === 'xai')) {
+            log.info(`Using ${activeProvider} provider for simple generation`, { model: config.modelName });
             return generateWithProvider(systemPrompt, prompt, {
                 maxTokens,
                 temperature: 0.7,
@@ -412,6 +412,132 @@ Important guidelines:
             if (!finalResponse.ok) {
                 const errorText = await finalResponse.text();
                 throw new Error(`OpenAI API error: ${finalResponse.status} - ${errorText}`);
+            }
+
+            const finalData = await finalResponse.json();
+            return finalData.choices?.[0]?.message?.content || '';
+        }
+
+        // -------------------------------------------------------------------------
+        // xAI Implementation - with attachments and function calling
+        // -------------------------------------------------------------------------
+        if (activeProvider === 'xai') {
+            // Note: URL context and Web Search handled differently or not supported yet
+            if (options?.enableUrlContext) {
+                log.warn('URL context not available for xAI provider - feature will be skipped');
+            }
+            if (options?.enableGoogleSearch) {
+                log.warn('Web search integration pending for xAI - feature will be skipped');
+            }
+
+            // Build tools array
+            const tools: any[] = [];
+            if (options?.enableSupermemorySearch) {
+                tools.push(getMemorySearchToolOpenAI());
+            }
+
+            // Build initial messages with attachment support (reuse OpenAI format which is compatible)
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: this.buildOpenAIMessageContent(prompt, options) },
+            ];
+
+            log.info('Making xAI API call', {
+                provider: 'xai',
+                model: config.modelName,
+                hasMemorySearch: !!options?.enableSupermemorySearch,
+                hasAttachment: !!options?.attachment,
+                toolCount: tools.length,
+            });
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    messages,
+                    temperature: 0.7,
+                    max_tokens: maxTokens, // xAI uses max_tokens
+                    top_p: 0.95,
+                    stream: false,
+                };
+
+                // Add tools if any are enabled
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('xAI API error', { status: response.status, error: errorText });
+                    throw new Error(`xAI API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to call a function
+                if (options?.enableSupermemorySearch && hasOpenAIToolCall(data)) {
+                    functionCallCount++;
+                    const toolCall = extractOpenAIToolCall(data);
+
+                    if (toolCall) {
+                        log.info('AI requested memory search for generation (xAI)', {
+                            functionName: toolCall.function.name,
+                            iteration: functionCallCount,
+                        });
+
+                        // Execute the memory search
+                        const result = await executeOpenAIMemorySearch(toolCall);
+
+                        // Add assistant's response with tool call to conversation
+                        messages.push(data.choices[0].message);
+
+                        // Add tool response to conversation
+                        messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+
+                        continue;
+                    }
+                }
+
+                // No tool call - return the generated text
+                const generatedText = data.choices?.[0]?.message?.content;
+
+                if (!generatedText) {
+                    log.error('No text in xAI response', { data });
+                    throw new Error('No text generated');
+                }
+
+                return generatedText;
+            }
+
+            // If exhausted function calls
+            log.warn('Max function calls reached for xAI generation, making final request');
+            const finalBody = {
+                model: config.modelName,
+                messages,
+                temperature: 0.7,
+                max_tokens: maxTokens,
+                top_p: 0.95,
+                stream: false,
+            };
+
+            const finalResponse = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body: JSON.stringify(finalBody),
+            });
+
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`xAI API error: ${finalResponse.status} - ${errorText}`);
             }
 
             const finalData = await finalResponse.json();
@@ -702,8 +828,8 @@ Important guidelines:
             options?.attachment;
 
         // For simple streaming without advanced features, use the provider abstraction
-        if (!hasAdvancedFeatures && activeProvider === 'openai') {
-            log.info('Using OpenAI provider for simple streaming', { model: config.modelName });
+        if (!hasAdvancedFeatures && (activeProvider === 'openai' || activeProvider === 'xai')) {
+            log.info(`Using ${activeProvider} provider for simple streaming`, { model: config.modelName });
             yield* streamWithProvider(systemPrompt, prompt, {
                 maxTokens,
                 temperature: 0.7,
@@ -830,6 +956,128 @@ Important guidelines:
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+            }
+
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('No response body');
+
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6).trim();
+                            if (data && data !== '[DONE]') {
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    const text = parsed.choices?.[0]?.delta?.content;
+                                    if (text) yield text;
+                                } catch { }
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+            return;
+        }
+
+        // -------------------------------------------------------------------------
+        // xAI Streaming
+        // -------------------------------------------------------------------------
+        if (activeProvider === 'xai') {
+            if (options?.enableUrlContext) {
+                log.warn('URL context not available for xAI provider - feature will be skipped');
+            }
+            if (options?.enableGoogleSearch) {
+                log.warn('Web search not available for xAI provider - feature will be skipped');
+            }
+
+            // Handle memory search first (non-streaming) if enabled
+            let memoryContext = '';
+            if (options?.enableSupermemorySearch) {
+                // Similar logic to OpenAI for memory search
+                const tools = [getMemorySearchToolOpenAI()];
+                const messages: any[] = [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: this.buildOpenAIMessageContent(prompt, options) },
+                ];
+
+                let functionCallCount = 0;
+                const MAX_FUNCTION_CALLS = 3;
+                const nonStreamConfig = await provider.getConfig(false);
+
+                while (functionCallCount < MAX_FUNCTION_CALLS) {
+                    const body = {
+                        model: nonStreamConfig.modelName,
+                        messages,
+                        tools,
+                        temperature: 0.7,
+                        max_tokens: maxTokens,
+                        top_p: 0.95,
+                        stream: false
+                    };
+
+                    const response = await fetch(nonStreamConfig.url, {
+                        method: 'POST',
+                        headers: nonStreamConfig.headers,
+                        body: JSON.stringify(body),
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (hasOpenAIToolCall(data)) {
+                            functionCallCount++;
+                            const toolCall = extractOpenAIToolCall(data);
+                            if (toolCall) {
+                                const result = await executeOpenAIMemorySearch(toolCall);
+                                messages.push(data.choices[0].message);
+                                messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+                                if (result.success) memoryContext = result.formattedResult;
+                                continue;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+
+            let enrichedPrompt = prompt;
+            if (memoryContext) {
+                enrichedPrompt = `${prompt}\n\nRelevant context from user's memories:\n${memoryContext}`;
+            }
+
+            const body = {
+                model: config.modelName,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: this.buildOpenAIMessageContent(enrichedPrompt, options) }
+                ],
+                temperature: 0.7,
+                max_tokens: maxTokens,
+                top_p: 0.95,
+                stream: true,
+            };
+
+            const response = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`xAI API error: ${response.status} - ${errorText}`);
             }
 
             const reader = response.body?.getReader();

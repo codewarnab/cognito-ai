@@ -27,6 +27,7 @@ export interface ProviderConfig {
     vertexCredentials?: VertexCredentials;
     openaiApiKey?: string;
     anthropicApiKey?: string;
+    xaiApiKey?: string;
 }
 
 /**

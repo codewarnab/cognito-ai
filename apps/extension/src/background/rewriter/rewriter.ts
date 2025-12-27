@@ -371,6 +371,123 @@ export class Rewriter {
         }
 
         // -------------------------------------------------------------------------
+        // xAI Implementation - with function calling support
+        // -------------------------------------------------------------------------
+        if (activeProvider === 'xai') {
+            const maxTokens = Math.max(text.length * 2, 500);
+            const provider = await getProvider();
+            const config = await provider.getConfig(false);
+
+            if (enableUrlContext) {
+                log.warn('URL context not available for xAI provider - feature will be skipped');
+            }
+            if (enableGoogleSearch) {
+                log.warn('Web search integration pending for xAI - feature will be skipped');
+            }
+
+            // Build tools array
+            const tools: any[] = [];
+            if (enableSupermemorySearch) {
+                tools.push(getMemorySearchToolOpenAI());
+            }
+
+            // Build initial messages
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: prompt },
+            ];
+
+            log.info('Making xAI rewrite call', {
+                hasMemorySearch: !!enableSupermemorySearch,
+                toolCount: tools.length,
+            });
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    messages,
+                    temperature: 0.7,
+                    max_tokens: maxTokens,
+                    top_p: 0.95,
+                    stream: false, // Rewrite is always non-streaming (for now)
+                };
+
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('xAI API error', { status: response.status, error: errorText });
+                    throw new Error(`xAI API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to call a function
+                if (enableSupermemorySearch && hasOpenAIToolCall(data)) {
+                    functionCallCount++;
+                    const toolCall = extractOpenAIToolCall(data);
+
+                    if (toolCall) {
+                        log.info('AI requested memory search for rewrite (xAI)', {
+                            functionName: toolCall.function.name,
+                            iteration: functionCallCount,
+                        });
+
+                        const result = await executeOpenAIMemorySearch(toolCall);
+                        messages.push(data.choices[0].message);
+                        messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+                        continue;
+                    }
+                }
+
+                const rewrittenText = data.choices?.[0]?.message?.content;
+                if (!rewrittenText) {
+                    log.error('No text in xAI response', { data });
+                    throw new Error('No text generated');
+                }
+
+                return rewrittenText;
+            }
+
+            // If exhausted function calls
+            log.warn('Max function calls reached for xAI rewrite, making final request');
+            const finalBody = {
+                model: config.modelName,
+                messages,
+                temperature: 0.7,
+                max_tokens: maxTokens,
+                top_p: 0.95,
+                stream: false,
+            };
+
+            const finalResponse = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body: JSON.stringify(finalBody),
+            });
+
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`xAI API error: ${finalResponse.status} - ${errorText}`);
+            }
+
+            const finalData = await finalResponse.json();
+            return finalData.choices?.[0]?.message?.content || '';
+        }
+
+        // -------------------------------------------------------------------------
         // Gemini / Vertex Implementation - supports advanced features
         // -------------------------------------------------------------------------
         const provider = await getProvider();

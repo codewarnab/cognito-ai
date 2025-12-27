@@ -9,7 +9,9 @@ import { GoogleProvider } from './google';
 import { VertexProvider } from './vertex';
 import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
+import { XAIProvider } from './xai';
 import { createLogger } from '~logger';
+import type { AIProvider } from '@/utils/credentials/providerTypes';
 
 const log = createLogger('ProviderFactory', 'BACKGROUND');
 
@@ -74,7 +76,7 @@ const providerCache: Map<string, IProvider> = new Map();
  * Get a provider instance for the specified type
  * Uses cached instances when available
  */
-function getProviderByType(type: 'google' | 'vertex' | 'openai' | 'anthropic'): IProvider {
+function getProviderByType(type: AIProvider): IProvider {
     const cached = providerCache.get(type);
     if (cached) {
         return cached;
@@ -94,6 +96,9 @@ function getProviderByType(type: 'google' | 'vertex' | 'openai' | 'anthropic'): 
             break;
         case 'anthropic':
             provider = new AnthropicProvider();
+            break;
+        case 'xai':
+            provider = new XAIProvider();
             break;
         default:
             throw new Error(`Unsupported provider type: ${type}`);
@@ -123,7 +128,7 @@ export async function getProvider(): Promise<IProvider> {
  * @param type Provider type to get
  * @returns The requested provider instance
  */
-export function getSpecificProvider(type: 'google' | 'vertex' | 'openai' | 'anthropic'): IProvider {
+export function getSpecificProvider(type: AIProvider): IProvider {
     return getProviderByType(type);
 }
 
