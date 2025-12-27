@@ -61,3 +61,76 @@ export function parseMemorySearchParams(args: unknown): MemorySearchFunctionPara
         limit: typeof params.limit === 'number' ? Math.min(Math.max(1, params.limit), 10) : 5,
     };
 }
+
+// ============================================================================
+// OpenAI Tool Format
+// ============================================================================
+
+/**
+ * Memory search function in OpenAI's tool format
+ * @see https://platform.openai.com/docs/guides/function-calling
+ */
+export const MEMORY_SEARCH_OPENAI_TOOL = {
+    type: 'function' as const,
+    function: {
+        name: MEMORY_SEARCH_FUNCTION.name,
+        description: MEMORY_SEARCH_FUNCTION.description,
+        strict: true,
+        parameters: {
+            type: 'object',
+            properties: {
+                query: {
+                    type: 'string',
+                    description: MEMORY_SEARCH_FUNCTION.parameters.properties.query.description,
+                },
+                limit: {
+                    type: ['number', 'null'],
+                    description: MEMORY_SEARCH_FUNCTION.parameters.properties.limit.description,
+                },
+            },
+            required: ['query', 'limit'],
+            additionalProperties: false,
+        },
+    },
+};
+
+/**
+ * Get memory search tool in OpenAI format
+ */
+export function getMemorySearchToolOpenAI(): typeof MEMORY_SEARCH_OPENAI_TOOL {
+    return MEMORY_SEARCH_OPENAI_TOOL;
+}
+
+// ============================================================================
+// Claude/Anthropic Tool Format
+// ============================================================================
+
+/**
+ * Memory search function in Claude's tool format
+ * @see https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+ */
+export const MEMORY_SEARCH_CLAUDE_TOOL = {
+    name: MEMORY_SEARCH_FUNCTION.name,
+    description: MEMORY_SEARCH_FUNCTION.description,
+    input_schema: {
+        type: 'object' as const,
+        properties: {
+            query: {
+                type: 'string',
+                description: MEMORY_SEARCH_FUNCTION.parameters.properties.query.description,
+            },
+            limit: {
+                type: 'number',
+                description: MEMORY_SEARCH_FUNCTION.parameters.properties.limit.description,
+            },
+        },
+        required: ['query'],
+    },
+};
+
+/**
+ * Get memory search tool in Claude format
+ */
+export function getMemorySearchToolClaude(): typeof MEMORY_SEARCH_CLAUDE_TOOL {
+    return MEMORY_SEARCH_CLAUDE_TOOL;
+}

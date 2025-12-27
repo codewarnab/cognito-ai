@@ -1,23 +1,35 @@
 /**
  * Rewriter Client
  * Non-streaming text rewriting using the modular provider architecture
- * Supports AI-driven memory search via function calling (Gemini only)
+ * Supports AI-driven memory search via function calling (Gemini, OpenAI, Claude)
  */
 
 import { getActiveProvider } from '@/utils/credentials';
 import { createLogger } from '~logger';
 import {
     getProvider,
-    generateWithProvider,
     performWebSearch,
     enrichPromptWithSearch,
 } from '../providers';
 import {
+    // Gemini function calling
     getMemorySearchTool,
     hasFunctionCall,
     extractFunctionCall,
     executeMemorySearch,
     type GeminiContentPart,
+    // OpenAI function calling
+    getMemorySearchToolOpenAI,
+    hasOpenAIToolCall,
+    extractOpenAIToolCall,
+    executeOpenAIMemorySearch,
+    buildOpenAIToolResponse,
+    // Claude function calling
+    getMemorySearchToolClaude,
+    hasClaudeToolUse,
+    extractClaudeToolUse,
+    executeClaudeMemorySearch,
+    buildClaudeToolResult,
 } from '../supermemory';
 import { searchMemories, formatMemoriesForPrompt } from '../supermemory';
 import type { RewritePreset } from '@/types';
@@ -71,37 +83,291 @@ export class Rewriter {
         const activeProvider = await getActiveProvider();
 
         // -------------------------------------------------------------------------
-        // OpenAI Implementation - with web search support
+        // OpenAI Implementation - with web search and function calling support
         // -------------------------------------------------------------------------
         if (activeProvider === 'openai') {
             const maxTokens = Math.max(text.length * 2, 500);
-            let enrichedPrompt = prompt;
-
-            // Handle web search for OpenAI (using Responses API pre-search)
-            if (enableGoogleSearch) {
-                log.info('Using OpenAI web search for rewrite');
-                const webSearchResult = await performWebSearch('openai', text);
-                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
-                    enrichedPrompt = enrichPromptWithSearch(prompt, webSearchResult.result);
-                    log.debug('Enriched rewrite prompt with web search results', {
-                        citationCount: webSearchResult.result.citations.length,
-                    });
-                }
-            }
+            const provider = await getProvider();
+            const config = await provider.getConfig(false);
 
             // Note: URL context is NOT available for OpenAI - Gemini-specific feature
             if (enableUrlContext) {
                 log.warn('URL context not available for OpenAI provider - feature will be skipped');
             }
 
+            // Build tools array - OpenAI can handle both web search and custom tools together
+            const tools: any[] = [];
+            if (enableSupermemorySearch) {
+                tools.push(getMemorySearchToolOpenAI());
+            }
+
+            // Build initial messages
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: prompt },
+            ];
+
             log.info('Making OpenAI rewrite call', {
                 hasWebSearch: !!enableGoogleSearch,
+                hasMemorySearch: !!enableSupermemorySearch,
+                toolCount: tools.length,
             });
-            return generateWithProvider(systemPrompt, enrichedPrompt, {
-                maxTokens,
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    messages,
+                    temperature: 0.7,
+                    max_completion_tokens: maxTokens,
+                    top_p: 0.95,
+                };
+
+                // Add tools if any are enabled
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                // Add web search if enabled (OpenAI has native web_search_preview tool)
+                if (enableGoogleSearch) {
+                    // For web search, we use pre-search approach as OpenAI web search is different
+                    const webSearchResult = await performWebSearch('openai', text);
+                    if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                        // Enrich the user message with search results
+                        messages[messages.length - 1].content = enrichPromptWithSearch(prompt, webSearchResult.result);
+                        log.debug('Enriched rewrite prompt with web search results', {
+                            citationCount: webSearchResult.result.citations.length,
+                        });
+                    }
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('OpenAI API error', { status: response.status, error: errorText });
+                    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to call a function
+                if (enableSupermemorySearch && hasOpenAIToolCall(data)) {
+                    functionCallCount++;
+                    const toolCall = extractOpenAIToolCall(data);
+
+                    if (toolCall) {
+                        log.info('AI requested memory search for rewrite (OpenAI)', {
+                            functionName: toolCall.function.name,
+                            iteration: functionCallCount,
+                        });
+
+                        // Execute the memory search
+                        const result = await executeOpenAIMemorySearch(toolCall);
+
+                        // Add assistant's response with tool call to conversation
+                        messages.push(data.choices[0].message);
+
+                        // Add tool response to conversation
+                        messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+
+                        log.debug('Added tool response to rewrite conversation (OpenAI)', {
+                            resultSuccess: result.success,
+                            resultLength: result.formattedResult.length,
+                        });
+
+                        continue;
+                    }
+                }
+
+                // No tool call - extract and return the rewritten text
+                const rewrittenText = data.choices?.[0]?.message?.content;
+
+                if (!rewrittenText) {
+                    log.error('No text in OpenAI response', { data });
+                    throw new Error('No text generated');
+                }
+
+                log.info('OpenAI Rewrite complete', {
+                    inputLength: text.length,
+                    outputLength: rewrittenText.length,
+                    preset,
+                    functionCallsUsed: functionCallCount,
+                });
+
+                return rewrittenText;
+            }
+
+            // If we exhausted function calls, make a final request without tools
+            log.warn('Max function calls reached for OpenAI rewrite, making final request');
+            const finalBody = {
+                model: config.modelName,
+                messages,
                 temperature: 0.7,
-                topP: 0.95,
+                max_completion_tokens: maxTokens,
+                top_p: 0.95,
+            };
+
+            const finalResponse = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body: JSON.stringify(finalBody),
             });
+
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`OpenAI API error: ${finalResponse.status} - ${errorText}`);
+            }
+
+            const finalData = await finalResponse.json();
+            return finalData.choices?.[0]?.message?.content || '';
+        }
+
+        // -------------------------------------------------------------------------
+        // Claude/Anthropic Implementation - with function calling support
+        // -------------------------------------------------------------------------
+        if (activeProvider === 'anthropic') {
+            const maxTokens = Math.max(text.length * 2, 500);
+            const provider = await getProvider();
+            const config = await provider.getConfig(false);
+
+            // Note: URL context and web search are NOT available for Claude
+            if (enableUrlContext) {
+                log.warn('URL context not available for Anthropic provider - feature will be skipped');
+            }
+            if (enableGoogleSearch) {
+                log.warn('Web search not available for Anthropic provider - feature will be skipped');
+            }
+
+            // Build tools array for Claude
+            const tools: any[] = [];
+            if (enableSupermemorySearch) {
+                tools.push(getMemorySearchToolClaude());
+            }
+
+            // Build initial messages
+            const messages: any[] = [
+                { role: 'user', content: prompt },
+            ];
+
+            log.info('Making Claude rewrite call', {
+                hasMemorySearch: !!enableSupermemorySearch,
+                toolCount: tools.length,
+            });
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    max_tokens: maxTokens,
+                    system: systemPrompt,
+                    messages,
+                    temperature: 0.7,
+                    top_p: 0.95,
+                };
+
+                // Add tools if any are enabled
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('Claude API error', { status: response.status, error: errorText });
+                    throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to use a tool
+                if (enableSupermemorySearch && hasClaudeToolUse(data)) {
+                    functionCallCount++;
+                    const toolUse = extractClaudeToolUse(data);
+
+                    if (toolUse) {
+                        log.info('AI requested memory search for rewrite (Claude)', {
+                            toolName: toolUse.name,
+                            iteration: functionCallCount,
+                        });
+
+                        // Execute the memory search
+                        const result = await executeClaudeMemorySearch(toolUse);
+
+                        // Add assistant's response to conversation
+                        messages.push({ role: 'assistant', content: data.content });
+
+                        // Add tool result to conversation
+                        messages.push(buildClaudeToolResult(toolUse.id, result.formattedResult, !result.success));
+
+                        log.debug('Added tool result to rewrite conversation (Claude)', {
+                            resultSuccess: result.success,
+                            resultLength: result.formattedResult.length,
+                        });
+
+                        continue;
+                    }
+                }
+
+                // No tool use - extract and return the rewritten text
+                const textBlock = data.content?.find((block: any) => block.type === 'text');
+                const rewrittenText = textBlock?.text;
+
+                if (!rewrittenText) {
+                    log.error('No text in Claude response', { data });
+                    throw new Error('No text generated');
+                }
+
+                log.info('Claude Rewrite complete', {
+                    inputLength: text.length,
+                    outputLength: rewrittenText.length,
+                    preset,
+                    functionCallsUsed: functionCallCount,
+                });
+
+                return rewrittenText;
+            }
+
+            // If we exhausted function calls, make a final request without tools
+            log.warn('Max function calls reached for Claude rewrite, making final request');
+            const finalBody = {
+                model: config.modelName,
+                max_tokens: maxTokens,
+                system: systemPrompt,
+                messages,
+                temperature: 0.7,
+                top_p: 0.95,
+            };
+
+            const finalResponse = await fetch(config.url, {
+                method: 'POST',
+                headers: config.headers,
+                body: JSON.stringify(finalBody),
+            });
+
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`Anthropic API error: ${finalResponse.status} - ${errorText}`);
+            }
+
+            const finalData = await finalResponse.json();
+            const textBlock = finalData.content?.find((block: any) => block.type === 'text');
+            return textBlock?.text || '';
         }
 
         // -------------------------------------------------------------------------

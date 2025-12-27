@@ -1,11 +1,21 @@
 /**
- * Gemini Function Calling Handler for Supermemory
+ * Function Calling Handler for Supermemory
  * Handles the function call-response loop for AI-driven memory search
+ * 
+ * Supports:
+ * - Gemini: Native function calling with function_declarations
+ * - OpenAI: Function calling with tools array
+ * - Claude: Tool use with input_schema
  */
 
 import { createLogger } from '~logger';
 import { searchMemories, formatMemoriesForPrompt } from './searchService';
-import { MEMORY_SEARCH_FUNCTION, parseMemorySearchParams } from './functionDeclaration';
+import {
+    MEMORY_SEARCH_FUNCTION,
+    parseMemorySearchParams,
+    getMemorySearchToolOpenAI,
+    getMemorySearchToolClaude,
+} from './functionDeclaration';
 
 const log = createLogger('MemoryFunctionHandler', 'BACKGROUND');
 
@@ -136,3 +146,172 @@ export function getMemorySearchTool(): { function_declarations: [typeof MEMORY_S
         function_declarations: [MEMORY_SEARCH_FUNCTION],
     };
 }
+
+// ============================================================================
+// OpenAI Function Calling Support
+// ============================================================================
+
+/**
+ * Represents a function call from OpenAI
+ */
+export interface OpenAIToolCall {
+    id: string;
+    type: 'function';
+    function: {
+        name: string;
+        arguments: string; // JSON string
+    };
+}
+
+/**
+ * Check if the OpenAI response contains a tool call for memory search
+ */
+export function hasOpenAIToolCall(response: { choices?: Array<{ message?: { tool_calls?: OpenAIToolCall[] } }> }): boolean {
+    const toolCalls = response?.choices?.[0]?.message?.tool_calls || [];
+    return toolCalls.some(tc =>
+        tc.type === 'function' && tc.function?.name === MEMORY_SEARCH_FUNCTION.name
+    );
+}
+
+/**
+ * Extract tool call from OpenAI response if present
+ */
+export function extractOpenAIToolCall(response: { choices?: Array<{ message?: { tool_calls?: OpenAIToolCall[] } }> }): OpenAIToolCall | null {
+    const toolCalls = response?.choices?.[0]?.message?.tool_calls || [];
+    for (const tc of toolCalls) {
+        if (tc.type === 'function' && tc.function?.name === MEMORY_SEARCH_FUNCTION.name) {
+            return tc;
+        }
+    }
+    return null;
+}
+
+/**
+ * Execute memory search from OpenAI tool call
+ */
+export async function executeOpenAIMemorySearch(toolCall: OpenAIToolCall): Promise<{
+    success: boolean;
+    formattedResult: string;
+    rawResults?: unknown;
+}> {
+    try {
+        const args = JSON.parse(toolCall.function.arguments);
+        return executeMemorySearch({ name: toolCall.function.name, args });
+    } catch (error) {
+        log.warn('Failed to parse OpenAI tool call arguments', { error });
+        return {
+            success: false,
+            formattedResult: 'Failed to parse tool call arguments.',
+        };
+    }
+}
+
+/**
+ * Build the tool response message for OpenAI
+ * @see https://platform.openai.com/docs/guides/function-calling
+ */
+export function buildOpenAIToolResponse(toolCallId: string, result: string): {
+    role: 'tool';
+    tool_call_id: string;
+    content: string;
+} {
+    return {
+        role: 'tool',
+        tool_call_id: toolCallId,
+        content: result,
+    };
+}
+
+/**
+ * Get the memory search tool configuration for OpenAI requests
+ */
+export { getMemorySearchToolOpenAI };
+
+// ============================================================================
+// Claude/Anthropic Tool Use Support
+// ============================================================================
+
+/**
+ * Represents a tool use block from Claude
+ */
+export interface ClaudeToolUse {
+    type: 'tool_use';
+    id: string;
+    name: string;
+    input: Record<string, unknown>;
+}
+
+/**
+ * Represents a content block from Claude response
+ */
+export type ClaudeContentBlock =
+    | { type: 'text'; text: string }
+    | ClaudeToolUse;
+
+/**
+ * Check if the Claude response contains a tool use for memory search
+ */
+export function hasClaudeToolUse(response: { content?: ClaudeContentBlock[]; stop_reason?: string }): boolean {
+    // Check if stop_reason indicates tool use
+    if (response?.stop_reason !== 'tool_use') {
+        return false;
+    }
+    const content = response?.content || [];
+    return content.some(block =>
+        block.type === 'tool_use' && block.name === MEMORY_SEARCH_FUNCTION.name
+    );
+}
+
+/**
+ * Extract tool use from Claude response if present
+ */
+export function extractClaudeToolUse(response: { content?: ClaudeContentBlock[] }): ClaudeToolUse | null {
+    const content = response?.content || [];
+    for (const block of content) {
+        if (block.type === 'tool_use' && block.name === MEMORY_SEARCH_FUNCTION.name) {
+            return block as ClaudeToolUse;
+        }
+    }
+    return null;
+}
+
+/**
+ * Execute memory search from Claude tool use
+ */
+export async function executeClaudeMemorySearch(toolUse: ClaudeToolUse): Promise<{
+    success: boolean;
+    formattedResult: string;
+    rawResults?: unknown;
+}> {
+    return executeMemorySearch({ name: toolUse.name, args: toolUse.input });
+}
+
+/**
+ * Build the tool result message for Claude
+ * Must be a user message with tool_result content block
+ * @see https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview
+ */
+export function buildClaudeToolResult(toolUseId: string, result: string, isError = false): {
+    role: 'user';
+    content: Array<{
+        type: 'tool_result';
+        tool_use_id: string;
+        content: string;
+        is_error?: boolean;
+    }>;
+} {
+    return {
+        role: 'user',
+        content: [{
+            type: 'tool_result',
+            tool_use_id: toolUseId,
+            content: result,
+            ...(isError && { is_error: true }),
+        }],
+    };
+}
+
+/**
+ * Get the memory search tool configuration for Claude requests
+ */
+export { getMemorySearchToolClaude };

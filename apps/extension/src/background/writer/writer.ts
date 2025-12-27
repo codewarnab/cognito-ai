@@ -2,8 +2,9 @@
  * Writer Client
  * Handles text generation using the modular provider architecture
  * 
- * Supports Google AI, Vertex AI, and OpenAI providers
+ * Supports Google AI, Vertex AI, OpenAI, and Claude providers
  * Provider-specific features (Gemini tools, function calling) are handled per-provider
+ * AI-driven memory search via function calling is supported on all providers
  */
 
 import { getActiveProvider } from '@/utils/credentials';
@@ -16,11 +17,24 @@ import {
     enrichPromptWithSearch,
 } from '../providers';
 import {
+    // Gemini function calling
     getMemorySearchTool,
     hasFunctionCall,
     extractFunctionCall,
     executeMemorySearch,
     type GeminiContentPart,
+    // OpenAI function calling
+    getMemorySearchToolOpenAI,
+    hasOpenAIToolCall,
+    extractOpenAIToolCall,
+    executeOpenAIMemorySearch,
+    buildOpenAIToolResponse,
+    // Claude function calling
+    getMemorySearchToolClaude,
+    hasClaudeToolUse,
+    extractClaudeToolUse,
+    executeClaudeMemorySearch,
+    buildClaudeToolResult,
 } from '../supermemory';
 import { searchMemories, formatMemoriesForPrompt } from '../supermemory';
 import type { WritePageContext, WriteTone } from '@/types';
@@ -240,7 +254,7 @@ Important guidelines:
         const systemPrompt = this.buildSystemPrompt(options);
         const maxTokens = options?.maxTokens || 1024;
 
-        // Check if advanced features are enabled (Gemini-only)
+        // Check if advanced features are enabled
         const hasAdvancedFeatures = options?.enableUrlContext ||
             options?.enableGoogleSearch ||
             options?.enableSupermemorySearch ||
@@ -256,61 +270,159 @@ Important guidelines:
             });
         }
 
+        // -------------------------------------------------------------------------
+        // OpenAI Implementation - with attachments, web search, and function calling
+        // -------------------------------------------------------------------------
         if (activeProvider === 'openai') {
-            // OpenAI Implementation with attachments and web search
-            let enrichedPrompt = prompt;
-
-            // Handle web search for OpenAI (using Responses API pre-search)
-            if (options?.enableGoogleSearch) {
-                log.info('Using OpenAI web search for generation');
-                const webSearchResult = await performWebSearch('openai', prompt);
-                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
-                    enrichedPrompt = enrichPromptWithSearch(prompt, webSearchResult.result);
-                    log.debug('Enriched prompt with web search results', {
-                        citationCount: webSearchResult.result.citations.length,
-                    });
-                }
-            }
-
             // Note: URL context is NOT available for OpenAI - Gemini-specific feature
             if (options?.enableUrlContext) {
                 log.warn('URL context not available for OpenAI provider - feature will be skipped');
             }
 
-            const body = {
+            // Build tools array - OpenAI can handle both web search and custom tools together
+            const tools: any[] = [];
+            if (options?.enableSupermemorySearch) {
+                tools.push(getMemorySearchToolOpenAI());
+            }
+
+            // Build initial messages with attachment support
+            const messages: any[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: this.buildOpenAIMessageContent(prompt, options) },
+            ];
+
+            log.info('Making OpenAI API call with function calling', {
+                provider: 'openai',
                 model: config.modelName,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: this.buildOpenAIMessageContent(enrichedPrompt, options) }
-                ],
+                hasWebSearch: !!options?.enableGoogleSearch,
+                hasMemorySearch: !!options?.enableSupermemorySearch,
+                hasAttachment: !!options?.attachment,
+                toolCount: tools.length,
+            });
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    messages,
+                    temperature: 0.7,
+                    max_completion_tokens: maxTokens,
+                    top_p: 0.95,
+                };
+
+                // Add tools if any are enabled
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                // Add web search if enabled (pre-search approach for first iteration)
+                if (options?.enableGoogleSearch && functionCallCount === 0) {
+                    const webSearchResult = await performWebSearch('openai', prompt);
+                    if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                        // Enrich the user message with search results
+                        const enrichedContent = this.buildOpenAIMessageContent(
+                            enrichPromptWithSearch(prompt, webSearchResult.result),
+                            options
+                        );
+                        messages[messages.length - 1].content = enrichedContent;
+                        log.debug('Enriched prompt with web search results', {
+                            citationCount: webSearchResult.result.citations.length,
+                        });
+                    }
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('OpenAI API error', { status: response.status, error: errorText });
+                    throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to call a function
+                if (options?.enableSupermemorySearch && hasOpenAIToolCall(data)) {
+                    functionCallCount++;
+                    const toolCall = extractOpenAIToolCall(data);
+
+                    if (toolCall) {
+                        log.info('AI requested memory search for generation (OpenAI)', {
+                            functionName: toolCall.function.name,
+                            iteration: functionCallCount,
+                        });
+
+                        // Execute the memory search
+                        const result = await executeOpenAIMemorySearch(toolCall);
+
+                        // Add assistant's response with tool call to conversation
+                        messages.push(data.choices[0].message);
+
+                        // Add tool response to conversation
+                        messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+
+                        log.debug('Added tool response to generation conversation (OpenAI)', {
+                            resultSuccess: result.success,
+                            resultLength: result.formattedResult.length,
+                        });
+
+                        continue;
+                    }
+                }
+
+                // No tool call - return the generated text
+                const generatedText = data.choices?.[0]?.message?.content;
+
+                if (!generatedText) {
+                    log.error('No text in OpenAI response', { data });
+                    throw new Error('No text generated');
+                }
+
+                log.info('OpenAI generation complete', {
+                    outputLength: generatedText.length,
+                    functionCallsUsed: functionCallCount,
+                });
+
+                return generatedText;
+            }
+
+            // If we exhausted function calls, make a final request without tools
+            log.warn('Max function calls reached for OpenAI generation, making final request');
+            const finalBody = {
+                model: config.modelName,
+                messages,
                 temperature: 0.7,
                 max_completion_tokens: maxTokens,
                 top_p: 0.95,
             };
 
-            log.info('Making OpenAI API call', { provider: 'openai', model: config.modelName });
-
-            const response = await fetch(config.url, {
+            const finalResponse = await fetch(config.url, {
                 method: 'POST',
                 headers: config.headers,
-                body: JSON.stringify(body),
+                body: JSON.stringify(finalBody),
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`OpenAI API error: ${finalResponse.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            return data.choices?.[0]?.message?.content || '';
+            const finalData = await finalResponse.json();
+            return finalData.choices?.[0]?.message?.content || '';
         }
 
+        // -------------------------------------------------------------------------
+        // Claude/Anthropic Implementation - with attachments and function calling
+        // -------------------------------------------------------------------------
         if (activeProvider === 'anthropic') {
-            // Anthropic/Claude Implementation with attachments
-            log.info('Using Anthropic provider for generation', { model: config.modelName });
-
             // Note: Anthropic doesn't have built-in web search or URL context
-            // If these are enabled, log a warning
             if (options?.enableGoogleSearch) {
                 log.warn('Web search not available for Anthropic provider - feature will be skipped');
             }
@@ -318,37 +430,134 @@ Important guidelines:
                 log.warn('URL context not available for Anthropic provider - feature will be skipped');
             }
 
-            const body = {
+            // Build tools array for Claude
+            const tools: any[] = [];
+            if (options?.enableSupermemorySearch) {
+                tools.push(getMemorySearchToolClaude());
+            }
+
+            // Build initial messages with attachment support
+            const messages: any[] = [
+                { role: 'user', content: this.buildAnthropicMessageContent(prompt, options) },
+            ];
+
+            log.info('Making Anthropic API call with function calling', {
+                provider: 'anthropic',
+                model: config.modelName,
+                hasMemorySearch: !!options?.enableSupermemorySearch,
+                hasAttachment: !!options?.attachment,
+                toolCount: tools.length,
+            });
+
+            // Function calling loop
+            const MAX_FUNCTION_CALLS = 3;
+            let functionCallCount = 0;
+
+            while (functionCallCount < MAX_FUNCTION_CALLS) {
+                const body: any = {
+                    model: config.modelName,
+                    max_tokens: maxTokens,
+                    system: systemPrompt,
+                    messages,
+                    temperature: 0.7,
+                    top_p: 0.95,
+                };
+
+                // Add tools if any are enabled
+                if (tools.length > 0) {
+                    body.tools = tools;
+                }
+
+                const response = await fetch(config.url, {
+                    method: 'POST',
+                    headers: config.headers,
+                    body: JSON.stringify(body),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log.error('Claude API error', { status: response.status, error: errorText });
+                    throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the model wants to use a tool
+                if (options?.enableSupermemorySearch && hasClaudeToolUse(data)) {
+                    functionCallCount++;
+                    const toolUse = extractClaudeToolUse(data);
+
+                    if (toolUse) {
+                        log.info('AI requested memory search for generation (Claude)', {
+                            toolName: toolUse.name,
+                            iteration: functionCallCount,
+                        });
+
+                        // Execute the memory search
+                        const result = await executeClaudeMemorySearch(toolUse);
+
+                        // Add assistant's response to conversation
+                        messages.push({ role: 'assistant', content: data.content });
+
+                        // Add tool result to conversation
+                        messages.push(buildClaudeToolResult(toolUse.id, result.formattedResult, !result.success));
+
+                        log.debug('Added tool result to generation conversation (Claude)', {
+                            resultSuccess: result.success,
+                            resultLength: result.formattedResult.length,
+                        });
+
+                        continue;
+                    }
+                }
+
+                // No tool use - return the generated text
+                const textBlock = data.content?.find((block: any) => block.type === 'text');
+                const generatedText = textBlock?.text;
+
+                if (!generatedText) {
+                    log.error('No text in Claude response', { data });
+                    throw new Error('No text generated');
+                }
+
+                log.info('Claude generation complete', {
+                    outputLength: generatedText.length,
+                    functionCallsUsed: functionCallCount,
+                });
+
+                return generatedText;
+            }
+
+            // If we exhausted function calls, make a final request without tools
+            log.warn('Max function calls reached for Claude generation, making final request');
+            const finalBody = {
                 model: config.modelName,
                 max_tokens: maxTokens,
                 system: systemPrompt,
-                messages: [
-                    { role: 'user', content: this.buildAnthropicMessageContent(prompt, options) }
-                ],
+                messages,
                 temperature: 0.7,
                 top_p: 0.95,
             };
 
-            log.info('Making Anthropic API call', { provider: 'anthropic', model: config.modelName });
-
-            const response = await fetch(config.url, {
+            const finalResponse = await fetch(config.url, {
                 method: 'POST',
                 headers: config.headers,
-                body: JSON.stringify(body),
+                body: JSON.stringify(finalBody),
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+            if (!finalResponse.ok) {
+                const errorText = await finalResponse.text();
+                throw new Error(`Anthropic API error: ${finalResponse.status} - ${errorText}`);
             }
 
-            const data = await response.json();
-            // Anthropic returns content as an array of blocks
-            const textBlock = data.content?.find((block: any) => block.type === 'text');
+            const finalData = await finalResponse.json();
+            const textBlock = finalData.content?.find((block: any) => block.type === 'text');
             return textBlock?.text || '';
         }
 
+        // -------------------------------------------------------------------------
         // Gemini/Vertex Implementation
+        // -------------------------------------------------------------------------
 
         // Check if built-in tools are enabled
         const hasBuiltInTools = options?.enableUrlContext || options?.enableGoogleSearch;
@@ -476,6 +685,8 @@ Important guidelines:
 
     /**
      * Streaming generation
+     * Note: For memory search (enableSupermemorySearch), tool calls are handled in non-streaming mode
+     * before streaming the final response. This is because tool call loops require synchronous handling.
      */
     async *generateStream(prompt: string, options?: WriterOptions): AsyncGenerator<string, void, unknown> {
         const activeProvider = await getActiveProvider();
@@ -484,9 +695,10 @@ Important guidelines:
         const systemPrompt = this.buildSystemPrompt(options);
         const maxTokens = options?.maxTokens || 1024;
 
-        // Check if advanced features are enabled (Gemini-only)
+        // Check if advanced features are enabled
         const hasAdvancedFeatures = options?.enableUrlContext ||
             options?.enableGoogleSearch ||
+            options?.enableSupermemorySearch ||
             options?.attachment;
 
         // For simple streaming without advanced features, use the provider abstraction
@@ -500,25 +712,101 @@ Important guidelines:
             return;
         }
 
+        // -------------------------------------------------------------------------
+        // OpenAI Streaming with attachments, web search, and function calling
+        // -------------------------------------------------------------------------
         if (activeProvider === 'openai') {
-            // OpenAI Streaming with attachments and web search
+            // Note: URL context is NOT available for OpenAI - Gemini-specific feature
+            if (options?.enableUrlContext) {
+                log.warn('URL context not available for OpenAI provider - feature will be skipped');
+            }
+
+            // Handle memory search first (non-streaming) if enabled
+            let memoryContext = '';
+            if (options?.enableSupermemorySearch) {
+                log.info('Handling memory search before streaming (OpenAI)');
+
+                // Build tools array
+                const tools = [getMemorySearchToolOpenAI()];
+
+                // Build initial messages
+                const messages: any[] = [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: this.buildOpenAIMessageContent(prompt, options) },
+                ];
+
+                // Function calling loop (non-streaming)
+                const MAX_FUNCTION_CALLS = 3;
+                let functionCallCount = 0;
+                const nonStreamConfig = await provider.getConfig(false);
+
+                while (functionCallCount < MAX_FUNCTION_CALLS) {
+                    const body = {
+                        model: nonStreamConfig.modelName,
+                        messages,
+                        tools,
+                        temperature: 0.7,
+                        max_completion_tokens: maxTokens,
+                        top_p: 0.95,
+                    };
+
+                    const response = await fetch(nonStreamConfig.url, {
+                        method: 'POST',
+                        headers: nonStreamConfig.headers,
+                        body: JSON.stringify(body),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (hasOpenAIToolCall(data)) {
+                        functionCallCount++;
+                        const toolCall = extractOpenAIToolCall(data);
+
+                        if (toolCall) {
+                            log.info('AI requested memory search for streaming generation (OpenAI)', {
+                                iteration: functionCallCount,
+                            });
+
+                            const result = await executeOpenAIMemorySearch(toolCall);
+                            messages.push(data.choices[0].message);
+                            messages.push(buildOpenAIToolResponse(toolCall.id, result.formattedResult));
+
+                            // Store memory context for the final streaming request
+                            if (result.success) {
+                                memoryContext = result.formattedResult;
+                            }
+                            continue;
+                        }
+                    }
+
+                    // No more tool calls needed
+                    break;
+                }
+            }
+
+            // Now do the streaming request
             let enrichedPrompt = prompt;
+
+            // Add memory context if available
+            if (memoryContext) {
+                enrichedPrompt = `${prompt}\n\nRelevant context from user's memories:\n${memoryContext}`;
+            }
 
             // Handle web search for OpenAI (using Responses API pre-search)
             if (options?.enableGoogleSearch) {
                 log.info('Using OpenAI web search for streaming generation');
                 const webSearchResult = await performWebSearch('openai', prompt);
                 if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
-                    enrichedPrompt = enrichPromptWithSearch(prompt, webSearchResult.result);
+                    enrichedPrompt = enrichPromptWithSearch(enrichedPrompt, webSearchResult.result);
                     log.debug('Enriched prompt with web search results', {
                         citationCount: webSearchResult.result.citations.length,
                     });
                 }
-            }
-
-            // Note: URL context is NOT available for OpenAI - Gemini-specific feature
-            if (options?.enableUrlContext) {
-                log.warn('URL context not available for OpenAI provider - feature will be skipped');
             }
 
             const body = {
@@ -578,9 +866,11 @@ Important guidelines:
             return;
         }
 
+        // -------------------------------------------------------------------------
+        // Claude/Anthropic Streaming (with function calling pre-processing)
+        // -------------------------------------------------------------------------
         if (activeProvider === 'anthropic') {
-            // Anthropic non-streaming with attachments (send full response when done)
-            log.info('Using Anthropic provider for generation', { model: config.modelName });
+            log.info('Using Anthropic provider for streaming generation', { model: config.modelName });
 
             // Note: Anthropic doesn't have built-in web search or URL context
             if (options?.enableGoogleSearch) {
@@ -590,12 +880,81 @@ Important guidelines:
                 log.warn('URL context not available for Anthropic provider - feature will be skipped');
             }
 
+            // Handle memory search first (non-streaming) if enabled
+            let enrichedPrompt = prompt;
+            if (options?.enableSupermemorySearch) {
+                log.info('Handling memory search before streaming (Claude)');
+
+                // Build tools array
+                const tools = [getMemorySearchToolClaude()];
+
+                // Build initial messages
+                const messages: any[] = [
+                    { role: 'user', content: this.buildAnthropicMessageContent(prompt, options) },
+                ];
+
+                // Function calling loop (non-streaming)
+                const MAX_FUNCTION_CALLS = 3;
+                let functionCallCount = 0;
+                const nonStreamConfig = await provider.getConfig(false);
+
+                while (functionCallCount < MAX_FUNCTION_CALLS) {
+                    const body = {
+                        model: nonStreamConfig.modelName,
+                        max_tokens: maxTokens,
+                        system: systemPrompt,
+                        messages,
+                        tools,
+                        temperature: 0.7,
+                        top_p: 0.95,
+                    };
+
+                    const response = await fetch(nonStreamConfig.url, {
+                        method: 'POST',
+                        headers: nonStreamConfig.headers,
+                        body: JSON.stringify(body),
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`Anthropic API error: ${response.status} - ${errorText}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (hasClaudeToolUse(data)) {
+                        functionCallCount++;
+                        const toolUse = extractClaudeToolUse(data);
+
+                        if (toolUse) {
+                            log.info('AI requested memory search for streaming generation (Claude)', {
+                                iteration: functionCallCount,
+                            });
+
+                            const result = await executeClaudeMemorySearch(toolUse);
+                            messages.push({ role: 'assistant', content: data.content });
+                            messages.push(buildClaudeToolResult(toolUse.id, result.formattedResult, !result.success));
+
+                            // Store memory context for the final request
+                            if (result.success) {
+                                enrichedPrompt = `${prompt}\n\nRelevant context from user's memories:\n${result.formattedResult}`;
+                            }
+                            continue;
+                        }
+                    }
+
+                    // No more tool calls needed
+                    break;
+                }
+            }
+
+            // Make final request (non-streaming for now as Claude streaming is more complex)
             const body = {
                 model: config.modelName,
                 max_tokens: maxTokens,
                 system: systemPrompt,
                 messages: [
-                    { role: 'user', content: this.buildAnthropicMessageContent(prompt, options) }
+                    { role: 'user', content: this.buildAnthropicMessageContent(enrichedPrompt, options) }
                 ],
                 temperature: 0.7,
                 top_p: 0.95,
