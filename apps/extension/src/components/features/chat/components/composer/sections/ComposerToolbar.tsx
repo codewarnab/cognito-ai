@@ -236,8 +236,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 isAdaptiveMode={isAdaptiveMode}
             />
 
-            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded) */}
-            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && (
+            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded or in backend mode) */}
+            {/* In backend mode, model is fixed to gemini-2.5-flash by the server */}
+            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && (
                 <ModelSelectorPopover
                     isOpen={isModelSelectorOpen}
                     onOpenChange={setIsModelSelectorOpen}
