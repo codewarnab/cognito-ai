@@ -35,14 +35,36 @@ export type AIProviderMode = 'local' | 'remote';
  */
 export type AIMode = AIProviderMode;
 
-// Remote model options
+// Remote model options - must match presets.ts model IDs
 export type RemoteModelType =
-  | 'gemini-3-flash-preview'     // Default - Gemini 3 Flash
+  // Google Gemini
   | 'gemini-3-pro-preview'
+  | 'gemini-3-flash-preview'     // Default - Gemini 3 Flash
   | 'gemini-2.5-pro'
   | 'gemini-2.5-flash'
   | 'gemini-2.5-flash-lite'
   | 'gemini-2.5-flash-image'
+  // Anthropic Claude
+  | 'claude-opus-4-5'
+  | 'claude-opus-4-1'
+  | 'claude-sonnet-4-5'
+  | 'claude-haiku-4-5'
+  // xAI Grok
+  | 'grok-4'
+  | 'grok-4-1-fast-reasoning'
+  | 'grok-4-1-fast-non-reasoning'
+  | 'grok-4-fast-reasoning'
+  | 'grok-4-fast-non-reasoning'
+  | 'grok-code-fast-1'
+  | 'grok-3'
+  // OpenAI
+  | 'gpt-5.2'
+  | 'gpt-5.1'
+  | 'gpt-5-mini'
+  | 'gpt-5-nano'
+  | 'gpt-4.1'
+  | 'gpt-4.1-mini'
+  | 'gpt-4.1-nano'
 
 // Model configuration
 export interface ModelConfig {
