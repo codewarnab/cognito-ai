@@ -237,7 +237,7 @@ export function CategoryGroup({
                 <div className="flex gap-1">
                     <button
                         type="button"
-                        className="py-1 px-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="py-1 px-2 bg-[var(--bg-quaternary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleEnableAll}
                         disabled={isOverridden || enabledCount === categories.length}
                         aria-label={`Enable all ${LOGGER_GROUP_LABELS[groupName]} categories`}
@@ -246,7 +246,7 @@ export function CategoryGroup({
                     </button>
                     <button
                         type="button"
-                        className="py-1 px-2 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="py-1 px-2 bg-[var(--bg-quaternary)] border border-[var(--border-color)] rounded text-[var(--text-secondary)] text-[11px] cursor-pointer transition-all duration-200 hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                         onClick={handleDisableAll}
                         disabled={isOverridden || enabledCount === 0}
                         aria-label={`Disable all ${LOGGER_GROUP_LABELS[groupName]} categories`}

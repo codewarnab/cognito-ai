@@ -86,7 +86,11 @@ export default defineBackground(() => {
     // Initialize all modular event listeners
     initializeLifecycleEventListeners();
     initializeMessageRouter();
-    initializeExternalMessageRouter();
+    try {
+        initializeExternalMessageRouter();
+    } catch (e) {
+        log.error('Failed to initialize external message router:', e);
+    }
     initializeSummarizerPortListener();
     initializeWriterPortListener();
     initializeRewriterPortListener();

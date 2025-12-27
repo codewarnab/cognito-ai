@@ -1,6 +1,6 @@
 // Lightweight logger with levels and prefix; respects NODE_ENV
 import { LOG_PRESETS } from '@/constants';
-import type { LogCategory } from '@cognito/shared';
+import type { LogCategory, LogEntry } from '@cognito/shared';
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 
@@ -42,7 +42,7 @@ class LoggerConfigManagerClass {
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    
+
     // Prevent multiple concurrent initializations
     if (this.initPromise) {
       return this.initPromise;
@@ -57,7 +57,7 @@ class LoggerConfigManagerClass {
       // Load config from storage
       const result = await chrome.storage.local.get('logger_config');
       const stored = result?.['logger_config'] as LoggerConfig | undefined;
-      
+
       if (stored) {
         // Merge with default to ensure all categories exist
         this.config = {
@@ -173,6 +173,83 @@ function format(prefix: string, level: LogLevel, msg: unknown, args: unknown[]) 
   return [`[${time}] [${prefix}] [${level.toUpperCase()}]`, msg, ...serializedArgs];
 }
 
+// ============================================================================
+// Log Broadcasting & History
+// ============================================================================
+
+class LogHistoryClass {
+  private buffer: LogEntry[] = [];
+  private readonly maxSize = 1000;
+
+  add(entry: LogEntry) {
+    this.buffer.push(entry);
+    if (this.buffer.length > this.maxSize) {
+      this.buffer.shift();
+    }
+  }
+
+  getHistory(): LogEntry[] {
+    return [...this.buffer];
+  }
+}
+
+export const LogHistory = new LogHistoryClass();
+
+class LogBroadcasterClass {
+  private ports: chrome.runtime.Port[] = [];
+
+  constructor() {
+    // Only setup if in extension context
+    try {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.onConnectExternal) {
+        this.setupListener();
+      }
+    } catch (e) {
+      // Ignore during build/test where API might be mocked but not implemented
+    }
+  }
+
+  private setupListener() {
+    chrome.runtime.onConnectExternal.addListener((port) => {
+      if (port.name === 'logger') {
+        this.ports.push(port);
+
+        // Send history immediately upon connection
+        const history = LogHistory.getHistory();
+        history.forEach(entry => {
+          try {
+            port.postMessage(entry)
+          } catch (e) {
+            // Ignore connection errors during history replay
+          }
+        });
+
+        port.onDisconnect.addListener(() => {
+          this.ports = this.ports.filter(p => p !== port);
+        });
+      }
+    });
+  }
+
+  broadcast(entry: LogEntry) {
+    // Always add to history
+    LogHistory.add(entry);
+
+    // Broadcast to connected ports
+    if (this.ports.length > 0) {
+      this.ports.forEach(port => {
+        try {
+          port.postMessage(entry);
+        } catch (e) {
+          this.ports = this.ports.filter(p => p !== port);
+        }
+      });
+    }
+  }
+}
+
+export const LogBroadcaster = new LogBroadcasterClass();
+
 export function createLogger(
   prefix: string,
   category?: LogCategory,
@@ -181,31 +258,43 @@ export function createLogger(
   const threshold = LEVEL_ORDER[minLevel];
   const isEnabled = (lvl: LogLevel) => LEVEL_ORDER[lvl] >= threshold;
 
-  return {
-    debug: (msg: unknown, ...args: unknown[]) => {
-      if (isEnabled("debug") && isCategoryEnabled(category)) {
-        console.debug(...format(prefix, "debug", msg, args));
-      }
-    },
-    info: (msg: unknown, ...args: unknown[]) => {
-      if (isEnabled("info") && isCategoryEnabled(category)) {
-        console.info(...format(prefix, "info", msg, args));
-      }
-    },
-    warn: (msg: unknown, ...args: unknown[]) => {
-      if (isEnabled("warn") && isCategoryEnabled(category)) {
-        console.warn(...format(prefix, "warn", msg, args));
-      }
-    },
-    error: (msg: unknown, ...args: unknown[]) => {
-      // ALWAYS show errors unless ERRORS_ONLY is specifically false
-      // AND category is disabled
-      const shouldShow = LoggerConfigManager.isErrorsOnlyMode() ? true :
-        (isEnabled("error") && (isCategoryEnabled(category) || true));
-      if (shouldShow) {
-        console.error(...format(prefix, "error", msg, args));
-      }
+  const log = (level: LogLevel, msg: unknown, args: unknown[]) => {
+    // 1. Console Output
+    const formatted = format(prefix, level, msg, args);
+
+    const isConsoleEnabled =
+      level === 'error'
+        ? (LoggerConfigManager.isErrorsOnlyMode() ? true : (isEnabled('error') && (isCategoryEnabled(category) || true)))
+        : (isEnabled(level) && isCategoryEnabled(category));
+
+    if (isConsoleEnabled) {
+      // eslint-disable-next-line no-console
+      console[level](...formatted);
     }
+
+    // 2. Broadcast to DevTools (always broadcast if we can, let the UI filter)
+    // We broadcast everything so the DevTools can show/hide even if console output is silenced
+    try {
+      const entry: LogEntry = {
+        id: crypto.randomUUID(),
+        timestamp: new Date().toISOString(),
+        level,
+        category,
+        message: msg,
+        args: args.map(serializeValue),
+        prefix
+      };
+      LogBroadcaster.broadcast(entry);
+    } catch (e) {
+      // Fail silently on broadcast errors
+    }
+  };
+
+  return {
+    debug: (msg: unknown, ...args: unknown[]) => log('debug', msg, args),
+    info: (msg: unknown, ...args: unknown[]) => log('info', msg, args),
+    warn: (msg: unknown, ...args: unknown[]) => log('warn', msg, args),
+    error: (msg: unknown, ...args: unknown[]) => log('error', msg, args)
   } as const;
 }
 

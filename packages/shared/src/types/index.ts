@@ -121,6 +121,7 @@ export type {
     LoggerPresetName,
     LoggerCategoryGroup,
     CategoryWithSubCategories,
+    LogEntry,
 } from './logger.js';
 export { LOGGER_CONFIG_KEY, LOGGER_CATEGORY_GROUPS, LOGGER_SUBCATEGORY_GROUPS, hasSubCategories } from './logger.js';
 

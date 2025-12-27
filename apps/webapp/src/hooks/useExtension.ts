@@ -23,8 +23,10 @@ export function useExtension(): UseExtensionReturn {
             // Timeout the check after 1s to avoid hanging if extension is present but unresponsive (should involve callback)
             // But chrome.runtime.sendMessage usually fails fast if ID not found.
             const installed = await extensionAPI.isInstalled();
+            console.log('[useExtension] isInstalled result:', installed);
             setIsInstalled(installed);
         } catch (err) {
+            console.error('[useExtension] Check failed:', err);
             setError(err instanceof Error ? err : new Error('Unknown error'));
             setIsInstalled(false);
         } finally {

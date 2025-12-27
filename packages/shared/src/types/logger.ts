@@ -475,3 +475,16 @@ export const LOGGER_CATEGORY_GROUPS = {
  * Group name type derived from LOGGER_CATEGORY_GROUPS
  */
 export type LoggerCategoryGroup = keyof typeof LOGGER_CATEGORY_GROUPS;
+
+/**
+ * Log entry structure for unified logging
+ */
+export interface LogEntry {
+    id: string;
+    timestamp: string;
+    level: 'debug' | 'info' | 'warn' | 'error';
+    category?: LogCategory;
+    message: unknown;
+    args: unknown[];
+    prefix?: string;
+}
