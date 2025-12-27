@@ -84,8 +84,6 @@ const Index = (props: IPropsProviders) => {
 				<AnimateBox className='w-full'>
 					{x.current_tab === props_tab.items.length - 1 ? (
 						<Disabled {...props_disabled} />
-					) : x.current_tab === props_tab.items.length - 2 ? (
-						<Custom {...props_custom} />
 					) : (
 						<Form {...props_form} />
 					)}
