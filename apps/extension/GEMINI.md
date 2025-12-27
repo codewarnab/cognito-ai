@@ -154,6 +154,7 @@ pnpm --filter @cognito/docs build
 - **MCP Implementation:** Check `apps/extension/src/entrypoints/background/` and `apps/extension/src/mcp/` to understand MCP connections. See `docs/MCP_STDIO_ARCHITECTURE.md` for backend-proxied stdio servers and `docs/REMOTE_MCP_INTEGRATION.md` for SSE/HTTP transport.
 - **Permissions:** The manifest configuration in `wxt.config.ts` lists Chrome extension permissions.
 - **Load Extension:** Load `.output/chrome-mv3` as unpacked extension in Chrome.
+- **Model Sync:** See `docs/MODEL_CONFIGURATION_SYNC.md` for details on how webapp and extension settings stay in sync.
 
 ## Shared Package (`@cognito/shared`)
 

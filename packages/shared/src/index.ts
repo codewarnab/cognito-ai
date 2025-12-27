@@ -14,3 +14,6 @@ export * from './constants/index.js';
 
 // Re-export storage interfaces
 export * from './storage/index.js';
+
+// Re-export models
+export * from './models/index.js';

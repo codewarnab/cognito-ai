@@ -11,6 +11,8 @@ import { z } from 'zod';
 import { createLogger } from '~logger';
 import type { PageContext } from '@/utils/tabs';
 import { generateLocalContextualSuggestions } from './local';
+import { getActiveProvider } from '@/utils/credentials';
+import { getContentScriptModel } from '@/constants/contentScriptModels';
 import { generateBackendSuggestions } from './backendSuggestions';
 import { initializeModel } from '../core/modelFactory';
 import { HIDE_LOCAL_MODE } from '@/constants';
@@ -110,8 +112,17 @@ export async function generateContextualSuggestions(
 
         // Remote mode: Use active provider (respects user's provider selection)
         try {
-            // Initialize model using modelFactory (automatically handles provider selection)
-            const { model, provider, modelName } = await initializeModel('gemini-2.5-flash-lite', 'remote');
+            // Determine active provider and its corresponding "cheap" model
+            const activeProvider = await getActiveProvider();
+            const modelConfig = getContentScriptModel(activeProvider);
+
+            if (!modelConfig) {
+                throw new Error(`No content script model configuration for provider: ${activeProvider}`);
+            }
+
+            // Initialize model using modelFactory
+            // We pass the provider-specific model name (e.g., 'gpt-5-mini' or 'gemini-2.5-flash-lite')
+            const { model, provider, modelName } = await initializeModel(modelConfig.model, 'remote');
 
             log.info('Generating remote suggestions with provider:', provider, 'model:', modelName);
 

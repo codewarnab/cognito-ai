@@ -14,6 +14,7 @@ import { builtInAI } from '@built-in-ai/core';
 import { createLogger } from '~logger';
 import { APIError, ErrorType } from '../../errors/errorTypes';
 import { getActiveProvider, getVertexCredentials, getGoogleApiKey, getOpenAIApiKey, getAnthropicApiKey, getXaiApiKey } from '@/utils/credentials';
+import { cognitoProviders } from '@cognito/shared';
 import {
     isSupermemoryReady,
     getSupermemoryApiKey,
@@ -108,27 +109,68 @@ export async function initializeModel(
         return initializeLocalModel();
     }
 
-    // Determine provider (Vertex if both configured)
-    let activeProvider: AIProvider;
-    try {
-        activeProvider = await getActiveProvider();
-        log.info('🎯 Active provider determined:', activeProvider);
+    // Determine provider from model name
+    let provider: AIProvider;
 
-        // Log if both providers are configured (Vertex is preferred)
-        const hasVertex = await getVertexCredentials();
-        const hasGoogle = await getGoogleApiKey();
-        if (hasVertex && hasGoogle) {
-            log.info('ℹ️  Both Google AI and Vertex AI are configured. Using Vertex AI as default.');
+    // Use shared registry to find provider for model
+    const foundProvider = cognitoProviders.find(p =>
+        p.models?.some(m => m.id === modelName)
+    );
+
+    if (foundProvider) {
+        if (foundProvider.name === 'google_gemini') {
+            // Check if Vertex is configured and preferred for Gemini models
+            const hasVertex = await getVertexCredentials();
+            const hasGoogle = await getGoogleApiKey();
+
+            if (hasVertex && hasGoogle) {
+                log.info('ℹ️  Both Google AI and Vertex AI are configured. Using Vertex AI for Gemini model.');
+                provider = 'vertex';
+            } else if (hasVertex) {
+                provider = 'vertex';
+            } else {
+                provider = 'google';
+            }
+        } else {
+            provider = foundProvider.name as AIProvider;
         }
-    } catch (error) {
-        log.error('❌ No provider configured:', error);
-        throw error;
+    } else {
+        // Fallback to heuristic checks if not found in registry (e.g. legacy or new models)
+        if (modelName.startsWith('gemini')) {
+            const hasVertex = await getVertexCredentials();
+            if (hasVertex) {
+                provider = 'vertex';
+            } else {
+                provider = 'google';
+            }
+        } else if (modelName.includes('claude')) {
+            provider = 'anthropic';
+        } else if (modelName.includes('grok')) {
+            provider = 'xai';
+        } else if (modelName.startsWith('gpt')) {
+            provider = 'openai';
+        } else {
+            // Fallback to active provider as last resort
+            try {
+                provider = await getActiveProvider();
+                log.info('⚠️ Model provider ambiguous, falling back to active provider:', provider);
+            } catch (error) {
+                throw new APIError({
+                    message: `Could not determine provider for model: ${modelName}`,
+                    statusCode: 400,
+                    retryable: false,
+                    userMessage: `Could not determine which provider to use for model "${modelName}".`,
+                    technicalDetails: 'Model name does not match any known provider patterns',
+                    errorCode: ErrorType.API_GENERIC_ERROR,
+                });
+            }
+        }
     }
 
-    log.info('🚀 Using provider:', activeProvider, 'with model:', modelName);
+    log.info('🚀 Using provider:', provider, 'with model:', modelName);
 
     // Initialize base model based on provider
-    switch (activeProvider) {
+    switch (provider) {
         case 'vertex':
             return await initializeVertexModel(modelName);
         case 'google':
@@ -141,10 +183,10 @@ export async function initializeModel(
             return await initializeXaiModel(modelName);
         default:
             throw new APIError({
-                message: `Unsupported provider: ${activeProvider}`,
+                message: `Unsupported provider: ${provider}`,
                 statusCode: 400,
                 retryable: false,
-                userMessage: `Provider "${activeProvider}" is not yet supported.`,
+                userMessage: `Provider "${provider}" is not yet supported.`,
                 technicalDetails: 'Provider not implemented in modelFactory',
                 errorCode: ErrorType.API_GENERIC_ERROR,
             });
