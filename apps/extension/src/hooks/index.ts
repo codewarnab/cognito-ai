@@ -38,5 +38,5 @@ export * from './workflows';
 // WebMCP hooks
 export * from './webmcp';
 
-// Provider capabilities hooks
-export { useProviderCapabilities, useCapability, getCapabilityUnavailableReason } from './useProviderCapabilities';
+// Provider capabilities hooks - Import directly from './useProviderCapabilities' to avoid auto-import duplication
+// export { useProviderCapabilities, useCapability, getCapabilityUnavailableReason } from './useProviderCapabilities';

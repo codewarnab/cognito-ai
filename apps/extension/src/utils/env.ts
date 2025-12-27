@@ -33,7 +33,14 @@ export const ENV = {
     /**
      * Metadata API URL for YouTube video metadata
      */
+    /**
+     * Metadata API URL for YouTube video metadata
+     */
     METADATA_API_URL: import.meta.env.WXT_METADATA_API_URL || 'https://youtube-transcript-generator-five.vercel.app/metadata',
+    /**
+     * Webapp URL for settings, providers, etc.
+     */
+    WEBAPP_URL: import.meta.env.WXT_WEBAPP_URL || (import.meta.env.DEV ? 'http://localhost:3002' : 'https://cognito-ai-webapp.vercel.app'),
 } as const;
 
 /**

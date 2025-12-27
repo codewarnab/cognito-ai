@@ -56,11 +56,12 @@ export class GoogleProvider implements IProvider {
         }
 
         const modelConfig = getContentScriptModel('google');
-        const endpoint = streaming ? 'streamGenerateContent?alt=sse' : 'generateContent';
+        const endpoint = streaming ? 'streamGenerateContent' : 'generateContent';
+        const queryParams = streaming ? `alt=sse&key=${apiKey}` : `key=${apiKey}`;
 
         return {
             type: 'google',
-            url: `${this.baseUrl}/models/${modelConfig.model}:${endpoint}?key=${apiKey}`,
+            url: `${this.baseUrl}/models/${modelConfig.model}:${endpoint}?${queryParams}`,
             headers: {
                 'Content-Type': 'application/json',
             },

@@ -2,6 +2,7 @@
 import { LOG_PRESETS } from '@/constants';
 import type { LogCategory, LogEntry } from '@cognito/shared';
 
+
 type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LEVEL_ORDER: Record<LogLevel, number> = {

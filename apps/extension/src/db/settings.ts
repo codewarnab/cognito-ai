@@ -128,3 +128,17 @@ export async function updateSettings(updates: Partial<Settings>): Promise<void> 
     }
 }
 
+/**
+ * Clear settings cache for specific keys
+ * Used when other contexts (e.g., webapp) update storage and we need fresh data
+ * @param keys Keys to clear from cache. If empty, clears all cache.
+ */
+export function clearSettingsCache(keys?: string[]): void {
+    if (!keys || keys.length === 0) {
+        settingsCache.clear();
+    } else {
+        for (const key of keys) {
+            settingsCache.delete(key);
+        }
+    }
+}
