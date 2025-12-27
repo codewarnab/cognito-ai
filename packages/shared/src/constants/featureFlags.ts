@@ -17,3 +17,13 @@
  * Set to `false` for development or when users should provide their own keys.
  */
 export const WEB_SEARCH_SELF_API_KEY_HIDDEN = true;
+
+/**
+ * Hide Auto Extract Insights Configuration
+ * When enabled (true), the extension disables all auto-extraction and memory features.
+ * This:
+ * - Hides the Supermemory/Auto-Extraction settings in the webapp
+ * - Prevents background alarms from triggering extraction
+ * - Prevents extraction triggers from content scripts
+ */
+export const HIDE_AUTO_EXTRACT_INSIGHTS = true;

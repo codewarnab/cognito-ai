@@ -12,7 +12,7 @@ export {
     SUGGESTION_CAPABILITIES,
 } from './prompts.js';
 
-export { WEB_SEARCH_SELF_API_KEY_HIDDEN } from './featureFlags.js';
+export { WEB_SEARCH_SELF_API_KEY_HIDDEN, HIDE_AUTO_EXTRACT_INSIGHTS } from './featureFlags.js';
 
 // Logger presets and utilities
 export {

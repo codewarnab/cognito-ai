@@ -14,6 +14,7 @@ import { cleanupCache } from '@/ai/fileApi/cache';
 import { APP_ICON } from '@/constants';
 import { processExtractionQueue } from './supermemory/extraction/processor';
 import { processContentMemoryQueue } from './supermemory/contentMemory/processor';
+import { HIDE_AUTO_EXTRACT_INSIGHTS } from '@cognito/shared';
 
 const log = createLogger('Background-Alarms', 'BACKGROUND');
 
@@ -64,6 +65,7 @@ export function initializeAlarmListeners(): void {
 
         // Handle memory extraction queue processing
         if (alarm.name === 'memory-extraction') {
+            if (HIDE_AUTO_EXTRACT_INSIGHTS) return;
             try {
                 await processExtractionQueue();
             } catch (error) {
@@ -74,6 +76,7 @@ export function initializeAlarmListeners(): void {
 
         // Handle content memory queue processing (summarizer, writer, rewriter)
         if (alarm.name === 'content-memory-processing') {
+            if (HIDE_AUTO_EXTRACT_INSIGHTS) return;
             try {
                 await processContentMemoryQueue();
             } catch (error) {

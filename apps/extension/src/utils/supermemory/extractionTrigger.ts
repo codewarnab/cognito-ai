@@ -10,6 +10,7 @@ import { loadThreadMessages } from '~/db';
 import { isSupermemoryReady } from '@/utils/supermemory/credentials';
 import { isAutoExtractionEnabled, getAutoExtractionMinMessages } from './autoExtraction';
 import { sendMessage } from '@/lib/messaging';
+import { HIDE_AUTO_EXTRACT_INSIGHTS } from '@cognito/shared';
 
 const log = createLogger('ExtractionTrigger', 'UTILS_HELPER');
 
@@ -58,6 +59,8 @@ async function getThreadExtractionMeta(
  * @param threadId - The thread ID to potentially queue for extraction
  */
 export async function maybeQueueForExtraction(threadId: string): Promise<void> {
+  if (HIDE_AUTO_EXTRACT_INSIGHTS) return; // Feature disabled via flag
+
   try {
     // Check if feature is enabled
     const [smReady, autoEnabled, minMessages] = await Promise.all([

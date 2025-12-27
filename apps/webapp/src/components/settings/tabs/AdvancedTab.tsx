@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { SupermemorySettings } from "@cognito/shared";
+import { SupermemorySettings, HIDE_AUTO_EXTRACT_INSIGHTS } from "@cognito/shared";
 import { extensionAPI } from "@/lib/extension-api";
 import { SettingSwitch } from "@/components/settings/shared/SettingSwitch";
 import { AnimatedAccordion } from "@/components/shared/AnimatedAccordion";
@@ -98,19 +98,21 @@ export function AdvancedTab({
                                 </a>
                             </div>
                         </div>
-                        <SettingSwitch
-                            label="Auto-Extract Insights"
-                            description="Automatically learn from your conversations"
-                            checked={supermemorySettings.autoExtraction}
-                            onCheckedChange={async (checked) => {
-                                setSupermemorySettings({ ...supermemorySettings, autoExtraction: checked });
-                                return updateSetting(
-                                    () => extensionAPI.setSupermemorySettings({ autoExtraction: checked }),
-                                    () => { }
-                                );
-                            }}
-                            searchQuery={searchQuery}
-                        />
+                        {!HIDE_AUTO_EXTRACT_INSIGHTS && (
+                            <SettingSwitch
+                                label="Auto-Extract Insights"
+                                description="Automatically learn from your conversations"
+                                checked={supermemorySettings.autoExtraction}
+                                onCheckedChange={async (checked) => {
+                                    setSupermemorySettings({ ...supermemorySettings, autoExtraction: checked });
+                                    return updateSetting(
+                                        () => extensionAPI.setSupermemorySettings({ autoExtraction: checked }),
+                                        () => { }
+                                    );
+                                }}
+                                searchQuery={searchQuery}
+                            />
+                        )}
                     </div>
                 </AnimatedAccordion>
             )}

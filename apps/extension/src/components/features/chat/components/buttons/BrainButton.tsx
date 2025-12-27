@@ -14,6 +14,7 @@ import { initializeModel } from '@/ai/core/modelFactory';
 import { addFactsBatch } from '@/background/supermemory/extraction/addService';
 import type { ExtractedFact } from '@/background/supermemory/extraction/types';
 import { createLogger } from '~logger';
+import { HIDE_AUTO_EXTRACT_INSIGHTS } from '@cognito/shared';
 
 const log = createLogger('BrainButton', 'UTILS');
 
@@ -182,6 +183,8 @@ export const BrainButton: React.FC<BrainButtonProps> = ({
   previousMessage,
   threadId,
 }) => {
+  if (HIDE_AUTO_EXTRACT_INSIGHTS) return null;
+
   const [state, setState] = useState<BrainButtonState>('idle');
   const [isSupermemoryConfigured, setIsSupermemoryConfigured] = useState<boolean | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
