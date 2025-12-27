@@ -174,6 +174,10 @@ See `docs/SERVER_TOOLS_ARCHITECTURE.md` for server-side tools architecture.
 See `docs/MCP_STDIO_ARCHITECTURE.md` for backend-proxied stdio MCP servers.
 See `docs/REMOTE_MCP_INTEGRATION.md` for Remote MCP integration (SSE/HTTP with OAuth).
 
+### Backend vs BYOK Models
+- **BYOK Mode**: Model-agnostic; supports any model the user provides a key for.
+- **Backend Mode**: Uses fixed `gemini-2.5-flash` model; user selection is ignored.
+
 ## Third-Party DOM Selector Robustness
 - For DOM queries dependent on third-party page structure, implement fallback selector arrays
 - Try selectors in order of reliability: specific class names → generic containers → ARIA attributes → broad fallbacks
