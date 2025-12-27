@@ -2,8 +2,6 @@ import { createLogger } from '~logger';
 import {
     ExternalMessage,
     ExternalResponse,
-    SetProviderPayload,
-    ClearProviderPayload,
     GetProviderConfigResponse,
     SearchSettingsWithKeys,
     AskAIButtonSettings,
@@ -37,14 +35,8 @@ import {
 } from '@/services/providerService';
 import { openSidePanel, openSidePanelForTab } from '@/background/sidepanelUtils';
 import {
-    getProviderConfig,
-    setGoogleApiKey,
-    setVertexCredentials,
-    clearGoogleApiKey,
-    clearVertexCredentials,
     hasGoogleApiKey,
     hasVertexCredentials,
-    setSelectedProvider,
 } from '@/utils/credentials';
 // Settings utilities
 import {
@@ -297,13 +289,13 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
         // Provider Config Messages
         // =================================================================
         case 'GET_PROVIDER_CONFIG': {
+            // Legacy endpoint - returns data from new providersConfig system
             try {
-                const config = await getProviderConfig();
                 const hasGoogle = await hasGoogleApiKey();
                 const hasVertex = await hasVertexCredentials();
 
                 const response: GetProviderConfigResponse = {
-                    config,
+                    config: null, // Legacy config no longer used
                     hasGoogle,
                     hasVertex,
                 };
@@ -319,65 +311,15 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
         }
 
         case 'SET_PROVIDER_CONFIG': {
-            try {
-                const payload = message.payload as SetProviderPayload;
-                if (!payload) {
-                    return { success: false, error: 'Missing payload' };
-                }
-
-                if (payload.provider === 'google') {
-                    if (!payload.googleApiKey) {
-                        return { success: false, error: 'Google API key is required' };
-                    }
-                    await setGoogleApiKey(payload.googleApiKey);
-                    await setSelectedProvider('google');
-                    log.info('Google API key saved via external message');
-                } else if (payload.provider === 'vertex') {
-                    if (!payload.vertexCredentials) {
-                        return { success: false, error: 'Vertex credentials are required' };
-                    }
-                    await setVertexCredentials(payload.vertexCredentials);
-                    await setSelectedProvider('vertex');
-                    log.info('Vertex credentials saved via external message');
-                } else {
-                    return { success: false, error: 'Invalid provider' };
-                }
-
-                return { success: true };
-            } catch (error) {
-                log.error('Failed to set provider config', error);
-                return {
-                    success: false,
-                    error: error instanceof Error ? error.message : 'Failed to set provider config'
-                };
-            }
+            // Legacy endpoint - redirects to new providersConfig system
+            log.warn('SET_PROVIDER_CONFIG is deprecated. Use SET_PROVIDERS_CONFIG instead.');
+            return { success: false, error: 'This endpoint is deprecated. Use SET_PROVIDERS_CONFIG.' };
         }
 
         case 'CLEAR_PROVIDER_CONFIG': {
-            try {
-                const payload = message.payload as ClearProviderPayload;
-                if (!payload) {
-                    return { success: false, error: 'Missing payload' };
-                }
-
-                if (payload.provider === 'google') {
-                    await clearGoogleApiKey();
-                    log.info('Google API key cleared via external message');
-                } else if (payload.provider === 'vertex') {
-                    await clearVertexCredentials();
-                    log.info('Vertex credentials cleared via external message');
-                } else {
-                    return { success: false, error: 'Invalid provider' };
-                }
-
-                return { success: true };
-            } catch (error) {
-                log.error('Failed to clear provider config', error);
-                return {
-                    success: false,
-                    error: error instanceof Error ? error.message : 'Failed to clear provider config'
-                };
-            }
+            // Legacy endpoint - redirects to new providersConfig system
+            log.warn('CLEAR_PROVIDER_CONFIG is deprecated. Use SET_PROVIDERS_CONFIG instead.');
+            return { success: false, error: 'This endpoint is deprecated. Use SET_PROVIDERS_CONFIG.' };
         }
 
         case 'GET_PROVIDERS_CONFIG': {
@@ -887,6 +829,64 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
             } catch (error) {
                 log.error('Failed to get logger config', error);
                 return { success: false, error: 'Failed to get logger config' };
+            }
+        }
+
+        case 'GET_STORES_STATE': {
+            try {
+                const payload = message.payload as { stores?: string[] } | undefined;
+
+                // Import stores dynamically to avoid circular dependencies
+                const {
+                    useSettingsStore,
+                    useUINavigationStore,
+                    useModelStore,
+                    useChatStore,
+                    useAttachmentsStore,
+                    useToolsStore,
+                    useVoiceModeStore,
+                    useMcpStore,
+                } = await import('@/stores');
+
+                // Map of store names to store instances
+                const storeMap: Record<string, { getState: () => unknown }> = {
+                    settings: useSettingsStore,
+                    uiNavigation: useUINavigationStore,
+                    model: useModelStore,
+                    chat: useChatStore,
+                    attachments: useAttachmentsStore,
+                    tools: useToolsStore,
+                    voiceMode: useVoiceModeStore,
+                    mcp: useMcpStore,
+                };
+
+                const requestedStores = payload?.stores || Object.keys(storeMap);
+                const storesState: Record<string, unknown> = {};
+
+                for (const storeName of requestedStores) {
+                    const store = storeMap[storeName];
+                    if (store) {
+                        try {
+                            const state = store.getState();
+                            // Filter out functions to make it serializable
+                            const serializableState: Record<string, unknown> = {};
+                            for (const [key, value] of Object.entries(state as Record<string, unknown>)) {
+                                if (typeof value !== 'function') {
+                                    serializableState[key] = value;
+                                }
+                            }
+                            storesState[storeName] = serializableState;
+                        } catch (e) {
+                            storesState[storeName] = { error: `Failed to get state: ${e}` };
+                        }
+                    }
+                }
+
+                log.info('Returning stores state for dev tools', { stores: Object.keys(storesState) });
+                return { success: true, data: storesState };
+            } catch (error) {
+                log.error('Failed to get stores state', error);
+                return { success: false, error: 'Failed to get stores state' };
             }
         }
 
