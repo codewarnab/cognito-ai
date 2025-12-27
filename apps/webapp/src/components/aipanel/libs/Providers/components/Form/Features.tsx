@@ -22,7 +22,7 @@ const Index = (props: IPropsFormModelFormFeatures) => {
 	})
 
 	return (
-		<div className='grid grid-cols-15'>
+		<div className='grid grid-cols-4'>
 			{feature_keys.map(key => (
 				<div
 					className={`
@@ -32,10 +32,10 @@ const Index = (props: IPropsFormModelFormFeatures) => {
 						text-soft text-base
 						border-b border-border-gray
 						hover:bg-bg-main-hover active:bg-bg-main-active
-						select-none cursor-pointer col-span-3 ${feature_metadata[key].col ?? 'col-span-5'}
+						select-none cursor-pointer
 						${feature_metadata[key].no_border_r ? 'border-r-0' : 'border-r'}
 						${features[key as keyof typeof features] && 'text-solid'}
-						${name === 'features' && 'nth-last-of-type-[-n+3]:border-b-0'}
+						${name === 'features' && 'nth-last-of-type-[-n+4]:border-b-0'}
 					`}
 					onClick={() => onItem(key)}
 					key={key}

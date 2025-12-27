@@ -171,18 +171,52 @@ export default function ProvidersPage() {
             <div className="min-h-screen bg-[var(--bg-primary)]">
                 <Header title="AI Providers" />
                 <div className="container mx-auto max-w-3xl py-8 px-4">
-                    <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <CardContent className="p-6 space-y-4">
-                            <Skeleton className="h-8 w-64" />
-                            <div className="flex gap-4 justify-center">
-                                {[...Array(6)].map((_, i) => (
-                                    <Skeleton key={i} className="h-12 w-12 rounded-full" />
-                                ))}
+                    <div className="border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-lg overflow-hidden">
+                        {/* Provider tabs skeleton */}
+                        <div className="flex gap-6 justify-center py-4 border-b border-[var(--border-color)]">
+                            {[...Array(7)].map((_, i) => (
+                                <div key={i} className="flex flex-col items-center gap-2">
+                                    <Skeleton className="h-8 w-8 rounded-md" />
+                                    <Skeleton className="h-3 w-12" />
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* API Key section */}
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-10 w-full rounded-md" />
                             </div>
-                            <Skeleton className="h-20 w-full" />
-                            <Skeleton className="h-40 w-full" />
-                        </CardContent>
-                    </Card>
+
+                            {/* Models section */}
+                            <div className="space-y-3">
+                                <Skeleton className="h-4 w-14" />
+                                <div className="border border-[var(--border-color)] rounded-lg divide-y divide-[var(--border-color)]">
+                                    {[...Array(5)].map((_, i) => (
+                                        <div key={i} className="flex items-center justify-between p-4">
+                                            <div className="space-y-2 flex-1">
+                                                <Skeleton className="h-4 w-40" />
+                                                <Skeleton className="h-3 w-64" />
+                                            </div>
+                                            <Skeleton className="h-6 w-10 rounded-full" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Actions section */}
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-14" />
+                                <div className="flex gap-4">
+                                    {[...Array(4)].map((_, i) => (
+                                        <Skeleton key={i} className="h-8 w-24" />
+                                    ))}
+                                    <Skeleton className="h-8 w-28 ml-auto" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

@@ -15,6 +15,10 @@ const navItems: NavItem[] = [
     { href: '/reminders', label: 'Reminders' },
     { href: '/troubleshooting', label: 'Troubleshooting' },
     { href: '/changelog', label: 'Changelog' },
+    // Dev-only nav items
+    ...(process.env.NODE_ENV === 'development'
+        ? [{ href: '/dev/logger', label: 'Logger' }]
+        : []),
 ];
 
 export function Navigation() {

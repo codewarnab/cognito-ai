@@ -84,8 +84,20 @@ export function LogViewer() {
                 return content.includes(query);
             }
             return true;
-        });
+        }).reverse();
     }, [logs, levelFilter, searchQuery]);
+
+    // Auto-scroll logic for "Newest at Top"
+    React.useEffect(() => {
+        if (autoScroll && virtuosoRef.current) {
+            // Scroll to top when logs change or autoScroll is enabled
+            // We use a small timeout to ensure the list has updated
+            const timeoutId = setTimeout(() => {
+                virtuosoRef.current?.scrollToIndex({ index: 0, align: 'start', behavior: 'smooth' });
+            }, 100);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [filteredLogs.length, autoScroll]);
 
     // Copy all visible logs
     const copyAllLogs = useCallback(() => {
@@ -348,7 +360,6 @@ export function LogViewer() {
                         ref={virtuosoRef}
                         data={filteredLogs}
                         totalCount={filteredLogs.length}
-                        followOutput={autoScroll ? 'smooth' : false}
                         itemContent={(index, log) => <LogRow log={log} />}
                         className="h-full scrollbar-thin"
                     />

@@ -15,6 +15,8 @@ const STORAGE_KEYS = {
 export interface StoredModelConfig {
   mode: AIProviderMode;
   remoteModel: RemoteModelType;
+  /** Provider ID (google_gemini, vertex, anthropic, xai, openai, etc.) */
+  remoteProvider?: string;
   conversationStartMode?: AIProviderMode; // Track initial mode for switching restrictions
   preferredProvider?: AIProvider; // Preferred AI provider (google or vertex)
 }

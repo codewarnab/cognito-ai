@@ -116,6 +116,10 @@ export interface ClearProviderPayload {
 /** Response payload for GET_PROVIDERS_CONFIG */
 export interface GetProvidersConfigResponse {
     config: AIProviderConfig;
+    /** Currently selected model ID in the extension */
+    selectedModel?: string;
+    /** Currently selected provider ID (google_gemini, vertex, anthropic, etc.) */
+    selectedProvider?: string;
 }
 
 /** Payload for SET_PROVIDERS_CONFIG */

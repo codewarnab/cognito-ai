@@ -10,6 +10,11 @@ export const getProvidersConfig = async (): Promise<AIProviderConfig | undefined
 
 export const setProvidersConfig = async (config: AIProviderConfig): Promise<void> => {
     await setSetting('providersConfig', config);
+    // Notify any UI components watching storage that providers config changed
+    // This allows real-time sync between webapp and extension sidepanel
+    await chrome.storage.local.set({
+        providersConfigLastUpdated: Date.now()
+    });
     log.info('Providers config updated');
 };
 

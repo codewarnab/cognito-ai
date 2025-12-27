@@ -383,10 +383,12 @@ async function handleExternalMessage(message: ExternalMessage, sender: chrome.ru
         case 'GET_PROVIDERS_CONFIG': {
             try {
                 const config = await getProvidersConfig();
-                // If config is undefined, provide a default structure or let frontend handle it?
-                // Shared types say AIProviderConfig, so we should structure it correctly.
+                // Get currently selected model from Chrome storage
+                const { ai_model_config } = await chrome.storage.local.get('ai_model_config');
                 const response: GetProvidersConfigResponse = {
-                    config: config || { providers: [], custom_providers: [] }
+                    config: config || { providers: [], custom_providers: [] },
+                    selectedModel: ai_model_config?.remoteModel,
+                    selectedProvider: ai_model_config?.remoteProvider,
                 };
                 return { success: true, data: response };
             } catch (error) {

@@ -6,10 +6,7 @@ import {
 	FileImageIcon,
 	GoogleChromeLogoIcon,
 	ImagesSquareIcon,
-	LinkIcon,
-	SortAscendingIcon,
 	ToggleRightIcon,
-	WaveformIcon,
 	WrenchIcon
 } from '@phosphor-icons/react'
 
@@ -17,34 +14,16 @@ import type { Icon } from '@phosphor-icons/react'
 
 export const feature_metadata = {
 	reasoning: {
-		Icon: BrainIcon,
-		col: 'col-span-3'
+		Icon: BrainIcon
 	},
 	vision: {
-		Icon: EyeIcon,
-		col: 'col-span-3'
-	},
-	voice: {
-		Icon: WaveformIcon,
-		col: 'col-span-3'
-	},
-	embedding: {
-		Icon: LinkIcon,
-		col: 'col-span-3'
-	},
-	reranking: {
-		Icon: SortAscendingIcon,
-		col: 'col-span-3',
-		no_border_r: true
+		Icon: EyeIcon
 	},
 	reasoning_optional: {
 		Icon: ToggleRightIcon
 	},
 	function_calling: {
-		Icon: WrenchIcon
-	},
-	structured_output: {
-		Icon: BracketsCurlyIcon,
+		Icon: WrenchIcon,
 		no_border_r: true
 	},
 	web_search: {
@@ -52,6 +31,9 @@ export const feature_metadata = {
 	},
 	image_input: {
 		Icon: ImagesSquareIcon
+	},
+	structured_output: {
+		Icon: BracketsCurlyIcon
 	},
 	image_output: {
 		Icon: FileImageIcon,
