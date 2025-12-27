@@ -92,8 +92,14 @@ export function getEnabledModelsFromConfig(config: AIProviderConfig): EnabledMod
 
 /**
  * Fetch enabled models from IndexedDB storage
+ * @param forceRefresh If true, clears cache before fetching to ensure fresh data
  */
-export async function fetchEnabledModels(): Promise<EnabledModel[]> {
+export async function fetchEnabledModels(forceRefresh = false): Promise<EnabledModel[]> {
+    if (forceRefresh) {
+        // Clear cache for providersConfig to ensure fresh data
+        const { clearSettingsCache } = await import('@/db/settings');
+        clearSettingsCache(['providersConfig']);
+    }
     const config = await getProvidersConfig();
     if (!config) return [];
     return getEnabledModelsFromConfig(config);

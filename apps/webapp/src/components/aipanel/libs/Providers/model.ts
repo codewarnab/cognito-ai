@@ -45,7 +45,7 @@ export default class Index {
 	get tabs() {
 		if (!this.providers.enabled) return []
 
-		return this.providers.enabled.map(item => item.name).concat('custom', 'disabled')
+		return this.providers.enabled.map(item => item.name).concat('disabled')
 	}
 
 	get provider() {

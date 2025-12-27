@@ -1,17 +1,48 @@
 /**
  * Provider Credentials Utility
  * Manages AI provider configuration and credentials storage
- * Supports both Google Generative AI and Vertex AI providers
+ * 
+ * REFACTORED: Now uses exclusively the new `providersConfig` storage via providerService.
+ * The old `ai_provider_config` storage key is NO LONGER USED.
  */
 
 import { APIError, ErrorType } from '@/errors/errorTypes';
-import type { AIProvider, ProviderConfig, VertexCredentials } from './providerTypes';
+import type { AIProvider, VertexCredentials } from './providerTypes';
+import { getProvidersConfig } from '@/services/providerService';
+import type { AIProviderConfig, ConfigProvider, SpecialProvider } from '@cognito/shared/types';
 import { createLogger } from '~logger';
 
 const credentialsLog = createLogger('Credentials', 'CREDENTIALS_AUTH');
-const storageLog = createLogger('Credentials-Storage', 'CREDENTIALS_STORAGE');
 
-const STORAGE_KEY = 'ai_provider_config';
+/**
+ * Find a provider in the config by its name
+ */
+function findProvider(config: AIProviderConfig | undefined, providerName: string): ConfigProvider | undefined {
+    if (!config?.providers) return undefined;
+    return config.providers.find(p => p.name === providerName);
+}
+
+/**
+ * Check if a provider is enabled and has an API key
+ */
+function isProviderConfigured(provider: ConfigProvider | undefined): boolean {
+    if (!provider || !provider.enabled) return false;
+
+    // Check for API key (standard providers)
+    if ('api_key' in provider && provider.api_key && provider.api_key.trim().length > 0) {
+        return true;
+    }
+
+    // Check for custom_fields (special providers like Vertex)
+    if ('custom_fields' in provider) {
+        const special = provider as SpecialProvider;
+        if (special.custom_fields?.clientEmail && special.custom_fields?.privateKey) {
+            return true;
+        }
+    }
+
+    return false;
+}
 
 /**
  * Validate Vertex AI credentials format
@@ -47,93 +78,152 @@ function validateVertexCredentials(credentials: VertexCredentials): { valid: boo
     return { valid: true };
 }
 
+// ============================================================================
+// API Key Retrieval - All from providersConfig now
+// ============================================================================
+
 /**
- * Get provider configuration from storage
- * @returns Provider configuration or null if not set
+ * Get Google AI API key from providersConfig
+ * @returns API key or null if not configured
  */
-export async function getProviderConfig(): Promise<ProviderConfig | null> {
+export async function getGoogleApiKey(): Promise<string | null> {
     try {
-        const result = await chrome.storage.local.get(STORAGE_KEY);
-        storageLog.debug('Retrieved provider config from storage');
-        return result[STORAGE_KEY] || null;
+        const config = await getProvidersConfig();
+        const provider = findProvider(config, 'google_gemini');
+        if (provider && 'api_key' in provider && provider.api_key) {
+            return provider.api_key;
+        }
+        return null;
     } catch (error) {
-        credentialsLog.error('Failed to get provider config', error);
+        credentialsLog.error('Failed to get Google API key', error);
         return null;
     }
 }
 
 /**
- * Set provider configuration in storage
- * @param config Provider configuration to store
- * @throws {APIError} If configuration is invalid
+ * Check if Google AI API key is configured
+ * @returns true if API key is set
  */
-export async function setProviderConfig(config: ProviderConfig): Promise<void> {
-    try {
-        // Validate based on provider type
-        if (config.provider === 'vertex') {
-            if (!config.vertexCredentials) {
-                throw APIError.authFailed('Vertex credentials are required');
-            }
-            const validation = validateVertexCredentials(config.vertexCredentials);
-            if (!validation.valid) {
-                throw APIError.authFailed(validation.error || 'Invalid Vertex credentials');
-            }
-        } else if (config.provider === 'google') {
-            if (!config.googleApiKey) {
-                throw APIError.authFailed('Google API key is required');
-            }
-        } else if (config.provider === 'openai') {
-            if (!config.openaiApiKey) {
-                throw APIError.authFailed('OpenAI API key is required');
-            }
-        } else if (config.provider === 'anthropic') {
-            if (!config.anthropicApiKey) {
-                throw APIError.authFailed('Anthropic API key is required');
-            }
-        }
+export async function hasGoogleApiKey(): Promise<boolean> {
+    const config = await getProvidersConfig();
+    const provider = findProvider(config, 'google_gemini');
+    return isProviderConfigured(provider);
+}
 
-        await chrome.storage.local.set({ [STORAGE_KEY]: config });
-        credentialsLog.info('Provider config saved', { provider: config.provider });
+/**
+ * Get OpenAI API key from providersConfig
+ * @returns API key or null if not configured
+ */
+export async function getOpenAIApiKey(): Promise<string | null> {
+    try {
+        const config = await getProvidersConfig();
+        const provider = findProvider(config, 'openai');
+        if (provider && 'api_key' in provider && provider.api_key) {
+            return provider.api_key;
+        }
+        return null;
     } catch (error) {
-        credentialsLog.error('Failed to set provider config', error);
-        throw error;
+        credentialsLog.error('Failed to get OpenAI API key', error);
+        return null;
     }
 }
 
 /**
- * Get Vertex AI credentials from storage
- * @returns Vertex credentials or null if not configured
+ * Check if OpenAI API key is configured
+ * @returns true if API key is set
  */
-export async function getVertexCredentials(): Promise<VertexCredentials | null> {
-    const config = await getProviderConfig();
-    return config?.vertexCredentials || null;
+export async function hasOpenAIApiKey(): Promise<boolean> {
+    const config = await getProvidersConfig();
+    const provider = findProvider(config, 'openai');
+    return isProviderConfigured(provider);
 }
 
 /**
- * Set Vertex AI credentials
- * @param credentials Vertex credentials to store
- * @throws {APIError} If credentials are invalid
+ * Get Anthropic API key from providersConfig
+ * @returns API key or null if not configured
  */
-export async function setVertexCredentials(credentials: VertexCredentials): Promise<void> {
+export async function getAnthropicApiKey(): Promise<string | null> {
     try {
-        // Validate credentials
-        const validation = validateVertexCredentials(credentials);
-        if (!validation.valid) {
-            throw APIError.authFailed(validation.error || 'Invalid Vertex credentials');
+        const config = await getProvidersConfig();
+        const provider = findProvider(config, 'anthropic');
+        if (provider && 'api_key' in provider && provider.api_key) {
+            return provider.api_key;
+        }
+        return null;
+    } catch (error) {
+        credentialsLog.error('Failed to get Anthropic API key', error);
+        return null;
+    }
+}
+
+/**
+ * Check if Anthropic API key is configured
+ * @returns true if API key is set
+ */
+export async function hasAnthropicApiKey(): Promise<boolean> {
+    const config = await getProvidersConfig();
+    const provider = findProvider(config, 'anthropic');
+    return isProviderConfigured(provider);
+}
+
+/**
+ * Get xAI API key from providersConfig
+ * @returns API key or null if not configured
+ */
+export async function getXaiApiKey(): Promise<string | null> {
+    try {
+        const config = await getProvidersConfig();
+        const provider = findProvider(config, 'xai');
+        if (provider && 'api_key' in provider && provider.api_key) {
+            return provider.api_key;
+        }
+        return null;
+    } catch (error) {
+        credentialsLog.error('Failed to get xAI API key', error);
+        return null;
+    }
+}
+
+/**
+ * Check if xAI API key is configured
+ * @returns true if API key is set
+ */
+export async function hasXaiApiKey(): Promise<boolean> {
+    const config = await getProvidersConfig();
+    const provider = findProvider(config, 'xai');
+    return isProviderConfigured(provider);
+}
+
+// ============================================================================
+// Vertex AI Credentials - from providersConfig custom_fields
+// ============================================================================
+
+/**
+ * Get Vertex AI credentials from providersConfig
+ * @returns Vertex credentials or null if not configured
+ */
+export async function getVertexCredentials(): Promise<VertexCredentials | null> {
+    try {
+        const config = await getProvidersConfig();
+        const provider = findProvider(config, 'vertex') as SpecialProvider | undefined;
+
+        if (!provider || !provider.custom_fields) return null;
+
+        const fields = provider.custom_fields;
+        if (!fields.clientEmail || !fields.privateKey || !fields.projectId) {
+            return null;
         }
 
-        // Get existing config or create new one
-        const config = await getProviderConfig() || { provider: 'vertex' };
-
-        // Update with Vertex credentials
-        config.provider = 'vertex';
-        config.vertexCredentials = credentials;
-
-        await setProviderConfig(config);
-        credentialsLog.info('Vertex credentials configured');
+        return {
+            projectId: fields.projectId,
+            location: fields.location || 'us-central1',
+            clientEmail: fields.clientEmail,
+            privateKey: fields.privateKey,
+            privateKeyId: fields.privateKeyId,
+        };
     } catch (error) {
-        credentialsLog.error('Failed to set Vertex credentials', error);
-        throw error;
+        credentialsLog.error('Failed to get Vertex credentials', error);
+        return null;
     }
 }
 
@@ -149,260 +239,13 @@ export async function hasVertexCredentials(): Promise<boolean> {
     return validation.valid;
 }
 
-/**
- * Clear Vertex AI credentials from storage
- */
-export async function clearVertexCredentials(): Promise<void> {
-    try {
-        const config = await getProviderConfig();
-        if (config) {
-            delete config.vertexCredentials;
-
-            // If no other credentials remain, remove the entire config
-            if (!config.googleApiKey) {
-                await chrome.storage.local.remove(STORAGE_KEY);
-            } else {
-                // Switch to Google provider if API key exists
-                config.provider = 'google';
-                await chrome.storage.local.set({ [STORAGE_KEY]: config });
-            }
-        }
-        credentialsLog.info('Vertex credentials cleared');
-    } catch (error) {
-        credentialsLog.error('Failed to clear Vertex credentials', error);
-        throw error;
-    }
-}
-
-/**
- * Get Google AI API key from provider config
- * @returns API key or null if not configured
- */
-export async function getGoogleApiKey(): Promise<string | null> {
-    const config = await getProviderConfig();
-    return config?.googleApiKey || null;
-}
-
-/**
- * Set Google AI API key
- * @param apiKey Google AI API key to store
- */
-export async function setGoogleApiKey(apiKey: string): Promise<void> {
-    try {
-        if (!apiKey || apiKey.trim().length === 0) {
-            throw APIError.authFailed('API key cannot be empty');
-        }
-
-        // Get existing config or create new one
-        const config = await getProviderConfig() || { provider: 'google' };
-
-        // Update with Google API key
-        config.provider = 'google';
-        config.googleApiKey = apiKey.trim();
-
-        await setProviderConfig(config);
-        credentialsLog.info('Google API key configured');
-    } catch (error) {
-        credentialsLog.error('Failed to set Google API key', error);
-        throw error;
-    }
-}
-
-/**
- * Check if Google AI API key is configured
- * @returns true if API key is set
- */
-export async function hasGoogleApiKey(): Promise<boolean> {
-    const config = await getProviderConfig();
-    return !!(config?.googleApiKey && config.googleApiKey.trim().length > 0);
-}
-
-/**
- * Clear Google AI API key from storage
- */
-export async function clearGoogleApiKey(): Promise<void> {
-    try {
-        const config = await getProviderConfig();
-        if (config) {
-            delete config.googleApiKey;
-
-            // If no other credentials remain, remove the entire config
-            if (!config.vertexCredentials) {
-                await chrome.storage.local.remove(STORAGE_KEY);
-            } else {
-                // Switch to Vertex provider if credentials exist
-                config.provider = 'vertex';
-                await chrome.storage.local.set({ [STORAGE_KEY]: config });
-            }
-        }
-        credentialsLog.info('Google API key cleared');
-    } catch (error) {
-        credentialsLog.error('Failed to clear Google API key', error);
-        throw error;
-    }
-}
-
 // ============================================================================
-// OpenAI Credentials
+// Active Provider Selection
 // ============================================================================
 
 /**
- * Get OpenAI API key from provider config
- * @returns API key or null if not configured
- */
-export async function getOpenAIApiKey(): Promise<string | null> {
-    const config = await getProviderConfig();
-    return config?.openaiApiKey || null;
-}
-
-/**
- * Set OpenAI API key
- * @param apiKey OpenAI API key to store
- */
-export async function setOpenAIApiKey(apiKey: string): Promise<void> {
-    try {
-        if (!apiKey || apiKey.trim().length === 0) {
-            throw APIError.authFailed('API key cannot be empty');
-        }
-
-        // Get existing config or create new one
-        const config = await getProviderConfig() || { provider: 'openai' as const };
-
-        // Update with OpenAI API key
-        config.provider = 'openai';
-        config.openaiApiKey = apiKey.trim();
-
-        await setProviderConfig(config);
-        credentialsLog.info('OpenAI API key configured');
-    } catch (error) {
-        credentialsLog.error('Failed to set OpenAI API key', error);
-        throw error;
-    }
-}
-
-/**
- * Check if OpenAI API key is configured
- * @returns true if API key is set
- */
-export async function hasOpenAIApiKey(): Promise<boolean> {
-    const config = await getProviderConfig();
-    return !!(config?.openaiApiKey && config.openaiApiKey.trim().length > 0);
-}
-
-/**
- * Clear OpenAI API key from storage
- */
-export async function clearOpenAIApiKey(): Promise<void> {
-    try {
-        const config = await getProviderConfig();
-        if (config) {
-            delete config.openaiApiKey;
-
-            // If no other credentials remain, remove the entire config
-            if (!config.googleApiKey && !config.vertexCredentials && !config.anthropicApiKey) {
-                await chrome.storage.local.remove(STORAGE_KEY);
-            } else {
-                // Switch to available provider
-                if (config.googleApiKey) {
-                    config.provider = 'google';
-                } else if (config.vertexCredentials) {
-                    config.provider = 'vertex';
-                } else if (config.anthropicApiKey) {
-                    config.provider = 'anthropic';
-                }
-                await chrome.storage.local.set({ [STORAGE_KEY]: config });
-            }
-        }
-        credentialsLog.info('OpenAI API key cleared');
-    } catch (error) {
-        credentialsLog.error('Failed to clear OpenAI API key', error);
-        throw error;
-    }
-}
-
-// ============================================================================
-// Anthropic Credentials
-// ============================================================================
-
-/**
- * Get Anthropic API key from provider config
- * @returns API key or null if not configured
- */
-export async function getAnthropicApiKey(): Promise<string | null> {
-    const config = await getProviderConfig();
-    return config?.anthropicApiKey || null;
-}
-
-/**
- * Set Anthropic API key
- * @param apiKey Anthropic API key to store
- */
-export async function setAnthropicApiKey(apiKey: string): Promise<void> {
-    try {
-        if (!apiKey || apiKey.trim().length === 0) {
-            throw APIError.authFailed('API key cannot be empty');
-        }
-
-        // Get existing config or create new one
-        const config = await getProviderConfig() || { provider: 'anthropic' as const };
-
-        // Update with Anthropic API key
-        config.provider = 'anthropic';
-        config.anthropicApiKey = apiKey.trim();
-
-        await setProviderConfig(config);
-        credentialsLog.info('Anthropic API key configured');
-    } catch (error) {
-        credentialsLog.error('Failed to set Anthropic API key', error);
-        throw error;
-    }
-}
-
-/**
- * Check if Anthropic API key is configured
- * @returns true if API key is set
- */
-export async function hasAnthropicApiKey(): Promise<boolean> {
-    const config = await getProviderConfig();
-    return !!(config?.anthropicApiKey && config.anthropicApiKey.trim().length > 0);
-}
-
-/**
- * Clear Anthropic API key from storage
- */
-export async function clearAnthropicApiKey(): Promise<void> {
-    try {
-        const config = await getProviderConfig();
-        if (config) {
-            delete config.anthropicApiKey;
-
-            // If no other credentials remain, remove the entire config
-            if (!config.googleApiKey && !config.vertexCredentials && !config.openaiApiKey) {
-                await chrome.storage.local.remove(STORAGE_KEY);
-            } else {
-                // Switch to available provider
-                if (config.googleApiKey) {
-                    config.provider = 'google';
-                } else if (config.vertexCredentials) {
-                    config.provider = 'vertex';
-                } else if (config.openaiApiKey) {
-                    config.provider = 'openai';
-                }
-                await chrome.storage.local.set({ [STORAGE_KEY]: config });
-            }
-        }
-        credentialsLog.info('Anthropic API key cleared');
-    } catch (error) {
-        credentialsLog.error('Failed to clear Anthropic API key', error);
-        throw error;
-    }
-}
-
-/**
- * Determine which provider to use
- * Rules:
- * - If user explicitly selected a provider, use it
- * - Otherwise, follow PROVIDER_PRIORITY order
+ * Determine which provider to use based on what's configured
+ * Checks providers in priority order and returns the first one that's enabled and has credentials
  * @returns Active provider
  * @throws {APIError} If no provider is configured
  */
@@ -410,35 +253,18 @@ export async function getActiveProvider(): Promise<AIProvider> {
     // Import here to avoid circular dependency
     const { PROVIDER_PRIORITY } = await import('~/constants/providerPriority');
 
-    const config = await getProviderConfig();
-
-    // If user explicitly selected a provider and it's configured, use it
-    if (config?.provider) {
-        if (config.provider === 'vertex' && await hasVertexCredentials()) {
-            return 'vertex';
-        }
-        if (config.provider === 'google' && await hasGoogleApiKey()) {
-            return 'google';
-        }
-        if (config.provider === 'openai' && await hasOpenAIApiKey()) {
-            return 'openai';
-        }
-        if (config.provider === 'anthropic' && await hasAnthropicApiKey()) {
-            return 'anthropic';
-        }
-    }
-
-    // Check providers in priority order
     const providerChecks: Record<string, () => Promise<boolean>> = {
         'openai': hasOpenAIApiKey,
         'google': hasGoogleApiKey,
         'vertex': hasVertexCredentials,
         'anthropic': hasAnthropicApiKey,
+        'xai': hasXaiApiKey,
     };
 
     for (const provider of PROVIDER_PRIORITY) {
         const checkFn = providerChecks[provider];
         if (checkFn && await checkFn()) {
+            credentialsLog.info('Active provider determined', { provider });
             return provider as AIProvider;
         }
     }
@@ -448,11 +274,28 @@ export async function getActiveProvider(): Promise<AIProvider> {
         message: 'No AI provider configured',
         statusCode: 401,
         retryable: false,
-        userMessage: 'Please configure an AI provider (Google AI, Vertex AI, OpenAI, or Anthropic) to use the assistant.',
-        technicalDetails: 'No provider credentials found in storage',
+        userMessage: 'Please configure an AI provider in the Settings → AI Providers page.',
+        technicalDetails: 'No provider credentials found in providersConfig',
         errorCode: ErrorType.API_AUTH_FAILED,
     });
 }
+
+/**
+ * Check if any provider is configured
+ * @returns true if at least one provider is configured
+ */
+export async function hasAnyProviderConfigured(): Promise<boolean> {
+    const hasVertex = await hasVertexCredentials();
+    const hasGoogle = await hasGoogleApiKey();
+    const hasOpenAI = await hasOpenAIApiKey();
+    const hasAnthropic = await hasAnthropicApiKey();
+    const hasXai = await hasXaiApiKey();
+    return hasVertex || hasGoogle || hasOpenAI || hasAnthropic || hasXai;
+}
+
+// ============================================================================
+// Provider Instructions (unchanged)
+// ============================================================================
 
 /**
  * Get instructions for configuring a provider
@@ -472,7 +315,7 @@ export function getProviderInstructions(provider: AIProvider): string {
 
 **Note:** The free tier includes generous quotas for personal use.
         `.trim();
-    } else {
+    } else if (provider === 'vertex') {
         return `
 **How to get Vertex AI credentials:**
 
@@ -491,69 +334,23 @@ export function getProviderInstructions(provider: AIProvider): string {
 
 **Note:** Ensure your GCP project has the Vertex AI API enabled.
         `.trim();
+    } else {
+        return `Please configure your ${provider} API key in the AI Providers settings.`;
     }
 }
 
-/**
- * Check if any provider is configured
- * @returns true if at least one provider is configured
- */
-export async function hasAnyProviderConfigured(): Promise<boolean> {
-    const hasVertex = await hasVertexCredentials();
-    const hasGoogle = await hasGoogleApiKey();
-    const hasOpenAI = await hasOpenAIApiKey();
-    const hasAnthropic = await hasAnthropicApiKey();
-    return hasVertex || hasGoogle || hasOpenAI || hasAnthropic;
-}
+// ============================================================================
+// Cache Invalidation Markers (kept for compatibility, now no-ops)
+// ============================================================================
 
-/**
- * Get the currently selected provider (without checking if it's configured)
- * @returns Selected provider or null if not set
- */
-export async function getSelectedProvider(): Promise<AIProvider | null> {
-    const config = await getProviderConfig();
-    return config?.provider || null;
-}
-
-/**
- * Set the selected provider (without changing credentials)
- * @param provider Provider to select
- */
-export async function setSelectedProvider(provider: AIProvider): Promise<void> {
-    const config = await getProviderConfig() || { provider };
-    config.provider = provider;
-    await chrome.storage.local.set({ [STORAGE_KEY]: config });
-}
-
-/**
- * Mark Vertex credentials as invalid in cache
- * Used when authentication fails
- * @param reason Reason for marking invalid
- */
 export async function markVertexCredentialsInvalid(reason: string): Promise<void> {
     credentialsLog.warn('Vertex credentials marked as invalid:', reason);
-    // We could implement a cache invalidation mechanism here
-    // For now, just log the reason
-    // In the future, could add a validation cache similar to geminiApiKey.ts
 }
 
-/**
- * Mark Google API key as invalid in cache  
- * Used when authentication fails
- * @param reason Reason for marking invalid
- */
 export async function markGoogleApiKeyInvalid(reason: string): Promise<void> {
     credentialsLog.warn('Google API key marked as invalid:', reason);
-    // We could implement a cache invalidation mechanism here
-    // For now, just log the reason
 }
 
-/**
- * Mark Google API key as valid (after successful API call)
- * Used for compatibility with older code
- */
 export async function markGoogleApiKeyValid(): Promise<void> {
-    credentialsLog.info('Google API key marked as valid');
-    // No-op for now - validation cache not yet implemented
+    credentialsLog.debug('Google API key marked as valid');
 }
-

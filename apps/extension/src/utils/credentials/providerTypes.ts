@@ -3,7 +3,7 @@
  * Supports Google Generative AI, Vertex AI, and OpenAI providers
  */
 
-export type AIProvider = 'google' | 'vertex' | 'openai' | 'anthropic';
+export type AIProvider = 'google' | 'vertex' | 'openai' | 'anthropic' | 'xai';
 
 /**
  * Vertex AI service account credentials

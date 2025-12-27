@@ -24,8 +24,8 @@ export const PROVIDER_PRIORITY = [
     'vertex', // 2nd priority - Vertex AI - full tool support
     'openai', // 3rd priority - OpenAI - function calling + web search
     'anthropic', // 4th priority - Anthropic (Claude) - function calling + web search
+    'xai', // 5th priority - xAI (Grok) - function calling
     // Future providers can be added here:
-    // 'xai',
     // 'deepseek',
     // 'groq',
     // 'ollama',
