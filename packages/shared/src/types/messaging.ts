@@ -65,7 +65,8 @@ export type DataOperationsMessageType =
 // Logger config sync (webapp → extension)
 export type LoggerMessageType =
     | 'LOGGER_CONFIG_UPDATE'
-    | 'LOGGER_CONFIG_REQUEST';
+    | 'LOGGER_CONFIG_REQUEST'
+    | 'GET_STORES_STATE';
 
 export type ExternalMessageType =
     | LifecycleMessageType
@@ -162,6 +163,18 @@ export interface LoggerConfigUpdatePayload {
 /** Response for LOGGER_CONFIG_REQUEST message */
 export interface LoggerConfigResponse {
     config: LoggerConfig;
+}
+
+/** Payload for GET_STORES_STATE message */
+export interface GetStoresStatePayload {
+    /** Array of store names to fetch (e.g., ['settings', 'chat', 'tools']) */
+    stores?: string[];
+}
+
+/** Response for GET_STORES_STATE message */
+export interface GetStoresStateResponse {
+    /** Object containing store states keyed by store name */
+    [storeName: string]: unknown;
 }
 
 // Re-export specific settings types if needed, or define AllSettingsPayload here
