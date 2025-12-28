@@ -6,11 +6,12 @@
 */
 import { create } from 'zustand';
 import { chromeStorageSync } from '../middleware/chromeStorageSync';
+import { STORAGE_KEYS } from '../constants';
 import type { SettingsState } from './types';
 
 export const useSettingsStore = create<SettingsState>()(
   chromeStorageSync<SettingsState>({
-    storageKey: 'cognito_settings',
+    storageKey: STORAGE_KEYS.SETTINGS,
     storageArea: 'local',
     debounceMs: 200,
     persistFields: [
@@ -78,7 +79,7 @@ export const useSettingsStore = create<SettingsState>()(
       // Also update legacy storage for backward compatibility during migration
       if (provider === 'google') {
         await chrome.storage.local.set({
-          ai_provider_config: { google: { apiKey: key } },
+          [STORAGE_KEYS.LEGACY_PROVIDER_CONFIG]: { google: { apiKey: key } },
         });
       }
     },
@@ -126,21 +127,21 @@ export const useSettingsStore = create<SettingsState>()(
     loadFromStorage: async () => {
       // Load from legacy storage locations for migration
       const [providerConfig, modelConfig] = await Promise.all([
-        chrome.storage.local.get('ai_provider_config'),
-        chrome.storage.local.get('ai_model_config'),
+        chrome.storage.local.get(STORAGE_KEYS.LEGACY_PROVIDER_CONFIG),
+        chrome.storage.local.get(STORAGE_KEYS.MODEL_CONFIG),
       ]);
 
       const updates: Partial<SettingsState> = {};
 
       // Migrate provider config
-      const providers = providerConfig.ai_provider_config;
+      const providers = providerConfig[STORAGE_KEYS.LEGACY_PROVIDER_CONFIG];
       if (providers?.google?.apiKey) {
         updates.googleApiKey = providers.google.apiKey;
         updates.hasAnyProviderConfigured = true;
       }
 
       // Migrate model config
-      const model = modelConfig.ai_model_config;
+      const model = modelConfig[STORAGE_KEYS.MODEL_CONFIG];
       if (model?.mode) {
         updates.preferredMode = model.mode;
       }

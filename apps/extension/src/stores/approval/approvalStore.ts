@@ -14,11 +14,10 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { createLogger } from '~logger';
+import { STORAGE_KEYS } from '../constants';
 import type { ApprovalState } from './types';
 
 const log = createLogger('ApprovalStore', 'TOOLS_EXECUTION');
-
-const STORAGE_KEY = 'toolApprovalPreferences';
 
 interface StoredPreferences {
     // Built-in tool approvals
@@ -72,8 +71,8 @@ export const useApprovalStore = create<ApprovalState>()(
             if (get().isInitialized) return;
 
             try {
-                const result = await chrome.storage.local.get(STORAGE_KEY);
-                const stored: StoredPreferences = { ...DEFAULT_STORED, ...result[STORAGE_KEY] };
+                const result = await chrome.storage.local.get(STORAGE_KEYS.TOOL_APPROVAL);
+                const stored: StoredPreferences = { ...DEFAULT_STORED, ...result[STORAGE_KEYS.TOOL_APPROVAL] };
 
                 set({
                     // Built-in
@@ -106,6 +105,10 @@ export const useApprovalStore = create<ApprovalState>()(
         // Built-in Tool Approvals (existing)
         // ═══════════════════════════════════════════════════════════════════════════
 
+        /**
+         * Adds a session-only approval for a built-in tool.
+         * @param toolName - The tool identifier to approve for this session
+         */
         addSessionApproval: (toolName: string) => {
             const { sessionApprovedTools } = get();
             if (!sessionApprovedTools.includes(toolName)) {
@@ -114,12 +117,19 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes a session approval for a built-in tool.
+         * @param toolName - The tool identifier to remove approval for
+         */
         removeSessionApproval: (toolName: string) => {
             set({
                 sessionApprovedTools: get().sessionApprovedTools.filter(t => t !== toolName),
             });
         },
 
+        /**
+         * Clears all session approvals (built-in, MCP, and WebMCP).
+         */
         clearSessionApprovals: () => {
             set({
                 sessionApprovedTools: [],
@@ -129,6 +139,11 @@ export const useApprovalStore = create<ApprovalState>()(
             log.info('🔓 Cleared all session approvals');
         },
 
+        /**
+         * Adds a website-specific approval for a built-in tool.
+         * @param toolName - The tool identifier to approve
+         * @param domain - The domain to approve the tool for
+         */
         addWebsiteApproval: async (toolName: string, domain: string) => {
             const { websiteApprovedTools } = get();
             const toolDomains = websiteApprovedTools[toolName] || [];
@@ -144,6 +159,11 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes a website-specific approval for a built-in tool.
+         * @param toolName - The tool identifier
+         * @param domain - The domain to remove approval for
+         */
         removeWebsiteApproval: async (toolName: string, domain: string) => {
             const { websiteApprovedTools } = get();
             const toolDomains = websiteApprovedTools[toolName] || [];
@@ -155,6 +175,10 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Adds an always-approved status for a built-in tool (all sites).
+         * @param toolName - The tool identifier to always approve
+         */
         addAlwaysApproval: async (toolName: string) => {
             const { alwaysApprovedTools } = get();
             if (!alwaysApprovedTools.includes(toolName)) {
@@ -164,6 +188,10 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes the always-approved status for a built-in tool.
+         * @param toolName - The tool identifier to remove always-approval for
+         */
         removeAlwaysApproval: async (toolName: string) => {
             set({
                 alwaysApprovedTools: get().alwaysApprovedTools.filter(t => t !== toolName),
@@ -171,6 +199,12 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Checks if a built-in tool is auto-approved.
+         * @param toolName - The tool identifier to check
+         * @param domain - Optional domain for website-specific approval check
+         * @returns True if the tool is auto-approved
+         */
         isAutoApproved: (toolName: string, domain?: string): boolean => {
             const { sessionApprovedTools, websiteApprovedTools, alwaysApprovedTools } = get();
 
@@ -195,6 +229,12 @@ export const useApprovalStore = create<ApprovalState>()(
             return false;
         },
 
+        /**
+         * Gets the reason why a built-in tool is auto-approved.
+         * @param toolName - The tool identifier
+         * @param domain - Optional domain for website-specific check
+         * @returns The approval reason or null if not approved
+         */
         getApprovalReason: (toolName: string, domain?: string): string | null => {
             const { sessionApprovedTools, websiteApprovedTools, alwaysApprovedTools } = get();
 
@@ -207,6 +247,9 @@ export const useApprovalStore = create<ApprovalState>()(
             return null;
         },
 
+        /**
+         * Clears all approval preferences (session, website, always, MCP, WebMCP).
+         */
         clearAllApprovals: async () => {
             set({
                 sessionApprovedTools: [],
@@ -219,7 +262,7 @@ export const useApprovalStore = create<ApprovalState>()(
                 webmcpApprovedTools: [],
                 webmcpSessionApprovedTools: [],
             });
-            await chrome.storage.local.remove(STORAGE_KEY);
+            await chrome.storage.local.remove(STORAGE_KEYS.TOOL_APPROVAL);
             log.info('🗑️ Cleared all approvals');
         },
 
@@ -227,6 +270,10 @@ export const useApprovalStore = create<ApprovalState>()(
         // MCP Server Tool Approvals
         // ═══════════════════════════════════════════════════════════════════════════
 
+        /**
+         * Adds approval for all tools from an MCP server.
+         * @param serverId - The MCP server identifier to approve
+         */
         addMcpServerApproval: async (serverId: string) => {
             const { mcpApprovedServers } = get();
             if (!mcpApprovedServers.includes(serverId)) {
@@ -236,6 +283,10 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes approval for an MCP server.
+         * @param serverId - The MCP server identifier to remove approval for
+         */
         removeMcpServerApproval: async (serverId: string) => {
             set({
                 mcpApprovedServers: get().mcpApprovedServers.filter(s => s !== serverId),
@@ -243,10 +294,19 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Checks if an MCP server is approved.
+         * @param serverId - The MCP server identifier to check
+         * @returns True if the server is approved
+         */
         isMcpServerApproved: (serverId: string): boolean => {
             return get().mcpApprovedServers.includes(serverId);
         },
 
+        /**
+         * Adds always-approval for a specific MCP tool.
+         * @param toolName - The MCP tool name to approve
+         */
         addMcpToolApproval: async (toolName: string) => {
             const { mcpApprovedTools } = get();
             if (!mcpApprovedTools.includes(toolName)) {
@@ -256,6 +316,10 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes always-approval for a specific MCP tool.
+         * @param toolName - The MCP tool name to remove approval for
+         */
         removeMcpToolApproval: async (toolName: string) => {
             set({
                 mcpApprovedTools: get().mcpApprovedTools.filter(t => t !== toolName),
@@ -263,10 +327,19 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Checks if an MCP tool is always-approved.
+         * @param toolName - The MCP tool name to check
+         * @returns True if the tool is always-approved
+         */
         isMcpToolApproved: (toolName: string): boolean => {
             return get().mcpApprovedTools.includes(toolName);
         },
 
+        /**
+         * Adds a session-only approval for an MCP tool.
+         * @param toolName - The MCP tool name to approve for this session
+         */
         addMcpSessionApproval: (toolName: string) => {
             const { mcpSessionApprovedTools } = get();
             if (!mcpSessionApprovedTools.includes(toolName)) {
@@ -275,12 +348,22 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes a session approval for an MCP tool.
+         * @param toolName - The MCP tool name to remove session approval for
+         */
         removeMcpSessionApproval: (toolName: string) => {
             set({
                 mcpSessionApprovedTools: get().mcpSessionApprovedTools.filter(t => t !== toolName),
             });
         },
 
+        /**
+         * Checks if an MCP tool is auto-approved (server, tool, or session level).
+         * @param toolName - The MCP tool name to check
+         * @param serverId - The MCP server identifier
+         * @returns True if the tool is auto-approved
+         */
         isMcpAutoApproved: (toolName: string, serverId: string): boolean => {
             const { mcpApprovedServers, mcpApprovedTools, mcpSessionApprovedTools } = get();
 
@@ -305,6 +388,12 @@ export const useApprovalStore = create<ApprovalState>()(
             return false;
         },
 
+        /**
+         * Gets the reason why an MCP tool is auto-approved.
+         * @param toolName - The MCP tool name
+         * @param serverId - The MCP server identifier
+         * @returns The approval reason or null if not approved
+         */
         getMcpApprovalReason: (toolName: string, serverId: string): string | null => {
             const { mcpApprovedServers, mcpApprovedTools, mcpSessionApprovedTools } = get();
 
@@ -318,6 +407,10 @@ export const useApprovalStore = create<ApprovalState>()(
         // WebMCP Website Tool Approvals
         // ═══════════════════════════════════════════════════════════════════════════
 
+        /**
+         * Adds approval for all tools from a WebMCP domain.
+         * @param domain - The domain to approve
+         */
         addWebmcpDomainApproval: async (domain: string) => {
             const { webmcpApprovedDomains } = get();
             if (!webmcpApprovedDomains.includes(domain)) {
@@ -327,6 +420,10 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes approval for a WebMCP domain.
+         * @param domain - The domain to remove approval for
+         */
         removeWebmcpDomainApproval: async (domain: string) => {
             set({
                 webmcpApprovedDomains: get().webmcpApprovedDomains.filter(d => d !== domain),
@@ -334,10 +431,19 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Checks if a WebMCP domain is approved.
+         * @param domain - The domain to check
+         * @returns True if the domain is approved
+         */
         isWebmcpDomainApproved: (domain: string): boolean => {
             return get().webmcpApprovedDomains.includes(domain);
         },
 
+        /**
+         * Adds always-approval for a specific WebMCP tool.
+         * @param toolName - The WebMCP tool name to approve
+         */
         addWebmcpToolApproval: async (toolName: string) => {
             const { webmcpApprovedTools } = get();
             if (!webmcpApprovedTools.includes(toolName)) {
@@ -347,6 +453,10 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes always-approval for a specific WebMCP tool.
+         * @param toolName - The WebMCP tool name to remove approval for
+         */
         removeWebmcpToolApproval: async (toolName: string) => {
             set({
                 webmcpApprovedTools: get().webmcpApprovedTools.filter(t => t !== toolName),
@@ -354,10 +464,19 @@ export const useApprovalStore = create<ApprovalState>()(
             await saveToStorage(get());
         },
 
+        /**
+         * Checks if a WebMCP tool is always-approved.
+         * @param toolName - The WebMCP tool name to check
+         * @returns True if the tool is always-approved
+         */
         isWebmcpToolApproved: (toolName: string): boolean => {
             return get().webmcpApprovedTools.includes(toolName);
         },
 
+        /**
+         * Adds a session-only approval for a WebMCP tool.
+         * @param toolName - The WebMCP tool name to approve for this session
+         */
         addWebmcpSessionApproval: (toolName: string) => {
             const { webmcpSessionApprovedTools } = get();
             if (!webmcpSessionApprovedTools.includes(toolName)) {
@@ -366,12 +485,22 @@ export const useApprovalStore = create<ApprovalState>()(
             }
         },
 
+        /**
+         * Removes a session approval for a WebMCP tool.
+         * @param toolName - The WebMCP tool name to remove session approval for
+         */
         removeWebmcpSessionApproval: (toolName: string) => {
             set({
                 webmcpSessionApprovedTools: get().webmcpSessionApprovedTools.filter(t => t !== toolName),
             });
         },
 
+        /**
+         * Checks if a WebMCP tool is auto-approved (domain, tool, or session level).
+         * @param toolName - The WebMCP tool name to check
+         * @param domain - The domain the tool belongs to
+         * @returns True if the tool is auto-approved
+         */
         isWebmcpAutoApproved: (toolName: string, domain: string): boolean => {
             const { webmcpApprovedDomains, webmcpApprovedTools, webmcpSessionApprovedTools } = get();
 
@@ -396,6 +525,12 @@ export const useApprovalStore = create<ApprovalState>()(
             return false;
         },
 
+        /**
+         * Gets the reason why a WebMCP tool is auto-approved.
+         * @param toolName - The WebMCP tool name
+         * @param domain - The domain the tool belongs to
+         * @returns The approval reason or null if not approved
+         */
         getWebmcpApprovalReason: (toolName: string, domain: string): string | null => {
             const { webmcpApprovedDomains, webmcpApprovedTools, webmcpSessionApprovedTools } = get();
 
@@ -420,14 +555,15 @@ async function saveToStorage(state: ApprovalState) {
         webmcpApprovedDomains: state.webmcpApprovedDomains,
         webmcpApprovedTools: state.webmcpApprovedTools,
     };
-    await chrome.storage.local.set({ [STORAGE_KEY]: toStore });
+    await chrome.storage.local.set({ [STORAGE_KEYS.TOOL_APPROVAL]: toStore });
 }
 
 // Listen for storage changes to sync across contexts
 if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'local' && changes[STORAGE_KEY]) {
-            const stored: StoredPreferences = { ...DEFAULT_STORED, ...changes[STORAGE_KEY].newValue };
+        const toolApprovalChange = changes[STORAGE_KEYS.TOOL_APPROVAL];
+        if (areaName === 'local' && toolApprovalChange) {
+            const stored: StoredPreferences = { ...DEFAULT_STORED, ...toolApprovalChange.newValue };
             useApprovalStore.setState({
                 // Built-in
                 websiteApprovedTools: stored.websiteApprovedTools,

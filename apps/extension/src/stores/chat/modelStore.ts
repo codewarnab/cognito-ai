@@ -10,11 +10,12 @@
 
 import { create } from 'zustand';
 import { chromeStorageSync } from '../middleware/chromeStorageSync';
+import { STORAGE_KEYS } from '../constants';
 import type { ModelState, AIMode, RemoteModel } from './types';
 
 export const useModelStore = create<ModelState>()(
   chromeStorageSync<ModelState>({
-    storageKey: 'ai_model_config',
+    storageKey: STORAGE_KEYS.MODEL_CONFIG,
     persistFields: ['mode', 'remoteModel'],
     onHydrate: () => {
       useModelStore.setState({ isHydrated: true });
@@ -58,8 +59,8 @@ export const useModelStore = create<ModelState>()(
      */
     refreshApiKeyStatus: async () => {
       try {
-        const result = await chrome.storage.local.get('ai_provider_config');
-        const config = result.ai_provider_config;
+        const result = await chrome.storage.local.get(STORAGE_KEYS.LEGACY_PROVIDER_CONFIG);
+        const config = result[STORAGE_KEYS.LEGACY_PROVIDER_CONFIG];
         const hasKey = !!(config?.google?.apiKey);
         set({ hasApiKey: hasKey });
       } catch (error) {

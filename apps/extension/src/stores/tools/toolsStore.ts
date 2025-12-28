@@ -118,6 +118,10 @@ export const useToolsStore = create<ToolsState>()(
 
 
     // Actions - Mode
+    /**
+     * Sets the tool mode and updates enabled tools accordingly.
+     * @param mode - The tool mode to set ('chat', 'agent', or 'adaptive')
+     */
     setMode: async (mode) => {
       if (mode === 'custom') return;
 
@@ -150,6 +154,12 @@ export const useToolsStore = create<ToolsState>()(
     },
 
     // Actions - Built-in tools
+    /**
+     * Toggles a built-in tool's enabled state.
+     * @param toolName - The tool identifier
+     * @param enabled - Whether to enable or disable the tool
+     * @throws If storage persistence fails
+     */
     toggleTool: async (toolName, enabled) => {
       const { enabledMap, supermemoryConfigured } = get();
 
@@ -183,6 +193,13 @@ export const useToolsStore = create<ToolsState>()(
       get().recalculateCounts();
     },
 
+    /**
+     * Toggles all tools in a category on or off.
+     * @param category - The category name
+     * @param tools - Array of tool names in the category
+     * @param enabled - Whether to enable or disable the tools
+     * @throws If storage persistence fails
+     */
     toggleCategory: async (category, tools, enabled) => {
       const { enabledMap, supermemoryConfigured } = get();
 
@@ -232,6 +249,10 @@ export const useToolsStore = create<ToolsState>()(
 
 
     // Actions - MCP tools
+    /**
+     * Loads MCP tools from all connected servers.
+     * Fetches tool lists and disabled tool configurations.
+     */
     loadMcpTools: async () => {
       set({ mcpLoading: true });
 
@@ -267,6 +288,12 @@ export const useToolsStore = create<ToolsState>()(
       }
     },
 
+    /**
+     * Toggles an MCP tool's enabled state.
+     * @param serverId - The MCP server identifier
+     * @param toolName - The tool name to toggle
+     * @param enabled - Whether to enable or disable the tool
+     */
     toggleMcpTool: async (serverId, toolName, enabled) => {
       const { mcpDisabledTools } = get();
       const currentDisabled = mcpDisabledTools[serverId] || [];

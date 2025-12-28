@@ -192,6 +192,11 @@ export const useMcpStore = create<McpState>()(
     navigateToAddCustom: () => set({ activeView: 'add-custom' }),
 
     // Actions - Server Operations
+    /**
+     * Enables an MCP server and establishes connection.
+     * @param serverId - The server identifier to enable
+     * @returns Promise with success status and optional error message
+     */
     enableServer: async (serverId) => {
       try {
         const response = await sendMcpMessage(serverId, 'enable');
@@ -212,6 +217,11 @@ export const useMcpStore = create<McpState>()(
       }
     },
 
+    /**
+     * Disables an MCP server and closes connection.
+     * @param serverId - The server identifier to disable
+     * @returns Promise with success status and optional error message
+     */
     disableServer: async (serverId) => {
       try {
         const response = await sendMcpMessage(serverId, 'disable');
@@ -231,6 +241,11 @@ export const useMcpStore = create<McpState>()(
       }
     },
 
+    /**
+     * Initiates authentication flow for an MCP server.
+     * @param serverId - The server identifier to authenticate
+     * @returns Promise with success status and optional error message
+     */
     authenticateServer: async (serverId) => {
       try {
         const response = await sendMcpMessage(serverId, 'auth/start');
