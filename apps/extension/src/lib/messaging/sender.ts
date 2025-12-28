@@ -182,7 +182,7 @@ export async function sendMessageWithTimeout<T extends MessageType>(
 
     // Use timeout with proper cleanup to prevent memory leaks
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    
+
     try {
         const result = await Promise.race([
             messagePromise,
