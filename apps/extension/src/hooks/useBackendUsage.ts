@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 import { createLogger } from '~logger';
 import { ENV } from '@/utils/env';
+import { getErrorMessage } from '@/utils/errors';
 
 const log = createLogger('BackendUsage', 'AI_CHAT');
 
@@ -70,7 +71,7 @@ export function useBackendUsage(): UseBackendUsageResult {
             setUsage(data);
             log.debug('Usage fetched:', data);
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Unknown error';
+            const message = getErrorMessage(err);
             log.warn('Failed to fetch usage:', message);
             setError(message);
         } finally {

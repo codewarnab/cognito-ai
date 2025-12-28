@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 
 const log = createLogger('useYouTubeVideoDetection', 'BROWSER_TABS');
+
+/** Polling interval for checking video info updates (in milliseconds) */
+const VIDEO_INFO_POLLING_INTERVAL_MS = 2000;
 
 /**
  * Information about a detected YouTube video
@@ -106,9 +109,9 @@ export function useYouTubeVideoDetection(): YouTubeVideoDetection {
     const [videoInfo, setVideoInfo] = useState<YouTubeVideoDetection>({
         isYouTubeVideo: false,
     });
+    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        let pollingInterval: NodeJS.Timeout | null = null;
 
         /**
          * Update the video information based on the current active tab
@@ -195,18 +198,19 @@ export function useYouTubeVideoDetection(): YouTubeVideoDetection {
         chrome.tabs.onActivated.addListener(handleTabActivated);
         chrome.tabs.onUpdated.addListener(handleTabUpdated);
 
-        // Poll every 2 seconds to catch any missed updates
-        pollingInterval = setInterval(() => {
+        // Poll periodically to catch any missed updates
+        pollingIntervalRef.current = setInterval(() => {
             log.debug('Polling for video info updates');
             updateVideoInfo();
-        }, 2000);
+        }, VIDEO_INFO_POLLING_INTERVAL_MS);
 
         // Cleanup listeners on unmount
         return () => {
             chrome.tabs.onActivated.removeListener(handleTabActivated);
             chrome.tabs.onUpdated.removeListener(handleTabUpdated);
-            if (pollingInterval) {
-                clearInterval(pollingInterval);
+            if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
             }
         };
     }, []);

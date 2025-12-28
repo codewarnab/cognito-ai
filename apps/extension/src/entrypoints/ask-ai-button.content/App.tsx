@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { browser } from 'wxt/browser';
 import { SparklesIcon } from "@assets/icons/ui/star";
@@ -11,14 +10,106 @@ import {
     hideForSession,
     hideForever,
 } from "@/utils/settings";
+import { createLogger } from '~logger';
 
+const log = createLogger('AskAIButton', 'CONTENT_SCRIPTS');
+
+/** Shared style constants for menu buttons */
+const MENU_BUTTON_STYLE: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '16px 20px',
+    background: 'rgba(30, 30, 30, 0.95)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '12px',
+    color: 'white',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    backdropFilter: 'blur(12px)',
+    whiteSpace: 'nowrap',
+    minWidth: '120px',
+};
+
+/** Hover state handlers for menu buttons */
+const menuButtonHoverHandlers = {
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.background = 'rgba(50, 50, 50, 0.95)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.background = 'rgba(30, 30, 30, 0.95)';
+        e.currentTarget.style.transform = 'translateY(0)';
+    },
+};
+
+/** Style for the floating menu container */
+const FLOATING_MENU_CONTAINER_STYLE: React.CSSProperties = {
+    position: 'fixed',
+    left: '50%',
+    bottom: '80px',
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    zIndex: 2147483645,
+    pointerEvents: 'auto',
+    alignItems: 'center',
+};
+
+/** Style for the cancel button */
+const CANCEL_BUTTON_STYLE: React.CSSProperties = {
+    padding: '10px 32px',
+    background: 'rgba(60, 60, 60, 0.95)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '8px',
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    backdropFilter: 'blur(12px)',
+};
+
+/** Hover state handlers for cancel button */
+const cancelButtonHoverHandlers = {
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.background = 'rgba(80, 80, 80, 0.95)';
+        e.currentTarget.style.color = 'white';
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.currentTarget.style.background = 'rgba(60, 60, 60, 0.95)';
+        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+    },
+};
+
+/** Position coordinates for the floating button */
 interface Position {
     x: number;
     y: number;
 }
 
-const AskAIButton = () => {
-    console.log("[AskAI] Component mounted");
+/** Message structure received from the sidebar */
+interface SidebarMessage {
+    action?: 'SIDEBAR_OPENED' | 'SIDEBAR_CLOSED';
+    type?: string;
+    tools?: unknown[];
+}
+
+/**
+ * Floating AI assistant button that appears on web pages.
+ * Supports drag-to-reposition and trash zone for hiding.
+ *
+ * @remarks
+ * - Button visibility is controlled by user preferences
+ * - Position persists in chrome.storage.local
+ * - Supports compact mode for fullscreen scenarios
+ */
+const AskAIButton: React.FC = () => {
+    log.debug('Component mounted');
     const [isVisible, setIsVisible] = useState(false); // Start hidden to prevent flash
     const [isDragging, setIsDragging] = useState(false);
     const [position, setPosition] = useState<Position | null>(null);
@@ -57,7 +148,7 @@ const AskAIButton = () => {
             const shouldShow = await shouldShowButton();
 
             if (!shouldShow) {
-                console.log("[AskAI] Button hidden based on visibility settings");
+                log.debug('Button hidden based on visibility settings');
                 setIsVisible(false);
                 setIsReady(true);
                 return; // Don't continue if button should be hidden
@@ -81,12 +172,12 @@ const AskAIButton = () => {
 
     // Listen for sidebar state changes and MCP tool detection
     useEffect(() => {
-        const handleMessage = (message: any) => {
+        const handleMessage = (message: SidebarMessage) => {
             if (message.action === "SIDEBAR_OPENED") {
                 setIsVisible(false);
             } else if (message.action === "SIDEBAR_CLOSED") {
                 setIsVisible(true);
-            } else if (message.type === "webmcp/tools/register" && message.tools?.length > 0) {
+            } else if (message.type === "webmcp/tools/register" && message.tools?.length) {
                 // MCP tools detected - potential logic here
             }
         };
@@ -99,10 +190,7 @@ const AskAIButton = () => {
         };
     }, []);
 
-    // Listen for fullscreen changes handled in separate useEffect below
-
-
-    // However, for document listeners inside a React component, use standard add/removeEventListener
+    // Handle fullscreen changes - document listeners use standard add/removeEventListener
     useEffect(() => {
         const handleFullscreenChange = () => {
             const isFullscreen = !!(document.fullscreenElement ||
@@ -147,13 +235,13 @@ const AskAIButton = () => {
             hasDragged.current = false;
             return; // Don't open if just finished dragging
         }
-        console.log("[AskAI] Button clicked, sending OPEN_SIDEBAR message");
+        log.debug('Button clicked, sending OPEN_SIDEBAR message');
         void trySendMessage('OPEN_SIDEBAR');
     };
 
     // Handle menu option selection
     const handleMenuSelect = async (action: 'page' | 'session' | 'forever') => {
-        console.log(`[AskAI] Menu action selected: ${action}`);
+        log.debug('Menu action selected:', action);
 
         // Hide the button immediately
         setIsVisible(false);
@@ -162,15 +250,15 @@ const AskAIButton = () => {
         switch (action) {
             case 'page':
                 await hideForCurrentPage();
-                console.log('[AskAI] Hidden for current page');
+                log.debug('Hidden for current page');
                 break;
             case 'session':
                 await hideForSession();
-                console.log('[AskAI] Hidden for session');
+                log.debug('Hidden for session');
                 break;
             case 'forever':
                 await hideForever();
-                console.log('[AskAI] Hidden permanently');
+                log.debug('Hidden permanently');
                 break;
         }
 
@@ -182,7 +270,7 @@ const AskAIButton = () => {
 
     // Handle cancel - return button to bottom-right
     const handleCancel = () => {
-        console.log('[AskAI] Cancel - returning to original position');
+        log.debug('Cancel - returning to original position');
         setShowMenu(false);
         setIsOverTrash(false);
         setIsButtonNear(false);
@@ -195,11 +283,11 @@ const AskAIButton = () => {
 
     // Trash zone callbacks
     const handleButtonEnterTrash = () => {
-        console.log('[AskAI] Button entered trash zone');
+        log.debug('Button entered trash zone');
     };
 
     const handleButtonLeaveTrash = () => {
-        console.log('[AskAI] Button left trash zone');
+        log.debug('Button left trash zone');
     };
 
     // Drag handlers
@@ -449,18 +537,7 @@ const AskAIButton = () => {
             {showMenu && (
                 <div
                     className="floating-menu-container"
-                    style={{
-                        position: 'fixed',
-                        left: '50%',
-                        bottom: '80px',
-                        transform: 'translateX(-50%)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px',
-                        zIndex: 2147483645,
-                        pointerEvents: 'auto',
-                        alignItems: 'center',
-                    }}
+                    style={FLOATING_MENU_CONTAINER_STYLE}
                 >
                     {/* Three buttons side by side */}
                     <div
@@ -472,32 +549,8 @@ const AskAIButton = () => {
                         <button
                             onClick={() => handleMenuSelect('page')}
                             className="menu-option-button"
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '16px 20px',
-                                background: 'rgba(30, 30, 30, 0.95)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '12px',
-                                color: 'white',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                backdropFilter: 'blur(12px)',
-                                whiteSpace: 'nowrap',
-                                minWidth: '120px',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(50, 50, 50, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(30, 30, 30, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                            style={MENU_BUTTON_STYLE}
+                            {...menuButtonHoverHandlers}
                         >
                             <EyeOff size={20} />
                             <span>Hide for this page</span>
@@ -506,32 +559,8 @@ const AskAIButton = () => {
                         <button
                             onClick={() => handleMenuSelect('session')}
                             className="menu-option-button"
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '16px 20px',
-                                background: 'rgba(30, 30, 30, 0.95)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '12px',
-                                color: 'white',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                backdropFilter: 'blur(12px)',
-                                whiteSpace: 'nowrap',
-                                minWidth: '120px',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(50, 50, 50, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(30, 30, 30, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                            style={MENU_BUTTON_STYLE}
+                            {...menuButtonHoverHandlers}
                         >
                             <Clock size={20} />
                             <span>Hide for session</span>
@@ -540,32 +569,8 @@ const AskAIButton = () => {
                         <button
                             onClick={() => handleMenuSelect('forever')}
                             className="menu-option-button"
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '16px 20px',
-                                background: 'rgba(30, 30, 30, 0.95)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                borderRadius: '12px',
-                                color: 'white',
-                                fontSize: '13px',
-                                fontWeight: '500',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                backdropFilter: 'blur(12px)',
-                                whiteSpace: 'nowrap',
-                                minWidth: '120px',
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(50, 50, 50, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(30, 30, 30, 0.95)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                            style={MENU_BUTTON_STYLE}
+                            {...menuButtonHoverHandlers}
                         >
                             <XCircle size={20} />
                             <span>Never show again</span>
@@ -576,26 +581,8 @@ const AskAIButton = () => {
                     <button
                         onClick={handleCancel}
                         className="menu-cancel-button"
-                        style={{
-                            padding: '10px 32px',
-                            background: 'rgba(60, 60, 60, 0.95)',
-                            border: '1px solid rgba(255, 255, 255, 0.15)',
-                            borderRadius: '8px',
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '13px',
-                            fontWeight: '500',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                            backdropFilter: 'blur(12px)',
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(80, 80, 80, 0.95)';
-                            e.currentTarget.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(60, 60, 60, 0.95)';
-                            e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
-                        }}
+                        style={CANCEL_BUTTON_STYLE}
+                        {...cancelButtonHoverHandlers}
                     >
                         Cancel
                     </button>

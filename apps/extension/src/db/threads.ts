@@ -5,6 +5,9 @@
 import { db } from './database';
 import type { ChatThread } from '~/types/database';
 
+/** Maximum length for thread titles before truncation */
+const MAX_THREAD_TITLE_LENGTH = 40;
+
 /**
  * Create a new chat thread
  * 
@@ -25,7 +28,7 @@ export async function createThread(
     const thread: ChatThread = {
         id: crypto.randomUUID(),
         title: firstMessage
-            ? (firstMessage.slice(0, 40) + (firstMessage.length > 40 ? '...' : ''))
+            ? (firstMessage.slice(0, MAX_THREAD_TITLE_LENGTH) + (firstMessage.length > MAX_THREAD_TITLE_LENGTH ? '...' : ''))
             : 'New Chat',
         createdAt: Date.now(),
         updatedAt: Date.now(),

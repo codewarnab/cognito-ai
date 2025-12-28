@@ -5,6 +5,17 @@
 import { db } from './database';
 import type { ReportSection } from './types';
 
+/**
+ * Counter for generating sequential section IDs within a session.
+ * 
+ * @remarks
+ * This counter is module-scoped and maintains state across function calls.
+ * It is reset when a new research session starts (via resetReportSectionCounter)
+ * or when sections are cleared (via clearReportSections).
+ * 
+ * Note: This is NOT thread-safe in concurrent environments. Each browser
+ * context (tab/worker) maintains its own counter instance.
+ */
 let reportSectionCounter = 0;
 
 /**

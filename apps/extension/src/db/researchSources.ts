@@ -73,12 +73,49 @@ export async function addResearchMetadata(params: {
 
 let currentResearchSessionId: string | null = null;
 
+/**
+ * Initialize a new research session with a unique ID.
+ * 
+ * @returns The newly generated session ID (UUID v4)
+ * 
+ * @remarks
+ * This function performs two actions:
+ * 1. Generates a new UUID for the research session
+ * 2. Resets the report section counter to 0
+ * 
+ * Call this at the start of each new research workflow to ensure
+ * proper isolation of sources and report sections.
+ * 
+ * @example
+ * ```typescript
+ * const sessionId = initResearchSession();
+ * // sessionId: "550e8400-e29b-41d4-a716-446655440000"
+ * ```
+ */
 export function initResearchSession(): string {
     currentResearchSessionId = crypto.randomUUID();
     resetReportSectionCounter();
     return currentResearchSessionId;
 }
 
+/**
+ * Get the current research session ID.
+ * 
+ * @returns The current session ID, or null if no session is active
+ * 
+ * @remarks
+ * Returns null if initResearchSession() has not been called yet.
+ * Use this to check if a research session is in progress before
+ * performing session-dependent operations.
+ * 
+ * @example
+ * ```typescript
+ * const sessionId = getCurrentResearchSessionId();
+ * if (sessionId) {
+ *   await saveResearchSource({ sessionId, ... });
+ * }
+ * ```
+ */
 export function getCurrentResearchSessionId(): string | null {
     return currentResearchSessionId;
 }

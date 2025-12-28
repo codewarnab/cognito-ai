@@ -3,6 +3,39 @@ import { createLogger } from '~logger';
 
 const log = createLogger('useBackgroundMessageListener', 'UI_SIDEPANEL_HOOKS');
 
+/** Message types received from background script */
+interface OmniboxMessage {
+    type: 'omnibox/send-message';
+    payload: { text: string };
+}
+
+interface AskAIMessage {
+    type: 'ask-ai/send-message';
+    payload: { message: string; tabAttachments?: unknown[] };
+}
+
+interface NotificationActionMessage {
+    type: 'ai/notification/action';
+    payload: { action: 'continue' | 'dismiss' | 'navigate' | 'open'; threadId: string };
+}
+
+type BackgroundMessage = OmniboxMessage | AskAIMessage | NotificationActionMessage | { type?: string; payload?: unknown };
+
+/** Type guard for omnibox messages */
+function isOmniboxMessage(msg: BackgroundMessage): msg is OmniboxMessage {
+    return msg?.type === 'omnibox/send-message';
+}
+
+/** Type guard for Ask AI messages */
+function isAskAIMessage(msg: BackgroundMessage): msg is AskAIMessage {
+    return msg?.type === 'ask-ai/send-message';
+}
+
+/** Type guard for notification action messages */
+function isNotificationActionMessage(msg: BackgroundMessage): msg is NotificationActionMessage {
+    return msg?.type === 'ai/notification/action';
+}
+
 export interface UseBackgroundMessageListenerProps {
     currentThreadId: string | null;
     handleNewThread: () => Promise<void>;
@@ -29,9 +62,9 @@ export function useBackgroundMessageListener({
 
     useEffect(() => {
         const handleBackgroundMessage = async (
-            message: any,
+            message: BackgroundMessage,
             _sender: chrome.runtime.MessageSender,
-            sendResponse: (response?: any) => void
+            sendResponse: (response?: { success: boolean; duplicate?: boolean; error?: string }) => void
         ) => {
             // Create a unique key for this message to detect duplicates
             const dedupeKey = `${message?.type}-${JSON.stringify(message?.payload)}`;
@@ -54,7 +87,7 @@ export function useBackgroundMessageListener({
                 processedMessagesRef.current.delete(dedupeKey);
             }, 1000);
             // Handle omnibox messages
-            if (message?.type === 'omnibox/send-message') {
+            if (isOmniboxMessage(message)) {
                 const { text } = message.payload;
 
                 log.info('🔤 Received omnibox message', { text, hasThread: !!currentThreadId });
@@ -78,7 +111,7 @@ export function useBackgroundMessageListener({
             }
 
             // Handle Ask AI button messages with attachments
-            if (message?.type === 'ask-ai/send-message') {
+            if (isAskAIMessage(message)) {
                 const { message: text, tabAttachments } = message.payload;
 
                 log.info('🤖 Received Ask AI message', { text, tabAttachments });
@@ -102,7 +135,7 @@ export function useBackgroundMessageListener({
             }
 
             // Handle notification actions
-            if (message?.type === 'ai/notification/action') {
+            if (isNotificationActionMessage(message)) {
                 const { action, threadId } = message.payload;
 
                 log.info('📬 Received notification action from background', { action, threadId });

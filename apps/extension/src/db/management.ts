@@ -12,6 +12,15 @@ import type { DBStats } from '~/types/database';
  * ⚠️ WARNING: This action is irreversible!
  * Removes all settings, messages, and threads from the database.
  * Uses a transaction to ensure atomic deletion.
+ * 
+ * @example
+ * ```typescript
+ * // Always confirm with user before wiping
+ * if (confirm('Are you sure you want to delete all data?')) {
+ *   await wipeAllData();
+ *   console.log('All data has been cleared');
+ * }
+ * ```
  */
 export async function wipeAllData(): Promise<void> {
     await db.transaction('rw', [db.settings, db.chatMessages, db.chatThreads], async () => {

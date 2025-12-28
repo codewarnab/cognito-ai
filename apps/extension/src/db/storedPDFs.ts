@@ -84,22 +84,17 @@ export async function deletePDF(id: string): Promise<void> {
 export async function cleanupExpiredPDFs(): Promise<number> {
     const now = Date.now();
 
-    // Find all expired PDFs
-    const expiredPDFs = await db.storedPDFs
+    // Bulk delete all expired PDFs in a single operation
+    const count = await db.storedPDFs
         .where('expiresAt')
         .below(now)
-        .toArray();
+        .delete();
 
-    // Delete them
-    for (const pdf of expiredPDFs) {
-        await db.storedPDFs.delete(pdf.id);
+    if (count > 0) {
+        console.debug(`[StoredPDFs] Cleaned up ${count} expired PDFs`);
     }
 
-    if (expiredPDFs.length > 0) {
-        console.debug(`[StoredPDFs] Cleaned up ${expiredPDFs.length} expired PDFs`);
-    }
-
-    return expiredPDFs.length;
+    return count;
 }
 
 /**

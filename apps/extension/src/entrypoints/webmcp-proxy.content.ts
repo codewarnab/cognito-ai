@@ -1,8 +1,26 @@
-
+/**
+ * WebMCP Proxy Content Script
+ *
+ * This content script acts as a bridge between web pages that implement the WebMCP protocol
+ * and the Chrome extension's background service. It discovers WebMCP servers on pages,
+ * registers their tools with the extension, and handles tool execution requests.
+ *
+ * Key responsibilities:
+ * - Detect and connect to WebMCP servers exposed by web pages
+ * - Discover available tools and report them to the background service
+ * - Execute tool calls from the extension and return results
+ * - Handle tool list change notifications
+ * - Rate limit tool executions for security
+ *
+ * @module webmcp-proxy.content
+ */
 import { TabClientTransport } from '@mcp-b/transports';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { ToolListChangedNotificationSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { WebMCPTool } from '@/types/webmcp';
+import { createLogger } from '~logger';
+
+const log = createLogger('WebMCP-Proxy', 'CONTENT_SCRIPTS');
 
 export default defineContentScript({
     matches: ['<all_urls>'],
@@ -19,6 +37,8 @@ export default defineContentScript({
 
         // Rate limiting for tool execution
         const toolExecutionTimestamps = new Map<string, number>();
+        // 100ms rate limit prevents rapid-fire tool calls that could overwhelm
+        // the page's WebMCP server or be used for denial-of-service attacks
         const RATE_LIMIT_MS = 100;
 
         /**
@@ -105,7 +125,7 @@ export default defineContentScript({
          */
         async function sendToolsToBackground(tools: WebMCPTool[]): Promise<void> {
             if (currentTabId === null) {
-                console.debug('[WebMCP Proxy] No tab ID, cannot send tools');
+                log.debug('No tab ID, cannot send tools');
                 return;
             }
 
@@ -117,10 +137,10 @@ export default defineContentScript({
                     domain: extractDomain(window.location.href),
                     url: window.location.href,
                 });
-                console.debug('[WebMCP Proxy] Sent tools to background:', tools.length);
+                log.debug('Sent tools to background:', tools.length);
             } catch (error) {
                 // Extension context may be invalidated
-                console.debug('[WebMCP Proxy] Failed to send tools:', error);
+                log.debug('Failed to send tools:', error);
             }
         }
 
@@ -129,7 +149,7 @@ export default defineContentScript({
          */
         async function fetchAndReportTools(): Promise<void> {
             if (!client || !isConnected) {
-                console.debug('[WebMCP Proxy] Not connected, cannot fetch tools');
+                log.debug('Not connected, cannot fetch tools');
                 return;
             }
 
@@ -149,9 +169,9 @@ export default defineContentScript({
                 }));
 
                 await sendToolsToBackground(webmcpTools);
-                console.log('[WebMCP Proxy] Discovered tools:', webmcpTools.map((t) => t.originalName));
+                log.info('Discovered tools:', webmcpTools.map((t) => t.originalName));
             } catch (error) {
-                console.debug('[WebMCP Proxy] Failed to fetch tools:', error);
+                log.debug('Failed to fetch tools:', error);
                 // Send empty tools on error to clear any stale tools
                 await sendToolsToBackground([]);
             }
@@ -177,18 +197,18 @@ export default defineContentScript({
             const validatedArgs = validateToolArgs(args);
 
             try {
-                console.log('[WebMCP Proxy] Executing tool:', originalToolName, validatedArgs);
+                log.info('Executing tool:', originalToolName, validatedArgs);
 
                 const result = await client.callTool({
                     name: originalToolName,
                     arguments: validatedArgs,
                 });
 
-                console.log('[WebMCP Proxy] Tool result:', originalToolName);
+                log.info('Tool result:', originalToolName);
                 return { success: true, result };
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.error('[WebMCP Proxy] Tool execution failed:', originalToolName, errorMessage);
+                log.error('Tool execution failed:', originalToolName, errorMessage);
                 return { success: false, error: errorMessage };
             }
         }
@@ -215,7 +235,7 @@ export default defineContentScript({
          */
         async function attemptConnection(): Promise<void> {
             if (connectionAttempted) {
-                console.debug('[WebMCP Proxy] Connection already attempted');
+                log.debug('Connection already attempted');
                 return;
             }
 
@@ -230,7 +250,7 @@ export default defineContentScript({
                 url.startsWith('edge://') ||
                 url.startsWith('brave://')
             ) {
-                console.debug('[WebMCP Proxy] Skipping protected page');
+                log.debug('Skipping protected page');
                 return;
             }
 
@@ -246,7 +266,7 @@ export default defineContentScript({
 
                 // Handle transport close
                 transport.onclose = () => {
-                    console.log('[WebMCP Proxy] Transport closed');
+                    log.info('Transport closed');
                     isConnected = false;
                     client = null;
                     transport = null;
@@ -263,7 +283,7 @@ export default defineContentScript({
                 await Promise.race([connectionPromise, timeoutPromise]);
 
                 isConnected = true;
-                console.log('[WebMCP Proxy] Connected to page WebMCP server');
+                log.info('Connected to page WebMCP server');
 
                 // Get server capabilities
                 const capabilities = client.getServerCapabilities?.() || {};
@@ -274,13 +294,13 @@ export default defineContentScript({
                 // Listen for tool list changes if supported
                 if (capabilities?.tools?.listChanged) {
                     client.setNotificationHandler(ToolListChangedNotificationSchema, async () => {
-                        console.log('[WebMCP Proxy] Tool list changed notification');
+                        log.info('Tool list changed notification');
                         await fetchAndReportTools();
                     });
                 }
             } catch (error) {
                 // Most pages won't have WebMCP - this is expected
-                console.debug('[WebMCP Proxy] No WebMCP server on this page (expected for most sites)');
+                log.debug('No WebMCP server on this page (expected for most sites)');
                 cleanup();
             }
         }
@@ -296,18 +316,18 @@ export default defineContentScript({
 
                 if (response?.tabId) {
                     currentTabId = response.tabId;
-                    console.debug('[WebMCP Proxy] Initialized with tab ID:', currentTabId);
+                    log.debug('Initialized with tab ID:', currentTabId);
 
                     // Attempt connection after a short delay to let page scripts initialize
                     ctx.setTimeout(() => {
                         attemptConnection();
                     }, 1000);
                 } else {
-                    console.debug('[WebMCP Proxy] Could not get tab ID');
+                    log.debug('Could not get tab ID');
                 }
             } catch (error) {
                 // Extension context may not be ready
-                console.debug('[WebMCP Proxy] Initialization error:', error);
+                log.debug('Initialization error:', error);
             }
         }
 

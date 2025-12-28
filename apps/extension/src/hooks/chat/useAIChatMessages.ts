@@ -2,7 +2,10 @@ import { useCallback } from 'react';
 import { createLogger } from '~logger';
 import { db, clearThreadMessages, updateThreadTitle, type ChatMessage } from '../../db';
 import { generateThreadTitle } from '@/utils/ai';
-import type { UIMessage } from 'ai';
+import type { UIMessage, ChatOnFinishCallback } from 'ai';
+
+/** Type for the AI finish result callback parameter */
+type AIFinishResult = Parameters<ChatOnFinishCallback<UIMessage>>[0];
 
 const log = createLogger('useAIChatMessages', 'AI_CHAT');
 
@@ -16,7 +19,7 @@ interface UseAIChatMessagesProps {
  */
 export function useAIChatMessages({ currentThreadId }: UseAIChatMessagesProps) {
 
-    const handleFinish = useCallback(async (result: any) => {
+    const handleFinish = useCallback(async (result: AIFinishResult) => {
         log.info('AI response finished', { messageId: result.message.id });
 
         if (result.messages && result.messages.length > 0 && currentThreadId) {

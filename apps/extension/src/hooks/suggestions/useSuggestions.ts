@@ -9,6 +9,7 @@ import { createLogger } from '~logger';
 import { extractPageContext } from '@/utils/tabs';
 import { suggestionCache } from '@/utils/ai';
 import { generateContextualSuggestions, type Suggestion } from '@/ai/suggestions';
+import { normalizeError } from '@/utils/errors';
 import type { ModelState } from '@/components/features/chat/types';
 
 const log = createLogger('UseSuggestions', 'MEMORY_SUGGESTIONS');
@@ -107,7 +108,7 @@ export function useSuggestions(
 
         } catch (err) {
             log.error('Error generating suggestions:', err);
-            setError(err instanceof Error ? err : new Error('Unknown error'));
+            setError(normalizeError(err));
         } finally {
             isGeneratingRef.current = false;
             setIsGenerating(false);

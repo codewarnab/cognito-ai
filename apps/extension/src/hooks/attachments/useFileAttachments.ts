@@ -4,9 +4,12 @@ import type { FileAttachmentMeta } from '@/components/features/chat/components/a
 import type { AIMode } from '@/components/features/chat/types';
 import { useAttachmentsStore } from '@/stores';
 
+/** Error handler callback type for reporting errors to UI */
+export type ErrorHandler = (message: string, type?: 'error' | 'warning' | 'info') => void;
+
 interface UseFileAttachmentsOptions {
     mode: AIMode;
-    onError?: (message: string, type?: 'error' | 'warning' | 'info') => void;
+    onError?: ErrorHandler;
 }
 
 /** Options for processing a single file with optional metadata */

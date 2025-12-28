@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
 import { getGoogleApiKey } from '@/utils/credentials';
+import { getErrorMessage } from '@/utils/errors';
 
 const log = createLogger('useApiKey', 'SETTINGS_STORE');
 
@@ -23,7 +24,7 @@ export function useApiKey() {
                     log.debug('No API key found in storage');
                 }
             } catch (error) {
-                log.error('Failed to load API key', error);
+                log.error('Failed to load API key', getErrorMessage(error));
             }
         };
         loadApiKey();
@@ -43,7 +44,7 @@ export function useApiKey() {
                     setApiKey(newApiKey);
                     log.debug('API key updated from storage change:', newApiKey ? 'set' : 'removed');
                 }).catch(error => {
-                    log.error('Failed to reload API key after storage change', error);
+                    log.error('Failed to reload API key after storage change', getErrorMessage(error));
                 });
             }
         };

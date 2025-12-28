@@ -11,6 +11,19 @@ import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
 import type { TabAttachmentData } from '@/components/features/chat/components/attachments';
 import type { UIMessage } from 'ai';
+import type { TextPart, TabContextPart } from '@/types/ai/messages';
+
+/** Extended file part with additional metadata used in this module */
+interface FileMessagePart {
+    type: 'file';
+    mediaType: string;
+    url: string;
+    name: string;
+    size: number;
+}
+
+/** Union of message part types used in this hook */
+type LocalMessagePart = TextPart | FileMessagePart | TabContextPart;
 import { workflowSessionManager } from '@/workflows/sessionManager';
 import { getWorkflow } from '@/workflows/registry';
 import { parseWorkflowCommand, isSlashCommand } from '@/utils/chat';
@@ -195,7 +208,7 @@ export function useMessageHandlers({
             }
 
             // Process attachments if present
-            let messageParts: any[] | null = null;
+            let messageParts: LocalMessagePart[] | null = null;
 
             if (attachments && attachments.length > 0) {
                 try {
@@ -263,7 +276,7 @@ export function useMessageHandlers({
 
                     // If we already have message parts from files, add tabs to them
                     // Otherwise create new parts array
-                    const tabMessageParts: any[] = messageParts?.length ? messageParts : [];
+                    const tabMessageParts: LocalMessagePart[] = messageParts?.length ? messageParts : [];
 
                     // Add text if not already added
                     if (displayMessage && !tabMessageParts.some(p => p.type === 'text')) {

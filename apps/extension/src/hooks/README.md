@@ -18,6 +18,9 @@ src/hooks/
 ├── chat/                    # Chat and messaging functionality
 │   └── index.ts
 │
+├── sandbox/                 # Sandbox/iframe execution hooks
+│   └── index.ts
+│
 ├── settings/                # Settings and configuration
 │   └── index.ts
 │
@@ -30,8 +33,18 @@ src/hooks/
 ├── ui/                      # Generic UI state hooks
 │   └── index.ts
 │
-└── workflows/               # Workflow-related hooks
-    └── index.ts
+├── webmcp/                  # Web-based MCP (Model Context Protocol) hooks
+│   └── index.ts
+│
+├── workflows/               # Workflow-related hooks
+│   └── index.ts
+│
+└── [root-level hooks]       # Standalone utility hooks
+    ├── useBackendUsage.ts
+    ├── useInlineCodeEnhancer.ts
+    ├── useProviderCapabilities.ts
+    ├── useSearchMode.ts
+    └── useSearchModeWithAI.ts
 ```
 
 ## Hook Categories
@@ -45,6 +58,7 @@ Hooks for handling file and media attachments:
 ### Browser (`browser/`)
 Hooks for Chrome browser and tab interactions:
 - `useActiveTabDetection` - Detects local PDF files in active tab
+- `useSelectedTextDetection` - Detects selected text on pages
 - `useTabContext` - Chrome tab context tracking
 - `useYouTubeVideoDetection` - YouTube video page detection
 
@@ -53,11 +67,16 @@ Hooks for chat and messaging functionality:
 - `useAIChatMessages` - AI message persistence and title generation
 - `useChatInputValidation` - Input validation before sending
 - `useMessageHandlers` - Message sending with attachments/context
-- `useThreadManagement` - Thread lifecycle and persistence
+- `useMessageTextSelection` - Text selection within chat messages
+
+### Sandbox (`sandbox/`)
+Hooks for sandbox/iframe execution:
+- `useSandbox` - Sandbox iframe management and code execution
 
 ### Settings (`settings/`)
 Hooks for settings and configuration:
 - `useApiKey` - Manages Gemini API key from storage
+- `useLoggerConfig` - Logger configuration management
 - `useOnboarding` - Onboarding state and persistence
 
 ### Sidepanel (`sidepanel/`)
@@ -79,9 +98,21 @@ Generic UI state hooks:
 
 > **Note:** Voice recording state has been moved to `useVoiceModeStore`. See `src/stores/voice/`.
 
+### WebMCP (`webmcp/`)
+Web-based Model Context Protocol hooks:
+- `useWebMCPTools` - Web-based MCP tool discovery and management
+
 ### Workflows (`workflows/`)
 Workflow-related hooks:
 - `useWorkflowMode` - Slash command workflow selection
+
+### Root-Level Hooks
+Standalone utility hooks not tied to a specific domain:
+- `useBackendUsage` - Backend API usage tracking
+- `useInlineCodeEnhancer` - Inline code enhancement for messages
+- `useProviderCapabilities` - AI provider capability detection
+- `useSearchMode` - Search mode state management
+- `useSearchModeWithAI` - AI-enhanced search mode
 
 ## Usage
 
