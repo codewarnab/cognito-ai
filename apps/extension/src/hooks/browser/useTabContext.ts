@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createLogger } from '~logger';
-import type { TabContext } from '../../types/sidepanel';
+import type { TabContext } from '../../types/chrome/tabs';
 
 const log = createLogger('useTabContext', 'BROWSER_TABS');
 

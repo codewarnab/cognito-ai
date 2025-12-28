@@ -1,5 +1,7 @@
 /**
  * Global type augmentations and ambient declarations
+ * 
+ * Note: Asset module declarations (*.svg, *.png, *.jpg, etc.) are in assets.d.ts
  */
 
 // Extend global Window interface if needed
@@ -10,24 +12,9 @@ declare global {
     }
 }
 
-// Module augmentations
+// Module augmentations (non-asset types only)
 declare module '*.css' {
     const content: Record<string, string>;
-    export default content;
-}
-
-declare module '*.svg' {
-    const content: string;
-    export default content;
-}
-
-declare module '*.png' {
-    const content: string;
-    export default content;
-}
-
-declare module '*.jpg' {
-    const content: string;
     export default content;
 }
 

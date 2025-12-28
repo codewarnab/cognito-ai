@@ -29,7 +29,7 @@ import { ChatLoadingSkeleton } from "@/components/features/chat/components/state
 
 // Types
 import type { VoiceInputHandle } from "@/audio/VoiceInput";
-import type { ContextWarningState } from "@/types/sidepanel";
+import type { ContextWarningState } from "@/types/components/chat";
 import type { FileAttachmentData, TabAttachmentData } from "@/components/features/chat/components/attachments";
 
 // Contexts
