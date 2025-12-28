@@ -58,7 +58,8 @@ export * from './writeCommand';
 export * from './rewriteCommand';
 
 // Keep existing sidepanel types
-export * from './sidepanel';
+// Sidepanel types have been moved or removed
+
 
 // Logger types are exported from @cognito/shared, not from a local module
 // Use: import type { LogCategory, LoggerConfig } from '@cognito/shared';

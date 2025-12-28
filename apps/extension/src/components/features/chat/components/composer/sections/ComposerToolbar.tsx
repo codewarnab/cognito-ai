@@ -5,7 +5,8 @@ import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Wrench, Cloud, Key, Globe } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
-import { HIDE_LOCAL_MODE, HIDE_MODEL_SELECTOR } from '@/constants';
+import { HIDE_MODEL_SELECTOR } from '@/constants';
+import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
@@ -115,7 +116,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
     return (
         <div className="flex items-center shrink-0" style={{ gap: '8px' }}>
-            {!HIDE_LOCAL_MODE && (
+            {!ENV.HIDE_LOCAL_MODE && (
                 <ModeSelector
                     modelState={modelState}
                     onModeChange={onModeChange}

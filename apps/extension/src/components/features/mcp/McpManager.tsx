@@ -6,7 +6,8 @@ import { AddCustomMcp } from "./AddCustomMcp"
 import { ToolCountWarning } from "./ToolCountWarning"
 import { MCP_SERVERS, type ServerConfig } from "@/constants/mcpServers"
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/primitives/popover"
-import { TOOLS_WARNING_THRESHOLD, HIDE_LOCAL_MODE } from "@/constants"
+import { TOOLS_WARNING_THRESHOLD } from "@/constants"
+import { ENV } from "@/utils/env"
 import { PlusIcon, type PlusIconHandle } from "@assets/icons/ui/plus"
 import { McpServerDefault } from "@assets/brands/integrations/McpServerDefault"
 import { useMcpStore, type McpState } from "@/stores"
@@ -167,7 +168,7 @@ export const McpManager: React.FC<McpManagerProps> = ({ onBack }) => {
                 />
             )}
 
-            {!HIDE_LOCAL_MODE && (
+            {!ENV.HIDE_LOCAL_MODE && (
                 <div style={{
                     padding: '0.75rem 1rem',
                     margin: '1rem 1rem 0.5rem 1rem',

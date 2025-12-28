@@ -12,7 +12,7 @@ import { createLogger } from '~logger';
 import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState } from '@/ai/tools/components';
 import { retrieveSchema, type RetrieveParams } from '@/search/schema';
-import { RETRIEVE_API_URL } from '@/constants';
+import { ENV } from '@/utils/env';
 import type { SearchResults } from '@/search/types';
 
 const log = createLogger('Tool-Retrieve', 'TOOLS_EXECUTION');
@@ -52,7 +52,12 @@ async function fetchJinaReaderData(url: string): Promise<SearchResults | null> {
             url: url.substring(0, 100),
         });
 
-        const response = await fetch(RETRIEVE_API_URL, {
+        if (!ENV.RETRIEVE_API_URL) {
+            log.error('RETRIEVE_API_URL environment variable is not set');
+            return null;
+        }
+
+        const response = await fetch(ENV.RETRIEVE_API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

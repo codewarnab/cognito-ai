@@ -5,7 +5,7 @@ import { ChatInput } from '@/components/features/chat/components/composer';
 import { ErrorNotification } from '@/components/features/chat/components/feedback';
 import { ModelDownloadToastContainer } from '@/components/shared/notifications';
 import type { VoiceInputHandle } from '@/audio/VoiceInput';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { ENV } from '@/utils/env';
 import type { Message, AIMode, RemoteModelType } from '@/components/features/chat/types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
@@ -180,7 +180,7 @@ export function CopilotChatWindow({
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
                 pendingMessageId={pendingMessageId}
-                isLocalMode={!HIDE_LOCAL_MODE && modelState.mode === 'local'}
+                isLocalMode={!ENV.HIDE_LOCAL_MODE && modelState.mode === 'local'}
                 onConfigureApiKey={handleOpenApiKeyDialog}
                 onContinue={onContinue}
                 threadId={threadId}
