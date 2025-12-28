@@ -12,7 +12,7 @@ import { createLogger } from '~logger';
 import type { PageContext } from '@/utils/tabs';
 import { generateLocalContextualSuggestions } from './local';
 import { getActiveProvider } from '@/utils/credentials';
-import { getContentScriptModel } from '@/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import { generateBackendSuggestions } from './backendSuggestions';
 import { initializeModel } from '../core/modelFactory';
 import { HIDE_LOCAL_MODE } from '@/constants';
@@ -114,10 +114,10 @@ export async function generateContextualSuggestions(
         try {
             // Determine active provider and its corresponding "cheap" model
             const activeProvider = await getActiveProvider();
-            const modelConfig = getContentScriptModel(activeProvider);
+            const modelConfig = getLightweightModel(activeProvider);
 
             if (!modelConfig) {
-                throw new Error(`No content script model configuration for provider: ${activeProvider}`);
+                throw new Error(`No lightweight model configuration for provider: ${activeProvider}`);
             }
 
             // Initialize model using modelFactory

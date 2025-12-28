@@ -12,7 +12,7 @@
  */
 
 import { getOpenAIApiKey } from '@/utils/credentials';
-import { getContentScriptModel } from '~/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import type {
     IProvider,
     ProviderConfig,
@@ -120,7 +120,7 @@ export class OpenAIProvider implements IProvider {
             throw new Error('OpenAI API key not found');
         }
 
-        const modelConfig = getContentScriptModel('openai');
+        const modelConfig = getLightweightModel('openai');
 
         return {
             type: 'openai',
@@ -138,7 +138,7 @@ export class OpenAIProvider implements IProvider {
         userPrompt: string,
         options: GenerationOptions
     ): OpenAIRequestBody {
-        const modelConfig = getContentScriptModel('openai');
+        const modelConfig = getLightweightModel('openai');
 
         return {
             model: modelConfig.model,
@@ -194,7 +194,7 @@ export class OpenAIProvider implements IProvider {
         options: GenerationOptions,
         tools: ProviderTool[]
     ): OpenAIRequestBodyWithTools {
-        const modelConfig = getContentScriptModel('openai');
+        const modelConfig = getLightweightModel('openai');
 
         // Convert provider-agnostic tools to OpenAI format
         const openaiTools: OpenAIToolFunction[] = tools.map((tool) => ({
@@ -275,7 +275,7 @@ export class OpenAIProvider implements IProvider {
         previousMessages: Message[],
         toolResults: ToolResult[]
     ): OpenAIRequestBody {
-        const modelConfig = getContentScriptModel('openai');
+        const modelConfig = getLightweightModel('openai');
 
         // Convert our Message format to OpenAI format
         const openaiMessages: OpenAIMessage[] = previousMessages.map((msg) => ({

@@ -24,7 +24,6 @@ import {
 } from './anthropic/webSearch';
 import {
     searchWithXai,
-    formatXaiCitationsForPrompt,
 } from './xai/webSearch';
 import { createLogger } from '~logger';
 

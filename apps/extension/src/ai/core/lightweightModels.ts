@@ -1,14 +1,14 @@
 /**
- * Content Script Models
+ * Lightweight Models Configuration
  * 
- * Models used internally by content script features (summarizer, writer, rewriter).
+ * Models used internally for lightweight AI features (summarizer, writer, rewriter, suggestions).
  * These are DEVELOPER-CONTROLLED and NOT user-selectable in the UI.
  * 
  * The goal is to use cost-efficient models for these lightweight features
  * while reserving heavier models for main chat/agent functionality.
  */
 
-export const CONTENT_SCRIPT_MODELS = {
+export const LIGHTWEIGHT_MODELS = {
     /** Google AI (Gemini API) - uses Flash Lite for cost efficiency */
     google: {
         model: 'gemini-2.5-flash-lite',
@@ -41,14 +41,14 @@ export const CONTENT_SCRIPT_MODELS = {
     },
 } as const;
 
-/** Type union of supported providers for content scripts */
-export type ContentScriptProvider = keyof typeof CONTENT_SCRIPT_MODELS;
+/** Type union of supported providers for lightweight models */
+export type LightweightModelProvider = keyof typeof LIGHTWEIGHT_MODELS;
 
 /**
  * Get the model configuration for a specific provider
  * @param provider - The AI provider to get model config for
  * @returns The model configuration or undefined if not supported
  */
-export function getContentScriptModel(provider: ContentScriptProvider) {
-    return CONTENT_SCRIPT_MODELS[provider];
+export function getLightweightModel(provider: LightweightModelProvider) {
+    return LIGHTWEIGHT_MODELS[provider];
 }

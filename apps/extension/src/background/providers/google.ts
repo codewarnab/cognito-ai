@@ -4,7 +4,7 @@
  */
 
 import { getGoogleApiKey } from '@/utils/credentials';
-import { getContentScriptModel } from '~/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import type {
     IProvider,
     ProviderConfig,
@@ -55,7 +55,7 @@ export class GoogleProvider implements IProvider {
             throw new Error('Google API key not found');
         }
 
-        const modelConfig = getContentScriptModel('google');
+        const modelConfig = getLightweightModel('google');
         const endpoint = streaming ? 'streamGenerateContent' : 'generateContent';
         const queryParams = streaming ? `alt=sse&key=${apiKey}` : `key=${apiKey}`;
 

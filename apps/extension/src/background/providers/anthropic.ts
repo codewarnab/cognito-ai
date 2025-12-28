@@ -15,7 +15,7 @@
  */
 
 import { getAnthropicApiKey } from '@/utils/credentials';
-import { getContentScriptModel } from '~/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import type {
     IProvider,
     ProviderConfig,
@@ -139,7 +139,7 @@ export class AnthropicProvider implements IProvider {
             throw new Error('Anthropic API key not found');
         }
 
-        const modelConfig = getContentScriptModel('anthropic');
+        const modelConfig = getLightweightModel('anthropic');
 
         return {
             type: 'anthropic',
@@ -164,7 +164,7 @@ export class AnthropicProvider implements IProvider {
         userPrompt: string,
         options: GenerationOptions
     ): AnthropicRequestBody {
-        const modelConfig = getContentScriptModel('anthropic');
+        const modelConfig = getLightweightModel('anthropic');
 
         return {
             model: modelConfig.model,
@@ -237,7 +237,7 @@ export class AnthropicProvider implements IProvider {
         options: GenerationOptions,
         tools: ProviderTool[]
     ): AnthropicRequestBody {
-        const modelConfig = getContentScriptModel('anthropic');
+        const modelConfig = getLightweightModel('anthropic');
 
         // Convert provider-agnostic tools to Anthropic format
         // Add cache_control to the last tool for efficient caching
@@ -320,7 +320,7 @@ export class AnthropicProvider implements IProvider {
         previousMessages: Message[],
         toolResults: ToolResult[]
     ): AnthropicRequestBody {
-        const modelConfig = getContentScriptModel('anthropic');
+        const modelConfig = getLightweightModel('anthropic');
 
         // Convert our Message format to Anthropic format
         const anthropicMessages: AnthropicMessage[] = [];

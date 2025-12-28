@@ -4,7 +4,7 @@
  */
 
 import { getVertexCredentials } from '@/utils/credentials';
-import { getContentScriptModel } from '~/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import { generateVertexAccessToken } from '../summarizer/vertexAuth';
 import type {
     IProvider,
@@ -58,7 +58,7 @@ export class VertexProvider implements IProvider {
 
         const accessToken = await generateVertexAccessToken(credentials);
         const baseUrl = this.baseUrlTemplate.replace('{location}', credentials.location);
-        const modelConfig = getContentScriptModel('vertex');
+        const modelConfig = getLightweightModel('vertex');
         const endpoint = streaming ? 'streamGenerateContent?alt=sse' : 'generateContent';
 
         return {

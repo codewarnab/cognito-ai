@@ -11,7 +11,7 @@
  */
 
 import { getXaiApiKey } from '@/utils/credentials';
-import { getContentScriptModel } from '~/constants/contentScriptModels';
+import { getLightweightModel } from '@/ai/core/lightweightModels';
 import type {
     IProvider,
     ProviderConfig,
@@ -121,7 +121,7 @@ export class XAIProvider implements IProvider {
             throw new Error('xAI API key not found');
         }
 
-        const modelConfig = getContentScriptModel('xai');
+        const modelConfig = getLightweightModel('xai');
 
         return {
             type: 'xai',
@@ -139,7 +139,7 @@ export class XAIProvider implements IProvider {
         userPrompt: string,
         options: GenerationOptions
     ): XaiRequestBody {
-        const modelConfig = getContentScriptModel('xai');
+        const modelConfig = getLightweightModel('xai');
 
         return {
             model: modelConfig.model,
@@ -178,7 +178,7 @@ export class XAIProvider implements IProvider {
         options: GenerationOptions,
         tools: ProviderTool[]
     ): XaiRequestBodyWithTools {
-        const modelConfig = getContentScriptModel('xai');
+        const modelConfig = getLightweightModel('xai');
 
         // Convert provider-agnostic tools to OpenAI/xAI format
         const xaiTools: XaiToolFunction[] = tools.map((tool) => ({
@@ -225,7 +225,7 @@ export class XAIProvider implements IProvider {
         previousMessages: Message[],
         toolResults: ToolResult[]
     ): XaiRequestBody {
-        const modelConfig = getContentScriptModel('xai');
+        const modelConfig = getLightweightModel('xai');
 
         const xaiMessages: XaiMessage[] = previousMessages.map((msg) => ({
             role: msg.role,
