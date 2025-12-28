@@ -4,7 +4,7 @@
  */
 
 import type { UIMessage } from 'ai';
-import type { AppUsage } from '../types/usage';
+import type { AppUsage } from '../../types/usage';
 
 /**
  * Provider types supported by the AI logic

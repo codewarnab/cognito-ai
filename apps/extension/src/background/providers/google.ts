@@ -16,16 +16,22 @@ import type {
  * Gemini-specific request body structure
  */
 interface GeminiRequestBody extends BaseRequestBody {
+    /** Conversation messages with role and text parts */
     contents: Array<{
         role: string;
         parts: Array<{ text: string }>;
     }>;
+    /** Optional system instruction to guide model behavior */
     systemInstruction?: {
         parts: Array<{ text: string }>;
     };
+    /** Model generation configuration parameters */
     generationConfig: {
+        /** Controls randomness in output (0.0-1.0) */
         temperature: number;
+        /** Maximum number of tokens to generate */
         maxOutputTokens: number;
+        /** Top-p (nucleus) sampling parameter */
         topP: number;
     };
 }
@@ -34,8 +40,11 @@ interface GeminiRequestBody extends BaseRequestBody {
  * Gemini API response structure
  */
 interface GeminiResponse {
+    /** Array of generated response candidates */
     candidates?: Array<{
+        /** Response content containing text parts */
         content?: {
+            /** Array of text parts in the response */
             parts?: Array<{ text?: string }>;
         };
     }>;

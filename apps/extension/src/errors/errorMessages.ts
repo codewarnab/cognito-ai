@@ -335,6 +335,41 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         ],
     },
 
+    // xAI (Grok) Errors
+    [ErrorType.API_XAI_AUTH_FAILED]: {
+        userMessage: 'xAI authentication failed. Please check your API key.',
+        technicalTemplate: 'xAI authentication failed. Status: {statusCode}, Details: {details}',
+        suggestions: [
+            'Verify your xAI API key in Settings',
+            'Generate a new API key from the xAI dashboard',
+            'Ensure your API key has the necessary permissions',
+        ],
+    },
+    [ErrorType.API_XAI_RATE_LIMIT]: {
+        userMessage: "You've made too many requests to xAI. Please wait a moment.",
+        technicalTemplate: 'xAI rate limit exceeded. Retry after: {retryAfter}ms, Details: {details}',
+        suggestions: [
+            'Wait a moment before making another request',
+            'The system will automatically retry after the cooldown period',
+        ],
+    },
+    [ErrorType.API_XAI_SERVER_ERROR]: {
+        userMessage: 'xAI service is temporarily unavailable. Retrying...',
+        technicalTemplate: 'xAI server error. Status: {statusCode}, Details: {details}',
+        suggestions: [
+            'The system will automatically retry',
+            'The xAI service should be back shortly',
+        ],
+    },
+    [ErrorType.API_XAI_INVALID_REQUEST]: {
+        userMessage: 'Invalid request to xAI. Please try rephrasing your request.',
+        technicalTemplate: 'Invalid xAI request. Details: {details}',
+        suggestions: [
+            'Try rephrasing your request',
+            'Break down complex requests into smaller steps',
+        ],
+    },
+
     // Generic
     [ErrorType.API_GENERIC_ERROR]: {
         userMessage: 'An API error occurred. Please try again.',

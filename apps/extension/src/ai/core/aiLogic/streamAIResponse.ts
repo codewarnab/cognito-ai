@@ -9,6 +9,7 @@ import { createLogger } from '~logger';
 
 import { localSystemPrompt } from '../../prompts/templates/local';
 import { getWorkflow } from '../../../workflows/registry';
+import type { WorkflowDefinition } from '../../../workflows/types';
 
 import { hasGoogleApiKey } from '@/utils/credentials';
 import { getModelConfig } from '@/utils/ai';
@@ -145,10 +146,10 @@ export async function streamAIResponse(params: StreamAIParams) {
                             });
 
                             // Build system prompt
-                            const promptResult = await buildSystemPromptForMode(workflowConfig, state.isSearchModeActive);
+                            const promptResult = await buildSystemPromptForMode(workflowConfig ?? null as WorkflowDefinition | null, state.isSearchModeActive);
 
                             // Setup remote mode
-                            const remoteSetup = await setupRemoteMode(modelName, workflowConfig || null, promptResult.systemPrompt);
+                            const remoteSetup = await setupRemoteMode(modelName, workflowConfig ?? null as WorkflowDefinition | null, promptResult.systemPrompt);
 
                             state.model = remoteSetup.model;
                             state.tools = remoteSetup.tools;
@@ -205,7 +206,7 @@ export async function streamAIResponse(params: StreamAIParams) {
                                 tools: state.tools,
                                 enhancedPrompt: state.enhancedPrompt,
                                 isSearchModeActive: state.isSearchModeActive,
-                                workflowConfig,
+                                workflowConfig: workflowConfig ?? null as WorkflowDefinition | null,
                             }),
                         });
                     }, 'AI stream');

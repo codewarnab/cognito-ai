@@ -22,7 +22,13 @@ import {
 
 const log = createLogger('ExtractionProcessor', 'BACKGROUND');
 
-const RE_EXTRACTION_THRESHOLD = 10; // New messages needed to re-extract
+/**
+ * Minimum number of new messages required before re-extracting facts from a thread.
+ * This threshold prevents excessive re-processing of threads with minor updates
+ * while ensuring significant new content triggers fact extraction.
+ * Value of 10 balances extraction freshness with processing efficiency.
+ */
+const RE_EXTRACTION_THRESHOLD = 10;
 
 /**
  * Process pending extractions in the queue
