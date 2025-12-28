@@ -1,5 +1,5 @@
 /**
- * Backend Chat with Frontend Tools
+ * Backend Chat with Frontend Tools - Main Stream Function
  * 
  * Handles the full tool execution loop:
  * 1. Send message + tool schemas to backend
@@ -8,7 +8,7 @@
  * 4. Send results back to continue generation
  */
 
-import { createUIMessageStream, generateId, type UIMessage, convertToModelMessages, type ModelMessage } from 'ai';
+import { createUIMessageStream, generateId, convertToModelMessages, type ModelMessage } from 'ai';
 import { createLogger } from '~logger';
 import {
     executeToolLocally,
@@ -16,275 +16,24 @@ import {
     SERVER_EXECUTED_TOOLS,
     type ToolCall,
     type ToolResult,
-} from './frontendToolExecutor';
-import { createBackendController, clearBackendController } from './streamingOptimizations';
-import { writeErrorToStream } from '../stream/streamHelpers';
-import { parseGeminiError } from '../errors/handlers';
-import { APIError, NetworkError } from '../../errors/errorTypes';
-import type { ToolMode } from '@/stores/tools/types';
+} from '../frontendToolExecutor';
+import { createBackendController, clearBackendController } from '../streamingOptimizations';
+import { writeErrorToStream } from '../../stream/streamHelpers';
+import { parseGeminiError } from '../../errors/handlers';
+import { APIError, NetworkError } from '../../../errors/errorTypes';
 import { ENV } from '@/utils/env';
-import { TOOLS_REQUIRING_APPROVAL } from '../setup/remoteMode';
-import { isMcpTool, isWebmcpTool } from '../tools/mcpApprovalConfig';
+import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
+import { isMcpTool, isWebmcpTool } from '../../tools/mcpApprovalConfig';
+
+import type { BackendChatWithToolsParams, ToolErrorInfo } from './types';
+import { parseStreamChunk } from './streamParser';
+import { sanitizeMessagesForBackend } from './messageSanitizer';
+import { prepareToolSchemasForBackend, mapToolNameBack } from './toolNameSanitizer';
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT_BACKEND');
 
 // Backend API URL from centralized ENV
 const BACKEND_URL = ENV.BACKEND_API_URL;
-
-/**
- * Sanitize messages to fix malformed conversation structure.
- * 
- * Problem: When UIMessages are converted to ModelMessages, an assistant message may contain
- * both tool-calls AND text responses that were generated AFTER the tool result was received.
- * If the tool result is in a separate 'tool' role message at the end, this creates an invalid
- * structure where the AI thinks it already responded to the tool result, causing a loop.
- * 
- * Solution: If the last message is a 'tool' role message (pending tool result), remove any
- * text content from the preceding assistant message that appears AFTER tool-call parts.
- * This ensures the AI sees: user -> assistant(tool-call) -> tool(result)
- * Instead of: user -> assistant(tool-call + text + text + text) -> tool(result)
- */
-function sanitizeMessagesForBackend(messages: ModelMessage[]): ModelMessage[] {
-    if (messages.length < 2) return messages;
-
-    const lastMessage = messages[messages.length - 1];
-    const secondLastMessage = messages[messages.length - 2];
-
-    // Null safety checks
-    if (!lastMessage || !secondLastMessage) return messages;
-
-    // Check if we have the problematic pattern:
-    // secondLastMessage is 'assistant' with tool-calls AND text
-    // lastMessage is 'tool' (pending tool result)
-    if (lastMessage.role !== 'tool' || secondLastMessage.role !== 'assistant') {
-        return messages;
-    }
-
-    // Check if assistant message has content array
-    const assistantContent = secondLastMessage.content;
-    if (!Array.isArray(assistantContent)) {
-        return messages;
-    }
-
-    // Find if there are both tool-calls and text parts
-    const hasToolCalls = assistantContent.some((part: any) => part.type === 'tool-call');
-    const hasTextAfterToolCall = (() => {
-        let seenToolCall = false;
-        for (const part of assistantContent as any[]) {
-            if (part.type === 'tool-call') {
-                seenToolCall = true;
-            } else if (part.type === 'text' && seenToolCall) {
-                return true;
-            }
-        }
-        return false;
-    })();
-
-    if (!hasToolCalls || !hasTextAfterToolCall) {
-        return messages;
-    }
-
-    log.warn('🔧 Detected malformed message structure - removing text after tool-calls from assistant message', {
-        originalPartCount: assistantContent.length,
-    });
-
-    // Filter out text parts that come AFTER tool-call parts
-    let seenToolCall = false;
-    const cleanedContent = (assistantContent as any[]).filter((part: any) => {
-        if (part.type === 'tool-call') {
-            seenToolCall = true;
-            return true;
-        }
-        // Keep text parts that come BEFORE the first tool-call
-        if (part.type === 'text' && !seenToolCall) {
-            return true;
-        }
-        // Remove text parts that come AFTER tool-calls
-        if (part.type === 'text' && seenToolCall) {
-            log.info('🗑️ Removing post-tool-call text from assistant message:', {
-                textLength: part.text?.length || 0,
-                preview: (part.text || '').substring(0, 50) + '...',
-            });
-            return false;
-        }
-        // Keep other part types
-        return true;
-    });
-
-    log.info('✅ Cleaned message structure', {
-        originalPartCount: assistantContent.length,
-        cleanedPartCount: cleanedContent.length,
-    });
-
-    // Return sanitized messages - cast to ModelMessage to ensure type safety
-    const cleanedAssistantMessage: ModelMessage = {
-        ...secondLastMessage,
-        content: cleanedContent,
-    } as ModelMessage;
-
-    return [
-        ...messages.slice(0, -2),
-        cleanedAssistantMessage,
-        lastMessage,
-    ];
-}
-
-export interface BackendChatWithToolsParams {
-    messages: UIMessage[];
-    systemPrompt?: string;
-    // Note: model is NOT accepted - backend uses a fixed model (gemini-2.5-flash)
-    /** 
-     * AI mode: 'chat' (minimal tools), 'agent' (all tools), or 'adaptive' (dynamic discovery)
-     * Backend uses this to select appropriate system prompt
-     */
-    mode?: ToolMode;
-    /**
-     * Maximum number of tool execution steps (frontend loop limit)
-     * Defaults to 10 if not specified
-     */
-    maxSteps?: number;
-    abortSignal?: AbortSignal;
-    onError?: (error: Error) => void;
-    onFinishCallback?: () => void;
-    onToolCall?: (toolCall: ToolCall) => void;
-    onToolResult?: (result: ToolResult) => void;
-    /**
-     * Initial page context captured when conversation started.
-     * Formatted string from formatPageContextForAI()
-     */
-    initialPageContext?: string;
-    /**
-     * Whether search mode is enabled.
-     * When true, backend will add webSearch tool and execute it server-side.
-     * Frontend will NOT send webSearch in tool schemas.
-     */
-    searchEnabled?: boolean;
-    /**
-     * Whether YouTube transcript tool should be executed on the server.
-     * When true, backend will add getYouTubeTranscript tool and execute it server-side.
-     * This allows the backend to use Supadata API without exposing tokens to the client.
-     */
-    youtubeEnabled?: boolean;
-}
-
-/**
- * Parse AI SDK v6 UI Message Stream format (SSE only)
- * 
- * Format: data: {"type":"...", ...}
- * 
- * Supported types:
- * - start: Message start with messageId
- * - text-start/text-delta/text-end: Text streaming
- * - tool-input-available: Complete tool call ready for execution
- * - tool-output-available: Tool result
- * - finish/finish-step: Stream completion
- * - error: Stream error
- */
-function parseStreamChunk(chunk: string): Array<{
-    type: 'text' | 'text_start' | 'text_end' | 'tool_call' | 'tool_result' | 'tool_error' | 'finish' | 'error';
-    data: any;
-}> {
-    const events: Array<{ type: any; data: any }> = [];
-    const lines = chunk.split('\n');
-
-    for (const line of lines) {
-        if (!line.trim()) continue;
-
-        // AI SDK v6 SSE format: "data: {...}"
-        if (line.startsWith('data: ')) {
-            const dataContent = line.slice(6);
-
-            // Stream termination marker
-            if (dataContent === '[DONE]') {
-                events.push({ type: 'finish', data: { done: true } });
-                continue;
-            }
-
-            try {
-                const parsed = JSON.parse(dataContent);
-                const eventType = parsed.type;
-
-                switch (eventType) {
-                    case 'text-start':
-                        events.push({ type: 'text_start', data: { id: parsed.id } });
-                        break;
-
-                    case 'text-delta':
-                        events.push({ type: 'text', data: parsed.delta });
-                        break;
-
-                    case 'text-end':
-                        events.push({ type: 'text_end', data: { id: parsed.id } });
-                        break;
-
-                    case 'tool-input-available':
-                        events.push({
-                            type: 'tool_call',
-                            data: {
-                                id: parsed.toolCallId,
-                                name: parsed.toolName,
-                                arguments: parsed.input,
-                            },
-                        });
-                        break;
-
-                    case 'tool-output-available':
-                        events.push({ type: 'tool_result', data: parsed });
-                        break;
-
-                    case 'tool-input-error':
-                        // Backend reports tool was unavailable/invalid
-                        events.push({
-                            type: 'tool_error',
-                            data: {
-                                id: parsed.toolCallId,
-                                name: parsed.toolName,
-                                input: parsed.input,
-                                errorText: parsed.errorText,
-                            },
-                        });
-                        break;
-
-                    case 'tool-output-error':
-                        // This follows tool-input-error with same info
-                        // tool_error from tool-input-error is sufficient
-                        break;
-
-                    case 'error':
-                        log.error('Stream error:', parsed);
-                        events.push({ type: 'error', data: { message: parsed.errorText || 'Unknown error' } });
-                        break;
-
-                    case 'finish':
-                    case 'finish-step':
-                        events.push({ type: 'finish', data: parsed });
-                        break;
-
-                    // Ignore other event types (start, start-step, reasoning-*, source-*, file, etc.)
-                    default:
-                        break;
-                }
-            } catch (e) {
-                // Ignore unparseable lines
-            }
-        }
-        // Ignore SSE comments/pings (lines starting with :)
-    }
-
-    return events;
-}
-
-// Helper to sanitize tool names for Gemini (matches backend logic)
-function sanitizeToolName(name: string): string {
-    // If starts with digit, prefix with tool_
-    let sanitized = name;
-    if (/^[0-9]/.test(sanitized)) {
-        sanitized = `tool_${sanitized}`;
-    }
-    // Replace invalid chars with underscore (allowed: a-z, A-Z, 0-9, _, ., -, :)
-    sanitized = sanitized.replace(/[^a-zA-Z0-9_.:-]/g, '_');
-    return sanitized;
-}
 
 /**
  * Stream AI response through backend with frontend tool execution
@@ -297,7 +46,7 @@ export async function streamBackendChatWithTools(
         systemPrompt,
         // Note: model is NOT extracted - backend uses fixed model (gemini-2.5-flash)
         mode = 'agent', // Default to agent mode for full tool access
-        maxSteps: userMaxSteps = 20, // Default to 10 if not specified
+        maxSteps: userMaxSteps = 20, // Default to 20 if not specified
         abortSignal,
         onError,
         onFinishCallback,
@@ -326,19 +75,7 @@ export async function streamBackendChatWithTools(
         const toolSchemas = await getToolSchemas(searchEnabled);
 
         // Sanitize tool names for Gemini compatibility
-        // Create a mapping to reverse the sanitization when receiving tool calls
-        const sanitizedSchemas: Record<string, any> = {};
-        const toolNameMapping: Record<string, string> = {}; // sanitized -> original
-
-        for (const [name, schema] of Object.entries(toolSchemas)) {
-            const sanitized = sanitizeToolName(name);
-            sanitizedSchemas[sanitized] = schema;
-            toolNameMapping[sanitized] = name;
-
-            if (name !== sanitized) {
-                log.info('🔧 Sanitized tool name for backend:', { original: name, sanitized });
-            }
-        }
+        const { sanitizedSchemas, toolNameMapping } = prepareToolSchemasForBackend(toolSchemas);
 
         const toolCount = Object.keys(sanitizedSchemas).length;
         log.info('Tool schemas prepared', { toolCount, searchEnabled: !!searchEnabled });
@@ -422,7 +159,7 @@ export async function streamBackendChatWithTools(
                         const decoder = new TextDecoder();
                         const pendingToolCalls: ToolCall[] = [];
                         // Track tool errors for feedback loop (extended info for proper messages)
-                        const pendingToolErrors: Array<{ id: string; name: string; input: any; result: string }> = [];
+                        const pendingToolErrors: ToolErrorInfo[] = [];
                         let accumulatedText = '';
 
                         // Generate a consistent message ID for this response
@@ -468,11 +205,10 @@ export async function streamBackendChatWithTools(
 
                                     case 'tool_call':
                                         // Map sanitized name back to original name for execution
-                                        const receivedName = event.data.name;
-                                        const originalName = toolNameMapping[receivedName] || receivedName;
+                                        const originalName = mapToolNameBack(event.data.name, toolNameMapping);
 
-                                        if (receivedName !== originalName) {
-                                            log.info('🔧 Mapping tool call name back:', { receivedName, originalName });
+                                        if (event.data.name !== originalName) {
+                                            log.info('🔧 Mapping tool call name back:', { receivedName: event.data.name, originalName });
                                         }
 
                                         const toolCall: ToolCall = {
@@ -585,7 +321,7 @@ export async function streamBackendChatWithTools(
                                         const errorData = event.data;
 
                                         // Map name back for consistent UI
-                                        const errOriginalName = toolNameMapping[errorData.name] || errorData.name;
+                                        const errOriginalName = mapToolNameBack(errorData.name, toolNameMapping);
 
                                         log.warn('🔧 Backend reports tool error:', {
                                             toolName: errOriginalName,

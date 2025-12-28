@@ -56,7 +56,7 @@ function normalizeToolDefinition(
 ): ToolDefinition<any, any> {
   // Check if using legacy 'parameters' property
   if ('parameters' in definition && !('inputSchema' in definition)) {
-    log.debug('Converting legacy tool definition to v5 format:', definition.name);
+    log.debug('Converting legacy tool definition to v6 format:', definition.name);
     return {
       name: definition.name,
       description: definition.description,
@@ -87,7 +87,7 @@ export function registerTool(definition: ToolDefinition<any, any> | LegacyToolDe
 /**
  * AI SDK v6 tool format returned by getAllTools
  */
-export interface AISDKv5Tool {
+export interface AISDKv6Tool {
   description: string;
   inputSchema: z.ZodSchema;
   outputSchema?: z.ZodSchema;
@@ -98,8 +98,8 @@ export interface AISDKv5Tool {
  * Get all registered tools in AI SDK v6 format
  * Tools are already stored with inputSchema, this wraps execute with abort handling
  */
-export function getAllTools(abortSignal?: AbortSignal): Record<string, AISDKv5Tool> {
-  const toolsObject: Record<string, AISDKv5Tool> = {};
+export function getAllTools(abortSignal?: AbortSignal): Record<string, AISDKv6Tool> {
+  const toolsObject: Record<string, AISDKv6Tool> = {};
 
   tools.forEach((tool, name) => {
     toolsObject[name] = {
@@ -155,14 +155,36 @@ export function getAllTools(abortSignal?: AbortSignal): Record<string, AISDKv5To
 }
 
 /**
- * Get a specific tool by name
+ * Get a specific tool by name from the registry.
+ * 
+ * @param name - The unique tool name to look up
+ * @returns The tool definition if found, undefined otherwise
+ * 
+ * @example
+ * ```ts
+ * const clickTool = getTool('clickByText');
+ * if (clickTool) {
+ *   await clickTool.execute({ text: 'Submit' });
+ * }
+ * ```
  */
 export function getTool(name: string): ToolDefinition<any, any> | undefined {
   return tools.get(name);
 }
 
 /**
- * Clear all registered tools (useful for testing)
+ * Clear all registered tools from the registry.
+ * 
+ * Primarily useful for:
+ * - Testing: Reset state between test cases
+ * - Hot reload: Clear before re-registering tools
+ * 
+ * @example
+ * ```ts
+ * beforeEach(() => {
+ *   clearAllTools();
+ * });
+ * ```
  */
 export function clearAllTools() {
   tools.clear();

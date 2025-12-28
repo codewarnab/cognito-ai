@@ -14,6 +14,18 @@ import { sanitizeToolName } from '@/utils/mcp/toolNameSanitizer';
 const log = createLogger('StreamExecutor', 'AI_CHAT_STREAM');
 
 /**
+ * Stream configuration constants
+ */
+export const STREAM_CONFIG = {
+    /** Maximum retries for streaming issues */
+    MAX_RETRIES: 20,
+    /** AI generation temperature (0-1 range) */
+    DEFAULT_TEMPERATURE: 0.7,
+    /** Delay in ms for smooth streaming */
+    SMOOTH_STREAM_DELAY_MS: 10,
+} as const;
+
+/**
  * Sanitize all tool names in a tools record
  * Returns the sanitized tools and a mapping from sanitized names back to original names
  */
@@ -240,10 +252,10 @@ export async function executeStreamText(params: {
 
             stopWhen: [stepCountIs(stepCount)],
             toolChoice: 'auto', // Let AI decide when to use tools
-            maxRetries: 20, // Internal AI SDK retries for streaming issues
-            temperature: 0.7,
+            maxRetries: STREAM_CONFIG.MAX_RETRIES,
+            temperature: STREAM_CONFIG.DEFAULT_TEMPERATURE,
             experimental_transform: smoothStream({
-                delayInMs: 10,
+                delayInMs: STREAM_CONFIG.SMOOTH_STREAM_DELAY_MS,
                 chunking: 'word',
             }),
             // Log when a step completes (includes tool calls)
