@@ -38,9 +38,14 @@ import exaImage from '@assets/brands/integrations/exa-color.svg';
 import twentyFirstDevImage from '@assets/brands/integrations/21stdev.png';
 import jinaImage from '@assets/brands/integrations/jina.png';
 import { GitHub } from "@assets/brands/integrations/GitHub"
+import { GoogleMaps } from "@assets/brands/integrations/GoogleMaps"
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
 import { BraveBrowser } from "@assets/brands/integrations/BraveBrowser"
+import { PerplexityAI } from "@assets/brands/integrations/PerplexityAI"
+import brightdataImage from '@assets/brands/integrations/brightdata.png';
+import firecrawlImage from '@assets/brands/integrations/firecrawl.png';
+import planeImage from '@assets/brands/integrations/plane.svg';
 
 
 //http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
@@ -68,6 +73,24 @@ export interface PatConfig {
     validationHeaders?: Record<string, string>
     /** Custom header name for API key (e.g., 'X-Subscription-Token'). Defaults to 'Authorization: Bearer' */
     authHeaderName?: string
+    /** Query parameter name for URL-based token (e.g., 'token'). When set, token is added to URL instead of headers */
+    urlTokenParam?: string
+    /** Multi-field configuration. When present, renders multiple inputs instead of single token. */
+    fields?: PatConfigField[]
+}
+
+/** Field definition for multi-field PAT authentication */
+export interface PatConfigField {
+    /** Unique field ID (matches envMapping key in registry) */
+    id: string
+    /** Display label */
+    label: string
+    /** Input placeholder */
+    placeholder: string
+    /** Whether field is required */
+    required?: boolean
+    /** Use password-style input (for sensitive values like API keys) */
+    secret?: boolean
 }
 
 /** Authentication configuration for MCP servers */
@@ -231,6 +254,63 @@ export const MCP_SERVERS: ServerConfig[] = [
                 placeholder: "BSA...",
                 helpUrl: "https://brave.com/search/api/",
                 authHeaderName: "X-Subscription-Token",
+            }
+        }
+    },
+    {
+        id: "perplexity",
+        name: "Perplexity",
+        icon: <PerplexityAI className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "stdio://perplexity",
+        description: "Real-time web research with Perplexity Sonar API. Supports search, ask, research, and reasoning tools.",
+        requiresAuthentication: true,
+        isBackendOnly: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Perplexity API Key",
+                placeholder: "pplx-...",
+                helpUrl: "https://www.perplexity.ai/account/api",
+            }
+        }
+    },
+    {
+        id: "brightdata",
+        name: "Bright Data",
+        icon: <img src={brightdataImage} alt="Bright Data" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.brightdata.com/mcp",
+        description: "Web MCP for real-time research, e-commerce intelligence, and AI agents with unblocked web access.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Bright Data API Token",
+                placeholder: "Enter your API token",
+                helpUrl: "https://brightdata.com",
+                urlTokenParam: "token",
+            }
+        }
+    },
+    {
+        id: "firecrawl",
+        name: "Firecrawl",
+        icon: <img src={firecrawlImage} alt="Firecrawl" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "stdio://firecrawl",
+        description: "Powerful web scraping and search. Scrape, crawl, map, and extract data from any website.",
+        requiresAuthentication: true,
+        isBackendOnly: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Firecrawl API Key",
+                placeholder: "fc-...",
+                helpUrl: "https://firecrawl.dev",
             }
         }
     },
@@ -459,6 +539,44 @@ export const MCP_SERVERS: ServerConfig[] = [
         url: "https://mcp.exa.ai/mcp",
         description: "Exa is a search engine for AI.",
         requiresAuthentication: false
+    },
+    {
+        // SECURITY: Command/args defined in backend registry: @cognito/shared/constants/mcpRegistry.ts
+        // Only serverId is sent to backend - see MCP_SERVER_REGISTRY['google-maps']
+        id: "google-maps",
+        name: "Google Maps Platform",
+        icon: <GoogleMaps className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: true,  // No auth needed
+        url: "stdio://google-maps", // Pseudo-URL indicating backend stdio
+        description: "Access Google Maps Platform documentation, tutorials, and code samples through RAG.",
+        requiresAuthentication: false,  // No auth needed!
+        isBackendOnly: true,
+    },
+    {
+        // SECURITY: Command/args defined in backend registry: @cognito/shared/constants/mcpRegistry.ts
+        // Only serverId is sent to backend - see MCP_SERVER_REGISTRY['plane']
+        id: "plane",
+        name: "Plane",
+        icon: <img src={planeImage} alt="Plane" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "stdio://plane", // Pseudo-URL indicating backend stdio
+        description: "AI automation for Plane projects, issues, cycles, and modules.",
+        requiresAuthentication: true,
+        isBackendOnly: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Plane Credentials",
+                placeholder: "",
+                helpUrl: "https://plane.so",
+                fields: [
+                    { id: 'apiKey', label: 'API Key', placeholder: 'plane_...', required: true, secret: true },
+                    { id: 'workspaceSlug', label: 'Workspace Slug', placeholder: 'my-workspace', required: true },
+                ]
+            }
+        }
     }
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
 ]

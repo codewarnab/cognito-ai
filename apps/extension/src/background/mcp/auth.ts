@@ -16,7 +16,8 @@ import {
     clearClientCredentials,
     storeOAuthEndpoints,
     clearOAuthEndpoints,
-    storePat
+    storePat,
+    storePatFields
 } from '../../mcp/oauth';
 import { validatePat } from '../../mcp/validation';
 import { discoverOAuthEndpoints } from '../../mcp/discovery';
@@ -396,15 +397,17 @@ export async function handleInvalidToken(serverId: string): Promise<void> {
  * Start PAT (Personal Access Token) authentication flow for an MCP server
  * 
  * Validates the token against the configured validation URL and stores it
- * if validation succeeds.
+ * if validation succeeds. Supports both single-token and multi-field credentials.
  * 
  * @param serverId - The unique identifier for the MCP server
- * @param token - The PAT to validate and store
+ * @param token - The PAT to validate and store (for single-token servers)
+ * @param fields - Multi-field credentials (for servers like Plane requiring apiKey + workspaceSlug)
  * @returns Success response with user data, or error response
  */
 export async function startPatAuth(
     serverId: string,
-    token: string
+    token: string,
+    fields?: Record<string, string>
 ): Promise<McpExtensionResponse> {
     const serverConfig = getServerConfig(serverId);
     const state = getServerState(serverId);
@@ -417,33 +420,54 @@ export async function startPatAuth(
         return { success: false, error: 'Server does not support PAT authentication' };
     }
 
-    if (!token || token.trim() === '') {
-        return { success: false, error: 'Token is required' };
+    const isMultiField = serverConfig.authConfig.patConfig.fields && serverConfig.authConfig.patConfig.fields.length > 0;
+
+    // Validate required fields
+    if (isMultiField) {
+        if (!fields) {
+            return { success: false, error: 'Credential fields are required' };
+        }
+        for (const field of serverConfig.authConfig.patConfig.fields!) {
+            if (field.required && (!fields[field.id] || fields[field.id].trim() === '')) {
+                return { success: false, error: `${field.label} is required` };
+            }
+        }
+    } else {
+        if (!token || token.trim() === '') {
+            return { success: false, error: 'Token is required' };
+        }
     }
 
     try {
-        authLog.info(`[${serverId}] Starting PAT authentication`);
+        authLog.info(`[${serverId}] Starting PAT authentication (multi-field: ${isMultiField})`);
 
         // Update status to show validation in progress
         state.status = { ...state.status, state: 'connecting' };
         broadcastStatusUpdate(serverId, state.status);
 
-        // Validate the token
-        const validation = await validatePat(serverConfig.authConfig.patConfig, token.trim());
+        // For multi-field servers, skip validation (no standard validation endpoint)
+        // For single-token servers, validate if configured
+        if (!isMultiField) {
+            const validation = await validatePat(serverConfig.authConfig.patConfig, token.trim());
 
-        if (!validation.valid) {
-            authLog.warn(`[${serverId}] PAT validation failed:`, validation.error);
-            state.status = {
-                serverId,
-                state: 'error',
-                error: validation.error || 'Token validation failed'
-            };
-            broadcastStatusUpdate(serverId, state.status);
-            return { success: false, error: validation.error || 'Token validation failed' };
+            if (!validation.valid) {
+                authLog.warn(`[${serverId}] PAT validation failed:`, validation.error);
+                state.status = {
+                    serverId,
+                    state: 'error',
+                    error: validation.error || 'Token validation failed'
+                };
+                broadcastStatusUpdate(serverId, state.status);
+                return { success: false, error: validation.error || 'Token validation failed' };
+            }
         }
 
-        // Store the PAT
-        await storePat(serverId, token.trim());
+        // Store the credentials
+        if (isMultiField && fields) {
+            await storePatFields(serverId, fields);
+        } else {
+            await storePat(serverId, token.trim());
+        }
 
         // Update state to authenticated
         state.status = { serverId, state: 'authenticated' };
@@ -454,8 +478,7 @@ export async function startPatAuth(
         return {
             success: true,
             data: {
-                state: 'authenticated',
-                userData: validation.userData
+                state: 'authenticated'
             }
         };
     } catch (error) {

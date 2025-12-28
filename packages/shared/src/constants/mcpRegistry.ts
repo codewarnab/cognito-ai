@@ -26,6 +26,13 @@ export interface McpServerRegistryEntry {
      * If set, the frontend's credentials.apiKey will be placed here.
      */
     envKeyName?: string;
+    /** 
+     * Maps credential field names to environment variables.
+     * Used for multi-field servers (e.g., Plane requires apiKey + workspaceSlug).
+     */
+    envMapping?: Record<string, string>;
+    /** Static environment variables (e.g., timeouts, defaults) */
+    staticEnv?: Record<string, string>;
     /** Whether this server is enabled */
     enabled: boolean;
 }
@@ -51,6 +58,41 @@ export const MCP_SERVER_REGISTRY: Record<string, McpServerRegistryEntry> = {
         envKeyName: 'BRAVE_API_KEY',
         enabled: true,
     },
+    'perplexity': {
+        id: 'perplexity',
+        command: 'npx',
+        args: ['-y', '@perplexity-ai/mcp-server'],
+        envKeyName: 'PERPLEXITY_API_KEY',
+        staticEnv: { 'PERPLEXITY_TIMEOUT_MS': '600000' },
+        enabled: true,
+    },
+    'firecrawl': {
+        id: 'firecrawl',
+        command: 'npx',
+        args: ['-y', 'firecrawl-mcp'],
+        envKeyName: 'FIRECRAWL_API_KEY',
+        enabled: true,
+    },
+    'google-maps': {
+        id: 'google-maps',
+        command: 'npx',
+        args: ['-y', '@googlemaps/code-assist-mcp@latest'],
+        // No envKeyName - no authentication required
+        enabled: true,
+    },
+    'plane': {
+        id: 'plane',
+        command: 'npx',
+        args: ['-y', '@makeplane/plane-mcp-server'],
+        envMapping: {
+            'apiKey': 'PLANE_API_KEY',
+            'workspaceSlug': 'PLANE_WORKSPACE_SLUG',
+        },
+        staticEnv: {
+            'PLANE_API_HOST_URL': 'https://api.plane.so/',
+        },
+        enabled: true,
+    },
     // Add more servers here as needed.
     // Each new server requires:
     // 1. Security review of the npm package
@@ -69,6 +111,8 @@ export interface McpStdioRequest {
     credentials?: {
         /** API key to inject (mapped to envKeyName from registry) */
         apiKey?: string;
+        /** Additional credential fields for multi-field servers (mapped via envMapping) */
+        fields?: Record<string, string>;
     };
 }
 

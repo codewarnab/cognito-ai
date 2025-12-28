@@ -18,7 +18,8 @@ export class McpBackendClient implements McpClient {
 
     constructor(
         private serverId: string,
-        private accessToken: string | null
+        private accessToken: string | null,
+        private credentialFields?: Record<string, string>
     ) {
         this.currentStatus = {
             serverId,
@@ -47,7 +48,11 @@ export class McpBackendClient implements McpClient {
         // SECURITY: Send only serverId + credentials, NOT command/args
         const payload: McpStdioRequest = {
             serverId: this.serverId,
-            credentials: this.accessToken ? { apiKey: this.accessToken } : undefined,
+            credentials: this.credentialFields
+                ? { fields: this.credentialFields }
+                : this.accessToken
+                    ? { apiKey: this.accessToken }
+                    : undefined,
         };
 
         try {
@@ -93,7 +98,11 @@ export class McpBackendClient implements McpClient {
         // SECURITY: Send only serverId + credentials, NOT command/args
         const payload: McpExecuteRequest = {
             serverId: this.serverId,
-            credentials: this.accessToken ? { apiKey: this.accessToken } : undefined,
+            credentials: this.credentialFields
+                ? { fields: this.credentialFields }
+                : this.accessToken
+                    ? { apiKey: this.accessToken }
+                    : undefined,
             toolName: name,
             toolArgs: args || {}
         };

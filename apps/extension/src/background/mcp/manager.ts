@@ -10,7 +10,7 @@ import type { McpExtensionResponse } from '../../mcp/types';
 import { getServerState, getServerConfig } from '../../mcp/state';
 import { broadcastStatusUpdate } from '../../mcp/events';
 import { ensureValidToken, refreshServerToken } from '../../mcp/authHelpers';
-import { getStoredTokens } from '../../mcp/oauth';
+import { getStoredTokens, getPatFields } from '../../mcp/oauth';
 import { updateKeepAliveState } from '../keepAlive';
 import { MCP_OAUTH_CONFIG } from '@/constants';
 import { MCPError, NetworkError } from '../../errors';
@@ -104,16 +104,41 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
         // Create Client based on type
         if (serverConfig.isBackendOnly) {
             mcpLog.info(`[${serverId}] Creating Backend StdIO Client`);
+
+            // Check for multi-field credentials
+            let credentialFields: Record<string, string> | undefined;
+            const tokens = await getStoredTokens(serverId);
+            if (tokens) {
+                credentialFields = getPatFields(tokens) || undefined;
+            }
+
             state.client = new McpBackendClient(
                 serverId,
-                accessToken
+                accessToken,
+                credentialFields
             );
         } else {
+            // Build final URL - inject token if urlTokenParam is configured
+            let finalUrl = serverConfig.url;
+            let tokenForClient = accessToken;
+
+            if (serverConfig.authConfig?.patConfig?.urlTokenParam && accessToken) {
+                try {
+                    const urlObj = new URL(finalUrl);
+                    urlObj.searchParams.set(serverConfig.authConfig.patConfig.urlTokenParam, accessToken);
+                    finalUrl = urlObj.toString();
+                    tokenForClient = ''; // Don't pass token to client since it's in URL
+                    mcpLog.info(`[${serverId}] Token injected into URL query parameter`);
+                } catch (urlError) {
+                    mcpLog.error(`[${serverId}] Failed to inject token into URL:`, urlError);
+                }
+            }
+
             // Create SSE client with error handling callbacks
             state.client = new McpSSEClient(
                 serverId,
-                serverConfig.url,
-                accessToken,
+                finalUrl,
+                tokenForClient,
                 {
                     onStatusChange: (status) => {
                         state.status = status;

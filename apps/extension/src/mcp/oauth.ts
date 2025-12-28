@@ -394,6 +394,47 @@ export async function storePat(serverId: string, token: string): Promise<void> {
 }
 
 /**
+ * Store multi-field PAT credentials as an OAuth token structure
+ * 
+ * Similar to storePat, but stores multiple credential fields (e.g., apiKey + workspaceSlug).
+ * The fields are JSON-encoded and stored in the metadata property.
+ * 
+ * @param serverId - The unique identifier for the MCP server
+ * @param fields - Record of field name to value (e.g., { apiKey: '...', workspaceSlug: '...' })
+ */
+export async function storePatFields(serverId: string, fields: Record<string, string>): Promise<void> {
+    const tokens: McpOAuthTokens = {
+        access_token: fields.apiKey || '', // Use apiKey as primary token if present
+        token_type: 'Bearer',
+        scope: 'pat-multifield',
+        // PATs don't expire like OAuth tokens, set to 1 year
+        expires_at: Date.now() + (365 * 24 * 60 * 60 * 1000),
+        created_at: Date.now(),
+        metadata: JSON.stringify({ fields })
+    };
+    await storeTokens(serverId, tokens);
+    authLog.info(`[${serverId}] Multi-field PAT stored with ${Object.keys(fields).length} fields`);
+}
+
+/**
+ * Retrieve multi-field PAT credentials from stored tokens
+ * 
+ * @param tokens - The stored McpOAuthTokens
+ * @returns The credential fields or null if not a multi-field PAT
+ */
+export function getPatFields(tokens: McpOAuthTokens): Record<string, string> | null {
+    if (tokens.scope !== 'pat-multifield' || !tokens.metadata) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(tokens.metadata);
+        return parsed.fields || null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Store dynamic client credentials in chrome.storage.local
  */
 export async function storeClientCredentials(serverId: string, credentials: DynamicClientCredentials): Promise<void> {

@@ -11,6 +11,7 @@ import { Atlassian } from '@assets/brands/integrations/Atlassian';
 import { Canva } from '@assets/brands/integrations/Canva';
 import { Figma } from '@assets/brands/integrations/Figma';
 import { GitHub } from '@assets/brands/integrations/GitHub';
+import { GoogleMaps } from '@assets/brands/integrations/GoogleMaps';
 import { HuggingFace } from '@assets/brands/integrations/HuggingFace';
 import { Linear } from '@assets/brands/integrations/Linear';
 import { Netlify } from '@assets/brands/integrations/Netlify';
@@ -31,6 +32,7 @@ import mcpGenericImage from '@assets/brands/integrations/mcp-server-stroke-round
 import twentyFirstDevImage from '@assets/brands/integrations/21stdev.png';
 // Adding new MCP server? Also add image import here and entry to MCP_SERVER_IMAGES below
 import jinaImage from '@assets/brands/integrations/jina.png';
+import planeImage from '@assets/brands/integrations/plane.svg';
 
 interface McpIconProps {
     size?: number;
@@ -49,6 +51,7 @@ const MCP_SERVER_ICONS: Record<string, React.ComponentType<any>> = {
     'canva': Canva,
     'figma': Figma,
     'github': GitHub,
+    'google-maps': GoogleMaps,
     'huggingface': HuggingFace,
     'linear': Linear,
     'netlify': Netlify,
@@ -82,6 +85,7 @@ const MCP_SERVER_IMAGES: Record<string, string> = {
     'wix': wixImage,
     'magic-mcp': twentyFirstDevImage,
     'jina': jinaImage,
+    'plane': planeImage,
 };
 
 /**
