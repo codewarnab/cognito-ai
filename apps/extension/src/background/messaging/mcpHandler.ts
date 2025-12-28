@@ -88,6 +88,13 @@ export async function handleMcpMessage(
     }
 
     const serverId = parts[1];
+    
+    // Validate serverId to prevent injection attacks
+    if (!serverId || !/^[a-zA-Z0-9_-]+$/.test(serverId)) {
+        sendResponse({ success: false, error: 'Invalid server ID format' });
+        return;
+    }
+    
     const action = parts.slice(2).join('/');
 
     let response: McpExtensionResponse;

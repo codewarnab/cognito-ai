@@ -7,6 +7,7 @@
 
 import { createLogger } from '~logger';
 import type { ExternalMessage, ExternalResponse } from '@cognito/shared';
+import { ALLOWED_EXTERNAL_ORIGINS } from '~/constants/webapp';
 
 // Import handlers
 import {
@@ -25,7 +26,7 @@ import {
     handleVoiceSettingsMessage,
     handleAIConfigMessage,
 } from './handlers';
-import { errorResponse } from './utils';
+import { errorResponse, checkRateLimit } from './utils';
 
 const log = createLogger('ExternalMessaging', 'BACKGROUND');
 
@@ -79,22 +80,31 @@ export function initializeExternalMessageRouter(): void {
         (message: ExternalMessage, sender, sendResponse: (response: ExternalResponse<any>) => void) => {
             log.info('Received external message:', message.type, 'from', sender.url);
 
-            // Verify sender (manifest 'externally_connectable' already filters at browser level)
-            const allowedOrigins = [
-                'http://localhost:3002',
-                'https://app.cognito.ai',
-            ];
+            // Validate message format
+            if (!message?.type || typeof message.type !== 'string') {
+                log.warn('Rejected message with invalid format');
+                sendResponse(errorResponse('Invalid message format'));
+                return true;
+            }
 
+            // Verify sender origin
             const origin = sender.url ? new URL(sender.url).origin : null;
             if (
                 !origin ||
-                !allowedOrigins.some(
-                    (allowed) =>
-                        origin === allowed ||
-                        (allowed.includes('*') && origin.match(allowed))
+                !ALLOWED_EXTERNAL_ORIGINS.some(
+                    (allowed) => origin === allowed
                 )
             ) {
-                // Basic check - manifest 'externally_connectable' already filters this
+                log.warn('Rejected message from unauthorized origin:', origin);
+                sendResponse(errorResponse('Unauthorized origin'));
+                return true;
+            }
+
+            // Check rate limit
+            if (!checkRateLimit(origin)) {
+                log.warn('Rate limit exceeded for origin:', origin);
+                sendResponse(errorResponse('Rate limit exceeded'));
+                return true;
             }
 
             routeExternalMessage(message, sender)

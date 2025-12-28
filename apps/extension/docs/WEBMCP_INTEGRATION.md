@@ -11,7 +11,8 @@ This document provides a comprehensive overview of the WebMCP (Browser-based MCP
 5. [Sequence Diagrams](#sequence-diagrams)
 6. [Message Types](#message-types)
 7. [State Management](#state-management)
-8. [Tool Approval System](#tool-approval-system)
+8. [Security](#security)
+9. [Tool Approval System](#tool-approval-system)
 
 ---
 
@@ -424,6 +425,126 @@ interface WebMCPTool extends Tool {
 | Key | Purpose |
 |-----|---------|
 | `webmcp.tools.disabled` | Array of disabled tool names |
+
+---
+
+## Security
+
+WebMCP tool execution includes multiple security layers to prevent malicious websites from exploiting the tool system.
+
+### Threat Model
+
+| Threat | Description | Mitigation |
+|--------|-------------|------------|
+| Tool Shadowing | Malicious site registers tools with names matching legitimate tools | Origin validation |
+| Cross-Tab Execution | Tool from one tab executed in another tab's context | Tab ID validation |
+| Parameter Injection | Unexpected arguments passed to tool execution | Schema validation |
+| Unauthorized Execution | Tools executed without user consent | HITL approval system |
+
+### Validation Layers
+
+Tool execution in `executeWebMCPTool()` performs three validation checks before forwarding to the content script:
+
+#### 1. Origin Validation
+
+Ensures the tool's domain matches the active tab's domain. Prevents tool shadowing attacks.
+
+```typescript
+function validateToolOrigin(tool: WebMCPTool, expectedDomain: string | null): boolean {
+  if (tool.domain !== expectedDomain) {
+    log.error('Tool origin mismatch - potential security issue', {
+      toolName: tool.name,
+      toolDomain: tool.domain,
+      expectedDomain,
+    });
+    return false;
+  }
+  return true;
+}
+```
+
+#### 2. Tab ID Validation
+
+Ensures the tool belongs to the currently active tab. Prevents cross-tab execution.
+
+```typescript
+function validateToolTabId(tool: WebMCPTool, expectedTabId: number | null): boolean {
+  if (tool.tabId !== expectedTabId) {
+    log.error('Tool tab ID mismatch - potential security issue', {
+      toolName: tool.name,
+      toolTabId: tool.tabId,
+      expectedTabId,
+    });
+    return false;
+  }
+  return true;
+}
+```
+
+#### 3. Schema Validation
+
+Validates arguments against the tool's declared `inputSchema`. Prevents parameter injection.
+
+```typescript
+function validateArgsAgainstSchema(
+  args: Record<string, unknown>,
+  inputSchema: unknown
+): { valid: boolean; errors: string[] } {
+  // Validates:
+  // - Required properties are present
+  // - Property types match schema declarations
+  // - No unexpected properties (if additionalProperties: false)
+}
+```
+
+### Execution Flow with Security
+
+```
+┌──────────────┐     ┌──────────────────────────────────────────────────┐
+│  Tool Call   │     │              executeWebMCPTool()                 │
+│  Request     │────►│                                                  │
+└──────────────┘     │  1. Find tool by name                           │
+                     │         │                                        │
+                     │         ▼                                        │
+                     │  2. validateToolOrigin()                         │
+                     │     - tool.domain === state.activeDomain?        │
+                     │         │                                        │
+                     │         ▼                                        │
+                     │  3. validateToolTabId()                          │
+                     │     - tool.tabId === state.activeTabId?          │
+                     │         │                                        │
+                     │         ▼                                        │
+                     │  4. validateArgsAgainstSchema()                  │
+                     │     - args match tool.inputSchema?               │
+                     │         │                                        │
+                     │         ▼                                        │
+                     │  5. Forward to content script (if all pass)      │
+                     └──────────────────────────────────────────────────┘
+```
+
+### Error Responses
+
+When validation fails, descriptive error messages are returned:
+
+```typescript
+// Origin mismatch
+{ success: false, error: "Security error: Tool origin mismatch..." }
+
+// Tab ID mismatch  
+{ success: false, error: "Security error: Tool tab mismatch..." }
+
+// Schema validation failure
+{ success: false, error: "Schema validation failed: Missing required property: query" }
+```
+
+### Key Security Files
+
+| File | Security Function |
+|------|-------------------|
+| `manager.ts` | Origin, tab ID, and schema validation |
+| `webmcpTools.ts` | HITL executor registry (no direct execute) |
+| `mcpApprovalConfig.ts` | Tool approval configuration |
+| `approvalStore.ts` | Persisted approval preferences |
 
 ---
 

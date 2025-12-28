@@ -11,6 +11,15 @@ export const WEBAPP_BASE_URL = isDev
     ? 'http://localhost:3002'
     : 'https://app.cognito.ai';
 
+/**
+ * Allowed origins for external messaging
+ * These origins can send messages to the extension via chrome.runtime.sendMessage
+ */
+export const ALLOWED_EXTERNAL_ORIGINS = [
+    'http://localhost:3002',
+    'https://app.cognito.ai',
+] as const;
+
 export const WEBAPP_ROUTES = {
     ONBOARDING: `${WEBAPP_BASE_URL}/onboarding`,
     SETTINGS: `${WEBAPP_BASE_URL}/settings`,

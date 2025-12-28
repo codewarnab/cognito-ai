@@ -29,13 +29,12 @@
  * - Discovery status
  * - Last update timestamp
  * 
- * ## Event Flow
+ * ## Security
  * 
- * 1. Tab activation triggers `setActiveTab()`
- * 2. Manager sends `webmcp/tools/refresh` to content script
- * 3. Content script discovers tools and sends `webmcp/tools/register`
- * 4. Manager updates state and notifies listeners
- * 5. UI receives `webmcp/tools/updated` broadcast
+ * Tool execution includes multiple validation layers:
+ * - **Origin validation**: Tool's domain must match the active tab's domain
+ * - **Tab ID validation**: Tool must belong to the currently active tab
+ * - **Schema validation**: Arguments are validated against the tool's inputSchema
  * 
  * @module background/webmcp
  * @see {@link file://./README.md | WebMCP Module README}
@@ -57,6 +56,144 @@ let state: WebMCPToolsState = {
 
 // Listeners for tool updates (used to notify UI)
 const toolUpdateListeners: Set<(tools: WebMCPTool[]) => void> = new Set();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Security Validation Functions
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Validate that a tool's origin matches the expected domain
+ * Prevents tool shadowing attacks where malicious sites register tools
+ * with names that match legitimate tools from other domains
+ * 
+ * @param tool - The WebMCP tool to validate
+ * @param expectedDomain - The domain we expect the tool to belong to
+ * @returns true if origin is valid, false otherwise
+ */
+function validateToolOrigin(tool: WebMCPTool, expectedDomain: string | null): boolean {
+  if (!expectedDomain) {
+    log.warn('Cannot validate tool origin: no expected domain', { toolName: tool.name });
+    return false;
+  }
+
+  if (tool.domain !== expectedDomain) {
+    log.error('Tool origin mismatch - potential security issue', {
+      toolName: tool.name,
+      toolDomain: tool.domain,
+      expectedDomain,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate that a tool belongs to the expected tab
+ * Ensures tools can only be executed on the tab that registered them
+ * 
+ * @param tool - The WebMCP tool to validate
+ * @param expectedTabId - The tab ID we expect the tool to belong to
+ * @returns true if tab ID is valid, false otherwise
+ */
+function validateToolTabId(tool: WebMCPTool, expectedTabId: number | null): boolean {
+  if (!expectedTabId) {
+    log.warn('Cannot validate tool tab: no expected tab ID', { toolName: tool.name });
+    return false;
+  }
+
+  if (tool.tabId !== expectedTabId) {
+    log.error('Tool tab ID mismatch - potential security issue', {
+      toolName: tool.name,
+      toolTabId: tool.tabId,
+      expectedTabId,
+    });
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Validate arguments against a tool's input schema
+ * Ensures only expected parameters are passed to tool execution
+ * 
+ * @param args - The arguments to validate
+ * @param inputSchema - The tool's declared input schema
+ * @returns Object with validation result and any errors
+ */
+function validateArgsAgainstSchema(
+  args: Record<string, unknown>,
+  inputSchema: unknown
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  // If no schema defined, allow any args (but log warning)
+  if (!inputSchema || typeof inputSchema !== 'object') {
+    log.debug('No input schema defined for tool, skipping validation');
+    return { valid: true, errors: [] };
+  }
+
+  const schema = inputSchema as {
+    type?: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+    additionalProperties?: boolean;
+  };
+
+  // Schema must be an object type
+  if (schema.type && schema.type !== 'object') {
+    errors.push(`Invalid schema type: expected 'object', got '${schema.type}'`);
+    return { valid: false, errors };
+  }
+
+  const properties = schema.properties || {};
+  const required = schema.required || [];
+
+  // Check for required properties
+  for (const requiredProp of required) {
+    if (!(requiredProp in args) || args[requiredProp] === undefined) {
+      errors.push(`Missing required property: ${requiredProp}`);
+    }
+  }
+
+  // Validate property types
+  for (const [key, value] of Object.entries(args)) {
+    const propSchema = properties[key] as { type?: string } | undefined;
+
+    // Check for unexpected properties (if additionalProperties is false)
+    if (!propSchema && schema.additionalProperties === false) {
+      errors.push(`Unexpected property: ${key}`);
+      continue;
+    }
+
+    // Skip type validation if no schema for this property
+    if (!propSchema?.type) continue;
+
+    // Basic type validation
+    const actualType = Array.isArray(value) ? 'array' : typeof value;
+    const expectedType = propSchema.type;
+
+    // Handle type mismatches (with some flexibility)
+    if (expectedType === 'integer' && actualType === 'number') {
+      if (!Number.isInteger(value)) {
+        errors.push(`Property '${key}' must be an integer, got float`);
+      }
+    } else if (expectedType === 'number' && actualType !== 'number') {
+      errors.push(`Property '${key}' must be a number, got ${actualType}`);
+    } else if (expectedType === 'string' && actualType !== 'string') {
+      errors.push(`Property '${key}' must be a string, got ${actualType}`);
+    } else if (expectedType === 'boolean' && actualType !== 'boolean') {
+      errors.push(`Property '${key}' must be a boolean, got ${actualType}`);
+    } else if (expectedType === 'array' && actualType !== 'array') {
+      errors.push(`Property '${key}' must be an array, got ${actualType}`);
+    } else if (expectedType === 'object' && (actualType !== 'object' || value === null)) {
+      errors.push(`Property '${key}' must be an object, got ${actualType}`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
 
 /**
  * Get current WebMCP tools state (immutable copy)
@@ -156,6 +293,12 @@ export async function setActiveTab(tabId: number): Promise<void> {
 
 /**
  * Execute a WebMCP tool on the active tab
+ * 
+ * Security validations performed:
+ * 1. Tool exists in current state
+ * 2. Tool origin matches active domain (prevents tool shadowing)
+ * 3. Tool tab ID matches active tab (prevents cross-tab execution)
+ * 4. Arguments match tool's declared inputSchema (prevents injection)
  */
 export async function executeWebMCPTool(
   toolName: string,
@@ -171,12 +314,42 @@ export async function executeWebMCPTool(
     return { success: false, error: 'No active tab' };
   }
 
+  // Security: Validate tool origin matches active domain
+  if (!validateToolOrigin(tool, state.activeDomain)) {
+    return {
+      success: false,
+      error: `Security error: Tool origin mismatch. Tool domain '${tool.domain}' does not match active domain '${state.activeDomain}'`,
+    };
+  }
+
+  // Security: Validate tool belongs to active tab
+  if (!validateToolTabId(tool, state.activeTabId)) {
+    return {
+      success: false,
+      error: `Security error: Tool tab mismatch. Tool registered on tab ${tool.tabId} but active tab is ${state.activeTabId}`,
+    };
+  }
+
+  // Security: Validate arguments against tool's input schema
+  const schemaValidation = validateArgsAgainstSchema(args, tool.inputSchema);
+  if (!schemaValidation.valid) {
+    log.warn('Schema validation failed for WebMCP tool', {
+      toolName,
+      errors: schemaValidation.errors,
+    });
+    return {
+      success: false,
+      error: `Schema validation failed: ${schemaValidation.errors.join(', ')}`,
+    };
+  }
+
   const requestId = crypto.randomUUID();
 
   log.info('Executing WebMCP tool', {
     toolName,
     originalName: tool.originalName,
     tabId: state.activeTabId,
+    domain: tool.domain,
     requestId,
   });
 
