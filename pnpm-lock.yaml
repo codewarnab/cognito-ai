@@ -558,9 +558,6 @@ importers:
       '@ai-sdk/mcp':
         specifier: ^1.0.1
         version: 1.0.1(zod@4.2.1)
-      '@cognito/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
