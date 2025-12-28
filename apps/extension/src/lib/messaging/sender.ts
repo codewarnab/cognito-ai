@@ -180,15 +180,25 @@ export async function sendMessageWithTimeout<T extends MessageType>(
         );
     })();
 
-    return Promise.race([
-        messagePromise,
-        new Promise<never>((_, reject) =>
-            setTimeout(
-                () => reject(new MessagingError(`Message ${type} timed out after ${timeoutMs}ms`, type)),
-                timeoutMs
-            )
-        ),
-    ]);
+    // Use timeout with proper cleanup to prevent memory leaks
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    
+    try {
+        const result = await Promise.race([
+            messagePromise,
+            new Promise<never>((_, reject) => {
+                timeoutId = setTimeout(
+                    () => reject(new MessagingError(`Message ${type} timed out after ${timeoutMs}ms`, type)),
+                    timeoutMs
+                );
+            }),
+        ]);
+        clearTimeout(timeoutId);
+        return result;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+    }
 }
 
 /**

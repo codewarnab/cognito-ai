@@ -16,6 +16,16 @@ export interface MessageHandlerCallbacks {
     onMessage: (message: McpMessage) => void;
 }
 
+/**
+ * Handles routing and lifecycle management of MCP JSON-RPC messages.
+ * 
+ * Responsibilities:
+ * - Processing incoming SSE messages and routing to appropriate handlers
+ * - Managing pending request/response correlation using message IDs
+ * - Resolving or rejecting promises for request-response patterns
+ * - Notifying callbacks about received messages
+ * - Cleaning up pending requests on disconnection
+ */
 export class MessageHandler {
     private pendingRequests = new Map<string | number, PendingRequest>();
 

@@ -29,6 +29,16 @@ export interface ConnectionManagerDeps {
     getNextMessageId: () => number;
 }
 
+/**
+ * Manages MCP SSE connections with automatic reconnection and exponential backoff.
+ * 
+ * Responsibilities:
+ * - Establishing initial connections to MCP servers
+ * - Handling connection failures with automatic retry logic
+ * - Managing exponential backoff for reconnection attempts
+ * - Coordinating between transport detection and stream processing
+ * - Tracking connection state and notifying callbacks
+ */
 export class ConnectionManager {
     private reconnectAttempts = 0;
     private reconnectTimeout: number | null = null;

@@ -4,7 +4,7 @@
  * Handles connecting, disconnecting, enabling, and disabling MCP servers.
  */
 
-import { McpSSEClient } from '../../mcp/sseClient';
+import { McpSSEClient } from '../../mcp/client';
 import { McpBackendClient } from './McpBackendClient';
 import type { McpExtensionResponse } from '../../mcp/types';
 import { getServerState, getServerConfig } from '../../mcp/state';

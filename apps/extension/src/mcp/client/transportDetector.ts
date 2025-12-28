@@ -190,6 +190,9 @@ export class TransportDetector {
     /**
      * Get the full POST endpoint URL
      * Handles both Streamable HTTP and HTTP+SSE transports
+     * 
+     * @returns The full URL to use for POST requests
+     * @throws Error if message endpoint is not available (HTTP+SSE transport only)
      */
     getPostUrl(): string {
         if (this.transportType === 'streamable-http') {

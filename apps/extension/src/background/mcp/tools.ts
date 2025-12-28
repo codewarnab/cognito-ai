@@ -4,7 +4,7 @@
  * Handles tool discovery, health checks, and tool execution for MCP servers.
  */
 
-import { McpSSEClient } from '../../mcp/sseClient';
+import { McpSSEClient } from '../../mcp/client';
 import type { McpExtensionResponse, McpTool } from '../../mcp/types';
 import { getServerState, getServerConfig, serverStates } from '../../mcp/state';
 import { ensureValidToken, refreshServerToken } from '../../mcp/authHelpers';

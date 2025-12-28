@@ -88,6 +88,10 @@ export function joinScopes(scopes: string[]): string {
 
 /**
  * Merge scopes, removing duplicates and preserving order
+ * 
+ * @param scopes1 - The primary array of scopes (order is preserved)
+ * @param scopes2 - Additional scopes to merge in (appended if not already present)
+ * @returns A new array containing all unique scopes from both arrays
  */
 export function mergeScopes(scopes1: string[], scopes2: string[]): string[] {
     const merged = [...scopes1];

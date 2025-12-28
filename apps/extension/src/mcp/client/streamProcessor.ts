@@ -27,6 +27,17 @@ export interface StreamProcessorDeps {
     getCurrentState: () => string;
 }
 
+/**
+ * Processes Server-Sent Events (SSE) streams from MCP servers.
+ * 
+ * Responsibilities:
+ * - Reading and buffering data from SSE ReadableStreams
+ * - Parsing SSE format (event types, data lines) into structured messages
+ * - Handling both Streamable HTTP and HTTP+SSE transport formats
+ * - Extracting endpoint information from SSE 'endpoint' events
+ * - Managing stream lifecycle and error recovery
+ * - Parsing JSON-RPC messages from SSE data payloads
+ */
 export class StreamProcessor {
     constructor(
         private deps: StreamProcessorDeps,

@@ -18,6 +18,9 @@ const DISCOVERY_TIMEOUT = 10000; // 10 seconds
 /**
  * Parse WWW-Authenticate header for Bearer challenges
  * Extracts scope, error, error_description, and resource_metadata
+ * 
+ * @param wwwAuthHeader - The WWW-Authenticate header value from a 401 response
+ * @returns Parsed challenge object with extracted fields, or null if not a Bearer challenge
  */
 export function parseScopeChallenge(wwwAuthHeader: string): ScopeChallenge | null {
     if (!wwwAuthHeader || !wwwAuthHeader.toLowerCase().startsWith('bearer ')) {

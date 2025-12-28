@@ -121,6 +121,13 @@ async function createCodeChallenge(verifier: string): Promise<string> {
 
 /**
  * Base64URL encode (without padding)
+ * 
+ * Converts a Uint8Array to a URL-safe base64 string by replacing
+ * standard base64 characters (+, /) with URL-safe alternatives (-, _)
+ * and removing padding (=).
+ * 
+ * @param buffer - The binary data to encode
+ * @returns The base64url-encoded string without padding
  */
 function base64UrlEncode(buffer: Uint8Array): string {
     const base64 = btoa(String.fromCharCode(...buffer));
