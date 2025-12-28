@@ -40,7 +40,9 @@ export async function validatePat(
         log.info(`Validating PAT against ${patConfig.validationUrl}`);
 
         const headers: Record<string, string> = {
-            'Authorization': `Bearer ${token}`,
+            ...(patConfig.authHeaderName
+                ? { [patConfig.authHeaderName]: token }
+                : { 'Authorization': `Bearer ${token}` }),
             'Accept': 'application/json',
             'User-Agent': 'Cognito-AI-Extension',
             ...patConfig.validationHeaders

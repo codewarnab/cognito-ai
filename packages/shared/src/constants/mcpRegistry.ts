@@ -44,6 +44,13 @@ export const MCP_SERVER_REGISTRY: Record<string, McpServerRegistryEntry> = {
         envKeyName: 'API_KEY',
         enabled: true,
     },
+    'brave-search': {
+        id: 'brave-search',
+        command: 'npx',
+        args: ['-y', '@brave/brave-search-mcp-server'],
+        envKeyName: 'BRAVE_API_KEY',
+        enabled: true,
+    },
     // Add more servers here as needed.
     // Each new server requires:
     // 1. Security review of the npm package

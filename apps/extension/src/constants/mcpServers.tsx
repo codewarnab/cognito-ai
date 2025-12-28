@@ -40,6 +40,7 @@ import jinaImage from '@assets/brands/integrations/jina.png';
 import { GitHub } from "@assets/brands/integrations/GitHub"
 
 // import { deepwiki , context7 , coingecko ,livekit } from "@assets/brands/integrations/bass64"
+import { BraveBrowser } from "@assets/brands/integrations/BraveBrowser"
 
 
 //http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
@@ -65,6 +66,8 @@ export interface PatConfig {
     validationMethod?: 'GET' | 'POST'
     /** Additional headers required for validation */
     validationHeaders?: Record<string, string>
+    /** Custom header name for API key (e.g., 'X-Subscription-Token'). Defaults to 'Authorization: Bearer' */
+    authHeaderName?: string
 }
 
 /** Authentication configuration for MCP servers */
@@ -208,6 +211,26 @@ export const MCP_SERVERS: ServerConfig[] = [
             patConfig: {
                 label: "Magic API Key",
                 placeholder: "Enter your API Key",
+            }
+        }
+    },
+    {
+        id: "brave-search",
+        name: "Brave Search",
+        icon: <BraveBrowser className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "stdio://brave-search",
+        description: "Brave Search MCP provides web, local, video, image, and news search capabilities.",
+        requiresAuthentication: true,
+        isBackendOnly: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Brave API Key",
+                placeholder: "BSA...",
+                helpUrl: "https://brave.com/search/api/",
+                authHeaderName: "X-Subscription-Token",
             }
         }
     },
