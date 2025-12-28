@@ -6,10 +6,10 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const getReportTemplateFormatter: ActionFormatter = ({ state, input, output }) => {
-    const query = input?.query;
-    const templateType = output?.templateType;
-    const templateName = output?.templateName;
-    const sectionCount = output?.sectionCount || 0;
+    const query = input?.query as string | undefined;
+    const templateType = output?.templateType as string | undefined;
+    const templateName = output?.templateName as string | undefined;
+    const sectionCount = (output?.sectionCount as number) || 0;
 
     if (state === 'loading') {
         return {
@@ -40,8 +40,8 @@ export const getReportTemplateFormatter: ActionFormatter = ({ state, input, outp
 };
 
 export const generatePDFFormatter: ActionFormatter = ({ state, input, output }) => {
-    const filename = output?.filename || input?.filename;
-    const size = output?.size;
+    const filename = (output?.filename || input?.filename) as string | undefined;
+    const size = output?.size as number | undefined;
     const formattedSize = size ? `${Math.round(size / 1024)}KB` : '';
 
     if (state === 'loading') {

@@ -14,9 +14,9 @@ export interface TrackedToolCall {
     /** Name of the tool (e.g., "webSearch") */
     toolName: string;
     /** Input arguments passed to the tool */
-    input: unknown;
+    input: Record<string, unknown>;
     /** Output from the tool (undefined while executing) */
-    output?: unknown;
+    output?: Record<string, unknown>;
     /** Execution state */
     state: 'loading' | 'success' | 'error';
     /** Error message if state is 'error' */

@@ -139,71 +139,77 @@ export function useRetrieve(): void {
             RETRIEVE_TOOL_NAME,
             (state: ToolUIState) => <CompactToolRenderer state={state} />,
             {
-                renderInput: (input: { url?: string }) => (
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                            color: 'var(--text-secondary)',
-                        }}
-                    >
-                        <span style={{ opacity: 0.7 }}>🔗</span>
-                        <span
+                renderInput: (rawInput: Record<string, unknown>) => {
+                    const input = rawInput as { url?: string };
+                    return (
+                        <div
                             style={{
-                                color: 'var(--text-primary)',
-                                opacity: 0.9,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                maxWidth: '250px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
                             }}
                         >
-                            {input.url ? getDomain(input.url) : 'URL'}
-                        </span>
-                    </div>
-                ),
-                renderOutput: (output: SearchResults) => (
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {output.results && output.results.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <div style={{ opacity: 0.7 }}>
-                                    ✓ Retrieved content
-                                </div>
-                                <div
-                                    style={{
-                                        padding: '6px 8px',
-                                        background: 'var(--bg-tertiary)',
-                                        borderRadius: '3px',
-                                        border: '1px solid var(--border-color)',
-                                        fontSize: '11px',
-                                    }}
-                                >
+                            <span style={{ opacity: 0.7 }}>🔗</span>
+                            <span
+                                style={{
+                                    color: 'var(--text-primary)',
+                                    opacity: 0.9,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    maxWidth: '250px',
+                                }}
+                            >
+                                {input.url ? getDomain(input.url) : 'URL'}
+                            </span>
+                        </div>
+                    );
+                },
+                renderOutput: (rawOutput: Record<string, unknown>) => {
+                    const output = rawOutput as unknown as SearchResults;
+                    return (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {output.results && output.results.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div style={{ opacity: 0.7 }}>
+                                        ✓ Retrieved content
+                                    </div>
                                     <div
                                         style={{
-                                            color: 'var(--text-primary)',
-                                            opacity: 0.9,
-                                            marginBottom: '2px',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
+                                            padding: '6px 8px',
+                                            background: 'var(--bg-tertiary)',
+                                            borderRadius: '3px',
+                                            border: '1px solid var(--border-color)',
+                                            fontSize: '11px',
                                         }}
                                     >
-                                        {output?.results[0]?.title}
-                                    </div>
-                                    <div style={{ opacity: 0.5, fontSize: '10px' }}>
-                                        {output?.results[0]?.content?.length.toLocaleString()} characters
+                                        <div
+                                            style={{
+                                                color: 'var(--text-primary)',
+                                                opacity: 0.9,
+                                                marginBottom: '2px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {output?.results[0]?.title}
+                                        </div>
+                                        <div style={{ opacity: 0.5, fontSize: '10px' }}>
+                                            {output?.results[0]?.content?.length.toLocaleString()} characters
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <span style={{ color: 'var(--error-color)' }}>
-                                Failed to retrieve content
-                            </span>
-                        )}
-                    </div>
-                ),
+                            ) : (
+                                <span style={{ color: 'var(--error-color)' }}>
+                                    Failed to retrieve content
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
             }
         );
 

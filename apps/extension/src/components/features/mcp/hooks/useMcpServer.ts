@@ -39,7 +39,7 @@ export const useMcpServer = ({
     useEffect(() => {
         loadStatus()
 
-        const handleMessage = (message: any) => {
+        const handleMessage = (message: McpExtensionMessage) => {
             if (message.type === `mcp/${id}/status/update`) {
                 const newStatus = message.payload as McpServerStatus
                 setStatus(newStatus)

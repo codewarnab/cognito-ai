@@ -22,8 +22,8 @@ const log = createLogger('CompactToolCard', 'UI_CHAT_COMPONENTS');
 interface CompactToolCardProps {
     toolName: string;
     state: 'loading' | 'success' | 'error' | 'pending-approval';
-    input?: any;
-    output?: any;
+    input?: Record<string, unknown>;
+    output?: Record<string, unknown>;
     errorText?: string;
     customRenderers?: CustomInputOutputRenderers;
     messageId?: string; // For Blob URL lifecycle management
@@ -77,7 +77,7 @@ export function CompactToolCard({
     const loadingCheckRef = useRef<LoadingCheckIconHandle>(null);
     const circleCheckRef = useRef<CircleCheckIconHandle>(null);
     const chevronRef = useRef<ChevronRightIconHandle | ChevronDownIconHandle>(null);
-    const toolIconRef = useRef<any>(null); // Ref for the tool icon
+    const toolIconRef = useRef<{ startAnimation?: () => void; stopAnimation?: () => void } | null>(null); // Ref for the tool icon
     const uploadIconRef = useRef<UploadIconHandle>(null); // Ref for upload icon
     const ToolIcon = getToolIcon(toolName);
 
@@ -122,7 +122,7 @@ export function CompactToolCard({
         }
     }, [state, formattedAction.customIcon]);
 
-    const formatContent = (data: any, maxLength = 200): string => {
+    const formatContent = (data: unknown, maxLength = 200): string => {
         if (!data) return '';
         const str = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
         return str.length > maxLength ? str.slice(0, maxLength) + '...' : str;
@@ -276,10 +276,10 @@ export function CompactToolCard({
             )}
 
             {/* File Attachment - Always visible when available */}
-            {output?.fileData && state === 'success' && (
+            {Boolean(output?.fileData) && state === 'success' && (
                 <div className="mt-3 pl-0 animate-in slide-in-from-top-1 fade-in duration-300">
                     <ToolFileAttachment
-                        fileData={output.fileData as ToolFileAttachmentData}
+                        fileData={output!.fileData as unknown as ToolFileAttachmentData}
                         messageId={messageId}
                     />
                 </div>

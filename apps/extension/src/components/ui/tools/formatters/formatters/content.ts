@@ -6,8 +6,9 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const readPageContentFormatter: ActionFormatter = ({ state, output }) => {
-    const title = output?.title;
-    const contentLength = output?.content?.length || output?.contentLength || 0;
+    const title = output?.title as string | undefined;
+    const content = output?.content as string | undefined;
+    const contentLength = content?.length || (output?.contentLength as number) || 0;
     const formattedLength = contentLength >= 1000 ? `${Math.round(contentLength / 1000)}k chars` : `${contentLength} chars`;
 
     if (state === 'loading') {
@@ -32,7 +33,7 @@ export const readPageContentFormatter: ActionFormatter = ({ state, output }) => 
 };
 
 export const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => {
-    const text = output?.text || output?.selectedText;
+    const text = (output?.text || output?.selectedText) as string | undefined;
     const length = text?.length || 0;
 
     if (state === 'loading') {
@@ -57,13 +58,15 @@ export const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => 
 };
 
 export const extractTextFormatter: ActionFormatter = ({ state, input, output }) => {
-    const selector = input?.selector;
-    const charCount = output?.text?.length || 0;
-    const structure = output?.structure;
+    const selector = input?.selector as string | undefined;
+    const text = output?.text as string | undefined;
+    const charCount = text?.length || 0;
+    const structure = output?.structure as { pageType?: string; headings?: Record<string, unknown[]> } | undefined;
     const pageType = structure?.pageType;
-    const count = output?.count;
-    const searchBars = output?.searchBars;
-    const primarySearchBar = output?.primarySearchBar;
+    const count = output?.count as number | undefined;
+    const searchBars = output?.searchBars as Array<{ isVisible?: boolean }> | undefined;
+    // primarySearchBar is available but not currently used
+    // const primarySearchBar = output?.primarySearchBar;
 
     if (state === 'loading') {
         return {
@@ -114,8 +117,8 @@ export const extractTextFormatter: ActionFormatter = ({ state, input, output }) 
 };
 
 export const scrollIntoViewFormatter: ActionFormatter = ({ state, input }) => {
-    const selector = input?.selector;
-    const block = input?.block;
+    const selector = input?.selector as string | undefined;
+    const block = input?.block as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -136,8 +139,12 @@ export const scrollIntoViewFormatter: ActionFormatter = ({ state, input }) => {
 };
 
 export const findSearchBarFormatter: ActionFormatter = ({ state, output }) => {
-    const count = output?.count || 0;
-    const primarySearchBar = output?.primarySearchBar;
+    const count = (output?.count as number) || 0;
+    const primarySearchBar = output?.primarySearchBar as {
+        placeholder?: string;
+        id?: string;
+        name?: string;
+    } | undefined;
 
     if (state === 'loading') {
         return {

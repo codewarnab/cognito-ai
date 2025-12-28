@@ -6,9 +6,9 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const clickElementFormatter: ActionFormatter = ({ state, input, output }) => {
-    const clicked = output?.clicked;
+    const clicked = output?.clicked as { text?: string; innerText?: string } | undefined;
     const text = clicked?.text || clicked?.innerText;
-    const selector = input?.selector;
+    const selector = input?.selector as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -32,7 +32,7 @@ export const clickElementFormatter: ActionFormatter = ({ state, input, output })
 };
 
 export const focusElementFormatter: ActionFormatter = ({ state, input }) => {
-    const selector = input?.selector;
+    const selector = input?.selector as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -59,9 +59,11 @@ export const focusElementFormatter: ActionFormatter = ({ state, input }) => {
 };
 
 export const clickByTextFormatter: ActionFormatter = ({ state, input, output }) => {
-    const searchText = input?.text;
-    const clicked = output?.clicked;
-    const matchInfo = output?.totalMatches > 1 ? ` (match ${output.clickedIndex} of ${output.totalMatches})` : '';
+    const searchText = input?.text as string | undefined;
+    const clicked = output?.clicked as { text?: string } | undefined;
+    const totalMatches = output?.totalMatches as number | undefined;
+    const clickedIndex = output?.clickedIndex as number | undefined;
+    const matchInfo = totalMatches && totalMatches > 1 ? ` (match ${clickedIndex} of ${totalMatches})` : '';
 
     if (state === 'loading') {
         return {
@@ -89,8 +91,8 @@ export const clickByTextFormatter: ActionFormatter = ({ state, input, output }) 
 };
 
 export const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) => {
-    const target = input?.target;
-    const text = input?.text || '';
+    const target = input?.target as string | undefined;
+    const text = (input?.text as string) || '';
     const length = text.length;
     const preview = truncateText(text, 20);
 
@@ -101,8 +103,8 @@ export const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) 
         };
     }
     if (state === 'success') {
-        const message = output?.message;
-        const typed = output?.typed || length;
+        const message = output?.message as string | undefined;
+        const typed = (output?.typed as number) || length;
         const pressedEnter = input?.pressEnter || message?.includes('Enter');
 
         return {
@@ -125,7 +127,7 @@ export const typeInFieldFormatter: ActionFormatter = ({ state, input, output }) 
 };
 
 export const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
-    const key = input?.key;
+    const key = input?.key as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -149,10 +151,10 @@ export const pressKeyFormatter: ActionFormatter = ({ state, input }) => {
 };
 
 export const globalTypeTextFormatter: ActionFormatter = ({ state, input, output }) => {
-    const text = input?.text || '';
+    const text = (input?.text as string) || '';
     const preview = text.substring(0, 20);
     const displayText = text.length > 20 ? preview + '...' : preview;
-    const typed = output?.typed || text.length;
+    const typed = (output?.typed as number) || text.length;
 
     if (state === 'loading') {
         return {
@@ -179,7 +181,7 @@ export const globalTypeTextFormatter: ActionFormatter = ({ state, input, output 
 };
 
 export const scrollFormatter: ActionFormatter = ({ state, input }) => {
-    const direction = input?.direction || 'down';
+    const direction = (input?.direction as string) || 'down';
 
     if (state === 'loading') {
         return {
@@ -203,7 +205,7 @@ export const scrollFormatter: ActionFormatter = ({ state, input }) => {
 };
 
 export const waitForElementFormatter: ActionFormatter = ({ state, input }) => {
-    const selector = input?.selector;
+    const selector = input?.selector as string | undefined;
 
     if (state === 'loading') {
         return {

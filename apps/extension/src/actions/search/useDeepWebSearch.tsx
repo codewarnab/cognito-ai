@@ -167,23 +167,29 @@ export function useDeepWebSearch(): void {
             DEEP_WEB_SEARCH_TOOL_NAME,
             (state: ToolUIState) => <CompactToolRenderer state={state} />,
             {
-                renderInput: (input: { queries?: string[] }) => (
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        <span style={{ opacity: 0.7 }}>🔍</span>{' '}
-                        <span style={{ color: 'var(--text-primary)' }}>
-                            Deep search ({input.queries?.length ?? 0} queries)
-                        </span>
-                    </div>
-                ),
-                renderOutput: (output: DeepSearchResults) => (
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {output.results?.length > 0 ? (
-                            <span>Found {output.unique_results} unique results from {output.executed_queries?.length ?? 0} searches</span>
-                        ) : (
-                            <span style={{ opacity: 0.7 }}>No results found</span>
-                        )}
-                    </div>
-                ),
+                renderInput: (rawInput: Record<string, unknown>) => {
+                    const input = rawInput as { queries?: string[] };
+                    return (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            <span style={{ opacity: 0.7 }}>🔍</span>{' '}
+                            <span style={{ color: 'var(--text-primary)' }}>
+                                Deep search ({input.queries?.length ?? 0} queries)
+                            </span>
+                        </div>
+                    );
+                },
+                renderOutput: (rawOutput: Record<string, unknown>) => {
+                    const output = rawOutput as unknown as DeepSearchResults;
+                    return (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {output.results?.length > 0 ? (
+                                <span>Found {output.unique_results} unique results from {output.executed_queries?.length ?? 0} searches</span>
+                            ) : (
+                                <span style={{ opacity: 0.7 }}>No results found</span>
+                            )}
+                        </div>
+                    );
+                },
             }
         );
 

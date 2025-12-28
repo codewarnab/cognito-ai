@@ -6,11 +6,11 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const pdfAgentFormatter: ActionFormatter = ({ state, input, output }) => {
-    const question = input?.question;
-    const pageCount = output?.pageCount;
-    const title = output?.title;
+    const question = input?.question as string | undefined;
+    const pageCount = output?.pageCount as number | undefined;
+    const title = output?.title as string | undefined;
     const pdfFile = input?.pdfFile || output?.pdfFile;
-    const errorMsg = output?.error || output?.errorType;
+    const errorMsg = (output?.error || output?.errorType) as string | undefined;
 
     // Check if it's a file upload (local file)
     const isFileUpload = !!pdfFile || (pdfFile instanceof File);

@@ -104,17 +104,21 @@ export function useNavigateToTool() {
             return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
         }, {
             // Optional: Custom input renderer for navigateTo tool
-            renderInput: (input: { url: string; newTab: boolean }) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    <span style={{ opacity: 0.7 }}>URL:</span>
-                    <a href={input.url} target="_blank" rel="noopener noreferrer"
-                        style={{ color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
-                        {input.url}
-                    </a>
-                </div>
-            ),
+            renderInput: (rawInput: Record<string, unknown>) => {
+                const input = rawInput as { url: string; newTab: boolean };
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        <span style={{ opacity: 0.7 }}>URL:</span>
+                        <a href={input.url} target="_blank" rel="noopener noreferrer"
+                            style={{ color: 'var(--text-primary)', textDecoration: 'none', opacity: 0.9 }}>
+                            {input.url}
+                        </a>
+                    </div>
+                );
+            },
             // Optional: Custom output renderer for navigateTo tool
-            renderOutput: (output: any) => {
+            renderOutput: (rawOutput: Record<string, unknown>) => {
+                const output = rawOutput as { url?: string; error?: string };
                 if (output.error) {
                     return (
                         <div style={{ fontSize: '12px', color: 'var(--error-color)', opacity: 0.9 }}>

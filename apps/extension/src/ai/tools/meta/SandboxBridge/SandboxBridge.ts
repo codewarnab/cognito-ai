@@ -233,7 +233,7 @@ export class SandboxBridge {
         const trackedCall: TrackedToolCall = {
             callId: request.callId,
             toolName: request.toolName,
-            input: request.args[0], // First arg is usually the input object
+            input: (request.args[0] ?? {}) as Record<string, unknown>, // First arg is usually the input object
             state: 'loading',
             startTime,
         };
@@ -273,7 +273,7 @@ export class SandboxBridge {
             const duration = Date.now() - startTime;
 
             // Update tracked call with success
-            trackedCall.output = result;
+            trackedCall.output = result as Record<string, unknown> | undefined;
             trackedCall.state = 'success';
             trackedCall.durationMs = duration;
 

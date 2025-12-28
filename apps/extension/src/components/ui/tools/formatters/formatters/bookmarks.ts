@@ -6,7 +6,7 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const createBookmarkFormatter: ActionFormatter = ({ state, input, output }) => {
-    const title = output?.title || input?.title;
+    const title = (output?.title || input?.title) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -30,8 +30,8 @@ export const createBookmarkFormatter: ActionFormatter = ({ state, input, output 
 };
 
 export const searchBookmarksFormatter: ActionFormatter = ({ state, input, output }) => {
-    const query = input?.query;
-    const count = output?.count || 0;
+    const query = input?.query as string | undefined;
+    const count = (output?.count as number) || 0;
 
     if (state === 'loading') {
         return {
@@ -55,7 +55,7 @@ export const searchBookmarksFormatter: ActionFormatter = ({ state, input, output
 };
 
 export const listBookmarksFormatter: ActionFormatter = ({ state, output }) => {
-    const count = output?.count || 0;
+    const count = (output?.count as number) || 0;
 
     if (state === 'loading') {
         return { action: 'Loading bookmarks' };
@@ -86,7 +86,7 @@ export const deleteBookmarkFormatter: ActionFormatter = ({ state }) => {
 };
 
 export const updateBookmarkFormatter: ActionFormatter = ({ state, input, output }) => {
-    const title = output?.title || input?.title;
+    const title = (output?.title || input?.title) as string | undefined;
 
     if (state === 'loading') {
         return { action: 'Updating bookmark' };
@@ -107,7 +107,7 @@ export const updateBookmarkFormatter: ActionFormatter = ({ state, input, output 
 };
 
 export const getBookmarkTreeFormatter: ActionFormatter = ({ state, output }) => {
-    const totalFolders = output?.totalFolders || 0;
+    const totalFolders = (output?.totalFolders as number) || 0;
 
     if (state === 'loading') {
         return { action: 'Loading bookmark tree' };
@@ -125,7 +125,7 @@ export const getBookmarkTreeFormatter: ActionFormatter = ({ state, output }) => 
 };
 
 export const organizeBookmarksFormatter: ActionFormatter = ({ state, output }) => {
-    const suggestions = output?.suggestions;
+    const suggestions = output?.suggestions as { newFolders?: unknown[] } | undefined;
     const count = suggestions?.newFolders?.length || 0;
 
     if (state === 'loading') {

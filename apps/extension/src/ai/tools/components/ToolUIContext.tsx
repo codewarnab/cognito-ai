@@ -28,9 +28,10 @@ export interface ToolUIRenderer {
 }
 
 // Optional custom renderers for tool-specific input/output UI
+// Note: Renderers should cast the generic Record type to their specific type internally
 export interface CustomInputOutputRenderers {
-  renderInput?: (input: any) => ReactNode;
-  renderOutput?: (output: any) => ReactNode;
+  renderInput?: (input: Record<string, unknown>) => ReactNode;
+  renderOutput?: (output: Record<string, unknown>) => ReactNode;
 }
 
 interface ToolUIContextType {

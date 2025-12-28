@@ -6,12 +6,12 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output }) => {
-    const title = output?.title;
-    const url = output?.url;
-    const reason = input?.reason;
+    const title = output?.title as string | undefined;
+    const url = output?.url as string | undefined;
+    const reason = input?.reason as string | undefined;
     const hasScreenshot = !!output?.screenshot;
-    const errorType = output?.errorType;
-    const errorDetails = output?.errorDetails;
+    const errorType = output?.errorType as string | undefined;
+    const errorDetails = output?.errorDetails as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -28,7 +28,7 @@ export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output 
     }
 
     if (state === 'success' && hasScreenshot) {
-        const viewport = output?.viewport;
+        const viewport = output?.viewport as { width?: number; height?: number } | undefined;
         const viewportInfo = viewport?.width && viewport?.height
             ? ` (${viewport.width}×${viewport.height})`
             : '';
@@ -57,7 +57,7 @@ export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output 
                 break;
             case 'RESTRICTED_PAGE':
                 errorAction = 'Restricted page';
-                const scheme = output?.restrictedScheme || 'system';
+                const scheme = (output?.restrictedScheme as string) || 'system';
                 errorDescription = `Cannot capture ${scheme}:// pages`;
                 break;
             case 'CAPTURE_FAILED':
@@ -82,8 +82,9 @@ export const takeScreenshotFormatter: ActionFormatter = ({ state, input, output 
                 errorDescription = 'Tab has no URL';
                 break;
             default:
-                if (output?.error) {
-                    errorDescription = truncateText(output.error, 45);
+                const errorMsg = output?.error as string | undefined;
+                if (errorMsg) {
+                    errorDescription = truncateText(errorMsg, 45);
                 }
         }
 

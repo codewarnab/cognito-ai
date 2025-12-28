@@ -6,7 +6,7 @@ import type { ActionFormatter } from '../types';
 import { truncateText, extractDomain } from '../helpers';
 
 export const navigateToFormatter: ActionFormatter = ({ state, input, output }) => {
-    const url = output?.url || input?.url || input?.targetUrl;
+    const url = (output?.url || input?.url || input?.targetUrl) as string | undefined;
     const domain = url ? extractDomain(url) : '';
     const newTab = input?.newTab || output?.newTab;
 

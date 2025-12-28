@@ -71,6 +71,10 @@ export interface Message {
     parts?: MessagePart[];
     generativeUI?: () => React.ReactElement | null;
     attachments?: FileAttachment[];
+    metadata?: {
+        internal?: boolean;
+        [key: string]: any;
+    };
 }
 
 export interface FileAttachment {

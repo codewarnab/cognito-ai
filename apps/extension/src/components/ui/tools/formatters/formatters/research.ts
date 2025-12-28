@@ -7,13 +7,13 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const addMemoryMetadataFormatter: ActionFormatter = ({ state, input }) => {
-    const sourceId = input?.sourceId;
-    const guideline = input?.futureUseGuideline;
+    const sourceId = input?.sourceId as string | undefined;
+    const guideline = input?.futureUseGuideline as string | undefined;
 
     if (state === 'loading') {
         return {
             action: 'Tagging source',
-            description: sourceId ? sourceId : undefined
+            description: sourceId
         };
     }
     if (state === 'success') {
@@ -28,9 +28,10 @@ export const addMemoryMetadataFormatter: ActionFormatter = ({ state, input }) =>
 };
 
 export const readResearchMemoryFormatter: ActionFormatter = ({ state, input, output }) => {
-    const sourceId = input?.sourceId;
+    const sourceId = input?.sourceId as string | undefined;
     const found = output?.found;
-    const contentLength = output?.content?.length || 0;
+    const content = output?.content as string | undefined;
+    const contentLength = content?.length || 0;
     const formattedLength = contentLength >= 1000
         ? `${Math.round(contentLength / 1000)}k chars`
         : `${contentLength} chars`;
@@ -38,7 +39,7 @@ export const readResearchMemoryFormatter: ActionFormatter = ({ state, input, out
     if (state === 'loading') {
         return {
             action: 'Loading source',
-            description: sourceId ? sourceId : undefined
+            description: sourceId
         };
     }
     if (state === 'success') {
@@ -57,7 +58,8 @@ export const readResearchMemoryFormatter: ActionFormatter = ({ state, input, out
 };
 
 export const listResearchSourcesFormatter: ActionFormatter = ({ state, output }) => {
-    const count = output?.count || output?.sources?.length || 0;
+    const sources = output?.sources as unknown[] | undefined;
+    const count = (output?.count as number) || sources?.length || 0;
 
     if (state === 'loading') {
         return {
@@ -75,7 +77,7 @@ export const listResearchSourcesFormatter: ActionFormatter = ({ state, output })
 };
 
 export const initResearchSessionFormatter: ActionFormatter = ({ state, output }) => {
-    const sessionId = output?.sessionId;
+    const sessionId = output?.sessionId as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -93,9 +95,9 @@ export const initResearchSessionFormatter: ActionFormatter = ({ state, output })
 };
 
 export const appendToReportFormatter: ActionFormatter = ({ state, input, output }) => {
-    const sectionName = input?.sectionName;
-    const order = output?.order;
-    const totalSections = output?.totalSectionsInReport;
+    const sectionName = input?.sectionName as string | undefined;
+    const order = output?.order as number | undefined;
+    const totalSections = output?.totalSectionsInReport as number | undefined;
 
     if (state === 'loading') {
         return {
@@ -105,7 +107,7 @@ export const appendToReportFormatter: ActionFormatter = ({ state, input, output 
     }
     if (state === 'success') {
         if (output?.success) {
-            const parts = [];
+            const parts: string[] = [];
             if (sectionName) parts.push(truncateText(sectionName, 25));
             if (order && totalSections) parts.push(`(${order}/${totalSections})`);
             return {
@@ -113,9 +115,10 @@ export const appendToReportFormatter: ActionFormatter = ({ state, input, output 
                 description: parts.length > 0 ? parts.join(' ') : undefined
             };
         }
+        const errorMsg = output?.error as string | undefined;
         return {
             action: 'Failed to add section',
-            description: output?.error ? truncateText(String(output.error), 40) : undefined
+            description: errorMsg ? truncateText(errorMsg, 40) : undefined
         };
     }
     return { action: 'Failed to add section' };

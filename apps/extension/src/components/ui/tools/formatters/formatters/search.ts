@@ -10,8 +10,9 @@ export const getSearchResultsFormatter: ActionFormatter = ({ state, output }) =>
         return { action: 'Reading search results' };
     }
     if (state === 'success') {
-        const count = output?.results?.length || output?.count || 0;
-        const engine = output?.engine || 'search';
+        const results = output?.results as unknown[] | undefined;
+        const count = results?.length || (output?.count as number) || 0;
+        const engine = (output?.engine as string) || 'search';
         return {
             action: `Found ${count} results`,
             description: engine
@@ -24,7 +25,7 @@ export const getSearchResultsFormatter: ActionFormatter = ({ state, output }) =>
 };
 
 export const chromeSearchFormatter: ActionFormatter = ({ state, input, output }) => {
-    const query = input?.query || output?.query;
+    const query = (input?.query || output?.query) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -33,10 +34,11 @@ export const chromeSearchFormatter: ActionFormatter = ({ state, input, output })
         };
     }
     if (state === 'success') {
-        const totalCount = output?.totalCount || output?.results?.length || 0;
-        const tabs = output?.results?.filter((r: any) => r.type === 'tab').length || 0;
-        const bookmarks = output?.results?.filter((r: any) => r.type === 'bookmark').length || 0;
-        const history = output?.results?.filter((r: any) => r.type === 'history').length || 0;
+        const results = output?.results as Array<{ type: string }> | undefined;
+        const totalCount = (output?.totalCount as number) || results?.length || 0;
+        const tabs = results?.filter((r) => r.type === 'tab').length || 0;
+        const bookmarks = results?.filter((r) => r.type === 'bookmark').length || 0;
+        const history = results?.filter((r) => r.type === 'history').length || 0;
 
         // Build description showing breakdown
         const parts = [];
@@ -64,8 +66,8 @@ export const chromeSearchFormatter: ActionFormatter = ({ state, input, output })
 };
 
 export const openSearchResultFormatter: ActionFormatter = ({ state, input, output }) => {
-    const title = output?.title || input?.title;
-    const rank = output?.rank || input?.rank || input?.index;
+    const title = (output?.title || input?.title) as string | undefined;
+    const rank = (output?.rank || input?.rank || input?.index) as number | undefined;
 
     if (state === 'loading') {
         return {
@@ -89,7 +91,7 @@ export const openSearchResultFormatter: ActionFormatter = ({ state, input, outpu
 };
 
 export const webSearchFormatter: ActionFormatter = ({ state, input, output }) => {
-    const query = input?.query || output?.query;
+    const query = (input?.query || output?.query) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -98,7 +100,8 @@ export const webSearchFormatter: ActionFormatter = ({ state, input, output }) =>
         };
     }
     if (state === 'success') {
-        const count = output?.results?.length || output?.number_of_results || 0;
+        const results = output?.results as unknown[] | undefined;
+        const count = results?.length || (output?.number_of_results as number) || 0;
         return {
             action: `Found ${count} results`,
             description: query ? `"${truncateText(query, 40)}"` : undefined
@@ -117,7 +120,7 @@ export const webSearchFormatter: ActionFormatter = ({ state, input, output }) =>
 };
 
 export const retrieveFormatter: ActionFormatter = ({ state, input, output }) => {
-    const url = input?.url || output?.url;
+    const url = (input?.url || output?.url) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -126,7 +129,8 @@ export const retrieveFormatter: ActionFormatter = ({ state, input, output }) => 
         };
     }
     if (state === 'success') {
-        const title = output?.results?.[0]?.title;
+        const results = output?.results as Array<{ title?: string }> | undefined;
+        const title = results?.[0]?.title as string | undefined;
         return {
             action: 'Retrieved content',
             description: title ? truncateText(title, 40) : (url ? truncateText(url, 40) : undefined)
@@ -145,7 +149,7 @@ export const retrieveFormatter: ActionFormatter = ({ state, input, output }) => 
 };
 
 export const deepWebSearchFormatter: ActionFormatter = ({ state, input, output }) => {
-    const queries = input?.queries || output?.executed_queries;
+    const queries = (input?.queries || output?.executed_queries) as unknown[] | undefined;
 
     if (state === 'loading') {
         return {
@@ -154,8 +158,9 @@ export const deepWebSearchFormatter: ActionFormatter = ({ state, input, output }
         };
     }
     if (state === 'success') {
-        const uniqueCount = output?.unique_results || 0;
-        const queryCount = output?.executed_queries?.length || 0;
+        const uniqueCount = (output?.unique_results as number) || 0;
+        const executedQueries = output?.executed_queries as unknown[] | undefined;
+        const queryCount = executedQueries?.length || 0;
         return {
             action: `Found ${uniqueCount} unique results`,
             description: `${queryCount} queries executed`

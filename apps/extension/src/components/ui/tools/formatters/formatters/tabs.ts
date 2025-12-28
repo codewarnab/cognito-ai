@@ -6,7 +6,7 @@ import type { ActionFormatter } from '../types';
 import { truncateText, extractDomain } from '../helpers';
 
 export const switchTabsFormatter: ActionFormatter = ({ state, input, output }) => {
-    const title = output?.title || input?.title;
+    const title = (output?.title || input?.title) as string | undefined;
 
     if (state === 'loading') {
         return { action: 'Switching tab' };
@@ -24,7 +24,7 @@ export const switchTabsFormatter: ActionFormatter = ({ state, input, output }) =
 };
 
 export const getActiveTabFormatter: ActionFormatter = ({ state, output }) => {
-    const title = output?.title;
+    const title = output?.title as string | undefined;
 
     if (state === 'loading') {
         return { action: 'Getting active tab' };
@@ -46,7 +46,8 @@ export const getAllTabsFormatter: ActionFormatter = ({ state, output }) => {
         return { action: 'Getting all tabs' };
     }
     if (state === 'success') {
-        const count = output?.count || output?.tabs?.length || 0;
+        const tabs = output?.tabs as unknown[] | undefined;
+        const count = (output?.count as number) || tabs?.length || 0;
         return {
             action: 'Retrieved all tabs',
             description: `${count} tab${count !== 1 ? 's' : ''}`
@@ -59,8 +60,8 @@ export const getAllTabsFormatter: ActionFormatter = ({ state, output }) => {
 };
 
 export const openNewTabFormatter: ActionFormatter = ({ state, input, output }) => {
-    const url = input?.url;
-    const title = output?.title;
+    const url = input?.url as string | undefined;
+    const title = output?.title as string | undefined;
     const domain = url ? extractDomain(url) : '';
 
     if (state === 'loading') {
@@ -85,7 +86,7 @@ export const openNewTabFormatter: ActionFormatter = ({ state, input, output }) =
 };
 
 export const closeTabFormatter: ActionFormatter = ({ state, input }) => {
-    const title = input?.title;
+    const title = input?.title as string | undefined;
 
     if (state === 'loading') {
         return { action: 'Closing tab' };
@@ -110,7 +111,8 @@ export const listTabsFormatter: ActionFormatter = ({ state, output }) => {
         return { action: 'Listing tabs' };
     }
     if (state === 'success') {
-        const count = output?.tabs?.length || output?.count || 0;
+        const tabs = output?.tabs as unknown[] | undefined;
+        const count = tabs?.length || (output?.count as number) || 0;
         return {
             action: 'Found tabs',
             description: `${count} open tabs`
@@ -128,14 +130,16 @@ export const organizeTabsByContextFormatter: ActionFormatter = ({ state, output 
     }
     if (state === 'success') {
         if (output?.needsAIAnalysis) {
-            const tabCount = output?.tabs?.length || 0;
+            const tabs = output?.tabs as unknown[] | undefined;
+            const tabCount = tabs?.length || 0;
             return {
                 action: 'Prepared for analysis',
                 description: `${tabCount} tabs`
             };
         }
         if (output?.groups) {
-            const groupCount = output?.groups?.length || 0;
+            const groups = output?.groups as unknown[] | undefined;
+            const groupCount = groups?.length || 0;
             return {
                 action: 'Tabs organized',
                 description: `${groupCount} groups`
@@ -154,8 +158,10 @@ export const organizeTabsByContextFormatter: ActionFormatter = ({ state, output 
 };
 
 export const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output }) => {
-    const groupCount = input?.groups?.length || 0;
-    const groupsCreated = output?.groupsCreated || output?.groups?.length || 0;
+    const inputGroups = input?.groups as unknown[] | undefined;
+    const outputGroups = output?.groups as unknown[] | undefined;
+    const groupCount = inputGroups?.length || 0;
+    const groupsCreated = (output?.groupsCreated as number) || outputGroups?.length || 0;
 
     if (state === 'loading') {
         return {
@@ -179,8 +185,9 @@ export const applyTabGroupsFormatter: ActionFormatter = ({ state, input, output 
 };
 
 export const ungroupTabsFormatter: ActionFormatter = ({ state, input, output }) => {
-    const groupCount = input?.groupIds?.length || 0;
-    const ungrouped = output?.ungroupedCount || 0;
+    const groupIds = input?.groupIds as unknown[] | undefined;
+    const groupCount = groupIds?.length || 0;
+    const ungrouped = (output?.ungroupedCount as number) || 0;
 
     if (state === 'loading') {
         if (input?.ungroupAll) {

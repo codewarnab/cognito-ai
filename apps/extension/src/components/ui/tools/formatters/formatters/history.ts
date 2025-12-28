@@ -6,7 +6,7 @@ import type { ActionFormatter } from '../types';
 import { truncateText, extractDomain } from '../helpers';
 
 export const getHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
-    const query = input?.query;
+    const query = input?.query as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -15,7 +15,8 @@ export const getHistoryFormatter: ActionFormatter = ({ state, input, output }) =
         };
     }
     if (state === 'success') {
-        const count = output?.results?.length || output?.count || 0;
+        const results = output?.results as unknown[] | undefined;
+        const count = results?.length || (output?.count as number) || 0;
         return {
             action: 'Found history items',
             description: `${count} results`
@@ -31,7 +32,7 @@ export const getHistoryFormatter: ActionFormatter = ({ state, input, output }) =
 };
 
 export const getRecentHistoryFormatter: ActionFormatter = ({ state, input, output }) => {
-    const hours = input?.hours || 24;
+    const hours = (input?.hours as number) || 24;
 
     if (state === 'loading') {
         return {
@@ -40,10 +41,12 @@ export const getRecentHistoryFormatter: ActionFormatter = ({ state, input, outpu
         };
     }
     if (state === 'success') {
-        const count = output?.found || output?.results?.length || 0;
+        const results = output?.results as unknown[] | undefined;
+        const count = (output?.found as number) || results?.length || 0;
+        const outputHours = (output?.hours as number) || hours;
         return {
             action: 'Recent history retrieved',
-            description: `${count} pages in ${output?.hours || hours}h`
+            description: `${count} pages in ${outputHours}h`
         };
     }
     if (state === 'pending-approval') {
@@ -56,7 +59,7 @@ export const getRecentHistoryFormatter: ActionFormatter = ({ state, input, outpu
 };
 
 export const getUrlVisitsFormatter: ActionFormatter = ({ state, input, output }) => {
-    const url = input?.url;
+    const url = input?.url as string | undefined;
     const domain = url ? extractDomain(url) : '';
 
     if (state === 'loading') {
@@ -66,7 +69,8 @@ export const getUrlVisitsFormatter: ActionFormatter = ({ state, input, output })
         };
     }
     if (state === 'success') {
-        const count = output?.visitCount || output?.visits?.length || 0;
+        const visits = output?.visits as unknown[] | undefined;
+        const count = (output?.visitCount as number) || visits?.length || 0;
         return {
             action: 'Visit details retrieved',
             description: `${count} visits`

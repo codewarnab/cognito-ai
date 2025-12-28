@@ -163,107 +163,113 @@ export function useWebSearch(): void {
             WEB_SEARCH_TOOL_NAME,
             (state: ToolUIState) => <CompactToolRenderer state={state} />,
             {
-                renderInput: (input: { query?: string; search_depth?: string }) => (
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '12px',
-                            color: 'var(--text-secondary)',
-                        }}
-                    >
-                        <span style={{ opacity: 0.7 }}>🔍</span>
-                        <span style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
-                            "{input.query}"
-                        </span>
-                        {input.search_depth === 'advanced' && (
-                            <span
-                                style={{
-                                    fontSize: '10px',
-                                    padding: '1px 4px',
-                                    background: 'var(--bg-tertiary)',
-                                    borderRadius: '3px',
-                                    opacity: 0.7,
-                                }}
-                            >
-                                advanced
+                renderInput: (rawInput: Record<string, unknown>) => {
+                    const input = rawInput as { query?: string; search_depth?: string };
+                    return (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '12px',
+                                color: 'var(--text-secondary)',
+                            }}
+                        >
+                            <span style={{ opacity: 0.7 }}>🔍</span>
+                            <span style={{ color: 'var(--text-primary)', opacity: 0.9 }}>
+                                "{input.query}"
                             </span>
-                        )}
-                    </div>
-                ),
-                renderOutput: (output: SearchResults) => (
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {output.results && output.results.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <div style={{ opacity: 0.7 }}>
-                                    Found {output.results.length} result
-                                    {output.results.length !== 1 ? 's' : ''}
-                                    {output.images && output.images.length > 0 &&
-                                        ` + ${output.images.length} image${output.images.length !== 1 ? 's' : ''}`}
-                                </div>
-                                <div
+                            {input.search_depth === 'advanced' && (
+                                <span
                                     style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '6px',
-                                        maxHeight: '200px',
-                                        overflowY: 'auto',
+                                        fontSize: '10px',
+                                        padding: '1px 4px',
+                                        background: 'var(--bg-tertiary)',
+                                        borderRadius: '3px',
+                                        opacity: 0.7,
                                     }}
                                 >
-                                    {output.results.slice(0, 5).map((result, index) => (
-                                        <div
-                                            key={`${result.url}-${index}`}
-                                            style={{
-                                                padding: '6px 8px',
-                                                background: 'var(--bg-tertiary)',
-                                                borderRadius: '3px',
-                                                border: '1px solid var(--border-color)',
-                                                fontSize: '11px',
-                                            }}
-                                        >
+                                    advanced
+                                </span>
+                            )}
+                        </div>
+                    );
+                },
+                renderOutput: (rawOutput: Record<string, unknown>) => {
+                    const output = rawOutput as unknown as SearchResults;
+                    return (
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                            {output.results && output.results.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <div style={{ opacity: 0.7 }}>
+                                        Found {output.results.length} result
+                                        {output.results.length !== 1 ? 's' : ''}
+                                        {output.images && output.images.length > 0 &&
+                                            ` + ${output.images.length} image${output.images.length !== 1 ? 's' : ''}`}
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '6px',
+                                            maxHeight: '200px',
+                                            overflowY: 'auto',
+                                        }}
+                                    >
+                                        {output.results.slice(0, 5).map((result, index) => (
                                             <div
+                                                key={`${result.url}-${index}`}
                                                 style={{
-                                                    color: 'var(--text-primary)',
-                                                    opacity: 0.9,
-                                                    marginBottom: '2px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
+                                                    padding: '6px 8px',
+                                                    background: 'var(--bg-tertiary)',
+                                                    borderRadius: '3px',
+                                                    border: '1px solid var(--border-color)',
+                                                    fontSize: '11px',
                                                 }}
                                             >
-                                                {result.title}
+                                                <div
+                                                    style={{
+                                                        color: 'var(--text-primary)',
+                                                        opacity: 0.9,
+                                                        marginBottom: '2px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {result.title}
+                                                </div>
+                                                <a
+                                                    href={result.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{
+                                                        fontSize: '10px',
+                                                        opacity: 0.6,
+                                                        textDecoration: 'none',
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {result.url}
+                                                </a>
                                             </div>
-                                            <a
-                                                href={result.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                style={{
-                                                    fontSize: '10px',
-                                                    opacity: 0.6,
-                                                    textDecoration: 'none',
-                                                    display: 'block',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {result.url}
-                                            </a>
-                                        </div>
-                                    ))}
-                                    {output.results.length > 5 && (
-                                        <div style={{ opacity: 0.5, fontSize: '10px' }}>
-                                            +{output.results.length - 5} more results
-                                        </div>
-                                    )}
+                                        ))}
+                                        {output.results.length > 5 && (
+                                            <div style={{ opacity: 0.5, fontSize: '10px' }}>
+                                                +{output.results.length - 5} more results
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <span style={{ opacity: 0.7 }}>No results found</span>
-                        )}
-                    </div>
-                ),
+                            ) : (
+                                <span style={{ opacity: 0.7 }}>No results found</span>
+                            )}
+                        </div>
+                    );
+                },
             }
         );
 

@@ -19,6 +19,9 @@ import { ExternalLink } from 'lucide-react';
 import { useInlineCodeEnhancer } from '@/hooks/useInlineCodeEnhancer';
 import { useMessageTextSelection } from '@/hooks/chat';
 import { QuotePopover } from './QuotePopover';
+import { createLogger } from '~logger';
+
+const log = createLogger('ChatMessages', 'UI_CHAT');
 
 // Error Boundary for Markdown rendering (kept as safety net)
 class MarkdownErrorBoundary extends React.Component<
@@ -357,19 +360,19 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             };
         };
 
-        console.log('[DEDUP] Processing messages, count:', messages.length);
+        log.debug('[DEDUP] Processing messages', { count: messages.length });
 
         for (let i = 0; i < messages.length; i++) {
             const msg = messages[i];
 
             if (!msg) continue;
             if (msg.id && skipIds.has(msg.id)) {
-                console.log(`[DEDUP] Skipping message ${i} (id: ${msg.id}) - already processed`);
+                log.debug(`[DEDUP] Skipping message ${i}`, { id: msg.id, reason: 'already processed' });
                 continue;
             }
 
             const hasToolCallsResult = hasToolCalls(msg);
-            console.log(`[DEDUP] Message ${i}: role=${msg.role}, hasTools=${hasToolCallsResult}, id=${msg.id}`);
+            log.debug(`[DEDUP] Message ${i}`, { role: msg.role, hasTools: hasToolCallsResult, id: msg.id });
 
             // Only deduplicate assistant messages with tool calls
             if (msg.role === 'assistant' && hasToolCallsResult) {
@@ -381,7 +384,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                     // This handles the duplicate bug where the same tool call appears twice
                     if (nextMsg && nextMsg.role === 'assistant' && hasToolCalls(nextMsg)) {
                         if (areDuplicateToolMessages(msg, nextMsg)) {
-                            console.log('[DEDUP] ✓ Found exact duplicate, merging', {
+                            log.debug('[DEDUP] ✓ Found exact duplicate, merging', {
                                 olderId: msg.id,
                                 newerId: nextMsg.id,
                                 toolIds: Array.from(getToolIdentifiers(msg))
@@ -397,7 +400,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             }
                             continue;
                         } else {
-                            console.log('[DEDUP] ✗ Not duplicates - different tools', {
+                            log.debug('[DEDUP] ✗ Not duplicates - different tools', {
                                 msg1Tools: Array.from(getToolIdentifiers(msg)),
                                 msg2Tools: Array.from(getToolIdentifiers(nextMsg))
                             });
@@ -410,7 +413,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
             result.push(msg);
         }
 
-        console.log('[DEDUP] Final result count:', result.length, 'skipped:', Array.from(skipIds));
+        log.debug('[DEDUP] Final result', { count: result.length, skipped: Array.from(skipIds) });
         return result;
     }, [messages]);
 
@@ -426,7 +429,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                     {processedMessages
                         .filter(message => {
                             // Filter out internal messages (tab context)
-                            if ((message as any).metadata?.internal) {
+                            if (message.metadata?.internal) {
                                 return false;
                             }
 
@@ -647,7 +650,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                     {/* Add copy button for assistant messages - only show after streaming is finished */}
                                                     {message.role === 'assistant' && extractMessageText(message) && !(isLoading && index === messages.length - 1) && (() => {
                                                         // Find the previous user message for context
-                                                        const filteredMessages = messages.filter(m => !(m as any).metadata?.internal);
+                                                        // Find the previous user message for context
+                                                        const filteredMessages = messages.filter(m => !m.metadata?.internal);
                                                         const currentIndex = filteredMessages.findIndex(m => m.id === message.id);
                                                         const previousUserMessage = currentIndex > 0
                                                             ? filteredMessages.slice(0, currentIndex).reverse().find(m => m.role === 'user')

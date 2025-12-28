@@ -6,7 +6,7 @@ import type { ActionFormatter } from '../types';
 import { truncateText, humanizeKey } from '../helpers';
 
 export const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
-    const key = input?.key || input?.name;
+    const key = (input?.key || input?.name) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -30,7 +30,7 @@ export const saveMemoryFormatter: ActionFormatter = ({ state, input }) => {
 };
 
 export const getMemoryFormatter: ActionFormatter = ({ state, input, output }) => {
-    const key = input?.key || input?.name;
+    const key = (input?.key || input?.name) as string | undefined;
     const found = output?.value !== undefined || output?.found;
 
     if (state === 'loading') {
@@ -61,7 +61,7 @@ export const getMemoryFormatter: ActionFormatter = ({ state, input, output }) =>
 };
 
 export const deleteMemoryFormatter: ActionFormatter = ({ state, input }) => {
-    const key = input?.key || input?.name;
+    const key = (input?.key || input?.name) as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -89,7 +89,8 @@ export const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
         return { action: 'Listing memories' };
     }
     if (state === 'success') {
-        const count = output?.memories?.length || output?.count || 0;
+        const memories = output?.memories as unknown[] | undefined;
+        const count = memories?.length || (output?.count as number) || 0;
         return {
             action: 'Found memories',
             description: `${count} items`
@@ -102,8 +103,8 @@ export const listMemoriesFormatter: ActionFormatter = ({ state, output }) => {
 };
 
 export const cancelReminderFormatter: ActionFormatter = ({ state, input, output }) => {
-    const identifier = input?.identifier;
-    const title = output?.title || identifier;
+    const identifier = input?.identifier as string | undefined;
+    const title = (output?.title || identifier) as string | undefined;
 
     if (state === 'loading') {
         return {

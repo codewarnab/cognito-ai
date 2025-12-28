@@ -6,8 +6,8 @@ import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
 
 export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, output }) => {
-    const videoTitle = output?.title || output?.videoTitle;
-    const url = input?.youtubeUrl;
+    const videoTitle = (output?.title || output?.videoTitle) as string | undefined;
+    const url = input?.youtubeUrl as string | undefined;
 
     if (state === 'loading') {
         return {
@@ -17,28 +17,30 @@ export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, o
     }
     if (state === 'success') {
         // Check if actually successful (YouTube tool returns error on failure)
-        if (output?.error) {
+        const errorMsg = output?.error as string | undefined;
+        if (errorMsg) {
             return {
                 action: 'Transcript unavailable',
-                description: output.error ? truncateText(output.error, 40) : undefined
+                description: truncateText(errorMsg, 40)
             };
         }
 
         // Handle new tool output format (hasTranscript, transcriptLength, durationFormatted)
         if (output?.hasTranscript !== undefined) {
             if (!output.hasTranscript) {
+                const durationFormatted = output.durationFormatted as string | undefined;
                 return {
                     action: 'No transcript available',
                     description: videoTitle
                         ? truncateText(videoTitle, 40)
-                        : output.durationFormatted
-                            ? `Duration: ${output.durationFormatted}`
+                        : durationFormatted
+                            ? `Duration: ${durationFormatted}`
                             : 'Video metadata retrieved'
                 };
             }
 
-            const charCount = output.transcriptLength || 0;
-            const durationStr = output.durationFormatted || '';
+            const charCount = (output.transcriptLength as number) || 0;
+            const durationStr = (output.durationFormatted as string) || '';
 
             return {
                 action: 'Transcript fetched',
@@ -49,8 +51,10 @@ export const getYoutubeTranscriptFormatter: ActionFormatter = ({ state, input, o
         }
 
         // Legacy format (transcript array with segments)
-        const segmentCount = output?.transcript?.length || 0;
-        const duration = output?.transcript?.[output.transcript.length - 1]?.timestamp || 0;
+        const transcript = output?.transcript as Array<{ timestamp?: number }> | undefined;
+        const segmentCount = transcript?.length || 0;
+        const lastSegment = transcript?.[transcript.length - 1];
+        const duration = (lastSegment?.timestamp as number) || 0;
         const minutes = Math.floor(duration / 60);
         const durationStr = duration > 0 ? `${minutes}m ${Math.floor(duration % 60)}s` : '';
 
