@@ -1,7 +1,7 @@
 import { createLogger } from '~logger';
 import { BaseSearchProvider } from './base';
 import type { SearchResults, SearchDepth, SearchResultImage } from '../types';
-import { WEB_SEARCH_API_URL } from '@/constants';
+import { ENV } from '@/utils/env';
 
 const log = createLogger('BackendSearch', 'SEARCH_PROVIDER');
 
@@ -29,7 +29,7 @@ export class BackendSearchProvider extends BaseSearchProvider {
         });
 
         try {
-            const response = await fetch(WEB_SEARCH_API_URL, {
+            const response = await fetch(ENV.WEB_SEARCH_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

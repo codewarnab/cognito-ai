@@ -5,7 +5,7 @@ import { extractPageContext, formatPageContextForAI } from '@/utils/tabs';
 import { processFile } from '@/utils/files';
 import { processTabsForMessage, type ProcessedTab } from '@/utils/tabs';
 import { getModelConfig, setConversationStartMode } from '@/utils/ai';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { ENV } from '@/utils/env';
 import { hasGoogleApiKey } from '@/utils/credentials';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 import type { FileAttachmentData } from '@/components/features/chat/components/attachments';
@@ -99,7 +99,7 @@ export function useMessageHandlers({
             const config = await getModelConfig();
             const useBackendMode = useSettingsStore.getState().useBackendMode;
 
-            if (!useBackendMode && (HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
+            if (!useBackendMode && (ENV.HIDE_LOCAL_MODE || config.mode === 'remote') && !(await hasGoogleApiKey())) {
                 onError?.(
                     'API Key Required. Please add your Gemini API key in Settings to use the AI assistant.',
                     'error'

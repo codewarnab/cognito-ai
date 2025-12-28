@@ -15,7 +15,7 @@ import { getActiveProvider } from '@/utils/credentials';
 import { getLightweightModel } from '@/ai/core/lightweightModels';
 import { generateBackendSuggestions } from './backendSuggestions';
 import { initializeModel } from '../core/modelFactory';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { ENV } from '@/utils/env';
 import { LRUCache } from '~/utils/cache/LRUCache';
 import { useSettingsStore } from '@/stores/settings/settingsStore';
 
@@ -97,7 +97,7 @@ export async function generateContextualSuggestions(
 
         // If local mode requested, use local AI (but skip if HIDE_LOCAL_MODE is enabled)
         if (mode === 'local') {
-            if (HIDE_LOCAL_MODE) {
+            if (ENV.HIDE_LOCAL_MODE) {
                 log.info('Local mode requested but HIDE_LOCAL_MODE is enabled, skipping local AI');
                 return null;
             }
@@ -137,7 +137,7 @@ export async function generateContextualSuggestions(
             if (!result?.suggestions || result.suggestions.length !== 3) {
                 log.warn('Invalid suggestions result:', result);
                 // Fallback to local if remote fails (but skip if HIDE_LOCAL_MODE is enabled)
-                if (!HIDE_LOCAL_MODE) {
+                if (!ENV.HIDE_LOCAL_MODE) {
                     log.info('Falling back to local AI');
                     return await generateLocalContextualSuggestions(pageContext);
                 }
@@ -154,7 +154,7 @@ export async function generateContextualSuggestions(
         } catch (error) {
             log.error('Remote suggestion generation failed:', error);
             // Fallback to local AI if remote fails (but skip if HIDE_LOCAL_MODE is enabled)
-            if (!HIDE_LOCAL_MODE) {
+            if (!ENV.HIDE_LOCAL_MODE) {
                 log.info('Falling back to local AI');
                 return await generateLocalContextualSuggestions(pageContext);
             }

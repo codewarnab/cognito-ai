@@ -20,7 +20,7 @@ interface SocialLink {
 
 const socialLinks: SocialLink[] = [
     {
-        href: 'mailto:contact@cognito-ai.dev',
+        href: 'mailto:dev@codewarnab.in',
         title: 'Contact Us',
         icon: <AtSignIcon size={20} />,
     },

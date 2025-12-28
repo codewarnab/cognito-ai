@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '~logger';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { ENV } from '@/utils/env';
 import { sendMessage } from '@/lib/messaging';
 
 const log = createLogger('Summarizer', 'AI_PROMPTS_SUMMARIZER');
@@ -81,7 +81,7 @@ export async function generateHeadline(
     }
 
     // Skip offscreen summarizer if HIDE_LOCAL_MODE is enabled (uses local Gemini Nano)
-    if (HIDE_LOCAL_MODE) {
+    if (ENV.HIDE_LOCAL_MODE) {
         log.info('HIDE_LOCAL_MODE is enabled, skipping offscreen summarizer');
         return null;
     }

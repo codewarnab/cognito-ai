@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { createLogger } from '~logger';
 import { fetchTranscriptDirect, processTranscriptForAI } from '@/ai/agents/youtubeToNotion/transcript';
 import type { ProcessedTranscript } from '@/ai/agents/youtubeToNotion/transcript';
-import { YOUTUBE_BADGE_PREFETCH_ENABLED } from '@/constants';
+import { ENV } from '@/utils/env';
 import type { YouTubeVideoInfo } from '../browser';
 import type { AIMode } from '@/components/features/chat/types';
 import type { ProcessFileOptions } from './useFileAttachments';
@@ -152,7 +152,7 @@ export const useYouTubeVideoAttachment = ({
     // Only runs when YOUTUBE_BADGE_PREFETCH_ENABLED is true
     useEffect(() => {
         // Skip prefetch entirely when flag is disabled
-        if (!YOUTUBE_BADGE_PREFETCH_ENABLED) {
+        if (!ENV.YOUTUBE_BADGE_PREFETCH_ENABLED) {
             log.debug('Prefetch disabled by YOUTUBE_BADGE_PREFETCH_ENABLED flag');
             return;
         }
@@ -390,6 +390,6 @@ ${transcriptEntry.transcript}
         /** Video metadata for UI display (thumbnail, author, etc.) */
         videoMetadata,
         /** Whether prefetch is enabled via config */
-        isPrefetchEnabled: YOUTUBE_BADGE_PREFETCH_ENABLED,
+        isPrefetchEnabled: ENV.YOUTUBE_BADGE_PREFETCH_ENABLED,
     };
 };

@@ -6,10 +6,9 @@
 
 import { createLogger } from '~logger';
 import { getSupermemoryApiKey, isSupermemoryReady, getSupermemoryUserId } from '@/utils/supermemory';
+import { SUPERMEMORY_SEARCH_URL } from '@/constants';
 
 const log = createLogger('SupermemorySearch', 'BACKGROUND');
-
-const SUPERMEMORY_SEARCH_URL = 'https://api.supermemory.ai/v4/search';
 
 export interface MemorySearchResult {
     id: string;

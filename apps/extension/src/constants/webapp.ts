@@ -5,19 +5,21 @@
  * Uses localhost:3002 for development, production domain TBD.
  */
 
+import { ENV } from '@/utils/env';
+
 const isDev = process.env.NODE_ENV === 'development';
 
 export const WEBAPP_BASE_URL = isDev
-    ? 'http://localhost:3002'
-    : 'https://app.cognito.ai';
+    ? ENV.WEBAPP_URL_DEV
+    : ENV.WEBAPP_URL_PROD;
 
 /**
  * Allowed origins for external messaging
  * These origins can send messages to the extension via chrome.runtime.sendMessage
  */
 export const ALLOWED_EXTERNAL_ORIGINS = [
-    'http://localhost:3002',
-    'https://app.cognito.ai',
+    ENV.WEBAPP_URL_DEV,
+    ENV.WEBAPP_URL_PROD,
 ] as const;
 
 export const WEBAPP_ROUTES = {

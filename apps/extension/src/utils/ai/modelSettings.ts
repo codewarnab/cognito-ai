@@ -5,7 +5,7 @@
 
 import type { AIProviderMode, RemoteModelType } from '@/ai/types/types';
 import type { AIProvider } from '@/utils/credentials/providerTypes';
-import { HIDE_LOCAL_MODE } from '@/constants';
+import { ENV } from '@/utils/env';
 
 const STORAGE_KEYS = {
   MODEL_CONFIG: 'ai_model_config',
@@ -32,7 +32,7 @@ export async function getModelConfig(): Promise<StoredModelConfig> {
   };
 
   // Force remote mode if HIDE_LOCAL_MODE is enabled
-  if (HIDE_LOCAL_MODE) {
+  if (ENV.HIDE_LOCAL_MODE) {
     config.mode = 'remote';
   }
 

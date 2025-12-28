@@ -30,3 +30,6 @@ export {
     type McpStdioRequest,
     type McpExecuteRequest,
 } from './mcpRegistry.js';
+
+// API URLs
+export { TAVILY_API_URL } from './urls.js';

@@ -1,6 +1,6 @@
 import { createLogger } from '~logger';
 import { ExternalServiceError, NetworkError, parseError } from '../../../../errors';
-import { TRANSCRIPT_API_URL } from '@/constants';
+import { ENV } from '@/utils/env';
 import { withRetry, MAX_RETRIES, INITIAL_RETRY_DELAY } from './retry';
 import { LRUCache } from '~/utils/cache/LRUCache';
 
@@ -170,7 +170,7 @@ async function fetchTranscriptWithNoCaptionsRetry(
 
         const response = await withRetry(
             async () => {
-                return await fetch(TRANSCRIPT_API_URL, {
+                return await fetch(ENV.TRANSCRIPT_API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

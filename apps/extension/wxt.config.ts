@@ -177,9 +177,9 @@ export default defineConfig({
 
         externally_connectable: {
             matches: [
-                "https://app.cognito.ai/*",
+                `${process.env.WXT_WEBAPP_URL_PROD}/*`,
                 "https://*.cognito.ai/*",
-                "http://localhost:3002/*"
+                `${process.env.WXT_WEBAPP_URL_DEV}/*`
             ]
         },
 

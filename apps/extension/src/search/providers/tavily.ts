@@ -1,11 +1,9 @@
 import { createLogger } from '~logger';
 import { BaseSearchProvider } from './base';
 import type { SearchResults, SearchDepth, SearchResultImage } from '../types';
+import { TAVILY_API_URL } from '@cognito/shared';
 
 const log = createLogger('TavilySearch', 'SEARCH_PROVIDER');
-
-/** Tavily API endpoint */
-const TAVILY_API_URL = 'https://api.tavily.com/search';
 
 /** Tavily API response types */
 interface TavilyResult {
@@ -67,7 +65,7 @@ export class TavilySearchProvider extends BaseSearchProvider {
             searchDepth,
             searchDepthType: typeof searchDepth,
         });
-        
+
         log.info('🔍 Tavily request body', {
             search_depth: searchDepth,
             max_results: Math.max(maxResults, 5),

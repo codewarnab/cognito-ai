@@ -26,7 +26,7 @@
  * - Retry up to 3 times with 1.5s delay before giving up on 404 responses
  */
 
-import { TRANSCRIPT_API_URL } from "@/constants";
+import { ENV } from "@/utils/env";
 import { createLogger } from '~logger';
 import type { TranscriptEntry } from "./transcriptCache";
 
@@ -113,7 +113,7 @@ async function fetchTranscriptWithRetry(
     log.info("📝 Fetching transcript from API", { videoUrl, retriesLeft });
 
     try {
-        const res = await fetch(TRANSCRIPT_API_URL, {
+        const res = await fetch(ENV.TRANSCRIPT_API_URL, {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
