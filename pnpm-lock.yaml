@@ -553,10 +553,10 @@ importers:
   packages/backend-vercel:
     dependencies:
       '@ai-sdk/google':
-        specifier: 'catalog:'
+        specifier: ^3.0.1
         version: 3.0.1(zod@4.2.1)
       '@ai-sdk/mcp':
-        specifier: 'catalog:'
+        specifier: ^1.0.1
         version: 1.0.1(zod@4.2.1)
       '@cognito/shared':
         specifier: workspace:*
@@ -571,7 +571,7 @@ importers:
         specifier: ^1.35.7
         version: 1.35.7
       ai:
-        specifier: 'catalog:'
+        specifier: ^6.0.3
         version: 6.0.3(zod@4.2.1)
       axios:
         specifier: ^1.8.4
@@ -592,7 +592,7 @@ importers:
         specifier: ^1.17.1
         version: 1.17.1
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.2.1
         version: 4.2.1
       zod-to-json-schema:
         specifier: ^3.25.0
