@@ -5,7 +5,7 @@
 import { BrowserAPIError, parseError } from '../../errors';
 import { createLogger } from '~logger';
 
-const log = createLogger('ChromeAPI:Bookmarks');
+const log = createLogger('ChromeAPI:Bookmarks', 'BROWSER');
 
 /**
  * Safely get Chrome bookmarks with error handling
@@ -16,9 +16,8 @@ export async function safeBookmarksSearch(query: string | chrome.bookmarks.Bookm
     try {
         if (typeof query === 'string') {
             return await chrome.bookmarks.search(query);
-        } else {
-            return await chrome.bookmarks.search(query);
         }
+        return await chrome.bookmarks.search(query);
     } catch (error) {
         const parsedError = parseError(error, { context: 'chrome-api' });
 
@@ -66,7 +65,7 @@ export async function safeBookmarksGet(id: string | string[]): Promise<chrome.bo
             throw BrowserAPIError.permissionDenied('bookmarks', 'Bookmarks API is not available.');
         }
 
-        const results = Array.isArray(id) 
+        const results = Array.isArray(id)
             ? await chrome.bookmarks.get(id)
             : await chrome.bookmarks.get(id);
         return results ?? [];

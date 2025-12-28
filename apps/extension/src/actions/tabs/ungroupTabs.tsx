@@ -1,6 +1,5 @@
 /**
  * UngroupTabs Tool for AI SDK v6
- * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Ungroup tabs by removing them from their tab groups.
  * Can ungroup all tabs, specific groups by name/ID, or tabs from multiple groups at once.

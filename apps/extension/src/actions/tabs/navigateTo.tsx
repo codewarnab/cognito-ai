@@ -1,6 +1,5 @@
 /**
  * NavigateTo Tool for AI SDK v6
- * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Opens a URL in a new tab or current tab (without switching/redirecting)
  * For switching to existing tabs, use the switchTabs tool instead
@@ -16,6 +15,7 @@ import { CompactToolRenderer } from '@/ai/tools/components';
 import type { ToolUIState, ToolUIRenderOptions } from '@/ai/tools/components';
 import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
 import { BrowserAPIError } from '../../errors';
+import type { NavigationResult } from '../types';
 
 const log = createLogger('Tool-NavigateTo', 'TOOLS_EXECUTION');
 
@@ -63,7 +63,7 @@ export function useNavigateToTool() {
                             action: 'opened_new_tab',
                             tabId: tab.id,
                             url: tab.url
-                        };
+                        } as NavigationResult;
                     } else {
                         // Open in current tab (update active tab)
                         const tabs = await safeTabsQuery({ active: true, currentWindow: true });
@@ -80,7 +80,7 @@ export function useNavigateToTool() {
                             action: 'opened_current_tab',
                             tabId: currentTab.id,
                             url: finalUrl
-                        };
+                        } as NavigationResult;
                     }
                 } catch (error) {
                     log.error('[Tool] Error opening tab:', error);
@@ -91,9 +91,10 @@ export function useNavigateToTool() {
                     }
 
                     return {
+                        success: false,
                         error: error instanceof Error ? error.message : "Failed to open tab",
                         details: String(error)
-                    };
+                    } as NavigationResult;
                 }
             },
         });

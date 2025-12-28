@@ -1,6 +1,5 @@
 /**
  * ApplyTabGroups Tool for AI SDK v6
- * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Apply AI-suggested tab groups. This is called after organizeTabsByContext
  * with the AI's grouping suggestions.

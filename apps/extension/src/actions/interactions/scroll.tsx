@@ -5,6 +5,7 @@ import { registerTool } from "@/ai/tools";
 import { useToolUI } from "@/ai/tools/components";
 import { CompactToolRenderer } from "@/ai/tools/components";
 import type { ToolUIState } from "@/ai/tools/components";
+import type { ScrollResult } from "../types";
 
 const log = createLogger("Actions-Interactions-Scroll");
 
@@ -133,12 +134,12 @@ EXAMPLE: scrollPage(direction="down", amount=500) or scrollPage(direction="to-el
                             });
                         }
                     });
-                    const result = results[0]?.result;
+                    const result = results[0]?.result as ScrollResult | undefined;
                     log.info("✅ scrollPage completed", result);
-                    return result || { success: true, message: `Scrolling ${direction}` };
+                    return result || { success: true, message: `Scrolling ${direction}` } as ScrollResult;
                 } catch (error) {
                     log.error('[Tool] Error scrolling page:', error);
-                    return { error: "Failed to scroll page. Make sure you have permission to access this page." };
+                    return { success: false, error: "Failed to scroll page. Make sure you have permission to access this page." } as ScrollResult;
                 }
             },
         });

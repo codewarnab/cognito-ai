@@ -1,6 +1,5 @@
 /**
  * GetActiveTab Tool for AI SDK v6
- * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Gets information about the currently active browser tab
  */

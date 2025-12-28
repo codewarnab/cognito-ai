@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useEffect } from 'react';
 import { registerTool } from '@/ai/tools';
 import { createLogger } from '~logger';
+import type { TypeResult } from '../types';
 
 const log = createLogger("Actions-Interactions-TypeInField");
 
@@ -382,16 +383,7 @@ export function useTypeInFieldTool() {
                         }
                     });
 
-                    const result = results[0]?.result as {
-                        success?: boolean;
-                        error?: string;
-                        suggestion?: string;
-                        typed?: number;
-                        target?: object;
-                        message?: string;
-                        bypassedRestriction?: boolean;
-                        restrictionType?: string;
-                    } | undefined;
+                    const result = results[0]?.result as TypeResult | undefined;
                     if (result?.success) {
                         if (result.bypassedRestriction) {
                             log.warn("⚠️ Text typed with bypassed restriction", { restrictionType: result.restrictionType, ...result });
@@ -401,10 +393,10 @@ export function useTypeInFieldTool() {
                     } else {
                         log.warn("❌ Typing failed", result);
                     }
-                    return result || { error: "Failed to type text" };
+                    return result || { success: false, error: "Failed to type text" } as TypeResult;
                 } catch (error) {
                     log.error('[Tool] Error typing text:', error);
-                    return { error: "Failed to type text. Make sure you have permission to access this page." };
+                    return { success: false, error: "Failed to type text. Make sure you have permission to access this page." } as TypeResult;
                 }
             },
         });

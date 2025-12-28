@@ -22,12 +22,9 @@ import type {
   BookmarkDeleteResult,
   BookmarkUpdateResult
 } from '../../types/bookmarks';
+import { errorWithHints } from '../types';
 
-const log = createLogger('Tool-BookmarksUnified');
-
-function errorWithHints(message: string, hints: string[]) {
-  return { success: false, error: `${message}\nHints:\n${hints.map(h => `- ${h}`).join('\n')}` };
-}
+const log = createLogger('Tool-BookmarksUnified', 'TOOLS_EXECUTION');
 
 async function getBookmarkPath(bookmarkId: string): Promise<string> {
   try {

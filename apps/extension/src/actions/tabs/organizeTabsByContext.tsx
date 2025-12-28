@@ -1,6 +1,5 @@
 /**
  * OrganizeTabsByContext Tool for AI SDK v6
- * Migrated from CopilotKit useFrontendTool to AI SDK v6 tool format
  * 
  * Intelligently organize tabs by analyzing their content and context.
  * Groups related tabs together even if they're from different websites.

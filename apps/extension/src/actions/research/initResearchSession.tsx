@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { registerTool } from '@/ai/tools';
 import { initResearchSession } from '@/db';
 import { createLogger } from '~logger';
+import type { ResearchSessionResult } from '../types';
 
 const log = createLogger('Tool-InitResearchSession', 'TOOLS_EXECUTION');
 
@@ -29,7 +30,7 @@ EXAMPLE: initResearchSession() → Returns { sessionId: 'research_1733654400000_
 
             parameters: z.object({}),
 
-            execute: async () => {
+            execute: async (): Promise<ResearchSessionResult> => {
                 try {
                     const sessionId = initResearchSession();
 
