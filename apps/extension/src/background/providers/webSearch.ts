@@ -22,6 +22,10 @@ import {
     searchWithAnthropic,
     formatAnthropicCitationsForPrompt,
 } from './anthropic/webSearch';
+import {
+    searchWithXai,
+    formatXaiCitationsForPrompt,
+} from './xai/webSearch';
 import { createLogger } from '~logger';
 
 const log = createLogger('WebSearch', 'BACKGROUND');
@@ -118,6 +122,25 @@ export async function performWebSearch(
                     })),
                     success: anthropicResult.success,
                     error: anthropicResult.error,
+                },
+            };
+
+        case 'xai_live_search':
+            // xAI uses live search via search_parameters
+            log.info('Performing xAI live search');
+            const xaiResult = await searchWithXai(query, {
+                maxSearchResults: 5,
+            });
+            return {
+                type: 'presearch',
+                result: {
+                    text: xaiResult.text,
+                    citations: xaiResult.citations.map(c => ({
+                        url: c.url,
+                        title: c.title,
+                    })),
+                    success: xaiResult.success,
+                    error: xaiResult.error,
                 },
             };
 

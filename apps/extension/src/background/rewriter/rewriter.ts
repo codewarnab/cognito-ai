@@ -238,18 +238,33 @@ export class Rewriter {
             const provider = await getProvider();
             const config = await provider.getConfig(false);
 
-            // Note: URL context and web search are NOT available for Claude
-            if (enableUrlContext) {
-                log.warn('URL context not available for Anthropic provider - feature will be skipped');
-            }
-            if (enableGoogleSearch) {
-                log.warn('Web search not available for Anthropic provider - feature will be skipped');
-            }
+            // Claude now supports web search via web_search_20250305 server tool
+            // and URL context via web_fetch_20250910 server tool
 
             // Build tools array for Claude
             const tools: any[] = [];
             if (enableSupermemorySearch) {
                 tools.push(getMemorySearchToolClaude());
+            }
+
+            // Handle web search via pre-search approach
+            if (enableGoogleSearch) {
+                const webSearchResult = await performWebSearch('anthropic', text);
+                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                    prompt = enrichPromptWithSearch(prompt, webSearchResult.result);
+                    log.debug('Enriched rewrite prompt with Claude web search results', {
+                        citationCount: webSearchResult.result.citations.length,
+                    });
+                }
+            }
+
+            // Handle URL context by adding web_fetch tool
+            // Note: For Claude, URL context is a tool that Claude invokes during generation
+            // This is different from Gemini's built-in url_context tool
+            if (enableUrlContext) {
+                // Import web fetch tool config dynamically to avoid circular deps
+                const { getWebFetchToolConfig } = await import('../providers/anthropic/webFetch');
+                tools.push(getWebFetchToolConfig({ maxUses: 3 }));
             }
 
             // Build initial messages
@@ -258,6 +273,8 @@ export class Rewriter {
             ];
 
             log.info('Making Claude rewrite call', {
+                hasWebSearch: !!enableGoogleSearch,
+                hasUrlContext: !!enableUrlContext,
                 hasMemorySearch: !!enableSupermemorySearch,
                 toolCount: tools.length,
             });
@@ -378,11 +395,20 @@ export class Rewriter {
             const provider = await getProvider();
             const config = await provider.getConfig(false);
 
+            // xAI does NOT support URL context
             if (enableUrlContext) {
                 log.warn('URL context not available for xAI provider - feature will be skipped');
             }
+
+            // Handle web search via xAI live search (pre-search approach)
             if (enableGoogleSearch) {
-                log.warn('Web search integration pending for xAI - feature will be skipped');
+                const webSearchResult = await performWebSearch('xai', text);
+                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                    prompt = enrichPromptWithSearch(prompt, webSearchResult.result);
+                    log.debug('Enriched rewrite prompt with xAI live search results', {
+                        citationCount: webSearchResult.result.citations.length,
+                    });
+                }
             }
 
             // Build tools array
@@ -398,6 +424,7 @@ export class Rewriter {
             ];
 
             log.info('Making xAI rewrite call', {
+                hasWebSearch: !!enableGoogleSearch,
                 hasMemorySearch: !!enableSupermemorySearch,
                 toolCount: tools.length,
             });

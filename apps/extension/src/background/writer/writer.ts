@@ -422,12 +422,22 @@ Important guidelines:
         // xAI Implementation - with attachments and function calling
         // -------------------------------------------------------------------------
         if (activeProvider === 'xai') {
-            // Note: URL context and Web Search handled differently or not supported yet
+            // xAI does NOT support URL context
             if (options?.enableUrlContext) {
                 log.warn('URL context not available for xAI provider - feature will be skipped');
             }
+
+            let workingPrompt = prompt;
+
+            // Handle web search via xAI live search (pre-search approach)
             if (options?.enableGoogleSearch) {
-                log.warn('Web search integration pending for xAI - feature will be skipped');
+                const webSearchResult = await performWebSearch('xai', prompt);
+                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                    workingPrompt = enrichPromptWithSearch(workingPrompt, webSearchResult.result);
+                    log.debug('Enriched writer prompt with xAI live search results', {
+                        citationCount: webSearchResult.result.citations.length,
+                    });
+                }
             }
 
             // Build tools array
@@ -439,7 +449,7 @@ Important guidelines:
             // Build initial messages with attachment support (reuse OpenAI format which is compatible)
             const messages: any[] = [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: this.buildOpenAIMessageContent(prompt, options) },
+                { role: 'user', content: this.buildOpenAIMessageContent(workingPrompt, options) },
             ];
 
             log.info('Making xAI API call', {
@@ -548,12 +558,18 @@ Important guidelines:
         // Claude/Anthropic Implementation - with attachments and function calling
         // -------------------------------------------------------------------------
         if (activeProvider === 'anthropic') {
-            // Note: Anthropic doesn't have built-in web search or URL context
+            // Claude now supports web search and URL context
+            let workingPrompt = prompt;
+
+            // Handle web search via pre-search approach
             if (options?.enableGoogleSearch) {
-                log.warn('Web search not available for Anthropic provider - feature will be skipped');
-            }
-            if (options?.enableUrlContext) {
-                log.warn('URL context not available for Anthropic provider - feature will be skipped');
+                const webSearchResult = await performWebSearch('anthropic', prompt);
+                if (webSearchResult.type === 'presearch' && webSearchResult.result.success) {
+                    workingPrompt = enrichPromptWithSearch(workingPrompt, webSearchResult.result);
+                    log.debug('Enriched writer prompt with Claude web search results', {
+                        citationCount: webSearchResult.result.citations.length,
+                    });
+                }
             }
 
             // Build tools array for Claude
@@ -562,9 +578,15 @@ Important guidelines:
                 tools.push(getMemorySearchToolClaude());
             }
 
+            // Handle URL context by adding web_fetch tool
+            if (options?.enableUrlContext) {
+                const { getWebFetchToolConfig } = await import('../providers/anthropic/webFetch');
+                tools.push(getWebFetchToolConfig({ maxUses: 3 }));
+            }
+
             // Build initial messages with attachment support
             const messages: any[] = [
-                { role: 'user', content: this.buildAnthropicMessageContent(prompt, options) },
+                { role: 'user', content: this.buildAnthropicMessageContent(workingPrompt, options) },
             ];
 
             log.info('Making Anthropic API call with function calling', {

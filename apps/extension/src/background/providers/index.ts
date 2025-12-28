@@ -66,6 +66,33 @@ export type {
     WebSearchOptions,
 } from './webSearch';
 
+// Re-export xAI web search module
+export {
+    searchWithXai,
+    isXaiWebSearchAvailable,
+    formatXaiCitationsForPrompt,
+    getXaiSearchParameters,
+} from './xai/webSearch';
+export type {
+    XaiWebSearchResult,
+    XaiWebSearchOptions,
+    XaiSearchParameters,
+    XaiSearchCitation,
+} from './xai/webSearch';
+
+// Re-export Anthropic web fetch module
+export {
+    fetchWithAnthropic,
+    isAnthropicWebFetchAvailable,
+    formatWebFetchCitationsForPrompt,
+    getWebFetchToolConfig,
+} from './anthropic/webFetch';
+export type {
+    AnthropicWebFetchResult,
+    AnthropicWebFetchOptions,
+    WebFetchToolConfig,
+} from './anthropic/webFetch';
+
 /**
  * Cached provider instances
  * We cache instances to avoid recreating them on every call

@@ -45,6 +45,7 @@ export type WebSearchImplementation =
     | 'google_search'
     | 'openai_responses'
     | 'anthropic_server_tool'
+    | 'xai_live_search'
     | 'native'
     | 'none';
 
@@ -56,6 +57,7 @@ export const WEB_SEARCH_IMPLEMENTATIONS: Record<string, WebSearchImplementation>
     vertex: 'google_search',
     openai: 'openai_responses',
     anthropic: 'anthropic_server_tool',
+    xai: 'xai_live_search',
     // Future providers:
     // perplexity: 'native',
 };
@@ -97,10 +99,18 @@ export const PROVIDER_CAPABILITIES: Record<string, ProviderCapabilities> = {
     anthropic: {
         functionCalling: true, // Full function calling support
         webSearch: true, // Via web_search_20250305 server tool
-        urlContext: false, // Not supported - Gemini-specific feature
+        urlContext: true, // Via web_fetch_20250910 server tool
         multimodal: true, // Supports images, PDFs
         streaming: true, // Full streaming support
         memoryFunctionCalling: true, // Can use function calling for Supermemory
+    },
+    xai: {
+        functionCalling: true, // OpenAI-compatible function calling
+        webSearch: true, // Via search_parameters in chat completions
+        urlContext: false, // Not supported by xAI API
+        multimodal: true, // Supports images
+        streaming: true, // Full streaming support
+        memoryFunctionCalling: true, // OpenAI-compatible function calling
     },
     // Future providers template:
     // perplexity: {

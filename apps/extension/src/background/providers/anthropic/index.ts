@@ -11,3 +11,13 @@ export {
     type AnthropicWebSearchResult,
     type AnthropicWebSearchOptions,
 } from './webSearch';
+
+export {
+    fetchWithAnthropic,
+    isAnthropicWebFetchAvailable,
+    formatWebFetchCitationsForPrompt,
+    getWebFetchToolConfig,
+    type AnthropicWebFetchResult,
+    type AnthropicWebFetchOptions,
+    type WebFetchToolConfig,
+} from './webFetch';
