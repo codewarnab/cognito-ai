@@ -168,9 +168,13 @@ async function fetchTranscriptWithNoCaptionsRetry(
     try {
         log.info('📝 Fetching transcript from API', { youtubeUrl, noCaptionsRetriesLeft });
 
+        if (!ENV.TRANSCRIPT_API_URL) {
+            throw new Error('TRANSCRIPT_API_URL is not configured');
+        }
+
         const response = await withRetry(
             async () => {
-                return await fetch(ENV.TRANSCRIPT_API_URL, {
+                return await fetch(ENV.TRANSCRIPT_API_URL!, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

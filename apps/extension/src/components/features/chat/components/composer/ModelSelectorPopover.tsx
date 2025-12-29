@@ -23,7 +23,7 @@ import {
     type PopoverProviderType,
 } from '@/utils/ai/modelSelectorUtils';
 import { createLogger } from '~logger';
-import { ENV } from '@/utils/env';
+import { WEBAPP_BASE_URL } from '@/constants/webapp';
 
 const log = createLogger('ModelSelectorPopover', 'UI_CHAT_COMPONENTS');
 
@@ -563,7 +563,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                                 type="button"
                                 onClick={() => {
                                     // Open webapp providers page
-                                    chrome.tabs.create({ url: `${ENV.WEBAPP_URL}/providers` });
+                                    chrome.tabs.create({ url: `${WEBAPP_BASE_URL}/providers` });
                                     setIsOpen(false);
                                 }}
                                 className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-transparent border-0 cursor-pointer transition-all duration-200 hover:bg-white/[0.04] group"

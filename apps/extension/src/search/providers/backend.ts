@@ -28,8 +28,12 @@ export class BackendSearchProvider extends BaseSearchProvider {
             searchDepth,
         });
 
+        if (!ENV.WEB_SEARCH_API_URL) {
+            throw new Error('WEB_SEARCH_API_URL is not configured');
+        }
+
         try {
-            const response = await fetch(ENV.WEB_SEARCH_API_URL, {
+            const response = await fetch(ENV.WEB_SEARCH_API_URL!, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
