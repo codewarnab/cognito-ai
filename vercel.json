@@ -1,0 +1,23 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "packages/backend-vercel/api/index.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "packages/backend-vercel/dist/**",
+                    "packages/shared/dist/**"
+                ]
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/packages/backend-vercel/api/index.js"
+        }
+    ],
+    "installCommand": "pnpm install --ignore-scripts",
+    "buildCommand": "pnpm --filter @cognito/shared build && pnpm --filter @cognito/backend-vercel run vercel-build"
+}
