@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useQueryState } from 'nuqs';
 import { Providers, type Config, type PresetProvider, type SpecialProvider, type ConfigProvider } from '@/components/aipanel';
 import '@/components/aipanel/index.css';
@@ -54,7 +54,7 @@ function mergeConfigWithDefaults(storedConfig: Config | null): Config {
     };
 }
 
-export default function ProvidersPage() {
+function ProvidersPageContent() {
     const router = useRouter();
     const { isInstalled, isLoading: extensionLoading } = useExtension();
     const [config, setConfig] = useState<Config>({ providers: cognitoProviders });
@@ -332,5 +332,69 @@ export default function ProvidersPage() {
                 />
             </div>
         </div>
+    );
+}
+
+function ProvidersPageLoading() {
+    return (
+        <div className="min-h-screen bg-[var(--bg-primary)]">
+            <Header title="AI Providers" />
+            <div className="container mx-auto max-w-3xl py-8 px-4">
+                <div className="border border-[var(--border-color)] bg-[var(--bg-secondary)] rounded-lg overflow-hidden">
+                    {/* Provider tabs skeleton */}
+                    <div className="flex gap-6 justify-center py-4 border-b border-[var(--border-color)]">
+                        {[...Array(7)].map((_, i) => (
+                            <div key={i} className="flex flex-col items-center gap-2">
+                                <Skeleton className="h-8 w-8 rounded-md" />
+                                <Skeleton className="h-3 w-12" />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                        {/* API Key section */}
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-10 w-full rounded-md" />
+                        </div>
+
+                        {/* Models section */}
+                        <div className="space-y-3">
+                            <Skeleton className="h-4 w-14" />
+                            <div className="border border-[var(--border-color)] rounded-lg divide-y divide-[var(--border-color)]">
+                                {[...Array(5)].map((_, i) => (
+                                    <div key={i} className="flex items-center justify-between p-4">
+                                        <div className="space-y-2 flex-1">
+                                            <Skeleton className="h-4 w-40" />
+                                            <Skeleton className="h-3 w-64" />
+                                        </div>
+                                        <Skeleton className="h-6 w-10 rounded-full" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Actions section */}
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-14" />
+                            <div className="flex gap-4">
+                                {[...Array(4)].map((_, i) => (
+                                    <Skeleton key={i} className="h-8 w-24" />
+                                ))}
+                                <Skeleton className="h-8 w-28 ml-auto" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default function ProvidersPage() {
+    return (
+        <Suspense fallback={<ProvidersPageLoading />}>
+            <ProvidersPageContent />
+        </Suspense>
     );
 }

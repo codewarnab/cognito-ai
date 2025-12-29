@@ -44,3 +44,4 @@ onlyBuiltDependencies:
   - msgpackr-extract
   - sharp
   - tesseract.js
+  - unrs-resolver
