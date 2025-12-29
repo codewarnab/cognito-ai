@@ -7,7 +7,9 @@
             "config": {
                 "includeFiles": [
                     "packages/backend-vercel/dist/**",
-                    "packages/shared/dist/**"
+                    "packages/shared/dist/**",
+                    "packages/shared/package.json",
+                    "node_modules/@cognito/**"
                 ]
             }
         }
