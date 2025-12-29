@@ -193,13 +193,12 @@ export async function discoverAuthorizationServerMetadata(
         const metadata = await fetchAuthorizationServerMetadata(endpoint);
 
         if (metadata) {
-            // Verify PKCE support as required by MCP spec
+            // Log PKCE support status (MCP spec requires PKCE, but many servers work without advertising it)
             if (!metadata.code_challenge_methods_supported ||
                 metadata.code_challenge_methods_supported.length === 0) {
-                log.warn(`Authorization server at ${endpoint} does not support PKCE (required by MCP spec)`);
-                log.warn(`Missing code_challenge_methods_supported field`);
-                // Continue to try other endpoints
-                continue;
+                log.warn(`Authorization server at ${endpoint} does not advertise PKCE support`);
+                log.warn(`Missing code_challenge_methods_supported field - PKCE may still work`);
+                // Continue with discovery anyway - client will use PKCE regardless
             }
 
             return metadata;

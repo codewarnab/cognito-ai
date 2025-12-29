@@ -21,6 +21,7 @@ import { Sentry } from '@assets/brands/integrations/Sentry';
 import { Stripe } from '@assets/brands/integrations/Stripe';
 import { Supabase } from '@assets/brands/integrations/Supabase';
 import { Supermemory } from '@assets/brands/integrations/Supermemory';
+import { Tally } from '@assets/brands/integrations/Tally';
 import { Vercel } from '@assets/brands/integrations/Vercel';
 import { Webflow } from '@assets/brands/integrations/Webflow';
 import context7Image from '@assets/brands/integrations/context7.png';
@@ -61,6 +62,7 @@ const MCP_SERVER_ICONS: Record<string, React.ComponentType<any>> = {
     'stripe': Stripe,
     'supabase': Supabase,
     'supermemory': Supermemory,
+    'tally': Tally,
     'vercel': Vercel,
     'webflow': Webflow,
     'exa': ({ size = 24, className }) => (

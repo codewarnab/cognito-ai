@@ -117,7 +117,15 @@ export async function startOAuthFlow(serverId: string): Promise<McpExtensionResp
         broadcastStatusUpdate(serverId, state.status);
 
         // Select scopes for registration
-        const scopes = await selectScopes(serverId, serverConfig.oauth);
+        // Merge server config scopes with discovered scopes from metadata
+        const configWithDiscoveredScopes = {
+            ...serverConfig.oauth,
+            // Use discovered scopes if no static scopes configured
+            scopes: serverConfig.oauth?.scopes?.length
+                ? serverConfig.oauth.scopes
+                : endpoints.scopes_supported
+        };
+        const scopes = await selectScopes(serverId, configWithDiscoveredScopes);
 
         const clientCredentials = await registerDynamicClient(
             serverId,
@@ -428,7 +436,8 @@ export async function startPatAuth(
             return { success: false, error: 'Credential fields are required' };
         }
         for (const field of serverConfig.authConfig.patConfig.fields!) {
-            if (field.required && (!fields[field.id] || fields[field.id].trim() === '')) {
+            const value = fields[field.id];
+            if (field.required && (!value || value.trim() === '')) {
                 return { success: false, error: `${field.label} is required` };
             }
         }

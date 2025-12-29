@@ -46,6 +46,7 @@ import { PerplexityAI } from "@assets/brands/integrations/PerplexityAI"
 import brightdataImage from '@assets/brands/integrations/brightdata.png';
 import firecrawlImage from '@assets/brands/integrations/firecrawl.png';
 import planeImage from '@assets/brands/integrations/plane.svg';
+import { Tally } from "@assets/brands/integrations/Tally"
 
 
 //http://help.xpoz.ai/en/articles/12616835-connecting-xpoz-with-claude-ai-personal-account add this
@@ -577,6 +578,16 @@ export const MCP_SERVERS: ServerConfig[] = [
                 ]
             }
         }
+    },
+    {
+        id: "tally",
+        name: "Tally",
+        icon: <Tally className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://api.tally.so/mcp",
+        description: "Tally is a user-friendly online form builder that works like a document. Create powerful forms for surveys, payments, applications, and more with conditional logic, file uploads, and integrations with Google Sheets, Notion, Slack, and Zapier.",
+        requiresAuthentication: true
     }
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
 ]
