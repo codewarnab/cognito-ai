@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { HighlightedText } from "@/components/shared/HighlightedText";
 import { accordionMatchesQuery } from "@/components/settings/shared/settingsSearchData";
+import { Check } from "lucide-react";
 
 interface AdvancedTabProps {
     supermemorySettings: SupermemorySettings | null;
@@ -24,6 +25,7 @@ export function AdvancedTab({
     forcedOpenSections = new Set()
 }: AdvancedTabProps) {
     const [manualOpen, setManualOpen] = useState(false);
+    const [apiKeySaved, setApiKeySaved] = useState(false);
 
     const isVisible = accordionMatchesQuery('supermemory', searchQuery);
 
@@ -60,9 +62,17 @@ export function AdvancedTab({
                             searchQuery={searchQuery}
                         />
                         <div>
-                            <Label className="text-sm font-medium">
-                                <HighlightedText text="API Key" searchQuery={searchQuery} />
-                            </Label>
+                            <div className="flex items-center justify-between">
+                                <Label className="text-sm font-medium">
+                                    <HighlightedText text="API Key" searchQuery={searchQuery} />
+                                </Label>
+                                {apiKeySaved && (
+                                    <span className="flex items-center gap-1 text-xs text-lime-500 animate-in fade-in slide-in-from-right-1 duration-200">
+                                        <Check size={12} strokeWidth={3} />
+                                        Saved
+                                    </span>
+                                )}
+                            </div>
                             <Input
                                 type="password"
                                 placeholder="Enter your Supermemory API key"
@@ -70,11 +80,15 @@ export function AdvancedTab({
                                 onChange={(e) => {
                                     setSupermemorySettings({ ...supermemorySettings, apiKey: e.target.value });
                                 }}
-                                onBlur={() => {
-                                    updateSetting(
+                                onBlur={async () => {
+                                    const success = await updateSetting(
                                         () => extensionAPI.setSupermemorySettings({ apiKey: supermemorySettings.apiKey }),
                                         () => { }
                                     );
+                                    if (success) {
+                                        setApiKeySaved(true);
+                                        setTimeout(() => setApiKeySaved(false), 2000);
+                                    }
                                 }}
                                 className="mt-1.5"
                             />
