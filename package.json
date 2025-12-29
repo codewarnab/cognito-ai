@@ -5,6 +5,10 @@
   "description": "Cognito AI - Privacy-first AI Browser Agent monorepo",
   "author": "dev@codewarnab.in",
   "license": "BUSL-1.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "pnpm --filter @cognito/extension dev",
     "dev:docs": "pnpm --filter @cognito/docs dev",
