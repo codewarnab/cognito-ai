@@ -14,6 +14,7 @@ export interface IPropsProviders {
 	locales?: DeepPartial<ProvidersLocales>
 	icons?: Record<string, ExoticComponent<any>>
 	initialTab?: number
+	saved?: boolean
 	onTabChange?: (tabIndex: number, providerName: string) => void
 	onChange: (v: Config) => void
 	onTest?: (provider: PresetProvider | SpecialProvider) => Promise<boolean>
@@ -46,6 +47,7 @@ export interface IPropsForm {
 	current_model: DataModel['current_model']
 	adding_model: DataModel['adding_model']
 	custom?: boolean
+	saved?: boolean
 	onTest?: DataModel['onTest']
 	onChangeProvider: DataModel['onChangeProvider']
 	download?: DataModel['download']
@@ -62,6 +64,7 @@ export interface IPropsFormAPIKey extends Pick<IPropsForm, 'test' | 'onTest'> {
 	title: string
 	api_key: IPropsForm['provider']['api_key']
 	custom?: boolean
+	saved?: boolean
 	register: UseFormRegister<IPropsForm['provider']>
 }
 

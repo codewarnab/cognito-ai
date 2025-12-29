@@ -5,7 +5,7 @@ import { Composer } from './Composer';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
-import { useFileAttachments } from '@/hooks/attachments';
+import { useFileAttachments, useYouTubeVideoAttachment } from '@/hooks/attachments';
 import { useYouTubeVideoDetection, useSelectedTextDetection } from '@/hooks/browser';
 import { useWorkflowMode } from '@/hooks/workflows';
 import { useSearchMode } from '@/hooks/useSearchMode';
@@ -75,7 +75,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
     // YouTube store state
     const setYouTubeVideoInfo = useAttachmentsStore((s) => s.setYouTubeVideoInfo);
-    const setIsAttachingYouTube = useAttachmentsStore((s) => s.setIsAttachingYouTube);
 
     // Selected text store state
     const setSelectedTextInfo = useAttachmentsStore((s) => s.setSelectedTextInfo);
@@ -172,26 +171,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         }
     }, [localPdfInfo, processFilesWithStore, onError, setIsAttachingLocalPdf]);
 
-    const handleAttachYouTubeVideo = useCallback(async () => {
-        if (!youtubeVideoInfo.isYouTubeVideo) return;
-        setIsAttachingYouTube(true);
-        try {
-            // Create a placeholder file with video info
-            const videoData = {
-                type: 'youtube_video',
-                videoId: youtubeVideoInfo.videoId,
-                url: youtubeVideoInfo.url,
-                title: youtubeVideoInfo.title,
-            };
-            const blob = new Blob([JSON.stringify(videoData)], { type: 'application/json' });
-            const file = new File([blob], `youtube-${youtubeVideoInfo.videoId}.json`, { type: 'application/json' });
-            await processFilesWithStore([{ file, meta: { source: 'youtube', videoId: videoData.videoId, url: videoData.url, title: videoData.title } }]);
-        } catch (error) {
-            onError?.('Failed to attach YouTube video', 'error');
-        } finally {
-            setIsAttachingYouTube(false);
-        }
-    }, [youtubeVideoInfo, processFilesWithStore, onError, setIsAttachingYouTube]);
+    // YouTube video attachment hook - properly fetches transcript from backend
+    const youtubeVideoInfoForHook = youtubeVideoInfo.isYouTubeVideo ? {
+        videoId: youtubeVideoInfo.videoId!,
+        url: youtubeVideoInfo.url!,
+        title: youtubeVideoInfo.title!,
+    } : null;
+
+    const { handleAttachYouTubeVideo, videoMetadata } = useYouTubeVideoAttachment({
+        youtubeVideoInfo: youtubeVideoInfoForHook,
+        mode: modelState.mode,
+        onError,
+        processFiles: processFilesWithStore,
+    });
 
     const handleAttachSelectedText = useCallback(async () => {
         if (!selectedTextInfo) return;

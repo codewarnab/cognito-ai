@@ -56,10 +56,18 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
     const isSelectedTextDismissed = useAttachmentsStore((s) => s.isSelectedTextDismissed);
     const isAttachingSelectedText = useAttachmentsStore((s) => s.isAttachingSelectedText);
     const dismissSelectedText = useAttachmentsStore((s) => s.dismissSelectedText);
+    // File attachments to check if YouTube video is already attached
+    const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
+
+    // Check if a YouTube video is already attached
+    const hasYouTubeAttached = fileAttachments.some((att) =>
+        att.file.name.endsWith('_yt.txt') || att.meta?.source === 'youtube'
+    );
 
     // Derive visibility
     const shouldShowLocalPdfSuggestion = !!localPdfInfo && !isLocalPdfDismissed;
-    const shouldShowYouTubeVideoSuggestion = !!youtubeVideoInfo && !isYouTubeDismissed;
+    // Hide YouTube suggestion if video is already attached
+    const shouldShowYouTubeVideoSuggestion = !!youtubeVideoInfo && !isYouTubeDismissed && !hasYouTubeAttached;
     const shouldShowSelectedTextSuggestion = !!selectedTextInfo && !isSelectedTextDismissed;
 
     const youtubeLoadingState = deriveYouTubeLoadingState(

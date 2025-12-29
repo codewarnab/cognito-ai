@@ -71,6 +71,8 @@ export interface WebMCPToolsState {
   activeTabId: number | null;
   /** Domain of active tab */
   activeDomain: string | null;
+  /** Origin of active tab (protocol + hostname + port) for same-site detection */
+  activeOrigin: string | null;
   /** Whether discovery is in progress */
   isDiscovering: boolean;
   /** Last update timestamp */

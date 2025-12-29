@@ -40,8 +40,8 @@ export const ENV = {
     /**
      * Webapp URL for settings, providers, etc.
      */
-    WEBAPP_URL_DEV: import.meta.env.WXT_WEBAPP_URL_DEV,
-    WEBAPP_URL_PROD: import.meta.env.WXT_WEBAPP_URL_PROD,
+    WEBAPP_URL_DEV: import.meta.env.WXT_WEBAPP_URL_DEV || 'http://localhost:3002',
+    WEBAPP_URL_PROD: import.meta.env.WXT_WEBAPP_URL_PROD || 'https://cognito-ai-one.vercel.app',
     /**
      * Transcript API URL for YouTube transcripts
      */

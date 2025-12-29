@@ -26,7 +26,7 @@ import type {
 } from './types'
 
 const Index = (props: IPropsProviders) => {
-	const { config, tab, width, locales, icons, initialTab, onTabChange, onChange, onTest, activeModel, activeProvider } = props
+	const { config, tab, width, locales, icons, initialTab, saved, onTabChange, onChange, onTest, activeModel, activeProvider } = props
 	const state = useRef(proxy(new Model()))
 	const x = useProxy(state.current)
 
@@ -54,6 +54,7 @@ const Index = (props: IPropsProviders) => {
 		test: deepClone(x.test),
 		current_model: x.current_model,
 		adding_model: x.adding_model,
+		saved,
 		onTest: x.onTest,
 		onChangeProvider: x.onChangeProvider,
 		download: x.download,

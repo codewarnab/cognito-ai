@@ -7,7 +7,7 @@
 
 import { ENV } from '@/utils/env';
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = import.meta.env.DEV;
 
 export const WEBAPP_BASE_URL = isDev
     ? ENV.WEBAPP_URL_DEV

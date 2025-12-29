@@ -71,6 +71,16 @@ const useThemeToggle = () => {
 
     const styleId = 'theme-transition-styles';
 
+    // Play sound effect
+    const playSound = useCallback(() => {
+        if (typeof window === 'undefined') return;
+        const audio = new Audio('/sweep1.mp3');
+        audio.volume = 0.5;
+        audio.play().catch(() => {
+            // Ignore autoplay errors
+        });
+    }, []);
+
     const updateStyles = useCallback((css: string) => {
         if (typeof window === 'undefined') return;
 
@@ -87,6 +97,9 @@ const useThemeToggle = () => {
 
     const toggleTheme = useCallback(() => {
         setIsDark(!isDark);
+
+        // Play the sweep sound
+        playSound();
 
         const animation = createTopDownAnimation();
         updateStyles(animation.css);

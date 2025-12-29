@@ -181,6 +181,7 @@ export default defineConfig({
         externally_connectable: {
             matches: [
                 "http://localhost:3002/*",
+                "https://cognito-ai-one.vercel.app/*"
             ]
         },
 

@@ -37,6 +37,9 @@ import type {
 
 const EXTENSION_ID = process.env.NEXT_PUBLIC_EXTENSION_ID;
 
+// Debug logging for extension connection
+console.log('[ExtensionAPI] Initializing with EXTENSION_ID:', EXTENSION_ID || '(not set)');
+
 class ExtensionAPI {
     private static instance: ExtensionAPI;
 
@@ -48,37 +51,57 @@ class ExtensionAPI {
     }
 
     async isAvailable(): Promise<boolean> {
-        return typeof chrome !== 'undefined' && !!chrome.runtime?.sendMessage;
+        const hasChromeRuntime = typeof chrome !== 'undefined' && !!chrome.runtime?.sendMessage;
+        console.log('[ExtensionAPI] isAvailable check:', {
+            hasChromeGlobal: typeof chrome !== 'undefined',
+            hasChromeRuntime: typeof chrome !== 'undefined' && !!chrome.runtime,
+            hasSendMessage: hasChromeRuntime,
+        });
+        return hasChromeRuntime;
     }
 
     async isInstalled(): Promise<boolean> {
+        console.log('[ExtensionAPI] isInstalled: Starting check...');
         try {
             const response = await this.sendMessage({ type: 'PING' });
+            console.log('[ExtensionAPI] isInstalled: PING response:', response);
             return response.success;
-        } catch {
+        } catch (error) {
+            console.error('[ExtensionAPI] isInstalled: PING failed:', error);
             return false;
         }
     }
 
     async sendMessage<T>(message: ExternalMessage): Promise<ExternalResponse<T>> {
-        if (!await this.isAvailable()) {
+        console.log('[ExtensionAPI] sendMessage: Sending', message.type);
+        
+        const available = await this.isAvailable();
+        if (!available) {
+            console.error('[ExtensionAPI] sendMessage: Chrome extension API not available');
             throw new Error('Chrome extension API not available');
         }
 
         if (!EXTENSION_ID) {
-            // For development, we might want to allow this or throw a specific error
-            console.warn('Extension ID not configured (NEXT_PUBLIC_EXTENSION_ID)');
-            // If we are on localhost, maybe we can try sending to a hardcoded dev ID if known, 
-            // but for now let's just warn and throw or fail.
+            console.error('[ExtensionAPI] sendMessage: NEXT_PUBLIC_EXTENSION_ID is not configured!');
+            console.error('[ExtensionAPI] Make sure NEXT_PUBLIC_EXTENSION_ID is set in Vercel environment variables');
             throw new Error('Extension ID not configured');
         }
+
+        console.log('[ExtensionAPI] sendMessage: Using extension ID:', EXTENSION_ID);
 
         return new Promise((resolve, reject) => {
             chrome.runtime.sendMessage(EXTENSION_ID!, message, (response: ExternalResponse<T>) => {
                 if (chrome.runtime.lastError) {
-                    // If the extension is not installed or ID is wrong, this will trigger
-                    reject(new Error(chrome.runtime.lastError.message));
+                    const errorMsg = chrome.runtime.lastError.message;
+                    console.error('[ExtensionAPI] sendMessage: Chrome runtime error:', errorMsg);
+                    console.error('[ExtensionAPI] Possible causes:');
+                    console.error('  1. Extension ID mismatch - check chrome://extensions for correct ID');
+                    console.error('  2. Extension not installed');
+                    console.error('  3. Extension disabled');
+                    console.error('  4. Externally connectable not configured for this origin');
+                    reject(new Error(errorMsg));
                 } else {
+                    console.log('[ExtensionAPI] sendMessage: Success, response:', response);
                     resolve(response);
                 }
             });

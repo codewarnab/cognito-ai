@@ -50,12 +50,27 @@ let state: WebMCPToolsState = {
   tools: [],
   activeTabId: null,
   activeDomain: null,
+  activeOrigin: null,
   isDiscovering: false,
   lastUpdated: 0,
 };
 
 // Listeners for tool updates (used to notify UI)
 const toolUpdateListeners: Set<(tools: WebMCPTool[]) => void> = new Set();
+
+/**
+ * Extract origin from URL (protocol + hostname + port)
+ * Used to detect same-site navigation vs cross-site navigation
+ */
+function extractOrigin(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const urlObj = new URL(url);
+    return urlObj.origin;
+  } catch {
+    return null;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Security Validation Functions
@@ -216,7 +231,8 @@ export function getActiveTabWebMCPTools(): WebMCPTool[] {
 export function registerWebMCPTools(
   tabId: number,
   domain: string,
-  tools: WebMCPTool[]
+  tools: WebMCPTool[],
+  url?: string
 ): void {
   // Only accept tools from the active tab
   if (tabId !== state.activeTabId) {
@@ -227,9 +243,13 @@ export function registerWebMCPTools(
     return;
   }
 
+  // Extract origin from URL for same-site detection
+  const origin = extractOrigin(url);
+
   log.info('Registering WebMCP tools', {
     tabId,
     domain,
+    origin,
     count: tools.length,
     tools: tools.map((t) => t.name),
   });
@@ -238,6 +258,7 @@ export function registerWebMCPTools(
     ...state,
     tools,
     activeDomain: domain,
+    activeOrigin: origin ?? state.activeOrigin, // Keep existing origin if not provided
     isDiscovering: false,
     lastUpdated: Date.now(),
   };
@@ -256,6 +277,7 @@ export function clearWebMCPTools(): void {
     ...state,
     tools: [],
     activeDomain: null,
+    activeOrigin: null,
     isDiscovering: false,
     lastUpdated: Date.now(),
   };
@@ -270,20 +292,31 @@ export async function setActiveTab(tabId: number): Promise<void> {
 
   log.info('Active tab changed', { from: state.activeTabId, to: tabId });
 
+  // Get the tab's URL to extract origin
+  let tabOrigin: string | null = null;
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    tabOrigin = extractOrigin(tab.url);
+  } catch {
+    // Tab might not exist or be accessible
+    log.debug('Could not get tab URL for origin', { tabId });
+  }
+
   // Clear existing tools
   clearWebMCPTools();
 
-  // Update active tab
+  // Update active tab with origin
   state = {
     ...state,
     activeTabId: tabId,
+    activeOrigin: tabOrigin,
     isDiscovering: true,
   };
 
   // Request tools from the new active tab
   try {
     await chrome.tabs.sendMessage(tabId, { type: 'webmcp/tools/refresh' });
-  } catch (error) {
+  } catch {
     // Tab might not have content script or WebMCP - this is expected
     log.debug('Could not request tools from tab', { tabId });
   }
@@ -446,12 +479,39 @@ export function initializeWebMCPManager(): void {
   });
 
   // Track tab URL changes (navigation)
-  chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
-    if (tabId === state.activeTabId && changeInfo.status === 'complete') {
-      // Page reloaded or navigated - clear and re-discover
-      log.info('Active tab navigated, re-discovering tools');
-      clearWebMCPTools();
-      state.isDiscovering = true;
+  chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (tabId !== state.activeTabId) return;
+
+    // Check if this is a navigation that requires re-discovery
+    if (changeInfo.status === 'complete') {
+      const newOrigin = extractOrigin(tab.url);
+      const previousOrigin = state.activeOrigin;
+
+      // Skip refresh if origin hasn't changed (same-site path navigation)
+      if (previousOrigin && newOrigin && previousOrigin === newOrigin) {
+        log.debug('Same-origin navigation, skipping WebMCP refresh', {
+          origin: newOrigin,
+          url: tab.url,
+        });
+        return;
+      }
+
+      // Origin changed or first load - clear and re-discover
+      log.info('Active tab navigated to new origin, re-discovering tools', {
+        from: previousOrigin,
+        to: newOrigin,
+      });
+
+      // Clear tools but preserve activeTabId
+      state = {
+        ...state,
+        tools: [],
+        activeDomain: null,
+        activeOrigin: newOrigin,
+        isDiscovering: true,
+        lastUpdated: Date.now(),
+      };
+      notifyToolUpdateListeners();
 
       try {
         await chrome.tabs.sendMessage(tabId, { type: 'webmcp/tools/refresh' });

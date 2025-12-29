@@ -60,6 +60,7 @@ function ProvidersPageContent() {
     const [config, setConfig] = useState<Config>({ providers: cognitoProviders });
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
     const [selectedModel, setSelectedModel] = useState<string | undefined>();
     const [selectedProviderName, setSelectedProviderName] = useState<string | undefined>();
@@ -182,7 +183,11 @@ function ProvidersPageContent() {
             setNotification(null);
             const response = await extensionAPI.setProvidersConfig(newConfig);
 
-            if (!response.success) {
+            if (response.success) {
+                // Show saved feedback briefly
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+            } else {
                 console.error('Failed to save config:', response.error);
                 setNotification({ type: 'error', message: response.error || 'Failed to save configuration' });
             }
@@ -324,6 +329,7 @@ function ProvidersPageContent() {
                     width="100%"
                     locales={cognitoLocales}
                     initialTab={initialTab}
+                    saved={saved}
                     onTabChange={handleTabChange}
                     onChange={handleChange}
                     onTest={handleTest}

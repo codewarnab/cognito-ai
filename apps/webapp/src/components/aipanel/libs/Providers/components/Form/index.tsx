@@ -34,6 +34,7 @@ const Index = (props: IPropsForm) => {
 		current_model,
 		adding_model,
 		custom,
+		saved,
 		onTest,
 		onChangeProvider,
 		download,
@@ -165,7 +166,7 @@ const Index = (props: IPropsForm) => {
 						</div>
 					</div>
 				)}
-				<APIKey title={locales.form.api_key} {...{ api_key, custom, test, onTest, register }} />
+				<APIKey title={locales.form.api_key} {...{ api_key, custom, saved, test, onTest, register }} />
 				<BaseUrl title={locales.form.base_url} {...{ base_url, custom, register }} />
 				<CustomFields custom_fields={(provider as SpecialProvider).custom_fields} register={register} />
 				<div className='flex flex-col gap-2.5'>

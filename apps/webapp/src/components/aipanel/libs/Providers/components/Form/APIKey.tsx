@@ -7,7 +7,7 @@ import { CheckIcon, SpinnerIcon, WifiHighIcon, XIcon } from '@phosphor-icons/rea
 import type { IPropsFormAPIKey } from '../../types'
 
 const Index = (props: IPropsFormAPIKey) => {
-	const { title, api_key, test, custom, onTest, register } = props
+	const { title, api_key, test, custom, saved, onTest, register } = props
 	const { loading, res } = test || {}
 
 	const Status = useMemo(() => {
@@ -21,7 +21,15 @@ const Index = (props: IPropsFormAPIKey) => {
 
 	return (
 		<div className='flex flex-col gap-2.5'>
-			<span className={`flex ${styles.label}`}>{title}</span>
+			<div className='flex items-center justify-between'>
+				<span className={`flex ${styles.label}`}>{title}</span>
+				{saved && (
+					<span className='flex items-center gap-1 text-xs text-lime-500 animate-in fade-in slide-in-from-right-1 duration-200'>
+						<CheckIcon size={12} weight='bold' />
+						Saved
+					</span>
+				)}
+			</div>
 			<div
 				className={`
 					border-border-solid

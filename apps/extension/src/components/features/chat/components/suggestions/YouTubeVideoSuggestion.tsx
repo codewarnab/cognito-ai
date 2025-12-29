@@ -9,6 +9,7 @@
 import React, { useEffect } from 'react';
 import { YoutubeIcon } from '@assets/icons/chat/youtube';
 import { useUINavigationStore, type UINavigationState } from '@/stores';
+import { TextShimmer } from '@/components/ui/TextShimmer';
 
 /** Loading state for the badge */
 export type YouTubeBadgeLoadingState = 'idle' | 'fetching' | 'ready';
@@ -52,7 +53,7 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
 
     // Hide voice-mode-fab when showing YouTube suggestion
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
-    
+
     useEffect(() => {
         setVoiceFabVisibility(false);
         return () => {
@@ -104,10 +105,13 @@ export const YouTubeVideoSuggestion: React.FC<YouTubeVideoSuggestionProps> = ({
 
                 {isFetching ? (
                     <span className="flex items-center min-w-[80px] h-[14px]">
-                        <span
-                            className="block w-[80px] h-[12px] bg-white/30 rounded animate-pulse"
-                            aria-hidden="true"
-                        />
+                        <TextShimmer
+                            className="text-[11px] font-semibold text-white/90"
+                            duration={1.5}
+                            spread={1.5}
+                        >
+                            Fetching transcript...
+                        </TextShimmer>
                         <span className="sr-only" aria-live="polite">
                             Fetching transcript...
                         </span>

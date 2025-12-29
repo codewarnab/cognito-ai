@@ -64,13 +64,14 @@ export async function handleWebMCPMessage(
 
         const tools = message.tools as WebMCPTool[];
         const domain = message.domain as string;
+        const url = message.url as string | undefined;
 
         if (!Array.isArray(tools)) {
           sendResponse({ success: false, error: 'Invalid tools array' });
           return;
         }
 
-        registerWebMCPTools(tabId, domain, tools);
+        registerWebMCPTools(tabId, domain, tools, url);
 
         log.info('WebMCP tools registered', {
           tabId,
