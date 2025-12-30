@@ -1,7 +1,9 @@
 /**
  * Settings types for user - configurable preferences
  */
-import type { AIProviderConfig } from '@cognito/shared/types';
+import type { AIProviderConfig, TTSProvider, VoiceSettings } from '@cognito/shared/types';
+
+export type { TTSProvider, VoiceName, VoiceSettings } from '@cognito/shared/types';
 
 /**
  * ## Mode Taxonomy in the Extension
@@ -25,9 +27,7 @@ import type { AIProviderConfig } from '@cognito/shared/types';
  * @see `@/stores/tools/types.ts` for ToolMode alias
  */
 
-export type VoiceName = 'Aoede' | 'Orus' | 'Puck' | 'Charon' | 'Kore' | 'Fenrir' | 'Orion';
 
-export type TTSProvider = 'gemini' | 'web-native';
 
 /**
  * ToolsMode - determines which system prompt and tool set to use
@@ -46,10 +46,6 @@ export type TTSProvider = 'gemini' | 'web-native';
  * - `ADAPTIVE_MODE_TOOLS` - tools enabled in adaptive mode (discoverTools, executeTools + basics)
  */
 export type ToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
-
-export interface VoiceSettings {
-  voiceName: VoiceName;
-}
 
 export interface UserSettings {
   version: number;

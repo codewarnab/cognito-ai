@@ -6,24 +6,14 @@
 /**
  * Preset rewrite options
  */
-export type RewritePreset =
-    | 'shorter'
-    | 'longer'
-    | 'professional'
-    | 'casual'
-    | 'improve'
-    | 'simplify'
-    | 'enthusiastic'
-    | 'conversational';
+import type { RewritePageContext, RewritePreset } from '@cognito/shared/types';
+
+export type { RewritePageContext, RewritePreset } from '@cognito/shared/types';
 
 /**
  * Page context for rewrite operations
  */
-export interface RewritePageContext {
-    title: string;
-    url: string;
-    domain: string;
-}
+
 
 /**
  * Request to rewrite text

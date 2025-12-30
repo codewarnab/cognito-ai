@@ -10,23 +10,21 @@
  * - headline: Single headline capturing the main idea
  * - teaser: Brief teaser to encourage reading the full text
  */
-export type SummaryType = 'key-points' | 'tl-dr' | 'headline' | 'teaser';
+import type { SummaryLength, SummaryPageContext, SummaryType } from '@cognito/shared/types';
+
+export type { SummaryLength, SummaryType } from '@cognito/shared/types';
 
 /**
  * Summary length options
  * Controls the approximate length of the generated summary
  */
-export type SummaryLength = 'short' | 'medium' | 'long';
+
 
 /**
  * Page context information
  * Provides context about the source page for better summaries
  */
-export interface PageContext {
-    title: string;
-    url: string;
-    domain: string;
-}
+export type PageContext = SummaryPageContext;
 
 /**
  * Request to summarize text

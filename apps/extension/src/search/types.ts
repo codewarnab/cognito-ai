@@ -1,46 +1,31 @@
 /**
- * Search result types for web search integration.
- * These types define the structure of search results returned by providers.
+ * Search types (extension)
+ *
+ * Canonical web-search request/response types live in `@cognito/shared` so both the
+ * extension and backend agree on a single contract.
+ *
+ * This file re-exports those shared types while preserving the extension's existing
+ * naming (`SearchResults`, `SearchResultItem`, etc.) and import path (`@/search/types`).
  */
 
-/** Depth of search - basic is faster, advanced is more thorough */
-export type SearchDepth = 'basic' | 'advanced';
-
-/** Individual search result item */
-export interface SearchResultItem {
-    /** Title of the search result */
-    title: string;
-    /** URL of the search result */
-    url: string;
-    /** Content snippet/description from the result */
-    content: string;
-}
+export type {
+    SearchDepth,
+    SearchProviderType,
+    SearchResult as SearchResultItem,
+    SearchImage as SearchResultImage,
+    WebSearchRequestBody,
+    WebSearchResponse,
+} from '@cognito/shared';
 
 /**
- * Search result image - can be a simple URL string or an object with description.
- * Tavily returns objects when include_image_descriptions is true.
+ * Generic results shape used across the extension's search + retrieve tools.
+ *
+ * - Web search returns `number_of_results`
+ * - Retrieve does not, so it's optional here.
  */
-export type SearchResultImage =
-    | string
-    | {
-          url: string;
-          description: string;
-      };
-
-/** Complete search results returned by providers */
-export interface SearchResults {
-    /** Array of image results */
-    images: SearchResultImage[];
-    /** Array of text/link results */
-    results: SearchResultItem[];
-    /** Total number of results found (optional) */
+export type SearchResults = Omit<import('@cognito/shared').WebSearchResponse, 'number_of_results'> & {
     number_of_results?: number;
-    /** Original query string */
-    query: string;
-}
-
-/** Search provider types supported by the extension */
-export type SearchProviderType = 'tavily';
+};
 
 /** Default search provider */
-export const DEFAULT_SEARCH_PROVIDER: SearchProviderType = 'tavily';
+export const DEFAULT_SEARCH_PROVIDER: import('@cognito/shared').SearchProviderType = 'tavily';

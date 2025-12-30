@@ -6,7 +6,9 @@
 /**
  * Tone options for generated content
  */
-export type WriteTone = 'professional' | 'casual' | 'formal' | 'friendly';
+import type { WritePageContext, WriteTone } from '@cognito/shared/types';
+
+export type { WritePageContext, WriteTone } from '@cognito/shared/types';
 
 /**
  * Attachment data for write command
@@ -87,13 +89,7 @@ export const WRITER_FILE_LIMITS = {
  * Page context information
  * Provides context about the current page for better writing suggestions
  */
-export interface WritePageContext {
-    title: string;
-    url: string;
-    domain: string;
-    platform?: string;
-    fieldType?: string;
-}
+
 
 /**
  * Request to generate text

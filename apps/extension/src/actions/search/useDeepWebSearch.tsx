@@ -91,7 +91,7 @@ function deduplicateResults(results: SearchResultItem[]): SearchResultItem[] {
 function deduplicateImages(images: SearchResultImage[]): SearchResultImage[] {
     const seen = new Set<string>();
     return images.filter((image) => {
-        const url = (typeof image === 'string' ? image : image.url).toLowerCase();
+        const url = image.url.toLowerCase();
         if (seen.has(url)) return false;
         seen.add(url);
         return true;

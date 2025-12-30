@@ -21,6 +21,14 @@ export type {
     VideoInfo,
 } from './transcript.js';
 
+// Web search types
+export type {
+    WebSearchRequestBody,
+    SearchResult,
+    SearchImage,
+    WebSearchResponse,
+} from './search.js';
+
 // Chat types
 export type {
     AIChatMessage,
