@@ -86,6 +86,16 @@ interface WebMCPToolsRegisterMessage {
 
 interface WebMCPToolCallRequest {
   type: 'webmcp/tool/call';
+  requestId: string;  // Required: unique identifier for correlation
+  payload: {
+    toolName: string;
+    args: Record<string, unknown>;
+  };
+}
+
+interface WebMCPToolExecuteMessage {
+  type: 'webmcp/tool/execute';
+  requestId: string;  // Copied from initial call
   payload: {
     toolName: string;
     args: Record<string, unknown>;
@@ -94,12 +104,128 @@ interface WebMCPToolCallRequest {
 
 interface WebMCPToolExecutionResult {
   type: 'webmcp/tool/result';
-  requestId: string;
+  requestId: string;  // Same as initial call for correlation
   success: boolean;
   result?: unknown;
   error?: string;
 }
 ```
+
+### Request ID Lifecycle
+
+The `requestId` field enables correlation between tool call requests and their results across the asynchronous message chain. This is critical for matching responses to their originating requests, especially when multiple tool calls are in flight.
+
+#### Generation
+
+Callers **MUST** include a unique `requestId` on the initial `webmcp/tool/call` payload. The ID should be collision-resistant to avoid mismatched responses.
+
+Recommended approaches:
+- **UUID v4** — `crypto.randomUUID()` (native in modern browsers/Node.js)
+- **nanoid** — `nanoid()` from the [nanoid](https://github.com/ai/nanoid) library (smaller, URL-safe)
+- **ulid** — `ulid()` from the [ulid](https://github.com/ulid/javascript) library (sortable, timestamp-based)
+
+```typescript
+// Example: Generating requestId with crypto.randomUUID()
+const callMessage: WebMCPToolCallRequest = {
+  type: 'webmcp/tool/call',
+  requestId: crypto.randomUUID(), // e.g., "550e8400-e29b-41d4-a716-446655440000"
+  payload: {
+    toolName: 'search_products',
+    args: { query: 'laptop' }
+  }
+};
+```
+
+#### Propagation
+
+All intermediate messages in the execution chain **MUST** copy the same `requestId` from the initial call:
+
+```mermaid
+sequenceDiagram
+    participant AI as AI/Caller
+    participant BG as Background SW
+    participant CS as Content Script
+    participant PAGE as Web Page
+
+    AI->>BG: webmcp/tool/call (requestId: "abc-123")
+    BG->>CS: webmcp/tool/execute (requestId: "abc-123")
+    CS->>PAGE: postMessage (requestId: "abc-123")
+    PAGE-->>CS: result (requestId: "abc-123")
+    CS-->>BG: webmcp/tool/result (requestId: "abc-123")
+    BG-->>AI: response (requestId: "abc-123")
+```
+
+The background service worker extracts the `requestId` from the incoming `webmcp/tool/call` and attaches it to the outgoing `webmcp/tool/execute` message:
+
+```typescript
+// Background handler
+function handleToolCall(message: WebMCPToolCallRequest) {
+  const { requestId, payload } = message;
+  
+  // Forward to content script with same requestId
+  chrome.tabs.sendMessage(tabId, {
+    type: 'webmcp/tool/execute',
+    requestId,  // Preserve the original requestId
+    payload
+  });
+}
+```
+
+#### Correlation
+
+The response (`webmcp/tool/result`) uses the **identical** `requestId` for correlation. Callers should maintain a map of pending requests to match responses:
+
+```typescript
+// Caller-side correlation
+const pendingRequests = new Map<string, {
+  resolve: (result: unknown) => void;
+  reject: (error: Error) => void;
+}>();
+
+async function callWebMCPTool(toolName: string, args: Record<string, unknown>) {
+  const requestId = crypto.randomUUID();
+  
+  return new Promise((resolve, reject) => {
+    pendingRequests.set(requestId, { resolve, reject });
+    
+    chrome.runtime.sendMessage({
+      type: 'webmcp/tool/call',
+      requestId,
+      payload: { toolName, args }
+    });
+  });
+}
+
+// Handle incoming results
+function handleToolResult(result: WebMCPToolExecutionResult) {
+  const pending = pendingRequests.get(result.requestId);
+  if (!pending) return; // Unknown request, ignore
+  
+  pendingRequests.delete(result.requestId);
+  
+  if (result.success) {
+    pending.resolve(result.result);
+  } else {
+    pending.reject(new Error(result.error));
+  }
+}
+```
+
+#### Error Handling
+
+Results with errors **still carry the same `requestId`** for correlation. The `success: false` flag indicates an error occurred, with details in the `error` field:
+
+```typescript
+// Error result example
+const errorResult: WebMCPToolExecutionResult = {
+  type: 'webmcp/tool/result',
+  requestId: 'abc-123',  // Same requestId as the original call
+  success: false,
+  error: 'Tool execution failed: element not found'
+};
+```
+
+This ensures callers can always correlate responses—whether successful or failed—back to their originating requests.
 
 ## DOM Messages
 
