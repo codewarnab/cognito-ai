@@ -11,6 +11,7 @@ This is a **pnpm monorepo** with the following packages:
 |---------|------|------------|
 | `@cognito/extension` | `apps/extension/` | WXT, React 19, TypeScript, Tailwind CSS v4 , Ai sdk v6 |
 | `@cognito/docs` | `apps/docs/` | Next.js 16, Fumadocs, React 19 |
+| `@cognito/webapp` | `apps/webapp/` | Next.js 16, React 19, Tailwind CSS, shadcn/ui |
 | `@cognito/shared` | `packages/shared/` | TypeScript (shared types/constants) |
 | `@cognito/backend-cloudflare` | `packages/backend-cloudflare/` | Cloudflare Workers, Wrangler, TypeScript |
 | `@cognito/backend-vercel` | `packages/backend-vercel/` | Express.js, TypeScript, Vercel |
@@ -19,6 +20,8 @@ This is a **pnpm monorepo** with the following packages:
 
 Each package has its own `GEMINI.md` file with detailed context:
 - **Extension**: `apps/extension/GEMINI.md`
+- **Webapp**: `apps/webapp/GEMINI.md`
+- **Docs**: `apps/docs/GEMINI.md`
 - **Shared**: `packages/shared/GEMINI.md`
 - **Backend Cloudflare**: `packages/backend-cloudflare/GEMINI.md`
 - **Backend Vercel**: `packages/backend-vercel/GEMINI.md`

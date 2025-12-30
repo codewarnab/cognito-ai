@@ -38,8 +38,8 @@ Key features:
 | Package | Path | Purpose | AGENTS.md |
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/extension/AGENTS.md) |
-| Webapp | `apps/webapp/` | Settings, onboarding, reminders UI | See `apps/webapp/` |
-| Shared | `packages/shared/` | Shared types/constants | [GEMINI.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/shared/GEMINI.md) |
+| Webapp | `apps/webapp/` | Settings, onboarding, reminders UI | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/webapp/AGENTS.md) |
+| Shared | `packages/shared/` | Shared types/constants | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/shared/AGENTS.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-cloudflare/AGENTS.md) |
 | Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [AGENTS.md](file:///c:/Users/User/code/hackathons/chrome-ai/packages/backend-vercel/AGENTS.md) |
 | Docs | `apps/docs/` | Documentation site | See `apps/docs/` |
@@ -85,6 +85,7 @@ pnpm install
 
 # Development
 pnpm dev                    # Start extension dev server
+pnpm dev:webapp             # Start webapp dev server
 pnpm dev:docs               # Start docs dev server
 pnpm dev:all                # Start all packages in parallel
 
