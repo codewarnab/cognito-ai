@@ -289,16 +289,40 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                             </span>
                         </button>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[200px]">
-                        <p className="text-xs">
-                            {useBackendMode
-                                ? "Using Cognito's API (rate limited, no API key needed)"
-                                : "Using your API key (unlimited, key stays on device)"
-                            }
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Click to switch modes
-                        </p>
+                    <TooltipContent side="top" className="max-w-[210px] p-3">
+                        <div className="flex flex-col gap-1.5">
+                            {useBackendMode ? (
+                                <>
+                                    <div className="font-semibold text-sm flex items-center gap-1.5">
+                                        <Cloud size={14} className="text-violet-500" />
+                                        Cloud Backend
+                                    </div>
+                                    <div className="text-xs text-muted-foreground leading-normal">
+                                        Using Cognito's hosted API. No API key required to get started.
+                                    </div>
+                                    <div className="text-[10px] text-amber-500/90 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded-sm w-fit">
+                                        Rate limits apply
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="font-semibold text-sm flex items-center gap-1.5">
+                                        <Key size={14} className="text-emerald-500" />
+                                        BYOK Mode
+                                    </div>
+                                    <div className="text-xs text-muted-foreground leading-normal">
+                                        Using your own API key for unlimited usage and higher rate limits.
+                                    </div>
+                                    <div className="text-[10px] text-emerald-600/90 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-sm flex items-start gap-1.5">
+                                        <span className="w-1 h-1 rounded-full bg-emerald-500 input-pulse mt-1 shrink-0" />
+                                        <span className="leading-tight">Your API key never leaves your device</span>
+                                    </div>
+                                </>
+                            )}
+                            <div className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50 mt-0.5">
+                                Click to switch modes
+                            </div>
+                        </div>
                     </TooltipContent>
                 </Tooltip>
             </div>
