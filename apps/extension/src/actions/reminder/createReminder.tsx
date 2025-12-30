@@ -95,6 +95,15 @@ EXAMPLE: createReminder(title="workout", dateTime="tomorrow at 6am", generatedTi
                     // Save reminder
                     await saveReminder(reminder);
 
+                    // Notify background to broadcast update to webapp
+                    try {
+                        await chrome.runtime.sendMessage({
+                            type: 'BROADCAST_REMINDERS_UPDATE'
+                        });
+                    } catch (e) {
+                        // Ignore if background script is not available
+                    }
+
                     // Schedule alarm
                     await chrome.alarms.create(`reminder:${id}`, { when });
 

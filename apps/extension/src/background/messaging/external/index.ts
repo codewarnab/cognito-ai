@@ -29,5 +29,6 @@
  */
 
 export { initializeExternalMessageRouter, routeExternalMessage } from './router';
+export { RemindersBroadcaster } from './remindersBroadcaster';
 export * from './types';
 export * from './utils';

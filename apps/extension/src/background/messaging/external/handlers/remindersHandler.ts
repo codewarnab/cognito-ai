@@ -24,6 +24,7 @@ import {
     updateReminder,
 } from '@/actions/reminder/storage';
 import { successResponse, errorResponse } from '../utils';
+import { RemindersBroadcaster } from '../remindersBroadcaster';
 
 const log = createLogger('ExternalMessaging:Reminders', 'BACKGROUND');
 
@@ -101,6 +102,10 @@ async function handleCreateReminder(
         await chrome.alarms.create(`reminder:${id}`, { when: reminder.when });
 
         log.info('Created reminder via external message', { id });
+
+        // Broadcast update to connected webapp pages
+        RemindersBroadcaster.broadcastUpdate();
+
         return successResponse(reminder);
     } catch (error) {
         log.error('Failed to create reminder', error);
@@ -132,6 +137,10 @@ async function handleUpdateReminder(
         }
 
         log.info('Updated reminder via external message', { id: payload.id });
+
+        // Broadcast update to connected webapp pages
+        RemindersBroadcaster.broadcastUpdate();
+
         return successResponse(updated);
     } catch (error) {
         log.error('Failed to update reminder', error);
@@ -158,6 +167,10 @@ async function handleDeleteReminder(
         await deleteReminder(payload.id);
 
         log.info('Deleted reminder via external message', { id: payload.id });
+
+        // Broadcast update to connected webapp pages
+        RemindersBroadcaster.broadcastUpdate();
+
         return successResponse();
     } catch (error) {
         log.error('Failed to delete reminder', error);

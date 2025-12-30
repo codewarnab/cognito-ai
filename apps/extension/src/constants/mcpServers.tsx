@@ -46,6 +46,7 @@ import { PerplexityAI } from "@assets/brands/integrations/PerplexityAI"
 import brightdataImage from '@assets/brands/integrations/brightdata.png';
 import firecrawlImage from '@assets/brands/integrations/firecrawl.png';
 import planeImage from '@assets/brands/integrations/plane.svg';
+import serpApiImage from '@assets/brands/integrations/serpapi.png';
 import { Tally } from "@assets/brands/integrations/Tally"
 
 
@@ -76,6 +77,13 @@ export interface PatConfig {
     authHeaderName?: string
     /** Query parameter name for URL-based token (e.g., 'token'). When set, token is added to URL instead of headers */
     urlTokenParam?: string
+    /** 
+     * URL path template with {API_KEY} placeholder for path-based tokens.
+     * When set, the server's url field is ignored and this template is used instead.
+     * Example: "https://mcp.serpapi.com/{API_KEY}/mcp"
+     * The {API_KEY} placeholder is replaced with the actual token.
+     */
+    urlPathTemplate?: string
     /** Multi-field configuration. When present, renders multiple inputs instead of single token. */
     fields?: PatConfigField[]
 }
@@ -234,6 +242,7 @@ export const MCP_SERVERS: ServerConfig[] = [
             type: 'pat',
             patConfig: {
                 label: "Magic API Key",
+                helpUrl:"https://21st.dev/mcp?redirect=%2Fmcp",
                 placeholder: "Enter your API Key",
             }
         }
@@ -481,47 +490,6 @@ export const MCP_SERVERS: ServerConfig[] = [
         requiresAuthentication: false
     },
     {
-        id: "fetch",
-        name: "Fetch",
-        icon: <Download className="w-6 h-6" />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://remote.mcpservers.org/fetch/mcp",
-        description: "An MCP server that provides web content fetching capabilities. This server enables LLMs to retrieve and process content from web pages, converting HTML to markdown for easier consumption.",
-        requiresAuthentication: false
-    },
-    {
-        id: "sequentialthinking",
-        name: "Sequential Thinking",
-        icon: <Workflow className="w-6 h-6" />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://remote.mcpservers.org/sequentialthinking/mcp",
-        description: "An MCP server implementation that provides a tool for dynamic and reflective problem-solving through a structured thinking process.",
-        requiresAuthentication: false
-    },
-    {
-        id: "edgeone-pages",
-        name: "EdgeOne Pages",
-        icon: <Globe className="w-6 h-6" />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://remote.mcpservers.org/edgeone-pages/mcp",
-        description: "An MCP service designed for deploying HTML content to EdgeOne Pages and obtaining an accessible public URL.",
-        requiresAuthentication: false
-    },
-    {
-        id: "parallel-search-mcp",
-        name: "Parallel Search MCP",
-        description: "Highly accurate deep search and batch tasks",
-        url: "https://task-mcp.parallel.ai/mcp",
-        icon: <LucideSearch className="w-6 h-6" />,
-        requiresAuthentication: true,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        paid: true
-    },
-    {
         id: "livekit-docs",
         name: "LiveKit Docs",
         icon: <img src={livekitImage} alt="LiveKit" style={{ width: 24, height: 24 }} />,
@@ -540,6 +508,26 @@ export const MCP_SERVERS: ServerConfig[] = [
         url: "https://mcp.exa.ai/mcp",
         description: "Exa is a search engine for AI.",
         requiresAuthentication: false
+    },
+    {
+        id: "serpapi",
+        name: "SerpAPI",
+        icon: <img src={serpApiImage} alt="SerpAPI" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        // URL is constructed dynamically using urlPathTemplate
+        url: "https://mcp.serpapi.com/mcp",
+        description: "SerpAPI provides real-time search engine results (Google, Bing, YouTube, etc.) and structured data extraction for AI agents.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "SerpAPI API Key",
+                placeholder: "Enter your API key",
+                helpUrl: "https://serpapi.com/manage-api-key",
+                urlPathTemplate: "https://mcp.serpapi.com/{API_KEY}/mcp",
+            }
+        }
     },
     {
         // SECURITY: Command/args defined in backend registry: @cognito/shared/constants/mcpRegistry.ts
@@ -588,6 +576,47 @@ export const MCP_SERVERS: ServerConfig[] = [
         url: "https://api.tally.so/mcp",
         description: "Tally is a user-friendly online form builder that works like a document. Create powerful forms for surveys, payments, applications, and more with conditional logic, file uploads, and integrations with Google Sheets, Notion, Slack, and Zapier.",
         requiresAuthentication: true
-    }
+    },
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
+     {
+        id: "fetch",
+        name: "Fetch",
+        icon: <Download className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://remote.mcpservers.org/fetch/mcp",
+        description: "An MCP server that provides web content fetching capabilities. This server enables LLMs to retrieve and process content from web pages, converting HTML to markdown for easier consumption.",
+        requiresAuthentication: false
+    },
+    {
+        id: "sequentialthinking",
+        name: "Sequential Thinking",
+        icon: <Workflow className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://remote.mcpservers.org/sequentialthinking/mcp",
+        description: "An MCP server implementation that provides a tool for dynamic and reflective problem-solving through a structured thinking process.",
+        requiresAuthentication: false
+    },
+    {
+        id: "edgeone-pages",
+        name: "EdgeOne Pages",
+        icon: <Globe className="w-6 h-6" />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://remote.mcpservers.org/edgeone-pages/mcp",
+        description: "An MCP service designed for deploying HTML content to EdgeOne Pages and obtaining an accessible public URL.",
+        requiresAuthentication: false
+    },
+    {
+        id: "parallel-search-mcp",
+        name: "Parallel Search MCP",
+        description: "Highly accurate deep search and batch tasks",
+        url: "https://task-mcp.parallel.ai/mcp",
+        icon: <LucideSearch className="w-6 h-6" />,
+        requiresAuthentication: true,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        paid: true
+    },
 ]

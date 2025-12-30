@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Header } from "@/components/shared/Header";
+import { ExtensionNotInstalled } from "@/components/shared/ExtensionNotInstalled";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExtension } from "@/hooks/useExtension";
 import type {
@@ -247,25 +248,10 @@ export default function SettingsPage() {
     // Show extension not installed message only after we've confirmed it's not installed
     if (!isInstalled) {
         return (
-            <div className="min-h-screen bg-[var(--bg-primary)]">
-                <Header title="Settings" />
-                <div className="container mx-auto max-w-4xl py-8 px-4">
-                    <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                                <AlertCircle className="h-5 w-5 text-yellow-500" />
-                                Extension Not Installed
-                            </CardTitle>
-                            <CardDescription className="text-[var(--text-secondary)]">
-                                The Cognito AI extension must be installed to configure settings.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button onClick={() => router.push("/")}>Go to Home</Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+            <ExtensionNotInstalled
+                title="Settings"
+                description="The Cognito AI extension must be installed to configure settings."
+            />
         );
     }
 

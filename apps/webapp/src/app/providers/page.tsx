@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useDebounceFn } from 'ahooks';
 import { useExtension } from '@/hooks/useExtension';
 import { Header } from '@/components/shared/Header';
+import { ExtensionNotInstalled } from '@/components/shared/ExtensionNotInstalled';
 
 /**
  * Merge stored config with default providers.
@@ -276,25 +277,11 @@ function ProvidersPageContent() {
     // Show extension not installed message
     if (!isInstalled) {
         return (
-            <div className="min-h-screen bg-[var(--bg-primary)]">
-                <Header title="AI Providers" />
-                <div className="container mx-auto max-w-3xl py-8 px-4">
-                    <Card className="border-[var(--border-color)] bg-[var(--bg-secondary)]">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-[var(--text-primary)]">
-                                <AlertCircle className="h-5 w-5 text-yellow-500" />
-                                Extension Not Installed
-                            </CardTitle>
-                            <CardDescription className="text-[var(--text-secondary)]">
-                                The Cognito AI extension must be installed to configure AI providers.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button onClick={() => router.push("/")}>Go to Home</Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+            <ExtensionNotInstalled
+                title="AI Providers"
+                description="The Cognito AI extension must be installed to configure AI providers."
+                maxWidth="max-w-3xl"
+            />
         );
     }
 

@@ -13,6 +13,7 @@ import { handleSummarizeRequest } from '../summarizer';
 import { handleWriteGenerate } from '../writer';
 import { handleRewriteRequest } from '../rewriter';
 import { handleGeolocationRequest } from './geolocationHandler';
+import { RemindersBroadcaster } from './external';
 
 import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory';
 import { queueThreadForExtraction } from '../supermemory/extraction/queue';
@@ -32,6 +33,13 @@ export function initializeMessageRouter(): void {
         // Handle GET_CURRENT_TAB_ID request from content scripts
         if (message.type === 'GET_CURRENT_TAB_ID') {
             sendResponse({ tabId: sender.tab?.id });
+            return false; // Synchronous response
+        }
+
+        // Handle BROADCAST_REMINDERS_UPDATE from sidepanel (after creating reminders)
+        if (message.type === 'BROADCAST_REMINDERS_UPDATE') {
+            RemindersBroadcaster.broadcastUpdate();
+            sendResponse({ success: true });
             return false; // Synchronous response
         }
 

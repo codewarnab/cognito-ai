@@ -9,3 +9,4 @@ export * from './collapsible';
 export * from './tooltip';
 export * from './calendar';
 export * from './select';
+export * from './drawer';

@@ -107,11 +107,11 @@ export function EditReminderDialog({
     if (showDeleteConfirm) {
         return (
             <Dialog open={true} onOpenChange={() => setShowDeleteConfirm(false)}>
-                <DialogContent className="bg-slate-900 border-white/10 text-white max-w-sm">
+                <DialogContent className="max-w-sm">
                     <DialogHeader>
                         <DialogTitle>Delete Reminder?</DialogTitle>
                     </DialogHeader>
-                    <p className="text-sm text-white/70 py-4">
+                    <p className="text-sm text-muted-foreground py-4">
                         Are you sure you want to delete this reminder? This action cannot be undone.
                     </p>
                     <DialogFooter className="gap-2">
@@ -129,7 +129,7 @@ export function EditReminderDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-            <DialogContent className="bg-slate-900 border-white/10 text-white max-w-md">
+            <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Edit Reminder</DialogTitle>
                 </DialogHeader>
@@ -137,43 +137,40 @@ export function EditReminderDialog({
                 <div className="flex flex-col gap-4 py-4">
                     {/* Name Field */}
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor={titleId} className="text-white/70">Name</Label>
+                        <Label htmlFor={titleId}>Name</Label>
                         <Input
                             id={titleId}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="What should I remind you about?"
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30"
                         />
                     </div>
 
                     {/* Instructions Field */}
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor={descriptionId} className="text-white/70">Instructions</Label>
+                        <Label htmlFor={descriptionId}>Instructions</Label>
                         <Textarea
                             id={descriptionId}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Add details about this reminder..."
-                            className="bg-white/5 border-white/10 text-white placeholder:text-white/30 min-h-[80px]"
+                            className="min-h-[80px]"
                         />
                     </div>
 
                     {/* When Section */}
                     <div className="flex flex-col gap-2">
-                        <Label className="text-white/70">When</Label>
+                        <Label>When</Label>
                         <Select
                             value={repeat}
                             setValue={(value) => setRepeat(value as RepeatFrequency)}
-                            className="bg-white/5 border-white/10 text-white w-full"
-                            popoverClassName="bg-slate-900 border-white/10"
                             placeholder="Repeat"
                         >
-                            <SelectOption value="none" className="text-white hover:bg-white/10">Doesn&apos;t repeat</SelectOption>
-                            <SelectOption value="daily" className="text-white hover:bg-white/10">Daily</SelectOption>
-                            <SelectOption value="weekly" className="text-white hover:bg-white/10">Weekly</SelectOption>
-                            <SelectOption value="monthly" className="text-white hover:bg-white/10">Monthly</SelectOption>
-                            <SelectOption value="yearly" className="text-white hover:bg-white/10">Yearly</SelectOption>
+                            <SelectOption value="none">Doesn&apos;t repeat</SelectOption>
+                            <SelectOption value="daily">Daily</SelectOption>
+                            <SelectOption value="weekly">Weekly</SelectOption>
+                            <SelectOption value="monthly">Monthly</SelectOption>
+                            <SelectOption value="yearly">Yearly</SelectOption>
                         </Select>
 
                         <div className="flex gap-2">
@@ -182,13 +179,13 @@ export function EditReminderDialog({
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="flex-1 justify-start text-left bg-white/5 border-white/10 text-white hover:bg-white/10"
+                                        className="flex-1 justify-start text-left font-normal"
                                     >
                                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                         {date ? format(date, 'dd-MM-yyyy') : 'Pick date'}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-slate-900 border-white/10">
+                                <PopoverContent className="w-auto p-0">
                                     <Calendar
                                         mode="single"
                                         selected={date}
@@ -209,7 +206,6 @@ export function EditReminderDialog({
                                     type="time"
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
-                                    className="bg-white/5 border-white/10 text-white"
                                 />
                             </div>
                         </div>
@@ -217,7 +213,7 @@ export function EditReminderDialog({
 
                     {/* Error Message */}
                     {error && (
-                        <div className="text-red-400 text-sm" role="alert">
+                        <div className="text-destructive text-sm" role="alert">
                             {error}
                         </div>
                     )}
@@ -226,10 +222,9 @@ export function EditReminderDialog({
                 <DialogFooter className="flex justify-between gap-2">
                     <div className="flex gap-2">
                         <Button
-                            variant={isPaused ? 'default' : 'outline'}
+                            variant={isPaused ? 'default' : 'secondary'}
                             size="sm"
                             onClick={() => setIsPaused(!isPaused)}
-                            className={isPaused ? 'bg-blue-500 hover:bg-blue-600' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}
                         >
                             {isPaused ? 'Resume' : 'Pause'}
                         </Button>
@@ -237,7 +232,7 @@ export function EditReminderDialog({
                             variant="outline"
                             size="sm"
                             onClick={handleDelete}
-                            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                            className="border-destructive/50 text-destructive hover:bg-destructive/10"
                         >
                             Delete
                         </Button>

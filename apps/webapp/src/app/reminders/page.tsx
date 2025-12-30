@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Trash2, Calendar, Copy, Check, Edit2 } from 'lucide-react';
 import { Clock } from '@phosphor-icons/react';
 import { extensionAPI } from '@/lib/extension-api';
@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Reminder } from '@cognito/shared';
 import { EditReminderDialog } from '@/components/reminders/EditReminderDialog';
-import { ExtensionStatus } from '@/components/extension/ExtensionStatus';
+import { ExtensionNotInstalled } from '@/components/shared/ExtensionNotInstalled';
 import { useExtension } from '@/hooks/useExtension';
+import { useRemindersStream } from '@/hooks/useRemindersStream';
 import { Header } from '@/components/shared/Header';
 
 // Example suggestions for creating reminders
@@ -20,33 +21,10 @@ const REMINDER_SUGGESTIONS = [
 
 export default function RemindersPage() {
     const { isInstalled, isLoading: extensionLoading } = useExtension();
-    const [reminders, setReminders] = useState<Reminder[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { reminders, isLoading: loading, refresh } = useRemindersStream();
     const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-    const loadReminders = useCallback(async () => {
-        if (!isInstalled) return;
-
-        try {
-            setLoading(true);
-            const response = await extensionAPI.getReminders();
-            if (response.success && response.data) {
-                setReminders(response.data);
-            }
-        } catch (error) {
-            console.error('Failed to load reminders', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [isInstalled]);
-
-    useEffect(() => {
-        if (isInstalled) {
-            loadReminders();
-        }
-    }, [isInstalled, loadReminders]);
 
     const handleCopySuggestion = async (suggestion: string, index: number) => {
         try {
@@ -61,7 +39,8 @@ export default function RemindersPage() {
     const handleDeleteReminder = async (id: string) => {
         try {
             await extensionAPI.deleteReminder(id);
-            await loadReminders();
+            // Refresh will happen automatically via the stream, but call anyway as fallback
+            await refresh();
         } catch (error) {
             console.error('Failed to delete reminder', error);
         }
@@ -85,7 +64,8 @@ export default function RemindersPage() {
                 isPaused: updatedReminder.isPaused,
             });
 
-            await loadReminders();
+            // Refresh will happen automatically via the stream, but call anyway as fallback
+            await refresh();
             setIsEditDialogOpen(false);
             setEditingReminder(null);
         } catch (error) {
@@ -137,7 +117,13 @@ export default function RemindersPage() {
     }
 
     if (!isInstalled) {
-        return <ExtensionStatus />;
+        return (
+            <ExtensionNotInstalled
+                title="Reminders"
+                description="The Cognito AI extension must be installed to manage reminders."
+                maxWidth="max-w-2xl"
+            />
+        );
     }
 
     return (

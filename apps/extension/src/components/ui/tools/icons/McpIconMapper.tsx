@@ -34,10 +34,26 @@ import twentyFirstDevImage from '@assets/brands/integrations/21stdev.png';
 // Adding new MCP server? Also add image import here and entry to MCP_SERVER_IMAGES below
 import jinaImage from '@assets/brands/integrations/jina.png';
 import planeImage from '@assets/brands/integrations/plane.svg';
+import serpApiImage from '@assets/brands/integrations/serpapi.png';
 
 interface McpIconProps {
     size?: number;
+    width?: number | string;
+    height?: number | string;
     className?: string;
+}
+
+function resolveIconSize({ size = 24, width, height }: McpIconProps): number {
+    const toNumber = (value: unknown): number | undefined => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+        return undefined;
+    };
+
+    return toNumber(width) ?? toNumber(height) ?? size;
 }
 
 /**
@@ -65,15 +81,18 @@ const MCP_SERVER_ICONS: Record<string, React.ComponentType<any>> = {
     'tally': Tally,
     'vercel': Vercel,
     'webflow': Webflow,
-    'exa': ({ size = 24, className }) => (
-        <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className={className}>
+    'exa': ({ size = 24, width, height, className }: McpIconProps) => {
+        const finalSize = resolveIconSize({ size, width, height });
+        return (
+        <div style={{ width: finalSize, height: finalSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }} className={className}>
             <img
                 src={exaImage}
                 alt="Exa"
                 style={{ width: '70%', height: '70%', objectFit: 'contain' }}
             />
         </div>
-    ),
+        );
+    },
 };
 
 /**
@@ -88,6 +107,7 @@ const MCP_SERVER_IMAGES: Record<string, string> = {
     'magic-mcp': twentyFirstDevImage,
     'jina': jinaImage,
     'plane': planeImage,
+    'serpapi': serpApiImage,
 };
 
 /**
@@ -108,21 +128,24 @@ export function getMcpServerIcon(serverId?: string): React.ComponentType<any> | 
     // Check images - return wrapper component
     if (MCP_SERVER_IMAGES[normalizedId]) {
         const imageSrc = MCP_SERVER_IMAGES[normalizedId];
-        return ({ size = 24, className }: McpIconProps) => (
-            <img
-                src={imageSrc}
-                alt={serverId}
-                width={size}
-                height={size}
-                className={className}
-                style={{
-                    objectFit: 'contain',
-                    maxWidth: size,
-                    maxHeight: size,
-                    flexShrink: 0,
-                }}
-            />
-        );
+        return ({ size = 24, width, height, className }: McpIconProps) => {
+            const finalSize = resolveIconSize({ size, width, height });
+            return (
+                <img
+                    src={imageSrc}
+                    alt={serverId}
+                    width={finalSize}
+                    height={finalSize}
+                    className={className}
+                    style={{
+                        objectFit: 'contain',
+                        maxWidth: finalSize,
+                        maxHeight: finalSize,
+                        flexShrink: 0,
+                    }}
+                />
+            );
+        };
     }
 
     return null;

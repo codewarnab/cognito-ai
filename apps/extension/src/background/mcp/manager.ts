@@ -118,14 +118,25 @@ export async function connectMcpServer(serverId: string): Promise<McpExtensionRe
                 credentialFields
             );
         } else {
-            // Build final URL - inject token if urlTokenParam is configured
+            // Build final URL - handle different token injection methods
             let finalUrl = serverConfig.url;
             let tokenForClient = accessToken;
+            const patConfig = serverConfig.authConfig?.patConfig;
 
-            if (serverConfig.authConfig?.patConfig?.urlTokenParam && accessToken) {
+            if (patConfig?.urlPathTemplate && accessToken) {
+                // URL path template: replace {API_KEY} placeholder with token
+                try {
+                    finalUrl = patConfig.urlPathTemplate.replace('{API_KEY}', accessToken);
+                    tokenForClient = ''; // Don't pass token to client since it's in URL path
+                    mcpLog.info(`[${serverId}] Token injected into URL path template`);
+                } catch (urlError) {
+                    mcpLog.error(`[${serverId}] Failed to inject token into URL path:`, urlError);
+                }
+            } else if (patConfig?.urlTokenParam && accessToken) {
+                // Query parameter: add token as URL query param
                 try {
                     const urlObj = new URL(finalUrl);
-                    urlObj.searchParams.set(serverConfig.authConfig.patConfig.urlTokenParam, accessToken);
+                    urlObj.searchParams.set(patConfig.urlTokenParam, accessToken);
                     finalUrl = urlObj.toString();
                     tokenForClient = ''; // Don't pass token to client since it's in URL
                     mcpLog.info(`[${serverId}] Token injected into URL query parameter`);

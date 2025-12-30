@@ -170,7 +170,7 @@ function looksLikeMcpTool(toolName: string): boolean {
         'notion', 'linear', 'github', 'figma', 'supabase',
         'netlify', 'sentry', 'paypal', 'webflow', 'ahrefs',
         'context7', 'deepwiki', 'coingecko', 'fetch', 'sequential',
-        'edgeone', 'parallel', 'mcp', 'jina', 'tally'
+        'edgeone', 'parallel', 'mcp', 'jina', 'tally', 'serpapi'
     ];
 
     // If tool name contains any MCP server hint

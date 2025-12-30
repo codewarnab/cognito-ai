@@ -3,7 +3,7 @@ import { ConfirmDialog } from "../../ui/primitives/dialog"
 import { McpServerCardHeader } from "./McpServerCardHeader"
 import { McpServerCardFooter } from "./McpServerCardFooter"
 import { useMcpServer } from "./hooks/useMcpServer"
-import { PatAuthDialog } from "./PatAuthDialog"
+import { PatAuthDrawer } from "./PatAuthDrawer"
 import { AuthMethodDialog } from "./AuthMethodDialog"
 import type { AuthConfig } from "@/constants/mcpServers"
 
@@ -235,7 +235,7 @@ export const McpServerCard: React.FC<McpServerCardProps> = ({
 
             {/* PAT authentication dialog */}
             {authConfig?.patConfig && (
-                <PatAuthDialog
+                <PatAuthDrawer
                     isOpen={showPatDialog}
                     onClose={handlePatDialogClose}
                     onSubmit={handlePatSubmit}
