@@ -129,13 +129,10 @@ export default defineConfig({
             "alarms",
             "scripting",
             "activeTab",
-            "webNavigation",
             "identity",
             "notifications",
             "offscreen",
-            "cookies",
             "history",
-            "search",
             "bookmarks",
             "omnibox",
             "clipboardWrite",
@@ -145,10 +142,7 @@ export default defineConfig({
         // Fixed key for consistent Extension ID
         key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwVgxsaDxwIfWw0yGhkMLONlzo+7RO6+wUT6bF2syzpTO73uMdr/ij5kJwUUQwR4/SNikqkvIi6ijDLkcl17610Cm1B4grtHMFYEuvp7dwkDbO35inGINnXFf+Zf8u9UNN63doNJUu0XEvEWmCS/qi5lOPCuvxAj3xs5gT/eTsDsS8waXNLLqu2l0aT/CR5dbFwH602shM2e2iCUccmFq/6S+gZso1AYg73ffb44XD87ZCiRAZo+hakAfqz6mnUe1lce8lB/J6Rul7mL48m76N9faDinWfowoSpIW9KE8ybFRkHzdX1TvDloGhY+P7vLwuOtR+MwAV0fKjHWHnJPZYQIDAQAB",
 
-        optional_permissions: [
-            "tabCapture",
-            "desktopCapture"
-        ],
+        optional_permissions: [],
         host_permissions: [
             "https://youtube-transcript-generator-five.vercel.app/*",
             "<all_urls>"
