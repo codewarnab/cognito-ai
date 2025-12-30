@@ -31,14 +31,14 @@ apps/extension/
 ├── src/
 │   ├── entrypoints/            # WXT entrypoints
 │   │   ├── sidepanel/          # Main UI entry point (React)
-│   │   ├── background/         # Background Service Worker (MCP, messaging)
+│   │   ├── background.ts       # Background Service Worker (MCP, messaging)
 │   │   └── contents/           # Content scripts
 │   ├── stores/                 # Zustand state management
 │   ├── actions/                # Browser automation actions
 │   ├── ai/                     # AI model integration & prompts
 │   ├── components/             # Reusable React UI components
 │   ├── mcp/                    # Model Context Protocol client
-│   ├── memory/                 # Local database (Dexie)
+│   ├── db/                     # Local database (Dexie)
 │   └── workflows/              # Automation workflows
 ├── wxt.config.ts               # WXT configuration
 └── package.json
@@ -111,7 +111,7 @@ const showModal = useToolsStore((s) => s.showModal);
 const setShowModal = useToolsStore((s) => s.setShowModal);
 ```
 
-Available stores: `useSettingsStore`, `useUINavigationStore`, `useModelStore`, `useChatStore`, `useAttachmentsStore`, `useToolsStore`, `useVoiceModeStore`, `useMcpStore`.
+Available stores: `useSettingsStore`, `useUINavigationStore`, `useModelStore`, `useChatStore`, `useAttachmentsStore`, `useToolsStore`, `useVoiceModeStore`, `useMcpStore`, `useApprovalStore`.
 
 ## Development Workflow
 
@@ -195,6 +195,8 @@ See `src/utils/env.ts` for all available environment variables with defaults.
 | `WXT_ELEVENLABS_WORKER_URL` | ElevenLabs Worker URL | Cloudflare Prod |
 | `WXT_BACKEND_API_URL` | Backend API Endpoint | Vercel Prod |
 | `WXT_METADATA_API_URL` | Metadata API URL | Vercel Prod |
+| `WXT_WEBAPP_URL_DEV` | Webapp URL for development | `http://localhost:3002` |
+| `WXT_WEBAPP_URL_PROD` | Webapp URL for production | Vercel Prod |
 
 ## Backend Integration
 
@@ -202,7 +204,6 @@ The extension supports two modes for AI processing:
 
 | Mode | Description | Requirements |
 |------|-------------|-------------|
-| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
 | **Backend Mode** | Uses hosted Vercel backend | No API key needed |
 | **BYOK Mode** | Direct API calls with user's key | Google API Key |
 
@@ -213,8 +214,13 @@ The extension supports two modes for AI processing:
 ```text
 src/ai/backend/
 ├── index.ts                   # Module exports
-├── backendChat.ts             # Simple backend chat
-├── backendChatWithTools.ts    # Chat with frontend tool execution
+├── backendChatWithTools/      # Chat with frontend tool execution
+│   ├── index.ts               # Module entry point
+│   ├── streamBackend.ts       # Streaming backend chat
+│   ├── streamParser.ts        # Stream parsing utilities
+│   ├── messageSanitizer.ts    # Message sanitization
+│   ├── toolNameSanitizer.ts   # Tool name sanitization
+│   └── types.ts               # Type definitions
 ├── frontendToolExecutor.ts    # Local tool execution  
 ├── gracefulDegradation.ts     # Auto-fallback to BYOK
 ├── streamingOptimizations.ts  # Fetch optimizations
@@ -319,7 +325,7 @@ const value = isSensitiveInput(input) ? undefined : input.value;
 
 - **ALWAYS** add `// SECURITY:` comments when stripping sensitive data
 - Apply defense-in-depth: check at extraction, formatting, AND transport layers
-- See `.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
+- See `apps/extension/.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
 
 ## Logger Categories
 

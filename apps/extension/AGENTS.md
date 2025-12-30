@@ -51,6 +51,9 @@ apps/extension/
 │   ├── mcp/                # MCP client implementation
 │   ├── db/                 # Dexie database (local memory)
 │   ├── workflows/          # Automation workflows
+│   ├── services/           # Service modules
+│   ├── search/             # Search functionality
+│   ├── lib/                # Library utilities
 │   ├── hooks/              # React hooks
 │   ├── utils/              # Utilities
 │   └── types/              # TypeScript types
@@ -147,9 +150,8 @@ See `docs/CODING_STANDARDS.md` for comprehensive React 19 patterns.
 ## AI Editor Configs
 
 This extension has detailed coding standards in:
-- `.cursor/rules/coding-standards.mdc` - Comprehensive coding standards
-- `.kiro/steering/` - Topic-specific Kiro steering files
-- `.trae/rules/project_rules.md` - Trae project rules
+- `apps/extension/.cursor/rules/coding-standards.mdc` - Comprehensive coding standards
+- `apps/extension/.kiro/steering/` - Topic-specific Kiro steering files (security, zustand-stores, react-hooks, etc.)
 
 ## Development
 
@@ -238,7 +240,7 @@ const value = isSensitiveInput(input) ? undefined : input.value;
 
 - **ALWAYS** add `// SECURITY:` comments when stripping sensitive data
 - Apply defense-in-depth: check at extraction, formatting, AND transport layers
-- See `.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
+- See `apps/extension/.kiro/steering/security.md` and `docs/CODING_STANDARDS.md` for full patterns
 
 ## Path Aliases
 
@@ -295,7 +297,6 @@ The extension supports two modes for AI processing:
 | Mode | Description | Requirements |
 |------|-------------|-------------|
 | **Backend Mode** | Uses hosted Vercel backend | No API key needed |
-| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
 | **BYOK Mode** | Direct API calls with user's key | Google API Key |
 
 > **Note**: BYOK Mode is model-agnostic (supports any model). Backend Mode uses fixed `gemini-2.5-flash`.
@@ -303,7 +304,7 @@ The extension supports two modes for AI processing:
 Toggle modes via `useSettingsStore.setUseBackendMode()`.
 
 **Backend Module** (`src/ai/backend/`):
-- `backendChatWithTools.ts` - Full tool execution loop
+- `backendChatWithTools/` - Full tool execution loop (directory with stream parser, sanitizers)
 - `frontendToolExecutor.ts` - Local tool execution
 - `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
 

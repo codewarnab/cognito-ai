@@ -9,7 +9,8 @@ Cognito AI is a **pnpm monorepo** containing a privacy-first, AI-powered Chrome 
 ```text
 cognito-ai/
 ├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension (WXT)
+│   ├── extension/          # @cognito/extension - Chrome Extension (WXT + React 19)
+│   ├── webapp/             # @cognito/webapp - Settings/Onboarding UI (Next.js)
 │   └── docs/               # @cognito/docs - Documentation site (Next.js + Fumadocs)
 ├── packages/
 │   ├── shared/             # @cognito/shared - Shared types and constants
@@ -26,7 +27,6 @@ Key features:
 - Human-in-the-loop tool approval system (see `apps/extension/docs/TOOL_APPROVAL_SYSTEM.md`)
 - Frontend tools pattern for browser automation
 - Graceful degradation from backend mode to BYOK (Bring Your Own Key)
-- Graceful degradation from backend mode to BYOK (Bring Your Own Key)
 - Server-side tools architecture (see `apps/extension/docs/SERVER_TOOLS_ARCHITECTURE.md`)
 
 ### Model Selection
@@ -38,7 +38,8 @@ Key features:
 | Package | Path | Purpose | CLAUDE.md |
 |---------|------|---------|-----------|
 | Extension | `apps/extension/` | Chrome Extension | [CLAUDE.md](apps/extension/CLAUDE.md) |
-| Shared | `packages/shared/` | Shared types/constants | [GEMINI.md](packages/shared/GEMINI.md) |
+| Webapp | `apps/webapp/` | Settings/Onboarding UI | [GEMINI.md](apps/webapp/GEMINI.md) |
+| Shared | `packages/shared/` | Shared types/constants | [CLAUDE.md](packages/shared/CLAUDE.md) |
 | Cloudflare Backend | `packages/backend-cloudflare/` | ElevenLabs proxy | [CLAUDE.md](packages/backend-cloudflare/CLAUDE.md) |
 | Vercel Backend | `packages/backend-vercel/` | AI Chat + YouTube | [CLAUDE.md](packages/backend-vercel/CLAUDE.md) |
 | Docs | `apps/docs/` | Documentation site | N/A |
@@ -51,12 +52,14 @@ pnpm install
 
 # Development
 pnpm dev                    # Start extension dev server
+pnpm dev:webapp             # Start webapp dev server
 pnpm dev:docs               # Start docs dev server
 pnpm dev:all                # Start all packages in parallel
 
 # Building
 pnpm build                  # Build all packages
 pnpm build:extension        # Build extension only
+pnpm build:webapp           # Build webapp only
 
 # Package-specific commands
 pnpm --filter @cognito/extension dev

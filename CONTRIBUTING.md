@@ -134,12 +134,113 @@ git push origin feature/my-new-feature
 - Use meaningful variable and function names
 - Add JSDoc comments for complex functions when helpful
 
+### React 19 Guidelines
+
+This extension uses **React 19** with important changes:
+
+#### `ref` as a Prop
+
+In React 19, `ref` is passed as a regular prop instead of using `forwardRef`:
+
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+}
+
+function MyComponent({ ref, ...props }: Props) {
+  return <div ref={ref} {...props} />;
+}
+
+// ❌ Old React 18 pattern (still works but not preferred)
+const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  return <div ref={ref} {...props} />;
+});
+```
+
+#### `useRef` Null Handling
+
+`useRef<T>(null)` now returns `RefObject<T | null>` instead of `RefObject<T>`:
+
+```typescript
+// ✅ React 19 - explicit null in type
+const inputRef = useRef<HTMLInputElement | null>(null);
+```
+
 ### React Components
 
 - Use **functional components** with hooks
 - Keep components small and focused
 - Use proper prop typing with TypeScript
 - Follow React best practices
+
+### Zustand State Management
+
+**CRITICAL: Selective Subscriptions Required**
+
+Never subscribe to the entire store with `useStore()`. Always use individual selectors:
+
+```typescript
+// ❌ BAD - Causes infinite re-render loops
+const store = useToolsStore();
+
+// ✅ GOOD - Selective subscriptions for each value
+const showModal = useToolsStore((s) => s.showModal);
+const setShowModal = useToolsStore((s) => s.setShowModal);
+```
+
+### Security Guidelines
+
+When reading data from the DOM that will be sent to AI or backend:
+
+- **NEVER capture sensitive input values** (passwords, credit cards, SSN, etc.)
+- Always check if an input is sensitive before reading `input.value`
+- Sensitive types: `password`
+- Sensitive autocomplete: `cc-number`, `cc-exp`, `cc-csc`, `current-password`, `new-password`
+- Sensitive name/id patterns: `/password|card|cvv|csc|ssn|secret|pin/i`
+
+```typescript
+// SECURITY: Stripping value from sensitive fields to prevent PII leakage to AI
+const value = isSensitiveInput(input) ? undefined : input.value;
+```
+
+### CSS Scoping (Critical)
+
+**NEVER write broad CSS selectors** that can match elements across unrelated components:
+
+```css
+/* ❌ BAD - Too broad, affects all spans inside any .group element */
+.group:hover span {
+    max-width: 50px;
+}
+
+/* ✅ GOOD - Scoped to specific component */
+.my-feature-btn:hover span {
+    max-width: 50px;
+}
+```
+
+### Environment Variables
+
+**CRITICAL**: Always use the centralized `ENV` module instead of directly accessing `import.meta.env`:
+
+```typescript
+// ✅ CORRECT - Use centralized ENV module
+import { ENV } from '@/utils/env';
+const workerUrl = ENV.ELEVENLABS_WORKER_URL;
+
+// ❌ WRONG - Never access directly
+const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
+```
+
+### Logger Categories
+
+All `createLogger` calls MUST include a category as the second argument:
+
+```typescript
+import { createLogger } from '~logger';
+const log = createLogger('FeatureName', 'CATEGORY');
+```
 
 ### File Naming
 
@@ -155,6 +256,18 @@ git push origin feature/my-new-feature
   - `@/*` → `./src/*` (e.g., `import { handleAPIError } from '@/utils/apiErrorHandler'`, `@/components/...`, `@/ai/...`)
   - `@assets/*` → `./assets/*` (e.g., `import icon from '@assets/icon.png'`)
   - `~logger` → `./src/logger` (e.g., `import { createLogger } from '~logger'`)
+
+### Shared Package
+
+Use `@cognito/shared` for shared types and constants between packages:
+
+```typescript
+// Import types
+import type { WriteTone, RewritePreset, SummaryType } from '@cognito/shared';
+
+// Import constants
+import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
+```
 
 ### Code Organization
 
@@ -201,7 +314,9 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 
 Since this is a monorepo, please specify the scope of the change:
 - `extension`
+- `webapp`
 - `docs`
+- `shared`
 - `backend-cloudflare`
 - `backend-vercel`
 - `repo` (for root level changes)
@@ -293,7 +408,7 @@ If you have questions about contributing:
 
 ## License
 
-By contributing to Cognito AI, you agree that your contributions will be licensed under the [MIT License](./LICENSE).
+By contributing to Cognito AI, you agree that your contributions will be licensed under the [BUSL-1.1 License](./LICENSE).
 
 ---
 

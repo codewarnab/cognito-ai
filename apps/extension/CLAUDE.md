@@ -35,8 +35,9 @@ apps/extension/
 ├── src/
 │   ├── entrypoints/        # WXT entrypoints
 │   │   ├── sidepanel/      # Main side panel React app
-│   │   ├── background/     # Background Service Worker
-│   │   └── contents/       # Content scripts
+│   │   └── background.ts   # Background Service Worker entry
+│   ├── background/         # Background service worker logic
+│   ├── contents/           # Content scripts
 │   ├── stores/             # Zustand state management (see below)
 │   ├── actions/            # Browser automation actions
 │   ├── ai/                 # AI model integration & prompts
@@ -49,7 +50,9 @@ apps/extension/
 │   │   ├── shell/          # App shell components
 │   │   └── ui/             # Reusable UI primitives
 │   ├── mcp/                # MCP client implementation
-│   ├── memory/             # Dexie database (local memory)
+│   ├── db/                 # Dexie database (local storage)
+│   ├── search/             # Web search implementation
+│   ├── services/           # Service layer integrations
 │   ├── workflows/          # Automation workflows
 │   ├── hooks/              # React hooks
 │   ├── utils/              # Utilities
@@ -128,8 +131,7 @@ import { Button } from '../../../components/ui/Button';
 | `~*` | `src/*` |
 | `@/*` | `src/*` |
 | `@assets/*` | `assets/*` |
-| `@/components/*` | `src/components/*` |
-| `@/utils/*` | `src/utils/*` |
+| `~logger` | `src/logger` |
 
 ## Coding Standards
 
@@ -198,7 +200,7 @@ export function Button({ label, onClick, disabled = false }: ButtonProps) {
 import { createLogger } from '~logger';
 
 // Always include category as second argument (see Logger Categories below)
-const logger = createLogger('MyComponent', 'UI_CHAT_COMPONENTS');
+const logger = createLogger('MyComponent', 'UI_CHAT');
 
 try {
   await someAsyncOperation();
@@ -301,7 +303,6 @@ The extension supports two modes for AI processing:
 | Mode | Description | Requirements |
 |------|-------------|-------------|
 | **Backend Mode** | Uses hosted Vercel backend | No API key needed |
-| **Backend Mode** | Uses hosted Vercel backend | No API key needed |
 | **BYOK Mode** | Direct API calls with user's key | Google API Key |
 
 > **Note**: BYOK Mode is model-agnostic (supports any model). Backend Mode uses fixed `gemini-2.5-flash`.
@@ -386,8 +387,9 @@ const log = createLogger('FeatureName', 'CATEGORY');
 |------|---------|
 | `docs/CODING_STANDARDS.md` | Detailed coding standards |
 | `docs/TECHNICAL_DOCUMENTATION.md` | Technical architecture |
-| `docs/TOOL_POPOVER_ARCHITECTURE.md` | Tool popover system |
-| `docs/WEBMCP_INTEGRATION.md` | MCP integration details |
+| `docs/MCP_STDIO_ARCHITECTURE.md` | MCP stdio transport |
+| `docs/REMOTE_MCP_INTEGRATION.md` | MCP SSE/HTTP transport |
+| `docs/WEBMCP_INTEGRATION.md` | WebMCP integration details |
 
 ## Git Commits
 
