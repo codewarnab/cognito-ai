@@ -1,0 +1,10 @@
+{
+    "title": "Configuration",
+    "pages": [
+        "index",
+        "settings-overview",
+        "env-vars",
+        "modes-and-feature-flags",
+        "permissions"
+    ]
+}

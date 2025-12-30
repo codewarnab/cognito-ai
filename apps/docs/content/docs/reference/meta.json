@@ -1,0 +1,9 @@
+{
+    "title": "Reference",
+    "pages": [
+        "index",
+        "glossary",
+        "env-vars",
+        "message-types"
+    ]
+}

@@ -1,0 +1,94 @@
+---
+title: Reminders
+description: Set and manage reminders with Cognito AI.
+---
+
+## What You'll Learn
+
+- Creating reminders via chat
+- Managing reminders in the webapp
+- How notifications work
+
+## Overview
+
+Cognito AI can set reminders that trigger Chrome notifications at specified times. Ask naturally to create reminders.
+
+## Create a Reminder
+
+### Natural Language
+
+```text
+Remind me to check emails in 30 minutes
+```
+
+```text
+Set a reminder for 3pm to join the standup
+```
+
+```text
+Remind me tomorrow at 9am to review the PR
+```
+
+### Reminder Tools
+
+| Tool | Description |
+|------|-------------|
+| `createReminder` | Schedule a new reminder |
+| `listReminders` | View active reminders |
+| `cancelReminder` | Delete a reminder |
+
+## How It Works
+
+| Step | Action |
+|------|--------|
+| 1 | AI parses your reminder request |
+| 2 | `createReminder` tool schedules via Chrome Alarms API |
+| 3 | Alarm triggers at specified time |
+| 4 | Chrome notification appears |
+
+## Managing Reminders
+
+### List Active Reminders
+
+```text
+What reminders do I have?
+```
+
+### Cancel a Reminder
+
+```text
+Cancel my 3pm reminder
+```
+
+### Webapp Interface
+
+> [!NOTE]
+> Advanced reminder management is available in the webapp at `/reminders`.
+
+The webapp provides:
+- Full list of all reminders
+- Edit reminder details
+- Bulk delete
+
+## Notifications
+
+Reminders trigger Chrome browser notifications:
+
+| Setting | Location |
+|---------|----------|
+| **Sound** | Settings → Enable Notification Sound |
+| **Chrome notifications** | Chrome OS/system settings |
+
+> [!TIP]
+> Ensure Chrome notifications are enabled in your system settings for reminders to appear.
+
+## Limitations
+
+- **Browser must be open** — Chrome needs to be running
+- **Extension active** — Extension must not be disabled
+- **Time zones** — Uses your local system time
+
+## Next Steps
+
+- [Settings Overview](/docs/configuration/settings-overview) — Notification preferences
+- [Side Panel Basics](/docs/using-cognito/sidepanel-basics) — Chat interface

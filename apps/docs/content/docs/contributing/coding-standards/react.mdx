@@ -53,3 +53,4 @@ description: Patterns for React components, hooks, and UI implementation.
 ## useEffect Dependencies
 - **CRITICAL**: Exclude callback props from useEffect dependency arrays when they're only used in cleanup; including them causes effects to re-run when parent re-defines callbacks, triggering premature cleanup.
 - Parent components should memoize callbacks with `useCallback` if stable references are needed.
+

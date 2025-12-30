@@ -1,0 +1,97 @@
+---
+title: MCP Issues
+description: Troubleshoot Model Context Protocol connection problems.
+---
+
+## What is MCP?
+
+**Model Context Protocol (MCP)** allows Cognito AI to connect to external tool servers. Issues typically involve connection, authentication, or server availability.
+
+## Server Won't Connect
+
+### Symptoms
+- "Connection failed" error
+- Server stays in "connecting" state
+
+### Solutions
+
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Bad URL | Server address | Verify URL is correct and accessible |
+| Server down | Server status | Check if server is running |
+| Network blocked | Firewall/proxy | Allow outbound connections |
+| CORS error | Browser console | Server must allow extension origin |
+
+### Verify Server is Running
+
+For local servers:
+```bash
+# Check if server is listening
+curl http://localhost:PORT/
+```
+
+For remote servers:
+- Check the service status page
+- Verify the URL works in a browser
+
+## Authentication Failed
+
+### Symptoms
+- "Unauthorized" or 401 error
+- OAuth popup fails
+
+### Solutions
+
+| Auth Type | Issue | Fix |
+|-----------|-------|-----|
+| API Key | Wrong key | Re-enter correct key |
+| OAuth | Popup blocked | Allow popups for extension |
+| OAuth | Token expired | Re-authenticate |
+| Bearer token | Malformed | Check token format |
+
+### OAuth Flow Issues
+
+1. Check popup is not blocked
+2. Complete the OAuth flow in the popup
+3. Wait for redirect back to extension
+4. If stuck, clear MCP credentials and retry
+
+## Tools Not Appearing
+
+### Symptoms
+- Connected but no tools listed
+- Server connected but tools don't work
+
+### Solutions
+
+| Cause | Fix |
+|-------|-----|
+| Server has no tools | Check server documentation |
+| Discovery failed | Reconnect to server |
+| Incompatible version | Update MCP client or server |
+
+### Force Tool Refresh
+
+1. Disconnect from server
+2. Reconnect
+3. Tools should re-discover
+
+## Server Errors During Use
+
+### Symptoms
+- Tools fail mid-execution
+- Timeout errors
+
+### Solutions
+
+| Error | Likely Cause | Fix |
+|-------|--------------|-----|
+| Timeout | Server slow | Increase timeout or retry |
+| 500 error | Server bug | Check server logs |
+| Connection reset | Network issue | Check connectivity |
+
+## Next Steps
+
+- [MCP Overview](/docs/integrations/mcp-overview) — Understanding MCP
+- [Remote MCP](/docs/integrations/remote-mcp) — Connection details
+- [Debugging](/docs/troubleshooting/debugging) — Console inspection

@@ -4,9 +4,17 @@
         "index",
         "---Getting Started---",
         "getting-started",
-        "---Core---",
+        "---Using Cognito---",
+        "using-cognito",
+        "integrations",
+        "configuration",
+        "---Reference---",
         "architecture",
-        "guides",
-        "contributing"
+        "security",
+        "troubleshooting",
+        "faq",
+        "---Contributing---",
+        "contributing",
+        "reference"
     ]
 }

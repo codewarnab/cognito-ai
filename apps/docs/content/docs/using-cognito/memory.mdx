@@ -1,0 +1,83 @@
+---
+title: Memory System
+description: How Cognito AI stores and recalls information locally.
+---
+
+## What You'll Learn
+
+- How the local memory system works
+- What data is stored
+- Managing your stored data
+
+## Overview
+
+Cognito AI uses a **local-first** memory system. All data stays in your browser using IndexedDB (via Dexie). Nothing is sent to external servers.
+
+> [!TIP]
+> Your conversations, preferences, and custom instructions remain private on your device.
+
+## What Gets Stored
+
+| Data Type | Location | Purpose |
+|-----------|----------|---------|
+| **Conversations** | IndexedDB | Chat history and threads |
+| **Preferences** | Chrome storage | Settings, API keys, modes |
+| **Threads** | IndexedDB | Conversation organization |
+| **Reminders** | Chrome alarms | Scheduled notifications |
+
+## Privacy Model
+
+- **All storage is local** — No cloud sync of conversations
+- **API keys stored locally** — BYOK keys never leave your device
+- **Backend mode** — Only sends messages for processing (no persistent storage)
+
+## Viewing Stored Data
+
+### Access via Browser DevTools
+
+1. Open Chrome DevTools (`F12`)
+2. Go to **Application** → **IndexedDB**
+3. Find the Cognito database
+4. Browse stored tables
+
+### Settings and Preferences
+
+Settings are stored in Chrome local storage:
+1. DevTools → **Application** → **Local Storage**
+2. Find `chrome-extension://[extension-id]`
+
+## Clearing Data
+
+### Clear Conversations
+
+From the side panel:
+1. Open thread list
+2. Delete threads individually or use **Clear All**
+
+### Clear All Extension Data
+
+1. Go to `chrome://extensions`
+2. Find Cognito AI
+3. Click **Details** → **Clear data**
+
+> [!CAUTION]
+> Clearing extension data removes all settings, API keys, and conversation history.
+
+### Clear Specific Storage
+
+DevTools method:
+1. **Application** → **IndexedDB** → Right-click database → **Delete**
+2. Or **Application** → **Local Storage** → Right-click → **Clear**
+
+## Technical Details
+
+| Technology | Purpose |
+|------------|---------|
+| **Dexie** | IndexedDB wrapper for conversations |
+| **Chrome Storage API** | Settings persistence |
+| **Chrome Alarms API** | Reminder scheduling |
+
+## Next Steps
+
+- [Privacy Model](/docs/security/privacy-model) — Deep dive on data handling
+- [Settings Overview](/docs/configuration/settings-overview) — All configuration options

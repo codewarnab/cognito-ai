@@ -1,0 +1,85 @@
+---
+title: Installation Issues
+description: Troubleshoot Cognito AI installation problems.
+---
+
+## Extension Won't Load
+
+### Symptoms
+- Extension doesn't appear in Chrome toolbar
+- "Load unpacked" fails with error
+
+### Solutions
+
+| Check | Solution |
+|-------|----------|
+| Chrome version | Ensure Chrome 120+ (`chrome://version`) |
+| Build exists | Verify `.output/chrome-mv3/` folder exists |
+| Manifest error | Check for red error badge in `chrome://extensions` |
+| Developer mode | Ensure Developer mode toggle is ON |
+
+### Detailed Steps
+
+**If build folder is missing:**
+```bash
+pnpm install
+pnpm build:extension
+```
+
+**If manifest error appears:**
+1. Go to `chrome://extensions`
+2. Click **Errors** button on extension card
+3. Read the specific error message
+
+## Build Fails
+
+### Symptoms
+- `pnpm build:extension` throws errors
+- TypeScript or module errors
+
+### Solutions
+
+| Error Type | Fix |
+|------------|-----|
+| Module not found | Run `pnpm install` |
+| TypeScript error | Check `tsconfig.json` or source files |
+| Out of memory | Increase Node heap: `NODE_OPTIONS=--max-old-space-size=4096` |
+
+### Clean Build
+
+```bash
+# Remove node_modules and reinstall
+rm -rf node_modules
+rm -rf apps/extension/dist
+pnpm install
+pnpm build:extension
+```
+
+## Side Panel Won't Open
+
+### Symptoms
+- `Ctrl+Shift+H` does nothing
+- No side panel when clicking icon
+
+### Solutions
+
+| Cause | Fix |
+|-------|-----|
+| Shortcut conflict | Check `chrome://extensions/shortcuts` |
+| Extension disabled | Enable at `chrome://extensions` |
+| Chrome bug | Restart Chrome completely |
+| Wrong profile | Check correct Chrome profile |
+
+### Verify Shortcut
+
+1. Go to `chrome://extensions/shortcuts`
+2. Find "Cognito : Your AI Browser Agent"
+3. Check "Open AI Chat side panel" shortcut
+4. Reassign if conflicting
+
+## Getting Help
+
+If issues persist:
+1. Check [Debugging](/docs/troubleshooting/debugging) for console inspection
+2. Look for similar issues in the GitHub repo
+3. File a new issue with error messages included

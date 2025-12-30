@@ -1,0 +1,197 @@
+---
+title: Permissions
+description: Chrome extension permissions explained.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/wxt.config.ts */}
+
+Cognito AI requires specific Chrome permissions to function. This page explains what each permission does and why it's needed.
+
+## Permission Categories
+
+| Category | Examples | Purpose |
+|----------|----------|---------|
+| **Core** | sidePanel, storage | Basic functionality |
+| **Tab Access** | tabs, activeTab | Read page content |
+| **Scripting** | scripting | Inject content scripts |
+| **Host** | `<all_urls>` | Access web pages |
+| **Optional** | identity | OAuth for MCP |
+
+## Core Permissions
+
+### sidePanel
+
+**Purpose**: Display the AI chat interface
+
+**Why needed**: Cognito's primary UI is a side panel that appears next to web pages.
+
+### storage
+
+**Purpose**: Persist settings and data
+
+**Why needed**: Stores user preferences, API keys, MCP tokens, and message history.
+
+### unlimitedStorage
+
+**Purpose**: Store large amounts of data
+
+**Why needed**: Message history and memory data can grow substantially over time.
+
+### alarms
+
+**Purpose**: Schedule background tasks
+
+**Why needed**: Token refresh, background extraction, and periodic tasks.
+
+### offscreen
+
+**Purpose**: Create offscreen documents
+
+**Why needed**: Audio processing for voice mode without visible UI.
+
+## Tab Access Permissions
+
+### tabs
+
+**Purpose**: Access tab information
+
+**Why needed**:
+- Read current page URL
+- Detect tab switches
+- Send messages to tabs
+
+### activeTab
+
+**Purpose**: Access the current tab
+
+**Why needed**: 
+- Read page content for AI context
+- Execute browser automation
+
+### tabCapture
+
+**Purpose**: Capture tab audio/video
+
+**Why needed**: Screenshot capabilities for AI analysis.
+
+## Scripting Permissions
+
+### scripting
+
+**Purpose**: Execute scripts in pages
+
+**Why needed**:
+- Inject content scripts
+- Read page DOM
+- Execute browser actions
+
+## Host Permissions
+
+### `<all_urls>`
+
+**Purpose**: Access any website
+
+**Why needed**:
+- Read page content on any site
+- Execute browser automation anywhere
+- Inject WebMCP proxy to discover tools
+
+> **Privacy**: While Cognito CAN access any page, it only reads content when you explicitly interact with it (e.g., ask about the page).
+
+## Optional Permissions
+
+### identity
+
+**Purpose**: OAuth authentication
+
+**Why needed**: MCP server authentication (e.g., Notion, Linear).
+
+**Requested**: Only when connecting to OAuth-requiring MCP servers.
+
+## Commands
+
+Keyboard shortcuts defined in the manifest:
+
+| Command | Default | Description |
+|---------|---------|-------------|
+| `toggle-sidepanel` | `Ctrl+Shift+H` | Open/close side panel |
+
+## Omnibox
+
+| Keyword | Description |
+|---------|-------------|
+| `co` | Search/command from address bar |
+
+Type `co` in the address bar, press Tab, then enter a command.
+
+## Content Security Policy
+
+Cognito uses a strict CSP for security:
+
+```json
+{
+  "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+}
+```
+
+This prevents:
+- Inline script execution
+- External script loading
+- XSS attacks
+
+## Web Accessible Resources
+
+The extension exposes certain resources to web pages for WebMCP integration.
+
+## Permission Requests
+
+### Required at Install
+
+These permissions are granted when you install the extension:
+- sidePanel
+- storage
+- tabs
+- activeTab
+- scripting
+
+### Requested at Runtime
+
+These are requested when needed:
+- **Host permissions**: When accessing a new domain
+- **identity**: When connecting OAuth MCP servers
+
+### Permission Prompts
+
+Chrome may show prompts like:
+- "Read and change your data on all websites"
+- "Sign you in with your Google account"
+
+## Privacy Implications
+
+| Permission | Data Access | Privacy Impact |
+|------------|-------------|----------------|
+| tabs | URLs, titles | Can see browsing history |
+| `<all_urls>` | Page content | Can read anything |
+| storage | Local data | Stores your data locally |
+
+### How Cognito Protects Privacy
+
+1. **Local-first**: All data stays on your device
+2. **No tracking**: No analytics or telemetry
+3. **Selective access**: Only reads pages you interact with
+4. **Secure storage**: Chrome's encrypted storage
+
+See [Privacy Model](/docs/security/privacy-model) for details.
+
+## Minimizing Permissions
+
+If you're concerned about permissions:
+
+1. Use **Local Mode** (Chrome built-in AI) — no remote API calls
+2. Disable MCP servers you don't use
+3. Use BYOK mode — your API key, no backend
+
+## Next Steps
+
+- [Privacy Model](/docs/security/privacy-model) — How data is protected
+- [Security Overview](/docs/security) — Security architecture

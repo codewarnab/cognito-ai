@@ -1,0 +1,262 @@
+---
+title: Adding MCP Server
+description: How to add support for a new MCP server.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/constants/mcpServers.tsx */}
+
+This guide walks you through adding support for a new MCP server to Cognito AI.
+
+## Server Types
+
+| Type | Transport | Configuration |
+|------|-----------|---------------|
+| **Remote (SSE/HTTP)** | WebSocket-like | User provides URL |
+| **Pre-configured Remote** | SSE/HTTP | Bundled in extension |
+| **StdIO (Backend-only)** | stdin/stdout | Backend proxied |
+
+## Adding a Pre-configured Remote Server
+
+### Step 1: Add Server Configuration
+
+Edit `apps/extension/src/constants/mcpServers.tsx`:
+
+```tsx
+export const MCP_SERVERS: McpServerConfig[] = [
+  // ... existing servers
+  
+  {
+    id: 'my-server',
+    name: 'My MCP Server',
+    description: 'Integration with My Service',
+    icon: <MyServiceIcon className="h-5 w-5" />,
+    serverUrl: 'https://mcp.myservice.com',
+    category: 'productivity',
+    requiresAuth: true,
+    authType: 'oauth',
+    isBackendOnly: false,
+  },
+];
+```
+
+### Step 2: Configuration Schema
+
+```typescript
+interface McpServerConfig {
+  // Required
+  id: string;                      // Unique identifier
+  name: string;                    // Display name
+  serverUrl: string;               // MCP endpoint URL
+  
+  // Optional
+  description?: string;            // User-facing description
+  icon?: React.ReactNode;          // Icon component
+  category?: string;               // For grouping
+  requiresAuth?: boolean;          // Needs authentication
+  authType?: 'oauth' | 'token';    // Authentication type
+  isBackendOnly?: boolean;         // StdIO server
+  tokenLabel?: string;             // Label for token input
+}
+```
+
+### Step 3: Add Icon
+
+Import or create an icon for the server:
+
+```tsx
+// Option 1: Use Lucide icon
+import { Database } from 'lucide-react';
+
+// Option 2: Custom SVG component
+function MyServiceIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24">
+      {/* SVG path */}
+    </svg>
+  );
+}
+```
+
+## Adding an OAuth Server
+
+For servers requiring OAuth authentication:
+
+### OAuth Discovery
+
+Cognito automatically discovers OAuth endpoints using:
+- RFC 9728: Protected Resource Metadata
+- RFC 8414: Authorization Server Metadata
+
+The server should expose:
+- `/.well-known/oauth-protected-resource` (optional)
+- `/.well-known/oauth-authorization-server` at the auth server
+
+### Required Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `authorization_endpoint` | User consent URL |
+| `token_endpoint` | Token exchange |
+| `registration_endpoint` | Dynamic client registration |
+
+### Configuration
+
+```tsx
+{
+  id: 'oauth-server',
+  name: 'OAuth Protected Server',
+  serverUrl: 'https://mcp.server.com',
+  requiresAuth: true,
+  authType: 'oauth',
+}
+```
+
+### Dynamic Client Registration
+
+Cognito uses RFC 7591 for dynamic client registration. The server must support:
+- `POST /register` endpoint
+- Returning `client_id` and optional `client_secret`
+
+## Adding a Token-Based Server
+
+For servers using API tokens:
+
+```tsx
+{
+  id: 'token-server',
+  name: 'API Token Server',
+  serverUrl: 'https://mcp.server.com',
+  requiresAuth: true,
+  authType: 'token',
+  tokenLabel: 'API Key',  // Shown in UI
+}
+```
+
+The user enters their API token in the settings UI.
+
+## Adding a StdIO Server (Backend-Only)
+
+StdIO servers require backend proxying since browsers can't spawn processes.
+
+### Step 1: Extension Configuration
+
+```tsx
+{
+  id: 'stdio-server',
+  name: 'CLI Tool Server',
+  description: 'MCP server for CLI tool',
+  isBackendOnly: true,  // Key flag
+  requiresAuth: true,
+  authType: 'token',
+  tokenLabel: 'API Key',
+}
+```
+
+### Step 2: Backend Registry
+
+Add to backend's secure command registry at `packages/shared/src/constants/mcpRegistry.ts`:
+
+```typescript
+export const MCP_SERVER_REGISTRY: Record<string, StdioServerConfig> = {
+  'stdio-server': {
+    command: 'npx',
+    args: ['-y', '@myorg/mcp-server'],
+    env: {
+      // API key injected at runtime
+      MY_API_KEY: '${API_KEY}',
+    },
+  },
+};
+```
+
+> **Security**: Commands are stored server-side only. The frontend sends `serverId` and credentials, never the actual command.
+
+### Step 3: Backend Endpoint
+
+The backend handles StdIO servers via:
+- `POST /api/ai/mcp/discover` — List tools
+- `POST /api/ai/mcp/execute` — Execute tool
+
+## Testing Your Server
+
+### Prerequisites
+
+1. Run `pnpm dev` to start the extension
+2. Load the extension in Chrome
+
+### Test Connection
+
+1. Open **Settings** → **MCP Servers**
+2. Find your server in the list
+3. Enable it
+4. If OAuth: Complete the consent flow
+5. If token: Enter your API key
+6. Verify status shows "Connected"
+
+### Test Tools
+
+1. Open the side panel
+2. Ask the AI to use a tool from your server
+3. Verify the tool executes correctly
+
+### Debugging
+
+Check the browser console for:
+- Connection errors
+- OAuth flow issues
+- Tool execution failures
+
+```javascript
+// In DevTools console, filter by:
+[MCP_CLIENT]
+[MCP_AUTH]
+[MCP_TOOLS]
+```
+
+## Server Requirements
+
+### Required MCP Methods
+
+| Method | Purpose |
+|--------|---------|
+| `initialize` | Handshake, protocol version |
+| `tools/list` | Return available tools |
+| `tools/call` | Execute a tool |
+
+### Optional Methods
+
+| Method | Purpose |
+|--------|---------|
+| `resources/list` | List resources |
+| `prompts/list` | List prompts |
+| `resources/read` | Read a resource |
+| `notifications/tools/list_changed` | Tool updates |
+
+### Protocol Versions
+
+Cognito supports:
+- `2025-06-18` — Streamable HTTP (preferred)
+- `2024-11-05` — HTTP+SSE (fallback)
+
+## Submitting Your Server
+
+### PR Checklist
+
+- [ ] Server config added to `mcpServers.tsx`
+- [ ] Icon included
+- [ ] Backend registry updated (if StdIO)
+- [ ] OAuth endpoints verified
+- [ ] Tested connection and tools
+- [ ] Documentation updated (if notable)
+
+### Documentation
+
+For significant servers, update:
+- `docs/integrations/remote-mcp.mdx` — Add to examples
+- Create usage documentation if needed
+
+## Next Steps
+
+- [MCP Overview](/docs/integrations/mcp-overview) — Protocol introduction
+- [MCP Client Architecture](/docs/architecture/mcp-client) — Implementation details
+- [Remote MCP](/docs/integrations/remote-mcp) — User guide

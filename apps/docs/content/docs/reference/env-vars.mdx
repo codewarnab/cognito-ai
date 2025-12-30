@@ -1,0 +1,162 @@
+---
+title: Environment Variables Reference
+description: Complete list of environment variables.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/utils/env.ts, packages/backend-vercel/.env.example */}
+
+Complete reference for all environment variables used across Cognito AI packages.
+
+## Extension (`apps/extension/`)
+
+All extension variables are prefixed with `WXT_`.
+
+### Backend URLs
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_ELEVENLABS_WORKER_URL` | ElevenLabs proxy URL | Cloudflare production |
+| `WXT_BACKEND_API_URL` | Main backend API URL | Vercel production |
+| `WXT_METADATA_API_URL` | Metadata extraction API | Vercel production |
+| `WXT_TRANSCRIPT_API_URL` | YouTube transcript API | Vercel production |
+
+### Webapp URLs
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_WEBAPP_URL_DEV` | Webapp URL for development | `http://localhost:3002` |
+| `WXT_WEBAPP_URL_PROD` | Webapp URL for production | Vercel production |
+
+### Feature Flags
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_HIDE_LOCAL_MODE` | Hide Chrome built-in AI option | `false` |
+| `WXT_YOUTUBE_BADGE_PREFETCH_ENABLED` | Prefetch YouTube badges | `true` |
+
+### Usage
+
+```typescript
+// Always use the ENV module
+import { ENV } from '@/utils/env';
+
+const backendUrl = ENV.BACKEND_API_URL;
+const isLocalHidden = ENV.HIDE_LOCAL_MODE;
+```
+
+## Backend Cloudflare (`packages/backend-cloudflare/`)
+
+### Secrets (via wrangler)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ELEVENLABS_API_KEY` | ElevenLabs API key | Yes |
+
+Set via:
+```bash
+wrangler secret put ELEVENLABS_API_KEY
+```
+
+### Variables (in wrangler.toml)
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ELEVENLABS_AGENT_ID` | Voice agent ID | Yes |
+
+Set in `wrangler.toml`:
+```toml
+[vars]
+ELEVENLABS_AGENT_ID = "agent_xxx"
+```
+
+## Backend Vercel (`packages/backend-vercel/`)
+
+### Required
+
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_AI_API_KEY` | Google Gemini API key for AI endpoints |
+| `SUPADATA_API_KEY` | Supadata API key for YouTube transcripts |
+
+### Optional
+
+| Variable | Description |
+|----------|-------------|
+| `TAVILY_API_KEY` | Tavily API key for web search |
+| `JINA_API_KEY` | Jina API key for URL content extraction |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL for rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token for rate limiting |
+
+### Example `.env`
+
+```bash
+# Required
+GOOGLE_AI_API_KEY=your_gemini_key
+SUPADATA_API_KEY=your_supadata_key
+
+# Optional - Web search
+TAVILY_API_KEY=your_tavily_key
+
+# Optional - URL content extraction
+JINA_API_KEY=your_jina_key
+
+# Optional - Rate limiting
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
+```
+
+## Webapp (`apps/webapp/`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_BACKEND_API_URL` | Backend API endpoint | Vercel production |
+
+## Development Setup
+
+### Copy Example Files
+
+```bash
+# Extension
+cp apps/extension/.env.example apps/extension/.env
+
+# Backend Vercel
+cp packages/backend-vercel/.env.example packages/backend-vercel/.env
+```
+
+### Local Development Configuration
+
+```bash
+# apps/extension/.env
+WXT_BACKEND_API_URL=http://localhost:3001
+WXT_WEBAPP_URL_DEV=http://localhost:3002
+```
+
+## Environment Precedence
+
+| Build | Source |
+|-------|--------|
+| Development | `.env` files |
+| Production | Platform dashboard (Vercel, Cloudflare) |
+| CI/CD | GitHub Secrets / environment |
+
+## Troubleshooting
+
+### Variable Not Available
+
+**Symptoms**: `undefined` or empty value at runtime
+
+**Checks**:
+1. Did you restart the dev server after changing `.env`?
+2. Is the variable prefixed correctly (`WXT_` for extension)?
+3. Are you using the `ENV` module, not `import.meta.env`?
+
+### Wrong Environment
+
+**Symptoms**: Calling production API in development
+
+**Check**: Verify the `.env` file is loaded and contains correct values.
+
+## See Also
+
+- [Configuration: Env Vars](/docs/configuration/env-vars) — Usage guide
+- [Dev Setup](/docs/contributing/dev-setup) — Development environment

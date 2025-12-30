@@ -1,0 +1,75 @@
+---
+title: WebMCP Issues
+description: Troubleshoot page-provided MCP tool problems.
+---
+
+## What is WebMCP?
+
+**WebMCP** allows websites to expose tools that Cognito AI can discover and use. The website provides tool definitions, and the extension makes them available.
+
+## Tools Not Discovered
+
+### Symptoms
+- No WebMCP tools on a site that should have them
+- "No tools discovered" message
+
+### Solutions
+
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Site doesn't support WebMCP | Documentation | Not all sites have WebMCP |
+| Discovery not triggered | Refresh page | Reload and re-check |
+| Content script blocked | Console errors | Check for CSP issues |
+| Extension conflict | Other extensions | Try disabling other extensions |
+
+### Verify Site Has WebMCP
+
+WebMCP-enabled sites expose a specific API. Check if the site documentation mentions MCP or Cognito support.
+
+## Discovery Errors in Console
+
+### Symptoms
+- Console shows WebMCP-related errors
+- Discovery starts but fails
+
+### Common Errors
+
+| Error | Meaning | Fix |
+|-------|---------|-----|
+| `postMessage blocked` | CSP restriction | Site configuration issue |
+| `Invalid tool schema` | Malformed definition | Report to site owner |
+| `Timeout` | Site too slow | Retry or check site status |
+
+## Tools Execute But Fail
+
+### Symptoms
+- Tool appears but returns errors
+- Partial results or crashes
+
+### Solutions
+
+| Issue | Check | Fix |
+|-------|-------|-----|
+| Permission denied | Tool requires login | Log into the site |
+| Invalid input | Tool parameters | Check input format |
+| Site error | Site console | Site-side bug |
+
+## Debugging WebMCP
+
+### Check Content Script Status
+
+1. Open DevTools (`F12`)
+2. Go to **Console**
+3. Filter by "webmcp" or "mcp"
+4. Look for discovery or execution errors
+
+### Verify Content Script Loaded
+
+1. DevTools → **Sources**
+2. Look for `webmcp-proxy.content.ts` in extension scripts
+3. If missing, reload the page
+
+## Next Steps
+
+- [WebMCP Architecture](/docs/architecture/webmcp-architecture) — How it works
+- [Debugging](/docs/troubleshooting/debugging) — General debugging

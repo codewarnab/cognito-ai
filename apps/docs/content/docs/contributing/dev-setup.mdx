@@ -1,0 +1,252 @@
+---
+title: Dev Setup
+description: Set up your development environment for Cognito AI.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: package.json, apps/extension/ */}
+
+Complete guide to setting up the Cognito AI development environment.
+
+## Prerequisites
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Node.js** | 18+ | LTS recommended. Run `node -v` to check |
+| **pnpm** | 8+ | Installed via corepack |
+| **Git** | 2.0+ | For version control |
+| **Chrome** | 120+ | For extension testing |
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+# Fork on GitHub first, then:
+git clone https://github.com/YOUR_USERNAME/cognito-ai.git
+cd cognito-ai
+```
+
+### 2. Enable Corepack
+
+Corepack manages the package manager version:
+
+```bash
+corepack enable
+```
+
+This ensures you use the correct pnpm version.
+
+### 3. Install Dependencies
+
+```bash
+pnpm install
+```
+
+This installs dependencies for all packages in the monorepo.
+
+## Environment Configuration
+
+### Extension Environment
+
+Copy the example environment file:
+
+```bash
+cp apps/extension/.env.example apps/extension/.env
+```
+
+Common development variables:
+
+```bash
+# apps/extension/.env
+
+# Point to local backend (optional)
+WXT_BACKEND_API_URL=http://localhost:3001
+WXT_WEBAPP_URL_DEV=http://localhost:3002
+
+# Feature flags
+WXT_HIDE_LOCAL_MODE=false
+```
+
+### Backend Environment (Optional)
+
+If developing backend features:
+
+```bash
+cp packages/backend-vercel/.env.example packages/backend-vercel/.env
+```
+
+```bash
+# packages/backend-vercel/.env
+GOOGLE_AI_API_KEY=your_key
+SUPADATA_API_KEY=your_key
+```
+
+## Development Servers
+
+### Extension Only
+
+Most common for extension development:
+
+```bash
+pnpm dev
+```
+
+This starts the WXT dev server with hot reload.
+
+### All Packages
+
+Run everything in parallel:
+
+```bash
+pnpm dev:all
+```
+
+Starts:
+- Extension (port 8080)
+- Webapp (port 3002)
+- Backend (port 3001)
+- Docs (port 3000)
+
+### Specific Packages
+
+```bash
+pnpm dev               # Extension
+pnpm dev:docs          # Documentation
+pnpm dev:webapp        # Webapp
+
+# Or using filter:
+pnpm --filter @cognito/extension dev
+pnpm --filter @cognito/backend-vercel dev
+```
+
+## Loading the Extension
+
+### Development Build
+
+1. Run `pnpm dev`
+2. Open Chrome and navigate to `chrome://extensions`
+3. Enable **Developer mode** (toggle in top right)
+4. Click **Load unpacked**
+5. Select the `.output/chrome-mv3` directory
+
+### Production Build
+
+1. Run `pnpm build:extension`
+2. Load `.output/chrome-mv3` as above
+
+### Verifying Installation
+
+1. Click the Cognito icon in the toolbar
+2. Or use keyboard shortcut: `Ctrl+Shift+H` (or `Cmd+Shift+H` on Mac)
+3. The side panel should open
+
+## Hot Reload
+
+WXT provides hot reload for most changes:
+
+| Change Type | Behavior |
+|-------------|----------|
+| **React components** | Auto-refresh |
+| **CSS** | Auto-refresh |
+| **Background script** | Manual extension reload |
+| **Manifest changes** | Manual extension reload |
+
+To manually reload:
+1. Go to `chrome://extensions`
+2. Click the reload button on Cognito
+
+## Building
+
+### Extension
+
+```bash
+pnpm build:extension
+```
+
+Outputs to `.output/chrome-mv3`.
+
+### All Packages
+
+```bash
+pnpm build
+```
+
+### Type Checking
+
+```bash
+pnpm typecheck
+```
+
+## Troubleshooting
+
+### "pnpm: command not found"
+
+Enable corepack:
+```bash
+corepack enable
+```
+
+### Dependency Installation Fails
+
+Clear pnpm cache and reinstall:
+```bash
+pnpm store prune
+rm -rf node_modules
+pnpm install
+```
+
+### Extension Won't Load
+
+**Check:**
+- Is Developer mode enabled?
+- Did the build complete successfully?
+- Is the correct directory selected (`.output/chrome-mv3`)?
+
+### Hot Reload Not Working
+
+**Solutions:**
+- Manually reload the extension
+- Restart the dev server
+- Check for build errors in terminal
+
+### Port Already in Use
+
+Kill the process and restart:
+
+```bash
+# Find process on port 3000 (example)
+lsof -i :3000
+kill -9 <PID>
+```
+
+Or use a different port:
+
+```bash
+PORT=3001 pnpm dev
+```
+
+## IDE Setup
+
+### VS Code
+
+Recommended extensions:
+- ESLint
+- Prettier
+- TypeScript
+- Tailwind CSS IntelliSense
+
+### Settings
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "typescript.preferences.importModuleSpecifier": "non-relative"
+}
+```
+
+## Next Steps
+
+- [Repo Tour](/docs/contributing/repo-tour) — Navigate the codebase
+- [Coding Standards](/docs/contributing/coding-standards) — Code conventions
+- [Architecture](/docs/architecture) — System design

@@ -35,3 +35,4 @@ description: Core principles, TypeScript configuration, and best practices for t
 - Calculate progress percentages correctly: use `(loaded / total) * 100`, not raw byte manipulation; provide fallbacks when totals are unavailable.
 - Remove commented-out code from source files; rely on git history for recovery if needed.
 - **CRITICAL**: When modifying HTTP headers in fetch operations, create new Headers objects to avoid mutating the original RequestInit; use `new Headers()` constructor which handles both Headers instances and plain objects correctly.
+

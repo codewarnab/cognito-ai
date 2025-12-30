@@ -52,3 +52,4 @@ description: Chrome extension specific patterns and DOM interactions.
 - Use spread operator `...array` instead of `.apply(null, Array.from())` for better TypeScript compatibility and readability.
 - **CRITICAL**: Check `chrome.runtime.lastError` in all Chrome API callbacks (storage, notifications); silent failures cause state inconsistencies.
 - Use utility functions consistently across similar operations (e.g., `clearNotification()` instead of direct `chrome.notifications.clear()`).
+

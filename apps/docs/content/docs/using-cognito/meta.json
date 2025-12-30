@@ -1,0 +1,13 @@
+{
+    "title": "Using Cognito",
+    "pages": [
+        "index",
+        "sidepanel-basics",
+        "browser-automation",
+        "voice-mode",
+        "memory",
+        "web-search",
+        "youtube",
+        "reminders"
+    ]
+}

@@ -1,0 +1,62 @@
+---
+title: Installation
+description: Install the Cognito AI Chrome extension from source.
+---
+
+{/* NOTE: Chrome Web Store availability pending - install from source for now */}
+
+## What You'll Learn
+
+- Building and loading the extension from source
+- Verifying a successful installation
+
+## Prerequisites
+
+- Google Chrome browser (version 120+)
+- Node.js 18+ and pnpm
+
+## Install from Source
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/codewarnab/cognito-ai.git
+cd cognito-ai
+```
+
+### Install Dependencies
+
+```bash
+pnpm install
+```
+
+### Build the Extension
+
+```bash
+pnpm build:extension
+```
+
+This creates the extension in `.output/chrome-mv3/`.
+
+### Load in Chrome
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked**
+4. Select the `.output/chrome-mv3` folder
+
+## Verify Installation
+
+| Check | Expected Result |
+|-------|-----------------|
+| **Toolbar icon** | Cognito AI icon appears in Chrome toolbar |
+| **Side panel** | `Ctrl+Shift+H` (Windows) or `Cmd+Shift+H` (Mac) opens the panel |
+
+> [!TIP]
+> Pin the extension to your toolbar for quick access. Click the puzzle icon in Chrome and pin Cognito AI.
+
+## Next Steps
+
+- [Provider Setup](/docs/getting-started/provider-setup) — Configure your AI provider
+- [Quickstart](/docs/getting-started/quickstart) — Start your first conversation
+- [Installation Troubleshooting](/docs/troubleshooting/install) — If something went wrong

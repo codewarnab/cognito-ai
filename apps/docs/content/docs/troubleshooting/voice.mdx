@@ -1,0 +1,86 @@
+---
+title: Voice Issues
+description: Troubleshoot voice mode problems.
+---
+
+## Voice Mode Not Starting
+
+### Symptoms
+- Microphone button doesn't respond
+- Voice mode toggle stays off
+
+### Solutions
+
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Feature disabled | Settings | Enable Voice Mode in settings |
+| Browser permission | Chrome permissions | Grant microphone access |
+| Secure context | URL bar | Must be HTTPS or localhost |
+
+### Enable Microphone Access
+
+1. Click the lock icon in the address bar
+2. Find **Microphone** permission
+3. Set to **Allow**
+4. Reload the extension
+
+## No Audio Response
+
+### Symptoms
+- Speak but no AI voice response
+- Only text response appears
+
+### Solutions
+
+| Cause | Check | Fix |
+|-------|-------|-----|
+| Audio muted | System volume | Unmute and increase volume |
+| Backend error | Console | Check for API errors |
+| ElevenLabs quota | Response headers | Rate limit may apply |
+
+### Check Backend Connectivity
+
+Voice synthesis requires the ElevenLabs backend proxy:
+1. Open DevTools Console
+2. Look for errors mentioning "elevenlabs" or "voice"
+3. Check network requests to the worker URL
+
+## Microphone Not Detected
+
+### Symptoms
+- "No microphone found" error
+- Audio input not recognized
+
+### Solutions
+
+| Cause | Fix |
+|-------|-----|
+| No microphone | Connect a microphone |
+| Wrong device selected | Check Chrome audio settings |
+| Driver issue | Update audio drivers |
+| OS permission | Grant in system settings |
+
+### Check Chrome Audio Settings
+
+1. Go to `chrome://settings/content/microphone`
+2. Ensure the correct device is selected
+3. Verify the extension is allowed
+
+## Voice Cuts Out
+
+### Symptoms
+- Voice stops mid-sentence
+- Choppy or interrupted audio
+
+### Solutions
+
+| Cause | Fix |
+|-------|-----|
+| Network instability | Check connection |
+| Server load | Wait and retry |
+| Audio buffer | Close other audio apps |
+
+## Next Steps
+
+- [Voice Mode](/docs/using-cognito/voice-mode) — Feature documentation
+- [Backend Services](/docs/integrations/backends) — ElevenLabs proxy details

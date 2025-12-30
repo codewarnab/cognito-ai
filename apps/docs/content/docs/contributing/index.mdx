@@ -1,63 +1,195 @@
 ---
-title: Contribution Guide
-description: How to contribute to Cognito AI using our standards and workflows.
+title: Contributing
+description: How to contribute to Cognito AI.
 ---
 
-Thank you for your interest in contributing to **Cognito AI**! We welcome contributions from the community. Please follow these guidelines to ensure a smooth collaboration process.
+{/* VERIFIED: 2024-12-31 | code_refs: CONTRIBUTING.md */}
+
+Thank you for your interest in contributing to **Cognito AI**! This guide covers everything you need to get started.
+
+## Ways to Contribute
+
+| Contribution | Description |
+|--------------|-------------|
+| **Bug Reports** | Report issues on GitHub |
+| **Feature Requests** | Suggest new features |
+| **Documentation** | Improve or add docs |
+| **Code** | Fix bugs, add features |
+| **Testing** | Test and report findings |
+
+## Quick Start
+
+```bash
+# 1. Fork and clone
+git clone https://github.com/YOUR_USERNAME/cognito-ai
+
+# 2. Setup
+cd cognito-ai
+corepack enable
+pnpm install
+
+# 3. Create branch
+git checkout -b feat/my-feature
+
+# 4. Develop
+pnpm dev
+
+# 5. Test and commit
+pnpm build
+git commit -m "feat(extension): add my feature"
+
+# 6. Push and open PR
+git push origin feat/my-feature
+```
+
+## Contributing Topics
+
+<Cards>
+  <Card title="Dev Setup" href="/docs/contributing/dev-setup" />
+  <Card title="Repo Tour" href="/docs/contributing/repo-tour" />
+  <Card title="Coding Standards" href="/docs/contributing/coding-standards" />
+  <Card title="Adding Tools" href="/docs/contributing/adding-tools" />
+  <Card title="Adding MCP Server" href="/docs/contributing/adding-mcp-server" />
+</Cards>
+
+## Development Workflow
+
+### 1. Find an Issue
+
+- Check [GitHub Issues](https://github.com/codewarnab/cognito-ai/issues)
+- Look for `good first issue` or `help wanted` labels
+- Comment on the issue to claim it
+
+### 2. Setup Environment
+
+See [Dev Setup](/docs/contributing/dev-setup) for complete instructions.
+
+### 3. Make Changes
+
+Follow the [Coding Standards](/docs/contributing/coding-standards):
+- TypeScript with strict types
+- React 19 patterns
+- Zustand selective subscriptions
+- CSS scoping
+
+### 4. Test Your Changes
+
+```bash
+# Build all packages
+pnpm build
+
+# Build extension only
+pnpm build:extension
+
+# Run type checking
+pnpm typecheck
+```
+
+### 5. Submit Pull Request
+
+See Pull Request Process below.
 
 ## Pull Request Process
 
-1.  **Fork and Clone**: Fork the repository and clone it locally.
-2.  **Create a Branch**: Create a new branch for your feature or fix.
-    ```bash
-    git checkout -b feat/my-new-feature
-    ```
-3.  **Make Changes**: Implement your changes, adhering to the coding standards.
-4.  **Test**: Run relevant tests and ensuring the project builds.
-5.  **Commit**: Commit your changes using [Conventional Commits](#commit-message-conventions).
-6.  **Push**: Push your branch to your fork.
-7.  **Open PR**: Open a Pull Request against the `main` branch of the `cognito-ai` repository.
+### Branch Naming
 
-## Branch Naming
-
-We follow a specific naming convention for branches to keep our history clean and organized:
-
--   `feat/description`: For new features (e.g., `feat/add-dark-mode`)
--   `fix/description`: For bug fixes (e.g., `fix/memory-leak`)
--   `docs/description`: For documentation changes (e.g., `docs/update-readme`)
--   `chore/description`: For maintenance tasks (e.g., `chore/upgrade-dependencies`)
--   `refactor/description`: For code refactoring without behavior changes
-
-## Commit Message Conventions
-
-We use [Conventional Commits](https://www.conventionalcommits.org/) to structure our commit messages. This allows us to automatically generate changelogs and version releases.
-
-**Format:**
 ```text
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer(s)]
+feat/feature-name     # New feature
+fix/bug-description   # Bug fix
+docs/topic            # Documentation
+refactor/area         # Code refactoring
 ```
 
-**Types:**
--   `feat`: A new feature
--   `fix`: A bug fix
--   `docs`: Documentation only changes
--   `style`: Changes that do not affect the meaning of the code (white-space, formatting, etc)
--   `refactor`: A code change that neither fixes a bug nor adds a feature
--   `perf`: A code change that improves performance
--   `test`: Adding missing tests or correcting existing tests
--   `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation
+### PR Checklist
 
-**Examples:**
+- [ ] Branch is up-to-date with `main`
+- [ ] Code follows coding standards
+- [ ] Types pass (`pnpm typecheck`)
+- [ ] Build succeeds (`pnpm build`)
+- [ ] Commit messages follow conventions
+- [ ] PR description explains changes
+
+### Review Process
+
+1. Submit PR against `main` branch
+2. Automated checks run
+3. Maintainer reviews code
+4. Address feedback
+5. Merge when approved
+
+## Commit Conventions
+
+Use [Conventional Commits](https://www.conventionalcommits.org/):
+
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation |
+| `style` | Formatting (no code change) |
+| `refactor` | Code restructuring |
+| `test` | Adding tests |
+| `chore` | Maintenance tasks |
+
+### Scope (Package)
+
 ```text
-feat(extension): add new sidebar component
-fix(backend-cloudflare): resolve cors issue
-docs: update contribution guide
+feat(extension): add new feature
+fix(backend-vercel): resolve API issue
+docs: update architecture guide
+chore: update dependencies
 ```
 
-## Code Review
+### Examples
 
-All Pull Requests require review by at least one maintainer. We may ask for changes or clarifications before merging. Please be patient and responsive to feedback.
+```bash
+# Feature
+git commit -m "feat(extension): add voice mode settings"
+
+# Bug fix
+git commit -m "fix(mcp): handle OAuth token refresh failure"
+
+# Documentation
+git commit -m "docs: add MCP setup guide"
+
+# Breaking change
+git commit -m "feat(backend)!: change API response format"
+```
+
+## Issue Reports
+
+### Bug Reports
+
+Include:
+- Chrome version
+- Extension version
+- Steps to reproduce
+- Expected vs actual behavior
+- Console errors (if any)
+- Screenshots (if applicable)
+
+### Feature Requests
+
+Include:
+- Clear description of the feature
+- Use case / motivation
+- Proposed implementation (optional)
+
+## Code of Conduct
+
+- Be respectful and inclusive
+- Focus on constructive feedback
+- Help newcomers get started
+
+## Getting Help
+
+- Check existing documentation
+- Search GitHub Issues
+- Ask in PR comments
+- Contact maintainers
+
+## Next Steps
+
+- [Dev Setup](/docs/contributing/dev-setup) — Set up your environment
+- [Repo Tour](/docs/contributing/repo-tour) — Navigate the codebase
+- [Coding Standards](/docs/contributing/coding-standards) — Code conventions

@@ -1,0 +1,164 @@
+---
+title: Glossary
+description: Terms and definitions used in Cognito AI.
+---
+
+Reference glossary of terms, concepts, and acronyms used throughout Cognito AI documentation.
+
+## Core Concepts
+
+### BYOK (Bring Your Own Key)
+
+A mode where users provide their own Google AI API key. API calls go directly from the extension to Google, never passing through Cognito servers. This provides maximum privacy and control.
+
+**Related**: [Provider Setup](/docs/getting-started/provider-setup), [Secrets & Keys](/docs/security/secrets-and-keys)
+
+### Backend Mode
+
+A mode where AI processing is handled by Cognito's hosted backend. Users don't need their own API key, but requests pass through the Cognito server. Subject to shared rate limits.
+
+**Related**: [Backend Services](/docs/integrations/backends)
+
+### MCP (Model Context Protocol)
+
+An open standard for connecting AI assistants to external tools and data sources. Cognito implements an MCP client that can connect to remote servers, local command-line tools, and page-provided tools.
+
+**Related**: [MCP Overview](/docs/integrations/mcp-overview), [MCP Client](/docs/architecture/mcp-client)
+
+### WebMCP
+
+A browser-specific variant of MCP where websites expose tools that the extension can discover and use. Tools are discovered via content scripts and require user approval before execution.
+
+**Related**: [WebMCP Integration](/docs/integrations/webmcp), [WebMCP Architecture](/docs/architecture/webmcp-architecture)
+
+### HITL (Human-in-the-Loop)
+
+A safety pattern where sensitive AI actions require explicit user approval before execution. Used for browser automation and external tool calls.
+
+**Related**: [Tools & Approval](/docs/architecture/tools-and-approval)
+
+### Side Panel
+
+Chrome's built-in panel UI that appears alongside web pages. Cognito AI uses this for its main chat interface, accessible via `Ctrl+Shift+H`.
+
+### Tools Mode
+
+Configuration that controls which tools are available to the AI:
+- **chat** — Minimal tools (read page, screenshot)
+- **agent** — Full browser automation
+- **adaptive** — Dynamic tool discovery
+- **custom** — User-selected tools
+
+**Related**: [Modes & Feature Flags](/docs/configuration/modes-and-feature-flags)
+
+### AIProviderMode
+
+Configuration that determines where AI processing happens:
+- **local** — Chrome built-in AI (Gemini Nano)
+- **remote** — Cloud API (BYOK or Backend mode)
+
+**Related**: [Modes & Feature Flags](/docs/configuration/modes-and-feature-flags)
+
+## Technologies
+
+### WXT
+
+The framework used to build the Chrome extension. WXT provides a modern development experience with hot reload, TypeScript support, and a simple project structure.
+
+**Link**: [wxt.dev](https://wxt.dev/)
+
+### Zustand
+
+Lightweight state management library used for extension state. Stores are synced with Chrome storage for persistence.
+
+**Link**: [zustand-demo.pmnd.rs](https://zustand-demo.pmnd.rs/)
+
+### Dexie
+
+IndexedDB wrapper used for local storage of messages, threads, and other structured data.
+
+**Link**: [dexie.org](https://dexie.org/)
+
+### Vercel AI SDK
+
+SDK for building AI-powered applications. Cognito uses version 6 for streaming, tool calling, and multi-provider support.
+
+**Link**: [sdk.vercel.ai](https://sdk.vercel.ai/)
+
+### Fumadocs
+
+Documentation framework used for this documentation site. Built on Next.js with MDX support.
+
+**Link**: [fumadocs.vercel.app](https://fumadocs.vercel.app/)
+
+### TailwindCSS
+
+Utility-first CSS framework used for styling the extension UI.
+
+**Link**: [tailwindcss.com](https://tailwindcss.com/)
+
+### shadcn/ui
+
+Component library used as the base for UI primitives.
+
+**Link**: [ui.shadcn.com](https://ui.shadcn.com/)
+
+## Protocols
+
+### SSE (Server-Sent Events)
+
+HTTP-based protocol for streaming data from server to client. Used by MCP for real-time communication.
+
+### OAuth 2.0
+
+Authorization framework used by MCP servers for user authentication. Cognito supports OAuth with PKCE and Dynamic Client Registration.
+
+### PKCE (Proof Key for Code Exchange)
+
+Security extension to OAuth that prevents authorization code interception attacks.
+
+### Dynamic Client Registration (RFC 7591)
+
+OAuth extension that allows clients to register themselves with authorization servers. Used by MCP for seamless server connections.
+
+## Extension Contexts
+
+### Background Service Worker
+
+A script that runs in the background, independent of any browser tab. Handles MCP connections, message routing, and Chrome API access.
+
+### Content Script
+
+JavaScript that runs in the context of web pages. Used for DOM access, WebMCP discovery, and page interaction.
+
+### Side Panel
+
+The React-based UI that appears in Chrome's side panel. Contains the chat interface, settings, and tool displays.
+
+## Acronyms
+
+| Acronym | Meaning |
+|---------|---------|
+| **AI** | Artificial Intelligence |
+| **API** | Application Programming Interface |
+| **BYOK** | Bring Your Own Key |
+| **CSS** | Cascading Style Sheets |
+| **DOM** | Document Object Model |
+| **HITL** | Human-in-the-Loop |
+| **HTTP** | Hypertext Transfer Protocol |
+| **MCP** | Model Context Protocol |
+| **MDX** | Markdown with JSX |
+| **OAuth** | Open Authorization |
+| **PKCE** | Proof Key for Code Exchange |
+| **SDK** | Software Development Kit |
+| **SSE** | Server-Sent Events |
+| **SW** | Service Worker |
+| **TLS** | Transport Layer Security |
+| **UI** | User Interface |
+| **URL** | Uniform Resource Locator |
+| **WXT** | Web Extension Tools |
+
+## See Also
+
+- [Architecture](/docs/architecture) — System design
+- [Getting Started](/docs/getting-started) — Quick start guide

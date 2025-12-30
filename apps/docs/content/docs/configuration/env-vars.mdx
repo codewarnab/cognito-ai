@@ -1,0 +1,171 @@
+---
+title: Environment Variables
+description: Configure Cognito AI using environment variables.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/utils/env.ts */}
+
+Environment variables configure Cognito AI at build time. Each package has its own environment configuration.
+
+## Extension Environment Variables
+
+Configure in `apps/extension/.env`:
+
+### Backend URLs
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_ELEVENLABS_WORKER_URL` | ElevenLabs proxy URL | Cloudflare production |
+| `WXT_BACKEND_API_URL` | Main backend API | Vercel production |
+| `WXT_METADATA_API_URL` | Metadata extraction API | Vercel production |
+| `WXT_TRANSCRIPT_API_URL` | YouTube transcript API | Vercel production |
+
+### Webapp URLs
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_WEBAPP_URL_DEV` | Webapp URL (development) | `http://localhost:3002` |
+| `WXT_WEBAPP_URL_PROD` | Webapp URL (production) | Vercel production |
+
+### Feature Flags
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_HIDE_LOCAL_MODE` | Hide local AI option | `false` |
+| `WXT_YOUTUBE_BADGE_PREFETCH_ENABLED` | Prefetch YouTube badges | `true` |
+
+### Example `.env` File
+
+```bash
+# Development configuration
+WXT_BACKEND_API_URL=http://localhost:3001
+WXT_WEBAPP_URL_DEV=http://localhost:3002
+WXT_HIDE_LOCAL_MODE=false
+WXT_YOUTUBE_BADGE_PREFETCH_ENABLED=true
+```
+
+### Using Environment Variables
+
+Always use the centralized `ENV` module:
+
+```typescript
+// ✅ CORRECT - Use centralized ENV module
+import { ENV } from '@/utils/env';
+
+const backendUrl = ENV.BACKEND_API_URL;
+const webappUrl = ENV.WEBAPP_URL;
+
+// ❌ WRONG - Never access directly
+const backendUrl = import.meta.env.WXT_BACKEND_API_URL;
+```
+
+## Backend Cloudflare Variables
+
+Configure via `wrangler secret` for the ElevenLabs proxy:
+
+| Variable | Description | Secret |
+|----------|-------------|--------|
+| `ELEVENLABS_API_KEY` | ElevenLabs API key | Yes |
+| `ELEVENLABS_AGENT_ID` | Voice agent ID | No (toml) |
+
+### Set Secrets
+
+```bash
+cd packages/backend-cloudflare
+wrangler secret put ELEVENLABS_API_KEY
+```
+
+### wrangler.toml Variables
+
+```toml
+[vars]
+ELEVENLABS_AGENT_ID = "agent_xxx"
+```
+
+## Backend Vercel Variables
+
+Configure in Vercel dashboard or `.env`:
+
+### Required
+
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_AI_API_KEY` | Gemini API key for AI endpoints |
+| `SUPADATA_API_KEY` | YouTube transcript service |
+
+### Optional
+
+| Variable | Description |
+|----------|-------------|
+| `TAVILY_API_KEY` | Web search service |
+| `JINA_API_KEY` | URL content extraction |
+| `UPSTASH_REDIS_REST_URL` | Rate limiting (Redis) |
+| `UPSTASH_REDIS_REST_TOKEN` | Rate limiting (Redis) |
+
+### Example
+
+```bash
+# Required
+GOOGLE_AI_API_KEY=your_gemini_key
+SUPADATA_API_KEY=your_supadata_key
+
+# Optional
+TAVILY_API_KEY=your_tavily_key
+JINA_API_KEY=your_jina_key
+UPSTASH_REDIS_REST_URL=https://your-redis.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
+```
+
+## Webapp Variables
+
+Configure in `apps/webapp/.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `WXT_BACKEND_API_URL` | Backend API endpoint | Vercel production |
+
+## Development vs Production
+
+| Environment | Extension | Backend |
+|-------------|-----------|---------|
+| **Development** | Local `.env` | Local `.env` |
+| **Production** | Build-time injection | Vercel dashboard |
+
+### Local Development Setup
+
+1. Copy example files:
+```bash
+cp apps/extension/.env.example apps/extension/.env
+cp packages/backend-vercel/.env.example packages/backend-vercel/.env
+```
+
+2. Fill in your API keys
+
+3. Start development servers:
+```bash
+pnpm dev:all
+```
+
+## Troubleshooting
+
+### Variable Not Available
+
+**Symptoms**: `undefined` or empty value
+
+**Checks**:
+- Did you restart the dev server after changing `.env`?
+- Is the variable prefixed correctly (`WXT_` for extension)?
+- Are you using the `ENV` module, not `import.meta.env`?
+
+### Wrong Environment
+
+**Symptoms**: Calling production API in development
+
+**Check**:
+- Verify `.env` file exists and is loaded
+- Check which URL is being used via `console.log(ENV.BACKEND_API_URL)`
+
+## Next Steps
+
+- [Reference: Env Vars](/docs/reference/env-vars) — Complete variable reference
+- [Dev Setup](/docs/contributing/dev-setup) — Development environment

@@ -1,0 +1,151 @@
+---
+title: MCP Overview
+description: Introduction to the Model Context Protocol in Cognito AI.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/ */}
+
+The **Model Context Protocol (MCP)** is an open standard created by Anthropic for connecting AI applications to external tools and data sources. Cognito AI implements an MCP client that enables seamless integration with MCP-compliant servers.
+
+## What MCP Provides
+
+| Capability | Description |
+|------------|-------------|
+| **Tool Discovery** | Automatically find available tools from connected servers |
+| **Tool Execution** | Execute tool calls requested by AI models |
+| **Resource Access** | Read documents, databases, or APIs |
+| **Prompt Templates** | Use pre-defined prompts from servers |
+
+Learn more at the [MCP specification](https://modelcontextprotocol.io/).
+
+## Supported Transports
+
+Cognito supports three MCP transport mechanisms:
+
+| Transport | Protocol | Use Case |
+|-----------|----------|----------|
+| **Streamable HTTP** | POST + SSE | Modern servers (2025-06-18 protocol) |
+| **HTTP+SSE** | GET + SSE | Legacy servers (2024-11-05 protocol) |
+| **StdIO** | stdin/stdout | Command-line servers via backend proxy |
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/client/transportDetector.ts */}
+
+## Transport Detection
+
+The MCP client automatically detects which transport the server supports:
+
+```typescript
+// Simplified detection logic
+async function detectTransport(serverUrl: string) {
+  // Try POST first (Streamable HTTP - newer protocol)
+  const postResponse = await fetch(serverUrl, { method: 'POST' });
+  if (postResponse.ok) return 'streamable-http';
+  
+  // Fall back to GET (HTTP+SSE - older protocol)
+  if (postResponse.status === 405) return 'http-sse';
+}
+```
+
+## Connection States
+
+| State | Description |
+|-------|-------------|
+| `disconnected` | Not connected, ready to connect |
+| `needs-auth` | OAuth authentication required |
+| `registering` | Registering OAuth client dynamically |
+| `authorizing` | User authorizing via OAuth consent screen |
+| `authenticated` | OAuth complete, not yet connected |
+| `connecting` | Establishing SSE connection |
+| `connected` | Fully operational |
+| `error` | Connection error occurred |
+| `token-refresh` | Refreshing expired OAuth token |
+
+{/* MERMAID_DIAGRAM: mcp.connection-states | type: state | represents: MCP connection state machine | code_refs: apps/extension/src/mcp/types.ts */}
+
+```mermaid
+stateDiagram-v2
+    [*] --> disconnected
+    disconnected --> needs_auth: Requires OAuth
+    disconnected --> connecting: No auth required
+    
+    needs_auth --> registering: Start OAuth
+    registering --> authorizing: Client registered
+    authorizing --> authenticated: User approved
+    authenticated --> connecting: Auto-connect
+    
+    connecting --> connected: Success
+    connecting --> error: Failed
+    
+    connected --> token_refresh: Token expiring
+    token_refresh --> connected: Refreshed
+    token_refresh --> needs_auth: Refresh failed
+    
+    connected --> disconnected: Disconnect
+    error --> disconnected: Reset
+```
+
+## MCP Server Types
+
+### Remote MCP Servers
+
+Hosted servers with SSE/HTTP transport. Examples:
+- **Notion** — Page and database management
+- **Linear** — Issue tracking
+- **Ahrefs** — SEO tools
+
+These require OAuth authentication and maintain persistent connections.
+
+### StdIO Servers (Backend-Proxied)
+
+Command-line MCP servers that run as subprocesses. Since browsers cannot spawn processes directly, Cognito proxies these through the backend:
+
+1. Extension sends `serverId` + credentials to backend
+2. Backend spawns the MCP server process
+3. Tool calls are proxied through the backend
+4. Results return to the extension
+
+> **Security**: Commands are stored in a secure server-side registry, not sent from the frontend. This prevents arbitrary command execution.
+
+### WebMCP
+
+Tools provided directly by web pages. Pages implementing the WebMCP specification can expose tools to Cognito without any server infrastructure.
+
+## Quick Setup
+
+### Connect a Remote MCP Server
+
+1. Open **Settings** → **MCP Servers**
+2. Enable the server (e.g., Notion)
+3. Complete OAuth authentication when prompted
+4. Server tools appear in your chat
+
+### Connect a StdIO Server
+
+1. Open **Settings** → **MCP Servers**
+2. Enable the backend-only server (e.g., Magic MCP)
+3. Enter required API credentials
+4. Backend discovers and caches tools
+
+## Module Structure
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/ */}
+
+```text
+apps/extension/src/mcp/
+├── client/                  # SSE-based MCP client
+│   ├── McpSSEClient.ts      # Main client class
+│   ├── transportDetector.ts # POST vs GET detection
+│   ├── streamProcessor.ts   # SSE stream parsing
+│   ├── requestManager.ts    # Request/response handling
+│   └── connectionManager.ts # Reconnection logic
+├── discovery.ts             # OAuth endpoint discovery
+├── oauth.ts                 # OAuth 2.0 implementation
+├── state.ts                 # Connection state management
+└── types.ts                 # Type definitions
+```
+
+## Next Steps
+
+- [Remote MCP Servers](/docs/integrations/remote-mcp) — Connect hosted servers
+- [WebMCP](/docs/integrations/webmcp) — Page-provided tools
+- [MCP Client Architecture](/docs/architecture/mcp-client) — Implementation details

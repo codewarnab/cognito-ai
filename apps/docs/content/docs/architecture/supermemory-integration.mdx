@@ -26,19 +26,19 @@ flowchart TD
         ContentProcessor["contentMemory/processor.ts"]
     end
 
-    Chat -- "extract facts" --> AddService
-    AskOverlay -- "memory search" --> SearchService
-    Chat -- "auto-extraction trigger" --> ExtractionQueue
-    ExtractionQueue --> ExtractionProcessor
-    ExtractionProcessor -- "Gemini extractFacts" --> AddService
-    contentMemoryHooks((Content Hooks)) -- "enqueue" --> ContentQueue
-    ContentQueue --> ContentProcessor
-    ContentProcessor -- "Gemini insights" --> AddService
-    AddService -- "POST /v4/add" --> Supermemory[(Supermemory API)]
-    SearchService -- "POST /v4/search" --> Supermemory
-    Settings -- "store key & flags" --> Credentials
-    Credentials -- "isReady?" --> SearchService
-    Credentials -- "isReady?" --> AddService
+    Chat -- "extract facts" */} AddService
+    AskOverlay -- "memory search" */} SearchService
+    Chat -- "auto-extraction trigger" */} ExtractionQueue
+    ExtractionQueue */} ExtractionProcessor
+    ExtractionProcessor -- "Gemini extractFacts" */} AddService
+    contentMemoryHooks((Content Hooks)) -- "enqueue" */} ContentQueue
+    ContentQueue */} ContentProcessor
+    ContentProcessor -- "Gemini insights" */} AddService
+    AddService -- "POST /v4/add" */} Supermemory[(Supermemory API)]
+    SearchService -- "POST /v4/search" */} Supermemory
+    Settings -- "store key & flags" */} Credentials
+    Credentials -- "isReady?" */} SearchService
+    Credentials -- "isReady?" */} AddService
 ```
 
 This document explains how **Supermemory** is integrated into the Chrome-AI code-base, which modules depend on it, and the edge-cases we currently handle.
@@ -258,3 +258,4 @@ This captures **in-page actions** (Writer, Rewriter, Summarizer, etc.) and store
 2. **Better deduplication** – unify identical memories, update `metadata.lastUsed`.
 3. **UI surfacing** – dedicated Memory Manager in settings to view/edit memories.
 4. **Privacy** – add option to locally encrypt before sending to Supermemory.
+

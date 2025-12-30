@@ -1,0 +1,69 @@
+---
+title: Provider Setup
+description: Configure your AI provider - BYOK or Backend mode.
+---
+
+## What You'll Learn
+
+- Choosing between **BYOK** (Bring Your Own Key) and **Backend** mode
+- Configuring your Google AI API key
+- Understanding rate limits and mode tradeoffs
+
+## AI Provider Modes
+
+Cognito AI supports two modes for AI processing:
+
+| Mode | API Key Required | Best For |
+|------|------------------|----------|
+| **Backend Mode** | No | Quick start, casual use |
+| **BYOK Mode** | Yes (Google AI) | Privacy, no rate limits |
+
+> [!TIP]
+> In **BYOK Mode**, your API key is stored locally and never sent to any server except Google's AI API.
+
+## Configure Backend Mode
+
+Backend mode requires no setup. Toggle it on and start chatting.
+
+**Rate limits apply** — the shared backend has usage quotas. If limits are exceeded and you have an API key configured, Cognito automatically falls back to BYOK mode.
+
+### Toggle Backend Mode
+
+1. Open the side panel (`Ctrl+Shift+H`)
+2. Click the **settings gear** icon
+3. Enable **Backend Mode**
+
+## Configure BYOK Mode
+
+BYOK mode connects directly to Google's AI API using your personal key.
+
+### Get a Google AI API Key
+
+1. Visit [Google AI Studio](https://aistudio.google.com/)
+2. Sign in with your Google account
+3. Click **Get API Key**
+4. Copy the generated key
+
+### Enter Your API Key
+
+1. Open the side panel
+2. Open **Settings**
+3. Paste your API key in the **Google AI API Key** field
+
+## Supported Models
+
+| Model | Description |
+|-------|-------------|
+| **Gemini 3 Flash** | Latest, fastest |
+| **Gemini 3 Pro** | Most capable for complex tasks |
+| **Gemini 2.5 Pro** | Advanced capabilities |
+| **Gemini 2.5 Flash** | Previous generation flash |
+| **Gemini 2.0 Flash** | Legacy model |
+
+> [!NOTE]
+> BYOK mode supports any model from the list above. Backend mode uses a fixed model (currently Gemini 2.5 Flash).
+
+## Next Steps
+
+- [Quickstart](/docs/getting-started/quickstart) — Start your first conversation
+- [Modes & Feature Flags](/docs/configuration/modes-and-feature-flags) — Deep dive into all mode types

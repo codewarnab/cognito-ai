@@ -2,10 +2,11 @@
     "title": "Architecture",
     "pages": [
         "index",
-        "content-features",
-        "remote-mcp-integration",
-        "web-search-integration",
-        "webmcp-integration",
-        "supermemory-integration"
+        "monorepo",
+        "extension-architecture",
+        "ai-system",
+        "tools-and-approval",
+        "mcp-client",
+        "webmcp-architecture"
     ]
 }

@@ -1,0 +1,99 @@
+---
+title: Extension Issues
+description: Troubleshoot Cognito AI runtime problems.
+---
+
+## AI Not Responding
+
+### Symptoms
+- Messages hang with loading spinner
+- No response after sending message
+
+### Solutions
+
+| Cause | Check | Fix |
+|-------|-------|-----|
+| No API key | Settings → API Key | Add Google AI key or enable Backend Mode |
+| Rate limited | Recent heavy usage | Wait or use BYOK mode |
+| Network issue | Browser console | Check internet connection |
+| Backend down | Console errors | Try BYOK mode |
+
+### Check Provider Configuration
+
+1. Open side panel
+2. Go to Settings
+3. Verify either:
+   - **Backend Mode** is enabled, OR
+   - **Google AI API Key** is set
+
+## Extension Not Working on a Site
+
+### Symptoms
+- Side panel opens but can't interact with page
+- "Cannot read page content" errors
+
+### Solutions
+
+| Site Type | Why | Fix |
+|-----------|-----|-----|
+| `chrome://` URLs | Chrome restriction | Cannot access—by design |
+| PDF viewer | Different rendering | Limited support |
+| Extension pages | Chrome restriction | Cannot access |
+| Iframe content | Cross-origin | May have partial access |
+
+### Specific Sites
+
+**Google Docs/Sheets:**
+- Use `takeScreenshot` instead of `readPageContent`
+- Content may be in iframes
+
+**Login-protected content:**
+- Must be logged in for AI to access
+- AI cannot bypass authentication
+
+## Tools Not Executing
+
+### Symptoms
+- AI suggests action but nothing happens
+- Tool calls appear but don't complete
+
+### Solutions
+
+| Cause | Fix |
+|-------|-----|
+| Wrong mode | Switch to **Agent** mode for automation |
+| Tool disabled | Check Settings → Tools |
+| Approval pending | Look for approval dialog |
+| Permission denied | Grant required permissions |
+
+### Check Tool Mode
+
+1. Open Settings
+2. Go to **Tools Mode**
+3. Select **Agent** for full automation
+4. Or **Custom** to enable specific tools
+
+## Settings Not Saving
+
+### Symptoms
+- Changes don't persist after reload
+- Settings reset on browser restart
+
+### Solutions
+
+1. **Check storage quota:**
+   - DevTools → Application → Storage
+   - Clear unused data if near limit
+
+2. **Reload extension:**
+   - Go to `chrome://extensions`
+   - Click the reload button
+
+3. **Reinstall if needed:**
+   - Remove extension
+   - Load unpacked again
+
+## Next Steps
+
+- [Debugging](/docs/troubleshooting/debugging) — Console inspection
+- [Provider Setup](/docs/getting-started/provider-setup) — Reconfigure provider

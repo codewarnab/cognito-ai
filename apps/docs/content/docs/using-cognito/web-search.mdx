@@ -1,0 +1,86 @@
+---
+title: Web Search
+description: Research topics with AI-powered web search.
+---
+
+## What You'll Learn
+
+- How web search works in Cognito AI
+- Search tools and their capabilities
+- Research workflows
+
+## Overview
+
+Cognito AI can search the web and extract content from URLs to answer questions and research topics.
+
+## Search Tools
+
+| Tool | Provider | Description |
+|------|----------|-------------|
+| `webSearch` | Tavily | General web search |
+| `retrieve` | Jina Reader | Extract content from URLs |
+| `deepWebSearch` | Tavily + Jina | Comprehensive research |
+
+## Using Web Search
+
+### Simple Search
+
+Ask a question that requires current information:
+
+```text
+What's the latest news about TypeScript 5.4?
+```
+
+The AI uses `webSearch` to find relevant results.
+
+### Research a Topic
+
+For in-depth research:
+
+```text
+Research the pros and cons of using Deno vs Node.js in 2024
+```
+
+The AI may use multiple searches and `retrieve` to gather information.
+
+### Extract URL Content
+
+Share a URL and ask for a summary:
+
+```text
+Summarize the key points from https://example.com/article
+```
+
+The AI uses `retrieve` (Jina Reader) to extract content.
+
+## How It Works
+
+| Step | Action |
+|------|--------|
+| 1 | AI determines search is needed |
+| 2 | Search query sent to Tavily API |
+| 3 | Results returned with snippets |
+| 4 | (Optional) Jina extracts full content |
+| 5 | AI synthesizes answer |
+
+> [!NOTE]
+> Web search uses the **backend API**. No additional API keys required.
+
+## Search vs Page Context
+
+| Feature | When to Use |
+|---------|-------------|
+| **Page context** | Asking about the current webpage |
+| **Web search** | Finding external information |
+| **URL retrieve** | Deep-diving into a specific URL |
+
+## Limitations
+
+- **Rate limits** — Backend has usage quotas
+- **Recency** — Search index may have slight delays
+- **Paywalls** — Cannot access gated content
+
+## Next Steps
+
+- [Backend Services](/docs/integrations/backends) — API details
+- [YouTube Analysis](/docs/using-cognito/youtube) — Video-specific research

@@ -1,0 +1,9 @@
+{
+    "title": "Security & Privacy",
+    "pages": [
+        "index",
+        "privacy-model",
+        "secrets-and-keys",
+        "threat-model"
+    ]
+}

@@ -1,0 +1,113 @@
+---
+title: Browser Automation
+description: Automate browser tasks with Cognito AI's agent capabilities.
+---
+
+## What You'll Learn
+
+- Available browser automation tools
+- Tool modes (Chat, Agent, Adaptive)
+- Tool approval system for sensitive actions
+- Best practices and limitations
+
+## Overview
+
+Cognito AI can interact with web pages through browser automation tools. Ask the AI to navigate, click, type, or extract information.
+
+## Tool Modes
+
+| Mode | Tools Available | Use Case |
+|------|-----------------|----------|
+| **Chat** | Read-only (readPageContent, takeScreenshot) | Simple Q&A about pages |
+| **Agent** | Full automation (click, type, navigate) | Complex browser tasks |
+| **Adaptive** | Dynamic discovery | Flexible tool selection |
+| **Custom** | User-selected | Fine-grained control |
+
+> [!TIP]
+> Use **Agent** mode for tasks like "fill out this form" or "search for X on Amazon."
+
+## Available Tools
+
+### Navigation & Tabs
+
+| Tool | Description |
+|------|-------------|
+| `navigateTo` | Navigate to a URL |
+| `switchTabs` | Switch between open tabs |
+| `getActiveTab` | Get current tab info |
+| `getAllTabs` | List all open tabs |
+| `applyTabGroups` | Group tabs by criteria |
+| `organizeTabsByContext` | Smart tab organization |
+
+### Content Reading
+
+| Tool | Description |
+|------|-------------|
+| `readPageContent` | Extract page text content |
+| `takeScreenshot` | Capture visible area |
+| `extractText` | Extract specific text |
+| `analyzeDom` | Analyze page structure |
+| `findSearchBar` | Locate search inputs |
+
+### Page Interaction
+
+| Tool | Description |
+|------|-------------|
+| `clickByText` | Click element by text |
+| `typeInField` | Type in input fields |
+| `selectOption` | Select dropdown options |
+| `pressKey` | Press keyboard keys |
+| `focusElement` | Focus on elements |
+| `scrollTo` | Scroll to positions |
+| `executeScript` | Run JavaScript |
+
+### Search & Web
+
+| Tool | Description |
+|------|-------------|
+| `chromeSearch` | Search via Chrome |
+| `webSearch` | Search via Tavily |
+| `retrieve` | Extract URL content |
+| `deepWebSearch` | Comprehensive research |
+
+## Tool Approval System
+
+> [!IMPORTANT]
+> Sensitive tools require your approval before execution.
+
+Tools that modify pages or navigate to new sites prompt for approval:
+
+| Tool | Risk Level | Why Approval Required |
+|------|------------|----------------------|
+| `navigateTo` | Medium | Opens new URLs |
+| `executeScript` | High | Runs arbitrary JavaScript |
+| `typeInField` | High | Can fill sensitive forms |
+| `clickByText` | High | Can submit forms, purchases |
+| `pressKey` | Medium | Can trigger actions |
+| `takeScreenshot` | Low | Privacy on sensitive pages |
+
+### Approval Options
+
+When prompted, choose:
+- **Allow once** — Approve this specific action
+- **Allow for this website** — Auto-approve on this domain
+- **Deny** — Block the action
+
+## Limitations
+
+- **Chrome pages** — Cannot interact with `chrome://` URLs
+- **Extension pages** — Limited access to other extensions
+- **CAPTCHA** — Cannot solve CAPTCHAs automatically
+- **Authentication** — Cannot access password-protected content you're not logged into
+
+## Best Practices
+
+1. **Start specific** — "Click 'Sign In' button" is better than "log me in"
+2. **Provide context** — Mention what page you're on
+3. **Review approvals** — Check what the AI is about to do
+4. **Use Agent mode** — Enable for multi-step automation tasks
+
+## Next Steps
+
+- [Tools & Approval Architecture](/docs/architecture/tools-and-approval) — Deep dive
+- [Voice Mode](/docs/using-cognito/voice-mode) — Hands-free control

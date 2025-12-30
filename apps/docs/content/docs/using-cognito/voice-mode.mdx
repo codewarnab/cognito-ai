@@ -1,0 +1,76 @@
+---
+title: Voice Mode
+description: Interact with Cognito AI using voice.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/services/elevenlabs/, packages/backend-cloudflare/ */}
+
+## What You'll Learn
+
+- Enabling and using voice mode
+- Voice conversation flow
+- Technical requirements
+
+## Overview
+
+Voice mode allows spoken interaction with Cognito AI. Speak your questions and hear responses through ElevenLabs text-to-speech.
+
+> [!NOTE]
+> Voice mode uses the ElevenLabs integration via a backend proxy.
+
+## Prerequisites
+
+- Cognito AI installed and configured
+- Microphone access granted to Chrome
+- Speakers or headphones
+
+## Enable Voice Mode
+
+1. Open the side panel (`Ctrl+Shift+H`)
+2. Open **Settings**
+3. Toggle **Enable Voice Mode** on
+
+## Using Voice Mode
+
+### Start a Voice Conversation
+
+1. Click the **microphone** button in the input area
+2. Allow microphone access if prompted
+3. Speak your message
+4. Wait for the AI response (played as audio)
+
+### End Voice Mode
+
+Click the microphone button again or press **Escape**.
+
+## Technical Details
+
+| Component | Technology |
+|-----------|------------|
+| **Voice synthesis** | ElevenLabs API |
+| **Backend proxy** | Cloudflare Worker |
+| **Audio processing** | Web Audio API worklets |
+
+The backend proxy handles API authentication so you don't need an ElevenLabs API key.
+
+## Limitations
+
+- **Language** — Best support for English
+- **Background noise** — Quiet environment recommended
+- **Response time** — Slight delay for synthesis
+- **Availability** — Requires backend connectivity
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Microphone not working | Check Chrome permissions |
+| No audio output | Check speaker/volume settings |
+| Voice cuts out | Check internet connection |
+
+See [Voice Troubleshooting](/docs/troubleshooting/voice) for more help.
+
+## Next Steps
+
+- [Side Panel Basics](/docs/using-cognito/sidepanel-basics) — Text-based chat
+- [Backend Services](/docs/integrations/backends) — ElevenLabs proxy details

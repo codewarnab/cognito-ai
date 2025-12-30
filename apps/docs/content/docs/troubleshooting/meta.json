@@ -1,0 +1,12 @@
+{
+    "title": "Troubleshooting",
+    "pages": [
+        "index",
+        "install",
+        "extension",
+        "mcp",
+        "webmcp",
+        "voice",
+        "debugging"
+    ]
+}

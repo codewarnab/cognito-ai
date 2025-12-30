@@ -1,0 +1,114 @@
+---
+title: Debugging
+description: Advanced debugging tools and techniques.
+---
+
+## Where to Look
+
+Chrome extensions have multiple JavaScript contexts. Check the right one:
+
+| Context | How to Access | Contains |
+|---------|---------------|----------|
+| **Side Panel** | Right-click panel → Inspect | UI errors, React issues |
+| **Background SW** | `chrome://extensions` → Inspect views | API calls, messaging |
+| **Content Script** | Page DevTools → Console | DOM interaction errors |
+
+## Inspect the Side Panel
+
+1. Open the side panel (`Ctrl+Shift+H`)
+2. Right-click inside the panel
+3. Click **Inspect**
+4. Go to **Console** tab
+
+Look for:
+- React errors (red text)
+- Network failures
+- Uncaught exceptions
+
+## Inspect the Background Service Worker
+
+1. Go to `chrome://extensions`
+2. Find Cognito AI
+3. Click **Inspect views: service worker**
+4. Check **Console** tab
+
+Look for:
+- API call failures
+- Storage errors
+- Message passing issues
+
+## Enable Debug Logging
+
+Cognito AI has a built-in logger with categories:
+
+### Set Log Level
+
+1. Open Settings in side panel
+2. Find **Log Level** setting
+3. Set to **Debug** for verbose output
+
+### Log Categories
+
+| Category | What it logs |
+|----------|--------------|
+| `AI_CHAT` | AI conversations and prompts |
+| `TOOLS_EXECUTION` | Tool invocations and results |
+| `MCP_CLIENT` | MCP server connections |
+| `STORAGE` | Storage operations |
+| `BACKGROUND` | Service worker activity |
+
+## Common Debug Scenarios
+
+### Network Issues
+
+1. Open DevTools → **Network** tab
+2. Look for failed requests (red)
+3. Check request/response details
+
+### Storage Issues
+
+1. DevTools → **Application**
+2. Check **Local Storage** and **IndexedDB**
+3. Verify data exists and is valid JSON
+
+### Message Passing
+
+Background console shows message routing. Look for:
+- `chrome.runtime.sendMessage` calls
+- Response handling errors
+- Port disconnection
+
+## Reproduce Issues
+
+### Create Minimal Reproduction
+
+1. Note exact steps to trigger issue
+2. Check which mode/settings are active
+3. Save relevant console logs
+4. Note Chrome and extension versions
+
+### Export Console Logs
+
+1. Right-click in Console
+2. Select **Save as...**
+3. Include log file in bug reports
+
+## Performance Issues
+
+### Check Extension Impact
+
+1. Go to `chrome://extensions`
+2. Click **Details** on Cognito AI
+3. Check **Inspect views** for active contexts
+4. Close unused contexts
+
+### Memory Usage
+
+DevTools → **Memory** tab:
+- Take heap snapshot
+- Compare snapshots to find leaks
+
+## Next Steps
+
+- [Installation Issues](/docs/troubleshooting/install)
+- [Extension Issues](/docs/troubleshooting/extension)

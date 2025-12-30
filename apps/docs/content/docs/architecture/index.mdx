@@ -1,17 +1,104 @@
 ---
 title: Architecture
-description: Overview of Cognito AI architecture.
+description: Technical architecture documentation for contributors.
 ---
 
-> [!NOTE]
-> Detailed architecture documentation will be migrated here in Phase 2.
+Deep dive into Cognito AI's technical architecture. This section covers the monorepo structure, extension internals, AI integration, and protocol implementations.
 
-## Core Components
+## Architecture Overview
 
-- **Extension**: detailed in `apps/extension`
-- **Backend (Cloudflare)**: detailed in `packages/backend-cloudflare`
-- **Backend (Vercel)**: detailed in `packages/backend-vercel`
+{/* MERMAID_DIAGRAM: architecture.overview | type: component | represents: High-level system architecture | code_refs: MONOREPO.md */}
 
-## Feature Architecture
+```mermaid
+graph TB
+    subgraph Apps["Applications"]
+        EXT[Chrome Extension]
+        WEBAPP[Webapp]
+        DOCS[Documentation]
+    end
+    
+    subgraph Backend["Backend Services"]
+        VERCEL[Vercel Backend]
+        CF[Cloudflare Worker]
+    end
+    
+    subgraph External["External Services"]
+        GEMINI[Google AI]
+        MCP[MCP Servers]
+        SM[Supermemory]
+        EL[ElevenLabs]
+    end
+    
+    subgraph Shared["Shared"]
+        TYPES[@cognito/shared]
+    end
+    
+    EXT --> VERCEL
+    EXT --> CF
+    EXT --> MCP
+    EXT --> SM
+    WEBAPP --> VERCEL
+    VERCEL --> GEMINI
+    CF --> EL
+    EXT --> TYPES
+    VERCEL --> TYPES
+```
 
-- [Content Features](./content-features): Writer and Rewriter architecture.
+## Architecture Topics
+
+<Cards>
+  <Card title="Monorepo Structure" href="/docs/architecture/monorepo" />
+  <Card title="Extension Architecture" href="/docs/architecture/extension-architecture" />
+  <Card title="AI System" href="/docs/architecture/ai-system" />
+  <Card title="Tools & Approval" href="/docs/architecture/tools-and-approval" />
+  <Card title="MCP Client" href="/docs/architecture/mcp-client" />
+  <Card title="WebMCP Architecture" href="/docs/architecture/webmcp-architecture" />
+</Cards>
+
+## Technology Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Extension** | WXT + React 19 + TypeScript |
+| **State** | Zustand + Chrome Storage |
+| **Styling** | TailwindCSS + shadcn/ui |
+| **AI SDK** | Vercel AI SDK v6 |
+| **Backend** | Express (Vercel) + Hono (Cloudflare) |
+| **Database** | IndexedDB (Dexie) |
+| **Package Manager** | pnpm (monorepo) |
+
+## Key Design Decisions
+
+### Privacy-First
+
+All user data stays on the device. The extension uses:
+- Chrome `storage.local` for preferences
+- IndexedDB for messages and threads
+- No analytics or telemetry
+
+### Multi-Provider Support
+
+The AI system supports multiple configurations:
+- Local (Chrome built-in AI)
+- BYOK (direct API with your key)
+- Backend (hosted API, no key needed)
+
+### MCP Compatibility
+
+Full Model Context Protocol support:
+- SSE/HTTP transport for remote servers
+- StdIO via backend proxy
+- WebMCP for page-provided tools
+
+### Human-in-the-Loop
+
+Safety controls for AI actions:
+- Read-only tools execute automatically
+- Destructive tools require approval
+- WebMCP tools always require consent
+
+## Next Steps
+
+- [Monorepo Structure](/docs/architecture/monorepo) — Package organization
+- [Extension Architecture](/docs/architecture/extension-architecture) — Chrome extension internals
+- [Contributing](/docs/contributing) — Development setup

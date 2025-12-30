@@ -1,0 +1,313 @@
+---
+title: Coding Standards
+description: Coding conventions and best practices for Cognito AI.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/GEMINI.md */}
+
+This guide covers coding conventions and best practices for contributing to Cognito AI.
+
+## TypeScript
+
+### Strict Typing
+
+Always use explicit types. Avoid `any`.
+
+```typescript
+// ✅ Good
+function processMessage(message: ChatMessage): ProcessedMessage {
+  return { ...message, processed: true };
+}
+
+// ❌ Bad
+function processMessage(message: any): any {
+  return { ...message, processed: true };
+}
+```
+
+### Type Imports
+
+Use `import type` for type-only imports:
+
+```typescript
+// ✅ Good
+import type { WriteTone, RewritePreset } from '@cognito/shared';
+import { TONE_INSTRUCTIONS } from '@cognito/shared';
+
+// ❌ Bad (imports type as value)
+import { WriteTone } from '@cognito/shared';
+```
+
+### Unknown vs Any
+
+Use `unknown` when type is truly unknown:
+
+```typescript
+// ✅ Good - requires type narrowing
+function handle(data: unknown) {
+  if (typeof data === 'string') {
+    return data.toUpperCase();
+  }
+}
+
+// ❌ Bad - bypasses type checking
+function handle(data: any) {
+  return data.toUpperCase();
+}
+```
+
+## React 19
+
+Cognito uses React 19 with important pattern changes.
+
+### Ref as Prop
+
+React 19 passes `ref` as a regular prop:
+
+```typescript
+// ✅ React 19 - ref as prop
+interface Props {
+  ref?: React.RefObject<HTMLDivElement | null>;
+  className?: string;
+}
+
+function MyComponent({ ref, className }: Props) {
+  return <div ref={ref} className={className} />;
+}
+
+// ❌ Old React 18 pattern (still works but not preferred)
+const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
+  return <div ref={ref} {...props} />;
+});
+```
+
+### useRef Null Handling
+
+Always include `null` in type:
+
+```typescript
+// ✅ React 19
+const inputRef = useRef<HTMLInputElement | null>(null);
+
+// ❌ Wrong - won't compile in React 19
+const inputRef = useRef<HTMLInputElement>(null);
+```
+
+### Component Props with Refs
+
+```typescript
+interface ComposerProps {
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+}
+
+function Composer({ textareaRef }: ComposerProps) {
+  return <textarea ref={textareaRef} />;
+}
+```
+
+## State Management (Zustand)
+
+### Selective Subscriptions (Critical)
+
+**Always use selectors** to avoid infinite re-render loops:
+
+```typescript
+// ✅ Good - selective subscription
+const messages = useChatStore((state) => state.messages);
+const addMessage = useChatStore((state) => state.addMessage);
+
+// ❌ Bad - causes infinite re-renders
+const store = useChatStore();
+```
+
+### Store Pattern
+
+```typescript
+import { create } from 'zustand';
+
+interface SettingsState {
+  useBackendMode: boolean;
+  setUseBackendMode: (value: boolean) => void;
+}
+
+export const useSettingsStore = create<SettingsState>()((set) => ({
+  useBackendMode: true,
+  setUseBackendMode: (value) => set({ useBackendMode: value }),
+}));
+```
+
+### Available Stores
+
+| Store | Purpose |
+|-------|---------|
+| `useSettingsStore` | User preferences |
+| `useModelStore` | AI model config |
+| `useChatStore` | Messages, threads |
+| `useToolsStore` | Tool state |
+| `useUINavigationStore` | UI state |
+| `useMcpStore` | MCP servers |
+| `useVoiceModeStore` | Voice settings |
+| `useApprovalStore` | Tool approvals |
+
+## CSS
+
+### CSS Scoping (Critical)
+
+**Never write broad CSS selectors** that affect unrelated components:
+
+```css
+/* ❌ Bad - affects all spans in any .group element */
+.group:hover span {
+    max-width: 50px;
+}
+
+/* ✅ Good - scoped to specific component */
+.my-feature-btn:hover span {
+    max-width: 50px;
+}
+```
+
+### TailwindCSS
+
+Use Tailwind utilities. Avoid custom CSS when possible:
+
+```tsx
+// ✅ Good
+<button className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer">
+  Click me
+</button>
+
+// ❌ Avoid (unless necessary)
+<button className="my-custom-button">
+  Click me
+</button>
+```
+
+### Clickable Elements
+
+Always add `cursor-pointer` to clickable elements:
+
+```tsx
+<button className="... cursor-pointer">Click</button>
+<div onClick={handleClick} className="... cursor-pointer">Clickable</div>
+```
+
+### Scrollable Containers
+
+Use the `mcp-scrollable` class for scrollable elements:
+
+```tsx
+<div className="mcp-scrollable">
+  {/* Scrollable content */}
+</div>
+```
+
+## Environment Variables
+
+### Centralized ENV Module
+
+**Always use the `ENV` module**, never access directly:
+
+```typescript
+// ✅ Correct
+import { ENV } from '@/utils/env';
+const backendUrl = ENV.BACKEND_API_URL;
+
+// ❌ Wrong - never access directly
+const backendUrl = import.meta.env.WXT_BACKEND_API_URL;
+const backendUrl = process.env.WXT_BACKEND_API_URL;
+```
+
+## Logging
+
+### Logger Categories
+
+All loggers must include a category:
+
+```typescript
+import { createLogger } from '~logger';
+const log = createLogger('FeatureName', 'CATEGORY');
+```
+
+### Available Categories
+
+| Category Group | Examples |
+|----------------|----------|
+| **MCP** | `MCP_CLIENT`, `MCP_TOOLS`, `MCP_AUTH` |
+| **Tools** | `TOOLS_REGISTRY`, `TOOLS_EXECUTION` |
+| **AI** | `AI_CHAT`, `AI_PROMPTS`, `AI_VOICE` |
+| **UI** | `UI_CHAT`, `UI_SETTINGS`, `UI_SIDEPANEL` |
+| **System** | `BACKGROUND`, `STORAGE`, `NOTIFICATIONS` |
+
+## Security
+
+### Sensitive Data Handling
+
+**Never capture sensitive input values**:
+
+```typescript
+// SECURITY: Stripping value from sensitive fields
+const value = isSensitiveInput(input) ? undefined : input.value;
+
+function isSensitiveInput(input: HTMLInputElement): boolean {
+  // Type-based
+  if (input.type === 'password') return true;
+  
+  // Autocomplete-based
+  const sensitiveAutocomplete = ['cc-number', 'cc-csc', 'current-password'];
+  if (sensitiveAutocomplete.includes(input.autocomplete)) return true;
+  
+  // Pattern-based
+  const pattern = /password|card|cvv|ssn|secret|pin/i;
+  if (pattern.test(input.name + input.id)) return true;
+  
+  return false;
+}
+```
+
+Always add `// SECURITY:` comments when handling sensitive data.
+
+### Defense in Depth
+
+Check at multiple layers:
+1. Extraction (when reading DOM)
+2. Formatting (when preparing for AI)
+3. Transport (before API calls)
+
+## File Naming
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Components | PascalCase | `ChatMessage.tsx` |
+| Hooks | camelCase with `use` prefix | `useWebMCPTools.ts` |
+| Utils | camelCase | `stringUtils.ts` |
+| Types | camelCase or PascalCase | `types.ts`, `ChatTypes.ts` |
+| Constants | camelCase | `mcpServers.tsx` |
+
+## UI Components
+
+### Never Modify Primitives
+
+Components in `src/components/ui/primitives/` should never be directly modified. Instead:
+
+1. Add props to the primitive
+2. Pass customization from consuming components
+
+### Component Structure
+
+```text
+components/
+├── ui/                      # Base primitives
+│   └── primitives/          # NEVER modify directly
+├── features/                # Feature-specific
+│   └── chat/
+│       ├── components/      # Feature components
+│       └── hooks/           # Feature hooks
+└── shared/                  # Reusable across features
+```
+
+## Next Steps
+
+- [Adding Tools](/docs/contributing/adding-tools) — Implement new tools
+- [Adding MCP Server](/docs/contributing/adding-mcp-server) — Add MCP support
+- [Architecture](/docs/architecture) — System design

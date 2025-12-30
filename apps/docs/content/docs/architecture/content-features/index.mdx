@@ -36,7 +36,7 @@ graph TD
 
     subgraph External [External Services]
         Gemini[Google Gemini API]
-        Tools[Start Search / Memories]
+        Tools[Search / Memories]
     end
 
     Writer -->|Port: write-command| Router
@@ -88,3 +88,4 @@ Common error handling strategies are used across both features:
 -   **API Key Protection**: Keys are stored in Chrome secure storage and never exposed to the content script.
 -   **Isolation**: Features run in an Isolated World (Content Script) and use Shadow DOM to prevent CSS conflicts with the host page.
 -   **Sanitization**: All user inputs are treated as untrusted and passed safely to the LLM.
+

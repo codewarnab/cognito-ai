@@ -1,0 +1,69 @@
+---
+title: Configuration
+description: Configure Cognito AI settings and preferences.
+---
+
+Configure Cognito AI to match your preferences and workflow. Settings are organized across the extension and webapp.
+
+## Configuration Areas
+
+| Area | Location | What's Configured |
+|------|----------|-------------------|
+| **Quick Settings** | Extension side panel | Model, mode, basic toggles |
+| **Full Settings** | Webapp (new tab) | All preferences, memory, MCP |
+| **Environment** | `.env` file | Build-time configuration |
+| **Permissions** | Chrome | Extension access levels |
+
+## Quick Tour
+
+### Extension Quick Settings
+
+Access directly in the side panel:
+- AI model selection
+- Backend/BYOK mode toggle
+- Tools mode selection
+- Voice mode toggle
+
+### Webapp Settings
+
+Full configuration in a dedicated page:
+- API key management
+- Memory settings
+- MCP server management
+- Feature preferences
+
+## Configuration Topics
+
+<Cards>
+  <Card title="Settings Overview" href="/docs/configuration/settings-overview" />
+  <Card title="Environment Variables" href="/docs/configuration/env-vars" />
+  <Card title="Modes & Feature Flags" href="/docs/configuration/modes-and-feature-flags" />
+  <Card title="Permissions" href="/docs/configuration/permissions" />
+</Cards>
+
+## Common Tasks
+
+### Switch AI Modes
+
+1. Open the side panel
+2. Click the mode selector
+3. Choose:
+   - **Backend Mode** — No API key needed
+   - **BYOK Mode** — Use your own API key
+
+### Configure MCP Servers
+
+1. Navigate to **Settings** → **MCP Servers**
+2. Enable desired servers
+3. Complete authentication when prompted
+
+### Manage Memory
+
+1. Navigate to **Settings** → **Memory**
+2. Enter Supermemory API key
+3. Enable/disable auto-extraction
+
+## Next Steps
+
+- [Settings Overview](/docs/configuration/settings-overview) — Where settings live
+- [Modes & Feature Flags](/docs/configuration/modes-and-feature-flags) — Understand the 4 mode types

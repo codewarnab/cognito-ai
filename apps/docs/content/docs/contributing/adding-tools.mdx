@@ -1,0 +1,282 @@
+---
+title: Adding Tools
+description: How to add new browser automation tools.
+---
+
+{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/ai/tools/ */}
+
+This guide walks you through creating and registering new browser automation tools.
+
+## Tool Architecture
+
+Tools are functions the AI can call to perform browser actions. They consist of:
+
+| Component | Purpose |
+|-----------|---------|
+| **Schema** | Zod schema defining parameters |
+| **Description** | What the tool does (shown to AI) |
+| **Execute function** | Implementation |
+| **Approval config** | Whether HITL is required |
+
+## Creating a Tool
+
+### Step 1: Define the Schema
+
+Create a file in `apps/extension/src/ai/tools/`:
+
+```typescript
+// myTool.ts
+import { z } from 'zod';
+
+// Define parameters with Zod
+export const myToolSchema = z.object({
+  selector: z.string().describe('CSS selector for the element'),
+  action: z.enum(['click', 'hover']).describe('Action to perform'),
+  waitMs: z.number().optional().describe('Wait time after action'),
+});
+
+export type MyToolParams = z.infer<typeof myToolSchema>;
+```
+
+### Step 2: Implement the Function
+
+```typescript
+// myTool.ts (continued)
+
+export async function myTool({ 
+  selector, 
+  action, 
+  waitMs = 0 
+}: MyToolParams): Promise<MyToolResult> {
+  // Get the active tab
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
+    return { success: false, error: 'No active tab' };
+  }
+  
+  // Execute via content script
+  const result = await chrome.tabs.sendMessage(tab.id, {
+    type: 'dom/action',
+    selector,
+    action,
+  });
+  
+  // Optional wait
+  if (waitMs > 0) {
+    await sleep(waitMs);
+  }
+  
+  return { success: true, result };
+}
+
+interface MyToolResult {
+  success: boolean;
+  result?: unknown;
+  error?: string;
+}
+```
+
+### Step 3: Register the Tool
+
+Add to the tool registry in `apps/extension/src/ai/tools/registry.ts`:
+
+```typescript
+// registry.ts
+import { myTool, myToolSchema } from './myTool';
+
+export const extensionTools = {
+  // ... existing tools
+  
+  myNewTool: {
+    description: 'Perform an action on a DOM element by selector',
+    parameters: myToolSchema,
+    execute: myTool,
+  },
+};
+```
+
+## Tool Types
+
+### Auto-Approved Tools
+
+Safe, read-only tools that execute immediately:
+
+```typescript
+const readPageContent = {
+  description: 'Read the visible text content of the page',
+  parameters: z.object({}),
+  execute: async () => {
+    // Read-only operation
+    return await getPageContent();
+  },
+};
+```
+
+### HITL Tools (Approval Required)
+
+Tools requiring user approval before execution:
+
+```typescript
+const clickElement = {
+  description: 'Click an element on the page',
+  parameters: z.object({
+    text: z.string().describe('Text of element to click'),
+  }),
+  // No execute function - handled via HITL
+};
+
+// Register executor separately
+registerToolExecutor('clickElement', async ({ text }) => {
+  return await performClick(text);
+});
+```
+
+Add to the approval list:
+
+```typescript
+// In approval config
+const TOOLS_REQUIRING_APPROVAL = [
+  // ... existing
+  'clickElement',
+];
+```
+
+## Content Script Integration
+
+Many tools need to interact with the page DOM via content scripts.
+
+### Sending Messages to Content Script
+
+```typescript
+// Tool implementation
+async function myTool(params: MyToolParams) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+  const result = await chrome.tabs.sendMessage(tab.id!, {
+    type: 'myTool/execute',
+    params,
+  });
+  
+  return result;
+}
+```
+
+### Content Script Handler
+
+In `apps/extension/src/entrypoints/contents/`:
+
+```typescript
+// myTool.content.ts
+export default defineContentScript({
+  matches: ['<all_urls>'],
+  main() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.type === 'myTool/execute') {
+        handleMyTool(message.params)
+          .then(sendResponse)
+          .catch((error) => sendResponse({ error: error.message }));
+        return true; // Keep channel open for async
+      }
+    });
+  },
+});
+
+async function handleMyTool(params: MyToolParams) {
+  // DOM manipulation here
+  const element = document.querySelector(params.selector);
+  if (!element) {
+    throw new Error(`Element not found: ${params.selector}`);
+  }
+  // ... implementation
+}
+```
+
+## Tool Descriptions
+
+Write clear descriptions for the AI:
+
+```typescript
+// ✅ Good - clear and specific
+{
+  description: 'Click a button or link on the page by its visible text. ' +
+               'Use this when you need to interact with a clickable element.',
+  parameters: z.object({
+    text: z.string().describe('Exact visible text of the element'),
+    elementType: z.enum(['button', 'link', 'any']).describe('Type of element'),
+  }),
+}
+
+// ❌ Bad - vague
+{
+  description: 'Click something',
+  parameters: z.object({ text: z.string() }),
+}
+```
+
+## Error Handling
+
+Return structured errors:
+
+```typescript
+async function myTool(params: MyToolParams): Promise<ToolResult> {
+  try {
+    const result = await performAction(params);
+    return { success: true, result };
+  } catch (error) {
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+```
+
+## Testing Tools
+
+### Manual Testing
+
+1. Run `pnpm dev`
+2. Load the extension
+3. Open the side panel
+4. Ask the AI to use your tool
+5. Verify the behavior
+
+### Unit Testing
+
+```typescript
+// myTool.test.ts
+describe('myTool', () => {
+  it('should perform action on element', async () => {
+    // Mock chrome.tabs
+    const mockTab = { id: 1 };
+    vi.spyOn(chrome.tabs, 'query').mockResolvedValue([mockTab]);
+    vi.spyOn(chrome.tabs, 'sendMessage').mockResolvedValue({ success: true });
+    
+    const result = await myTool({ selector: '#btn', action: 'click' });
+    
+    expect(result.success).toBe(true);
+    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
+      type: 'dom/action',
+      selector: '#btn',
+      action: 'click',
+    });
+  });
+});
+```
+
+## Tool Checklist
+
+Before submitting your tool:
+
+- [ ] Schema has descriptive parameter `.describe()` calls
+- [ ] Description is clear and helps AI understand when to use it
+- [ ] Error handling returns structured results
+- [ ] Content script integration tested
+- [ ] Added to `TOOLS_REQUIRING_APPROVAL` if needed
+- [ ] Documentation updated
+
+## Next Steps
+
+- [Tools & Approval Architecture](/docs/architecture/tools-and-approval) — HITL system
+- [Adding MCP Server](/docs/contributing/adding-mcp-server) — External tools
+- [Coding Standards](/docs/contributing/coding-standards) — Code conventions
