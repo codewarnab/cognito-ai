@@ -3,9 +3,6 @@
  * Type definitions for the text rewrite feature (select text → rewrite)
  */
 
-/**
- * Preset rewrite options
- */
 import type { RewritePageContext, RewritePreset } from '@cognito/shared/types';
 
 export type { RewritePageContext, RewritePreset } from '@cognito/shared/types';
