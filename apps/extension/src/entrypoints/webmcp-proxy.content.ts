@@ -380,9 +380,25 @@ export default defineContentScript({
 
         // Handle visibility changes (tab becomes hidden/visible)
         ctx.addEventListener(document, 'visibilitychange', () => {
-            if (document.visibilityState === 'visible' && isConnected) {
-                // Refresh tools when tab becomes visible
-                fetchAndReportTools();
+            if (document.visibilityState !== 'visible') return;
+
+            /**
+             * NOTE:
+             * Window/tab focus changes (e.g., Alt-Tab to VS Code and back) can trigger
+             * `visibilitychange` even when the active tab hasn't changed.
+             *
+             * We intentionally avoid refreshing tools here to prevent "re-registering"
+             * the same WebMCP tools on simple window switches.
+             *
+             * Tool discovery is driven by:
+             * - Background refresh requests (`webmcp/tools/refresh`)
+             * - MCP tool list change notifications (when supported by the page)
+             *
+             * If the transport dropped while the tab was hidden, we can attempt to
+             * reconnect when the tab becomes visible again.
+             */
+            if (!isConnected) {
+                attemptConnection();
             }
         });
 
