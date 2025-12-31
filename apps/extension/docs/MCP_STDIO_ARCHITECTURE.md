@@ -84,10 +84,12 @@ Browser extensions cannot spawn local processes directly. To support StdIO-based
 
 | Type | Package | Purpose |
 |------|---------|---------|
-| MCP_SERVER_REGISTRY | `@cognito/shared` | Secure server command registry |
+| MCP_SERVER_REGISTRY | `@cognito/shared` | Secure server command registry (Record<string, McpServerRegistryEntry>) |
+| McpServerRegistryEntry | `@cognito/shared` | Entry in registry (id, command, args, envKeyName, envMapping, staticEnv, enabled) |
 | McpStdioRequest | `@cognito/shared` | Discovery/execute request (serverId + credentials) |
-| McpExecuteRequest | `@cognito/shared` | Tool execution request payload |
+| McpExecuteRequest | `@cognito/shared` | Tool execution request payload (extends McpStdioRequest + toolName, toolArgs) |
 | McpDiscoveryResponse | `@cognito/shared` | Tool discovery response payload |
+| StdioMcpConfig | `@cognito/shared` | StdIO config (command, args, env) |
 
 ---
 
@@ -553,6 +555,9 @@ interface ServerConfig {
         patConfig?: {
             label: string;
             placeholder: string;
+            helpUrl?: string;            // Link to documentation
+            // Multi-field authentication (for servers like Plane)
+            fields?: Array<{ id: string; label: string; placeholder: string; required?: boolean; secret?: boolean }>;
         };
     };
 }
@@ -571,7 +576,8 @@ interface ServerConfig {
 export class McpBackendClient implements McpClient {
     constructor(
         serverId: string,
-        accessToken: string | null
+        accessToken: string | null,
+        credentialFields?: Record<string, string>  // For multi-field servers (e.g., Plane)
     );
     
     // Lifecycle
@@ -597,13 +603,33 @@ export class McpBackendClient implements McpClient {
 // Backend resolves command from MCP_SERVER_REGISTRY.
 
 // Tool Discovery
-POST /api/ai/mcp/discover
-Request:  { serverId: string, credentials?: { apiKey?: string } }
-Response: { tools: Array<{ name, description, inputSchema }> }
+POST /api/ai/mcp/discover?skipCache=true  // Optional: bypass Redis cache
+Request: {
+    serverId: string,
+    credentials?: {
+        apiKey?: string,                         // For single-key servers
+        fields?: Record<string, string>          // For multi-field servers (e.g., Plane)
+    }
+}
+Response: {
+    tools: Array<{
+        name: string,
+        description?: string,
+        inputSchema: object  // JSON Schema
+    }>
+}
 
 // Tool Execution
 POST /api/ai/mcp/execute
-Request:  { serverId, credentials?, toolName: string, toolArgs: object }
+Request: {
+    serverId: string,
+    credentials?: {
+        apiKey?: string,                         // For single-key servers
+        fields?: Record<string, string>          // For multi-field servers
+    },
+    toolName: string,
+    toolArgs?: Record<string, any>
+}
 Response: { result: any }
 ```
 
@@ -811,6 +837,53 @@ A mapping is maintained to reverse sanitization when receiving tool calls from t
             placeholder: "Enter your API Key",
         }
     }
+}
+```
+
+### Multi-Field Server Example: Plane
+
+For servers requiring multiple credentials (like Plane), use `patConfig.fields` and `envMapping`:
+
+```typescript
+// apps/extension/src/constants/mcpServers.tsx
+
+{
+    id: "plane",
+    name: "Plane",
+    icon: <PlaneIcon />,
+    url: "stdio://plane",
+    description: "AI automation for Plane projects, issues, cycles, and modules.",
+    requiresAuthentication: true,
+    isBackendOnly: true,
+    authConfig: {
+        type: 'pat',
+        patConfig: {
+            label: "Plane Credentials",
+            placeholder: "",
+            helpUrl: "https://plane.so",
+            fields: [
+                { id: 'apiKey', label: 'API Key', placeholder: 'plane_...', required: true, secret: true },
+                { id: 'workspaceSlug', label: 'Workspace Slug', placeholder: 'my-workspace', required: true },
+            ]
+        }
+    }
+}
+
+// packages/shared/src/constants/mcpRegistry.ts
+// The backend registry maps field IDs to environment variables:
+
+'plane': {
+    id: 'plane',
+    command: 'npx',
+    args: ['-y', '@makeplane/plane-mcp-server'],
+    envMapping: {
+        'apiKey': 'PLANE_API_KEY',
+        'workspaceSlug': 'PLANE_WORKSPACE_SLUG',
+    },
+    staticEnv: {
+        'PLANE_API_HOST_URL': 'https://api.plane.so/',
+    },
+    enabled: true,
 }
 ```
 

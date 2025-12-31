@@ -46,7 +46,9 @@ import { PerplexityAI } from "@assets/brands/integrations/PerplexityAI"
 import brightdataImage from '@assets/brands/integrations/brightdata.png';
 import firecrawlImage from '@assets/brands/integrations/firecrawl.png';
 import planeImage from '@assets/brands/integrations/plane.svg';
+import bitlyImage from '@assets/brands/integrations/bitly.png';
 import serpApiImage from '@assets/brands/integrations/serpapi.png';
+import sciraImage from '@assets/brands/integrations/scira.png';
 import { Tally } from "@assets/brands/integrations/Tally"
 
 
@@ -163,6 +165,24 @@ export const MCP_SERVERS: ServerConfig[] = [
     //         scopes: [] // Use default scopes from discovery
     //     }
     // },
+    {
+        id: "bitly",
+        name: "Bitly",
+        icon: <img src={bitlyImage} alt="Bitly" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://api-ssl.bitly.com/v4/mcp",
+        description: "Bitly is a link management platform. Shorten, branding, and track your links.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Bitly API Key",
+                placeholder: "Enter your API key",
+                helpUrl: "https://bitly.com/settings/api",
+            }
+        }
+    },
     {   // working 
         id: "ahrefs",
         name: "Ahrefs",
@@ -242,7 +262,7 @@ export const MCP_SERVERS: ServerConfig[] = [
             type: 'pat',
             patConfig: {
                 label: "Magic API Key",
-                helpUrl:"https://21st.dev/mcp?redirect=%2Fmcp",
+                helpUrl: "https://21st.dev/mcp?redirect=%2Fmcp",
                 placeholder: "Enter your API Key",
             }
         }
@@ -578,7 +598,7 @@ export const MCP_SERVERS: ServerConfig[] = [
         requiresAuthentication: true
     },
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
-     {
+    {
         id: "fetch",
         name: "Fetch",
         icon: <Download className="w-6 h-6" />,
@@ -618,5 +638,24 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialEnabled: false,
         initialAuthenticated: false,
         paid: true
+    },
+    {
+        id: "scira",
+        name: "Scira AI",
+        icon: <img src={sciraImage} alt="Scira AI" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.scira.ai/mcp",
+        description: "AI-powered search with web search, people profiles, X/Twitter posts, and Reddit discussions.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Scira AI API Key",
+                placeholder: "Enter your API key",
+                helpUrl: "https://api.scira.ai",
+                authHeaderName: "x-api-key",
+            }
+        }
     },
 ]

@@ -25,7 +25,36 @@ export async function getSupermemoryUserId(): Promise<string> {
             return storage[STORAGE_KEY];
         }
 
-        // Generate new UUID using native crypto API
+        // Try to generate a stable ID using device fingerprinting
+        try {
+            // Dynamically import to avoid issues in contexts where offscreen API isn't available
+            // or if ensureOffscreenDocument has side effects
+            const { ensureOffscreenDocument } = await import('@/offscreen/ensure');
+
+            // Only attempt if we have the permission/ability (e.g. in background script)
+            if (chrome.offscreen) {
+                await ensureOffscreenDocument();
+
+                const response = await chrome.runtime.sendMessage({
+                    type: 'offscreen/fingerprint/request'
+                }) as { ok: boolean, fingerprint?: string, error?: string };
+
+                if (response?.ok && response?.fingerprint) {
+                    const fp = response.fingerprint;
+                    // Create UUID-like format from SHA-256 hash (take first 32 chars)
+                    // Format: 8-4-4-4-12
+                    const stableId = `${fp.substring(0, 8)}-${fp.substring(8, 12)}-${fp.substring(12, 16)}-${fp.substring(16, 20)}-${fp.substring(20, 32)}`;
+
+                    await chrome.storage.local.set({ [STORAGE_KEY]: stableId });
+                    log.info('Generated stable Supermemory user ID from fingerprint');
+                    return stableId;
+                }
+            }
+        } catch (fpError) {
+            log.warn('Failed to generate stable fingerprint ID, falling back to random', fpError);
+        }
+
+        // Generate new UUID using native crypto API (Fallback)
         const newId = crypto.randomUUID();
         await chrome.storage.local.set({ [STORAGE_KEY]: newId });
 

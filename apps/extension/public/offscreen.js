@@ -146,6 +146,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
             }
             return true; // Keep channel open for async callback
         }
+
+        if (message?.type === 'offscreen/fingerprint/request') {
+            try {
+                const fingerprint = await getFingerprint();
+                sendResponse({ ok: true, fingerprint });
+            } catch (e) {
+                sendResponse({ ok: false, error: e.message });
+            }
+            return;
+        }
     })();
 
     return true;
@@ -155,4 +165,46 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 setInterval(() => {
     // heartbeat
 }, 30000);
+
+/* Device Fingerprinting Logic */
+async function getFingerprint() {
+    const signals = {
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        colorDepth: screen.colorDepth,
+        pixelRatio: window.devicePixelRatio,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezoneOffset: new Date().getTimezoneOffset(),
+        language: navigator.language,
+        languages: navigator.languages ? navigator.languages.join(',') : '',
+        platform: navigator.platform,
+        hardwareConcurrency: navigator.hardwareConcurrency || 0,
+        deviceMemory: navigator.deviceMemory || 0,
+        touchSupport: 'ontouchstart' in window,
+        maxTouchPoints: navigator.maxTouchPoints || 0,
+        webglVendor: getWebGLVendor(),
+    };
+
+    // keys sort for stability
+    const data = JSON.stringify(signals, Object.keys(signals).sort());
+    const encoder = new TextEncoder();
+    const buffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+    return Array.from(new Uint8Array(buffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+function getWebGLVendor() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) return 'none';
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (!debugInfo) return 'unknown';
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        return vendor || 'unknown';
+    } catch {
+        return 'error';
+    }
+}
 
