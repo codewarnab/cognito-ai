@@ -22,12 +22,13 @@ import { executeStreamText } from '../../stream/streamExecutor';
 import { parseProviderError } from '../../errors/handlers';
 import { writeErrorToStream } from '../../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../../setup';
-import { useSettingsStore } from '@/stores';
+import { useSettingsStore, useToolsStore } from '@/stores';
 
 import type { StreamAIParams, AIProvider, StreamState } from './types';
 import { handleBackendMode } from './backendMode';
 import { buildSystemPromptForMode } from './promptBuilder';
 import { createOnErrorCallback, createOnFinishCallback, createPrepareStepCallback } from './streamHandlers';
+import { streamCodeModeChat } from '../../codeMode';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
 
@@ -53,6 +54,17 @@ export async function streamAIResponse(params: StreamAIParams) {
     const { messages, abortSignal, initialPageContext, onError, onUsageUpdate, workflowId, threadId, onFinishCallback } = params;
 
     log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
+
+    // Check if code mode is active - route to local bridge
+    const currentToolsMode = useToolsStore.getState().currentMode;
+    if (currentToolsMode === 'code') {
+        log.info('🔧 Using CODE MODE - routing to local bridge');
+        return streamCodeModeChat({
+            messages,
+            abortSignal,
+            onError,
+        });
+    }
 
     // Check if backend mode is enabled - route to backend immediately
     const useBackendMode = useSettingsStore.getState().useBackendMode;

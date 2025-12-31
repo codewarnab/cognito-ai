@@ -288,6 +288,15 @@ import type { ChatMode } from '@/stores/ui/types';
 - All clickable buttons must include `cursor-pointer` class for proper UX
 - Scrollbars must be modern and minimal; use `mcp-scrollable` class for scrollable containers
 - **Never modify primitive UI components** (`src/components/ui/primitives/`) directly; always add props for customization and pass them from consuming components
+- **Use existing primitives** before creating custom components. Import from `@/components/ui/primitives/<component>`:
+
+```typescript
+// ✅ CORRECT - Import from primitives
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/primitives/tooltip';
+
+// ❌ WRONG - Non-existent path
+import { Button } from '@/components/ui/button';
+```
 
 ## CSS Scoping (CRITICAL)
 

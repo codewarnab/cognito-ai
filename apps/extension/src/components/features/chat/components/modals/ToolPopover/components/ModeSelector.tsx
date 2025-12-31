@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Bot, Sparkles, Info } from 'lucide-react';
+import { MessageSquare, Bot, Sparkles, Info, Code } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ToolMode } from '../types';
 
@@ -40,6 +40,8 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             : 'var(--bg-tertiary, #1a2637)',
         color: isActive ? 'var(--color-success, #10b981)' : 'var(--text-secondary, #9ca3af)',
     });
+
+
 
     return (
         <div style={{
@@ -142,6 +144,16 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     </div>
                 )}
             </div>
+            {/* Code mode button */}
+            <button
+                type="button"
+                style={getButtonStyle(displayMode === 'code')}
+                onClick={() => onModeChange('code')}
+                title="Code Mode with Element Picker"
+            >
+                <Code size={12} />
+                <span>Code</span>
+            </button>
             {hasUserModified && (
                 <div style={{
                     marginLeft: 'auto',

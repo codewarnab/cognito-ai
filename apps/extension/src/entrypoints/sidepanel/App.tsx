@@ -43,6 +43,7 @@ import { createLogger } from '~logger';
 import { useRegisterAllActions } from "@/actions/registerAll";
 import { useRegisterAllWorkflows } from "@/workflows/registerAll";
 import { useAIChat } from "@/ai/hooks";
+import { usePatchProposalTool } from "@/ai/codeMode/usePatchProposalTool";
 
 // Custom hooks
 import { useOnboarding } from "@/hooks/settings";
@@ -77,6 +78,9 @@ function AIChatContent() {
     // Register actions and workflows
     useRegisterAllActions();
     useRegisterAllWorkflows();
+
+    // Register Code Mode patch proposal tool UI
+    usePatchProposalTool();
 
     // Initialize sandbox bridge for adaptive mode code execution
     const { isReady: isSandboxReady, error: sandboxError } = useSandbox();

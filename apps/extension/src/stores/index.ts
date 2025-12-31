@@ -80,3 +80,12 @@ export {
   selectIsInitialized as selectMcpIsInitialized,
 } from './mcp/mcpStore';
 export type { McpState, McpServerStatus, CustomServerData } from './mcp/types';
+
+// Code Mode Store
+export { useCodeModeStore } from './codeMode/codeModeStore';
+export type { CodeModeState, BridgeStatus, AgentInfo } from './codeMode/types';
+
+// Approval Store
+export { useApprovalStore } from './approval/approvalStore';
+export type { ApprovalState, ApprovalPreferences } from './approval/types';
+

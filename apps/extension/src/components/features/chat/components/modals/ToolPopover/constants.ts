@@ -57,3 +57,6 @@ export const ADAPTIVE_ONLY_TOOLS: string[] = [
     'discoverTools',
     'executeTools',
 ];
+
+// Code mode - no default tools, relies on local CLI agent
+export const CODE_MODE_TOOLS: string[] = [];

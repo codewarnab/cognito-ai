@@ -166,3 +166,6 @@ export type {
     McpDiscoveryRequest,
     McpDiscoveryResponse,
 } from './mcp.js';
+
+// Code Mode types
+export type { CodeModeElementContext } from './codeMode.js';

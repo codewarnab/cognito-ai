@@ -178,7 +178,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         title: youtubeVideoInfo.title!,
     } : null;
 
-    const { handleAttachYouTubeVideo, videoMetadata } = useYouTubeVideoAttachment({
+    const { handleAttachYouTubeVideo } = useYouTubeVideoAttachment({
         youtubeVideoInfo: youtubeVideoInfoForHook,
         mode: modelState.mode,
         onError,

@@ -16,6 +16,8 @@ Import from `@/stores`:
 - `useToolsStore` - Tool enabled states and counts
 - `useVoiceModeStore` - Voice recording and ElevenLabs state
 - `useMcpStore` - MCP server connections and status
+- `useCodeModeStore` - Code mode state and bridge status
+- `useApprovalStore` - Tool approval preferences and requests
 
 ## Selective Subscriptions (CRITICAL - PREVENTS INFINITE LOOPS)
 
@@ -60,6 +62,8 @@ import { useAttachmentsStore, type AttachmentsState } from '@/stores';
 import { useToolsStore, type ToolsState } from '@/stores';
 import { useVoiceModeStore, type VoiceModeState } from '@/stores';
 import { useMcpStore, type McpState } from '@/stores';
+import { useCodeModeStore, type CodeModeState } from '@/stores';
+import { useApprovalStore, type ApprovalState } from '@/stores';
 ```
 
 ## Usage Patterns

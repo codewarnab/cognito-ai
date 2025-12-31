@@ -7,7 +7,7 @@ import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 
 // Stores
-import { useUINavigationStore, useToolsStore, useAttachmentsStore, type UINavigationState } from '@/stores';
+import { useUINavigationStore, useToolsStore, useAttachmentsStore, useCodeModeStore, type UINavigationState, type CodeModeState } from '@/stores';
 
 // Extracted hooks
 import { useScreenshotCapture } from './hooks';
@@ -22,6 +22,8 @@ import {
     ComposerToolbar,
     ComposerActions
 } from './sections';
+
+import { ElementContextChip } from '../../../codeMode/ElementContextChip';
 
 const log = createLogger('Composer', 'AI_CHAT');
 
@@ -126,11 +128,14 @@ export const Composer: React.FC<ComposerProps> = ({
     // Voice FAB visibility management via store
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
+    // Code mode element context - hide FAB when element is selected
+    const elementContext = useCodeModeStore((state: CodeModeState) => state.elementContext);
+
     useEffect(() => {
-        // Hide FAB when dropdown/attachments/recording are active
-        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording;
+        // Hide FAB when dropdown/attachments/recording/element context are active
+        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || !!elementContext;
         setVoiceFabVisibility(!shouldHide);
-    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, setVoiceFabVisibility]);
+    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, elementContext, setVoiceFabVisibility]);
 
     // Debug logging
     log.info('🎨 Composer render - search mode state', {
@@ -181,6 +186,11 @@ export const Composer: React.FC<ComposerProps> = ({
                 handleSlashCommandDetection={handleSlashCommandDetection}
                 mode={modelState.mode}
             />
+
+            {/* Code Mode: Selected element context */}
+            <div className="px-3 pb-2 pt-1">
+                <ElementContextChip />
+            </div>
 
             {/* Attachments area: tab and file attachments (uses store) */}
             <AttachmentsArea />

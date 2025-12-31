@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
@@ -11,6 +11,10 @@ import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
+import { ElementPickerButton } from '../../../../codeMode/ElementPickerButton';
+import { BridgePairingDrawer } from '../../../../codeMode/BridgePairingDrawer';
+import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
+import type { CodeModeState } from '@/stores/codeMode/types';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { McpToolWithServer } from '@/stores/tools/types';
@@ -73,6 +77,29 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Backend mode state
     const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
 
+    // Code Mode bridge state
+    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+    const checkBridgeHealth = useCodeModeStore((s: CodeModeState) => s.checkBridgeHealth);
+    const clearElementContext = useCodeModeStore((s: CodeModeState) => s.clearElementContext);
+    const [showPairingDrawer, setShowPairingDrawer] = useState(false);
+
+    // Check bridge health when entering Code mode, clear context when leaving
+    useEffect(() => {
+        if (toolsMode === 'code') {
+            checkBridgeHealth();
+        } else {
+            // Clear picked element when leaving code mode
+            clearElementContext();
+        }
+    }, [toolsMode, checkBridgeHealth, clearElementContext]);
+
+    // Auto-open pairing drawer when Code mode needs pairing
+    useEffect(() => {
+        if (toolsMode === 'code' && bridgeStatus === 'needs-pairing') {
+            setShowPairingDrawer(true);
+        }
+    }, [toolsMode, bridgeStatus]);
+
     // Get unique enabled MCP server IDs
     const enabledMcpServers = useMemo(() => {
         const serverMap = new Map<string, { serverId: string; serverName: string }>();
@@ -124,6 +151,19 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     onToggleDropdown={onToggleModeDropdown}
                     onError={onError}
                 />
+            )}
+
+            {/* Code Mode: Element Picker + Pairing Drawer */}
+            {toolsMode === 'code' && (
+                <>
+                    <div className="flex items-center border-r border-border/50 pr-2 mr-2">
+                        <ElementPickerButton />
+                    </div>
+                    <BridgePairingDrawer
+                        isOpen={showPairingDrawer}
+                        onClose={() => setShowPairingDrawer(false)}
+                    />
+                </>
             )}
 
             <div style={{ position: 'relative' }}>

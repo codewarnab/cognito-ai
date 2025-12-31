@@ -251,6 +251,16 @@ export interface MessageRegistry {
 
     /** Notification that WebMCP tools have been updated */
     'webmcp/tools/updated': MessageDefinition<{ tools: unknown[] }, void>;
+
+    // -------------------------------------------------------------------------
+    // Code Mode Messages
+    // -------------------------------------------------------------------------
+
+    /** Start the element picker in code mode */
+    'code/picker/start': MessageDefinition<
+        undefined,
+        { ok: true; context: import('@cognito/shared/types').CodeModeElementContext } | { ok: false; error: string }
+    >;
 }
 
 // =============================================================================

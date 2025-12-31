@@ -13,6 +13,7 @@
     "dev": "pnpm --filter @cognito/extension dev",
     "dev:docs": "pnpm --filter @cognito/docs dev",
     "dev:webapp": "pnpm --filter @cognito/webapp dev",
+    "dev:bridge": "pnpm --filter @cognito/code-bridge dev",
     "dev:all": "pnpm -r --parallel dev",
     "build": "pnpm -r build",
     "build:extension": "pnpm --filter @cognito/extension build",

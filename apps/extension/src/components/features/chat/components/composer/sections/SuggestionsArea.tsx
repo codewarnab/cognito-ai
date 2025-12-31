@@ -2,7 +2,7 @@ import React from 'react';
 import { LocalPdfSuggestion } from '../../suggestions/LocalPdfSuggestion';
 import { YouTubeVideoSuggestion, type YouTubeBadgeLoadingState } from '../../suggestions/YouTubeVideoSuggestion';
 import { SelectedTextSuggestion } from '../../suggestions/SelectedTextSuggestion';
-import { useAttachmentsStore } from '@/stores';
+import { useAttachmentsStore, useCodeModeStore } from '@/stores';
 
 interface SuggestionsAreaProps {
     /** Handler to attach local PDF - requires processFiles from parent */
@@ -58,6 +58,14 @@ export const SuggestionsArea: React.FC<SuggestionsAreaProps> = ({
     const dismissSelectedText = useAttachmentsStore((s) => s.dismissSelectedText);
     // File attachments to check if YouTube video is already attached
     const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
+
+    // Code mode element context - hide suggestions when element is selected
+    const elementContext = useCodeModeStore((s) => s.elementContext);
+
+    // Hide all suggestions when an element is selected in code mode
+    if (elementContext) {
+        return null;
+    }
 
     // Check if a YouTube video is already attached
     const hasYouTubeAttached = fileAttachments.some((att) =>
