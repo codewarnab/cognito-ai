@@ -124,10 +124,3 @@ export async function regenerateFingerprint(): Promise<string> {
     await chrome.storage.local.remove(FINGERPRINT_CACHE_KEY);
     return getDeviceFingerprint();
 }
-
-/**
- * Helper to check if we are in a context that supports fingerprinting (DOM)
- */
-function hasDOM(): boolean {
-    return typeof window !== 'undefined' && typeof document !== 'undefined';
-}

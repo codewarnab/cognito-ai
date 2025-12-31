@@ -35,10 +35,10 @@ export async function ensureOffscreenDocument(): Promise<void> {
 
         if (!hasDoc) {
             await chrome.offscreen.createDocument({
-                url: 'offscreen.html',
+                url: '/offscreen.html',
                 // Using IFRAME_SCRIPTING is appropriate for running DOM APIs & scripts
-                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING,chrome.offscreen.Reason.GEOLOCATION],
-                justification: 'Run Chrome Summarizer API and Geolocation in an isolated offscreen document'
+                reasons: [chrome.offscreen.Reason.IFRAME_SCRIPTING, chrome.offscreen.Reason.GEOLOCATION],
+                justification: 'Run Chrome Summarizer API, Geolocation, and Device Fingerprinting in an isolated offscreen document'
             });
             log.info('Offscreen document created');
         }
