@@ -215,8 +215,10 @@ apps/extension/src/
 │       └── input-otp.tsx              # Animated OTP input components
 ├── services/
 │   └── codeBridge.ts              # Bridge API client
-└── ai/codeMode/
-    └── codeModeChat.ts            # Code mode chat handler
+├── ai/codeMode/
+│   ├── codeModeChat.ts            # Code mode chat handler
+│   └── usePatchProposalTool.tsx   # Patch proposal tool hook
+
 ```
 
 
@@ -272,7 +274,9 @@ interface CodeModeState {
   bridgeBaseUrl: string;
   bridgeToken: string | null;
   bridgeStatus: 'connected' | 'needs-pairing' | 'offline';
+  isCheckingBridge: boolean;
   repoCwd: string | null;
+
 
   // Agent selection
   selectedAgentName: string;

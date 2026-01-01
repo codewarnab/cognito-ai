@@ -8,12 +8,15 @@ Shared types, constants, and storage utilities for the Cognito AI monorepo. This
 ### Directory Structure
 - `src/types/`: TypeScript definitions (Zod schemas where applicable)
 - `src/constants/`: Static values, prompts, and configuration defaults
+- `src/models/`: AI model definitions and registry
 - `src/storage/`: Shared storage logic (e.g., IndexedDB wrappers)
 
 ### Critical Modules
-- **Logger**: `types/logger.ts`, `constants/logger.ts`, `storage/loggerStorage.ts`
+- **Logger**: `types/logger.ts`, `constants/logger/`, `storage/loggerStorage.ts`
 - **Settings**: `types/settings.ts` (User preferences structure)
 - **AI Context**: `types/chat.ts`, `constants/prompts.ts`
+- **Models**: `models/registry.ts` (AI Provider registry)
+- **MCP**: `types/mcp.ts` (Model Context Protocol)
 
 ## Coding Standards
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
@@ -10,6 +10,7 @@ import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
+import { useBridgeHeartbeat } from '@/hooks/codeMode';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
 import { ElementPickerButton } from '../../../../codeMode/ElementPickerButton';
 import { BridgePairingDrawer } from '../../../../codeMode/BridgePairingDrawer';
@@ -17,7 +18,7 @@ import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 import type { CodeModeState } from '@/stores/codeMode/types';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
-import type { McpToolWithServer } from '@/stores/tools/types';
+import type { McpToolWithServer, ToolMode } from '@/stores/tools/types';
 
 const log = createLogger('ComposerToolbar', 'AI_CHAT');
 
@@ -82,23 +83,65 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const checkBridgeHealth = useCodeModeStore((s: CodeModeState) => s.checkBridgeHealth);
     const clearElementContext = useCodeModeStore((s: CodeModeState) => s.clearElementContext);
     const [showPairingDrawer, setShowPairingDrawer] = useState(false);
+    const [previousMode, setPreviousMode] = useState<ToolMode | null>(null);
+    const setMode = useToolsStore((s: ToolsState) => s.setMode);
 
-    // Check bridge health when entering Code mode, clear context when leaving
+    // Track mode changes to store previous mode and show pairing drawer immediately
+    const prevToolsModeRef = React.useRef<ToolMode | null>(null);
     useEffect(() => {
-        if (toolsMode === 'code') {
-            checkBridgeHealth();
-        } else {
+        // When entering code mode
+        if (toolsMode === 'code' && prevToolsModeRef.current !== 'code') {
+            // Store previous mode for reverting if pairing is cancelled
+            if (prevToolsModeRef.current) {
+                setPreviousMode(prevToolsModeRef.current);
+            }
+            // Check bridge health and show pairing if not already paired
+            checkBridgeHealth().then(() => {
+                // Need to check bridgeToken since bridgeStatus may not have updated yet
+                const currentStore = useCodeModeStore.getState();
+                if (currentStore.bridgeStatus === 'needs-pairing' || !currentStore.bridgeToken) {
+                    setShowPairingDrawer(true);
+                }
+            });
+        } else if (toolsMode !== 'code' && prevToolsModeRef.current === 'code') {
             // Clear picked element when leaving code mode
             clearElementContext();
         }
+        prevToolsModeRef.current = toolsMode as ToolMode;
     }, [toolsMode, checkBridgeHealth, clearElementContext]);
 
-    // Auto-open pairing drawer when Code mode needs pairing
+    // Also show pairing drawer if bridge status changes to needs-pairing while in code mode
     useEffect(() => {
         if (toolsMode === 'code' && bridgeStatus === 'needs-pairing') {
             setShowPairingDrawer(true);
         }
     }, [toolsMode, bridgeStatus]);
+
+    // Bridge heartbeat - polls bridge health every 30s when in code mode
+    const handleBridgeDisconnect = useCallback(() => {
+        log.warn('Bridge disconnected (detected by heartbeat)');
+        // Show pairing drawer if bridge goes offline
+        if (toolsMode === 'code') {
+            setShowPairingDrawer(true);
+        }
+    }, [toolsMode]);
+
+    useBridgeHeartbeat({
+        enabled: toolsMode === 'code',
+        intervalMs: 30_000, // 30 seconds
+        onDisconnect: handleBridgeDisconnect,
+    });
+
+    // Handle drawer close - revert to previous mode if not paired
+    const handlePairingDrawerClose = () => {
+        setShowPairingDrawer(false);
+        // If still not paired, revert to previous mode
+        const currentBridgeToken = useCodeModeStore.getState().bridgeToken;
+        if (!currentBridgeToken && previousMode) {
+            setMode(previousMode);
+            setPreviousMode(null);
+        }
+    };
 
     // Get unique enabled MCP server IDs
     const enabledMcpServers = useMemo(() => {
@@ -153,17 +196,12 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 />
             )}
 
-            {/* Code Mode: Element Picker + Pairing Drawer */}
+            {/* Code Mode: Pairing Drawer (rendered before tools, but it's a modal overlay) */}
             {toolsMode === 'code' && (
-                <>
-                    <div className="flex items-center border-r border-border/50 pr-2 mr-2">
-                        <ElementPickerButton />
-                    </div>
-                    <BridgePairingDrawer
-                        isOpen={showPairingDrawer}
-                        onClose={() => setShowPairingDrawer(false)}
-                    />
-                </>
+                <BridgePairingDrawer
+                    isOpen={showPairingDrawer}
+                    onClose={handlePairingDrawerClose}
+                />
             )}
 
             <div style={{ position: 'relative' }}>
@@ -271,108 +309,121 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 )}
             </div>
 
-            {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode) */}
+            {/* Code Mode: Element Picker (after tools section) */}
+            {toolsMode === 'code' && (
+                <div className="flex items-center border-l border-border/50 pl-2 ml-2">
+                    <ElementPickerButton />
+                </div>
+            )}
+
+            {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode and code mode) */}
             <SearchControls
                 activeWorkflow={activeWorkflow}
                 isAdaptiveMode={isAdaptiveMode}
+                isCodeMode={toolsMode === 'code'}
             />
 
-            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded or in backend mode) */}
+            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded, in backend mode, or in code mode) */}
             {/* In backend mode, model is fixed to gemini-2.5-flash by the server */}
-            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && (
+            {/* In code mode, the agent selector is shown instead */}
+            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && toolsMode !== 'code' && (
                 <ModelSelectorPopover
                     isOpen={isModelSelectorOpen}
                     onOpenChange={setIsModelSelectorOpen}
                 />
             )}
 
-            {/* Backend Mode Toggle - Icon only, expands on hover */}
-            <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <button
-                            type="button"
-                            onClick={() => setUseBackendMode(!useBackendMode)}
-                            className="cursor-pointer backend-mode-btn"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0px',
-                                padding: '6px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                background: useBackendMode
-                                    ? 'rgba(139, 92, 246, 0.1)'
-                                    : 'rgba(156, 163, 175, 0.1)',
-                                color: useBackendMode
-                                    ? 'rgb(139, 92, 246)'
-                                    : 'var(--text-secondary, #9ca3af)',
-                                fontSize: '12px',
-                                fontWeight: 500,
-                                transition: 'all 0.2s ease',
-                                overflow: 'hidden',
-                            }}
-                        >
-                            {useBackendMode ? <Cloud size={14} /> : <Key size={14} />}
-                            <span
-                                className="whitespace-nowrap"
-                                style={{
-                                    display: 'inline-block',
-                                    maxWidth: '0px',
-                                    opacity: 0,
-                                    overflow: 'hidden',
-                                    transition: 'max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease',
-                                    marginLeft: '0px',
-                                }}
-                            >
-                                {useBackendMode ? 'Cloud' : 'BYOK'}
-                            </span>
-                        </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[210px] p-3">
-                        <div className="flex flex-col gap-1.5">
-                            {useBackendMode ? (
-                                <>
-                                    <div className="font-semibold text-sm flex items-center gap-1.5">
-                                        <Cloud size={14} className="text-violet-500" />
-                                        Cloud Backend
+            {/* Backend Mode Toggle - Icon only, expands on hover (hidden in code mode) */}
+            {toolsMode !== 'code' && (
+                <>
+                    <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    onClick={() => setUseBackendMode(!useBackendMode)}
+                                    className="cursor-pointer backend-mode-btn"
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0px',
+                                        padding: '6px',
+                                        borderRadius: '6px',
+                                        border: 'none',
+                                        background: useBackendMode
+                                            ? 'rgba(139, 92, 246, 0.1)'
+                                            : 'rgba(156, 163, 175, 0.1)',
+                                        color: useBackendMode
+                                            ? 'rgb(139, 92, 246)'
+                                            : 'var(--text-secondary, #9ca3af)',
+                                        fontSize: '12px',
+                                        fontWeight: 500,
+                                        transition: 'all 0.2s ease',
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    {useBackendMode ? <Cloud size={14} /> : <Key size={14} />}
+                                    <span
+                                        className="whitespace-nowrap"
+                                        style={{
+                                            display: 'inline-block',
+                                            maxWidth: '0px',
+                                            opacity: 0,
+                                            overflow: 'hidden',
+                                            transition: 'max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease',
+                                            marginLeft: '0px',
+                                        }}
+                                    >
+                                        {useBackendMode ? 'Cloud' : 'BYOK'}
+                                    </span>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[210px] p-3">
+                                <div className="flex flex-col gap-1.5">
+                                    {useBackendMode ? (
+                                        <>
+                                            <div className="font-semibold text-sm flex items-center gap-1.5">
+                                                <Cloud size={14} className="text-violet-500" />
+                                                Cloud Backend
+                                            </div>
+                                            <div className="text-xs text-muted-foreground leading-normal">
+                                                Using Cognito's hosted API. No API key required to get started.
+                                            </div>
+                                            <div className="text-[10px] text-amber-500/90 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded-sm w-fit">
+                                                Rate limits apply
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="font-semibold text-sm flex items-center gap-1.5">
+                                                <Key size={14} className="text-emerald-500" />
+                                                BYOK Mode
+                                            </div>
+                                            <div className="text-xs text-muted-foreground leading-normal">
+                                                Using your own API key for unlimited usage and higher rate limits.
+                                            </div>
+                                            <div className="text-[10px] text-emerald-600/90 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-sm flex items-start gap-1.5">
+                                                <span className="w-1 h-1 rounded-full bg-emerald-500 input-pulse mt-1 shrink-0" />
+                                                <span className="leading-tight">Your API key never leaves your device</span>
+                                            </div>
+                                        </>
+                                    )}
+                                    <div className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50 mt-0.5">
+                                        Click to switch modes
                                     </div>
-                                    <div className="text-xs text-muted-foreground leading-normal">
-                                        Using Cognito's hosted API. No API key required to get started.
-                                    </div>
-                                    <div className="text-[10px] text-amber-500/90 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded-sm w-fit">
-                                        Rate limits apply
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="font-semibold text-sm flex items-center gap-1.5">
-                                        <Key size={14} className="text-emerald-500" />
-                                        BYOK Mode
-                                    </div>
-                                    <div className="text-xs text-muted-foreground leading-normal">
-                                        Using your own API key for unlimited usage and higher rate limits.
-                                    </div>
-                                    <div className="text-[10px] text-emerald-600/90 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-sm flex items-start gap-1.5">
-                                        <span className="w-1 h-1 rounded-full bg-emerald-500 input-pulse mt-1 shrink-0" />
-                                        <span className="leading-tight">Your API key never leaves your device</span>
-                                    </div>
-                                </>
-                            )}
-                            <div className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50 mt-0.5">
-                                Click to switch modes
-                            </div>
-                        </div>
-                    </TooltipContent>
-                </Tooltip>
-            </div>
-            <style>{`
+                                </div>
+                            </TooltipContent>
+                        </Tooltip>
+                    </div>
+                    <style>{`
                 .backend-mode-btn:hover span {
                     max-width: 50px !important;
                     opacity: 1 !important;
                     margin-left: 6px !important;
                 }
             `}</style>
+                </>
+            )}
         </div>
     );
 };

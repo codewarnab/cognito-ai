@@ -97,7 +97,7 @@ export { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@cognito/shared';
  * Quick configurations for common scenarios.
  * To use a preset, update the LOG_CONFIG export at the end of this section.
  *
- * @see packages/shared/src/constants/logger.ts for preset definitions
+ * @see packages/shared/src/constants/logger/presets/index.ts for preset definitions
  */
 export { LOG_PRESETS, LOGGER_GROUP_LABELS, LOGGER_PRESET_NAMES, matchesPreset, getDefaultLoggerConfig } from '@cognito/shared';
 

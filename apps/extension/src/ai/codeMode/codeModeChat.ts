@@ -8,7 +8,7 @@ import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 import { streamCodeBridgeChat, type BridgeEvent } from '@/services/codeBridge';
 import type { UIMessage } from 'ai';
 
-const log = createLogger('codeModeChat', 'AI_CHAT');
+const log = createLogger('codeModeChat', 'CODE_MODE_CHAT');
 
 export interface CodeModeChatParams {
   messages: UIMessage[];
@@ -123,8 +123,9 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
 
         // Write error as text
         writer.write({
-          type: 'text',
-          text: `\n\n❌ **Error:** ${error instanceof Error ? error.message : 'Unknown error'}\n\nMake sure the code bridge is running and you're paired.`,
+          type: 'text-delta',
+          id: 'error-' + generateId(),
+          delta: `\n\n❌ **Error:** ${error instanceof Error ? error.message : 'Unknown error'}\n\nMake sure the code bridge is running and you're paired.`,
         });
 
         onError?.(error instanceof Error ? error : new Error(String(error)));
@@ -141,7 +142,7 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
 function handleBridgeEvent(
   event: BridgeEvent,
   writer: any,
-  assistantId: string,
+  _assistantId: string,
   textBuffer: string,
   setTextBuffer: (text: string) => void
 ): void {
@@ -149,8 +150,9 @@ function handleBridgeEvent(
     case 'text':
       // Stream text delta
       writer.write({
-        type: 'text',
-        text: event.content,
+        type: 'text-delta',
+        id: 'text-' + generateId(),
+        delta: event.content,
       });
       setTextBuffer(textBuffer + event.content);
       break;
@@ -188,8 +190,9 @@ function handleBridgeEvent(
 
     case 'error':
       writer.write({
-        type: 'text',
-        text: `\n\n❌ **Error:** ${event.error}`,
+        type: 'text-delta',
+        id: 'error-' + generateId(),
+        delta: `\n\n❌ **Error:** ${event.error}`,
       });
       break;
 

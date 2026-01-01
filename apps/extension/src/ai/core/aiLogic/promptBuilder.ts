@@ -16,7 +16,7 @@ const log = createLogger('AI-PromptBuilder', 'AI_CHAT');
 
 export interface PromptBuildResult {
     systemPrompt: string;
-    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom';
+    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom' | 'code';
 }
 
 /**

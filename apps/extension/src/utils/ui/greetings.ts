@@ -1,5 +1,6 @@
 // Time-based greeting utility
 
+
 const greetings = {
   morning: [
     "Good morning! What should we dive into today?",
@@ -108,6 +109,58 @@ const greetings = {
   ]
 };
 
+// Code mode specific greetings - developer-focused
+const codeModeGreetings = {
+  morning: [
+    "Good morning! Ready to ship some code?",
+    "Morning! Let's squash some bugs today.",
+    "Coffee + code = productivity. What are we building?",
+    "Fresh morning, fresh commits. Let's go!",
+    "Good morning! What feature are we working on?",
+    "Rise and code! What's the first task?",
+    "Morning! Time to turn ideas into code.",
+    "Ready to write some clean code today?",
+    "Good morning! Let's make some magic happen.",
+    "New day, new code. What's the plan?"
+  ],
+  afternoon: [
+    "Good afternoon! Let's keep the code flowing.",
+    "Afternoon coding session. What's the focus?",
+    "Post-lunch productivity! What are we fixing?",
+    "Good afternoon! Ready to refactor?",
+    "Let's debug and deploy. What's up?",
+    "Afternoon! Time for some focused coding.",
+    "Good afternoon! Let's push some commits.",
+    "Keeping the momentum. What needs work?",
+    "Good afternoon! Ready to tackle that feature?",
+    "Code review time? Or maybe a new feature?"
+  ],
+  evening: [
+    "Evening! Perfect time for focused coding.",
+    "Good evening! Let's wrap up that feature.",
+    "Quiet evening, perfect for deep work.",
+    "Evening coding session. What are we building?",
+    "Good evening! Time for some uninterrupted coding.",
+    "Let's make progress before the day ends.",
+    "Evening! The best time for complex problems.",
+    "Good evening! Ready to ship something?",
+    "Winding down with some code. What's next?",
+    "Golden hour for coding. Let's do this."
+  ],
+  night: [
+    "Late night coding? The best bugs are found now.",
+    "Midnight commits hit different. Let's go!",
+    "Night owl mode: ON. What are we hacking?",
+    "The world sleeps, we code. What's the task?",
+    "Late night inspiration? Let's capture it in code.",
+    "Silence is golden for debugging. What's broken?",
+    "Night shift coding. Where's the problem?",
+    "Burning the midnight oil? Let's be efficient.",
+    "Late night, bright screens. What are we building?",
+    "The night is young. Let's write some code."
+  ]
+};
+
 /**
  * Get a random item from an array
  */
@@ -121,17 +174,19 @@ const getRandomGreeting = (list: string[]): string => {
  * - Afternoon: 12 PM - 5 PM
  * - Evening: 5 PM - 10 PM
  * - Night: 10 PM - 5 AM
+ * @param isCodeMode - If true, use developer-focused greetings
  */
-export const getTimeBasedGreeting = (): string => {
+export const getTimeBasedGreeting = (isCodeMode = false): string => {
   const hour = new Date().getHours();
+  const greetingSet = isCodeMode ? codeModeGreetings : greetings;
 
   if (hour >= 5 && hour < 12) {
-    return getRandomGreeting(greetings.morning);
+    return getRandomGreeting(greetingSet.morning);
   } else if (hour >= 12 && hour < 17) {
-    return getRandomGreeting(greetings.afternoon);
+    return getRandomGreeting(greetingSet.afternoon);
   } else if (hour >= 17 && hour < 22) {
-    return getRandomGreeting(greetings.evening);
+    return getRandomGreeting(greetingSet.evening);
   } else {
-    return getRandomGreeting(greetings.night);
+    return getRandomGreeting(greetingSet.night);
   }
 };

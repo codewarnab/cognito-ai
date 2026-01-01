@@ -16,6 +16,9 @@ export * from './attachments';
 // Chat hooks
 export * from './chat';
 
+// Code Mode hooks
+export * from './codeMode';
+
 // Settings hooks
 export * from './settings';
 

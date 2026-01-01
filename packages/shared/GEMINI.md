@@ -25,12 +25,20 @@ packages/shared/
 │   │   ├── settings.ts        # UserSettings, AIProvider settings
 │   │   ├── messaging.ts       # Message passing types
 │   │   ├── provider.ts        # AI Provider interfaces
+│   │   ├── mcp.ts             # Model Context Protocol types
+│   │   ├── codeMode.ts        # Code Mode context types
+│   │   ├── search.ts          # Web search types
 │   │   └── reminder.ts        # Reminder types
 │   ├── constants/
 │   │   ├── index.ts           # Re-exports all constants
 │   │   ├── prompts.ts         # TONE_INSTRUCTIONS, PLATFORM_INSTRUCTIONS
-│   │   ├── logger.ts          # Log categories and defaults
-│   │   └── featureFlags.ts    # Feature flags configuration
+│   │   ├── logger/            # Log categories, labels, presets
+│   │   ├── featureFlags.ts    # Feature flags configuration
+│   │   ├── mcpRegistry.ts     # MCP registry defaults
+│   │   └── urls.ts            # Shared API URLs
+│   ├── models/
+│   │   ├── index.ts           # Re-exports models
+│   │   └── registry.ts        # AI Provider and Model registry
 │   ├── storage/
 │   │   ├── index.ts           # Re-exports storage utilities
 │   │   └── loggerStorage.ts   # IndexedDB storage for logs

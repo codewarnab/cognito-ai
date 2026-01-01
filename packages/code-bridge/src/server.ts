@@ -2,6 +2,7 @@ import http from 'node:http';
 import { handleCors } from './http/cors.js';
 import { readJson, sendJson, sendError } from './http/json.js';
 import { startPairing, confirmPairing, getCurrentPairingCode } from './pairing/pairing.js';
+import { validateToken } from './pairing/tokenStore.js';
 import { getAgentsWithAvailability } from './agents.js';
 import { handleCodeChat } from './handlers/chat.js';
 import { handlePatchApply } from './handlers/patch.js';
@@ -36,6 +37,22 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
         return;
       }
 
+      // Token validation (validates if provided token is still valid)
+      if (path === '/validate' && req.method === 'POST') {
+        const header = req.headers.authorization || '';
+        const match = header.match(/^Bearer\s+(.+)$/i);
+
+        if (!match) {
+          sendJson(res, { valid: false, reason: 'missing_token' });
+          return;
+        }
+
+        const token = match[1];
+        const isValid = await validateToken(token);
+        sendJson(res, { valid: isValid, reason: isValid ? undefined : 'invalid_token' });
+        return;
+      }
+
       // Start pairing (no auth required)
       if (path === '/pair/start' && req.method === 'POST') {
         const pairing = startPairing();
@@ -46,7 +63,7 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
       // Confirm pairing (no auth required)
       if (path === '/pair/confirm' && req.method === 'POST') {
         const body = await readJson(req) as { code?: string };
-        
+
         if (!body.code || typeof body.code !== 'string') {
           sendError(res, 'Missing code', 400);
           return;

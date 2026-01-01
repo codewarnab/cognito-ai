@@ -1,7 +1,96 @@
 import { createLogger } from '~logger';
 import type { CodeModeChatParams, BridgeEvent, ApplyPatchResult } from './types';
 
-const log = createLogger('codeBridgeClient', 'AI_CHAT');
+const log = createLogger('codeBridgeClient', 'CODE_MODE_BRIDGE');
+
+/**
+ * Retry configuration for transient network failures
+ */
+interface RetryConfig {
+  maxRetries: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+  backoffMultiplier: number;
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  initialDelayMs: 500,
+  maxDelayMs: 5000,
+  backoffMultiplier: 2,
+};
+
+/**
+ * Check if an error is retryable (transient network failures)
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof TypeError) {
+    // Network errors (fetch failures, CORS issues when offline, etc.)
+    return true;
+  }
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    // User-initiated abort - don't retry
+    return false;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    // Retry on network-related errors
+    if (
+      message.includes('network') ||
+      message.includes('failed to fetch') ||
+      message.includes('timeout') ||
+      message.includes('connection') ||
+      message.includes('econnrefused') ||
+      message.includes('econnreset')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Delay execution for a given number of milliseconds
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Execute a function with automatic retries and exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  config: RetryConfig = DEFAULT_RETRY_CONFIG,
+  context: string = 'operation'
+): Promise<T> {
+  let lastError: unknown;
+  let delayMs = config.initialDelayMs;
+
+  for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Don't retry if error is not retryable or we've exhausted retries
+      if (!isRetryableError(error) || attempt === config.maxRetries) {
+        throw error;
+      }
+
+      log.warn(`${context} failed, retrying in ${delayMs}ms`, {
+        attempt: attempt + 1,
+        maxRetries: config.maxRetries,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      await delay(delayMs);
+      delayMs = Math.min(delayMs * config.backoffMultiplier, config.maxDelayMs);
+    }
+  }
+
+  throw lastError;
+}
 
 /**
  * Parse SSE event data
@@ -9,7 +98,7 @@ const log = createLogger('codeBridgeClient', 'AI_CHAT');
 function parseSSEEvent(eventType: string, data: string): BridgeEvent | null {
   try {
     const parsed = JSON.parse(data);
-    
+
     switch (eventType) {
       case 'text':
         return { type: 'text', content: parsed.content };
@@ -111,7 +200,7 @@ export async function* streamCodeBridgeChat(
 }
 
 /**
- * Apply a patch via the bridge
+ * Apply a patch via the bridge (with automatic retries)
  */
 export async function applyPatch(
   baseUrl: string,
@@ -120,49 +209,65 @@ export async function applyPatch(
 ): Promise<ApplyPatchResult> {
   log.info('Applying patch', { patchId });
 
-  const response = await fetch(`${baseUrl}/code/patch/apply`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+  return withRetry(
+    async () => {
+      const response = await fetch(`${baseUrl}/code/patch/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ patchId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return {
+          applied: false,
+          filesChanged: result.filesChanged || [],
+          error: result.error || `HTTP ${response.status}`,
+        };
+      }
+
+      return result;
     },
-    body: JSON.stringify({ patchId }),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    return {
-      applied: false,
-      filesChanged: result.filesChanged || [],
-      error: result.error || `HTTP ${response.status}`,
-    };
-  }
-
-  return result;
+    DEFAULT_RETRY_CONFIG,
+    `applyPatch(${patchId})`
+  );
 }
 
 /**
- * Check bridge health
+ * Check bridge health (with automatic retries for transient failures)
  */
-export async function checkBridgeHealth(baseUrl: string): Promise<{
+export async function checkBridgeHealth(
+  baseUrl: string,
+  options?: { retryOnFailure?: boolean }
+): Promise<{
   ok: boolean;
   version?: string;
   cwd?: string;
   error?: string;
 }> {
-  try {
+  const doCheck = async () => {
     const response = await fetch(`${baseUrl}/health`, {
       method: 'GET',
       signal: AbortSignal.timeout(3000),
     });
 
     if (!response.ok) {
-      return { ok: false, error: `HTTP ${response.status}` };
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
     return { ok: true, version: data.version, cwd: data.cwd };
+  };
+
+  try {
+    if (options?.retryOnFailure) {
+      return await withRetry(doCheck, DEFAULT_RETRY_CONFIG, 'checkBridgeHealth');
+    }
+    return await doCheck();
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }

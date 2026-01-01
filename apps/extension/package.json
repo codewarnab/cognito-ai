@@ -59,6 +59,7 @@
         "react-diff-viewer-continued": "^3.4.0",
         "react-dom": "catalog:",
         "react-markdown": "^10.1.0",
+        "react-use-measure": "^2.1.7",
         "streamdown": "^1.6.10",
         "tailwind-merge": "catalog:",
         "tailwindcss": "catalog:",

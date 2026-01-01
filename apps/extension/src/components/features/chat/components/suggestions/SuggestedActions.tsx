@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSuggestions } from '@/hooks/suggestions';
 import { TextMorph } from '@/components/ui/feedback';
+import { CodingAgentSelector } from '@/components/features/codeMode';
+import { useToolsStore } from '@/stores';
+import type { ToolsState } from '@/stores/tools/types';
 import type { Message, ModelState } from '../../types';
 import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { WorkflowDefinition } from '@/workflows/types';
@@ -75,6 +78,10 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // Track if suggestions are enabled in settings
     const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
 
+    // Check if we're in code mode - show agent selector instead of suggestions
+    const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
+    const isCodeMode = toolsMode === 'code';
+
     // Load suggestions enabled setting
     useEffect(() => {
         const loadSetting = async () => {
@@ -142,6 +149,11 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         onSuggestionClick(action);
         setUserDismissed(true);
     };
+
+    // In code mode, show the coding agent selector instead of suggestions
+    if (isCodeMode) {
+        return <CodingAgentSelector />;
+    }
 
     return (
         <AnimatePresence>

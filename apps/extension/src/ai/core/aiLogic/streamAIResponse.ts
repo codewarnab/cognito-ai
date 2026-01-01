@@ -273,7 +273,7 @@ export async function streamAIResponse(params: StreamAIParams) {
  */
 function determineActiveTools(
     tools: Record<string, any>,
-    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom',
+    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom' | 'code',
     isSearchModeActive: boolean,
     isWorkflow: boolean
 ): string[] {

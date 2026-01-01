@@ -5,11 +5,12 @@
 
 import React, { useState, useMemo } from 'react';
 import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
-import { ChevronDown, ChevronRight, Copy, Check, FileCode } from 'lucide-react';
-import { parseUnifiedDiff, formatFilePath, getFileExtension } from './diffUtils';
+import { ChevronDown, ChevronRight, Copy, Check } from 'lucide-react';
+import { parseUnifiedDiff, formatFilePath } from './diffUtils';
+import { getFileIcon } from '@/utils/files';
 import { createLogger } from '~logger';
 
-const log = createLogger('DiffViewer', 'UI_CHAT');
+const log = createLogger('DiffViewer', 'CODE_MODE_UI');
 
 interface DiffViewerProps {
     unifiedDiff: string;
@@ -75,7 +76,6 @@ const FileDiff: React.FC<FileDiffProps> = ({
     const [copied, setCopied] = useState(false);
 
     const displayPath = newFile || oldFile;
-    const extension = getFileExtension(displayPath);
     const isNewFile = !oldFile || oldCode === '';
     const isDeletedFile = !newFile || newCode === '';
 
@@ -102,7 +102,9 @@ const FileDiff: React.FC<FileDiffProps> = ({
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </button>
 
-                <FileCode size={14} className="text-[#8b949e] flex-shrink-0" />
+                <span className="flex-shrink-0">
+                    {getFileIcon(displayPath, 14)}
+                </span>
 
                 <span className="text-[13px] text-[#c9d1d9] font-mono truncate flex-1" title={displayPath}>
                     {formatFilePath(displayPath)}

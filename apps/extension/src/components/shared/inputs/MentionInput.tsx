@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { TabMentionDropdown } from './TabMentionDropdown';
 import {
     isMentionTrigger,
@@ -12,6 +13,57 @@ import {
     getCursorPosition
 } from '@/utils/chat';
 import { detectSlashCommand, getSlashSearchQuery } from '@/utils/chat';
+import { useCodeModeStore, useToolsStore, type CodeModeState } from '@/stores';
+
+/**
+ * Animated placeholder with letter-by-letter morphing effect.
+ * Each letter animates in with rotateX, Y translation, and blur.
+ */
+const AnimatedPlaceholder = ({ text }: { text: string }) => {
+    const letters = text.split('');
+
+    return (
+        <motion.span className="inline-flex flex-wrap overflow-hidden">
+            {letters.map((letter, index) => (
+                <motion.span
+                    key={`${text}-${index}`}
+                    initial={{
+                        opacity: 0,
+                        rotateX: '80deg',
+                        y: 8,
+                        filter: 'blur(3px)',
+                    }}
+                    exit={{
+                        opacity: 0,
+                        rotateX: '-80deg',
+                        filter: 'blur(3px)',
+                        y: -8,
+
+                    }}
+                    animate={{
+                        opacity: 1,
+                        rotateX: '0deg',
+                        y: 0,
+                        filter: 'blur(0px)',
+                    }}
+                    transition={{
+                        delay: 0.015 * index,
+                        type: 'spring',
+                        damping: 16,
+                        stiffness: 240,
+                        mass: 1.2,
+                    }}
+                    style={{
+                        willChange: 'transform',
+                    }}
+                    className="inline-block"
+                >
+                    {letter === ' ' ? '\u00A0' : letter}
+                </motion.span>
+            ))}
+        </motion.span>
+    );
+};
 
 const MIN_HEIGHT = 44;
 const MAX_HEIGHT = 160;
@@ -37,6 +89,19 @@ export function MentionInput({
     onSlashCommand,
     isSlashDropdownOpen = false
 }: MentionInputProps) {
+    // Check if code mode is active for placeholder
+    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+    const currentMode = useToolsStore((s) => s.currentMode);
+
+    // Only show code placeholder if bridge is connected AND we are actually in code mode
+    // The user can be connected to bridge but be in 'chat' or 'agent' mode
+    const isCodeMode = bridgeStatus === 'connected' && currentMode === 'code';
+
+    // Use code mode specific placeholder when connected
+    const actualPlaceholder = isCodeMode
+        ? "Describe your code changes..."
+        : placeholder;
+
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -170,14 +235,27 @@ export function MentionInput({
 
     return (
         <div className="relative flex-1 w-full">
+            {/* Animated placeholder overlay */}
+            {!value && (
+                <div className="absolute left-0 top-0 w-full h-full flex items-start pt-[2px] pointer-events-none overflow-hidden z-0">
+                    <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.div
+                            key={actualPlaceholder}
+                            className="text-sm text-white/35 font-normal whitespace-normal"
+                        >
+                            <AnimatedPlaceholder text={actualPlaceholder} />
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            )}
+
             {/* Textarea for multi-line support - mentions shown as plain text */}
             <textarea
                 ref={inputRef}
                 value={value}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                className="flex-1 bg-transparent border-none text-white outline-none resize-none text-sm font-normal leading-[1.4] tracking-[0.3px] w-full placeholder:text-white/35 placeholder:font-normal disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative z-10 flex-1 bg-transparent border-none text-white outline-none resize-none text-sm font-normal leading-[1.4] tracking-[0.3px] w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={disabled}
                 autoFocus={autoFocus}
                 rows={1}

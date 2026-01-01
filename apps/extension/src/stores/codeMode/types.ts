@@ -45,6 +45,7 @@ export interface CodeModeState {
   setElementContext: (ctx: CodeModeElementContext | null) => void;
   clearElementContext: () => void;
   startPicker: () => Promise<void>;
+  cancelPicker: () => Promise<void>;
 
   // Actions - Bridge
   setBridgeBaseUrl: (url: string) => void;

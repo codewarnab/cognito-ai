@@ -14,7 +14,9 @@
     "dev:docs": "pnpm --filter @cognito/docs dev",
     "dev:webapp": "pnpm --filter @cognito/webapp dev",
     "dev:bridge": "pnpm --filter @cognito/code-bridge dev",
+    "dev:backend": "pnpm --filter @cognito/backend-vercel dev",
     "dev:all": "pnpm -r --parallel dev",
+    "dev:stack": "pnpm --filter @cognito/extension --filter @cognito/webapp --filter @cognito/code-bridge --filter @cognito/backend-vercel --parallel dev",
     "build": "pnpm -r build",
     "build:extension": "pnpm --filter @cognito/extension build",
     "build:docs": "pnpm --filter @cognito/docs build",
@@ -39,7 +41,7 @@
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
   },
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@10.27.0",
   "dependencies": {
     "next-themes": "^0.4.6"
   }

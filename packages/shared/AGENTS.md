@@ -12,6 +12,13 @@ This package (`packages/shared`) is the **single source of truth** for types, co
 - **`settings.ts`**: User configuration (`UserSettings`)
 - **`featureFlags.ts`**: Feature toggles
 - **`chat.ts`**: Core AI chat interfaces
+- **`mcp.ts`**: Model Context Protocol definitions
+- **`codeMode.ts`**: Code Mode element context
+- **`providers.ts`**: AI Provider definitions
+- **`search.ts`**: Web search interfaces
+
+### Models (`src/models/`)
+- **`registry.ts`**: Central registry of AI providers and models (OpenAI, etc.)
 
 ### Storage (`src/storage/`)
 - **`LoggerStorage`**: IndexedDB wrapper for persisting application logs
@@ -23,8 +30,10 @@ This package (`packages/shared`) is the **single source of truth** for types, co
 
 ### Constants (`src/constants/`)
 - **`prompts.ts`**: Shared system prompts (Tone, Platform instructions)
-- **`logger.ts`**: Default logging configuration
+- **`logger/`**: Logging constants, labels, and presets
 - **`featureFlags.ts`**: Default flag values
+- **`mcpRegistry.ts`**: MCP server registry defaults
+- **`urls.ts`**: Shared API URLs
 
 ## Development Workflow
 

@@ -28,33 +28,33 @@ export const ENV = {
     /**
      * ElevenLabs Worker URL for TTS proxy
      */
-    ELEVENLABS_WORKER_URL: import.meta.env.WXT_ELEVENLABS_WORKER_URL ,
+    ELEVENLABS_WORKER_URL: import.meta.env.WXT_ELEVENLABS_WORKER_URL,
     /**
      * Backend API URL for AI chat, summarizer, writer, rewriter
      */
-    BACKEND_API_URL: import.meta.env.WXT_BACKEND_API_URL ,
+    BACKEND_API_URL: import.meta.env.WXT_BACKEND_API_URL,
     /**
      * Metadata API URL for YouTube video metadata
      */
-    METADATA_API_URL: import.meta.env.WXT_METADATA_API_URL ,
+    METADATA_API_URL: import.meta.env.WXT_METADATA_API_URL,
     /**
      * Webapp URL for settings, providers, etc.
      */
-    WEBAPP_URL_DEV: import.meta.env.WXT_WEBAPP_URL_DEV || 'http://localhost:3002',
-    WEBAPP_URL_PROD: import.meta.env.WXT_WEBAPP_URL_PROD || 'https://cognito-ai-one.vercel.app',
+    WEBAPP_URL_DEV: (import.meta.env.WXT_WEBAPP_URL_DEV || 'http://localhost:3002').replace(/\/$/, ''),
+    WEBAPP_URL_PROD: (import.meta.env.WXT_WEBAPP_URL_PROD || 'https://cognito-ai-one.vercel.app').replace(/\/$/, ''),
     /**
      * Transcript API URL for YouTube transcripts
      */
-    TRANSCRIPT_API_URL: import.meta.env.WXT_TRANSCRIPT_API_URL ,
+    TRANSCRIPT_API_URL: import.meta.env.WXT_TRANSCRIPT_API_URL,
     /**
      * Retrieve API URL for content retrieval
      */
-    RETRIEVE_API_URL: import.meta.env.WXT_RETRIEVE_API_URL ,
+    RETRIEVE_API_URL: import.meta.env.WXT_RETRIEVE_API_URL,
     /**
      * Web Search Backend API URL
      * Used when WEB_SEARCH_SELF_API_KEY_HIDDEN is enabled to proxy requests through the backend
      */
-    WEB_SEARCH_API_URL: import.meta.env.WXT_WEB_SEARCH_API_URL ,
+    WEB_SEARCH_API_URL: import.meta.env.WXT_WEB_SEARCH_API_URL,
     /**
      * Logger preset name for configuring log levels
      * @deprecated LOG_CONFIG is deprecated. Logger configuration is now dynamic.

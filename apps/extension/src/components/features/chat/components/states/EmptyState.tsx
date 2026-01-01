@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
 import { getTimeBasedGreeting } from '@/utils/ui';
+import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 
-import { TIPS } from './tips';
+import { TIPS, CODE_MODE_TIPS } from './tips';
 
 interface EmptyStateProps {
     isLocalMode?: boolean;
@@ -53,31 +54,37 @@ const renderTipWithLinks = (tip: string): React.ReactNode => {
 export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigureApiKey }) => {
     const [currentTip, setCurrentTip] = useState<string>('');
     const [greeting, setGreeting] = useState<string>('');
+    const bridgeStatus = useCodeModeStore((s) => s.bridgeStatus);
+
+    // Determine which tips array to use based on code mode
+    const isCodeMode = bridgeStatus === 'connected';
+    const tipsArray = isCodeMode ? CODE_MODE_TIPS : TIPS;
+    const storageKey = isCodeMode ? 'codeModeTipIndex' : 'tipIndex';
 
     useEffect(() => {
         // Set time-based greeting
-        setGreeting(getTimeBasedGreeting());
+        setGreeting(getTimeBasedGreeting(isCodeMode));
 
         // Get and increment tip index from storage
-        chrome.storage.local.get(['tipIndex'], (result) => {
+        chrome.storage.local.get([storageKey], (result) => {
             if (chrome.runtime.lastError) {
                 console.error('Failed to get tip index:', chrome.runtime.lastError);
-                setCurrentTip(TIPS[0] ?? '');
+                setCurrentTip(tipsArray[0] ?? '');
                 return;
             }
-            const currentIndex = result.tipIndex || 0;
-            const nextIndex = (currentIndex + 1) % TIPS.length;
+            const currentIndex = result[storageKey] || 0;
+            const nextIndex = (currentIndex + 1) % tipsArray.length;
 
-            setCurrentTip(TIPS[currentIndex] ?? TIPS[0] ?? '');
+            setCurrentTip(tipsArray[currentIndex] ?? tipsArray[0] ?? '');
 
             // Store next index for next thread
-            chrome.storage.local.set({ tipIndex: nextIndex }, () => {
+            chrome.storage.local.set({ [storageKey]: nextIndex }, () => {
                 if (chrome.runtime.lastError) {
                     console.error('Failed to set tip index:', chrome.runtime.lastError);
                 }
             });
         });
-    }, []);
+    }, [isCodeMode, tipsArray, storageKey]);
 
     return (
         <div

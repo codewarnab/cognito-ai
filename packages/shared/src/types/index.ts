@@ -114,6 +114,7 @@ export type {
     UIThreadsSubCategory,
     UISidepanelSubCategory,
     UIRemindersSubCategory,
+    CodeModeSubCategory,
     BackgroundSubCategory,
     StorageSubCategory,
     UtilsSubCategory,

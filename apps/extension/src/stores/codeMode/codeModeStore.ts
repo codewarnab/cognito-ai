@@ -4,7 +4,7 @@ import { createLogger } from '~logger';
 import type { CodeModeState, AgentInfo, PatchState } from './types';
 import { applyPatch as applyPatchToServer } from '@/services/codeBridge';
 
-const log = createLogger('codeModeStore', 'TOOLS_EXECUTION');
+const log = createLogger('codeModeStore', 'CODE_MODE_STORE');
 
 const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:8787';
 
@@ -73,6 +73,23 @@ export const useCodeModeStore = create<CodeModeState>()(
         }
       },
 
+      cancelPicker: async () => {
+        log.info('Cancelling element picker');
+        try {
+          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+          const activeTab = tabs[0];
+
+          if (activeTab?.id) {
+            await chrome.tabs.sendMessage(activeTab.id, {
+              type: 'code/picker/cancel'
+            });
+          }
+        } catch (error) {
+          log.warn('Failed to send cancel message', error);
+        }
+        set({ isPicking: false });
+      },
+
       // Actions - Bridge
       setBridgeBaseUrl: (url) => {
         set({ bridgeBaseUrl: url });
@@ -108,9 +125,38 @@ export const useCodeModeStore = create<CodeModeState>()(
           const data = await response.json().catch(() => ({}));
           const repoCwd = data.cwd || null;
 
-          // Bridge is reachable
+          // Bridge is reachable - now validate token if we have one
           if (bridgeToken) {
-            set({ bridgeStatus: 'connected', repoCwd });
+            // Validate the token with the bridge
+            try {
+              const validateResponse = await fetch(`${bridgeBaseUrl}/validate`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${bridgeToken}`,
+                },
+                signal: AbortSignal.timeout(3000),
+              });
+
+              if (validateResponse.ok) {
+                const validateData = await validateResponse.json();
+                if (validateData.valid) {
+                  set({ bridgeStatus: 'connected', repoCwd });
+                } else {
+                  // Token is invalid - clear it and require re-pairing
+                  log.warn('Bridge token invalid, clearing', { reason: validateData.reason });
+                  set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+                }
+              } else {
+                // Validation endpoint error - assume token is invalid
+                log.warn('Bridge token validation failed');
+                set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+              }
+            } catch (validateError) {
+              // If validation fails but health passed, token might still be valid
+              // Be conservative and mark as needs-pairing
+              log.warn('Bridge token validation error', validateError);
+              set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+            }
           } else {
             set({ bridgeStatus: 'needs-pairing', repoCwd });
           }

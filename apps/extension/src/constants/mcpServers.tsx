@@ -597,6 +597,25 @@ export const MCP_SERVERS: ServerConfig[] = [
         description: "Tally is a user-friendly online form builder that works like a document. Create powerful forms for surveys, payments, applications, and more with conditional logic, file uploads, and integrations with Google Sheets, Notion, Slack, and Zapier.",
         requiresAuthentication: true
     },
+    {
+        id: "scira",
+        name: "Scira AI",
+        icon: <img src={sciraImage} alt="Scira AI" style={{ width: 24, height: 24 }} />,
+        initialEnabled: false,
+        initialAuthenticated: false,
+        url: "https://mcp.scira.ai/mcp",
+        description: "AI-powered search with web search, people profiles, X/Twitter posts, and Reddit discussions.",
+        requiresAuthentication: true,
+        authConfig: {
+            type: 'pat',
+            patConfig: {
+                label: "Scira AI API Key",
+                placeholder: "Enter your API key",
+                helpUrl: "https://api.scira.ai",
+                authHeaderName: "x-api-key",
+            }
+        }
+    },
     // https://github.com/Zomato/mcp-server-manifest reach out to them for access
     {
         id: "fetch",
@@ -638,24 +657,5 @@ export const MCP_SERVERS: ServerConfig[] = [
         initialEnabled: false,
         initialAuthenticated: false,
         paid: true
-    },
-    {
-        id: "scira",
-        name: "Scira AI",
-        icon: <img src={sciraImage} alt="Scira AI" style={{ width: 24, height: 24 }} />,
-        initialEnabled: false,
-        initialAuthenticated: false,
-        url: "https://mcp.scira.ai/mcp",
-        description: "AI-powered search with web search, people profiles, X/Twitter posts, and Reddit discussions.",
-        requiresAuthentication: true,
-        authConfig: {
-            type: 'pat',
-            patConfig: {
-                label: "Scira AI API Key",
-                placeholder: "Enter your API key",
-                helpUrl: "https://api.scira.ai",
-                authHeaderName: "x-api-key",
-            }
-        }
     },
 ]

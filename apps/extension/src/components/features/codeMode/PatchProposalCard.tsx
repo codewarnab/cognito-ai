@@ -11,7 +11,7 @@ import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 import type { PatchStatus } from '@/stores/codeMode/types';
 import { createLogger } from '~logger';
 
-const log = createLogger('PatchProposalCard', 'UI_CHAT');
+const log = createLogger('PatchProposalCard', 'CODE_MODE_UI');
 
 interface PatchProposalCardProps {
     patchId: string;

@@ -19,6 +19,7 @@ import { isMemorySearchAvailable as checkSupermemoryReady } from '../supermemory
 import { queueThreadForExtraction } from '../supermemory/extraction/queue';
 import { getActiveProvider } from '@/utils/credentials';
 import { getProviderCapabilities } from '../providers/capabilities';
+import { useSettingsStore } from '@/stores/settings/settingsStore';
 
 const backgroundLog = createLogger('Background-Router', 'BACKGROUND');
 
@@ -45,6 +46,40 @@ export function initializeMessageRouter(): void {
 
         // Handle GET_PROVIDER_CAPABILITIES request
         if (message.type === 'GET_PROVIDER_CAPABILITIES') {
+            // Ensure settings are hydrated or check storage directly for backend mode
+            // This prevents race conditions where useBackendMode is false during startup
+            const isHydrated = useSettingsStore.getState().isHydrated;
+            let useBackendMode = useSettingsStore.getState().useBackendMode;
+
+            if (!isHydrated) {
+                // Return promise to handle async storage read if not hydrated
+                chrome.storage.local.get(['settings']).then((result) => {
+                    // Fallback to storage read if store isn't ready
+                    const storedSettings = result.settings;
+                    useBackendMode = storedSettings?.state?.useBackendMode ?? false;
+
+                    if (useBackendMode) {
+                        const capabilities = getProviderCapabilities('backend');
+                        sendResponse({ provider: 'backend', capabilities });
+                    } else {
+                        // Fallback to existing logic
+                        checkLocalProviders();
+                    }
+                });
+                return true;
+            }
+
+            if (useBackendMode) {
+                const capabilities = getProviderCapabilities('backend');
+                sendResponse({ provider: 'backend', capabilities });
+                return true;
+            }
+
+            checkLocalProviders();
+            return true;
+        }
+
+        function checkLocalProviders() {
             getActiveProvider().then((provider) => {
                 const capabilities = getProviderCapabilities(provider);
                 sendResponse({ provider, capabilities });
@@ -63,7 +98,6 @@ export function initializeMessageRouter(): void {
                     },
                 });
             });
-            return true; // Will respond asynchronously
         }
 
         // Route WebMCP messages (before MCP to avoid conflicts)

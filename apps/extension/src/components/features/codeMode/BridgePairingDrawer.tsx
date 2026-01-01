@@ -16,7 +16,9 @@ import {
 import { Link, Loader2, WifiOff, CheckCircle } from 'lucide-react';
 import { cn } from '@/utils/ui';
 import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
+import { useUINavigationStore } from '@/stores';
 import type { CodeModeState } from '@/stores/codeMode/types';
+import type { UINavigationState } from '@/stores';
 
 interface BridgePairingDrawerProps {
     isOpen: boolean;
@@ -37,6 +39,13 @@ export const BridgePairingDrawer: React.FC<BridgePairingDrawerProps> = ({
     const [success, setSuccess] = useState(false);
 
     const pairWithBridge = useCodeModeStore((s: CodeModeState) => s.pairWithBridge);
+
+    // Voice FAB visibility management - hide when drawer is open
+    const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
+
+    useEffect(() => {
+        setVoiceFabVisibility(!isOpen);
+    }, [isOpen, setVoiceFabVisibility]);
 
     // Reset state when drawer opens/closes
     useEffect(() => {

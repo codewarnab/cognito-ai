@@ -23,8 +23,6 @@ import {
     ComposerActions
 } from './sections';
 
-import { ElementContextChip } from '../../../codeMode/ElementContextChip';
-
 const log = createLogger('Composer', 'AI_CHAT');
 
 export interface ComposerProps {
@@ -131,11 +129,14 @@ export const Composer: React.FC<ComposerProps> = ({
     // Code mode element context - hide FAB when element is selected
     const elementContext = useCodeModeStore((state: CodeModeState) => state.elementContext);
 
+    // Get current tools mode to hide FAB when in code mode
+    const currentMode = useToolsStore((s) => s.currentMode);
+
     useEffect(() => {
-        // Hide FAB when dropdown/attachments/recording/element context are active
-        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || !!elementContext;
+        // Hide FAB when dropdown/attachments/recording/element context are active, or when in code mode
+        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || !!elementContext || currentMode === 'code';
         setVoiceFabVisibility(!shouldHide);
-    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, elementContext, setVoiceFabVisibility]);
+    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, elementContext, currentMode, setVoiceFabVisibility]);
 
     // Debug logging
     log.info('🎨 Composer render - search mode state', {
@@ -186,11 +187,6 @@ export const Composer: React.FC<ComposerProps> = ({
                 handleSlashCommandDetection={handleSlashCommandDetection}
                 mode={modelState.mode}
             />
-
-            {/* Code Mode: Selected element context */}
-            <div className="px-3 pb-2 pt-1">
-                <ElementContextChip />
-            </div>
 
             {/* Attachments area: tab and file attachments (uses store) */}
             <AttachmentsArea />

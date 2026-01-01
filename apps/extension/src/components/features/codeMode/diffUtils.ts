@@ -61,8 +61,8 @@ export function parseUnifiedDiff(diff: string): ParsedDiff[] {
         if (!oldFile && !newFile) {
             const match = lines[0]?.match(/a\/(.+?) b\/(.+)/);
             if (match) {
-                oldFile = match[1];
-                newFile = match[2];
+                oldFile = match[1] ?? '';
+                newFile = match[2] ?? '';
             }
         }
 
@@ -77,9 +77,9 @@ export function parseUnifiedDiff(diff: string): ParsedDiff[] {
             const hunkMatch = line.match(/^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@/);
             if (hunkMatch) {
                 currentHunk = {
-                    oldStart: parseInt(hunkMatch[1], 10),
+                    oldStart: parseInt(hunkMatch[1] ?? '0', 10),
                     oldLines: parseInt(hunkMatch[2] || '1', 10),
-                    newStart: parseInt(hunkMatch[3], 10),
+                    newStart: parseInt(hunkMatch[3] ?? '0', 10),
                     newLines: parseInt(hunkMatch[4] || '1', 10),
                     lines: [],
                 };
@@ -139,7 +139,7 @@ export function formatFilePath(path: string, maxLength = 50): string {
  */
 export function getFileExtension(path: string): string {
     const match = path.match(/\.([^./]+)$/);
-    return match ? match[1].toLowerCase() : '';
+    return match?.[1]?.toLowerCase() ?? '';
 }
 
 /**

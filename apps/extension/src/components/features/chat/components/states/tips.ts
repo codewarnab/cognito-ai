@@ -35,3 +35,19 @@ export const TIPS = [
     "Change  mode by clicking the tool icon in the chat input Chat | Agent | Adaptive | Custom"
 ];
 
+// Tips specific to code mode
+export const CODE_MODE_TIPS = [
+    "Use the element picker to select any UI component on the page",
+    "The code bridge connects Cognito to your local development environment",
+    "Describe the change you want and I'll generate a patch for your codebase",
+    "Patches can be previewed before applying to your files",
+    "Make sure the bridge server is running before using code mode",
+    "I can see your project structure and modify files locally",
+    "Select an element to provide visual context for your coding request",
+    "Rejected patches won't affect your codebase",
+    "Ask me to refactor, fix bugs, or add new features to your code",
+    "The bridge runs locally - your code never leaves your machine",
+    "Pair with the bridge using the code shown in your terminal",
+    "I can explain the selected element's styling and structure",
+    "Applied patches can be undone using git",
+];

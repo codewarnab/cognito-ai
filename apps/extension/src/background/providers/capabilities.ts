@@ -112,6 +112,14 @@ export const PROVIDER_CAPABILITIES: Record<string, ProviderCapabilities> = {
         streaming: true, // Full streaming support
         memoryFunctionCalling: true, // OpenAI-compatible function calling
     },
+    backend: {
+        functionCalling: true, // Supported via backend tools
+        webSearch: true, // Supported via backend proxy
+        urlContext: true, // Supported via backend proxy
+        multimodal: true, // Supported
+        streaming: true, // Supported
+        memoryFunctionCalling: true, // Supported
+    },
     // Future providers template:
     // perplexity: {
     //     functionCalling: false,

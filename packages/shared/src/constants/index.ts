@@ -21,7 +21,7 @@ export {
     LOGGER_PRESET_NAMES,
     matchesPreset,
     getDefaultLoggerConfig,
-} from './logger.js';
+} from './logger/index.js';
 
 // MCP Server Registry (security-critical)
 export {

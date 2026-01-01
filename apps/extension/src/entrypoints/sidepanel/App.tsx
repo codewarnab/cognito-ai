@@ -124,6 +124,7 @@ function AIChatContent() {
 
     // Tools Store - initialize on mount for accurate tool counts
     const initializeToolsStore = useToolsStore((state: ToolsState) => state.initialize);
+    const currentToolsMode = useToolsStore((state: ToolsState) => state.currentMode);
 
     // Local UI state (transient - not persisted)
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
@@ -544,8 +545,8 @@ function AIChatContent() {
                                 }}
                             />
 
-                            {/* Voice Mode FAB - Only in text mode */}
-                            {!isImagePreviewOpen && isVoiceFabVisible && (
+                            {/* Voice Mode FAB - Only in text mode, hidden in code mode */}
+                            {!isImagePreviewOpen && isVoiceFabVisible && currentToolsMode !== 'code' && (
                                 <motion.button
                                     className={`fixed bottom-[120px] right-4 w-[44px] h-11 rounded-full 
                                         bg-white/5 border border-white/10 text-white/60 
