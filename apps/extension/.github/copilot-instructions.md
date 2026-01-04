@@ -1,14 +1,14 @@
   # Cognito AI Browser Agent - Development Guide
 
 ## Project Overview
-Cognito is a Chrome MV3 extension that provides an AI-powered browser agent with voice interaction, tool execution, MCP server integration, and automated workflows. Built with Plasmo, React, TypeScript, and AI SDK v5.
+Cognito is a Chrome MV3 extension that provides an AI-powered browser agent with voice interaction, tool execution, MCP server integration, and automated workflows. Built with WXT, React 19, TypeScript, and Vercel AI SDK v6.
 
 ## Architecture
 
 ### Multi-Agent System
 The extension uses a **two-tier agent architecture**:
-1. **Gemini Live Voice Agent** (`src/ai/geminiLive/`) - User-facing conversational AI that handles voice interactions and delegates browser tasks
-2. **Browser Action Agent** (`src/ai/agents/browser/`) - Backend AI that executes multi-step browser automation using registered tools
+1. **Voice Mode** (`src/components/features/voice/`) - User-facing conversational AI that handles voice interactions via ElevenLabs
+2. **AI Agents** (`src/ai/agents/`) - Backend AI agents for YouTube analysis, PDF generation, and search
 
 **Critical Flow**: User speaks → Voice Agent → executeBrowserAction tool → Browser Agent → Chrome APIs → Result → Voice Agent → User hears response
 
@@ -35,10 +35,10 @@ export function useMyTool() {
 **Tool UI**: Use `useToolUI()` hook + `CompactToolRenderer` for consistent display. Register UI in the same hook with `registerToolUI(name, renderer)`.
 
 ### Communication Layers
-- **Sidepanel** (`src/sidepanel.tsx`) - Main React UI, initializes tools/workflows, manages chat state
-- **Background Service Worker** (`src/background.ts`) - Orchestrates modules: MCP OAuth, omnibox, alarms, notifications, messaging router
-- **Content Scripts** (`src/contents/`) - Injected page interaction (Ask AI button, DOM manipulation)
-- **Offscreen Document** (`public/offscreen.js`) - Hosts Chrome Summarizer API for local model downloads
+- **Sidepanel** (`src/entrypoints/sidepanel/`) - Main React UI entry point (App.tsx, main.tsx)
+- **Background Service Worker** (`src/entrypoints/background.ts` + `src/background/`) - Orchestrates modules: MCP OAuth, omnibox, alarms, notifications, messaging router
+- **Content Scripts** (`src/entrypoints/*.content/`) - Injected page interaction (Ask AI button, DOM manipulation)
+- **Offscreen Document** (`src/entrypoints/offscreen/`) - Hosts Chrome Summarizer API for local model downloads
 
 ### Storage & State
 - **Zustand Stores** (`src/stores/`) - Centralized state management with Chrome storage sync
@@ -53,7 +53,7 @@ export function useMyTool() {
 - **Tool Registry** (`src/ai/tools/registryUtils.ts`) - Global `Map<string, ToolDefinition>`, accessed via `getAllTools()`, `getTool(name)`
 - **Workflow Registry** (`src/workflows/registry.ts`) - Similar pattern for multi-step workflows
 - **MCP Server State** (`src/mcp/state.ts`) - Per-server state (tokens, credentials, connection status)
-- **Memory System** (`src/memory/store.ts`) - Uses `@plasmohq/storage` with indexed key-value storage for AI memory persistence
+- **Memory System** (`src/db/`) - Uses Dexie (IndexedDB) for local memory persistence
 - **Thread Management** - Messages persisted to IndexedDB/Dexie by thread ID for conversation history
 
 ### Model Execution Modes
@@ -66,14 +66,14 @@ export function useMyTool() {
 ### Setup & Build
 ```powershell
 pnpm install                    # Install dependencies
-pnpm dev                        # Development with hot reload → build/chrome-mv3-dev
-pnpm build                      # Production build → build/chrome-mv3-prod
+pnpm dev                        # Development with hot reload → dist/
+pnpm build                      # Production build → dist/
 pnpm type:check                 # Run TypeScript checks (do this before commits)
 ```
 
-**Post-install**: Scripts run automatically to patch dependencies (`scripts/patch-vfile.js`, `scripts/patch-math-intrinsics.js`)
+**Post-install**: Scripts run automatically to patch dependencies (`scripts/patch-math-intrinsics.js`, `scripts/patch-streamdown.js`)
 
-**Load Extension**: Chrome → `chrome://extensions` → Developer mode → Load unpacked → `build/chrome-mv3-dev`
+**Load Extension**: Chrome → `chrome://extensions` → Developer mode → Load unpacked → `dist/`
 
 **Keyboard Shortcut**: `Ctrl+Shift+H` / `Cmd+Shift+H` opens sidepanel
 
@@ -130,6 +130,7 @@ log.error('Failure', error);    // Errors with context
 - Wrap all async operations in try-catch with context logging
 - Check `chrome.runtime.lastError` in all Chrome API callbacks
 - Validate API response structure before accessing properties (`response?.data?.field || defaultValue`)
+- **Always guard URLs before using in `fetch()`**: Environment variables may be undefined; check before calling (e.g., `if (!ENV.API_URL) { return errorEntry; }`)
 
 ```typescript
 import { APIError, ErrorType } from '@/errors';
@@ -210,34 +211,35 @@ pnpm type:check    # TypeScript validation
 ### Common Issues
 - **Tool not executing**: Check registration in `registerAll.ts`, verify `registerTool()` was called
 - **Hot reload not working**: Manually reload extension at `chrome://extensions`
-- **Build errors**: Clear cache `rm -rf build/ .plasmo/`, reinstall `pnpm install`
+- **Build errors**: Clear cache `rm -rf dist/ .wxt/`, reinstall `pnpm install`
 - **Local model download stuck**: Check `chrome://components` for Optimization Guide update
 
 ## Key Files Reference
-- `src/sidepanel.tsx` - Main UI entry, tool/workflow registration
-- `src/background.ts` - Service worker orchestrator
-- `src/ai/core/aiLogic.ts` - AI SDK v5 streaming logic
+- `src/entrypoints/sidepanel/App.tsx` - Main UI entry, tool/workflow registration
+- `src/entrypoints/background.ts` - Service worker entry point
+- `src/background/` - Background service worker modules
+- `src/ai/core/aiLogic.ts` - AI SDK v6 streaming logic
 - `src/ai/core/modelSetup.ts` - Local vs remote model setup
-- `src/ai/agents/browser/prompts.ts` - Agent system instructions (critical for tool usage)
+- `src/ai/prompts/` - Agent system instructions (critical for tool usage)
 - `src/ai/tools/registryUtils.ts` - Tool registration system
 - `src/actions/registerAll.ts` - Centralized tool registration
 - `src/workflows/registry.ts` - Workflow system
-- `src/memory/store.ts` - Memory persistence layer
+- `src/db/` - Local database with Dexie (IndexedDB)
 - `src/mcp/state.ts` - MCP server state management
 - `docs/CODING_STANDARDS.md` - Comprehensive coding rules
 
 ## Domain-Specific Patterns
 
 ### YouTube Video Analysis
-- Handled by dedicated agent in `src/ai/agents/browser/browserActionAgent.ts`
-- Uses transcript API (Vercel deployment): `src/constants.ts` → `TRANSCRIPT_API_URL`
-- Agent tool: `analyzeYouTubeVideo` - delegates to specialized logic
+- Handled by dedicated agents in `src/ai/agents/youtube/` and `src/ai/agents/youtubeToNotion/`
+- Uses transcript API via ENV module: `src/utils/env.ts` → `ENV.TRANSCRIPT_API_URL`
+- Transcript fetching: `src/ai/agents/youtube/utils/transcript.ts`
 
 ### Voice Interaction
-- Gemini Live API in `src/ai/geminiLive/GeminiLiveClient.ts`
+- ElevenLabs integration in `src/components/features/voice/`
 - Voice recording UI: `src/components/shared/inputs/VoiceRecordingPill.tsx`
 - Audio transcription: `src/audio/` directory
-- Voice settings: `src/components/features/settings/components/VoiceSettings.tsx`
+- Voice settings: Managed in webapp (`apps/webapp/src/components/settings/tabs/VoiceTTSTab.tsx`)
 
 ### Tab Management
 - TabManager singleton in `src/actions/tabs/TabManager.ts`
@@ -245,10 +247,9 @@ pnpm type:check    # TypeScript validation
 - Tab grouping by AI context classification
 
 ### Memory System
-- CRUD operations in `src/memory/store.ts`
+- Local database with Dexie (IndexedDB) in `src/db/`
 - Tools: `rememberThis`, `recallMemory`, `forgetMemory`, `listMemories`
 - Indexed by key with confidence scoring
-- Uses Chrome sync storage via `@plasmohq/storage`
 
 ## Anti-Patterns to Avoid
 - ❌ Using `any` type - prefer `unknown` with type guards
@@ -287,9 +288,8 @@ pnpm type:watch                        # Watch mode type checking
 
 ## Additional Resources
 - See `docs/CODING_STANDARDS.md` for exhaustive coding rules and examples
-- See `docs/TECHNICAL_DOCUMENTATION.md` for architecture deep dive
-- See `SETUP.md` for detailed development setup
-- See `plans/` directory for feature implementation plans
-- AI SDK v5 docs: https://sdk.vercel.ai/docs
-- Plasmo framework: https://docs.plasmo.com/
+- See `docs/` directory for architecture documentation
+- See root `SETUP.md` for detailed development setup
+- Vercel AI SDK v6 docs: https://sdk.vercel.ai/docs
+- WXT framework: https://wxt.dev/
 - Chrome Extension MV3: https://developer.chrome.com/docs/extensions/mv3/

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSuggestions } from '@/hooks/suggestions';
 import { TextMorph } from '@/components/ui/feedback';
-import { CodingAgentSelector } from '@/components/features/codeMode';
+import { CodingAgentSelector } from '@/components/features/cliMode';
 import { useToolsStore } from '@/stores';
 import type { ToolsState } from '@/stores/tools/types';
 import type { Message, ModelState } from '../../types';
@@ -80,7 +80,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
 
     // Check if we're in code mode - show agent selector instead of suggestions
     const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
-    const isCodeMode = toolsMode === 'code';
+    const isCodeMode = toolsMode === 'cli';
 
     // Load suggestions enabled setting
     useEffect(() => {

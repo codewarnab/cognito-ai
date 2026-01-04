@@ -1,3 +1,5 @@
+import React from 'react';
+import { motion } from 'motion/react';
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { TextShimmer } from '@/components/ui/TextShimmer';
 

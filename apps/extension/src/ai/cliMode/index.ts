@@ -1,1 +1,1 @@
-export { streamCodeModeChat, type CodeModeChatParams } from './codeModeChat';
+export { streamCliModeChat, type CliModeChatParams } from './cliModeChat';

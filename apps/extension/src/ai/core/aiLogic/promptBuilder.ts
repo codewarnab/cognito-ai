@@ -11,12 +11,13 @@ import { getSearchPromptAddition } from '../../prompts/searchPrompt';
 import { getToolsMode } from '@/utils/settings';
 
 import type { WorkflowDefinition } from '../../../workflows/types';
+import type { ToolsMode } from '@/types/settings';
 
 const log = createLogger('AI-PromptBuilder', 'AI_CHAT');
 
 export interface PromptBuildResult {
     systemPrompt: string;
-    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom' | 'code';
+    toolsMode: ToolsMode;
 }
 
 /**

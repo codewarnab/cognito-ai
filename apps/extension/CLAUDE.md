@@ -92,6 +92,19 @@ const workerUrl = import.meta.env.WXT_ELEVENLABS_WORKER_URL;
 const backendUrl = process.env.WXT_BACKEND_API_URL;
 ```
 
+**CRITICAL**: Always guard URLs before using them in `fetch()` or other network calls. Environment variables may be undefined:
+
+```typescript
+// ✅ CORRECT - Guard before using
+if (!ENV.TRANSCRIPT_API_URL) {
+    return createErrorEntry(videoUrl, "Transcript API URL is not configured");
+}
+const res = await fetch(ENV.TRANSCRIPT_API_URL, { ... });
+
+// ❌ WRONG - fetch() will fail if URL is undefined
+const res = await fetch(ENV.TRANSCRIPT_API_URL, { ... }); // TypeScript error: string | undefined
+```
+
 See `src/utils/env.ts` for all available environment variables with defaults.
 
 ```env

@@ -33,6 +33,7 @@ alwaysApply: true
 - **CRITICAL**: Never use empty catch blocks; always log errors with context using logger's `warn()` or `error()` methods
 - **CRITICAL**: Always use `APIError` instead of generic `Error`; include statusCode, retryable flag, userMessage, technicalDetails, and errorCode
 - **CRITICAL**: Validate API response structure before accessing properties; check for `null` or non-object responses
+- **CRITICAL**: Always guard URLs before using them in `fetch()` or other network calls; environment variables may be undefined (e.g., `if (!ENV.API_URL) { return errorEntry; }`)
 - **CRITICAL**: Wrap initialization logic in try-catch blocks; ensure all async initialization functions handle errors gracefully
 - **CRITICAL**: Define proper TypeScript interfaces for callback parameters instead of `any`; validate objects have required methods before calling
 - **CRITICAL**: Wrap all external I/O operations (writer.write, API calls) in try-catch blocks; log failures with context but continue execution where possible
@@ -186,7 +187,8 @@ See `docs/REMOTE_MCP_INTEGRATION.md` for Remote MCP integration (SSE/HTTP with O
 - **CRITICAL**: Use relative/child selectors (e.g., `element.querySelector('#child')`) instead of nested absolute selectors
 
 ## Storage and Data
-- Use `@plasmohq/storage` for extension storage; avoid direct `localStorage`
+- Use Dexie (IndexedDB) for local data persistence; see `src/db/` for database schema
+- Avoid direct `localStorage`; use Zustand stores with Chrome storage sync for settings
 - Maintain indices for efficient queries; update index on CRUD
 - **CRITICAL**: Wrap all storage persistence calls in try-catch blocks; on failure, revert UI state and notify user
 - Always store previous state before async updates; use it to rollback on persistence failure

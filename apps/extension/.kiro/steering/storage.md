@@ -6,7 +6,7 @@
 - See `zustand-stores.md` for usage patterns
 
 ## Extension Storage
-- Use `@plasmohq/storage` for extension storage outside of stores
+- Use Dexie (IndexedDB) for local data persistence via `src/db/`
 - Avoid direct `localStorage`
 - Maintain indices for efficient queries
 - Update index on CRUD operations

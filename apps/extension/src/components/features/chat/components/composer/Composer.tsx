@@ -7,7 +7,7 @@ import { useSearchMode } from '@/hooks/useSearchMode';
 import { createLogger } from '~logger';
 
 // Stores
-import { useUINavigationStore, useToolsStore, useAttachmentsStore, useCodeModeStore, type UINavigationState, type CodeModeState } from '@/stores';
+import { useUINavigationStore, useToolsStore, useAttachmentsStore, useCliModeStore, type UINavigationState, type CliModeState } from '@/stores';
 
 // Extracted hooks
 import { useScreenshotCapture } from './hooks';
@@ -126,17 +126,16 @@ export const Composer: React.FC<ComposerProps> = ({
     // Voice FAB visibility management via store
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
-    // Code mode element context - hide FAB when element is selected
-    const elementContext = useCodeModeStore((state: CodeModeState) => state.elementContext);
-
-    // Get current tools mode to hide FAB when in code mode
+    // CLI mode - get bridge status and current mode to hide FAB when in CLI mode
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
     const currentMode = useToolsStore((s) => s.currentMode);
+    const isCliMode = bridgeStatus === 'connected' && currentMode === 'cli';
 
     useEffect(() => {
-        // Hide FAB when dropdown/attachments/recording/element context are active, or when in code mode
-        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || !!elementContext || currentMode === 'code';
+        // Hide FAB when dropdown/attachments/recording are active, or when in CLI mode
+        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || isCliMode;
         setVoiceFabVisibility(!shouldHide);
-    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, elementContext, currentMode, setVoiceFabVisibility]);
+    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, isCliMode, setVoiceFabVisibility]);
 
     // Debug logging
     log.info('🎨 Composer render - search mode state', {

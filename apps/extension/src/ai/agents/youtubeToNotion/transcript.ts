@@ -112,10 +112,14 @@ async function fetchTranscriptWithRetry(
 ): Promise<TranscriptEntry> {
     log.info("📝 Fetching transcript from API", { videoUrl, retriesLeft });
 
+    if (!ENV.TRANSCRIPT_API_URL) {
+        return createErrorEntry(videoUrl, "Transcript API URL is not configured");
+    }
+
     try {
         const res = await fetch(ENV.TRANSCRIPT_API_URL, {
             method: "POST",
-            headers: { 
+            headers: {
                 "Content-Type": "application/json",
                 "X-API-Version": "2"
             },
@@ -124,14 +128,14 @@ async function fetchTranscriptWithRetry(
 
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            
+
             // Handle 404 "no captions" - retry as API sometimes returns this incorrectly
             if (res.status === 404 && retriesLeft > 0) {
                 log.info(`🔄 Got "no captions" response, retrying (${retriesLeft} attempts left)...`);
                 await new Promise(resolve => setTimeout(resolve, NO_CAPTIONS_RETRY_DELAY));
                 return fetchTranscriptWithRetry(videoUrl, retriesLeft - 1);
             }
-            
+
             log.warn(
                 `⚠️ Transcript API error ${res.status}`,
                 data
