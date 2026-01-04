@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, Bot, Sparkles, Info, Code } from 'lucide-react';
+import { MessageSquare, Bot, Sparkles, Info, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { ToolMode } from '../types';
 
@@ -144,15 +144,15 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     </div>
                 )}
             </div>
-            {/* Code mode button */}
+            {/* CLI mode button */}
             <button
                 type="button"
                 style={getButtonStyle(displayMode === 'code')}
                 onClick={() => onModeChange('code')}
-                title="Code Mode with Element Picker"
+                title="CLI Mode - Use your local CLI agent"
             >
-                <Code size={12} />
-                <span>Code</span>
+                <Terminal size={12} />
+                <span>CLI</span>
             </button>
             {hasUserModified && (
                 <div style={{

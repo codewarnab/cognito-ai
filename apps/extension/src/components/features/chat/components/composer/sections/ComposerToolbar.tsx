@@ -12,7 +12,7 @@ import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } 
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { useBridgeHeartbeat } from '@/hooks/codeMode';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
-import { ElementPickerButton } from '../../../../codeMode/ElementPickerButton';
+
 import { BridgePairingDrawer } from '../../../../codeMode/BridgePairingDrawer';
 import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 import type { CodeModeState } from '@/stores/codeMode/types';
@@ -81,7 +81,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Code Mode bridge state
     const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
     const checkBridgeHealth = useCodeModeStore((s: CodeModeState) => s.checkBridgeHealth);
-    const clearElementContext = useCodeModeStore((s: CodeModeState) => s.clearElementContext);
+
     const [showPairingDrawer, setShowPairingDrawer] = useState(false);
     const [previousMode, setPreviousMode] = useState<ToolMode | null>(null);
     const setMode = useToolsStore((s: ToolsState) => s.setMode);
@@ -103,12 +103,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     setShowPairingDrawer(true);
                 }
             });
-        } else if (toolsMode !== 'code' && prevToolsModeRef.current === 'code') {
-            // Clear picked element when leaving code mode
-            clearElementContext();
         }
         prevToolsModeRef.current = toolsMode as ToolMode;
-    }, [toolsMode, checkBridgeHealth, clearElementContext]);
+    }, [toolsMode, checkBridgeHealth]);
 
     // Also show pairing drawer if bridge status changes to needs-pairing while in code mode
     useEffect(() => {
@@ -308,12 +305,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 )}
             </div>
 
-            {/* Code Mode: Element Picker (after tools section) */}
-            {toolsMode === 'code' && (
-                <div className="flex items-center border-l border-border/50 pl-2 ml-2">
-                    <ElementPickerButton />
-                </div>
-            )}
+
 
             {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode and code mode) */}
             <SearchControls

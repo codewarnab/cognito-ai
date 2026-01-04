@@ -1,5 +1,3 @@
-import type { CodeModeElementContext } from '@cognito/shared/types';
-
 export type BridgeStatus = 'connected' | 'needs-pairing' | 'offline';
 
 export type PatchStatus = 'pending' | 'applying' | 'applied' | 'rejected' | 'error';
@@ -23,10 +21,6 @@ export interface AgentInfo {
 }
 
 export interface CodeModeState {
-  // Element picker state
-  elementContext: CodeModeElementContext | null;
-  isPicking: boolean;
-
   // Bridge connection state
   bridgeBaseUrl: string;
   bridgeToken: string | null;
@@ -43,12 +37,6 @@ export interface CodeModeState {
 
   // Agent status (for loading indicator)
   agentStatus: string | null;
-
-  // Actions - Element picker
-  setElementContext: (ctx: CodeModeElementContext | null) => void;
-  clearElementContext: () => void;
-  startPicker: () => Promise<void>;
-  cancelPicker: () => Promise<void>;
 
   // Actions - Bridge
   setBridgeBaseUrl: (url: string) => void;
@@ -69,4 +57,3 @@ export interface CodeModeState {
   applyPatch: (patchId: string) => Promise<boolean>;
   rejectPatch: (patchId: string) => void;
 }
-

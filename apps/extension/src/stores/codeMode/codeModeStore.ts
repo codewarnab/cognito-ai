@@ -11,10 +11,6 @@ const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:8787';
 export const useCodeModeStore = create<CodeModeState>()(
   persist(
     (set, get) => ({
-      // Initial State - Element picker
-      elementContext: null,
-      isPicking: false,
-
       // Initial State - Bridge
       bridgeBaseUrl: DEFAULT_BRIDGE_URL,
       bridgeToken: null,
@@ -31,67 +27,6 @@ export const useCodeModeStore = create<CodeModeState>()(
 
       // Initial State - Agent status (for loading indicator)
       agentStatus: null,
-
-      // Actions - Element picker
-      setElementContext: (ctx) => {
-        set({ elementContext: ctx });
-        log.info('Element context set', { tagName: ctx?.tagName, selector: ctx?.selector });
-      },
-
-      clearElementContext: () => {
-        set({ elementContext: null });
-        log.info('Element context cleared');
-      },
-
-      startPicker: async () => {
-        set({ isPicking: true });
-        log.info('Starting element picker');
-
-        try {
-          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-          const activeTab = tabs[0];
-
-          if (!activeTab?.id) {
-            throw new Error('No active tab found');
-          }
-
-          const response = await chrome.tabs.sendMessage(activeTab.id, {
-            type: 'code/picker/start'
-          });
-
-          if (response?.ok && response.context) {
-            set({ elementContext: response.context });
-            log.info('Element picked successfully');
-          } else if (response?.error) {
-            if (response.error !== 'cancelled') {
-              log.error('Picker error', new Error(response.error));
-            } else {
-              log.info('Picker cancelled');
-            }
-          }
-        } catch (error) {
-          log.error('Failed to start picker', error);
-        } finally {
-          set({ isPicking: false });
-        }
-      },
-
-      cancelPicker: async () => {
-        log.info('Cancelling element picker');
-        try {
-          const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-          const activeTab = tabs[0];
-
-          if (activeTab?.id) {
-            await chrome.tabs.sendMessage(activeTab.id, {
-              type: 'code/picker/cancel'
-            });
-          }
-        } catch (error) {
-          log.warn('Failed to send cancel message', error);
-        }
-        set({ isPicking: false });
-      },
 
       // Actions - Bridge
       setBridgeBaseUrl: (url) => {

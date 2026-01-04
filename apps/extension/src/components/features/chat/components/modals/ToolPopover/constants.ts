@@ -1,4 +1,4 @@
-export const TOOL_WARNING_THRESHOLD = 40;
+    export const TOOL_WARNING_THRESHOLD = 40;
 
 export const CHAT_MODE_TOOLS: string[] = [
     'readPageContent',
@@ -58,5 +58,5 @@ export const ADAPTIVE_ONLY_TOOLS: string[] = [
     'executeTools',
 ];
 
-// Code mode - no default tools, relies on local CLI agent
-export const CODE_MODE_TOOLS: string[] = [];
+// Code mode / CLI mode - use same tools as agent mode (browser operation via CLI agent)
+export const CODE_MODE_TOOLS: string[] = [...AGENT_MODE_TOOLS];
