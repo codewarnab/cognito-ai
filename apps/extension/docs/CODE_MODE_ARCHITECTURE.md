@@ -49,6 +49,12 @@ Code Mode enables the Cognito Chrome extension to communicate with a **local cod
 - Handles pairing with extension
 - Spawns agent CLI via ACP protocol
 - Stores and applies patches
+- **SSE `/events` endpoint** for real-time connection status:
+  - Sends `connected` event on connection
+  - Sends `bridge:closing` event immediately on shutdown (SIGINT/SIGTERM)
+  - Periodic heartbeat to keep connection alive
+- **Status streaming** during agent lifecycle (shown in LoadingIndicator):
+  - `status` events sent: "Starting agent...", "Process spawned...", "Initializing protocol...", "Connected to agent...", "Creating session...", "Session ready", "Sending message..."
 
 ### 4. Agent CLI
 - Gemini CLI, Claude Code, or Codex CLI
@@ -256,11 +262,23 @@ packages/code-bridge/src/
 | Method | Path              | Auth | Description                    |
 |--------|-------------------|------|--------------------------------|
 | GET    | /health           | No   | Health check, returns `cwd`    |
+| GET    | /events           | No   | SSE stream for real-time status |
 | POST   | /pair/start       | No   | Generate pairing code          |
 | POST   | /pair/confirm     | No   | Exchange code for token        |
 | GET    | /agents           | No   | List available agents          |
 | POST   | /code/chat        | Yes  | Stream chat with agent         |
 | POST   | /code/patch/apply | Yes  | Apply stored patch             |
+
+### Chat SSE Event Types
+
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `status` | `{message: string}` | Agent lifecycle status for LoadingIndicator |
+| `text` | `{content: string}` | Streamed text response from agent |
+| `tool_call` | `{toolName, toolCallId, args}` | Tool invocation |
+| `patch_proposal` | `{patchId, unifiedDiff, summary}` | Code patch proposal |
+| `error` | `{error: string}` | Error message |
+| `done` | `{}` | Stream complete |
 
 ### Extension Store State
 
@@ -277,10 +295,12 @@ interface CodeModeState {
   isCheckingBridge: boolean;
   repoCwd: string | null;
 
-
   // Agent selection
   selectedAgentName: string;
   availableAgents: AgentInfo[];
+
+  // Agent status (for LoadingIndicator)
+  agentStatus: string | null;
 
   // Patches
   patches: Record<string, PatchState>;

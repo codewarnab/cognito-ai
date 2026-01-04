@@ -631,6 +631,9 @@ importers:
 
   packages/code-bridge:
     dependencies:
+      '@agentclientprotocol/sdk':
+        specifier: ^0.12.0
+        version: 0.12.0(zod@4.2.1)
       ai:
         specifier: 'catalog:'
         version: 6.0.3(zod@4.2.1)
@@ -661,6 +664,11 @@ packages:
 
   '@acemir/cssom@0.9.24':
     resolution: {integrity: sha512-5YjgMmAiT2rjJZU7XK1SNI7iqTy92DpaYVgG6x63FxkJ11UpYfLndHJATtinWJClAXiOlW9XWaUyAQf8pMrQPg==}
+
+  '@agentclientprotocol/sdk@0.12.0':
+    resolution: {integrity: sha512-V8uH/KK1t7utqyJmTA7y7DzKu6+jKFIXM+ZVouz8E55j8Ej2RV42rEvPKn3/PpBJlliI5crcGk1qQhZ7VwaepA==}
+    peerDependencies:
+      zod: ^3.25.0 || ^4.0.0
 
   '@ai-sdk/anthropic@2.0.50':
     resolution: {integrity: sha512-21PaHfoLmouOXXNINTsZJsMw+wE5oLR2He/1kq/sKokTVKyq7ObGT1LDk6ahwxaz/GoaNaGankMh+EgVcdv2Cw==}
@@ -8415,6 +8423,10 @@ snapshots:
       many-keys-map: 2.0.1
 
   '@acemir/cssom@0.9.24': {}
+
+  '@agentclientprotocol/sdk@0.12.0(zod@4.2.1)':
+    dependencies:
+      zod: 4.2.1
 
   '@ai-sdk/anthropic@2.0.50(zod@4.2.1)':
     dependencies:

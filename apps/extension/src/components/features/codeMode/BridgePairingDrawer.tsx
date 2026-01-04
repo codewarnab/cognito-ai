@@ -43,9 +43,23 @@ export const BridgePairingDrawer: React.FC<BridgePairingDrawerProps> = ({
     // Voice FAB visibility management - hide when drawer is open
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
+    // Get bridge status to detect when pairing succeeds
+    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+
     useEffect(() => {
         setVoiceFabVisibility(!isOpen);
     }, [isOpen, setVoiceFabVisibility]);
+
+    // Auto-close drawer when bridge becomes connected (e.g., stored token validation succeeded)
+    useEffect(() => {
+        if (isOpen && bridgeStatus === 'connected' && !success) {
+            // Bridge is already connected - close drawer
+            setSuccess(true);
+            setTimeout(() => {
+                onClose();
+            }, 500); // Shorter delay since we didn't show the pairing flow
+        }
+    }, [isOpen, bridgeStatus, success, onClose]);
 
     // Reset state when drawer opens/closes
     useEffect(() => {

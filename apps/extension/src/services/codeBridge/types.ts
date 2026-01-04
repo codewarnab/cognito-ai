@@ -48,16 +48,45 @@ export interface BridgeDoneEvent {
   type: 'done';
 }
 
+export interface BridgeStatusEvent {
+  type: 'status';
+  message: string;
+}
+
 export type BridgeEvent =
   | BridgeTextEvent
   | BridgePatchProposalEvent
   | BridgeToolCallEvent
   | BridgeToolResultEvent
   | BridgeErrorEvent
-  | BridgeDoneEvent;
+  | BridgeDoneEvent
+  | BridgeStatusEvent;
 
 export interface ApplyPatchResult {
   applied: boolean;
   filesChanged: string[];
   error?: string;
 }
+
+// SSE Event Types for real-time bridge connection
+export interface BridgeSSEConnectedEvent {
+  type: 'connected';
+  version: string;
+  cwd: string;
+}
+
+export interface BridgeSSEHeartbeatEvent {
+  type: 'heartbeat';
+  timestamp: number;
+}
+
+export interface BridgeSSEClosingEvent {
+  type: 'bridge:closing';
+  reason: string;
+}
+
+export type BridgeSSEEvent =
+  | BridgeSSEConnectedEvent
+  | BridgeSSEHeartbeatEvent
+  | BridgeSSEClosingEvent;
+

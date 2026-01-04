@@ -1,5 +1,5 @@
 import { createLogger } from '~logger';
-import type { CodeModeChatParams, BridgeEvent, ApplyPatchResult } from './types';
+import type { CodeModeChatParams, BridgeEvent, ApplyPatchResult, BridgeSSEEvent } from './types';
 
 const log = createLogger('codeBridgeClient', 'CODE_MODE_BRIDGE');
 
@@ -124,6 +124,8 @@ function parseSSEEvent(eventType: string, data: string): BridgeEvent | null {
         };
       case 'error':
         return { type: 'error', error: parsed.error };
+      case 'status':
+        return { type: 'status', message: parsed.message };
       case 'done':
         return { type: 'done' };
       default:
@@ -272,3 +274,68 @@ export async function checkBridgeHealth(
     return { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
   }
 }
+
+/**
+ * Connect to bridge SSE event stream for real-time status updates.
+ * Returns a cleanup function to close the connection.
+ */
+export function connectToEventStream(
+  baseUrl: string,
+  callbacks: {
+    onConnected?: (event: BridgeSSEEvent & { type: 'connected' }) => void;
+    onHeartbeat?: (event: BridgeSSEEvent & { type: 'heartbeat' }) => void;
+    onClosing?: (event: BridgeSSEEvent & { type: 'bridge:closing' }) => void;
+    onError?: (error: Error) => void;
+  }
+): () => void {
+  log.info('Connecting to bridge SSE event stream', { baseUrl });
+
+  const eventSource = new EventSource(`${baseUrl}/events`);
+
+  // Log when connection opens
+  eventSource.onopen = () => {
+    log.info('SSE: EventSource connection opened');
+  };
+
+  eventSource.addEventListener('connected', (e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data);
+      log.info('SSE: Connected to bridge', { version: data.version, cwd: data.cwd });
+      callbacks.onConnected?.({ type: 'connected', version: data.version, cwd: data.cwd });
+    } catch (err) {
+      log.error('SSE: Failed to parse connected event', err);
+    }
+  });
+
+  eventSource.addEventListener('heartbeat', (e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data);
+      log.debug('SSE: Heartbeat received', { timestamp: data.timestamp });
+      callbacks.onHeartbeat?.({ type: 'heartbeat', timestamp: data.timestamp });
+    } catch (err) {
+      log.error('SSE: Failed to parse heartbeat event', err);
+    }
+  });
+
+  eventSource.addEventListener('bridge:closing', (e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data);
+      log.warn('SSE: Bridge closing', { reason: data.reason });
+      callbacks.onClosing?.({ type: 'bridge:closing', reason: data.reason });
+    } catch (err) {
+      log.error('SSE: Failed to parse closing event', err);
+    }
+  });
+
+  eventSource.onerror = () => {
+    log.warn('SSE: Connection error or closed');
+    callbacks.onError?.(new Error('SSE connection failed'));
+  };
+
+  // Return cleanup function
+  return () => {
+    log.info('SSE: Closing connection');
+    eventSource.close();
+  };
+}
+

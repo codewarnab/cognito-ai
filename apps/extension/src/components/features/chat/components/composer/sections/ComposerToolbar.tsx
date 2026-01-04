@@ -128,7 +128,6 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
     useBridgeHeartbeat({
         enabled: toolsMode === 'code',
-        intervalMs: 30_000, // 30 seconds
         onDisconnect: handleBridgeDisconnect,
     });
 

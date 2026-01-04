@@ -41,6 +41,9 @@ export interface CodeModeState {
   // Patch tracking
   patches: Record<string, PatchState>;
 
+  // Agent status (for loading indicator)
+  agentStatus: string | null;
+
   // Actions - Element picker
   setElementContext: (ctx: CodeModeElementContext | null) => void;
   clearElementContext: () => void;
@@ -57,6 +60,7 @@ export interface CodeModeState {
 
   // Actions - Agent
   setSelectedAgentName: (name: string) => void;
+  setAgentStatus: (status: string | null) => void;
 
   // Actions - Patches
   addPatch: (patch: Omit<PatchState, 'status' | 'createdAt'>) => void;

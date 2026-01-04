@@ -65,20 +65,28 @@ export async function handleCodeChat(
   const auth = await requireAuth(req, res);
   if (!auth.ok) return;
 
+  console.log('[chat] Received chat request');
+
   try {
     const body = await readJson(req);
     const parsed = CodeModeChatRequestSchema.safeParse(body);
 
     if (!parsed.success) {
+      console.log('[chat] Invalid request:', parsed.error.message);
       sendError(res, `Invalid request: ${parsed.error.message}`, 400);
       return;
     }
 
     const { messages, elementContext, agent, sessionId } = parsed.data;
 
+    console.log('[chat] Agent:', agent.name);
+    console.log('[chat] Messages:', messages.length);
+    console.log('[chat] Session:', sessionId || 'new');
+
     // Find the agent definition
     const agentDef = findAgent(agent.name);
     if (!agentDef) {
+      console.log('[chat] Unknown agent:', agent.name);
       sendError(res, `Unknown agent: ${agent.name}`, 400);
       return;
     }
@@ -88,9 +96,11 @@ export async function handleCodeChat(
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     res.flushHeaders();
+    console.log('[chat] SSE headers sent');
 
     // Helper to send SSE events
     const sendEvent = (event: string, data: unknown) => {
+      console.log(`[chat] SSE event: ${event}`, JSON.stringify(data).slice(0, 200));
       res.write(`event: ${event}\n`);
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
@@ -105,14 +115,20 @@ export async function handleCodeChat(
 
     // Clean up on disconnect
     req.on('close', () => {
+      console.log('[chat] Client disconnected, cleaning up');
       provider.cleanup();
     });
 
     // Handle messages from the agent
     provider.on('message', (msg: ACPMessage) => {
+      console.log('[chat] Agent message:', msg.type);
       switch (msg.type) {
         case 'text':
           sendEvent('text', { content: msg.content });
+          break;
+
+        case 'status':
+          sendEvent('status', { message: msg.status });
           break;
 
         case 'tool_call':
@@ -163,11 +179,13 @@ export async function handleCodeChat(
     });
 
     provider.on('error', (err: Error) => {
+      console.error('[chat] Provider error:', err.message);
       sendEvent('error', { error: err.message });
       res.end();
     });
 
     provider.on('close', (code: number) => {
+      console.log('[chat] Provider closed with code:', code);
       if (code !== 0) {
         sendEvent('error', { error: `Agent exited with code ${code}` });
       }
@@ -177,10 +195,24 @@ export async function handleCodeChat(
 
     // Start the agent
     try {
+      console.log('[chat] Starting agent...');
       await provider.start();
+      console.log('[chat] Agent started');
     } catch (err) {
+      const agentCommand = agent.command || agentDef.command;
+      const agentArgs = agent.args || agentDef.args;
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      console.error('[chat] Failed to start agent:', errorMessage);
+
       sendEvent('error', {
-        error: `Failed to start agent: ${err instanceof Error ? err.message : String(err)}`,
+        error: `Failed to start agent "${agent.name}" (${agentCommand} ${agentArgs.join(' ')}): ${errorMessage}`,
+        code: 'AGENT_START_FAILED',
+        details: {
+          agentName: agent.name,
+          command: agentCommand,
+          args: agentArgs,
+        },
       });
       res.end();
       return;
@@ -195,15 +227,17 @@ export async function handleCodeChat(
       content: m.content.map((c) => c.text).join('\n'),
     }));
 
+    console.log('[chat] Sending chat to agent...');
     // Send chat request to agent
     await provider.chat({
       messages: chatMessages,
       systemPrompt,
     });
+    console.log('[chat] Chat sent to agent, waiting for response...');
 
   } catch (err) {
     console.error('[chat] Error:', err);
-    
+
     // If headers not sent yet, send error response
     if (!res.headersSent) {
       sendError(res, err instanceof Error ? err.message : 'Internal error', 500);

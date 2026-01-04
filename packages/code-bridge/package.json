@@ -17,6 +17,7 @@
     "type:check": "tsc --noEmit"
   },
   "dependencies": {
+    "@agentclientprotocol/sdk": "^0.12.0",
     "ai": "catalog:",
     "zod": "catalog:"
   },

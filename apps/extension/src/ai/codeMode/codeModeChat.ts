@@ -92,11 +92,48 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
         );
 
         let textBuffer = '';
-        const assistantId = generateId();
+        const messageId = 'msg-' + generateId();
+        let hasStartedText = false;
 
         for await (const event of eventStream) {
-          handleBridgeEvent(event, writer, assistantId, textBuffer, (newText) => {
-            textBuffer = newText;
+          // Handle status events - update store for LoadingIndicator
+          if (event.type === 'status') {
+            log.debug('Status update', { message: event.message });
+            useCodeModeStore.getState().setAgentStatus(event.message);
+            continue;
+          }
+
+          // Handle text events with proper start/delta/end pattern
+          if (event.type === 'text' && event.content) {
+            if (!hasStartedText) {
+              log.info('Starting text stream', { messageId });
+              // Clear status when text starts
+              useCodeModeStore.getState().setAgentStatus(null);
+              writer.write({
+                type: 'text-start',
+                id: messageId,
+              });
+              hasStartedText = true;
+            }
+
+            textBuffer += event.content;
+            writer.write({
+              type: 'text-delta',
+              id: messageId,
+              delta: event.content,
+            });
+          } else {
+            // Handle non-text events (errors, tool calls, etc.)
+            handleBridgeEvent(event, writer);
+          }
+        }
+
+        // Send text-end if we sent any text
+        if (hasStartedText) {
+          log.info('Ending text stream', { messageId, textLength: textBuffer.length });
+          writer.write({
+            type: 'text-end',
+            id: messageId,
           });
         }
 
@@ -110,23 +147,40 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
       } catch (error) {
         log.error('Code mode chat error', error);
 
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isAgentStartError = errorMessage.includes('Agent not started') ||
+          errorMessage.includes('Failed to start agent') ||
+          errorMessage.includes('AGENT_START_FAILED');
+
         writer.write({
           type: 'data-status',
           id: 'status-' + generateId(),
           data: {
             status: 'error',
-            errorCode: 'BRIDGE_ERROR',
+            errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
             timestamp: Date.now(),
           },
           transient: false,
         });
 
-        // Write error as text
-        writer.write({
-          type: 'text-delta',
-          id: 'error-' + generateId(),
-          delta: `\n\n❌ **Error:** ${error instanceof Error ? error.message : 'Unknown error'}\n\nMake sure the code bridge is running and you're paired.`,
-        });
+        // Build helpful error message
+        let displayMessage = `\n\n❌ **Error:** ${errorMessage}\n\n`;
+
+        if (isAgentStartError) {
+          displayMessage += `### Troubleshooting\n\n`;
+          displayMessage += `1. **Check if the agent CLI is installed** - Run the command in your terminal to verify\n`;
+          displayMessage += `2. **Verify the agent supports ACP mode** - Not all CLI agents support the Agent Communication Protocol yet\n`;
+          displayMessage += `3. **Check your API key** - Make sure the required environment variable is set\n`;
+          displayMessage += `4. **Try a different agent** - Select another agent from the dropdown\n`;
+        } else {
+          displayMessage += `Make sure the code bridge is running and you're paired.\n`;
+        }
+
+        // Write error as text with proper start/delta/end pattern
+        const errorId = 'error-' + generateId();
+        writer.write({ type: 'text-start', id: errorId });
+        writer.write({ type: 'text-delta', id: errorId, delta: displayMessage });
+        writer.write({ type: 'text-end', id: errorId });
 
         onError?.(error instanceof Error ? error : new Error(String(error)));
       }
@@ -137,33 +191,26 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
 }
 
 /**
- * Handle individual bridge events
+ * Handle individual bridge events (non-text events only)
+ * Text events are handled inline with text-start/text-delta/text-end pattern
  */
 function handleBridgeEvent(
   event: BridgeEvent,
-  writer: any,
-  _assistantId: string,
-  textBuffer: string,
-  setTextBuffer: (text: string) => void
+  writer: any
 ): void {
   switch (event.type) {
     case 'text':
-      // Stream text delta
-      writer.write({
-        type: 'text-delta',
-        id: 'text-' + generateId(),
-        delta: event.content,
-      });
-      setTextBuffer(textBuffer + event.content);
+      // Text events are handled inline with proper text-start/text-delta/text-end
+      // This case should not be reached, but kept for safety
       break;
 
     case 'patch_proposal':
-      // Write patch proposal as a special tool result
+      // Write patch proposal as a special tool call
       writer.write({
-        type: 'tool-call',
+        type: 'tool-input-available',
         toolCallId: event.patchId,
         toolName: 'propose_patch',
-        args: {
+        input: {
           patchId: event.patchId,
           unifiedDiff: event.unifiedDiff,
           summary: event.summary,
@@ -173,31 +220,47 @@ function handleBridgeEvent(
 
     case 'tool_call':
       writer.write({
-        type: 'tool-call',
+        type: 'tool-input-available',
         toolCallId: event.toolCallId,
         toolName: event.toolName,
-        args: event.args,
+        input: event.args,
       });
       break;
 
     case 'tool_result':
       writer.write({
-        type: 'tool-result',
+        type: 'tool-output-available',
         toolCallId: event.toolCallId,
-        result: event.result,
+        output: event.result,
       });
       break;
 
-    case 'error':
-      writer.write({
-        type: 'text-delta',
-        id: 'error-' + generateId(),
-        delta: `\n\n❌ **Error:** ${event.error}`,
-      });
+    case 'error': {
+      const errorMessage = event.error;
+      const isAgentStartError = errorMessage.includes('Agent not started') ||
+        errorMessage.includes('Failed to start agent') ||
+        errorMessage.includes('AGENT_START_FAILED');
+
+      let displayMessage = `\n\n❌ **Error:** ${errorMessage}\n\n`;
+
+      if (isAgentStartError) {
+        displayMessage += `### Troubleshooting\n\n`;
+        displayMessage += `1. **Check if the agent CLI is installed** - Run the command in your terminal to verify\n`;
+        displayMessage += `2. **Verify the agent supports ACP mode** - Not all CLI agents support the Agent Communication Protocol yet\n`;
+        displayMessage += `3. **Check your API key** - Make sure the required environment variable is set\n`;
+        displayMessage += `4. **Try a different agent** - Select another agent from the dropdown\n`;
+      }
+
+      // Write error as text (need text-start/delta/end)
+      const errorId = 'error-' + generateId();
+      writer.write({ type: 'text-start', id: errorId });
+      writer.write({ type: 'text-delta', id: errorId, delta: displayMessage });
+      writer.write({ type: 'text-end', id: errorId });
       break;
+    }
 
     case 'done':
-      // Stream complete
+      // Stream complete - nothing to do, completion is handled in the main loop
       break;
   }
 }

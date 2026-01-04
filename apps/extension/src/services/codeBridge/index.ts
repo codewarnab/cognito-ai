@@ -1,4 +1,4 @@
-export { streamCodeBridgeChat, applyPatch, checkBridgeHealth } from './codeBridgeClient';
+export { streamCodeBridgeChat, applyPatch, checkBridgeHealth, connectToEventStream } from './codeBridgeClient';
 export type {
   CodeModeChatParams,
   BridgeEvent,
@@ -9,4 +9,9 @@ export type {
   BridgeErrorEvent,
   BridgeDoneEvent,
   ApplyPatchResult,
+  BridgeSSEEvent,
+  BridgeSSEConnectedEvent,
+  BridgeSSEHeartbeatEvent,
+  BridgeSSEClosingEvent,
 } from './types';
+

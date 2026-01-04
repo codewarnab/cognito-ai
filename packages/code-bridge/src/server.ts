@@ -11,6 +11,42 @@ import type { ServerConfig } from './types.js';
 
 const VERSION = '0.0.1';
 
+// Track SSE clients for graceful shutdown notification
+const sseClients = new Set<http.ServerResponse>();
+
+// Track last validation time per token to debounce reconnection messages
+// Key: token hash (first 8 chars), Value: timestamp of last validation
+const lastValidationTime = new Map<string, number>();
+const VALIDATION_DEBOUNCE_MS = 10_000; // Only show message once per 10 seconds
+
+/**
+ * Broadcast a shutdown event to all connected SSE clients
+ */
+function broadcastShutdown(reason: string): void {
+  for (const client of sseClients) {
+    try {
+      client.write(`event: bridge:closing\ndata: ${JSON.stringify({ reason })}\n\n`);
+      client.end();
+    } catch {
+      // Client may already be disconnected
+    }
+  }
+  sseClients.clear();
+}
+
+// Graceful shutdown handlers
+process.on('SIGINT', () => {
+  console.log('\n[server] Shutting down (SIGINT)...');
+  broadcastShutdown('shutdown');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\n[server] Shutting down (SIGTERM)...');
+  broadcastShutdown('shutdown');
+  process.exit(0);
+});
+
 /**
  * Start the bridge HTTP server
  */
@@ -37,6 +73,42 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
         return;
       }
 
+      // SSE events stream for real-time connection status (no auth required)
+      if (path === '/events' && req.method === 'GET') {
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': req.headers.origin || '*',
+        });
+
+        // Send initial connected event
+        res.write(`event: connected\ndata: ${JSON.stringify({ version: VERSION, cwd })}\n\n`);
+
+        // Track this client
+        sseClients.add(res);
+
+        // Clean up on client disconnect
+        req.on('close', () => {
+          sseClients.delete(res);
+        });
+
+        // Keep connection alive with periodic heartbeats (every 30 seconds)
+        const heartbeatInterval = setInterval(() => {
+          try {
+            res.write(`event: heartbeat\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`);
+          } catch {
+            clearInterval(heartbeatInterval);
+          }
+        }, 30000);
+
+        req.on('close', () => {
+          clearInterval(heartbeatInterval);
+        });
+
+        return;
+      }
+
       // Token validation (validates if provided token is still valid)
       if (path === '/validate' && req.method === 'POST') {
         const header = req.headers.authorization || '';
@@ -49,6 +121,24 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
 
         const token = match[1];
         const isValid = await validateToken(token);
+
+        // Show reconnection message in CLI when stored token is used (with debounce)
+        if (isValid) {
+          const tokenKey = token.slice(0, 8); // Use first 8 chars as key
+          const now = Date.now();
+          const lastTime = lastValidationTime.get(tokenKey) || 0;
+
+          // Only show message if enough time has passed since last validation
+          if (now - lastTime > VALIDATION_DEBOUNCE_MS) {
+            console.log('');
+            console.log('╔════════════════════════════════════════════════════════════╗');
+            console.log('║  ✓ Extension reconnected (stored token valid)              ║');
+            console.log('╚════════════════════════════════════════════════════════════╝');
+            console.log('');
+          }
+          lastValidationTime.set(tokenKey, now);
+        }
+
         sendJson(res, { valid: isValid, reason: isValid ? undefined : 'invalid_token' });
         return;
       }
@@ -74,6 +164,13 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
           sendError(res, 'Invalid or expired code', 400);
           return;
         }
+
+        // Show connection success in CLI
+        console.log('');
+        console.log('╔════════════════════════════════════════════════════════════╗');
+        console.log('║  ✓ Extension connected successfully!                       ║');
+        console.log('╚════════════════════════════════════════════════════════════╝');
+        console.log('');
 
         sendJson(res, { token });
         return;

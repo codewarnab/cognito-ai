@@ -29,6 +29,9 @@ export const useCodeModeStore = create<CodeModeState>()(
       // Initial State - Patches
       patches: {},
 
+      // Initial State - Agent status (for loading indicator)
+      agentStatus: null,
+
       // Actions - Element picker
       setElementContext: (ctx) => {
         set({ elementContext: ctx });
@@ -227,6 +230,10 @@ export const useCodeModeStore = create<CodeModeState>()(
       setSelectedAgentName: (name) => {
         set({ selectedAgentName: name });
         log.info('Selected agent changed', { name });
+      },
+
+      setAgentStatus: (status) => {
+        set({ agentStatus: status });
       },
 
       // Actions - Patches

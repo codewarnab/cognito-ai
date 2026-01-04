@@ -1,14 +1,13 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
+import { Readable, Writable } from 'node:stream';
+import * as acp from '@agentclientprotocol/sdk';
 
 /**
- * ACP (Agent Communication Protocol) Provider
+ * ACP (Agent Client Protocol) Provider
  * 
- * This is a simplified implementation that spawns a local CLI agent
- * and communicates via stdin/stdout using JSON-RPC style messages.
- * 
- * Note: This is a placeholder implementation. The actual ACP protocol
- * may differ based on the specific agent CLI being used.
+ * Uses the official @agentclientprotocol/sdk to communicate with
+ * agents like Gemini CLI via JSON-RPC over stdio.
  */
 
 export interface ACPProviderConfig {
@@ -19,19 +18,93 @@ export interface ACPProviderConfig {
 }
 
 export interface ACPMessage {
-  type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done';
+  type: 'text' | 'tool_call' | 'tool_result' | 'error' | 'done' | 'status';
   content?: string;
   toolName?: string;
   toolCallId?: string;
   args?: Record<string, unknown>;
   result?: unknown;
   error?: string;
+  status?: string;
+}
+
+/**
+ * Client implementation that handles agent requests
+ */
+class BridgeClient implements acp.Client {
+  private emitter: EventEmitter;
+
+  constructor(emitter: EventEmitter) {
+    this.emitter = emitter;
+  }
+
+  async requestPermission(params: acp.RequestPermissionRequest): Promise<acp.RequestPermissionResponse> {
+    console.log('[ACP Client] Permission requested:', params.toolCall.title);
+
+    // Auto-approve for now (you can make this interactive later)
+    // Just use the first option available
+    const allowOption = params.options[0];
+
+    return {
+      outcome: {
+        outcome: 'selected',
+        optionId: allowOption.optionId,
+      },
+    };
+  }
+
+  async sessionUpdate(params: acp.SessionNotification): Promise<void> {
+    const update = params.update;
+
+    console.log('[ACP Client] Session update:', update.sessionUpdate);
+
+    switch (update.sessionUpdate) {
+      case 'agent_message_chunk':
+        if (update.content.type === 'text') {
+          this.emitter.emit('message', {
+            type: 'text',
+            content: update.content.text,
+          } as ACPMessage);
+        }
+        break;
+
+      case 'tool_call':
+        this.emitter.emit('message', {
+          type: 'tool_call',
+          toolName: update.title,
+          toolCallId: update.toolCallId,
+          args: {},
+        } as ACPMessage);
+        break;
+
+      case 'tool_call_update':
+        console.log(`[ACP Client] Tool call ${update.toolCallId} updated: ${update.status}`);
+        break;
+
+      default:
+        console.log(`[ACP Client] Unhandled update: ${update.sessionUpdate}`);
+        break;
+    }
+  }
+
+  async writeTextFile(params: acp.WriteTextFileRequest): Promise<acp.WriteTextFileResponse> {
+    console.log('[ACP Client] writeTextFile:', params.path);
+    // The bridge should handle file operations
+    return {};
+  }
+
+  async readTextFile(params: acp.ReadTextFileRequest): Promise<acp.ReadTextFileResponse> {
+    console.log('[ACP Client] readTextFile:', params.path);
+    // The bridge should handle file operations
+    return { content: '' };
+  }
 }
 
 export class ACPProvider extends EventEmitter {
   private process: ChildProcess | null = null;
+  private connection: acp.ClientSideConnection | null = null;
+  private sessionId: string | null = null;
   private config: ACPProviderConfig;
-  private buffer = '';
 
   constructor(config: ACPProviderConfig) {
     super();
@@ -39,7 +112,7 @@ export class ACPProvider extends EventEmitter {
   }
 
   /**
-   * Start the agent process
+   * Start the agent process and initialize ACP connection
    */
   async start(): Promise<void> {
     if (this.process) {
@@ -51,65 +124,101 @@ export class ACPProvider extends EventEmitter {
       ...this.config.env,
     };
 
-    this.process = spawn(this.config.command, this.config.args, {
+    console.log('[ACP] Starting agent...');
+    console.log('[ACP]   Command:', this.config.command);
+    console.log('[ACP]   Args:', this.config.args.join(' '));
+    console.log('[ACP]   CWD:', this.config.cwd);
+
+    this.emit('message', { type: 'status', status: 'Starting agent...' } as ACPMessage);
+
+    return new Promise((resolve, reject) => {
+      const proc = spawn(this.config.command, this.config.args, {
+        cwd: this.config.cwd,
+        env,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        // Required on Windows to execute .cmd/.bat files (like npm-installed CLIs)
+        shell: process.platform === 'win32',
+      });
+
+      console.log('[ACP] Process spawned, PID:', proc.pid);
+      this.emit('message', { type: 'status', status: 'Process spawned...' } as ACPMessage);
+
+      this.process = proc;
+
+      proc.stderr?.on('data', (data: Buffer) => {
+        const output = data.toString('utf-8');
+        console.error('[ACP stderr]', output);
+      });
+
+      proc.on('close', (code) => {
+        console.log('[ACP] Process closed with code:', code);
+        this.emit('close', code);
+        this.process = null;
+        this.connection = null;
+        this.sessionId = null;
+      });
+
+      proc.on('error', (err) => {
+        console.error('[ACP] Process error:', err.message);
+        this.emit('error', err);
+        this.process = null;
+        reject(new Error(`Failed to spawn agent process: ${err.message}`));
+      });
+
+      // Set up ACP connection using the SDK
+      this.initializeConnection(proc)
+        .then(() => {
+          console.log('[ACP] Connection initialized');
+          resolve();
+        })
+        .catch((err) => {
+          console.error('[ACP] Connection initialization failed:', err.message);
+          proc.kill();
+          reject(err);
+        });
+    });
+  }
+
+  /**
+   * Initialize the ACP connection with the agent
+   */
+  private async initializeConnection(proc: ChildProcess): Promise<void> {
+    // Create streams for communication
+    const input = Writable.toWeb(proc.stdin!);
+    const output = Readable.toWeb(proc.stdout!) as ReadableStream<Uint8Array>;
+
+    // Create the client and connection
+    const client = new BridgeClient(this);
+    const stream = acp.ndJsonStream(input, output);
+    this.connection = new acp.ClientSideConnection((_agent) => client, stream);
+
+    console.log('[ACP] Initializing protocol...');
+    this.emit('message', { type: 'status', status: 'Initializing protocol...' } as ACPMessage);
+
+    // Initialize the connection
+    const initResult = await this.connection.initialize({
+      protocolVersion: acp.PROTOCOL_VERSION,
+      clientCapabilities: {
+        fs: {
+          readTextFile: true,
+          writeTextFile: true,
+        },
+      },
+    });
+
+    console.log(`[ACP] Connected to agent (protocol v${initResult.protocolVersion})`);
+    this.emit('message', { type: 'status', status: 'Connected to agent...' } as ACPMessage);
+
+    // Create a new session
+    this.emit('message', { type: 'status', status: 'Creating session...' } as ACPMessage);
+    const sessionResult = await this.connection.newSession({
       cwd: this.config.cwd,
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      mcpServers: [],
     });
 
-    this.process.stdout?.on('data', (data: Buffer) => {
-      this.handleOutput(data.toString('utf-8'));
-    });
-
-    this.process.stderr?.on('data', (data: Buffer) => {
-      console.error('[ACP stderr]', data.toString('utf-8'));
-    });
-
-    this.process.on('close', (code) => {
-      this.emit('close', code);
-      this.process = null;
-    });
-
-    this.process.on('error', (err) => {
-      this.emit('error', err);
-    });
-
-    // Wait a bit for the process to start
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-
-  /**
-   * Handle output from the agent
-   */
-  private handleOutput(data: string): void {
-    this.buffer += data;
-
-    // Try to parse complete JSON messages (newline-delimited)
-    const lines = this.buffer.split('\n');
-    this.buffer = lines.pop() || '';
-
-    for (const line of lines) {
-      if (!line.trim()) continue;
-
-      try {
-        const message = JSON.parse(line) as ACPMessage;
-        this.emit('message', message);
-      } catch {
-        // Not JSON, treat as plain text
-        this.emit('message', { type: 'text', content: line } as ACPMessage);
-      }
-    }
-  }
-
-  /**
-   * Send a message to the agent
-   */
-  send(message: Record<string, unknown>): void {
-    if (!this.process?.stdin) {
-      throw new Error('Agent not started');
-    }
-
-    this.process.stdin.write(JSON.stringify(message) + '\n');
+    this.sessionId = sessionResult.sessionId;
+    console.log(`[ACP] Created session: ${this.sessionId}`);
+    this.emit('message', { type: 'status', status: 'Session ready' } as ACPMessage);
   }
 
   /**
@@ -119,11 +228,47 @@ export class ACPProvider extends EventEmitter {
     messages: Array<{ role: string; content: string }>;
     systemPrompt?: string;
   }): Promise<void> {
-    this.send({
-      type: 'chat',
-      messages: params.messages,
-      systemPrompt: params.systemPrompt,
-    });
+    if (!this.connection || !this.sessionId) {
+      throw new Error('Agent not started');
+    }
+
+    // Get the last user message
+    const lastUserMessage = params.messages
+      .filter(m => m.role === 'user')
+      .pop();
+
+    if (!lastUserMessage) {
+      this.emit('message', { type: 'error', error: 'No user message found' } as ACPMessage);
+      this.emit('message', { type: 'done' } as ACPMessage);
+      return;
+    }
+
+    const promptContent = params.systemPrompt
+      ? `${params.systemPrompt}\n\n${lastUserMessage.content}`
+      : lastUserMessage.content;
+
+    console.log('[ACP] Sending prompt:', promptContent.slice(0, 100) + '...');
+    this.emit('message', { type: 'status', status: 'Sending message...' } as ACPMessage);
+
+    try {
+      const promptResult = await this.connection.prompt({
+        sessionId: this.sessionId,
+        prompt: [
+          {
+            type: 'text',
+            text: promptContent,
+          },
+        ],
+      });
+
+      console.log(`[ACP] Agent completed with: ${promptResult.stopReason}`);
+      this.emit('message', { type: 'done' } as ACPMessage);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.error('[ACP] Prompt error:', errorMessage);
+      this.emit('message', { type: 'error', error: errorMessage } as ACPMessage);
+      this.emit('message', { type: 'done' } as ACPMessage);
+    }
   }
 
   /**
@@ -133,6 +278,8 @@ export class ACPProvider extends EventEmitter {
     if (this.process) {
       this.process.kill();
       this.process = null;
+      this.connection = null;
+      this.sessionId = null;
     }
   }
 }

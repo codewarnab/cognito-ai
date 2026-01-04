@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { TextShimmer } from '@/components/ui/TextShimmer';
+import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 
 const THINKING_MESSAGES = [
     'Thinking...',
@@ -17,13 +18,20 @@ const MESSAGE_INTERVAL = 7000;
 
 export const LoadingIndicator: React.FC = () => {
     const [messageIndex, setMessageIndex] = React.useState(0);
+    const agentStatus = useCodeModeStore((s) => s.agentStatus);
 
     React.useEffect(() => {
+        // Only cycle messages if no agent status is provided
+        if (agentStatus) return;
+
         const interval = setInterval(() => {
             setMessageIndex((prev) => (prev + 1) % THINKING_MESSAGES.length);
         }, MESSAGE_INTERVAL);
         return () => clearInterval(interval);
-    }, []);
+    }, [agentStatus]);
+
+    // Use agent status if available, otherwise fall back to cycling messages
+    const displayMessage = agentStatus || THINKING_MESSAGES[messageIndex] || 'Thinking...';
 
     return (
         <motion.div
@@ -33,13 +41,13 @@ export const LoadingIndicator: React.FC = () => {
             className="flex gap-3 justify-start items-start py-1"
         >
             <TextShimmer
-                key={messageIndex}
+                key={displayMessage}
                 as="span"
                 className="text-sm font-medium [--base-color:#a1a1aa] [--base-gradient-color:#ffffff]"
                 duration={2}
                 spread={2}
             >
-                {THINKING_MESSAGES[messageIndex] ?? 'Thinking...'}
+                {displayMessage}
             </TextShimmer>
         </motion.div>
     );
