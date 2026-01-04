@@ -479,7 +479,7 @@ QUALITY PARAMETER - IMPORTANT:
 ⚠️ ALWAYS prefer "low" quality unless you specifically need to read text or see fine details. High quality screenshots slow down AI response significantly.
 
 WHEN TO USE:
-- First step when analyzing any new page (before readPageContent or extractText)
+- First step when analyzing any new page (before readPageContent)
 - User asks "what's on this page?", "show me the page", "what do you see?"
 - Verifying page loaded correctly after navigateTo (use quality="low")
 - Checking visual layout, design, UI elements, forms, buttons

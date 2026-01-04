@@ -38,7 +38,7 @@ WHEN TO USE:
 - Tasks that require page context (libraries, frameworks)
 
 PRECONDITIONS:
-- Use analyzeDom first to understand page structure
+- Use readPageContent with mode='structure' first to understand page structure
 - Verify selectors and element existence
 - Ensure code is safe and won't cause infinite loops
 
@@ -146,10 +146,10 @@ Output: { success: true, result: { filled: 3 } }`,
                                             return "Variable or function not found. Check if it exists in page context.";
                                         }
                                         if (errorMsg.includes('Cannot read property') || errorMsg.includes('Cannot read properties')) {
-                                            return "Trying to access property of null/undefined. Use analyzeDom to verify element exists.";
+                                            return "Trying to access property of null/undefined. Use readPageContent with mode='structure' to verify element exists.";
                                         }
                                         if (errorMsg.includes('querySelector') || errorMsg.includes('getElementById')) {
-                                            return "Element not found. Use analyzeDom to get correct selector.";
+                                            return "Element not found. Use readPageContent with mode='structure' to get correct selector.";
                                         }
                                         if (errorMsg.includes('Unexpected token')) {
                                             return "Syntax error in code. Check JavaScript syntax.";

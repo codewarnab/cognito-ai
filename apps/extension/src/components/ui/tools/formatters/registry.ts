@@ -15,7 +15,6 @@ import {
 import {
     readPageContentFormatter,
     getSelectedTextFormatter,
-    extractTextFormatter,
     scrollIntoViewFormatter,
     findSearchBarFormatter
 } from './formatters/content';
@@ -72,7 +71,6 @@ import {
     organizeBookmarksFormatter
 } from './formatters/bookmarks';
 import {
-    analyzeDomFormatter,
     executeScriptFormatter
 } from './formatters/dom';
 
@@ -98,7 +96,6 @@ export const formatters: Record<string, ActionFormatter> = {
     extractContent: readPageContentFormatter,
     getSelectedText: getSelectedTextFormatter,
     getSelection: getSelectedTextFormatter,
-    extractText: extractTextFormatter,
     scrollIntoView: scrollIntoViewFormatter,
     findSearchBar: findSearchBarFormatter,
 
@@ -168,8 +165,7 @@ export const formatters: Record<string, ActionFormatter> = {
     getBookmarkTree: getBookmarkTreeFormatter,
     organizeBookmarks: organizeBookmarksFormatter,
 
-    // DOM Analysis & Script Execution
-    analyzeDom: analyzeDomFormatter,
+    // DOM Script Execution (analyzeDom removed - unified into readPageContent)
     executeScript: executeScriptFormatter,
 };
 

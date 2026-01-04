@@ -62,8 +62,8 @@ const RESEARCH_PHASE_TOOLS = [
     'getAllTabs',
     // Content extraction
     'readPageContent',
-    'extractText',
     'getSearchResults',
+    // NOTE: 'extractText' removed - unified into readPageContent
     // Search
     'chromeSearch',
     'openSearchResult',

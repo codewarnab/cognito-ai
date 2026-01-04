@@ -82,7 +82,6 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     chromeSearch: SearchIcon,
     getSearchResults: SearchIcon,
     openSearchResult: LinkIcon,
-    extractText: ExpandIcon,
     scrollIntoView: ArrowBigDownDashIcon,
     findSearchBar: SearchIcon,
     waitFor: ClockIcon,
@@ -141,7 +140,6 @@ export const TOOL_ICON_MAP: Record<string, React.ComponentType<any>> = {
     generatePDF: BookTextIcon,
 
     // DOM tools
-    analyzeDom: ExpandIcon,
     executeScript: CodeExecuteIcon,
 
     // Unified tools

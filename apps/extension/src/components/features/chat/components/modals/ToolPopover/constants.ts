@@ -22,9 +22,8 @@ export const AGENT_MODE_TOOLS: string[] = [
     // Content Reading & Extraction
     'takeScreenshot',
     'readPageContent',
-    'extractText',
     'findSearchBar',
-    'analyzeDom',
+    // NOTE: 'extractText' and 'analyzeDom' removed - unified into readPageContent
     // Interaction Tools
     'typeInField',
     'clickByText',

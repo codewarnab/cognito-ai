@@ -6,7 +6,7 @@ import { useClickByTextTool } from "./clickByText";
 import { usePressKeyTool } from "./usePressKeyTool";
 
 // Import existing tools we want to keep
-import { registerTextExtractionInteractions } from "./text-extraction";
+// NOTE: registerTextExtractionInteractions removed - now part of unified readPageContent
 import { useChromeSearchTool } from "./search";
 import { useFocusElementTool } from "./focus";
 import { useScrollPageTool } from "./scroll";
@@ -26,7 +26,7 @@ export function registerInteractionActions() {
     useChromeSearchTool();      // Search functionality
     useFocusElementTool();      // Focus elements
     useScrollPageTool();        // Scroll page
-    registerTextExtractionInteractions(); // Text extraction
+    // NOTE: registerTextExtractionInteractions removed - unified into readPageContent
 
     // NEW: Search result parsing and navigation
     useGetSearchResultsTool();  // Parse Google/Bing search results

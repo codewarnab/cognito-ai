@@ -178,8 +178,10 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "CONTEXT EXTRACTION: From search results, identify personal/company websites (domains), social profiles (GitHub/Twitter/LinkedIn URLs), related topics to suggest further searches, and content type (article/tutorial/news) to tailor follow-ups.",
 
                 "CONTENT EXTRACTION - CHOOSE THE RIGHT TOOL:",
-                "  readPageContent → Basic text (fast, simple answers)",
-                "  extractText → Page structure analysis + search bar detection (page type, headings, landmarks, search inputs)",
+                "  readPageContent({ mode: 'text' }) → Basic text (fast, simple answers)",
+                "  readPageContent({ mode: 'full' }) → Page structure analysis with ranked selectors (buttons, links, forms, headings)",
+                "  readPageContent({ mode: 'interactive' }) → Interactive elements only (buttons, links, inputs, forms)",
+                "  readPageContent({ mode: 'structure' }) → Page overview only (minimal tokens, progressive workflow)",
                 "  findSearchBar → Locate search inputs ONLY (returns exact selectors, placeholders, IDs)",
                 "  Rule: Can't find search? Use findSearchBar first, then typeInField with returned selector.",
 
@@ -284,7 +286,7 @@ When blocked by permissions or technical limits, try fallback approaches and exp
                 "chromeSearch (searches across Chrome bookmarks, history, and open tabs)",
                 "getSelectedText",
                 "readPageContent",
-                "extractText - Advanced page analysis with semantic structure (page type, headings, landmarks, search bar detection)",
+                "readPageContent - Unified page extraction with modes: text, interactive, full, structure",
                 "findSearchBar - Dedicated search input locator (returns exact selectors, placeholders, IDs)",
                 "clickElement",
                 "scrollPage",

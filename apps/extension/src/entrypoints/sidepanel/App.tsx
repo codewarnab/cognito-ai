@@ -43,7 +43,6 @@ import { createLogger } from '~logger';
 import { useRegisterAllActions } from "@/actions/registerAll";
 import { useRegisterAllWorkflows } from "@/workflows/registerAll";
 import { useAIChat } from "@/ai/hooks";
-import { usePatchProposalTool } from "@/ai/codeMode/usePatchProposalTool";
 
 // Custom hooks
 import { useOnboarding } from "@/hooks/settings";
@@ -79,8 +78,6 @@ function AIChatContent() {
     useRegisterAllActions();
     useRegisterAllWorkflows();
 
-    // Register Code Mode patch proposal tool UI
-    usePatchProposalTool();
 
     // Initialize sandbox bridge for adaptive mode code execution
     const { isReady: isSandboxReady, error: sandboxError } = useSandbox();
@@ -546,7 +543,7 @@ function AIChatContent() {
                             />
 
                             {/* Voice Mode FAB - Only in text mode, hidden in code mode */}
-                            {!isImagePreviewOpen && isVoiceFabVisible && currentToolsMode !== 'code' && (
+                            {!isImagePreviewOpen && isVoiceFabVisible && currentToolsMode !== 'cli' && (
                                 <motion.button
                                     className={`fixed bottom-[120px] right-4 w-[44px] h-11 rounded-full 
                                         bg-white/5 border border-white/10 text-white/60 

@@ -1,62 +1,10 @@
 /**
  * DOM tool formatters
+ * NOTE: analyzeDomFormatter removed - functionality unified into readPageContent
  */
 
 import type { ActionFormatter } from '../types';
 import { truncateText } from '../helpers';
-
-export const analyzeDomFormatter: ActionFormatter = ({ state, input, output }) => {
-    const selector = input?.selector as string | undefined;
-    const depth = (input?.depth as number) || 5;
-
-    if (state === 'loading') {
-        return {
-            action: 'Analyzing DOM',
-            description: selector
-                ? `Analyzing ${truncateText(selector, 30)} (depth: ${depth})`
-                : `Analyzing page structure (depth: ${depth})`
-        };
-    }
-
-    if (state === 'success') {
-        const totalElements = (output?.totalElements as number) || 0;
-        const interactive = output?.interactiveCounts as Record<string, number> | undefined;
-        const shadowDom = (output?.shadowDomCount as number) || 0;
-
-        // Build summary of interactive elements
-        const interactiveSummary = interactive
-            ? Object.entries(interactive)
-                .filter(([_, count]) => count > 0)
-                .map(([type, count]) => `${count} ${type}`)
-                .slice(0, 3) // Show first 3 types
-                .join(', ')
-            : '';
-
-        const description = [
-            `${totalElements} elements`,
-            interactiveSummary,
-            shadowDom > 0 ? `${shadowDom} shadow roots` : ''
-        ].filter(Boolean).join(' • ');
-
-        return {
-            action: 'DOM analyzed',
-            description: description || `${totalElements} elements found`
-        };
-    }
-
-    if (state === 'pending-approval') {
-        return {
-            action: 'Analyze DOM',
-            description: selector ? truncateText(selector, 40) : 'Waiting for approval'
-        };
-    }
-
-    const errorMsg = output?.error as string | undefined;
-    return {
-        action: 'DOM analysis failed',
-        description: errorMsg ? truncateText(errorMsg, 50) : undefined
-    };
-};
 
 export const executeScriptFormatter: ActionFormatter = ({ state, input, output }) => {
     const code = input?.code as string | undefined;

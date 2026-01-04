@@ -488,7 +488,7 @@ registerToolUI('newToolName', (state: ToolUIState, options) => {
 | 🔴 Critical | `executeScript` | Always |
 | 🟠 High | `navigateTo`, `typeInField`, `clickByText` | Always |
 | 🟡 Medium | `pressKey`, `takeScreenshot` | Recommended |
-| 🟢 Low | `readPageContent`, `analyzeDom` | No |
+| 🟢 Low | `readPageContent`, `findSearchBar` | No |
 
 ---
 

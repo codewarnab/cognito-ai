@@ -57,64 +57,7 @@ export const getSelectedTextFormatter: ActionFormatter = ({ state, output }) => 
     return { action: 'Failed to get selection' };
 };
 
-export const extractTextFormatter: ActionFormatter = ({ state, input, output }) => {
-    const selector = input?.selector as string | undefined;
-    const text = output?.text as string | undefined;
-    const charCount = text?.length || 0;
-    const structure = output?.structure as { pageType?: string; headings?: Record<string, unknown[]> } | undefined;
-    const pageType = structure?.pageType;
-    const count = output?.count as number | undefined;
-    const searchBars = output?.searchBars as Array<{ isVisible?: boolean }> | undefined;
-    // primarySearchBar is available but not currently used
-    // const primarySearchBar = output?.primarySearchBar;
-
-    if (state === 'loading') {
-        return {
-            action: 'Extracting text',
-            description: selector ? truncateText(selector, 40) : 'entire page'
-        };
-    }
-    if (state === 'success') {
-        // Build description with structure info
-        let parts: string[] = [];
-
-        if (charCount > 0) {
-            parts.push(`${charCount} chars`);
-        }
-
-        if (count) {
-            parts.push(`${count} elements`);
-        }
-
-        // Prioritize search bar info if detected
-        if (searchBars && searchBars.length > 0) {
-            const visibleCount = searchBars.filter((sb: any) => sb.isVisible).length;
-            parts.push(`${searchBars.length} search bar${searchBars.length > 1 ? 's' : ''}${visibleCount < searchBars.length ? ` (${visibleCount} visible)` : ''}`);
-        }
-
-        if (pageType && pageType !== 'unknown') {
-            parts.push(`${pageType} page`);
-        }
-
-        if (structure?.headings) {
-            const headingCount = (structure.headings.h1?.length || 0) +
-                (structure.headings.h2?.length || 0) +
-                (structure.headings.h3?.length || 0);
-            if (headingCount > 0) {
-                parts.push(`${headingCount} headings`);
-            }
-        }
-
-        return {
-            action: 'Text extracted',
-            description: parts.join(' • ') || undefined
-        };
-    }
-    return {
-        action: 'Extraction failed',
-        description: selector ? truncateText(selector, 40) : undefined
-    };
-};
+// NOTE: extractTextFormatter removed - functionality unified into readPageContent
 
 export const scrollIntoViewFormatter: ActionFormatter = ({ state, input }) => {
     const selector = input?.selector as string | undefined;

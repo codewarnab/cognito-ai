@@ -122,7 +122,8 @@ The research workflow is defined as a `WorkflowDefinition` with:
 'navigateTo', 'switchTabs', 'getActiveTab', 'openTab', 'getAllTabs'
 
 // Content extraction
-'readPageContent', 'extractText', 'getSearchResults'
+'readPageContent', 'getSearchResults'
+// NOTE: 'extractText' removed - unified into readPageContent
 
 // Search
 'chromeSearch', 'openSearchResult'

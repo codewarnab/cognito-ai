@@ -627,7 +627,7 @@ function validateCode(code: string): ValidationResult {
 │   │   Use discoverTools("keyword") to get full details:                │    │
 │   │                                                                     │    │
 │   │   - **addMemory**: Add information to long-term memory             │    │
-│   │   - **analyzeDom**: Analyze the DOM structure...                   │    │
+│   │   - **readPageContent**: Extract page content with modes...        │    │
 │   │   - **applyTabGroups**: Group browser tabs...                      │    │
 │   │   - **chromeSearch**: Search in Chrome...                          │    │
 │   │   - ...                                                             │    │

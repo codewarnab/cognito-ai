@@ -48,9 +48,8 @@ export const DEFAULT_ENABLED_TOOLS: string[] = [
   // 'getSelectedText',
   'takeScreenshot',
   'readPageContent',
-  'extractText',
   'findSearchBar',
-  'analyzeDom',
+  // NOTE: 'extractText' and 'analyzeDom' removed - unified into readPageContent
 
   // Interaction Tools
   'typeInField',

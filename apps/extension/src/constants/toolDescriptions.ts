@@ -13,10 +13,9 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
 
     // Content
     takeScreenshot: 'Capture page screenshots',
-    readPageContent: 'Extract page text content',
-    extractText: 'Extract text from elements',
+    readPageContent: 'Extract page content with modes: text, interactive, full, structure',
     findSearchBar: 'Locate search inputs on page',
-    analyzeDom: 'Analyze DOM structure and interactive elements',
+    // NOTE: extractText and analyzeDom removed - unified into readPageContent
 
     // Interaction
     typeInField: 'Type text into input fields',
@@ -62,7 +61,7 @@ export const TOOL_DESCRIPTIONS: Record<string, string> = {
 export const TOOL_CATEGORIES: Record<string, string[]> = {
     'Tabs & Navigation': ['navigateTo', 'switchTabs', 'getActiveTab', 'getAllTabs', 'applyTabGroups', 'ungroupTabs', 'organizeTabsByContext'],
     'Page Interaction': ['typeInField', 'clickByText', 'pressKey', 'focusElement', 'scrollTo', 'findSearchBar', 'executeScript'],
-    'Page Content': ['takeScreenshot', 'readPageContent', 'extractText', 'analyzeDom'],
+    'Page Content': ['takeScreenshot', 'readPageContent'],
     'Search': ['chromeSearch', 'getSearchResults', 'openSearchResult'],
     'History': [],
     'Bookmarks': ['createBookmark', 'searchBookmarks', 'listBookmarks', 'deleteBookmark', 'updateBookmark', 'getBookmarkTree', 'organizeBookmarks'],

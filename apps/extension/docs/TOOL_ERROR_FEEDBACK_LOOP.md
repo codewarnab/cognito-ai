@@ -1,7 +1,7 @@
 # Tool Error Feedback Loop Implementation
 
 ## Problem
-When the AI attempts to call a tool that doesn't exist (e.g., `analyzeDom` instead of `readPageContent`), or passes invalid arguments to a tool, the conversation fails abruptly with an error instead of recovering.
+When the AI attempts to call a tool that doesn't exist (e.g., a deprecated tool like `analyzeDom`), or passes invalid arguments to a tool, the conversation fails abruptly with an error instead of recovering.
 
 ## Solution
 Implemented a **feedback loop** that catches tool-related errors and returns descriptive error messages to the AI, allowing it to see what went wrong and try again with the correct tools or parameters.
@@ -45,7 +45,7 @@ Implemented a **feedback loop** that catches tool-related errors and returns des
 ### Tool Not Found - Before (Broken Flow):
 ```
 User: "Analyze this page"
-AI: calls analyzeDom() 
+AI: calls someDeprecatedTool() 
 System: ❌ ERROR: Tool not found
 → Conversation stops
 ```
@@ -53,8 +53,8 @@ System: ❌ ERROR: Tool not found
 ### Tool Not Found - After (Feedback Loop):
 ```
 User: "Analyze this page"
-AI: calls analyzeDom()
-System: ❌ Tool "analyzeDom" is not available.
+AI: calls someDeprecatedTool()
+System: ❌ Tool "someDeprecatedTool" is not available.
         Available tools: readPageContent, getActiveTab, getAllTabs, ...
         Please choose from the available tools and try again.
 AI: calls readPageContent() ✅
@@ -89,7 +89,7 @@ AI: "Here are the 5 most recent posts..."
 
 1. **Load the extension** with the updated code
 2. **Test tool-not-found recovery:**
-   - "Use analyzeDom to check this page"
+   - "Use someNonExistentTool to check this page"
    - "Call the getDomStructure tool"
 3. **Test invalid arguments recovery:**
    - Navigate to a WebMCP-enabled site

@@ -1,12 +1,10 @@
 /**
  * DOM Actions
- * Deep DOM analysis and script execution capabilities
+ * Script execution capabilities (analyzeDom removed - now part of unified readPageContent)
  */
 
-import { useAnalyzeDomTool } from "./analyzeDom";
 import { useExecuteScriptTool } from "./executeScript";
 
 export function registerDomActions() {
-    useAnalyzeDomTool();
     useExecuteScriptTool();
 }
