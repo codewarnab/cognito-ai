@@ -1,7 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { TextShimmer } from '@/components/ui/TextShimmer';
-import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
 
 const THINKING_MESSAGES = [
     'Thinking...',
@@ -18,7 +16,7 @@ const MESSAGE_INTERVAL = 7000;
 
 export const LoadingIndicator: React.FC = () => {
     const [messageIndex, setMessageIndex] = React.useState(0);
-    const agentStatus = useCodeModeStore((s) => s.agentStatus);
+    const agentStatus = useCliModeStore((s) => s.agentStatus);
 
     React.useEffect(() => {
         // Only cycle messages if no agent status is provided

@@ -147,8 +147,8 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             {/* CLI mode button */}
             <button
                 type="button"
-                style={getButtonStyle(displayMode === 'code')}
-                onClick={() => onModeChange('code')}
+                style={getButtonStyle(displayMode === 'cli')}
+                onClick={() => onModeChange('cli')}
                 title="CLI Mode - Use your local CLI agent"
             >
                 <Terminal size={12} />

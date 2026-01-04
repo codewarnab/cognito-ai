@@ -1,7 +1,7 @@
 import { createLogger } from '~logger';
-import type { CodeModeChatParams, BridgeEvent, ApplyPatchResult, BridgeSSEEvent } from './types';
+import type { CliBridgeChatParams, BridgeEvent, BridgeSSEEvent } from './types';
 
-const log = createLogger('codeBridgeClient', 'CODE_MODE_BRIDGE');
+const log = createLogger('codeBridgeClient', 'CLI_MODE_BRIDGE');
 
 /**
  * Retry configuration for transient network failures
@@ -102,13 +102,6 @@ function parseSSEEvent(eventType: string, data: string): BridgeEvent | null {
     switch (eventType) {
       case 'text':
         return { type: 'text', content: parsed.content };
-      case 'patch_proposal':
-        return {
-          type: 'patch_proposal',
-          patchId: parsed.patchId,
-          unifiedDiff: parsed.unifiedDiff,
-          summary: parsed.summary,
-        };
       case 'tool_call':
         return {
           type: 'tool_call',
@@ -141,15 +134,18 @@ function parseSSEEvent(eventType: string, data: string): BridgeEvent | null {
 /**
  * Stream chat with the code bridge
  */
+/**
+ * Stream chat with the code bridge
+ */
 export async function* streamCodeBridgeChat(
   baseUrl: string,
   token: string,
-  params: CodeModeChatParams,
+  params: CliBridgeChatParams,
   abortSignal?: AbortSignal
 ): AsyncGenerator<BridgeEvent> {
-  log.info('Starting code bridge chat stream', { agent: params.agent.name });
+  log.info('Starting cli bridge chat stream', { agent: params.agent.name });
 
-  const response = await fetch(`${baseUrl}/code/chat`, {
+  const response = await fetch(`${baseUrl}/cli/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -199,44 +195,6 @@ export async function* streamCodeBridgeChat(
   } finally {
     reader.releaseLock();
   }
-}
-
-/**
- * Apply a patch via the bridge (with automatic retries)
- */
-export async function applyPatch(
-  baseUrl: string,
-  token: string,
-  patchId: string
-): Promise<ApplyPatchResult> {
-  log.info('Applying patch', { patchId });
-
-  return withRetry(
-    async () => {
-      const response = await fetch(`${baseUrl}/code/patch/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ patchId }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return {
-          applied: false,
-          filesChanged: result.filesChanged || [],
-          error: result.error || `HTTP ${response.status}`,
-        };
-      }
-
-      return result;
-    },
-    DEFAULT_RETRY_CONFIG,
-    `applyPatch(${patchId})`
-  );
 }
 
 /**

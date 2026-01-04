@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'node:stream';
 import * as acp from '@agentclientprotocol/sdk';
+import type { ContentPart } from '../types.js';
 
 /**
  * ACP (Agent Client Protocol) Provider
@@ -9,6 +10,33 @@ import * as acp from '@agentclientprotocol/sdk';
  * Uses the official @agentclientprotocol/sdk to communicate with
  * agents like Gemini CLI via JSON-RPC over stdio.
  */
+
+/**
+ * Convert extension content parts to ACP ContentBlock format
+ */
+function convertToACPContentBlocks(parts: ContentPart[]): acp.ContentBlock[] {
+  return parts.map((part): acp.ContentBlock => {
+    switch (part.type) {
+      case 'text':
+        return { type: 'text', text: part.text };
+      case 'image':
+        return { type: 'image', data: part.data, mimeType: part.mimeType };
+      case 'audio':
+        return { type: 'audio', data: part.data, mimeType: part.mimeType };
+      case 'resource':
+        return {
+          type: 'resource',
+          resource: {
+            blob: part.data,
+            mimeType: part.mimeType,
+            uri: `file://${part.name}`,
+          },
+        };
+      default:
+        throw new Error(`Unknown content type: ${(part as { type: string }).type}`);
+    }
+  });
+}
 
 export interface ACPProviderConfig {
   command: string;
@@ -223,9 +251,10 @@ export class ACPProvider extends EventEmitter {
 
   /**
    * Send a chat message and get streaming response
+   * Supports multimodal content: text, images, audio, and documents
    */
   async chat(params: {
-    messages: Array<{ role: string; content: string }>;
+    messages: Array<{ role: string; content: ContentPart[] }>;
     systemPrompt?: string;
   }): Promise<void> {
     if (!this.connection || !this.sessionId) {
@@ -243,22 +272,33 @@ export class ACPProvider extends EventEmitter {
       return;
     }
 
-    const promptContent = params.systemPrompt
-      ? `${params.systemPrompt}\n\n${lastUserMessage.content}`
-      : lastUserMessage.content;
+    // Convert content parts to ACP format
+    const promptBlocks = convertToACPContentBlocks(lastUserMessage.content);
 
-    console.log('[ACP] Sending prompt:', promptContent.slice(0, 100) + '...');
+    // Prepend system prompt if provided
+    if (params.systemPrompt) {
+      promptBlocks.unshift({ type: 'text', text: params.systemPrompt });
+    }
+
+    // Log what we're sending
+    const textParts = lastUserMessage.content.filter(p => p.type === 'text');
+    const imageParts = lastUserMessage.content.filter(p => p.type === 'image');
+    const audioParts = lastUserMessage.content.filter(p => p.type === 'audio');
+    const resourceParts = lastUserMessage.content.filter(p => p.type === 'resource');
+
+    console.log('[ACP] Sending multimodal prompt:', {
+      textParts: textParts.length,
+      images: imageParts.length,
+      audio: audioParts.length,
+      resources: resourceParts.length,
+    });
+
     this.emit('message', { type: 'status', status: 'Sending message...' } as ACPMessage);
 
     try {
       const promptResult = await this.connection.prompt({
         sessionId: this.sessionId,
-        prompt: [
-          {
-            type: 'text',
-            text: promptContent,
-          },
-        ],
+        prompt: promptBlocks,
       });
 
       console.log(`[ACP] Agent completed with: ${promptResult.stopReason}`);

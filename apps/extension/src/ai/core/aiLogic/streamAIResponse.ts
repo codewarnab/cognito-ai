@@ -28,7 +28,7 @@ import type { StreamAIParams, AIProvider, StreamState } from './types';
 import { handleBackendMode } from './backendMode';
 import { buildSystemPromptForMode } from './promptBuilder';
 import { createOnErrorCallback, createOnFinishCallback, createPrepareStepCallback } from './streamHandlers';
-import { streamCodeModeChat } from '../../codeMode';
+import { streamCliModeChat } from '../../cliMode/cliModeChat';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
 
@@ -55,11 +55,11 @@ export async function streamAIResponse(params: StreamAIParams) {
 
     log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
 
-    // Check if code mode is active - route to local bridge
+    // Check if cli mode is active - route to local bridge
     const currentToolsMode = useToolsStore.getState().currentMode;
-    if (currentToolsMode === 'code') {
-        log.info('🔧 Using CODE MODE - routing to local bridge');
-        return streamCodeModeChat({
+    if (currentToolsMode === 'cli') {
+        log.info('🔧 Using CLI MODE - routing to local bridge');
+        return streamCliModeChat({
             messages,
             abortSignal,
             onError,

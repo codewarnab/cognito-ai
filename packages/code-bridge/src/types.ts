@@ -8,44 +8,51 @@ export interface AgentDefinition {
   envHints?: string[];
 }
 
-// Element context from the extension
-export interface CodeModeElementContext {
-  url: string;
-  title?: string;
-  selector?: string;
-  tagName: string;
-  id?: string;
-  classList: string[];
-  textPreview?: string;
-  outerHtmlPreview?: string;
-  boundingBox?: { top: number; left: number; width: number; height: number };
-  computedStyle?: {
-    display?: string;
-    position?: string;
-    zIndex?: string;
-    color?: string;
-    backgroundColor?: string;
-    fontSize?: string;
-    fontFamily?: string;
-  };
-  sourceHint?: {
-    filePath?: string;
-    line?: number;
-    column?: number;
-    componentName?: string;
-  };
-}
+// Content part types for multimodal messages
+export const TextContentPartSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
+});
+
+export const ImageContentPartSchema = z.object({
+  type: z.literal('image'),
+  data: z.string(),      // Base64-encoded image data
+  mimeType: z.string(),  // e.g., "image/png", "image/jpeg"
+});
+
+export const AudioContentPartSchema = z.object({
+  type: z.literal('audio'),
+  data: z.string(),      // Base64-encoded audio data
+  mimeType: z.string(),  // e.g., "audio/mp3", "audio/wav"
+});
+
+export const ResourceContentPartSchema = z.object({
+  type: z.literal('resource'),
+  data: z.string(),      // Base64-encoded file data
+  mimeType: z.string(),  // e.g., "application/pdf"
+  name: z.string(),      // Original filename
+});
+
+export const ContentPartSchema = z.discriminatedUnion('type', [
+  TextContentPartSchema,
+  ImageContentPartSchema,
+  AudioContentPartSchema,
+  ResourceContentPartSchema,
+]);
+
+export type ContentPart = z.infer<typeof ContentPartSchema>;
+export type TextContentPart = z.infer<typeof TextContentPartSchema>;
+export type ImageContentPart = z.infer<typeof ImageContentPartSchema>;
+export type AudioContentPart = z.infer<typeof AudioContentPartSchema>;
+export type ResourceContentPart = z.infer<typeof ResourceContentPartSchema>;
+
 
 // Chat request from extension
-export const CodeModeChatRequestSchema = z.object({
+export const CliChatRequestSchema = z.object({
   messages: z.array(z.object({
     role: z.enum(['user', 'assistant']),
-    content: z.array(z.object({
-      type: z.literal('text'),
-      text: z.string(),
-    })),
+    content: z.array(ContentPartSchema),
   })),
-  elementContext: z.any().optional(),
   agent: z.object({
     name: z.string(),
     command: z.string(),
@@ -56,23 +63,7 @@ export const CodeModeChatRequestSchema = z.object({
   sessionId: z.string().optional(),
 });
 
-export type CodeModeChatRequest = z.infer<typeof CodeModeChatRequestSchema>;
-
-// Patch proposal
-export interface PatchProposal {
-  id: string;
-  unifiedDiff: string;
-  summary?: string;
-}
-
-// Stored patch with metadata
-export interface StoredPatch {
-  patchId: string;
-  unifiedDiff: string;
-  summary?: string;
-  createdAt: number;
-  tokenHash: string;
-}
+export type CliChatRequest = z.infer<typeof CliChatRequestSchema>;
 
 // Stored token
 export interface StoredToken {

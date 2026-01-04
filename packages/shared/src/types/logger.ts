@@ -85,13 +85,13 @@ export type LogCategory =
     // Memory
     | 'MEMORY_OPERATIONS'
     | 'MEMORY_SUGGESTIONS'
-    // Code Mode
-    | 'CODE_MODE'
-    | 'CODE_MODE_STORE'
-    | 'CODE_MODE_CHAT'
-    | 'CODE_MODE_BRIDGE'
-    | 'CODE_MODE_UI'
-    | 'CODE_MODE_PICKER'
+    // CLI Mode
+    | 'CLI_MODE'
+    | 'CLI_MODE_STORE'
+    | 'CLI_MODE_CHAT'
+    | 'CLI_MODE_BRIDGE'
+    | 'CLI_MODE_UI'
+    | 'CLI_MODE_PICKER'
     // UI
     | 'UI_CHAT'
     | 'UI_VOICE'
@@ -333,9 +333,9 @@ export type ContentScriptsSubCategory = 'INJECT' | 'MESSAGE' | 'DOM';
 export type UIRemindersSubCategory = 'COMPONENTS' | 'HOOKS' | 'STATE';
 
 /**
- * Sub-categories for CODE_MODE
+ * Sub-categories for CLI_MODE
  */
-export type CodeModeSubCategory = 'STORE' | 'CHAT' | 'BRIDGE' | 'UI' | 'PICKER';
+export type CliModeSubCategory = 'STORE' | 'CHAT' | 'BRIDGE' | 'UI' | 'PICKER';
 
 /**
  * All sub-category types combined
@@ -364,7 +364,8 @@ export type LogSubCategory =
     | UISidepanelSubCategory
     | UISidepanelSubCategory
     | UIRemindersSubCategory
-    | CodeModeSubCategory
+    | UIRemindersSubCategory
+    | CliModeSubCategory
     | BackgroundSubCategory
     | StorageSubCategory
     | UtilsSubCategory
@@ -408,8 +409,8 @@ export const LOGGER_SUBCATEGORY_GROUPS = {
     UI_THREADS: ['UI_THREADS_COMPONENTS', 'UI_THREADS_HOOKS', 'UI_THREADS_STATE'] as const,
     UI_SIDEPANEL: ['UI_SIDEPANEL_COMPONENTS', 'UI_SIDEPANEL_HOOKS', 'UI_SIDEPANEL_STATE'] as const,
     UI_REMINDERS: ['UI_REMINDERS_COMPONENTS', 'UI_REMINDERS_HOOKS', 'UI_REMINDERS_STATE'] as const,
-    // Code Mode sub-categories
-    CODE_MODE: ['CODE_MODE_STORE', 'CODE_MODE_CHAT', 'CODE_MODE_BRIDGE', 'CODE_MODE_UI', 'CODE_MODE_PICKER'] as const,
+    // CLI Mode sub-categories
+    CLI_MODE: ['CLI_MODE_STORE', 'CLI_MODE_CHAT', 'CLI_MODE_BRIDGE', 'CLI_MODE_UI', 'CLI_MODE_PICKER'] as const,
     // System sub-categories
     BACKGROUND: ['BACKGROUND_LIFECYCLE', 'BACKGROUND_MESSAGING', 'BACKGROUND_SERVICE'] as const,
     STORAGE: ['STORAGE_LOCAL', 'STORAGE_SYNC', 'STORAGE_SESSION', 'STORAGE_DB'] as const,
@@ -469,7 +470,7 @@ export const LOGGER_CATEGORY_GROUPS = {
     AI: ['AI_CHAT', 'AI_PROMPTS', 'AI_VOICE', 'AI_WEBSITE_DETECTION'] as const,
     Voice: ['VOICE_RECORDING', 'VOICE_CLIENT', 'VOICE_UI', 'VOICE_AUDIO'] as const,
     Memory: ['MEMORY_OPERATIONS', 'MEMORY_SUGGESTIONS'] as const,
-    CodeMode: ['CODE_MODE'] as const,
+    CliMode: ['CLI_MODE'] as const,
     UI: ['UI_CHAT', 'UI_VOICE', 'UI_SETTINGS', 'UI_THREADS', 'UI_SIDEPANEL', 'UI_REMINDERS'] as const,
     System: [
         'BACKGROUND',

@@ -10,12 +10,12 @@ import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
-import { useBridgeHeartbeat } from '@/hooks/codeMode';
+import { useBridgeHeartbeat } from '@/hooks/cliMode';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
 
-import { BridgePairingDrawer } from '../../../../codeMode/BridgePairingDrawer';
-import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
-import type { CodeModeState } from '@/stores/codeMode/types';
+import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
+import type { CliModeState } from '@/stores/cliMode/types';
+import { BridgePairingDrawer } from '../../../../cliMode/BridgePairingDrawer';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { McpToolWithServer, ToolMode } from '@/stores/tools/types';
@@ -78,9 +78,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Backend mode state
     const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
 
-    // Code Mode bridge state
-    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
-    const checkBridgeHealth = useCodeModeStore((s: CodeModeState) => s.checkBridgeHealth);
+    // CLI Mode bridge state
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
+    const checkBridgeHealth = useCliModeStore((s: CliModeState) => s.checkBridgeHealth);
 
     const [showPairingDrawer, setShowPairingDrawer] = useState(false);
     const [previousMode, setPreviousMode] = useState<ToolMode | null>(null);
@@ -89,8 +89,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Track mode changes to store previous mode and show pairing drawer immediately
     const prevToolsModeRef = React.useRef<ToolMode | null>(null);
     useEffect(() => {
-        // When entering code mode
-        if (toolsMode === 'code' && prevToolsModeRef.current !== 'code') {
+        // When entering cli mode
+        if (toolsMode === 'cli' && prevToolsModeRef.current !== 'cli') {
             // Store previous mode for reverting if pairing is cancelled
             if (prevToolsModeRef.current) {
                 setPreviousMode(prevToolsModeRef.current);
@@ -98,7 +98,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             // Check bridge health and show pairing if not already paired
             checkBridgeHealth().then(() => {
                 // Need to check bridgeToken since bridgeStatus may not have updated yet
-                const currentStore = useCodeModeStore.getState();
+                const currentStore = useCliModeStore.getState();
                 if (currentStore.bridgeStatus === 'needs-pairing' || !currentStore.bridgeToken) {
                     setShowPairingDrawer(true);
                 }
@@ -107,24 +107,24 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         prevToolsModeRef.current = toolsMode as ToolMode;
     }, [toolsMode, checkBridgeHealth]);
 
-    // Also show pairing drawer if bridge status changes to needs-pairing while in code mode
+    // Also show pairing drawer if bridge status changes to needs-pairing while in cli mode
     useEffect(() => {
-        if (toolsMode === 'code' && bridgeStatus === 'needs-pairing') {
+        if (toolsMode === 'cli' && bridgeStatus === 'needs-pairing') {
             setShowPairingDrawer(true);
         }
     }, [toolsMode, bridgeStatus]);
 
-    // Bridge heartbeat - polls bridge health every 30s when in code mode
+    // Bridge heartbeat - polls bridge health every 30s when in cli mode
     const handleBridgeDisconnect = useCallback(() => {
         log.warn('Bridge disconnected (detected by heartbeat)');
         // Show pairing drawer if bridge goes offline
-        if (toolsMode === 'code') {
+        if (toolsMode === 'cli') {
             setShowPairingDrawer(true);
         }
     }, [toolsMode]);
 
     useBridgeHeartbeat({
-        enabled: toolsMode === 'code',
+        enabled: toolsMode === 'cli',
         onDisconnect: handleBridgeDisconnect,
     });
 
@@ -132,7 +132,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const handlePairingDrawerClose = () => {
         setShowPairingDrawer(false);
         // If still not paired, revert to previous mode
-        const currentBridgeToken = useCodeModeStore.getState().bridgeToken;
+        const currentBridgeToken = useCliModeStore.getState().bridgeToken;
         if (!currentBridgeToken && previousMode) {
             setMode(previousMode);
             setPreviousMode(null);
@@ -192,8 +192,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 />
             )}
 
-            {/* Code Mode: Pairing Drawer (rendered before tools, but it's a modal overlay) */}
-            {toolsMode === 'code' && (
+            {/* CLI Mode: Pairing Drawer (rendered before tools, but it's a modal overlay) */}
+            {toolsMode === 'cli' && (
                 <BridgePairingDrawer
                     isOpen={showPairingDrawer}
                     onClose={handlePairingDrawerClose}
@@ -307,25 +307,25 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
 
 
-            {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode and code mode) */}
+            {/* Search Controls - Toggle and Depth Selector (hidden in adaptive mode) */}
             <SearchControls
                 activeWorkflow={activeWorkflow}
                 isAdaptiveMode={isAdaptiveMode}
-                isCodeMode={toolsMode === 'code'}
+                isCliMode={false}
             />
 
-            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded, in backend mode, or in code mode) */}
+            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded, in backend mode, or in cli mode) */}
             {/* In backend mode, model is fixed to gemini-2.5-flash by the server */}
-            {/* In code mode, the agent selector is shown instead */}
-            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && toolsMode !== 'code' && (
+            {/* In cli mode, the agent selector is shown instead */}
+            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && toolsMode !== 'cli' && (
                 <ModelSelectorPopover
                     isOpen={isModelSelectorOpen}
                     onOpenChange={setIsModelSelectorOpen}
                 />
             )}
 
-            {/* Backend Mode Toggle - Icon only, expands on hover (hidden in code mode) */}
-            {toolsMode !== 'code' && (
+            {/* Backend Mode Toggle - Icon only, expands on hover (hidden in cli mode) */}
+            {toolsMode !== 'cli' && (
                 <>
                     <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
                         <Tooltip>

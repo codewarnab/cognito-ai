@@ -1,14 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createLogger } from '~logger';
-import type { CodeModeState, AgentInfo, PatchState } from './types';
-import { applyPatch as applyPatchToServer } from '@/services/codeBridge';
+import type { CliModeState, AgentInfo } from './types';
 
-const log = createLogger('codeModeStore', 'CODE_MODE_STORE');
+const log = createLogger('cliModeStore', 'CLI_MODE_STORE');
 
 const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:8787';
 
-export const useCodeModeStore = create<CodeModeState>()(
+export const useCliModeStore = create<CliModeState>()(
   persist(
     (set, get) => ({
       // Initial State - Bridge
@@ -21,9 +20,6 @@ export const useCodeModeStore = create<CodeModeState>()(
       // Initial State - Agent
       selectedAgentName: 'Gemini CLI',
       availableAgents: [],
-
-      // Initial State - Patches
-      patches: {},
 
       // Initial State - Agent status (for loading indicator)
       agentStatus: null,
@@ -170,89 +166,13 @@ export const useCodeModeStore = create<CodeModeState>()(
       setAgentStatus: (status) => {
         set({ agentStatus: status });
       },
-
-      // Actions - Patches
-      addPatch: (patch) => {
-        const { patches } = get();
-        const newPatch: PatchState = {
-          ...patch,
-          status: 'pending',
-          createdAt: Date.now(),
-        };
-        set({ patches: { ...patches, [patch.patchId]: newPatch } });
-        log.info('Patch added', { patchId: patch.patchId, summary: patch.summary });
-      },
-
-      setPatchStatus: (patchId, status, error, filesChanged) => {
-        const { patches } = get();
-        const patch = patches[patchId];
-        if (!patch) {
-          log.warn('Patch not found', { patchId });
-          return;
-        }
-        set({
-          patches: {
-            ...patches,
-            [patchId]: { ...patch, status, error, filesChanged },
-          },
-        });
-        log.info('Patch status updated', { patchId, status });
-      },
-
-      clearPatches: () => {
-        set({ patches: {} });
-        log.info('All patches cleared');
-      },
-
-      applyPatch: async (patchId) => {
-        const { bridgeBaseUrl, bridgeToken, patches } = get();
-        const patch = patches[patchId];
-
-        if (!patch) {
-          log.error('Patch not found', new Error(`Patch ${patchId} not found`));
-          return false;
-        }
-
-        if (!bridgeToken) {
-          log.error('Not authenticated with bridge', new Error('No bridge token'));
-          return false;
-        }
-
-        // Set status to applying
-        get().setPatchStatus(patchId, 'applying');
-
-        try {
-          const result = await applyPatchToServer(bridgeBaseUrl, bridgeToken, patchId);
-
-          if (result.applied) {
-            get().setPatchStatus(patchId, 'applied', undefined, result.filesChanged);
-            log.info('Patch applied successfully', { patchId, filesChanged: result.filesChanged });
-            return true;
-          } else {
-            get().setPatchStatus(patchId, 'error', result.error, result.filesChanged);
-            log.error('Patch apply failed', new Error(result.error || 'Unknown error'));
-            return false;
-          }
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          get().setPatchStatus(patchId, 'error', errorMessage);
-          log.error('Patch apply request failed', error);
-          return false;
-        }
-      },
-
-      rejectPatch: (patchId) => {
-        get().setPatchStatus(patchId, 'rejected');
-        log.info('Patch rejected', { patchId });
-      },
     }),
     {
-      name: 'cognito-code-mode',
+      name: 'cognito-cli-mode',
       partialize: (state) => ({
         bridgeBaseUrl: state.bridgeBaseUrl,
         bridgeToken: state.bridgeToken,
         selectedAgentName: state.selectedAgentName,
-        patches: state.patches,
       }),
     }
   )

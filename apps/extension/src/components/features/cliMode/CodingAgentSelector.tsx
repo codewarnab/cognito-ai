@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronDown, Check, Loader2, Terminal } from 'lucide-react';
-import { useCodeModeStore } from '@/stores';
-import type { CodeModeState, AgentInfo } from '@/stores/codeMode/types';
+import { useCliModeStore } from '@/stores';
+import type { CliModeState, AgentInfo } from '@/stores/cliMode/types';
 import { cn } from '@/lib/utils';
 import { createLogger } from '~logger';
 import { Gemini } from '@assets/brands/integrations/Gemini';
 import { ClaudeAI } from '@assets/brands/integrations/ClaudeAI';
 import { OpenAI } from '@assets/brands/integrations/OpenAI';
 
-const log = createLogger('CodingAgentSelector', 'CODE_MODE_UI');
+const log = createLogger('CodingAgentSelector', 'CLI_MODE_UI');
 
 // Agent icon mapping - matches agent names to brand icons
 const AGENT_ICONS: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
@@ -40,20 +40,20 @@ interface CodingAgentSelectorProps {
 }
 
 /**
- * CodingAgentSelector - Renders above the chat input when in Code Mode
+ * CodingAgentSelector - Renders above the chat input when in CLI Mode
  * Allows selecting which coding agent CLI to use (Gemini CLI, Claude Code, etc.)
- * Shows in place of SuggestedActions when toolsMode === 'code'
+ * Shows in place of SuggestedActions when toolsMode === 'cli'
  */
 export const CodingAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Code mode store state
-    const selectedAgentName = useCodeModeStore((s: CodeModeState) => s.selectedAgentName);
-    const availableAgents = useCodeModeStore((s: CodeModeState) => s.availableAgents);
-    const setSelectedAgentName = useCodeModeStore((s: CodeModeState) => s.setSelectedAgentName);
-    const fetchAvailableAgents = useCodeModeStore((s: CodeModeState) => s.fetchAvailableAgents);
-    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+    // CLI mode store state
+    const selectedAgentName = useCliModeStore((s: CliModeState) => s.selectedAgentName);
+    const availableAgents = useCliModeStore((s: CliModeState) => s.availableAgents);
+    const setSelectedAgentName = useCliModeStore((s: CliModeState) => s.setSelectedAgentName);
+    const fetchAvailableAgents = useCliModeStore((s: CliModeState) => s.fetchAvailableAgents);
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
 
     // Fetch available agents when component mounts and bridge is connected
     useEffect(() => {

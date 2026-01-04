@@ -4,13 +4,13 @@
 
 import { createUIMessageStream, generateId } from 'ai';
 import { createLogger } from '~logger';
-import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
+import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { streamCodeBridgeChat, type BridgeEvent } from '@/services/codeBridge';
 import type { UIMessage } from 'ai';
 
-const log = createLogger('codeModeChat', 'CODE_MODE_CHAT');
+const log = createLogger('cliModeChat', 'CLI_MODE_CHAT');
 
-export interface CodeModeChatParams {
+export interface CliModeChatParams {
   messages: UIMessage[];
   abortSignal?: AbortSignal;
   onError?: (error: Error) => void;
@@ -21,15 +21,54 @@ export interface CodeModeChatParams {
  */
 function convertMessages(messages: UIMessage[]): Array<{
   role: 'user' | 'assistant';
-  content: Array<{ type: 'text'; text: string }>;
+  content: Array<
+    | { type: 'text'; text: string }
+    | { type: 'image'; data: string; mimeType: string }
+    | { type: 'audio'; data: string; mimeType: string }
+    | { type: 'resource'; data: string; mimeType: string; name: string }
+  >;
 }> {
   return messages
     .filter((m) => m.role === 'user' || m.role === 'assistant')
     .map((m) => ({
       role: m.role as 'user' | 'assistant',
       content: m.parts
-        .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-        .map((p) => ({ type: 'text' as const, text: p.text })),
+        .map((p) => {
+          if (p.type === 'text') {
+            return { type: 'text' as const, text: p.text };
+          }
+
+          if (p.type === 'file') {
+            // Handle file attachments (images, audio, PDF, etc.)
+            // url is typically a data URL like "data:image/png;base64,..."
+            const dataUrl = (p as any).url || '';
+            const matches = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+
+            if (matches) {
+              const mimeType = matches[1];
+              const data = matches[2]; // Raw base64
+
+              if (mimeType.startsWith('image/')) {
+                return { type: 'image' as const, data, mimeType };
+              }
+
+              if (mimeType.startsWith('audio/')) {
+                return { type: 'audio' as const, data, mimeType };
+              }
+
+              // Fallback for PDFs and other documents
+              return {
+                type: 'resource' as const,
+                data,
+                mimeType,
+                name: (p as any).name || 'attachment'
+              };
+            }
+          }
+
+          return null;
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null),
     }));
 }
 
@@ -37,14 +76,14 @@ function convertMessages(messages: UIMessage[]): Array<{
  * Stream AI response from the code bridge
  * Returns a UIMessageStream compatible with useChat
  */
-export async function streamCodeModeChat(params: CodeModeChatParams) {
+export async function streamCliModeChat(params: CliModeChatParams) {
   const { messages, abortSignal, onError } = params;
 
-  log.info('Starting code mode chat', { messageCount: messages.length });
+  log.info('Starting cli mode chat', { messageCount: messages.length });
 
   // Get bridge state
-  const state = useCodeModeStore.getState();
-  const { bridgeBaseUrl, bridgeToken, bridgeStatus, selectedAgentName, availableAgents, elementContext } = state;
+  const state = useCliModeStore.getState();
+  const { bridgeBaseUrl, bridgeToken, bridgeStatus, selectedAgentName, availableAgents } = state;
 
   // Validate bridge connection
   if (bridgeStatus !== 'connected' || !bridgeToken) {
@@ -81,7 +120,7 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
           bridgeToken,
           {
             messages: bridgeMessages,
-            elementContext: elementContext || undefined,
+            // elementContext removed
             agent: {
               name: agent.name,
               command: agent.command,
@@ -99,7 +138,7 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
           // Handle status events - update store for LoadingIndicator
           if (event.type === 'status') {
             log.debug('Status update', { message: event.message });
-            useCodeModeStore.getState().setAgentStatus(event.message);
+            useCliModeStore.getState().setAgentStatus(event.message);
             continue;
           }
 
@@ -108,7 +147,7 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
             if (!hasStartedText) {
               log.info('Starting text stream', { messageId });
               // Clear status when text starts
-              useCodeModeStore.getState().setAgentStatus(null);
+              useCliModeStore.getState().setAgentStatus(null);
               writer.write({
                 type: 'text-start',
                 id: messageId,
@@ -145,7 +184,7 @@ export async function streamCodeModeChat(params: CodeModeChatParams) {
           transient: false,
         });
       } catch (error) {
-        log.error('Code mode chat error', error);
+        log.error('Cli mode chat error', error);
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const isAgentStartError = errorMessage.includes('Agent not started') ||
@@ -204,19 +243,6 @@ function handleBridgeEvent(
       // This case should not be reached, but kept for safety
       break;
 
-    case 'patch_proposal':
-      // Write patch proposal as a special tool call
-      writer.write({
-        type: 'tool-input-available',
-        toolCallId: event.patchId,
-        toolName: 'propose_patch',
-        input: {
-          patchId: event.patchId,
-          unifiedDiff: event.unifiedDiff,
-          summary: event.summary,
-        },
-      });
-      break;
 
     case 'tool_call':
       writer.write({

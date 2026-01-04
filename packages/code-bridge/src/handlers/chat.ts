@@ -1,62 +1,15 @@
 import type http from 'node:http';
-import crypto from 'node:crypto';
 import { readJson, sendJson, sendError } from '../http/json.js';
 import { requireAuth } from '../http/auth.js';
-import { CodeModeChatRequestSchema, type CodeModeElementContext } from '../types.js';
+import { CliChatRequestSchema } from '../types.js';
 import { createACPProvider, type ACPMessage } from '../acp/acpProvider.js';
-import { savePatch } from '../patch/patchStore.js';
 import { findAgent } from '../agents.js';
 
 /**
- * Build system prompt for code mode
- */
-function buildSystemPrompt(elementContext?: CodeModeElementContext): string {
-  const parts = [
-    'You are a coding agent operating on a local repository on disk.',
-    'You can read and modify files in the current working directory.',
-    '',
-    'When you want to propose code changes, output them as a unified diff.',
-    'The user will review and approve changes before they are applied.',
-    '',
-  ];
-
-  if (elementContext) {
-    parts.push('## Selected Element Context');
-    parts.push('The user has selected the following element on the page:');
-    parts.push('');
-    parts.push(`- URL: ${elementContext.url}`);
-    if (elementContext.title) parts.push(`- Page Title: ${elementContext.title}`);
-    parts.push(`- Tag: ${elementContext.tagName}`);
-    if (elementContext.id) parts.push(`- ID: ${elementContext.id}`);
-    if (elementContext.classList.length > 0) {
-      parts.push(`- Classes: ${elementContext.classList.join(', ')}`);
-    }
-    if (elementContext.selector) parts.push(`- Selector: ${elementContext.selector}`);
-    if (elementContext.textPreview) {
-      parts.push(`- Text Preview: ${elementContext.textPreview.slice(0, 200)}`);
-    }
-    if (elementContext.sourceHint?.filePath) {
-      parts.push('');
-      parts.push('## Source Hint');
-      parts.push(`- File: ${elementContext.sourceHint.filePath}`);
-      if (elementContext.sourceHint.line) {
-        parts.push(`- Line: ${elementContext.sourceHint.line}`);
-      }
-      if (elementContext.sourceHint.componentName) {
-        parts.push(`- Component: ${elementContext.sourceHint.componentName}`);
-      }
-    }
-    parts.push('');
-  }
-
-  return parts.join('\n');
-}
-
-/**
- * Handle POST /code/chat
+ * Handle POST /cli/chat
  * Streams AI response using Server-Sent Events
  */
-export async function handleCodeChat(
+export async function handleCliChat(
   req: http.IncomingMessage,
   res: http.ServerResponse,
   cwd: string
@@ -69,7 +22,7 @@ export async function handleCodeChat(
 
   try {
     const body = await readJson(req);
-    const parsed = CodeModeChatRequestSchema.safeParse(body);
+    const parsed = CliChatRequestSchema.safeParse(body);
 
     if (!parsed.success) {
       console.log('[chat] Invalid request:', parsed.error.message);
@@ -77,7 +30,7 @@ export async function handleCodeChat(
       return;
     }
 
-    const { messages, elementContext, agent, sessionId } = parsed.data;
+    const { messages, agent, sessionId } = parsed.data;
 
     console.log('[chat] Agent:', agent.name);
     console.log('[chat] Messages:', messages.length);
@@ -132,33 +85,11 @@ export async function handleCodeChat(
           break;
 
         case 'tool_call':
-          // Check if this is a patch proposal
-          if (msg.toolName === 'propose_patch' && msg.args) {
-            const patchId = crypto.randomUUID();
-            const unifiedDiff = String(msg.args.unifiedDiff || msg.args.diff || '');
-            const summary = String(msg.args.summary || '');
-
-            // Store the patch
-            savePatch({
-              patchId,
-              unifiedDiff,
-              summary,
-              createdAt: Date.now(),
-              tokenHash: auth.tokenHash,
-            });
-
-            sendEvent('patch_proposal', {
-              patchId,
-              unifiedDiff,
-              summary,
-            });
-          } else {
-            sendEvent('tool_call', {
-              toolName: msg.toolName,
-              toolCallId: msg.toolCallId,
-              args: msg.args,
-            });
-          }
+          sendEvent('tool_call', {
+            toolName: msg.toolName,
+            toolCallId: msg.toolCallId,
+            args: msg.args,
+          });
           break;
 
         case 'tool_result':
@@ -218,20 +149,18 @@ export async function handleCodeChat(
       return;
     }
 
-    // Build system prompt
-    const systemPrompt = buildSystemPrompt(elementContext);
-
-    // Convert messages to simple format
+    // Pass messages with content parts directly to provider
+    // The provider will convert ContentPart[] to ACP ContentBlock[]
     const chatMessages = messages.map((m) => ({
       role: m.role,
-      content: m.content.map((c) => c.text).join('\n'),
+      content: m.content,
     }));
 
     console.log('[chat] Sending chat to agent...');
     // Send chat request to agent
     await provider.chat({
       messages: chatMessages,
-      systemPrompt,
+      systemPrompt: 'You are a coding agent operating connected to the user\'s local machine.',
     });
     console.log('[chat] Chat sent to agent, waiting for response...');
 

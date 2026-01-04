@@ -35,8 +35,8 @@ export const TIPS = [
     "Change  mode by clicking the tool icon in the chat input Chat | Agent | Adaptive | Custom"
 ];
 
-// Tips specific to code mode
-export const CODE_MODE_TIPS = [
+// Tips specific to cli mode
+export const CLI_MODE_TIPS = [
     "Use the element picker to select any UI component on the page",
     "The code bridge connects Cognito to your local development environment",
     "Describe the change you want and I'll generate a patch for your codebase",

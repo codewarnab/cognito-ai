@@ -81,9 +81,9 @@ export {
 } from './mcp/mcpStore';
 export type { McpState, McpServerStatus, CustomServerData } from './mcp/types';
 
-// Code Mode Store
-export { useCodeModeStore } from './codeMode/codeModeStore';
-export type { CodeModeState, BridgeStatus, AgentInfo } from './codeMode/types';
+// CLI Mode Store
+export { useCliModeStore } from './cliMode/cliModeStore';
+export type { CliModeState, BridgeStatus, AgentInfo } from './cliMode/types';
 
 // Approval Store
 export { useApprovalStore } from './approval/approvalStore';

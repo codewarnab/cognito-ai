@@ -15,9 +15,9 @@ import {
 } from '@/components/ui/primitives/input-otp';
 import { Link, Loader2, WifiOff, CheckCircle } from 'lucide-react';
 import { cn } from '@/utils/ui';
-import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
+import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { useUINavigationStore } from '@/stores';
-import type { CodeModeState } from '@/stores/codeMode/types';
+import type { CliModeState } from '@/stores/cliMode/types';
 import type { UINavigationState } from '@/stores';
 
 interface BridgePairingDrawerProps {
@@ -38,13 +38,13 @@ export const BridgePairingDrawer: React.FC<BridgePairingDrawerProps> = ({
     const [error, setError] = useState<string | undefined>();
     const [success, setSuccess] = useState(false);
 
-    const pairWithBridge = useCodeModeStore((s: CodeModeState) => s.pairWithBridge);
+    const pairWithBridge = useCliModeStore((s: CliModeState) => s.pairWithBridge);
 
     // Voice FAB visibility management - hide when drawer is open
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
     // Get bridge status to detect when pairing succeeds
-    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
 
     useEffect(() => {
         setVoiceFabVisibility(!isOpen);
@@ -135,12 +135,12 @@ export const BridgePairingDrawer: React.FC<BridgePairingDrawerProps> = ({
                                 ? "bg-gradient-to-r from-green-300 via-green-100 to-green-300"
                                 : "bg-gradient-to-r from-white via-blue-100 to-white"
                         )}>
-                            {success ? 'Connected!' : 'Pair with Code Bridge'}
+                            {success ? 'Connected!' : 'Pair with CLI Bridge'}
                         </span>
                     </DrawerTitle>
                     <DrawerDescription className="text-center">
                         {success
-                            ? 'You can now use Code Mode to edit your local files.'
+                            ? 'You can now use CLI Mode to edit your local files.'
                             : 'Enter the 6-digit code shown in your terminal.'}
                     </DrawerDescription>
                 </DrawerHeader>

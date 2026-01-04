@@ -1,10 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useCodeModeStore } from '@/stores';
-import type { CodeModeState } from '@/stores/codeMode/types';
+import { useCliModeStore } from '@/stores';
+import type { CliModeState } from '@/stores/cliMode/types';
 import { connectToEventStream } from '@/services/codeBridge';
 import { createLogger } from '~logger';
 
-const log = createLogger('useBridgeHeartbeat', 'CODE_MODE_BRIDGE');
+const log = createLogger('useBridgeHeartbeat', 'CLI_MODE_BRIDGE');
 
 /**
  * Retry configuration for aggressive reconnection when offline
@@ -41,7 +41,7 @@ interface UseBridgeHeartbeatOptions {
  * @example
  * ```tsx
  * useBridgeHeartbeat({
- *   enabled: isCodeMode,
+ *   enabled: isCliMode,
  *   onDisconnect: () => toast.error('Bridge disconnected'),
  * });
  * ```
@@ -50,10 +50,10 @@ export function useBridgeHeartbeat(options: UseBridgeHeartbeatOptions = {}) {
     const { enabled = true, onDisconnect, onReconnect } = options;
 
     // Store selectors
-    const bridgeBaseUrl = useCodeModeStore((s: CodeModeState) => s.bridgeBaseUrl);
-    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
-    const setBridgeStatus = useCodeModeStore((s: CodeModeState) => s.setBridgeStatus);
-    const checkBridgeHealth = useCodeModeStore((s: CodeModeState) => s.checkBridgeHealth);
+    const bridgeBaseUrl = useCliModeStore((s: CliModeState) => s.bridgeBaseUrl);
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
+    const setBridgeStatus = useCliModeStore((s: CliModeState) => s.setBridgeStatus);
+    const checkBridgeHealth = useCliModeStore((s: CliModeState) => s.checkBridgeHealth);
 
     // Track connection state
     const prevStatusRef = useRef(bridgeStatus);

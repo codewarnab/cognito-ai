@@ -20,11 +20,11 @@ export interface SearchControlsProps {
     activeWorkflow?: WorkflowDefinition | null;
     /** Whether adaptive mode is active - hides search controls entirely */
     isAdaptiveMode?: boolean;
-    /** Whether code mode is active - hides search controls entirely */
-    isCodeMode?: boolean;
+    /** Whether cli mode is active - hides search controls entirely */
+    isCliMode?: boolean;
 }
 
-export const SearchControls: React.FC<SearchControlsProps> = ({ className, activeWorkflow, isAdaptiveMode, isCodeMode }) => {
+export const SearchControls: React.FC<SearchControlsProps> = ({ className, activeWorkflow, isAdaptiveMode, isCliMode }) => {
     const {
         isSearchMode,
         toggleSearchMode,
@@ -34,10 +34,10 @@ export const SearchControls: React.FC<SearchControlsProps> = ({ className, activ
         isLoading,
     } = useSearchMode();
 
-    // Hide search controls entirely in adaptive mode or code mode
+    // Hide search controls entirely in adaptive mode or cli mode
     // In adaptive mode: Search tools are discoverable via discoverTools
-    // In code mode: Web search is not relevant for code editing context
-    if (isAdaptiveMode || isCodeMode) {
+    // In cli mode: Web search is not relevant for code editing context
+    if (isAdaptiveMode || isCliMode) {
         return null;
     }
 

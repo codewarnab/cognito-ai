@@ -4,9 +4,7 @@ import { readJson, sendJson, sendError } from './http/json.js';
 import { startPairing, confirmPairing, getCurrentPairingCode } from './pairing/pairing.js';
 import { validateToken } from './pairing/tokenStore.js';
 import { getAgentsWithAvailability } from './agents.js';
-import { handleCodeChat } from './handlers/chat.js';
-import { handlePatchApply } from './handlers/patch.js';
-import { cleanupOldPatches } from './patch/patchStore.js';
+import { handleCliChat } from './handlers/chat.js';
 import type { ServerConfig } from './types.js';
 
 const VERSION = '0.0.1';
@@ -55,9 +53,6 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
 
   // Generate initial pairing code
   const initialPairing = startPairing();
-
-  // Cleanup old patches periodically
-  setInterval(() => cleanupOldPatches(), 60 * 60 * 1000); // Every hour
 
   const server = http.createServer(async (req, res) => {
     // Handle CORS
@@ -184,14 +179,8 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
       }
 
       // Code chat (auth required)
-      if (path === '/code/chat' && req.method === 'POST') {
-        await handleCodeChat(req, res, cwd);
-        return;
-      }
-
-      // Apply patch (auth required)
-      if (path === '/code/patch/apply' && req.method === 'POST') {
-        await handlePatchApply(req, res, cwd);
+      if (path === '/cli/chat' && req.method === 'POST') {
+        await handleCliChat(req, res, cwd);
         return;
       }
 

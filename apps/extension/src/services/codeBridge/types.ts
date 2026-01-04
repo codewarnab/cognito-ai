@@ -1,11 +1,14 @@
-import type { CodeModeElementContext } from '@cognito/shared/types';
 
-export interface CodeModeChatParams {
+export interface CliBridgeChatParams {
   messages: Array<{
     role: 'user' | 'assistant';
-    content: Array<{ type: 'text'; text: string }>;
+    content: Array<
+      | { type: 'text'; text: string }
+      | { type: 'image'; data: string; mimeType: string }
+      | { type: 'audio'; data: string; mimeType: string }
+      | { type: 'resource'; data: string; mimeType: string; name: string }
+    >;
   }>;
-  elementContext?: CodeModeElementContext;
   agent: {
     name: string;
     command: string;
@@ -17,13 +20,6 @@ export interface CodeModeChatParams {
 export interface BridgeTextEvent {
   type: 'text';
   content: string;
-}
-
-export interface BridgePatchProposalEvent {
-  type: 'patch_proposal';
-  patchId: string;
-  unifiedDiff: string;
-  summary?: string;
 }
 
 export interface BridgeToolCallEvent {
@@ -55,18 +51,11 @@ export interface BridgeStatusEvent {
 
 export type BridgeEvent =
   | BridgeTextEvent
-  | BridgePatchProposalEvent
   | BridgeToolCallEvent
   | BridgeToolResultEvent
   | BridgeErrorEvent
   | BridgeDoneEvent
   | BridgeStatusEvent;
-
-export interface ApplyPatchResult {
-  applied: boolean;
-  filesChanged: string[];
-  error?: string;
-}
 
 // SSE Event Types for real-time bridge connection
 export interface BridgeSSEConnectedEvent {

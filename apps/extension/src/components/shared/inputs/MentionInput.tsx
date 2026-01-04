@@ -13,7 +13,7 @@ import {
     getCursorPosition
 } from '@/utils/chat';
 import { detectSlashCommand, getSlashSearchQuery } from '@/utils/chat';
-import { useCodeModeStore, useToolsStore, type CodeModeState } from '@/stores';
+import { useCliModeStore, useToolsStore, type CliModeState } from '@/stores';
 
 /**
  * Animated placeholder with letter-by-letter morphing effect.
@@ -89,16 +89,16 @@ export function MentionInput({
     onSlashCommand,
     isSlashDropdownOpen = false
 }: MentionInputProps) {
-    // Check if code mode is active for placeholder
-    const bridgeStatus = useCodeModeStore((s: CodeModeState) => s.bridgeStatus);
+    // Check if cli mode is active for placeholder
+    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
     const currentMode = useToolsStore((s) => s.currentMode);
 
-    // Only show code placeholder if bridge is connected AND we are actually in code mode
+    // Only show cli placeholder if bridge is connected AND we are actually in cli mode
     // The user can be connected to bridge but be in 'chat' or 'agent' mode
-    const isCodeMode = bridgeStatus === 'connected' && currentMode === 'code';
+    const isCliMode = bridgeStatus === 'connected' && currentMode === 'cli';
 
-    // Use code mode specific placeholder when connected
-    const actualPlaceholder = isCodeMode
+    // Use cli mode specific placeholder when connected
+    const actualPlaceholder = isCliMode
         ? "Describe your code changes..."
         : placeholder;
 

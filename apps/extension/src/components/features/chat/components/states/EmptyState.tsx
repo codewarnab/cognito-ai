@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
 import { getTimeBasedGreeting } from '@/utils/ui';
-import { useCodeModeStore } from '@/stores/codeMode/codeModeStore';
+import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 
-import { TIPS, CODE_MODE_TIPS } from './tips';
+import { TIPS, CLI_MODE_TIPS } from './tips';
 
 interface EmptyStateProps {
     isLocalMode?: boolean;
@@ -54,16 +54,16 @@ const renderTipWithLinks = (tip: string): React.ReactNode => {
 export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigureApiKey }) => {
     const [currentTip, setCurrentTip] = useState<string>('');
     const [greeting, setGreeting] = useState<string>('');
-    const bridgeStatus = useCodeModeStore((s) => s.bridgeStatus);
+    const bridgeStatus = useCliModeStore((s) => s.bridgeStatus);
 
-    // Determine which tips array to use based on code mode
-    const isCodeMode = bridgeStatus === 'connected';
-    const tipsArray = isCodeMode ? CODE_MODE_TIPS : TIPS;
-    const storageKey = isCodeMode ? 'codeModeTipIndex' : 'tipIndex';
+    // Determine which tips array to use based on cli mode
+    const isCliMode = bridgeStatus === 'connected';
+    const tipsArray = isCliMode ? CLI_MODE_TIPS : TIPS;
+    const storageKey = isCliMode ? 'cliModeTipIndex' : 'tipIndex';
 
     useEffect(() => {
         // Set time-based greeting
-        setGreeting(getTimeBasedGreeting(isCodeMode));
+        setGreeting(getTimeBasedGreeting(isCliMode));
 
         // Get and increment tip index from storage
         chrome.storage.local.get([storageKey], (result) => {
@@ -84,7 +84,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isLocalMode, onConfigure
                 }
             });
         });
-    }, [isCodeMode, tipsArray, storageKey]);
+    }, [isCliMode, tipsArray, storageKey]);
 
     return (
         <div

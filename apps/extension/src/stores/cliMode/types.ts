@@ -1,17 +1,5 @@
 export type BridgeStatus = 'connected' | 'needs-pairing' | 'offline';
 
-export type PatchStatus = 'pending' | 'applying' | 'applied' | 'rejected' | 'error';
-
-export interface PatchState {
-  patchId: string;
-  unifiedDiff: string;
-  summary?: string;
-  status: PatchStatus;
-  error?: string;
-  filesChanged?: string[];
-  createdAt: number;
-}
-
 export interface AgentInfo {
   name: string;
   command: string;
@@ -20,7 +8,7 @@ export interface AgentInfo {
   envHints?: string[];
 }
 
-export interface CodeModeState {
+export interface CliModeState {
   // Bridge connection state
   bridgeBaseUrl: string;
   bridgeToken: string | null;
@@ -31,9 +19,6 @@ export interface CodeModeState {
   // Agent selection
   selectedAgentName: string;
   availableAgents: AgentInfo[];
-
-  // Patch tracking
-  patches: Record<string, PatchState>;
 
   // Agent status (for loading indicator)
   agentStatus: string | null;
@@ -49,11 +34,4 @@ export interface CodeModeState {
   // Actions - Agent
   setSelectedAgentName: (name: string) => void;
   setAgentStatus: (status: string | null) => void;
-
-  // Actions - Patches
-  addPatch: (patch: Omit<PatchState, 'status' | 'createdAt'>) => void;
-  setPatchStatus: (patchId: string, status: PatchStatus, error?: string, filesChanged?: string[]) => void;
-  clearPatches: () => void;
-  applyPatch: (patchId: string) => Promise<boolean>;
-  rejectPatch: (patchId: string) => void;
 }
