@@ -3,11 +3,38 @@ title: Privacy Model
 description: How Cognito AI handles your data.
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/db/, apps/extension/src/ai/ */}
 
 Cognito AI is designed with privacy as a core principle. This page explains what data is accessed, where it's stored, and what is sent externally.
 
+<Callout type="info" title="Privacy First">
+  Your data stays on your device by default. External services are only used when you explicitly enable cloud features.
+</Callout>
+
 ## Core Privacy Principles
+
+```mermaid
+mindmap
+  root((Privacy First))
+    Local-First
+      Data stays on device
+      Browser storage only
+      No cloud sync by default
+    BYOK
+      Your own API keys
+      Direct API calls
+      No middleman
+    Minimal Access
+      Only what you request
+      Active tab only
+      No background scanning
+    No Telemetry
+      No analytics
+      No usage tracking
+      No error reporting
+```
 
 | Principle | What It Means |
 |-----------|---------------|
@@ -16,7 +43,28 @@ Cognito AI is designed with privacy as a core principle. This page explains what
 | **Minimal access** | Only access data you explicitly interact with |
 | **No telemetry** | No usage tracking, analytics, or error reporting |
 
-## Data Categories
+## What Data Does Cognito Access?
+
+```mermaid
+flowchart LR
+    subgraph allowed["✅ Accessed When You Ask"]
+        A[Page Content]
+        B[Selected Text]
+        C[Tab Info]
+        D[Form Fields]
+    end
+    
+    subgraph blocked["🚫 Never Accessed"]
+        E[Passwords]
+        F[Credit Cards]
+        G[SSN / IDs]
+        H[Other Tabs]
+        I[Browsing History]
+    end
+    
+    style allowed fill:#d4edda,stroke:#28a745
+    style blocked fill:#f8d7da,stroke:#dc3545
+```
 
 ### What Cognito Accesses
 
@@ -29,6 +77,10 @@ Cognito AI is designed with privacy as a core principle. This page explains what
 
 ### What Cognito Never Accesses
 
+<Callout type="warn" title="Automatic Protection">
+  Sensitive fields are automatically detected and excluded. Cognito uses multiple detection methods to ensure your private data is never captured.
+</Callout>
+
 | Data Type | Protection Method |
 |-----------|-------------------|
 | **Passwords** | Input type detection |
@@ -37,71 +89,74 @@ Cognito AI is designed with privacy as a core principle. This page explains what
 | **Other tabs** | Active tab only |
 | **Browsing history** | Not accessed |
 
-```typescript
-// SECURITY: Example from DOM extraction
-const value = isSensitiveInput(input) ? undefined : input.value;
-
-function isSensitiveInput(input: HTMLInputElement): boolean {
-  // Type-based detection
-  if (input.type === 'password') return true;
-  
-  // Autocomplete-based detection
-  const autocomplete = input.autocomplete.toLowerCase();
-  const sensitiveAutocomplete = ['cc-number', 'cc-exp', 'cc-csc', 
-    'current-password', 'new-password'];
-  if (sensitiveAutocomplete.includes(autocomplete)) return true;
-  
-  // Name/ID pattern matching
-  const sensitivePattern = /password|card|cvv|csc|ssn|secret|pin/i;
-  if (sensitivePattern.test(input.name + input.id)) return true;
-  
-  return false;
-}
+```mermaid
+flowchart TD
+    INPUT[Form Input Detected] --> CHECK1{Is it a password field?}
+    CHECK1 -->|Yes| BLOCK[🚫 Blocked]
+    CHECK1 -->|No| CHECK2{Credit card autocomplete?}
+    CHECK2 -->|Yes| BLOCK
+    CHECK2 -->|No| CHECK3{Contains sensitive patterns?}
+    CHECK3 -->|Yes| BLOCK
+    CHECK3 -->|No| ALLOW[✅ Can be accessed]
+    
+    style BLOCK fill:#f8d7da,stroke:#dc3545
+    style ALLOW fill:#d4edda,stroke:#28a745
 ```
 
-## Data Storage
+## Where Is Your Data Stored?
 
-All user data is stored locally on your device:
+All user data is stored locally on your device by default:
 
-| Data | Storage | Encryption | Sync |
-|------|---------|------------|------|
-| **Conversations** | IndexedDB (Dexie) | Browser-level | No |
-| **Settings** | `chrome.storage.local` | Chrome encryption | Optional |
-| **API keys** | `chrome.storage.local` | Chrome encryption | No |
-| **OAuth tokens** | `chrome.storage.local` | Chrome encryption | No |
-| **Memories** | Supermemory API | External service | Yes |
-
-### Local Database (IndexedDB)
-
-Messages and threads are stored in IndexedDB:
-
-```typescript
-// Simplified Dexie schema
-const db = new Dexie('cognito-ai');
-db.version(1).stores({
-  messages: '++id, threadId, timestamp',
-  threads: '++id, createdAt, updatedAt'
-});
+```mermaid
+flowchart TB
+    subgraph device["🖥️ Your Device (Local Storage)"]
+        direction TB
+        CONV[("💬 Conversations<br/>IndexedDB")]
+        SETTINGS[("⚙️ Settings<br/>Chrome Storage")]
+        KEYS[("🔑 API Keys<br/>Chrome Storage")]
+        TOKENS[("🎫 OAuth Tokens<br/>Chrome Storage")]
+    end
+    
+    subgraph cloud["☁️ Cloud (Optional)"]
+        MEMORY[("🧠 Memories<br/>Supermemory")]
+    end
+    
+    device -.->|Only if enabled| cloud
+    
+    style device fill:#e7f3ff,stroke:#0066cc
+    style cloud fill:#fff3e0,stroke:#ff9800
 ```
 
-This data:
-- Never leaves your browser
-- Is not accessible to websites
-- Persists until you clear it
+| Data | Storage Location | Encryption | Cloud Sync |
+|------|-----------------|------------|------------|
+| **Conversations** | Your browser (IndexedDB) | Browser-level | ❌ No |
+| **Settings** | Chrome local storage | Chrome encryption | Optional |
+| **API keys** | Chrome local storage | Chrome encryption | ❌ No |
+| **OAuth tokens** | Chrome local storage | Chrome encryption | ❌ No |
+| **Memories** | Supermemory | External service | ✅ Yes (if enabled) |
 
-## Data Flow
+<Callout title="Your Data, Your Control">
+  Conversations and messages never leave your browser. They are stored in IndexedDB which is:
+  - **Isolated** — Not accessible to websites you visit
+  - **Persistent** — Remains until you clear it
+  - **Private** — Only Cognito can access it
+</Callout>
+
+## Data Flow Overview
+
+This diagram shows how your data flows depending on which mode you use:
 
 {/* MERMAID_DIAGRAM: privacy.data-flow | type: flowchart | represents: Data flow paths | code_refs: apps/extension/src/ai/ */}
 
 ```mermaid
 flowchart TB
-    subgraph Local["Your Device"]
-        EXT[Extension]
+    subgraph Local["🖥️ Your Device"]
+        EXT[Cognito Extension]
         STORAGE[(Local Storage)]
         INDEXDB[(IndexedDB)]
     end
     
-    subgraph External["External (when you use cloud features)"]
+    subgraph External["☁️ External Services"]
         GOOGLE[Google AI]
         BACKEND[Cognito Backend]
         ELEVENLABS[ElevenLabs]
@@ -111,75 +166,131 @@ flowchart TB
     EXT --> STORAGE
     EXT --> INDEXDB
     
-    EXT -->|BYOK mode| GOOGLE
-    EXT -->|Backend mode| BACKEND
-    EXT -->|Voice mode| ELEVENLABS
-    EXT -->|Memory features| SUPERMEMORY
+    EXT -->|"🔑 BYOK Mode<br/>(Your API Key)"| GOOGLE
+    EXT -->|"🌐 Backend Mode<br/>(No key needed)"| BACKEND
+    EXT -->|"🎙️ Voice Mode"| ELEVENLABS
+    EXT -->|"🧠 Memory Features"| SUPERMEMORY
     
     BACKEND --> GOOGLE
+    
+    style Local fill:#e7f3ff,stroke:#0066cc
+    style External fill:#fff3e0,stroke:#ff9800
 ```
 
-## External Services
+## Understanding the Different Modes
 
-### Local Mode (No External Access)
+```mermaid
+flowchart TD
+    START[Choose Your Mode] --> LOCAL
+    START --> BYOK
+    START --> BACKEND
+    
+    subgraph LOCAL["🏠 Local Mode"]
+        L1[Chrome Built-in AI]
+        L2[100% On-Device]
+        L3[Zero Network Calls]
+        L4[Limited Capabilities]
+    end
+    
+    subgraph BYOK["🔑 BYOK Mode"]
+        B1[Your Own API Key]
+        B2[Direct to Google]
+        B3[No Middleman]
+        B4[Full Capabilities]
+    end
+    
+    subgraph BACKEND["🌐 Backend Mode"]
+        C1[No API Key Needed]
+        C2[Via Cognito Servers]
+        C3[Rate Limited]
+        C4[Full Capabilities]
+    end
+    
+    style LOCAL fill:#d4edda,stroke:#28a745
+    style BYOK fill:#cce5ff,stroke:#004085
+    style BACKEND fill:#fff3cd,stroke:#856404
+```
 
-Uses Chrome's built-in AI (Gemini Nano):
-- All processing on device
-- No network calls
-- Limited capabilities
+### Local Mode — Maximum Privacy
 
-### BYOK Mode (Direct to Google)
+<Callout type="info" title="Best for Privacy">
+  Local mode uses Chrome's built-in AI (Gemini Nano). All processing happens on your device with zero data sent externally.
+</Callout>
 
-Your API key calls Google directly:
-- Key stays in your browser
-- Request goes directly to `googleapis.com`
-- No intermediary servers
+- ✅ All processing on your device
+- ✅ No network calls
+- ⚠️ Limited capabilities compared to cloud models
 
-### Backend Mode (Via Cognito)
+### BYOK Mode — Your Keys, Your Control
 
-Messages routed through Cognito backend:
-- No API key needed
-- Subject to rate limits
+- ✅ Your API key calls Google directly
+- ✅ Key never leaves your browser
+- ✅ Request goes directly to `googleapis.com`
+- ✅ No intermediary servers
+
+### Backend Mode — Convenience
+
+- ✅ No API key needed
+- ⚠️ Messages routed through Cognito backend
+- ⚠️ Subject to rate limits
 - Backend uses server-side credentials
 
-### Voice Mode (ElevenLabs)
+### Voice Mode — ElevenLabs Integration
 
-Audio processed by ElevenLabs:
+- Audio processed by ElevenLabs
 - Proxied via Cognito Cloudflare worker
-- Audio data is transient
-- No conversation storage
+- Audio data is transient (not stored)
+- No conversation storage on servers
 
-### Memory Features (Supermemory)
+### Memory Features — Supermemory
 
-If you enable Supermemory:
+<Callout type="warn" title="Cloud Service">
+  Memory features require Supermemory, which stores data in the cloud. Only enable this if you're comfortable with cloud storage.
+</Callout>
+
 - Facts extracted from conversations
 - Stored in Supermemory's cloud
 - Requires separate API key
 
-## Privacy-Preserving Features
+## Privacy Comparison by Mode
 
-### On-Device Processing
+```mermaid
+quadrantChart
+    title Privacy vs Capability Trade-offs
+    x-axis Low Capability --> High Capability
+    y-axis Low Privacy --> High Privacy
+    quadrant-1 Ideal
+    quadrant-2 Privacy-Focused
+    quadrant-3 Avoid
+    quadrant-4 Convenience
+    Local Mode: [0.25, 0.95]
+    BYOK Mode: [0.85, 0.80]
+    Backend Mode: [0.85, 0.50]
+```
 
-For privacy-sensitive tasks, use Local mode:
-- Chrome built-in AI
-- Zero external data transfer
-- Trade-off: limited capabilities
-
-### BYOK for Control
-
-BYOK provides:
-- Direct API relationship with Google
-- Your usage quota
-- No Cognito involvement
-
-### Minimal Context
-
-AI receives only:
-- Your current message
-- Page content you requested
-- Your selected conversation history
+| Mode | Privacy Level | Capabilities | Best For |
+|------|--------------|--------------|----------|
+| **Local** | 🟢 Highest | Limited | Sensitive tasks |
+| **BYOK** | 🟢 High | Full | Power users |
+| **Backend** | 🟡 Medium | Full | Casual users |
 
 ## User Controls
+
+### Managing Your Privacy
+
+```mermaid
+flowchart LR
+    subgraph controls["🎛️ Your Privacy Controls"]
+        direction TB
+        CLEAR["🗑️ Clear History"]
+        DISABLE["⛔ Disable Features"]
+        EXPORT["📤 Export Data"]
+    end
+    
+    CLEAR --> |Settings → Privacy| DONE1[All conversations deleted]
+    DISABLE --> |Switch modes| DONE2[No external calls]
+    EXPORT --> |Developer tools| DONE3[Download your data]
+```
 
 ### Clear Conversation History
 
@@ -191,13 +302,22 @@ AI receives only:
 
 | Feature | How to Disable |
 |---------|----------------|
-| Backend mode | Switch to BYOK |
-| Voice mode | Don't enable |
-| Supermemory | Don't configure |
+| Backend mode | Switch to Local or BYOK mode |
+| Voice mode | Don't enable in settings |
+| Supermemory | Don't configure API key |
+
+<Callout title="Full Control">
+  You can always switch between modes. Use Local mode for maximum privacy on sensitive tasks, and BYOK or Backend mode when you need more powerful AI capabilities.
+</Callout>
 
 ### Export Your Data
 
-Data can be exported from IndexedDB using browser developer tools.
+Your data belongs to you. Export it anytime:
+
+1. Open Chrome Developer Tools (`F12`)
+2. Go to **Application** → **IndexedDB**
+3. Find the Cognito database
+4. Export conversations as needed
 
 ## Next Steps
 

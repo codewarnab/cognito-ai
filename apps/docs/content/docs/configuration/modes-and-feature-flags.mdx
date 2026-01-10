@@ -3,196 +3,222 @@ title: Modes & Feature Flags
 description: Understanding Cognito AI's different operating modes.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/stores/ */}
+Cognito AI has **4 different modes** that control how the extension works. This guide explains each one in simple terms.
 
-Cognito AI uses **4 distinct "mode" concepts**. Understanding these prevents confusion when configuring the extension.
-
-## Mode Summary
-
-| Type | Values | Purpose | Store |
-|------|--------|---------|-------|
-| **AIProviderMode** | `local` / `remote` | WHERE AI runs | `useModelStore.mode` |
-| **ToolsMode** | `chat` / `agent` / `adaptive` / `custom` | WHICH TOOLS available | `useToolsStore.currentMode` |
-| **ChatMode** | `text` / `voice` | User INPUT METHOD | `useUINavigationStore.chatMode` |
-| **Backend Mode** | `boolean` | HOW remote API is called | `useSettingsStore.useBackendMode` |
-
-## AIProviderMode (Where AI Runs)
-
-Determines whether AI processing happens locally or in the cloud.
+## Quick Overview
 
 ```mermaid
-graph TD
-    A[AIProviderMode] --> B{local}
-    A --> C{remote}
-    B --> D[Chrome Built-in AI<br/>Gemini Nano]
-    C --> E{Backend Mode?}
-    E -->|true| F[Vercel Backend<br/>No API key needed]
-    E -->|false| G[BYOK<br/>Direct Google AI API]
+graph LR
+    subgraph "The 4 Modes"
+        A["🌐 AI Provider<br/>Where AI runs"]
+        B["🔧 Tools Mode<br/>What AI can do"]
+        C["🎤 Chat Mode<br/>How you talk"]
+        D["☁️ Backend Mode<br/>API routing"]
+    end
+```
+
+| Mode | What It Controls | Options |
+|------|-----------------|---------|
+| **AI Provider** | Where the AI processing happens | Local (on device) or Remote (cloud) |
+| **Tools Mode** | What actions AI can perform | Chat, Agent, Adaptive, or Custom |
+| **Chat Mode** | How you communicate with AI | Text or Voice |
+| **Backend Mode** | How remote AI is accessed | Backend server or Your own API key |
+
+---
+
+## AI Provider Mode
+
+This determines **where** your AI processing happens.
+
+```mermaid
+flowchart TD
+    START["AI Provider Mode"] --> LOCAL["🏠 Local Mode"]
+    START --> REMOTE["☁️ Remote Mode"]
+    
+    LOCAL --> NANO["Chrome's Built-in AI<br/>(Gemini Nano)"]
+    NANO --> PRIVACY["✅ Maximum Privacy<br/>Everything stays on device"]
+    
+    REMOTE --> BACKEND{"Using Backend?"}
+    BACKEND -->|"Yes"| VERCEL["Cognito Servers<br/>No API key needed"]
+    BACKEND -->|"No"| BYOK["Your Own API Key<br/>Direct to Google AI"]
+    
+    style LOCAL fill:#e8f5e9
+    style REMOTE fill:#e3f2fd
+    style PRIVACY fill:#c8e6c9
 ```
 
 ### Local Mode
+- **What it is**: AI runs entirely on your computer using Chrome's built-in Gemini Nano
+- **Best for**: Maximum privacy—nothing leaves your device
+- **Limitations**: Fewer capabilities, no browser automation tools
 
-| Aspect | Details |
-|--------|---------|
-| **AI Model** | Gemini Nano (Chrome built-in) |
-| **Requirements** | Chrome with AI features enabled |
-| **Privacy** | All processing on device |
-| **Capabilities** | Limited (no tools, shorter context) |
+### Remote Mode  
+- **What it is**: AI runs in the cloud for full power
+- **Best for**: Complex tasks, browser automation, longer conversations
+- **How to access**: Via Cognito's backend OR bring your own API key
 
-### Remote Mode
+---
 
-Determined by **Backend Mode** setting:
+## Tools Mode
 
-| Backend Mode | API | Requirements |
-|--------------|-----|--------------|
-| `true` | Vercel backend | None (shared quota) |
-| `false` | Google AI directly | Your API key |
+This determines **what the AI can do** during your conversation.
 
-## ToolsMode (Which Tools Available)
-
-Determines which tools the AI can use during conversations.
-
-| Mode | Tools | Use Case |
-|------|-------|----------|
-| **chat** | Minimal (readPageContent, takeScreenshot) | Simple Q&A |
-| **agent** | Full browser automation | Complex tasks |
-| **adaptive** | Meta-tools (discoverTools, executeTools) | Dynamic discovery |
-| **custom** | User-selected | Personal preference |
-
-### Chat Mode Tools
-
-```typescript
-const chatTools = {
-  readPageContent,  // Extract page text
-  takeScreenshot,   // Capture visible area
-  searchTabs,       // Find open tabs
-  // ... minimal set
-};
+```mermaid
+flowchart LR
+    subgraph CHAT["💬 Chat Mode"]
+        C1["Read page content"]
+        C2["Take screenshots"]
+        C3["Search tabs"]
+    end
+    
+    subgraph AGENT["🤖 Agent Mode"]
+        A1["Everything in Chat"]
+        A2["Click buttons"]
+        A3["Fill forms"]
+        A4["Navigate pages"]
+        A5["Scroll & interact"]
+    end
+    
+    subgraph ADAPTIVE["🔄 Adaptive Mode"]
+        AD1["AI discovers tools<br/>as needed"]
+        AD2["Loads only what's<br/>relevant"]
+    end
+    
+    subgraph CUSTOM["⚙️ Custom Mode"]
+        CU1["You choose exactly<br/>which tools to enable"]
+    end
 ```
 
-### Agent Mode Tools
+| Mode | Capabilities | When to Use |
+|------|-------------|-------------|
+| **Chat** | Reading pages, screenshots, tab search | Simple Q&A, summarizing content |
+| **Agent** | Full browser control | Automating tasks, filling forms, navigating |
+| **Adaptive** | AI picks tools dynamically | Balanced approach, efficient token usage |
+| **Custom** | Only tools you select | Fine-grained control over AI abilities |
 
-```typescript
-const agentTools = {
-  ...chatTools,
-  navigateTo,       // Open URL
-  clickByText,      // Click elements
-  typeInField,      // Fill inputs
-  scrollPage,       // Scroll viewport
-  // ... full automation
-};
+### Tool Categories at a Glance
+
+```mermaid
+mindmap
+  root((AI Tools))
+    Reading
+      Page content
+      Screenshots
+      Tab info
+    Navigation
+      Open URLs
+      Switch tabs
+      Scroll pages
+    Interaction
+      Click elements
+      Type in fields
+      Submit forms
+    Advanced
+      MCP servers
+      External APIs
 ```
 
-### Adaptive Mode
+---
 
-Uses meta-tools for dynamic discovery:
+## Chat Mode
 
-1. AI calls `discoverTools` to see available tools
-2. AI selects relevant tools via `executeTools`
-3. Tools load on-demand
+This is simply **how you communicate** with the AI.
 
-### Custom Mode
+```mermaid
+flowchart LR
+    USER["You"] --> TEXT["⌨️ Text Mode<br/>Type your messages"]
+    USER --> VOICE["🎤 Voice Mode<br/>Speak your messages"]
+    
+    TEXT --> AI["AI Assistant"]
+    VOICE --> AI
+    
+    style TEXT fill:#fff3e0
+    style VOICE fill:#fce4ec
+```
 
-User selects specific tools:
-
-1. Open **Settings** → **Tools**
-2. Toggle individual tools on/off
-3. Only enabled tools available to AI
-
-## ChatMode (Input Method)
-
-How the user interacts with the AI.
-
-| Mode | Description |
+| Mode | How It Works |
 |------|-------------|
-| **text** | Standard keyboard input |
-| **voice** | Voice input via microphone |
+| **Text** | Type your messages normally |
+| **Voice** | Click the microphone to speak (requires ElevenLabs setup) |
 
-### Switch Input Mode
+**To switch**: Click the **microphone button** in the chat interface.
 
-- Click the **microphone** button to toggle voice mode
-- Voice mode requires ElevenLabs integration
+---
 
-## Backend Mode (API Routing)
+## Backend Mode
 
-Only applies when `AIProviderMode = remote`.
+This controls **how the AI is accessed** when using Remote mode.
 
-| Value | API Route | Requirements |
-|-------|-----------|--------------|
-| `true` | Through Vercel backend | None |
-| `false` | Direct to Google AI | Your API key |
+```mermaid
+flowchart TD
+    subgraph "Backend Mode ON"
+        B1["Your Request"] --> B2["Cognito Server"]
+        B2 --> B3["Google AI"]
+        B3 --> B2
+        B2 --> B4["Response to You"]
+    end
+    
+    subgraph "Backend Mode OFF (BYOK)"
+        K1["Your Request"] --> K2["Direct to Google AI<br/>(using your API key)"]
+        K2 --> K3["Response to You"]
+    end
+```
 
-### When to Use Backend Mode
+| Setting | What Happens | Best For |
+|---------|-------------|----------|
+| **Backend ON** | Requests go through Cognito's servers | Quick start, no setup needed |
+| **Backend OFF** (BYOK) | Direct connection with your API key | Higher limits, more privacy |
 
-| Scenario | Recommendation |
-|----------|----------------|
-| No API key | Backend Mode |
-| Rate limited | Switch to BYOK |
-| Privacy priority | BYOK (fewer intermediaries) |
-| StdIO MCP servers | Either (backend proxies) |
+### Smart Fallback
 
-### Graceful Degradation
+If the backend hits rate limits and you have an API key saved, Cognito automatically switches to your key—no interruption needed!
 
-When Backend Mode hits rate limits:
-
-1. Backend returns 429 status
-2. Extension checks for BYOK key
-3. If key exists, auto-switches to BYOK
-4. Shows notification to user
+---
 
 ## Feature Flags
 
-Build-time flags that enable/disable features:
+These are optional settings that control specific features:
 
-| Flag | Effect | Default |
-|------|--------|---------|
-| `WXT_HIDE_LOCAL_MODE` | Hide local AI option | `true` |
-| `WXT_YOUTUBE_BADGE_PREFETCH` | Prefetch YouTube badges | `true` |
+| Feature | What It Does | Default |
+|---------|-------------|---------|
+| **Hide Local Mode** | Hides the local AI option in settings | On |
+| **YouTube Badge Prefetch** | Pre-loads AI badges on YouTube videos | On |
 
-Configure in `.env` file (see [Environment Variables](/docs/configuration/env-vars)).
+These are configured during setup and most users won't need to change them.
 
-## Type Imports
+---
 
-When working with modes in code:
+## How to Change Modes
 
-```typescript
-// AIProviderMode
-import type { AIProviderMode, AIMode } from '@/stores/chat/types';
+All modes can be changed from **Settings**:
 
-// ToolsMode
-import type { ToolsMode } from '@/types/settings';
-import type { ToolMode } from '@/stores/tools/types';
-
-// ChatMode
-import type { ChatMode } from '@/stores/ui/types';
+```mermaid
+flowchart LR
+    SETTINGS["⚙️ Open Settings"] --> PROVIDER["AI Provider<br/>Local or Remote"]
+    SETTINGS --> TOOLS["Tools Tab<br/>Mode dropdown"]
+    SETTINGS --> BACKEND["Backend Toggle<br/>On or Off"]
+    SETTINGS --> CHAT["Mic Button<br/>Text or Voice"]
+    
+    style SETTINGS fill:#f3e5f5
 ```
 
-## Switching Modes
+1. **AI Provider**: Settings → AI Provider section
+2. **Tools Mode**: Settings → Tools tab → Mode dropdown  
+3. **Backend Mode**: Settings → "Use Backend" toggle
+4. **Chat Mode**: Microphone button in chat (not in settings)
 
-### Via UI
+---
 
-- **AIProviderMode**: Settings → AI Provider
-- **ToolsMode**: Settings → Tools → Mode dropdown
-- **ChatMode**: Microphone button toggle
-- **Backend Mode**: Settings → Use Backend toggle
+## Recommended Configurations
 
-### Via Code
-
-```typescript
-// AIProviderMode
-useModelStore.getState().setMode('remote');
-
-// ToolsMode
-useToolsStore.getState().setCurrentMode('agent');
-
-// ChatMode
-useUINavigationStore.getState().setChatMode('voice');
-
-// Backend Mode
-useSettingsStore.getState().setUseBackendMode(true);
-```
+| Use Case | AI Provider | Tools Mode | Backend |
+|----------|-------------|-----------|---------|
+| **Privacy focused** | Local | Chat | N/A |
+| **Casual browsing** | Remote | Chat | On |
+| **Task automation** | Remote | Agent | On or Off |
+| **Power user** | Remote | Custom | Off (BYOK) |
 
 ## Next Steps
 
 - [Provider Setup](/docs/getting-started/provider-setup) — Configure your AI provider
-- [AI System Architecture](/docs/architecture/ai-system) — How modes interact
+- [AI System Architecture](/docs/architecture/ai-system) — Technical deep-dive into how modes work

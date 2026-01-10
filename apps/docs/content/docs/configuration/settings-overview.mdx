@@ -3,79 +3,66 @@ title: Settings Overview
 description: Understand where settings live in Cognito AI.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/stores/, apps/webapp/src/app/ */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/stores/settings/, apps/extension/src/types/settings.ts, apps/webapp/src/app/ */}
 
 Cognito AI settings are split between the extension (quick access) and webapp (full configuration). This guide explains where each setting lives.
 
 ## Settings Architecture
 
-{/* MERMAID_DIAGRAM: settings.architecture | type: component | represents: Settings split between extension and webapp | code_refs: apps/extension/src/stores/, apps/webapp/ */}
+{/* MERMAID_DIAGRAM: settings.architecture | type: component | represents: Settings split between extension and webapp | code_refs: apps/extension/src/stores/, apps/webapp/, apps/extension/src/db/ */}
 
-```mermaid
-graph TB
-    subgraph Extension["Extension Side Panel"]
-        QS[Quick Settings]
-        MS[Model Selector]
-        TM[Tools Mode]
-    end
-    
-    subgraph Webapp["Webapp Pages"]
-        Full[Full Settings]
-        Memory[Memory Config]
-        MCP[MCP Servers]
-        Onboard[Onboarding]
-    end
-    
-    subgraph Storage["Chrome Storage"]
-        Local[storage.local]
-        Sync[storage.sync]
-    end
-    
-    QS --> Local
-    Full --> Sync
-    Memory --> Local
-    MCP --> Local
-```
 
 ## Extension Settings
 
-Quick settings accessible directly in the side panel:
+Quick settings accessible directly in the side panel composer toolbar:
 
 | Setting | Location | Description |
 |---------|----------|-------------|
-| **AI Model** | Model selector | Choose Gemini variant |
-| **Mode** | Toggle | Backend vs BYOK |
-| **Tools Mode** | Dropdown | Chat/Agent/Adaptive/Custom |
-| **Voice Mode** | Button | Enable voice input |
+| **Tools Mode** | Mode Selector dropdown | Chat/Agent/Adaptive/Custom/CLI mode |
+| **AI Model** | Model selector popover | Choose provider and model (BYOK mode only) |
+| **Search** | Search toggle | Enable/disable web search grounding |
+| **Tools** | Tools modal | View and configure enabled tools |
 
 ### Access Extension Settings
 
 1. Open the side panel (`Ctrl+Shift+H`)
-2. Click the **Settings** gear icon
-3. Quick settings appear inline
+2. Settings are in the composer toolbar at the bottom
+3. Click mode icon to change tools mode
+4. Click model icon to change AI model (BYOK mode)
 
 ## Webapp Settings
 
-Full configuration pages opened in a new tab:
+Full configuration pages opened in a new tab via extension messaging:
 
 | Page | Route | Purpose |
 |------|-------|---------|
-| **Settings** | `/settings` | All preferences |
-| **Onboarding** | `/onboarding` | First-time setup |
-| **Reminders** | `/reminders` | Reminder management |
-| **Features** | `/features` | Feature showcase |
+| **Settings** | `/settings` | All feature settings (AI, Search, Voice, Writing, Supermemory) |
+| **Onboarding** | `/onboarding` | First-time setup wizard |
+| **Reminders** | `/reminders` | View and manage reminders |
+| **Features** | `/features` | Feature showcase and discovery |
 | **Troubleshooting** | `/troubleshooting` | Help and debugging |
 | **Changelog** | `/changelog` | Version history |
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/webapp/src/app/ */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/webapp/src/app/, apps/webapp/src/lib/extension-api.ts */}
+
+### Webapp Settings Tabs
+
+The `/settings` page has four main tabs:
+
+| Tab | Settings Included |
+|-----|-------------------|
+| **AI & Search** | Max tool calls, web search provider, search depth, API keys |
+| **Voice & TTS** | Voice name, TTS provider, voice preview |
+| **Writing Tools** | Ask AI button, Summarizer, Rewriter, Write command, Research workflow |
+| **Advanced** | Supermemory integration (API key, auto-extraction) |
 
 ### Access Webapp Settings
 
 1. Open the side panel
-2. Click **Settings** → **Open Full Settings**
+2. Use keyboard shortcut or extension menu
 3. Webapp opens in a new tab
 
-Or navigate directly to the webapp URL.
+The webapp communicates with the extension via `chrome.runtime.sendMessage` using the external messaging API.
 
 ## Settings Categories
 
@@ -84,59 +71,131 @@ Or navigate directly to the webapp URL.
 | Setting | Description | Values |
 |---------|-------------|--------|
 | **Google API Key** | Your Gemini API key | String |
+| **Anthropic API Key** | Your Anthropic API key | String |
+| **OpenAI API Key** | Your OpenAI API key | String |
 | **Use Backend Mode** | Use hosted API | Boolean |
-| **Model** | AI model selection | gemini-2.5-flash, etc. |
+| **Backend Model** | Model for backend mode | gemini-3-flash-preview (default), gemini-3-pro-preview, gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash |
+| **Preferred Model** | Model for BYOK mode | String (default: gemini-3-flash-preview) |
 
 ### Memory (Supermemory)
 
 | Setting | Description | Default |
 |---------|-------------|---------|
 | **API Key** | Supermemory API key | — |
-| **Enable Supermemory** | Master toggle | false |
-| **Auto Extraction** | Extract facts from chat | false |
-| **Min Messages** | Threshold for extraction | 4 |
+| **Enable Supermemory** | Master toggle | `false` |
+| **Auto Extraction** | Extract facts from chat | `false` |
+| **Min Messages** | Threshold for extraction | `4` |
 
 ### Tools
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **Tools Mode** | Tool availability | `chat` |
+| **Tools Mode** | Tool availability mode | `agent` |
 | **Enabled Tools** | Custom tool selection | All |
-| **MCP Servers** | Connected servers | None |
+| **MCP Servers** | Connected MCP servers | None |
+| **Max Tool Calls** | Max tool calls per response | `20` |
+
+**Tools Mode Options:**
+- `chat` — Minimal tools, focused on reading and Q&A
+- `agent` — Full browser automation capabilities (default)
+- `adaptive` — On-demand tool discovery via discoverTools + executeTools
+- `custom` — User-customized tool selection
+- `cli` — Local CLI agent mode for code editing (requires Code Bridge)
 
 ### Voice
 
 | Setting | Description | Default |
 |---------|-------------|---------|
-| **Voice Model** | ElevenLabs voice | Default |
-| **Auto-speak** | Read responses aloud | false |
+| **Voice Name** | Gemini voice selection | `Aoede` |
+| **TTS Provider** | Text-to-speech engine | `gemini` |
+| **Suggestions** | Enable voice suggestions | `true` |
+
+**Available Gemini Voices:** Aoede, Orus, Puck, Charon, Kore, Fenrir, Orion
+
+**TTS Providers:**
+- `gemini` — Gemini Live TTS (recommended)
+- `web-native` — Browser's built-in speech synthesis
+
+### UI Preferences
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Theme** | Color theme | `dark` |
+| **Compact Mode** | Reduced UI spacing | `false` |
+| **Notification Sound** | Play sound for notifications | `true` |
+| **Show Search Toggle** | Display search toggle | `true` |
+
+**Theme Options:** `dark`, `light`, `system`
+
+### Debugging
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| **Log Level** | Console logging verbosity | `info` |
+| **Log Categories** | Specific categories to log | `[]` |
+
+**Log Levels:** `debug`, `info`, `warn`, `error`
 
 ## Storage Locations
 
-Settings are persisted in Chrome storage:
+All settings are persisted locally on the device:
 
 | Storage | Data |
 |---------|------|
-| **storage.local** | User preferences, MCP tokens, memory |
-| **storage.sync** | Synced across Chrome profiles |
-| **IndexedDB (Dexie)** | Messages, threads, reminders |
+| **chrome.storage.local** | User preferences, API keys, MCP tokens, feature settings |
+| **IndexedDB (Dexie)** | Messages, threads, chat history, research sources, PDFs |
+
+### Persisted Settings
+
+The following settings are automatically persisted to `chrome.storage.local` via Zustand middleware:
+
+**Settings Store (`cognito_settings`):**
+- `googleApiKey`, `anthropicApiKey`, `openaiApiKey`
+- `preferredModel`, `preferredMode`
+- `enableVoiceMode`, `enableNotificationSound`, `showSearchToggle`
+- `enabledBuiltInTools`
+- `logLevel`, `logCategories`
+- `theme`, `compactMode`
+- `useBackendMode`, `backendModel`
+- `providersConfig`
+
+**Separate Storage Keys:**
+- `userSettings` — Voice, TTS, tools mode, max tool call limit
+- `searchSettings` / `searchApiKeys` — Web search configuration
+- `customMcpServers` — User-added MCP servers
+- `writeCommandSettings`, `rewriteSettings`, `researchWorkflowSettings` — Feature-specific settings
+
+### IndexedDB Tables (Dexie)
+
+| Table | Purpose |
+|-------|---------|
+| `chatMessages` | All chat messages with thread association |
+| `chatThreads` | Conversation threads/containers |
+| `settings` | Key-value settings records |
+| `reportSections` | Research report sections |
+| `researchSources` | Context offloading for research |
+| `storedPDFs` | Cached PDF documents |
 
 ### Access Storage (Debug)
 
-```javascript
-// In extension devtools console
+```javascript title="Extension DevTools Console"
+// Chrome storage
 chrome.storage.local.get(null, console.log);
-chrome.storage.sync.get(null, console.log);
+
+// IndexedDB (Dexie)
+const db = await indexedDB.open('ChatDB');
 ```
 
 ## Settings Sync
 
-Extension and webapp stay in sync via Chrome storage events:
+Extension contexts (side panel, background, content scripts) stay in sync via Chrome storage events:
 
-1. Webapp updates a setting
-2. Change written to `chrome.storage.sync`
-3. Extension receives `storage.onChanged` event
-4. Zustand store updates automatically
+1. Any context updates a setting in `chrome.storage.local`
+2. Chrome broadcasts `storage.onChanged` event
+3. Other contexts receive the change via Zustand middleware
+4. State updates automatically across all contexts
+
+The webapp communicates with the extension through external messaging (`chrome.runtime.sendMessage`), not direct storage access. Settings changes from the webapp flow through the extension's background script.
 
 See [Model Configuration Sync](/docs/architecture/ai-system) for details.
 

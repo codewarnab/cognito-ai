@@ -3,7 +3,7 @@ title: Integrations
 description: Connect Cognito AI with external services and tools.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/, apps/extension/src/background/ */}
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 
 Cognito AI extends its capabilities through external integrations. Connect to **MCP servers**, use **WebMCP** for page-provided tools, or leverage **backend services** for AI and content features.
 
@@ -30,46 +30,17 @@ Cognito AI extends its capabilities through external integrations. Connect to **
 ## Available Integrations
 
 <Cards>
-  <Card title="MCP Overview" href="/docs/integrations/mcp-overview" />
-  <Card title="Remote MCP Servers" href="/docs/integrations/remote-mcp" />
-  <Card title="WebMCP" href="/docs/integrations/webmcp" />
-  <Card title="Supermemory" href="/docs/integrations/supermemory" />
-  <Card title="Backend Services" href="/docs/integrations/backends" />
+  <Card title="MCP Overview" description="Introduction to the Model Context Protocol and how Cognito AI implements it." href="/docs/integrations/mcp-overview" />
+  <Card title="Remote MCP Servers" description="Connect to 30+ hosted MCP servers with OAuth or API key authentication." href="/docs/integrations/remote-mcp" />
+  <Card title="WebMCP" description="Use tools provided directly by web pages with no server infrastructure required." href="/docs/integrations/webmcp" />
+  <Card title="Supermemory" description="Store and retrieve user memories for personalized AI responses." href="/docs/integrations/supermemory" />
+  <Card title="Backend Services" description="Server-side AI processing, YouTube transcripts, web search, and content extraction." href="/docs/integrations/backends" />
 </Cards>
 
 ## Architecture
 
-{/* MERMAID_DIAGRAM: integrations.overview | type: component | represents: Integration architecture | code_refs: apps/extension/src/mcp/, apps/extension/src/background/mcp/ */}
 
-```mermaid
-graph TB
-    subgraph Extension["Cognito Extension"]
-        UI[Side Panel UI]
-        BG[Background Service Worker]
-    end
-    
-    subgraph MCP["MCP Integration"]
-        SSE[SSE Client]
-        BACKEND[Backend Client]
-        WEBMCP[WebMCP Handler]
-    end
-    
-    subgraph External["External Services"]
-        REMOTE[Remote MCP Servers]
-        STDIO[StdIO Servers via Backend]
-        PAGE[Web Page Tools]
-        VERCEL[Vercel Backend]
-    end
-    
-    UI --> BG
-    BG --> SSE
-    BG --> BACKEND
-    BG --> WEBMCP
-    SSE --> REMOTE
-    BACKEND --> STDIO
-    WEBMCP --> PAGE
-    BG --> VERCEL
-```
+<ImageZoom src="/intregrations-diagram.png" alt="Integration Architecture Diagram" width={800} height={500}/>
 
 ## Next Steps
 

@@ -7,6 +7,8 @@ description: Troubleshoot Model Context Protocol connection problems.
 
 **Model Context Protocol (MCP)** allows Cognito AI to connect to external tool servers. Issues typically involve connection, authentication, or server availability.
 
+For protocol details, see the [official MCP documentation](https://modelcontextprotocol.io/docs/getting-started/intro).
+
 ## Server Won't Connect
 
 ### Symptoms
@@ -25,7 +27,7 @@ description: Troubleshoot Model Context Protocol connection problems.
 ### Verify Server is Running
 
 For local servers:
-```bash
+```bash title="Terminal"
 # Check if server is listening
 curl http://localhost:PORT/
 ```
@@ -92,6 +94,7 @@ For remote servers:
 
 ## Next Steps
 
+- [Official MCP Documentation](https://modelcontextprotocol.io/docs/getting-started/intro) — Protocol specification and guides
 - [MCP Overview](/docs/integrations/mcp-overview) — Understanding MCP
 - [Remote MCP](/docs/integrations/remote-mcp) — Connection details
 - [Debugging](/docs/troubleshooting/debugging) — Console inspection

@@ -293,7 +293,7 @@ const log = createLogger('FeatureName', 'CATEGORY');
 ## Testing the Extension
 
 1. Build: `pnpm build:extension`
-2. Load `.output/chrome-mv3` as unpacked extension in Chrome
+2. Load `dist` as unpacked extension in Chrome
 3. Open side panel with `Ctrl+Shift+H`
 
 ## External Dependencies

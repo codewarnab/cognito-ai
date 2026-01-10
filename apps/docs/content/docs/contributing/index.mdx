@@ -3,7 +3,11 @@ title: Contributing
 description: How to contribute to Cognito AI.
 ---
 
+import { GithubInfo } from 'fumadocs-ui/components/github-info';
+
 {/* VERIFIED: 2024-12-31 | code_refs: CONTRIBUTING.md */}
+
+<GithubInfo owner="codewarnab" repo="cognito-ai" className="mb-6" />
 
 Thank you for your interest in contributing to **Cognito AI**! This guide covers everything you need to get started.
 
@@ -19,52 +23,68 @@ Thank you for your interest in contributing to **Cognito AI**! This guide covers
 
 ## Quick Start
 
-```bash
-# 1. Fork and clone
-git clone https://github.com/YOUR_USERNAME/cognito-ai
+### Fork and Clone
 
-# 2. Setup
+```bash title="Terminal"
+git clone https://github.com/YOUR_USERNAME/cognito-ai
 cd cognito-ai
+```
+
+### Install Dependencies
+
+```bash title="Terminal"
 corepack enable
 pnpm install
+```
 
-# 3. Create branch
+### Create a Branch
+
+```bash title="Terminal"
 git checkout -b feat/my-feature
+```
 
-# 4. Develop
+### Start Development
+
+```bash title="Terminal"
 pnpm dev
+```
 
-# 5. Test and commit
+### Build and Commit
+
+```bash title="Terminal"
 pnpm build
 git commit -m "feat(extension): add my feature"
+```
 
-# 6. Push and open PR
+### Push and Open PR
+
+```bash title="Terminal"
 git push origin feat/my-feature
 ```
 
 ## Contributing Topics
 
 <Cards>
-  <Card title="Dev Setup" href="/docs/contributing/dev-setup" />
-  <Card title="Repo Tour" href="/docs/contributing/repo-tour" />
-  <Card title="Coding Standards" href="/docs/contributing/coding-standards" />
-  <Card title="Adding Tools" href="/docs/contributing/adding-tools" />
-  <Card title="Adding MCP Server" href="/docs/contributing/adding-mcp-server" />
+  <Card title="Dev Setup" description="Set up your local development environment" href="/docs/contributing/dev-setup" />
+  <Card title="Repo Tour" description="Navigate the monorepo structure" href="/docs/contributing/repo-tour" />
+  <Card title="Coding Standards" description="Code conventions and best practices" href="/docs/contributing/coding-standards" />
+  <Card title="Adding Tools" description="Create new AI-powered browser tools" href="/docs/contributing/adding-tools" />
+  <Card title="Adding MCP Server" description="Integrate Model Context Protocol servers" href="/docs/contributing/adding-mcp-server" />
 </Cards>
 
 ## Development Workflow
 
-### 1. Find an Issue
+### Find an Issue
 
 - Check [GitHub Issues](https://github.com/codewarnab/cognito-ai/issues)
 - Look for `good first issue` or `help wanted` labels
 - Comment on the issue to claim it
 
-### 2. Setup Environment
+### Setup Environment
 
 See [Dev Setup](/docs/contributing/dev-setup) for complete instructions.
 
-### 3. Make Changes
+### Make Changes
 
 Follow the [Coding Standards](/docs/contributing/coding-standards):
 - TypeScript with strict types
@@ -72,20 +92,15 @@ Follow the [Coding Standards](/docs/contributing/coding-standards):
 - Zustand selective subscriptions
 - CSS scoping
 
-### 4. Test Your Changes
+### Test Your Changes
 
-```bash
-# Build all packages
+```bash title="Terminal"
 pnpm build
-
-# Build extension only
 pnpm build:extension
-
-# Run type checking
 pnpm typecheck
 ```
 
-### 5. Submit Pull Request
+### Submit Pull Request
 
 See Pull Request Process below.
 
@@ -111,11 +126,7 @@ refactor/area         # Code refactoring
 
 ### Review Process
 
-1. Submit PR against `main` branch
-2. Automated checks run
-3. Maintainer reviews code
-4. Address feedback
-5. Merge when approved
+Submit your PR against the `main` branch. Automated checks run immediately. A maintainer reviews the code and provides feedback. Address any requested changes. The PR is merged once approved.
 
 ## Commit Conventions
 
@@ -135,7 +146,7 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```text
 feat(extension): add new feature
-fix(backend-vercel): resolve API issue
+fix(webapp): resolve settings page issue
 docs: update architecture guide
 chore: update dependencies
 ```

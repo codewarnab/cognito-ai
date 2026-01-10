@@ -3,6 +3,8 @@ title: Environment Variables Reference
 description: Complete list of environment variables.
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/utils/env.ts, packages/backend-vercel/.env.example */}
 
 Complete reference for all environment variables used across Cognito AI packages.
@@ -36,7 +38,7 @@ All extension variables are prefixed with `WXT_`.
 
 ### Usage
 
-```typescript
+```typescript title="apps/extension/src/example.ts"
 // Always use the ENV module
 import { ENV } from '@/utils/env';
 
@@ -44,7 +46,13 @@ const backendUrl = ENV.BACKEND_API_URL;
 const isLocalHidden = ENV.HIDE_LOCAL_MODE;
 ```
 
-## Backend Cloudflare (`packages/backend-cloudflare/`)
+## Backend Services (Reference Only)
+
+<Callout type="warn">
+  The backend packages are **not open-source**. These environment variables are documented for reference purposes only. You cannot contribute to backend code.
+</Callout>
+
+### Backend Cloudflare
 
 ### Secrets (via wrangler)
 
@@ -53,7 +61,7 @@ const isLocalHidden = ENV.HIDE_LOCAL_MODE;
 | `ELEVENLABS_API_KEY` | ElevenLabs API key | Yes |
 
 Set via:
-```bash
+```bash title="Terminal"
 wrangler secret put ELEVENLABS_API_KEY
 ```
 
@@ -64,12 +72,12 @@ wrangler secret put ELEVENLABS_API_KEY
 | `ELEVENLABS_AGENT_ID` | Voice agent ID | Yes |
 
 Set in `wrangler.toml`:
-```toml
+```toml title="wrangler.toml"
 [vars]
 ELEVENLABS_AGENT_ID = "agent_xxx"
 ```
 
-## Backend Vercel (`packages/backend-vercel/`)
+### Backend Vercel
 
 ### Required
 
@@ -89,7 +97,7 @@ ELEVENLABS_AGENT_ID = "agent_xxx"
 
 ### Example `.env`
 
-```bash
+```bash title="packages/backend-vercel/.env"
 # Required
 GOOGLE_AI_API_KEY=your_gemini_key
 SUPADATA_API_KEY=your_supadata_key
@@ -115,18 +123,14 @@ UPSTASH_REDIS_REST_TOKEN=your_token
 
 ### Copy Example Files
 
-```bash
+```bash title="Terminal"
 # Extension
 cp apps/extension/.env.example apps/extension/.env
-
-# Backend Vercel
-cp packages/backend-vercel/.env.example packages/backend-vercel/.env
 ```
 
 ### Local Development Configuration
 
-```bash
-# apps/extension/.env
+```bash title="apps/extension/.env"
 WXT_BACKEND_API_URL=http://localhost:3001
 WXT_WEBAPP_URL_DEV=http://localhost:3002
 ```
@@ -145,16 +149,20 @@ WXT_WEBAPP_URL_DEV=http://localhost:3002
 
 **Symptoms**: `undefined` or empty value at runtime
 
-**Checks**:
-1. Did you restart the dev server after changing `.env`?
-2. Is the variable prefixed correctly (`WXT_` for extension)?
-3. Are you using the `ENV` module, not `import.meta.env`?
+<Callout>
+  **Checklist:**
+  - Restart the dev server after changing `.env`
+  - Verify the variable is prefixed correctly (`WXT_` for extension)
+  - Use the `ENV` module, not `import.meta.env`
+</Callout>
 
 ### Wrong Environment
 
 **Symptoms**: Calling production API in development
 
-**Check**: Verify the `.env` file is loaded and contains correct values.
+<Callout>
+  Verify the `.env` file is loaded and contains correct values.
+</Callout>
 
 ## See Also
 

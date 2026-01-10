@@ -3,7 +3,8 @@ title: Threat Model
 description: Understanding Cognito AI's security considerations.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/ai/tools/approvalConfig.ts */}
+import { Callout } from 'fumadocs-ui/components/callout';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 
 This page documents Cognito AI's threat model, including attack vectors, mitigations, and known limitations.
 
@@ -19,7 +20,7 @@ This page documents Cognito AI's threat model, including attack vectors, mitigat
 
 ## Threat Categories
 
-### 1. Malicious Tool Execution
+### Malicious Tool Execution
 
 **Threat**: AI executes harmful browser actions
 
@@ -28,17 +29,9 @@ This page documents Cognito AI's threat model, including attack vectors, mitigat
 - Read-only tools auto-approved, write tools require consent
 - Clear display of tool arguments before approval
 
-```mermaid
-graph TD
-    A[AI Tool Call] --> B{Requires Approval?}
-    B -->|No| C[Auto-execute]
-    B -->|Yes| D[Show Approval UI]
-    D --> E{User Decision}
-    E -->|Approve| F[Execute]
-    E -->|Reject| G[Cancel]
-```
+<ImageZoom src="/tool-apprival-flow.png" alt="HITL Approval Flow" width={300} height={400}/>
 
-### 2. WebMCP Attacks
+### WebMCP Attacks
 
 **Threat**: Malicious websites exploit WebMCP tools
 
@@ -49,12 +42,11 @@ graph TD
 | **Parameter injection** | Unexpected args passed to tools | Schema validation |
 | **Unauthorized execution** | Tools run without consent | HITL approval |
 
-**Validation Flow**:
-```text
-Tool Call → Origin Check → Tab ID Check → Schema Check → User Approval → Execute
-```
+<Callout>
+**Validation Flow**: Tool Call → Origin Check → Tab ID Check → Schema Check → User Approval → Execute
+</Callout>
 
-### 3. MCP Server Attacks
+### MCP Server Attacks
 
 **Threat**: Compromised MCP servers
 
@@ -64,34 +56,16 @@ Tool Call → Origin Check → Tab ID Check → Schema Check → User Approval �
 - User can revoke access at any time
 - Tools display server origin
 
-### 4. Data Exfiltration
+### Data Exfiltration
 
 **Threat**: Sensitive data sent to AI or external services
 
 **Mitigations**:
-- Sensitive input detection (passwords, credit cards)
+- Sensitive input detection (passwords, credit cards, SSN, PINs)
 - Values stripped before sending to AI
 - Defense-in-depth at extraction, formatting, AND transport layers
 
-```typescript
-// Example: Sensitive field detection
-function isSensitiveInput(input: HTMLInputElement): boolean {
-  // Type-based
-  if (input.type === 'password') return true;
-  
-  // Autocomplete-based
-  const sensitive = ['cc-number', 'cc-csc', 'current-password'];
-  if (sensitive.includes(input.autocomplete)) return true;
-  
-  // Pattern-based
-  const pattern = /password|card|cvv|ssn|secret|pin/i;
-  if (pattern.test(input.name + input.id)) return true;
-  
-  return false;
-}
-```
-
-### 5. API Key Theft
+### API Key Theft
 
 **Threat**: Attacker obtains user's API key
 
@@ -100,11 +74,11 @@ function isSensitiveInput(input: HTMLInputElement): boolean {
 - Never exposed to web pages
 - BYOK calls go directly to Google (not via backend)
 
-**Limitations**:
-- Admin/malware with system access could extract keys
-- Chrome sync may expose keys across devices
+<Callout type="warn">
+Admin/malware with system access could extract keys. Chrome sync may expose keys across devices.
+</Callout>
 
-### 6. Prompt Injection
+### Prompt Injection
 
 **Threat**: Page content manipulates AI behavior
 
@@ -113,11 +87,11 @@ function isSensitiveInput(input: HTMLInputElement): boolean {
 - Page content is clearly delimited in context
 - HITL approval for destructive actions
 
-**Limitations**:
-- AI may still be influenced by adversarial page content
-- Read-only actions don't require approval
+<Callout type="warn">
+AI may still be influenced by adversarial page content. Read-only actions don't require approval.
+</Callout>
 
-### 7. Denial of Service
+### Denial of Service
 
 **Threat**: Resource exhaustion attacks
 
@@ -141,18 +115,7 @@ Tools requiring approval:
 
 ### Content Security Policy
 
-Extension pages use strict CSP:
-
-```json
-{
-  "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
-}
-```
-
-This prevents:
-- Inline script execution
-- External script loading
-- XSS attacks
+Extension pages use strict CSP preventing inline script execution, external script loading, and XSS attacks.
 
 ### Permission Model
 
@@ -191,28 +154,30 @@ Minimal Chrome permissions requested:
 
 ### For Users
 
-1. **Review before approving** — Read tool arguments carefully
-2. **Use BYOK for sensitive work** — Direct API calls, no intermediary
-3. **Trust MCP servers selectively** — Only enable servers you recognize
-4. **Monitor API usage** — Check for unexpected activity
-5. **Keep Chrome updated** — Security patches protect extension
+- **Review before approving** — Read tool arguments carefully
+- **Use BYOK for sensitive work** — Direct API calls, no intermediary
+- **Trust MCP servers selectively** — Only enable servers you recognize
+- **Monitor API usage** — Check for unexpected activity
+- **Keep Chrome updated** — Security patches protect extension
 
 ### For Contributors
 
-1. **Never log sensitive data** — API keys, tokens, passwords
-2. **Validate all inputs** — Use Zod schemas strictly
-3. **Maintain defense-in-depth** — Check at multiple layers
-4. **Add SECURITY comments** — Document sensitive handling
-5. **Test edge cases** — Adversarial inputs, malformed data
+- **Never log sensitive data** — API keys, tokens, passwords
+- **Validate all inputs** — Use Zod schemas strictly
+- **Maintain defense-in-depth** — Check at multiple layers
+- **Add SECURITY comments** — Document sensitive handling
+- **Test edge cases** — Adversarial inputs, malformed data
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability:
+<Callout type="error">
+**Do not** open a public GitHub issue for security vulnerabilities.
+</Callout>
 
-1. **Do not** open a public GitHub issue
-2. Email security concerns to the maintainers
-3. Include reproduction steps
-4. Allow time for a fix before disclosure
+To report a security issue:
+- Email security concerns to the maintainers
+- Include reproduction steps
+- Allow time for a fix before disclosure
 
 ## Next Steps
 

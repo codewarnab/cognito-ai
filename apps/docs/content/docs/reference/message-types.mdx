@@ -1,35 +1,43 @@
 ---
 title: Message Types
-description: Internal message types used in Cognito AI.
+description: Internal message types used for communication between extension contexts.
 ---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { MessageFlowSequence } from '@/components/diagrams/MessageFlowSequence';
+import { WebMCPMessageSequence } from '@/components/diagrams/WebMCPMessageSequence';
 
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/background/messaging/ */}
 
-Reference for internal message types used between extension contexts.
+Cognito AI uses **typed messages** for communication between extension contexts. Each message includes a `type` field with a prefix that determines routing.
 
-## Message Architecture
+## Message Flow Overview
 
-```mermaid
-graph LR
-    SP[Side Panel] <-->|chrome.runtime| BG[Background SW]
-    BG <-->|chrome.tabs| CS[Content Scripts]
-    CS <-->|postMessage| PAGE[Web Page]
-```
+Messages flow between four contexts: **Side Panel**, **Background Service Worker**, **Content Scripts**, and **Web Pages**.
 
-## Message Format
+<MessageFlowSequence />
 
-All messages follow this structure:
+The background service worker acts as a **central router**, dispatching messages to the appropriate handler based on the type prefix.
 
-```typescript
-interface ExtensionMessage {
-  type: string;           // Message identifier
-  payload?: unknown;      // Message data
-}
-```
+## Message Categories
+
+Messages are organized by **type prefix**. The router examines the prefix to determine which handler processes the message.
+
+| Prefix | Handler | Purpose |
+|--------|---------|---------|
+| `mcp/` | MCP Handler | Remote MCP server connections |
+| `webmcp/` | WebMCP Handler | Web page tool discovery and execution |
+| `dom/` | DOM Handler | Page content and interactions |
+| `settings/` | Settings Handler | User preferences and sync |
+| `supermemory/` | Memory Handler | Memory search and storage |
+
+---
 
 ## MCP Messages
 
-### Type Prefix: `mcp/`
+Remote MCP server management uses the `mcp/` prefix with dynamic server IDs.
+
+### Message Types
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
@@ -40,27 +48,19 @@ interface ExtensionMessage {
 | `mcp/{serverId}/tool/call` | AI → BG | Execute MCP tool |
 | `mcp/all/status` | BG → SP | Broadcast all statuses |
 
-### Example
+### Server ID Pattern
 
-```typescript
-// Connect to Notion MCP server
-chrome.runtime.sendMessage({
-  type: 'mcp/notion/connect'
-});
+Server IDs are dynamic identifiers matching configured MCP servers. For example:
+- `mcp/notion/connect` — Connect to Notion
+- `mcp/github/tool/call` — Execute a GitHub tool
 
-// Execute a tool
-chrome.runtime.sendMessage({
-  type: 'mcp/notion/tool/call',
-  payload: {
-    name: 'create_page',
-    arguments: { title: 'New Page' }
-  }
-});
-```
+---
 
 ## WebMCP Messages
 
-### Type Prefix: `webmcp/`
+WebMCP enables **web pages to expose tools** that AI can invoke. Messages flow through content scripts to reach page-level handlers.
+
+### Message Types
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
@@ -73,163 +73,33 @@ chrome.runtime.sendMessage({
 | `webmcp/tool/execute` | BG → CS | Forward execution |
 | `webmcp/tool/result` | CS → BG | Return execution result |
 
-### Interfaces
+### Request ID Correlation
 
-```typescript
-interface WebMCPToolsRegisterMessage {
-  type: 'webmcp/tools/register';
-  tools: WebMCPTool[];
-  tabId: number;
-  domain: string;
-  url: string;
-}
+WebMCP uses a **`requestId` field** to correlate requests with responses across the asynchronous message chain. This is critical when multiple tool calls are in flight.
 
-interface WebMCPToolCallRequest {
-  type: 'webmcp/tool/call';
-  requestId: string;  // Required: unique identifier for correlation
-  payload: {
-    toolName: string;
-    args: Record<string, unknown>;
-  };
-}
+<WebMCPMessageSequence />
 
-interface WebMCPToolExecuteMessage {
-  type: 'webmcp/tool/execute';
-  requestId: string;  // Copied from initial call
-  payload: {
-    toolName: string;
-    args: Record<string, unknown>;
-  };
-}
-
-interface WebMCPToolExecutionResult {
-  type: 'webmcp/tool/result';
-  requestId: string;  // Same as initial call for correlation
-  success: boolean;
-  result?: unknown;
-  error?: string;
-}
-```
+<Callout>
+  The `requestId` must be a unique, collision-resistant identifier. Use `crypto.randomUUID()` or a library like **nanoid**.
+</Callout>
 
 ### Request ID Lifecycle
 
-The `requestId` field enables correlation between tool call requests and their results across the asynchronous message chain. This is critical for matching responses to their originating requests, especially when multiple tool calls are in flight.
+| Stage | Action |
+|-------|--------|
+| **Generation** | Caller creates unique `requestId` on initial `webmcp/tool/call` |
+| **Propagation** | Each intermediate handler copies the same `requestId` |
+| **Correlation** | Response includes matching `requestId` for lookup |
 
-#### Generation
+Error responses **also include** the same `requestId`, allowing callers to match failures to their originating requests.
 
-Callers **MUST** include a unique `requestId` on the initial `webmcp/tool/call` payload. The ID should be collision-resistant to avoid mismatched responses.
-
-Recommended approaches:
-- **UUID v4** — `crypto.randomUUID()` (native in modern browsers/Node.js)
-- **nanoid** — `nanoid()` from the [nanoid](https://github.com/ai/nanoid) library (smaller, URL-safe)
-- **ulid** — `ulid()` from the [ulid](https://github.com/ulid/javascript) library (sortable, timestamp-based)
-
-```typescript
-// Example: Generating requestId with crypto.randomUUID()
-const callMessage: WebMCPToolCallRequest = {
-  type: 'webmcp/tool/call',
-  requestId: crypto.randomUUID(), // e.g., "550e8400-e29b-41d4-a716-446655440000"
-  payload: {
-    toolName: 'search_products',
-    args: { query: 'laptop' }
-  }
-};
-```
-
-#### Propagation
-
-All intermediate messages in the execution chain **MUST** copy the same `requestId` from the initial call:
-
-```mermaid
-sequenceDiagram
-    participant AI as AI/Caller
-    participant BG as Background SW
-    participant CS as Content Script
-    participant PAGE as Web Page
-
-    AI->>BG: webmcp/tool/call (requestId: "abc-123")
-    BG->>CS: webmcp/tool/execute (requestId: "abc-123")
-    CS->>PAGE: postMessage (requestId: "abc-123")
-    PAGE-->>CS: result (requestId: "abc-123")
-    CS-->>BG: webmcp/tool/result (requestId: "abc-123")
-    BG-->>AI: response (requestId: "abc-123")
-```
-
-The background service worker extracts the `requestId` from the incoming `webmcp/tool/call` and attaches it to the outgoing `webmcp/tool/execute` message:
-
-```typescript
-// Background handler
-function handleToolCall(message: WebMCPToolCallRequest) {
-  const { requestId, payload } = message;
-  
-  // Forward to content script with same requestId
-  chrome.tabs.sendMessage(tabId, {
-    type: 'webmcp/tool/execute',
-    requestId,  // Preserve the original requestId
-    payload
-  });
-}
-```
-
-#### Correlation
-
-The response (`webmcp/tool/result`) uses the **identical** `requestId` for correlation. Callers should maintain a map of pending requests to match responses:
-
-```typescript
-// Caller-side correlation
-const pendingRequests = new Map<string, {
-  resolve: (result: unknown) => void;
-  reject: (error: Error) => void;
-}>();
-
-async function callWebMCPTool(toolName: string, args: Record<string, unknown>) {
-  const requestId = crypto.randomUUID();
-  
-  return new Promise((resolve, reject) => {
-    pendingRequests.set(requestId, { resolve, reject });
-    
-    chrome.runtime.sendMessage({
-      type: 'webmcp/tool/call',
-      requestId,
-      payload: { toolName, args }
-    });
-  });
-}
-
-// Handle incoming results
-function handleToolResult(result: WebMCPToolExecutionResult) {
-  const pending = pendingRequests.get(result.requestId);
-  if (!pending) return; // Unknown request, ignore
-  
-  pendingRequests.delete(result.requestId);
-  
-  if (result.success) {
-    pending.resolve(result.result);
-  } else {
-    pending.reject(new Error(result.error));
-  }
-}
-```
-
-#### Error Handling
-
-Results with errors **still carry the same `requestId`** for correlation. The `success: false` flag indicates an error occurred, with details in the `error` field:
-
-```typescript
-// Error result example
-const errorResult: WebMCPToolExecutionResult = {
-  type: 'webmcp/tool/result',
-  requestId: 'abc-123',  // Same requestId as the original call
-  success: false,
-  error: 'Tool execution failed: element not found'
-};
-```
-
-This ensures callers can always correlate responses—whether successful or failed—back to their originating requests.
+---
 
 ## DOM Messages
 
-### Type Prefix: `dom/`
+DOM messages control **page content reading** and **element interactions**.
+
+### Message Types
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
@@ -239,34 +109,13 @@ This ensures callers can always correlate responses—whether successful or fail
 | `dom/scroll` | BG → CS | Scroll the page |
 | `dom/screenshot` | BG → CS | Capture screenshot |
 
-### Example
+These messages enable AI tools to interact with the current page through the content script.
 
-```typescript
-// Read page content
-const content = await chrome.tabs.sendMessage(tabId, {
-  type: 'dom/read'
-});
-
-// Click an element
-await chrome.tabs.sendMessage(tabId, {
-  type: 'dom/click',
-  selector: '#submit-btn'
-});
-```
-
-## Supermemory Messages
-
-### Type Prefix: `supermemory/`
-
-| Type | Direction | Purpose |
-|------|-----------|---------|
-| `supermemory/search` | SP → BG | Search memories |
-| `supermemory/add` | SP → BG | Add a memory |
-| `supermemory/status` | SP → BG | Check connection |
+---
 
 ## Settings Messages
 
-### Type Prefix: `settings/`
+Settings messages synchronize **user preferences** across contexts.
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
@@ -274,105 +123,36 @@ await chrome.tabs.sendMessage(tabId, {
 | `settings/update` | SP → BG | Update settings |
 | `settings/sync` | BG → SP | Sync settings change |
 
-## Message Router
+---
 
-The background service worker routes messages by type prefix:
+## Supermemory Messages
 
-```typescript
-// background/messaging/router.ts
-function routeMessage(message: ExtensionMessage) {
-  const { type } = message;
-  
-  if (type.startsWith('mcp/')) {
-    return mcpHandler(message);
-  }
-  if (type.startsWith('webmcp/')) {
-    return webmcpHandler(message);
-  }
-  if (type.startsWith('dom/')) {
-    return domHandler(message);
-  }
-  if (type.startsWith('settings/')) {
-    return settingsHandler(message);
-  }
-  // ... more handlers
-}
-```
+Memory integration uses the `supermemory/` prefix.
 
-## Sending Messages
+| Type | Direction | Purpose |
+|------|-----------|---------|
+| `supermemory/search` | SP → BG | Search memories |
+| `supermemory/add` | SP → BG | Add a memory |
+| `supermemory/status` | SP → BG | Check connection |
 
-### From Side Panel to Background
+---
 
-```typescript
-// Send and wait for response
-const result = await chrome.runtime.sendMessage({
-  type: 'mcp/notion/status/get'
-});
-```
+## Direction Legend
 
-### From Background to Content Script
+Message directions use these abbreviations:
 
-```typescript
-// Send to specific tab
-const result = await chrome.tabs.sendMessage(tabId, {
-  type: 'dom/read'
-});
-```
+| Abbreviation | Context |
+|--------------|---------|
+| **SP** | Side Panel |
+| **BG** | Background Service Worker |
+| **CS** | Content Script |
+| **AI** | AI Model / Caller |
 
-### From Content Script to Page
+Solid arrows (→) indicate **requests**. Dashed arrows indicate **responses**.
 
-```typescript
-// Via postMessage
-window.postMessage({
-  type: 'mcp-request',
-  payload: { method: 'tools/list' }
-}, '*');
-```
-
-## Listening for Messages
-
-### In Background
-
-```typescript
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const result = routeMessage(message);
-  
-  if (result instanceof Promise) {
-    result.then(sendResponse);
-    return true; // Keep channel open for async
-  }
-  
-  sendResponse(result);
-});
-```
-
-### In Content Script
-
-```typescript
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'dom/read') {
-    const content = document.body.innerText;
-    sendResponse({ content });
-  }
-});
-```
-
-## Type Safety
-
-Define typed message handlers:
-
-```typescript
-type MessageHandler<T, R> = (message: T) => Promise<R>;
-
-const handlers: Record<string, MessageHandler<unknown, unknown>> = {
-  'mcp/connect': handleMcpConnect,
-  'webmcp/tools/list': handleWebmcpToolsList,
-  // ...
-};
-```
+---
 
 ## See Also
 
-- [Extension Architecture](/docs/architecture/extension-architecture) — Context communication
-- [WebMCP Architecture](/docs/architecture/webmcp-architecture) — WebMCP message flow
-- [MCP Client](/docs/architecture/mcp-client) — MCP message handling
+- [WebMCP Architecture](../architecture/webmcp-architecture) — WebMCP message flow details
+- [MCP Client](../architecture/mcp-client) — MCP protocol handling

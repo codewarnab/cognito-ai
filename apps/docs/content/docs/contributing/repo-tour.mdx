@@ -3,31 +3,60 @@ title: Repo Tour
 description: Navigate the Cognito AI codebase.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: MONOREPO.md */}
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
+{/* VERIFIED: 2026-01-10 | code_refs: MONOREPO.md */}
 
 This guide walks you through the Cognito AI codebase, explaining where to find things and how packages relate.
 
 ## Top-Level Structure
 
-```text
-cognito-ai/
-├── apps/                    # Applications
-│   ├── extension/           # Chrome Extension (main product)
-│   ├── docs/                # Documentation site (you're reading this)
-│   └── webapp/              # Settings pages (opened in tabs)
-├── packages/                # Shared packages
-│   ├── shared/              # Shared types and constants
-│   ├── backend-cloudflare/  # ElevenLabs voice proxy
-│   └── backend-vercel/      # AI + transcript API
-├── docs/                    # Internal design documents
-├── .cursor/                 # Cursor AI rules
-├── .gemini/                 # Gemini AI configuration
-├── package.json             # Root package
-├── pnpm-workspace.yaml      # Workspace config
-├── MONOREPO.md              # Architecture doc
-├── CONTRIBUTING.md          # Contribution guide
-└── SETUP.md                 # Setup instructions
-```
+<Files>
+  <Folder name="cognito-ai" defaultOpen>
+    <Folder name="apps" >
+      <Folder name="extension">
+        <File name="Chrome Extension (main product)" />
+      </Folder>
+      <Folder name="docs">
+        <File name="Documentation site (you're reading this)" />
+      </Folder>
+      <Folder name="webapp">
+        <File name="Settings pages (opened in tabs)" />
+      </Folder>
+    </Folder>
+    <Folder name="packages" >
+      <Folder name="shared">
+        <File name="Shared types and constants" />
+      </Folder>
+      <Folder name="code-bridge">
+        <File name="Code execution bridge" />
+      </Folder>
+    </Folder>
+    <Folder name="scripts">
+      <File name="Build and utility scripts" />
+    </Folder>
+    <Folder name=".cursor">
+      <File name="Cursor AI rules" />
+    </Folder>
+    <Folder name=".gemini">
+      <File name="Gemini AI configuration" />
+    </Folder>
+    <Folder name=".kiro">
+      <File name="Kiro AI configuration" />
+    </Folder>
+    <Folder name=".trae">
+      <File name="Trae AI configuration" />
+    </Folder>
+    <File name="package.json" />
+    <File name="pnpm-workspace.yaml" />
+    <File name="turbo.json" />
+    <File name="MONOREPO.md" />
+    <File name="CONTRIBUTING.md" />
+    <File name="SETUP.md" />
+  </Folder>
+</Files>
 
 ## Extension (`apps/extension/`)
 
@@ -35,58 +64,177 @@ The core Chrome Extension built with WXT and React 19.
 
 ### Source Structure
 
-```text
-apps/extension/src/
-├── entrypoints/             # WXT entry points
-│   ├── sidepanel/           # Main UI (React)
-│   │   ├── index.html       # HTML shell
-│   │   ├── main.tsx         # React entry
-│   │   └── App.tsx          # Root component
-│   ├── background.ts        # Service worker
-│   └── contents/            # Content scripts
-│       ├── webmcp-proxy.content.ts
-│       └── ...
-├── components/              # React components
-│   ├── ui/                  # Base primitives (shadcn)
-│   │   └── primitives/      # Never modify directly
-│   ├── features/            # Feature-specific
-│   │   ├── chat/            # Chat interface
-│   │   ├── mcp/             # MCP UI
-│   │   └── settings/        # Settings UI
-│   └── shared/              # Reusable components
-├── stores/                  # Zustand state
-│   ├── settings/            # User preferences
-│   ├── chat/                # Messages, threads
-│   ├── model/               # AI model config
-│   ├── tools/               # Tool state
-│   └── mcp/                 # MCP connections
-├── ai/                      # AI integration
-│   ├── chat/                # Chat implementation
-│   ├── tools/               # Tool definitions
-│   │   ├── manager.ts       # Tool aggregation
-│   │   └── webmcpTools.ts   # WebMCP integration
-│   ├── backend/             # Backend mode
-│   └── prompts/             # System prompts
-├── mcp/                     # MCP client
-│   ├── client/              # SSE client
-│   ├── discovery.ts         # OAuth discovery
-│   ├── oauth.ts             # OAuth flow
-│   └── state.ts             # Connection state
-├── background/              # Background services
-│   ├── messaging/           # Message handlers
-│   │   ├── router.ts        # Message routing
-│   │   ├── mcpHandler.ts    # MCP messages
-│   │   └── webmcpHandler.ts # WebMCP messages
-│   ├── mcp/                 # MCP management
-│   ├── webmcp/              # WebMCP management
-│   └── supermemory/         # Memory services
-├── db/                      # Local database (Dexie)
-├── hooks/                   # React hooks
-├── types/                   # TypeScript types
-└── utils/                   # Utilities
-    ├── env.ts               # Environment variables
-    └── ...
-```
+<Files>
+  <Folder name="apps/extension/src" defaultOpen>
+    <Folder name="entrypoints" >
+      <Folder name="sidepanel">
+        <File name="index.html" />
+        <File name="main.tsx" />
+        <File name="App.tsx" />
+      </Folder>
+      <File name="background.ts" />
+      <Folder name="offscreen">
+        <File name="Offscreen documents" />
+      </Folder>
+      <Folder name="options">
+        <File name="Options page" />
+      </Folder>
+      <Folder name="sandbox-executor">
+        <File name="Sandboxed code execution" />
+      </Folder>
+      <Folder name="ask-ai-button.content">
+        <File name="Floating AI button" />
+      </Folder>
+      <Folder name="unified-overlay.content">
+        <File name="Overlay UI" />
+      </Folder>
+      <File name="webmcp-proxy.content.ts" />
+    </Folder>
+    <Folder name="components" >
+      <Folder name="ui">
+        <File name="Base primitives (shadcn)" />
+      </Folder>
+      <Folder name="features" defaultOpen>
+        <Folder name="chat">
+          <File name="Chat interface" />
+        </Folder>
+        <Folder name="mcp">
+          <File name="MCP UI" />
+        </Folder>
+        <Folder name="settings">
+          <File name="Settings UI" />
+        </Folder>
+        <Folder name="voice">
+          <File name="Voice mode UI" />
+        </Folder>
+        <Folder name="cliMode">
+          <File name="CLI mode UI" />
+        </Folder>
+        <Folder name="threads">
+          <File name="Thread management" />
+        </Folder>
+      </Folder>
+      <Folder name="shared">
+        <File name="Reusable components" />
+      </Folder>
+      <Folder name="shell">
+        <File name="App shell components" />
+      </Folder>
+    </Folder>
+    <Folder name="stores" >
+      <Folder name="settings">
+        <File name="User preferences" />
+      </Folder>
+      <Folder name="chat">
+        <File name="Messages, threads" />
+      </Folder>
+      <Folder name="mcp">
+        <File name="MCP connections" />
+      </Folder>
+      <Folder name="tools">
+        <File name="Tool state" />
+      </Folder>
+      <Folder name="voice">
+        <File name="Voice mode state" />
+      </Folder>
+      <Folder name="approval">
+        <File name="Tool approval state" />
+      </Folder>
+      <Folder name="ui">
+        <File name="UI state" />
+      </Folder>
+    </Folder>
+    <Folder name="ai" >
+      <Folder name="core">
+        <File name="Core AI logic" />
+      </Folder>
+      <Folder name="agents">
+        <File name="AI agents" />
+      </Folder>
+      <Folder name="tools" >
+        <File name="registry.ts" />
+        <File name="manager.ts" />
+        <File name="webmcpTools.ts" />
+      </Folder>
+      <Folder name="models">
+        <File name="Model configuration" />
+      </Folder>
+      <Folder name="prompts">
+        <File name="System prompts" />
+      </Folder>
+      <Folder name="planning">
+        <File name="Task planning" />
+      </Folder>
+      <Folder name="stream">
+        <File name="Streaming utilities" />
+      </Folder>
+      <Folder name="cliMode">
+        <File name="CLI mode AI" />
+      </Folder>
+      <Folder name="mcp">
+        <File name="MCP AI integration" />
+      </Folder>
+    </Folder>
+    <Folder name="mcp">
+      <Folder name="client">
+        <File name="SSE client" />
+      </Folder>
+      <File name="discovery.ts" />
+      <File name="oauth.ts" />
+      <File name="state.ts" />
+      <File name="scopeHandler.ts" />
+    </Folder>
+    <Folder name="background" >
+      <Folder name="messaging" defaultOpen>
+        <File name="router.ts" />
+        <File name="mcpHandler.ts" />
+        <File name="webmcpHandler.ts" />
+      </Folder>
+      <Folder name="mcp">
+        <File name="MCP management" />
+      </Folder>
+      <Folder name="webmcp">
+        <File name="WebMCP management" />
+      </Folder>
+      <Folder name="supermemory">
+        <File name="Memory services" />
+      </Folder>
+      <Folder name="contextMenu">
+        <File name="Context menu" />
+      </Folder>
+      <Folder name="providers">
+        <File name="Service providers" />
+      </Folder>
+    </Folder>
+    <Folder name="services">
+      <File name="Service layer" />
+    </Folder>
+    <Folder name="workflows">
+      <File name="Workflow definitions" />
+    </Folder>
+    <Folder name="search">
+      <File name="Search functionality" />
+    </Folder>
+    <Folder name="db">
+      <File name="Local database (Dexie)" />
+    </Folder>
+    <Folder name="hooks">
+      <File name="React hooks" />
+    </Folder>
+    <Folder name="types">
+      <File name="TypeScript types" />
+    </Folder>
+    <Folder name="contexts">
+      <File name="React contexts" />
+    </Folder>
+    <Folder name="lib">
+      <File name="Utility libraries" />
+    </Folder>
+    <Folder name="utils">
+      <File name="Utilities" />
+    </Folder>
+  </Folder>
+</Files>
 
 ### Key Files
 
@@ -101,52 +249,100 @@ apps/extension/src/
 
 Settings and configuration pages as a Next.js app.
 
-```text
-apps/webapp/
-├── src/
-│   ├── app/                 # Next.js pages
-│   │   ├── settings/        # Settings page
-│   │   ├── onboarding/      # Onboarding flow
-│   │   ├── reminders/       # Reminders UI
-│   │   └── ...
-│   ├── components/          # React components
-│   └── lib/                 # Utilities
-├── public/                  # Static assets
-└── docs/                    # Implementation docs
-```
+<Files>
+  <Folder name="apps/webapp" defaultOpen>
+    <Folder name="src" defaultOpen>
+      <Folder name="app" defaultOpen>
+        <Folder name="settings">
+          <File name="Settings page" />
+        </Folder>
+        <Folder name="onboarding">
+          <File name="Onboarding flow" />
+        </Folder>
+        <Folder name="reminders">
+          <File name="Reminders UI" />
+        </Folder>
+        <Folder name="features">
+          <File name="Feature showcase" />
+        </Folder>
+        <Folder name="changelog">
+          <File name="Changelog page" />
+        </Folder>
+        <Folder name="troubleshooting">
+          <File name="Troubleshooting page" />
+        </Folder>
+        <Folder name="demo">
+          <File name="Demo pages" />
+        </Folder>
+      </Folder>
+      <Folder name="components">
+        <File name="React components" />
+      </Folder>
+      <Folder name="hooks">
+        <File name="React hooks" />
+      </Folder>
+      <Folder name="lib">
+        <File name="Utilities" />
+      </Folder>
+    </Folder>
+    <Folder name="public">
+      <File name="Static assets" />
+    </Folder>
+    <Folder name="docs">
+      <File name="Implementation docs" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## Docs (`apps/docs/`)
 
 This documentation site, built with Fumadocs.
 
-```text
-apps/docs/
-├── content/
-│   └── docs/                # MDX documentation
-│       ├── getting-started/
-│       ├── architecture/
-│       └── ...
-├── source.config.ts         # Fumadocs config
-└── app/                     # Next.js app
-```
+<Files>
+  <Folder name="apps/docs" defaultOpen>
+    <Folder name="content" defaultOpen>
+      <Folder name="docs" defaultOpen>
+        <Folder name="getting-started" />
+        <Folder name="architecture" />
+        <File name="..." />
+      </Folder>
+    </Folder>
+    <File name="source.config.ts" />
+    <Folder name="app">
+      <File name="Next.js app" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## Shared (`packages/shared/`)
 
-Common types and constants.
+Common types and constants used across packages.
 
-```text
-packages/shared/
-├── src/
-│   ├── types/               # Shared types
-│   │   ├── writer.ts        # WriteTone, etc.
-│   │   ├── chat.ts          # Chat types
-│   │   └── ...
-│   ├── constants/           # Shared constants
-│   │   ├── prompts.ts       # TONE_INSTRUCTIONS, etc.
-│   │   └── ...
-│   └── index.ts             # Exports
-└── dist/                    # Compiled output
-```
+<Files>
+  <Folder name="packages/shared" defaultOpen>
+    <Folder name="src" defaultOpen>
+      <Folder name="types" defaultOpen>
+        <File name="writer.ts" />
+        <File name="chat.ts" />
+        <File name="..." />
+      </Folder>
+      <Folder name="constants" defaultOpen>
+        <File name="prompts.ts" />
+        <File name="..." />
+      </Folder>
+      <Folder name="models">
+        <File name="Model definitions" />
+      </Folder>
+      <Folder name="storage">
+        <File name="Storage utilities" />
+      </Folder>
+      <File name="index.ts" />
+    </Folder>
+    <Folder name="dist">
+      <File name="Compiled output" />
+    </Folder>
+  </Folder>
+</Files>
 
 **Usage:**
 ```typescript
@@ -154,91 +350,84 @@ import type { WriteTone } from '@cognito/shared';
 import { TONE_INSTRUCTIONS } from '@cognito/shared';
 ```
 
-## Backend Vercel (`packages/backend-vercel/`)
-
-Express API for AI and content services.
-
-```text
-packages/backend-vercel/
-├── src/
-│   ├── routes/              # API routes
-│   │   ├── ai.ts            # /api/ai/*
-│   │   ├── transcript.ts    # /simple-transcript
-│   │   ├── search.ts        # /web-search
-│   │   └── ...
-│   ├── services/            # Business logic
-│   ├── middleware/          # Rate limiting, logging
-│   └── index.ts             # Express app
-└── vercel.json              # Vercel config
-```
-
-## Backend Cloudflare (`packages/backend-cloudflare/`)
-
-ElevenLabs voice proxy.
-
-```text
-packages/backend-cloudflare/
-├── src/
-│   └── index.ts             # Worker handlers
-└── wrangler.toml            # Cloudflare config
-```
-
 ## Finding Things
 
 ### "Where do I add a new tool?"
 
-```text
-apps/extension/src/ai/tools/
-├── registry.ts              # Add tool definition here
-├── manager.ts               # Registered automatically
-└── [tool-name].ts           # Create tool file
-```
+<Files>
+  <Folder name="apps/extension/src/ai/tools" defaultOpen>
+    <File name="registry.ts" />
+    <File name="manager.ts" />
+    <File name="[tool-name].ts" />
+  </Folder>
+</Files>
 
 ### "Where do I add a new MCP server?"
 
-```text
-apps/extension/src/constants/mcpServers.tsx  # Pre-configured servers
-apps/extension/src/mcp/                      # Client implementation
-```
+<Files>
+  <Folder name="apps/extension/src" defaultOpen>
+    <Folder name="constants">
+      <File name="mcpServers.tsx" />
+    </Folder>
+    <Folder name="mcp">
+      <File name="Client implementation" />
+    </Folder>
+  </Folder>
+</Files>
 
 ### "Where are the React components?"
 
-```text
-apps/extension/src/components/
-├── features/chat/           # Chat components
-├── features/mcp/            # MCP components
-└── ui/                      # Base components
-```
+<Files>
+  <Folder name="apps/extension/src/components" defaultOpen>
+    <Folder name="features" defaultOpen>
+      <Folder name="chat">
+        <File name="Chat components" />
+      </Folder>
+      <Folder name="mcp">
+        <File name="MCP components" />
+      </Folder>
+    </Folder>
+    <Folder name="ui">
+      <File name="Base components" />
+    </Folder>
+  </Folder>
+</Files>
 
 ### "Where is the background logic?"
 
-```text
-apps/extension/src/background/
-├── messaging/               # Message handling
-├── mcp/                     # MCP connections
-└── supermemory/             # Memory features
-```
+<Files>
+  <Folder name="apps/extension/src/background" defaultOpen>
+    <Folder name="messaging">
+      <File name="Message handling" />
+    </Folder>
+    <Folder name="mcp">
+      <File name="MCP connections" />
+    </Folder>
+    <Folder name="supermemory">
+      <File name="Memory features" />
+    </Folder>
+  </Folder>
+</Files>
 
 ### "Where are types defined?"
 
-```text
-packages/shared/src/types/   # Shared types
-apps/extension/src/types/    # Extension-specific types
-```
+<Files>
+  <Folder name="packages/shared/src" defaultOpen>
+    <Folder name="types">
+      <File name="Shared types" />
+    </Folder>
+  </Folder>
+  <Folder name="apps/extension/src" defaultOpen>
+    <Folder name="types">
+      <File name="Extension-specific types" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## Package Dependencies
 
-```mermaid
-graph TD
-    EXT[Extension] --> SHARED[Shared]
-    WEBAPP[Webapp] --> SHARED
-    VERCEL[Backend Vercel] --> SHARED
-    DOCS[Docs]
-    
-    EXT -->|API calls| VERCEL
-    EXT -->|API calls| CF[Backend Cloudflare]
-```
 
+<ImageZoom src="/package-dependecy.png" alt="Package Dependency Graph" width={600} height={400} />
 ## Next Steps
 
 - [Monorepo Architecture](/docs/architecture/monorepo) — Package details

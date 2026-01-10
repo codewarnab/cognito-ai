@@ -1,25 +1,39 @@
 ---
 title: Coding Standards
-description: Coding conventions and best practices for Cognito AI.
+description: Coding conventions and best practices for Cognito AI development.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/GEMINI.md */}
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
 
-This guide covers coding conventions and best practices for contributing to Cognito AI.
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/docs/CODING_STANDARDS.md */}
+
+This guide covers coding standards for contributing to Cognito AI.
+
+<Callout>
+  For detailed standards, see the modular pages: [TypeScript](/docs/contributing/coding-standards/typescript), [React](/docs/contributing/coding-standards/react), [Extension](/docs/contributing/coding-standards/extension), and [Reliability](/docs/contributing/coding-standards/reliability).
+</Callout>
+
+## Core Principles
+
+- Use TypeScript with **strict type checking** enabled
+- Prefer `const` over `let`; avoid `var`
+- Keep modules small and single-responsibility
+- Co-locate related hooks and components
+- **Never log secrets**, API keys, or PII
 
 ## TypeScript
 
 ### Strict Typing
 
-Always use explicit types. Avoid `any`.
+Use explicit types. Avoid `any`:
 
-```typescript
-// ✅ Good
+```typescript title="Good"
 function processMessage(message: ChatMessage): ProcessedMessage {
   return { ...message, processed: true };
 }
+```
 
-// ❌ Bad
+```typescript title="Bad"
 function processMessage(message: any): any {
   return { ...message, processed: true };
 }
@@ -29,43 +43,35 @@ function processMessage(message: any): any {
 
 Use `import type` for type-only imports:
 
-```typescript
-// ✅ Good
+```typescript title="Good"
 import type { WriteTone, RewritePreset } from '@cognito/shared';
 import { TONE_INSTRUCTIONS } from '@cognito/shared';
-
-// ❌ Bad (imports type as value)
-import { WriteTone } from '@cognito/shared';
 ```
 
-### Unknown vs Any
+### Path Aliases
 
-Use `unknown` when type is truly unknown:
+**Always use path aliases** instead of relative paths:
 
-```typescript
-// ✅ Good - requires type narrowing
-function handle(data: unknown) {
-  if (typeof data === 'string') {
-    return data.toUpperCase();
-  }
-}
+| Alias | Maps To | Example |
+|-------|---------|---------|
+| `~*` | `./src/*` | `import { x } from '~/utils/helper'` |
+| `@/*` | `./src/*` | `import { Button } from '@/components/ui/Button'` |
+| `@assets/*` | `./assets/*` | `import icon from '@assets/icon.png'` |
+| `~logger` | `./src/logger` | `import { createLogger } from '~logger'` |
 
-// ❌ Bad - bypasses type checking
-function handle(data: any) {
-  return data.toUpperCase();
-}
-```
+<Callout type="warn">
+  Never use `../../` or `../../../` patterns. Use path aliases configured in `tsconfig.json`.
+</Callout>
 
 ## React 19
 
-Cognito uses React 19 with important pattern changes.
+Cognito uses **React 19** with updated patterns.
 
 ### Ref as Prop
 
 React 19 passes `ref` as a regular prop:
 
-```typescript
-// ✅ React 19 - ref as prop
+```typescript title="React 19 Pattern"
 interface Props {
   ref?: React.RefObject<HTMLDivElement | null>;
   className?: string;
@@ -74,66 +80,37 @@ interface Props {
 function MyComponent({ ref, className }: Props) {
   return <div ref={ref} className={className} />;
 }
-
-// ❌ Old React 18 pattern (still works but not preferred)
-const MyComponent = forwardRef<HTMLDivElement, Props>((props, ref) => {
-  return <div ref={ref} {...props} />;
-});
 ```
 
 ### useRef Null Handling
 
-Always include `null` in type:
+Always include `null` in the type:
 
-```typescript
-// ✅ React 19
+```typescript title="Correct"
 const inputRef = useRef<HTMLInputElement | null>(null);
+```
 
-// ❌ Wrong - won't compile in React 19
+```typescript title="Incorrect - won't compile"
 const inputRef = useRef<HTMLInputElement>(null);
 ```
 
-### Component Props with Refs
+## State Management
 
-```typescript
-interface ComposerProps {
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
-}
+Cognito uses **Zustand** for state management.
 
-function Composer({ textareaRef }: ComposerProps) {
-  return <textarea ref={textareaRef} />;
-}
-```
+### Selective Subscriptions
 
-## State Management (Zustand)
+<Callout type="warn">
+  **Always use selectors** to avoid infinite re-render loops. Never subscribe to the entire store.
+</Callout>
 
-### Selective Subscriptions (Critical)
-
-**Always use selectors** to avoid infinite re-render loops:
-
-```typescript
-// ✅ Good - selective subscription
+```typescript title="Good - selective subscription"
 const messages = useChatStore((state) => state.messages);
 const addMessage = useChatStore((state) => state.addMessage);
-
-// ❌ Bad - causes infinite re-renders
-const store = useChatStore();
 ```
 
-### Store Pattern
-
-```typescript
-import { create } from 'zustand';
-
-interface SettingsState {
-  useBackendMode: boolean;
-  setUseBackendMode: (value: boolean) => void;
-}
-
-export const useSettingsStore = create<SettingsState>()((set) => ({
-  useBackendMode: true,
-  setUseBackendMode: (value) => set({ useBackendMode: value }),
-}));
+```typescript title="Bad - causes infinite re-renders"
+const store = useChatStore();
 ```
 
 ### Available Stores
@@ -144,92 +121,70 @@ export const useSettingsStore = create<SettingsState>()((set) => ({
 | `useModelStore` | AI model config |
 | `useChatStore` | Messages, threads |
 | `useToolsStore` | Tool state |
-| `useUINavigationStore` | UI state |
+| `useUINavigationStore` | UI navigation |
 | `useMcpStore` | MCP servers |
 | `useVoiceModeStore` | Voice settings |
 | `useApprovalStore` | Tool approvals |
 
-## CSS
+## CSS Guidelines
 
-### CSS Scoping (Critical)
+### CSS Scoping
 
-**Never write broad CSS selectors** that affect unrelated components:
+<Callout type="warn">
+  **Never write broad CSS selectors** that affect unrelated components. Always use unique, specific class names.
+</Callout>
 
-```css
-/* ❌ Bad - affects all spans in any .group element */
-.group:hover span {
-    max-width: 50px;
-}
-
-/* ✅ Good - scoped to specific component */
-.my-feature-btn:hover span {
-    max-width: 50px;
-}
+```css title="Bad - affects all spans"
+.group:hover span { max-width: 50px; }
 ```
 
-### TailwindCSS
+```css title="Good - scoped to component"
+.my-feature-btn:hover span { max-width: 50px; }
+```
+
+### Tailwind CSS
 
 Use Tailwind utilities. Avoid custom CSS when possible:
 
-```tsx
-// ✅ Good
+```tsx title="Good"
 <button className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer">
-  Click me
-</button>
-
-// ❌ Avoid (unless necessary)
-<button className="my-custom-button">
-  Click me
+  Click
 </button>
 ```
 
-### Clickable Elements
+**Required patterns:**
 
-Always add `cursor-pointer` to clickable elements:
-
-```tsx
-<button className="... cursor-pointer">Click</button>
-<div onClick={handleClick} className="... cursor-pointer">Clickable</div>
-```
-
-### Scrollable Containers
-
-Use the `mcp-scrollable` class for scrollable elements:
-
-```tsx
-<div className="mcp-scrollable">
-  {/* Scrollable content */}
-</div>
-```
+| Pattern | Use Case |
+|---------|----------|
+| `cursor-pointer` | All clickable elements |
+| `mcp-scrollable` | Scrollable containers |
+| `type="button"` | Buttons that shouldn't submit forms |
 
 ## Environment Variables
 
 ### Centralized ENV Module
 
-**Always use the `ENV` module**, never access directly:
+<Callout type="warn">
+  **Always use the `ENV` module** from `@/utils/env`. Never access `import.meta.env` or `process.env` directly.
+</Callout>
 
-```typescript
-// ✅ Correct
+```typescript title="Correct"
 import { ENV } from '@/utils/env';
 const backendUrl = ENV.BACKEND_API_URL;
+```
 
-// ❌ Wrong - never access directly
+```typescript title="Wrong"
 const backendUrl = import.meta.env.WXT_BACKEND_API_URL;
-const backendUrl = process.env.WXT_BACKEND_API_URL;
 ```
 
 ## Logging
 
-### Logger Categories
+Initialize a module-scoped logger with a category:
 
-All loggers must include a category:
-
-```typescript
+```typescript title="Logger Usage"
 import { createLogger } from '~logger';
 const log = createLogger('FeatureName', 'CATEGORY');
 ```
-
-### Available Categories
 
 | Category Group | Examples |
 |----------------|----------|
@@ -243,12 +198,9 @@ const log = createLogger('FeatureName', 'CATEGORY');
 
 ### Sensitive Data Handling
 
-**Never capture sensitive input values**:
+**Never capture sensitive input values** when extracting DOM data:
 
-```typescript
-// SECURITY: Stripping value from sensitive fields
-const value = isSensitiveInput(input) ? undefined : input.value;
-
+```typescript title="Sensitive Input Detection"
 function isSensitiveInput(input: HTMLInputElement): boolean {
   // Type-based
   if (input.type === 'password') return true;
@@ -265,49 +217,120 @@ function isSensitiveInput(input: HTMLInputElement): boolean {
 }
 ```
 
-Always add `// SECURITY:` comments when handling sensitive data.
+**Security requirements:**
 
-### Defense in Depth
-
-Check at multiple layers:
-1. Extraction (when reading DOM)
-2. Formatting (when preparing for AI)
-3. Transport (before API calls)
+- Add `// SECURITY:` comments when stripping sensitive data
+- Check at **multiple layers**: extraction, formatting, transport
+- Never pass API keys in URL query parameters; use headers
 
 ## File Naming
 
 | Type | Convention | Example |
 |------|------------|---------|
 | Components | PascalCase | `ChatMessage.tsx` |
-| Hooks | camelCase with `use` prefix | `useWebMCPTools.ts` |
+| Hooks | camelCase + `use` | `useWebMCPTools.ts` |
 | Utils | camelCase | `stringUtils.ts` |
-| Types | camelCase or PascalCase | `types.ts`, `ChatTypes.ts` |
+| Types | camelCase or PascalCase | `types.ts` |
 | Constants | camelCase | `mcpServers.tsx` |
 
-## UI Components
+## Component Structure
 
-### Never Modify Primitives
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="components" defaultOpen>
+      <Folder name="ui">
+        <Folder name="primitives">
+          <File name="Button.tsx" />
+          <File name="Input.tsx" />
+        </Folder>
+      </Folder>
+      <Folder name="features">
+        <Folder name="chat">
+          <Folder name="components">
+            <File name="ChatMessage.tsx" />
+          </Folder>
+          <Folder name="hooks">
+            <File name="useChat.ts" />
+          </Folder>
+        </Folder>
+      </Folder>
+      <Folder name="shared">
+        <File name="ErrorBoundary.tsx" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
 
-Components in `src/components/ui/primitives/` should never be directly modified. Instead:
+<Callout type="warn">
+  Components in `primitives/` should never be directly modified. Add props to the primitive and pass customization from consuming components.
+</Callout>
 
-1. Add props to the primitive
-2. Pass customization from consuming components
+## Database Structure
 
-### Component Structure
+The extension uses **Dexie** (IndexedDB wrapper) for structured data:
 
-```text
-components/
-├── ui/                      # Base primitives
-│   └── primitives/          # NEVER modify directly
-├── features/                # Feature-specific
-│   └── chat/
-│       ├── components/      # Feature components
-│       └── hooks/           # Feature hooks
-└── shared/                  # Reusable across features
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="db" defaultOpen>
+      <File name="database.ts" />
+      <File name="index.ts" />
+      <File name="management.ts" />
+      <File name="messages.ts" />
+      <File name="threads.ts" />
+      <File name="settings.ts" />
+      <File name="usage.ts" />
+      <File name="types.ts" />
+    </Folder>
+  </Folder>
+</Files>
+
+| File | Purpose |
+|------|---------|
+| `database.ts` | Core Dexie setup, schema definitions |
+| `messages.ts` | Message CRUD operations |
+| `threads.ts` | Thread management |
+| `usage.ts` | Token usage tracking |
+
+## AI SDK v6
+
+Cognito uses **Vercel AI SDK v6** for AI interactions.
+
+### Human-in-the-Loop Approval
+
+For sensitive browser actions, implement tool approval:
+
+| Component | Purpose |
+|-----------|---------|
+| `TOOLS_REQUIRING_APPROVAL` | List of tools needing approval |
+| `TOOL_APPROVAL_CONFIG` | Per-tool domain extraction |
+| `approvalStore` | Approval preferences (Zustand) |
+| `CompactToolRenderer` | Approval UI rendering |
+
+```typescript title="Tool UI Registration"
+registerToolUI('toolName', (state: ToolUIState, options) => {
+  return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
+});
 ```
+
+### Data Stream Protocol
+
+Text content must use the complete message lifecycle:
+
+```typescript title="Correct - Complete lifecycle"
+writer.write({ type: 'text-start' });
+writer.write({ type: 'text-delta', textDelta: 'Response...' });
+writer.write({ type: 'text-end' });
+```
+
+<Callout type="warn">
+  Missing `text-start` or `text-end` causes stream parsing errors.
+</Callout>
 
 ## Next Steps
 
+- [TypeScript Standards](/docs/contributing/coding-standards/typescript) — Type safety and imports
+- [React Standards](/docs/contributing/coding-standards/react) — Components and hooks
+- [Extension Standards](/docs/contributing/coding-standards/extension) — Browser-specific patterns
+- [Reliability Standards](/docs/contributing/coding-standards/reliability) — Error handling and security
 - [Adding Tools](/docs/contributing/adding-tools) — Implement new tools
 - [Adding MCP Server](/docs/contributing/adding-mcp-server) — Add MCP support
-- [Architecture](/docs/architecture) — System design

@@ -3,7 +3,9 @@ title: MCP Overview
 description: Introduction to the Model Context Protocol in Cognito AI.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/ */}
+import { Callout } from 'fumadocs-ui/components/callout';
+
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/mcp/ */}
 
 The **Model Context Protocol (MCP)** is an open standard created by Anthropic for connecting AI applications to external tools and data sources. Cognito AI implements an MCP client that enables seamless integration with MCP-compliant servers.
 
@@ -28,7 +30,7 @@ Cognito supports three MCP transport mechanisms:
 | **HTTP+SSE** | GET + SSE | Legacy servers (2024-11-05 protocol) |
 | **StdIO** | stdin/stdout | Command-line servers via backend proxy |
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/client/transportDetector.ts */}
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/mcp/client/transportDetector.ts */}
 
 ## Transport Detection
 
@@ -58,7 +60,9 @@ async function detectTransport(serverUrl: string) {
 | `connecting` | Establishing SSE connection |
 | `connected` | Fully operational |
 | `error` | Connection error occurred |
+| `cloudflare-error` | Cloudflare Worker error (Error 1101) |
 | `token-refresh` | Refreshing expired OAuth token |
+| `invalid-token` | Token format is invalid, needs re-authentication |
 
 {/* MERMAID_DIAGRAM: mcp.connection-states | type: state | represents: MCP connection state machine | code_refs: apps/extension/src/mcp/types.ts */}
 
@@ -75,11 +79,15 @@ stateDiagram-v2
     
     connecting --> connected: Success
     connecting --> error: Failed
+    connecting --> cloudflare_error: Worker error
     
     connected --> token_refresh: Token expiring
     token_refresh --> connected: Refreshed
+    token_refresh --> invalid_token: Bad token format
     token_refresh --> needs_auth: Refresh failed
     
+    invalid_token --> needs_auth: Re-authenticate
+    cloudflare_error --> disconnected: Reset
     connected --> disconnected: Disconnect
     error --> disconnected: Reset
 ```
@@ -104,7 +112,9 @@ Command-line MCP servers that run as subprocesses. Since browsers cannot spawn p
 3. Tool calls are proxied through the backend
 4. Results return to the extension
 
-> **Security**: Commands are stored in a secure server-side registry, not sent from the frontend. This prevents arbitrary command execution.
+<Callout title="Security">
+  Commands are stored in a secure server-side registry, not sent from the frontend. This prevents arbitrary command execution.
+</Callout>
 
 ### WebMCP
 
@@ -128,20 +138,28 @@ Tools provided directly by web pages. Pages implementing the WebMCP specificatio
 
 ## Module Structure
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/ */}
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/mcp/ */}
 
 ```text
 apps/extension/src/mcp/
 ├── client/                  # SSE-based MCP client
 │   ├── McpSSEClient.ts      # Main client class
-│   ├── transportDetector.ts # POST vs GET detection
-│   ├── streamProcessor.ts   # SSE stream parsing
+│   ├── config.ts            # Client configuration
+│   ├── connectionManager.ts # Reconnection logic
+│   ├── errorHandler.ts      # Error handling and recovery
+│   ├── messageHandler.ts    # MCP message processing
 │   ├── requestManager.ts    # Request/response handling
-│   └── connectionManager.ts # Reconnection logic
-├── discovery.ts             # OAuth endpoint discovery
-├── oauth.ts                 # OAuth 2.0 implementation
+│   ├── streamProcessor.ts   # SSE stream parsing
+│   └── transportDetector.ts # POST vs GET detection
+├── authHelpers.ts           # Authentication utilities
+├── discovery.ts             # OAuth endpoint discovery (RFC 9728, RFC 8414)
+├── events.ts                # Event types and emitters
+├── oauth.ts                 # OAuth 2.0 with Dynamic Client Registration
+├── scopeHandler.ts          # OAuth scope management
 ├── state.ts                 # Connection state management
-└── types.ts                 # Type definitions
+├── toolsConfig.ts           # Tool enable/disable configuration
+├── types.ts                 # Type definitions
+└── validation.ts            # Input validation
 ```
 
 ## Next Steps

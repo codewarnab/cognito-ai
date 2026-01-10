@@ -14,14 +14,14 @@ description: Troubleshoot Cognito AI installation problems.
 | Check | Solution |
 |-------|----------|
 | Chrome version | Ensure Chrome 120+ (`chrome://version`) |
-| Build exists | Verify `.output/chrome-mv3/` folder exists |
+| Build exists | Verify `dist/` folder exists |
 | Manifest error | Check for red error badge in `chrome://extensions` |
 | Developer mode | Ensure Developer mode toggle is ON |
 
 ### Detailed Steps
 
 **If build folder is missing:**
-```bash
+```bash title="Terminal"
 pnpm install
 pnpm build:extension
 ```
@@ -47,7 +47,7 @@ pnpm build:extension
 
 ### Clean Build
 
-```bash
+```bash title="Terminal"
 # Remove node_modules and reinstall
 rm -rf node_modules
 rm -rf apps/extension/dist
