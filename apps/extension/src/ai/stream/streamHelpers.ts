@@ -32,11 +32,24 @@ export function writeErrorToStream(
   // This prevents the AI SDK from trying to access undefined properties
   const messageId = 'error-msg-' + generateId();
 
+  // IMPORTANT: UIMessageStream requires text-start -> text-delta -> text-end for a given id.
+  // If we emit a text-delta without a preceding text-start, the AI SDK stream processor
+  // will throw (activeTextParts[id] is undefined) which masks the original error.
+  writer.write({
+    type: 'text-start',
+    id: messageId,
+  });
+
   // Write text content
   writer.write({
     type: 'text-delta',
     id: messageId,
     delta: `${errorMarkdown}\n`,
+  });
+
+  writer.write({
+    type: 'text-end',
+    id: messageId,
   });
 
   log.error(`AI Stream Error [${context || 'unknown'}]:`, {

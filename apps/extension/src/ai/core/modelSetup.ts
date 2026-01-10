@@ -138,11 +138,14 @@ export function writeMissingApiKeyError(writer: any): void {
 
   log.error('❌ Missing API key for remote mode');
 
-  // Write error message to the stream
+  // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
+  const messageId = 'api-key-error-' + generateId();
+  writer.write({ type: 'text-start', id: messageId });
   writer.write({
     type: 'text-delta',
-    id: 'api-key-error-' + generateId(),
+    id: messageId,
     delta: `⚠️ **API Key Required**\n\n${errorMsg}${instructionMsg}`,
   });
+  writer.write({ type: 'text-end', id: messageId });
 }
 

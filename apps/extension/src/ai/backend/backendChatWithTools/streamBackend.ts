@@ -493,11 +493,15 @@ export async function streamBackendChatWithTools(
 
                     if (stepCount >= maxSteps) {
                         log.warn('Max steps reached, stopping tool execution loop');
+                        // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
+                        const warningId = 'warning-' + generateId();
+                        writer.write({ type: 'text-start', id: warningId });
                         writer.write({
                             type: 'text-delta',
-                            id: 'warning-' + generateId(),
+                            id: warningId,
                             delta: '\n\n⚠️ Maximum tool execution steps reached.',
                         });
+                        writer.write({ type: 'text-end', id: warningId });
                     }
 
                     // Send completion status

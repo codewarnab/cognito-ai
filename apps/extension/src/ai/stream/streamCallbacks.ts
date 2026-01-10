@@ -79,15 +79,19 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
                 count: tracker.consecutiveEmptyCount
             });
 
+            // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
+            const emptyResponseId = 'empty-response-error-' + generateId();
+            writer.write({ type: 'text-start', id: emptyResponseId });
             writer.write({
                 type: 'text-delta',
-                id: 'empty-response-error-' + generateId(),
+                id: emptyResponseId,
                 delta: '\n\n **The model is having trouble generating a response.** This can happen when:\n' +
                     '- The context is too complex\n' +
                     '- The request needs clarification\n' +
                     '- There\'s a temporary service issue\n\n' +
                     'Please try rephrasing your request or starting a new conversation.\n\n',
             });
+            writer.write({ type: 'text-end', id: emptyResponseId });
 
             // Send status for UI to potentially show retry button
             writer.write({
@@ -121,11 +125,14 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
             );
 
             // Write inline error notification to stream
+            const stepErrorId = 'step-error-' + generateId();
+            writer.write({ type: 'text-start', id: stepErrorId });
             writer.write({
                 type: 'text-delta',
-                id: 'step-error-' + generateId(),
+                id: stepErrorId,
                 delta: `\n\n⚠️ ${malformedError.userMessage}\n\n`,
             });
+            writer.write({ type: 'text-end', id: stepErrorId });
         }
 
         // Check for MALFORMED_FUNCTION_CALL via response
@@ -145,11 +152,14 @@ export function createOnStepFinishCallback(writer: any, sessionId?: string) {
 
             // Write error to stream
             const errorMarkdown = `\n\n**${malformedError.userMessage}**\n\n${malformedError.technicalDetails}\n\n`;
+            const malformedErrorId = 'malformed-error-' + generateId();
+            writer.write({ type: 'text-start', id: malformedErrorId });
             writer.write({
                 type: 'text-delta',
-                id: 'malformed-error-' + generateId(),
+                id: malformedErrorId,
                 delta: errorMarkdown,
             });
+            writer.write({ type: 'text-end', id: malformedErrorId });
         }
 
         if (toolCalls && toolCalls.length > 0) {

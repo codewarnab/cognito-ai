@@ -215,11 +215,15 @@ export function createOnErrorCallback(context: OnErrorContext) {
 
             const fallbackMessage = `Error processing AI response: ${errorMessage}`;
 
+            // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
+            const messageId = 'error-msg-' + generateId();
+            writer.write({ type: 'text-start', id: messageId });
             writer.write({
                 type: 'text-delta',
-                id: 'error-msg-' + generateId(),
+                id: messageId,
                 delta: `⚠️ ${fallbackMessage}\n`,
             });
+            writer.write({ type: 'text-end', id: messageId });
 
             onError?.(new Error(fallbackMessage));
 
