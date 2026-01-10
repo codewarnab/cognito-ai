@@ -2,18 +2,18 @@
     "title": "Documentation",
     "pages": [
         "index",
-        "---[Rocket]Getting Started---",
+        "---Getting Started---",
         "getting-started",
-        "---[AppWindow]Using Cognito---",
+        "---Using Cognito---",
         "using-cognito",
         "integrations",
         "configuration",
-        "---[FileText]Reference---",
+        "---Reference---",
         "architecture",
         "security",
         "troubleshooting",
         "faq",
-        "---[GitPullRequest]Contributing---",
+        "---Contributing---",
         "contributing",
         "reference"
     ]

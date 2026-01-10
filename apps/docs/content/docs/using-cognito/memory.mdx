@@ -1,83 +1,190 @@
 ---
 title: Memory System
-description: How Cognito AI stores and recalls information locally.
+description: How Cognito AI learns and remembers using Supermemory.
 ---
+
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { Callout } from 'fumadocs-ui/components/callout';
+import { MemoryExtractionSequence } from '@/components/diagrams/MemoryExtractionSequence';
+
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/background/supermemory/, apps/extension/src/utils/supermemory/ */}
 
 ## What You'll Learn
 
-- How the local memory system works
-- What data is stored
-- Managing your stored data
+- How Supermemory provides persistent memory
+- Memory retrieval in chat and content features
+- Automatic memory extraction from conversations
+- Managing your memory data
 
 ## Overview
 
-Cognito AI uses a **local-first** memory system. All data stays local—stored in the browser using IndexedDB (via Dexie) for conversations and threads, Chrome storage for preferences, and Chrome alarms for reminders. Nothing is sent to external servers.
+Cognito AI uses [Supermemory](https://supermemory.ai) for persistent, cloud-based memory. Unlike traditional local storage, Supermemory builds a **semantic knowledge graph** that evolves as you interact with the AI.
 
-> [!TIP]
-> Your conversations, preferences, and custom instructions remain private on your device.
+<ImageZoom src="/super-memory-architecture.png" alt="Supermemory Architecture" width={800} height={500} />
 
-## What Gets Stored
+<Callout>
+  Supermemory stores memories in the cloud, not on your device. Your API key controls access to your personal memory store.
+</Callout>
 
-| Data Type | Location | Purpose |
-|-----------|----------|---------|
-| **Conversations** | IndexedDB | Chat history and threads |
-| **Preferences** | Chrome storage | Settings, API keys, modes |
-| **Threads** | IndexedDB | Conversation organization |
-| **Reminders** | Chrome alarms | Scheduled notifications |
+## How It Works
 
-## Privacy Model
+### Memory Storage
 
-- **All storage is local** — No cloud sync of conversations
-- **API keys stored locally** — BYOK keys never leave your device
-- **Backend mode** — Only sends messages for processing (no persistent storage)
+| Aspect | Description |
+|--------|-------------|
+| **Storage location** | Supermemory cloud servers |
+| **Access control** | Your personal API key |
+| **User isolation** | Unique user ID per extension |
+| **Indexing** | Semantic understanding graph |
 
-## Viewing Stored Data
+Supermemory extracts **facts** from your interactions—preferences, topics you research, writing styles—and organizes them into a queryable knowledge base.
 
-### Access via Browser DevTools
+### Memory Retrieval
 
-1. Open Chrome DevTools (`F12`)
-2. Go to **Application** → **IndexedDB**
-3. Find the Cognito database
-4. Browse stored tables
+When you chat or use content features, Cognito searches your memories for relevant context:
 
-### Settings and Preferences
+| Feature | How Memories Help |
+|---------|-------------------|
+| **Chat** | AI recalls past conversations and preferences |
+| **Writer** | Matches your established writing style |
+| **Rewriter** | Applies consistent tone preferences |
+| **Summarizer** | Connects to previously researched topics |
 
-Settings are stored in Chrome local storage:
-1. DevTools → **Application** → **Local Storage**
-2. Find `chrome-extension://[extension-id]`
+## Setup
 
-## Clearing Data
+### Get Your API Key
 
-### Clear Conversations
+1. Visit [Supermemory Console](https://console.supermemory.ai)
+2. Create an account or sign in
+3. Generate an API key
 
-From the side panel:
-1. Open thread list
-2. Delete threads individually or use **Clear All**
+### Configure in Cognito
 
-### Clear All Extension Data
+1. Open the side panel (`Ctrl+Shift+H`)
+2. Open **Settings** → **Advanced**
+3. Expand **Supermemory** section
+4. Paste your API key
+5. Toggle **Enable Supermemory** on
 
-1. Go to `chrome://extensions`
-2. Find Cognito AI
-3. Click **Details** → **Clear data**
+<Callout type="warn">
+  Your API key is stored locally in Chrome and only used to authenticate with Supermemory. It never passes through Cognito's servers.
+</Callout>
 
-> [!CAUTION]
-> Clearing extension data removes all settings, API keys, and conversation history.
+## Automatic Memory Extraction
 
-### Clear Specific Storage
+When enabled, Cognito automatically extracts memories from your interactions.
 
-DevTools method:
-1. **Application** → **IndexedDB** → Right-click database → **Delete**
-2. Or **Application** → **Local Storage** → Right-click → **Clear**
+<Callout>
+  This feature is currently behind a feature flag and may not be visible in all builds.
+</Callout>
 
-## Technical Details
+### How It Works
 
-| Technology | Purpose |
-|------------|---------|
-| **Dexie** | IndexedDB wrapper for conversations |
-| **Chrome Storage API** | Settings persistence |
-| **Chrome Alarms API** | Reminder scheduling |
+<MemoryExtractionSequence />
+
+### Extraction Sources
+
+| Source | What Gets Extracted |
+|--------|---------------------|
+| **Chat conversations** | Topics discussed, preferences stated, facts shared |
+| **Summarizer** | Research interests, frequently visited topics |
+| **Writer** | Writing topics, tone preferences, context patterns |
+| **Rewriter** | Style preferences, common transformations |
+
+### Trigger Conditions
+
+Extraction runs when:
+
+| Condition | Threshold |
+|-----------|-----------|
+| **Minimum messages** | 4+ messages in conversation |
+| **Re-extraction** | 10+ new messages since last extraction |
+| **Trigger event** | User switches threads or creates new chat |
+
+### Enable Auto-Extraction
+
+1. Open **Settings** → **Advanced**
+2. Expand **Supermemory** section
+3. Toggle **Auto-Extract Insights** on
+
+## Memory Search
+
+Cognito provides AI tools for memory interaction:
+
+| Tool | Purpose |
+|------|---------|
+| `searchMemories` | Semantic search across your memory store |
+| `addMemory` | Manually save important information |
+
+These tools allow the AI to:
+- Find relevant past context during conversations
+- Store new facts you explicitly want remembered
+- Provide personalized responses based on your history
+
+## Data Architecture
+
+<ImageZoom src="/supermemory-dataflow.png" alt="Supermemory Data Flow" width={600} height={500} />
+
+### What Stays Local
+
+| Data | Storage |
+|------|---------|
+| **API key** | Chrome local storage |
+| **Extraction queue** | Chrome local storage |
+| **User ID** | Chrome local storage |
+
+### What Goes to Cloud
+
+| Data | Destination |
+|------|-------------|
+| **Extracted facts** | Supermemory servers |
+| **Search queries** | Supermemory API |
+
+## Managing Your Memories
+
+### View Memories
+
+Visit the [Supermemory Console](https://console.supermemory.ai) to:
+- Browse stored memories
+- Search your knowledge graph
+- Delete specific memories
+
+### Clear All Memories
+
+From Supermemory Console:
+1. Navigate to your memory store
+2. Select memories to delete
+3. Confirm deletion
+
+<Callout type="warn">
+  Deleting memories from Supermemory is permanent. The extension cannot recover deleted memories.
+</Callout>
+
+### Disable Memory Features
+
+To stop memory collection:
+1. Open **Settings** → **Advanced**
+2. Toggle **Enable Supermemory** off
+
+This stops new memories from being added but preserves existing data in Supermemory.
+
+## Privacy Considerations
+
+| Aspect | Detail |
+|--------|--------|
+| **Data ownership** | You control your Supermemory account |
+| **API key security** | Stored locally, never sent to Cognito servers |
+| **Memory deletion** | Full control via Supermemory Console |
+| **Feature toggle** | Disable anytime without data loss |
+
+For Supermemory's privacy policy, see [Supermemory Documentation](https://supermemory.ai/docs/introduction).
+
+<Callout>
+  We're working on adding support for more memory providers in the future. Stay tuned for updates!
+</Callout>
 
 ## Next Steps
 
-- [Privacy Model](/docs/security/privacy-model) — Deep dive on data handling
+- [Privacy Model](/docs/security/privacy-model) — Overall data handling
 - [Settings Overview](/docs/configuration/settings-overview) — All configuration options
+- [Supermemory Documentation](https://supermemory.ai/docs/introduction) — Full API reference

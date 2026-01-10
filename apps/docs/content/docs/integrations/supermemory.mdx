@@ -3,207 +3,143 @@ title: Supermemory
 description: Store and retrieve user memories with Supermemory integration.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/background/supermemory/ */}
+import { Callout } from 'fumadocs-ui/components/callout';
+import { MemoryExtractionSequence } from '@/components/diagrams/MemoryExtractionSequence';
 
-Supermemory is an external service that stores user-approved memories (facts, preferences, personal context) and provides semantic search. Cognito integrates with Supermemory to enable personalized AI responses.
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/background/supermemory/ */}
+
+[Supermemory](https://supermemory.ai) is a memory API service that stores user facts, preferences, and personal context. Cognito integrates with Supermemory to enable personalized AI responses across all features.
+
+<Callout>
+  For a user-focused overview of the memory system, see [Memory System](/docs/using-cognito/memory).
+</Callout>
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| **Manual Memory** | Save facts from chat via the Brain button |
-| **Auto Extraction** | Automatically extract facts from conversations |
 | **Memory Search** | Retrieve relevant memories during AI generation |
-| **Content Memory** | Store insights from page interactions |
+| **Auto Extraction** | Automatically extract facts from conversations |
+| **Content Memory** | Store insights from Summarizer, Writer, Rewriter |
+| **AI Tools** | `addMemory` and `searchMemories` tools for chat |
 
 ## Setup
 
 ### Get an API Key
 
-1. Create an account at [Supermemory](https://supermemory.ai)
+1. Create an account at [Supermemory Console](https://console.supermemory.ai)
 2. Generate an API key from your dashboard
 3. Copy the key for the next step
 
 ### Configure in Cognito
 
-1. Open **Settings** → **Memory**
-2. Paste your Supermemory API key
-3. Toggle **Enable Supermemory** on
+1. Open **Settings** → **Advanced**
+2. Expand the **Supermemory** section
+3. Paste your Supermemory API key
+4. Toggle **Enable Supermemory** on
 
-### Verify Connection
-
-The status indicator shows:
-- **Connected** — Ready to use
-- **Invalid** — API key is incorrect
-- **Not configured** — Key not entered
-
-## Manual Memory (Brain Button)
-
-Save facts from chat conversations manually:
-
-1. Highlight messages in the chat
-2. Click the **🧠 Brain** button
-3. AI extracts facts from the selection
-4. Facts are saved to Supermemory
-
-**Status indicators:**
-- **Analyzing** — Extracting facts
-- **Success** — Facts saved
-- **No facts** — No extractable information
-- **Error** — Save failed
-
-## Auto Memory Extraction
-
-Automatically extract facts from chat conversations:
-
-1. Enable **Auto Memory Extraction** in Settings
-2. Set minimum messages threshold (default: 4)
-3. Facts are extracted in the background as you chat
-
-{/* MERMAID_DIAGRAM: supermemory.extraction | type: flowchart | represents: Auto extraction flow | code_refs: apps/extension/src/background/supermemory/extraction/ */}
-
-```mermaid
-flowchart LR
-    Chat[Chat Messages] --> Trigger{Min messages?}
-    Trigger -->|Yes| Queue[Extraction Queue]
-    Queue --> Processor[Background Processor]
-    Processor --> Gemini[Gemini Extract Facts]
-    Gemini --> API[Supermemory API]
-```
-
-### Configuration
-
-| Setting | Purpose | Default |
-|---------|---------|---------|
-| `supermemoryEnabled` | Master on/off switch | `false` |
-| `autoMemoryExtraction` | Enable background extraction | `false` |
-| `autoMemoryMinMessages` | Min messages before extraction | `4` |
+<Callout type="warn">
+  Your API key is stored locally in Chrome and only used to authenticate with Supermemory. It never passes through Cognito's servers.
+</Callout>
 
 ## Memory Search
 
-Cognito searches your memories to personalize AI responses:
+Cognito searches your memories to personalize AI responses across features:
 
-### In Writer/Rewriter
+| Feature | How Memories Are Used |
+|---------|----------------------|
+| **Chat** | AI recalls past conversations and preferences |
+| **Writer** | Matches your established writing style |
+| **Rewriter** | Applies consistent tone preferences |
 
-1. Enable **Use memories** when writing
-2. AI retrieves relevant memories
-3. Output is personalized based on your context
+### AI Memory Tools
 
-### How It Works
+The AI has access to memory tools during chat:
 
-```typescript
-// Search memories for relevant context
-const memories = await searchMemories({
-  query: userQuery,
-  limit: 10,
-  threshold: 0.7,
-  rerank: true
-});
+| Tool | Purpose |
+|------|---------|
+| `searchMemories` | Semantic search across your memory store |
+| `addMemory` | Manually save important information |
 
-// Format for AI prompt
-const context = formatMemoriesForPrompt(memories);
-```
+## Auto Memory Extraction
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/background/supermemory/searchService.ts */}
+<Callout>
+  This feature is currently behind a feature flag and may not be visible in all builds.
+</Callout>
+
+Automatically extract facts from chat conversations:
+
+1. Enable **Auto-Extract Insights** in Settings → Advanced → Supermemory
+2. Facts are extracted when you switch threads or create new chats
+3. Minimum 4 messages required before extraction triggers
+
+<MemoryExtractionSequence />
+
+### Trigger Conditions
+
+| Condition | Threshold |
+|-----------|-----------|
+| **Minimum messages** | 4+ messages in conversation |
+| **Re-extraction** | 10+ new messages since last extraction |
+| **Trigger event** | User switches threads or creates new chat |
 
 ## Content Memory
 
 Store insights from page interactions (Writer, Rewriter, Summarizer):
 
-1. Use any content tool on a page
-2. Insights are queued for processing
-3. Background processor extracts structured facts
-4. Facts are saved to Supermemory
-
-### Supported Sources
-
 | Source | What's Captured |
 |--------|-----------------|
-| **Writer** | Topics, writing style, preferences |
-| **Rewriter** | Editing patterns, tone choices |
-| **Summarizer** | Key topics of interest |
+| **Summarizer** | Research interests, frequently visited topics |
+| **Writer** | Writing topics, tone preferences, context patterns |
+| **Rewriter** | Style preferences, common transformations |
 
-## Architecture
-
-{/* MERMAID_DIAGRAM: supermemory.architecture | type: component | represents: Supermemory integration architecture | code_refs: apps/extension/src/background/supermemory/ */}
-
-```mermaid
-graph TB
-    subgraph UI["UI Layer"]
-        Brain[Brain Button]
-        Settings[Settings Page]
-        Writer[Writer Overlay]
-    end
-    
-    subgraph Background["Background Workers"]
-        Search[searchService.ts]
-        Add[addService.ts]
-        ExtQueue[Extraction Queue]
-        ExtProc[Extraction Processor]
-        ContentQueue[Content Memory Queue]
-        ContentProc[Content Memory Processor]
-    end
-    
-    subgraph External["External"]
-        API[(Supermemory API)]
-        Gemini[Gemini AI]
-    end
-    
-    Brain --> Add
-    Settings --> Search
-    Writer --> Search
-    ExtQueue --> ExtProc
-    ExtProc --> Gemini
-    Gemini --> Add
-    ContentQueue --> ContentProc
-    ContentProc --> Gemini
-    Add --> API
-    Search --> API
-```
+<Callout>
+  Content memory is part of the auto-extraction feature and follows the same feature flag.
+</Callout>
 
 ## Error Handling
 
 | Scenario | Handling |
 |----------|----------|
 | **Missing API key** | Features disabled, UI shows status |
-| **Invalid key (401/403)** | Shows "Invalid API key" |
+| **Invalid key (401/403)** | Shows "Invalid API key" error |
 | **Rate limit (429)** | Retry with exponential backoff |
 | **Network failure** | Retry up to 3 times |
 | **Browser restart** | Queue items resume on startup |
-| **Queue overflow** | New items discarded with warning |
-| **Large facts** | Truncated to 1024 chars |
 
 ## Troubleshooting
 
-### Memories Not Saving
-
-**Check:**
-- Is Supermemory enabled in Settings?
-- Is the API key valid? (check status indicator)
-- Is there network connectivity?
-
 ### Memories Not Appearing in Responses
 
-**Check:**
-- Is "Use memories" enabled for the tool?
-- Are memories relevant to the query?
-- The semantic search may not find matches
+| Check | Solution |
+|-------|----------|
+| Supermemory enabled? | Settings → Advanced → Enable Supermemory |
+| API key valid? | Re-enter key from Supermemory Console |
+| Memories exist? | Check [Supermemory Console](https://console.supermemory.ai) |
 
 ### Auto Extraction Not Working
 
-**Check:**
-- Is `autoMemoryExtraction` enabled?
-- Have you sent enough messages? (check `autoMemoryMinMessages`)
-- Check background worker logs for errors
+| Check | Solution |
+|-------|----------|
+| Feature enabled? | Settings → Advanced → Auto-Extract Insights |
+| Enough messages? | Minimum 4 messages required |
+| Feature flag? | May be hidden in current build |
 
 ## Privacy Considerations
 
-- Memories are stored in Supermemory's cloud
-- Each profile has a unique user ID for isolation
-- Facts are extracted by Gemini before storage
-- You control what gets saved via settings
+| Aspect | Detail |
+|--------|--------|
+| **Storage location** | Supermemory cloud servers |
+| **User isolation** | Unique user ID per extension |
+| **API key security** | Stored locally, never sent to Cognito servers |
+| **Data control** | Full control via [Supermemory Console](https://console.supermemory.ai) |
+
+<Callout>
+  We're working on adding support for more memory providers in the future. Stay tuned for updates!
+</Callout>
 
 ## Next Steps
 
-- [Memory Features](/docs/using-cognito/memory) — Using memory in daily workflows
-- [Settings Reference](/docs/configuration/settings) — All memory settings
+- [Memory System](/docs/using-cognito/memory) — User-focused memory guide
+- [Privacy Model](/docs/security/privacy-model) — Overall data handling
+- [Supermemory Documentation](https://supermemory.ai/docs/introduction) — Full API reference

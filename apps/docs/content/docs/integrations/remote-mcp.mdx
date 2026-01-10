@@ -1,22 +1,96 @@
 ---
 title: Remote MCP Servers
-description: Connect to hosted MCP servers with OAuth authentication.
+description: Connect to 30+ hosted MCP servers with OAuth or API key authentication.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/client/, apps/extension/src/constants/mcpServers.tsx */}
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/mcp/client/, apps/extension/src/constants/mcpServers.tsx */}
 
 Remote MCP servers are hosted services that expose tools via SSE/HTTP transport. Cognito connects to these servers and makes their tools available to the AI assistant.
 
+<Callout>
+  **All MCP tools require human approval** before execution for security.
+</Callout>
+
 ## Supported Servers
 
-| Server | Category | Tools |
-|--------|----------|-------|
-| **Notion** | Productivity | Page/database management |
-| **Linear** | Project Management | Issue tracking |
-| **Ahrefs** | SEO | Keyword research, backlinks |
-| **Supabase** | Database | Query, insert, update |
+Cognito supports **30+ MCP servers** across various categories:
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/constants/mcpServers.tsx */}
+### Productivity & Project Management
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Notion** | OAuth | Page and database management |
+| **Linear** | OAuth | Issue tracking and project management |
+| **Tally** | OAuth | Form builder with surveys, payments, applications |
+| **Plane** | API Key | AI automation for projects, issues, cycles |
+
+### Development & Code
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **GitHub** | PAT | Repository management and collaboration |
+| **Netlify** | OAuth | Build and deploy websites |
+| **Webflow** | OAuth | Website building and deployment |
+| **Supabase** | OAuth | Database queries, inserts, updates |
+| **Sentry** | OAuth | Error tracking and monitoring |
+
+### Search & Research
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Brave Search** | API Key | Web, local, video, image, and news search |
+| **Perplexity** | API Key | Real-time web research with Sonar API |
+| **Exa** | None | AI-powered search engine |
+| **SerpAPI** | API Key | Google, Bing, YouTube search results |
+| **Scira AI** | API Key | Web search, X/Twitter, Reddit discussions |
+| **Parallel Search** | OAuth | Deep search and batch tasks (paid) |
+
+### Web Scraping & Content
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Firecrawl** | API Key | Web scraping, crawling, data extraction |
+| **Bright Data** | API Key | Real-time research with unblocked web access |
+| **Jina AI** | API Key | Web reading and content extraction |
+| **Fetch** | None | Web content fetching, HTML to markdown |
+
+### Documentation & Knowledge
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Context7** | None | Up-to-date code documentation for LLMs |
+| **DeepWiki** | None | Architecture diagrams and codebase docs |
+| **Astro Docs** | None | Astro static site builder documentation |
+| **LiveKit Docs** | None | Voice, video, and AI agent documentation |
+| **Google Maps** | None | Maps Platform documentation and samples |
+| **Hugging Face** | None | ML model platform documentation |
+
+### SEO & Marketing
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Ahrefs** | OAuth | Website analysis and keyword research |
+| **Bitly** | API Key | Link shortening, branding, and tracking |
+
+### Finance & Crypto
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **PayPal** | OAuth | Payment processing and transactions |
+| **CoinGecko** | None | Cryptocurrency data and market info |
+
+### AI & Utilities
+
+| Server | Auth | Description |
+|--------|------|-------------|
+| **Magic MCP** | API Key | 21st.dev Magic MCP server |
+| **Sequential Thinking** | None | Structured problem-solving process |
+| **EdgeOne Pages** | None | Deploy HTML to EdgeOne with public URL |
+
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/constants/mcpServers.tsx */}
 
 ## Connect a Server
 
@@ -29,36 +103,41 @@ Remote MCP servers are hosted services that expose tools via SSE/HTTP transport.
 
 1. Find the server in the list
 2. Toggle **Enable** 
-3. Click **Connect** to start OAuth
+3. Click **Connect** to authenticate
 
-### Complete OAuth
+### Authentication Types
+
+Servers use one of three authentication methods:
+
+| Type | Flow | Examples |
+|------|------|----------|
+| **OAuth** | Browser popup, consent screen | Notion, Linear, Supabase |
+| **API Key (PAT)** | Enter key in extension settings | GitHub, Brave Search, Firecrawl |
+| **None** | No auth required | Context7, DeepWiki, CoinGecko |
+
+### OAuth Flow
 
 {/* MERMAID_DIAGRAM: mcp.oauth-flow | type: sequence | represents: OAuth authentication flow | code_refs: apps/extension/src/mcp/oauth.ts */}
 
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant E as Extension
-    participant A as Auth Server
-    participant M as MCP Server
-    
-    U->>E: Click Connect
-    E->>M: Discover OAuth endpoints
-    M-->>E: Authorization URL, Token URL
-    E->>E: Register dynamic client (RFC 7591)
-    E->>A: Open consent screen
-    U->>A: Approve permissions
-    A-->>E: Authorization code
-    E->>A: Exchange for tokens
-    A-->>E: Access + refresh tokens
-    E->>M: Connect with token
-    M-->>E: Connection ready
-```
+<McpOAuthSequence />
 
 The OAuth flow uses:
 - **Dynamic Client Registration** (RFC 7591) — Automatic client setup
 - **PKCE** — Secure code exchange
 - **Chrome Identity API** — Handles redirect securely
+
+### API Key (PAT) Authentication
+
+For servers using API keys:
+
+1. Click **Connect** on the server
+2. Enter your API key in the modal
+3. Click **Save** to store securely
+4. Connection establishes automatically
+
+<Callout type="info">
+  API keys are stored in `chrome.storage.local` and sent via appropriate headers (Bearer token or custom header like `X-Subscription-Token`).
+</Callout>
 
 ## Server Status
 
@@ -79,28 +158,41 @@ Once connected, server tools appear in the AI's tool palette. Ask naturally:
 
 The AI will:
 1. Select the appropriate MCP tool
-2. Execute it via the connected server
-3. Return the result
+2. **Request your approval** (human-in-the-loop)
+3. Execute it via the connected server after approval
+4. Return the result
+
+## Tool Approval System
+
+<Callout type="warn">
+  **All MCP tools require human approval** before execution. This security feature prevents the AI from performing unintended actions.
+</Callout>
+
+### Approval Options
+
+When an MCP tool is called, you'll see approval buttons with these options:
+
+| Option | Scope | Persistence |
+|--------|-------|-------------|
+| **Allow** | Single execution | None |
+| **Trust this server** | All tools from this server | Permanent |
+| **Always allow** | This specific tool | Permanent |
+| **This session only** | Tool only | Until browser closes |
+| **Deny** | Block execution | None |
+
+### Approval Flow
+
+<McpToolApprovalSequence />
+
+### Managing Approvals
+
+View and manage your saved approvals in **Settings** → **Privacy & Security** → **Tool Approvals**.
 
 ## Tool Execution Flow
 
-{/* MERMAID_DIAGRAM: mcp.tool-execution | type: sequence | represents: Tool execution via MCP | code_refs: apps/extension/src/ai/mcp/proxy.ts */}
+{/* MERMAID_DIAGRAM: mcp.tool-execution | type: sequence | represents: Tool execution via MCP with approval | code_refs: apps/extension/src/ai/mcp/proxy.ts */}
 
-```mermaid
-sequenceDiagram
-    participant C as Chat UI
-    participant AI as AI Model
-    participant BG as Background SW
-    participant M as MCP Server
-    
-    C->>AI: User message
-    AI->>AI: Select MCP tool
-    AI->>BG: Execute notion_create_page
-    BG->>M: POST tools/call
-    M-->>BG: Result
-    BG-->>AI: Tool result
-    AI-->>C: Response with result
-```
+<McpToolExecutionSequence />
 
 ## Transport Protocols
 
@@ -110,7 +202,7 @@ Remote servers use one of two protocols:
 
 Modern protocol using POST requests with SSE responses:
 
-```http
+```http title="MCP Request"
 POST /mcp HTTP/1.1
 Content-Type: application/json
 Accept: text/event-stream
@@ -128,6 +220,25 @@ Older protocol with separate GET stream and POST endpoint:
 2. Server sends `endpoint` event with message URL
 3. **POST** to message endpoint for requests
 4. Responses arrive via SSE stream
+
+## Backend-Proxied Servers (StdIO)
+
+Some MCP servers run on the backend via stdio transport. These are marked as "Backend" in the UI:
+
+| Server | Type | Description |
+|--------|------|-------------|
+| **Brave Search** | Backend | Web search capabilities |
+| **Perplexity** | Backend | Real-time web research |
+| **Firecrawl** | Backend | Web scraping and crawling |
+| **Google Maps** | Backend | Maps documentation (no auth) |
+| **Plane** | Backend | Project management |
+| **Magic MCP** | Backend | 21st.dev tools |
+
+Backend servers:
+- Execute on Cognito's Vercel backend
+- Require API keys (sent securely to backend)
+- Use stdio protocol internally
+- Still require frontend approval for tool calls
 
 ## Token Refresh
 
@@ -163,29 +274,47 @@ To disconnect a server:
 
 ## Troubleshooting
 
-### OAuth Popup Blocked
+<Accordions>
+  <Accordion title="OAuth Popup Blocked" id="oauth-popup-blocked">
+    **Symptom**: Nothing happens when clicking Connect
 
-**Symptom**: Nothing happens when clicking Connect
+    **Solution**: Allow popups for the extension or try again
+  </Accordion>
 
-**Solution**: Allow popups for the extension or try again
+  <Accordion title="Connection Timeout" id="connection-timeout">
+    **Symptom**: Status stuck on "Connecting"
 
-### Connection Timeout
+    **Solutions**:
+    - Check network connectivity
+    - Verify the MCP server is online
+    - Check browser console for errors
+  </Accordion>
 
-**Symptom**: Status stuck on "Connecting"
+  <Accordion title="Invalid Token" id="invalid-token">
+    **Symptom**: Was working, now shows "Auth Required"
 
-**Solutions**:
-- Check network connectivity
-- Verify the MCP server is online
-- Check browser console for errors
+    **Solution**: Token expired and refresh failed. Reconnect to re-authenticate.
+  </Accordion>
 
-### Invalid Token
+  <Accordion title="API Key Not Working" id="api-key-not-working">
+    **Symptom**: Connection fails with API key authentication
 
-**Symptom**: Was working, now shows "Auth Required"
+    **Solutions**:
+    - Verify the API key is correct and not expired
+    - Check if the key has required permissions/scopes
+    - Some services require specific key formats (e.g., `ghp_...` for GitHub)
+  </Accordion>
 
-**Solution**: Token expired and refresh failed. Reconnect to re-authenticate.
+  <Accordion title="Tool Approval Not Showing" id="tool-approval-not-showing">
+    **Symptom**: Tool executes without asking for approval
+
+    **Solution**: This shouldn't happen—all MCP tools require approval. Check browser console for errors.
+  </Accordion>
+</Accordions>
 
 ## Next Steps
 
 - [WebMCP](/docs/integrations/webmcp) — Page-provided tools
 - [MCP Client Architecture](/docs/architecture/mcp-client) — Implementation details
+- [Tool Approval System](/docs/architecture/tool-approval) — Security model
 - [MCP Troubleshooting](/docs/troubleshooting/mcp) — Common issues

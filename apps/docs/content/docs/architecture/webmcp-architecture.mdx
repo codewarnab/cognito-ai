@@ -1,399 +1,164 @@
 ---
 title: WebMCP Architecture
-description: Page-provided tools via WebMCP.
+description: Technical architecture of page-provided tools via WebMCP.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts, apps/extension/src/background/webmcp/ */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts, apps/extension/src/background/webmcp/manager.ts, apps/extension/src/ai/tools/webmcpTools.ts */}
 
-WebMCP enables websites to expose tools that Cognito can discover and execute. This page covers the technical implementation.
+import { Callout } from 'fumadocs-ui/components/callout';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { WebMcpDiscoverySequence } from '@/components/diagrams/WebMcpDiscoverySequence';
+import { WebMcpExecutionSequence } from '@/components/diagrams/WebMcpExecutionSequence';
+import { WebMcpValidationFlow } from '@/components/diagrams/WebMcpValidationFlow';
+import { WebMcpTransportSequence } from '@/components/diagrams/WebMcpTransportSequence';
+
+This page covers the **technical architecture** of WebMCP. For usage instructions, see [WebMCP Integration](/docs/integrations/webmcp).
 
 ## Architecture Overview
 
+WebMCP connects websites to Cognito through a multi-layered architecture:
+
 {/* MERMAID_DIAGRAM: webmcp.architecture-detailed | type: component | represents: WebMCP architecture | code_refs: apps/extension/src/background/webmcp/ */}
 
-```mermaid
-graph TB
-    subgraph Extension["Chrome Extension"]
-        SP[Side Panel]
-        BG[Background SW]
-        CS[Content Script<br/>webmcp-proxy]
-    end
-    
-    subgraph Page["Web Page"]
-        WS[WebMCP Server]
-    end
-    
-    SP <-->|messages| BG
-    BG <-->|chrome.tabs| CS
-    CS <-->|postMessage| WS
-```
+<ImageZoom src="/webmcp-architecture.png" alt="WebMCP Architecture" width={700} height={500} />
 
-## Component Reference
+| Layer | Component | Responsibility |
+|-------|-----------|----------------|
+| **Page** | WebMCP Server | Exposes tools via `postMessage` API |
+| **Bridge** | Content Script | Discovers servers, relays messages |
+| **Core** | Background Manager | State management, security validation |
+| **UI** | Side Panel | Tool display, user approval |
+| **AI** | Tool Converter | Converts tools to AI SDK format |
 
-| Component | Path | Purpose |
-|-----------|------|---------|
-| Content Script | `src/entrypoints/webmcp-proxy.content.ts` | Bridge to page |
-| Manager | `src/background/webmcp/manager.ts` | State management |
-| Handler | `src/background/messaging/webmcpHandler.ts` | Message routing |
-| AI Tools | `src/ai/tools/webmcpTools.ts` | SDK integration |
-| Hook | `src/hooks/webmcp/useWebMCPTools.ts` | React hook |
+## Active Tab Design
 
-## Content Script (`webmcp-proxy`)
+<Callout>
+  WebMCP tracks tools **only from the active tab**. Switching tabs clears tools and triggers fresh discovery.
+</Callout>
 
-Injected into every page to discover WebMCP servers:
+This design choice provides several benefits:
 
-```typescript
-// webmcp-proxy.content.ts
+| Benefit | Description |
+|---------|-------------|
+| **Reduced memory** | No stale tools from inactive tabs |
+| **Clear mental model** | Tools always match current page |
+| **Fresh data** | Avoids outdated tool definitions |
+| **Better security** | Only interacts with visible content |
 
-// Attempt connection on page load
-async function attemptConnection() {
-  const transport = new TabClientTransport();
-  const client = new McpClient(transport);
-  
-  try {
-    await client.connect();
-    const tools = await client.listTools();
-    
-    // Report to background
-    chrome.runtime.sendMessage({
-      type: 'webmcp/tools/register',
-      tools,
-      tabId: currentTabId,
-      domain: location.hostname,
-      url: location.href
-    });
-  } catch (error) {
-    // No WebMCP server on this page
-  }
-}
+## Discovery Flow
 
-// Handle tool execution requests
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'webmcp/tool/execute') {
-    return handleToolExecution(message);
-  }
-});
-```
+When a page loads, the content script attempts to discover WebMCP tools:
 
-### TabClientTransport
+<WebMcpDiscoverySequence />
 
-Custom MCP transport using `postMessage`:
+**Key behaviors:**
 
-```typescript
-class TabClientTransport {
-  send(message: McpMessage) {
-    window.postMessage({
-      type: 'mcp-request',
-      payload: message
-    }, '*');
-  }
-  
-  receive(): Promise<McpMessage> {
-    return new Promise((resolve) => {
-      window.addEventListener('message', (event) => {
-        if (event.data.type === 'mcp-response') {
-          resolve(event.data.payload);
-        }
-      });
-    });
-  }
-}
-```
+- **Automatic discovery** — Runs on `document_idle` for every page
+- **Silent failure** — Pages without WebMCP servers are ignored
+- **Metadata capture** — Domain, tab ID, favicon, and URL stored with tools
+- **Tool prefixing** — Tools renamed to `webmcp_{domain}_{name}` format
 
-## Background Manager
+## Execution Flow
 
-Maintains state for active tab's WebMCP tools:
+Tool execution involves validation, user approval, and message relay:
 
-```typescript
-// manager.ts
-interface WebMCPState {
-  tools: WebMCPTool[];
-  activeTabId: number | null;
-  activeDomain: string | null;
-  isDiscovering: boolean;
-  lastUpdated: number;
-}
+<WebMcpExecutionSequence />
 
-// Register tools from content script
-export function registerWebMCPTools(data: ToolsRegisterPayload) {
-  const { tools, tabId, domain, url } = data;
-  
-  // Only track active tab
-  if (tabId !== state.activeTabId) return;
-  
-  state.tools = tools.map(tool => ({
-    ...tool,
-    name: `webmcp_${domain}_${tool.name}`,
-    originalName: tool.name,
-    domain,
-    tabId,
-    url
-  }));
-  
-  broadcastToolsUpdate();
-}
-```
+**Key behaviors:**
 
-### Active Tab Tracking
+- **Human-in-the-loop** — All WebMCP tools require user approval
+- **Multi-layer validation** — Origin, tab ID, and schema checks
+- **Rate limiting** — 100ms minimum between tool calls (prevents abuse)
+- **Isolated execution** — Tools run in page context, not extension
 
-Only tracks tools from the currently active tab:
+## Security Model
 
-```typescript
-// Tab switch handling
-chrome.tabs.onActivated.addListener(async ({ tabId }) => {
-  // Clear previous tab's tools
-  clearWebMCPTools();
-  setActiveTab(tabId);
-  
-  // Trigger discovery on new tab
-  chrome.tabs.sendMessage(tabId, {
-    type: 'webmcp/tools/refresh'
-  });
-});
-```
+WebMCP implements three-layer validation before any tool executes:
 
-## Message Flow
+<WebMcpValidationFlow />
 
-### Tool Discovery
+### Origin Validation
 
-```mermaid
-sequenceDiagram
-    participant Page as Web Page
-    participant CS as Content Script
-    participant BG as Background
-    participant UI as Side Panel
-    
-    Note over CS: Page loads
-    CS->>Page: Connect via postMessage
-    Page-->>CS: Connection accepted
-    CS->>Page: listTools()
-    Page-->>CS: Tool list
-    CS->>BG: webmcp/tools/register
-    BG->>BG: Store tools
-    BG->>UI: webmcp/tools/updated
-    UI->>UI: Update tool display
-```
+Ensures tools only execute on their registered domain. Prevents **tool shadowing attacks** where malicious pages register tools with names matching legitimate sites.
 
-### Tool Execution
+### Tab ID Validation
 
-```mermaid
-sequenceDiagram
-    participant AI as AI Model
-    participant BG as Background
-    participant CS as Content Script
-    participant Page as Web Page
-    
-    AI->>BG: webmcp/tool/call
-    BG->>BG: Validate origin + tab
-    BG->>CS: webmcp/tool/execute
-    CS->>Page: callTool()
-    Page-->>CS: Result
-    CS-->>BG: webmcp/tool/result
-    BG-->>AI: Tool output
-```
+Ensures tools execute only on the tab that registered them. Prevents **cross-tab execution** attacks if multiple WebMCP sites are open.
 
-## Security Validation
+### Schema Validation
 
-Three-layer validation before execution:
+Validates arguments against the tool's declared `inputSchema`. Prevents **parameter injection** with unexpected or malformed inputs.
 
-### 1. Origin Validation
-
-```typescript
-function validateToolOrigin(tool: WebMCPTool): boolean {
-  if (tool.domain !== state.activeDomain) {
-    log.error('Origin mismatch', { 
-      toolDomain: tool.domain,
-      activeDomain: state.activeDomain 
-    });
-    return false;
-  }
-  return true;
-}
-```
-
-### 2. Tab ID Validation
-
-```typescript
-function validateToolTabId(tool: WebMCPTool): boolean {
-  if (tool.tabId !== state.activeTabId) {
-    log.error('Tab ID mismatch', {
-      toolTabId: tool.tabId,
-      activeTabId: state.activeTabId
-    });
-    return false;
-  }
-  return true;
-}
-```
-
-### 3. Schema Validation
-
-```typescript
-function validateArgsAgainstSchema(args: object, schema: JSONSchema): boolean {
-  // Check required properties
-  for (const prop of schema.required || []) {
-    if (!(prop in args)) {
-      return false;
-    }
-  }
-  
-  // Check types
-  for (const [key, value] of Object.entries(args)) {
-    const propSchema = schema.properties?.[key];
-    if (!validateType(value, propSchema)) {
-      return false;
-    }
-  }
-  
-  return true;
-}
-```
+<Callout type="warn">
+  If a user switches tabs during execution, the tool call fails with a security error.
+</Callout>
 
 ## AI SDK Integration
 
-Convert WebMCP tools to AI SDK format:
+WebMCP tools integrate with the AI SDK through conversion and registration:
 
-```typescript
-// webmcpTools.ts
-export async function getWebMCPToolsFromBackground() {
-  const { tools } = await chrome.runtime.sendMessage({
-    type: 'webmcp/tools/list'
-  });
-  
-  return convertWebMCPToolsToAITools(tools);
-}
+{/* MERMAID_DIAGRAM: webmcp.ai-integration | type: flow | represents: Tool conversion flow | code_refs: apps/extension/src/ai/tools/webmcpTools.ts */}
 
-function convertWebMCPToolsToAITools(tools: WebMCPTool[]) {
-  const result: Record<string, Tool> = {};
-  
-  for (const tool of tools) {
-    const executor = createExecutor(tool);
-    registerWebmcpToolExecutor(tool.name, executor);
-    
-    result[tool.name] = {
-      description: `[WebMCP - ${tool.domain}] ${tool.description}`,
-      parameters: convertToZod(tool.inputSchema),
-      // No execute - requires HITL approval
-    };
-  }
-  
-  return result;
-}
+<ImageZoom src="/web-mcp-tool-conversion-flow.png" alt="WebMCP AI Integration" width={800} height={400} />
+
+| Step | Description |
+|------|-------------|
+| **Fetch tools** | Background returns enabled tools for active tab |
+| **Convert schema** | JSON Schema → Zod schema transformation |
+| **Register executor** | Executor function stored for post-approval use |
+| **Return to AI** | Tools returned without `execute` (requires HITL) |
+
+### Tool Description Enhancement
+
+WebMCP tools are prefixed in their descriptions to help the AI understand their source:
+
+```text title="Description Pattern"
+[WebMCP - example.com] Original tool description
 ```
 
-## Tool Naming
+## Transport Layer
 
-WebMCP tools are prefixed to prevent collisions:
+Communication between content script and page uses `postMessage`:
 
-```text
-Pattern: webmcp_{domain}_{originalName}
+{/* MERMAID_DIAGRAM: webmcp.transport | type: sequence | represents: postMessage transport | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts */}
 
-Examples:
-- webmcp_example.com_search
-- webmcp_app.notion.com_create_page
-```
+<WebMcpTransportSequence />
 
-### Name Sanitization
+| Message Type | Direction | Purpose |
+|--------------|-----------|---------|
+| `mcp-request` | Extension → Page | MCP protocol requests |
+| `mcp-response` | Page → Extension | MCP protocol responses |
 
-Tool names are sanitized for Gemini compatibility:
+The transport uses the standard MCP protocol over this custom channel, enabling any MCP-compliant server implementation on the page side.
 
-```typescript
-function sanitizeToolName(name: string): string {
-  let sanitized = name;
-  
-  // Prefix if starts with digit
-  if (/^[0-9]/.test(sanitized)) {
-    sanitized = `tool_${sanitized}`;
-  }
-  
-  // Replace invalid chars
-  sanitized = sanitized.replace(/[^a-zA-Z0-9_.:-]/g, '_');
-  
-  return sanitized;
-}
-```
+## State Management
 
-## React Hook (`useWebMCPTools`)
+The background manager maintains an in-memory state object:
 
-Provides WebMCP state to components:
+| Field | Type | Description |
+|-------|------|-------------|
+| `tools` | `WebMCPTool[]` | Discovered tools from active tab |
+| `activeTabId` | `number \| null` | Currently tracked tab |
+| `activeDomain` | `string \| null` | Domain of active tab |
+| `activeOrigin` | `string \| null` | Full origin for navigation detection |
+| `isDiscovering` | `boolean` | Discovery in progress |
+| `lastUpdated` | `number` | Timestamp of last update |
 
-```typescript
-// useWebMCPTools.ts
-export function useWebMCPTools() {
-  const [tools, setTools] = useState<WebMCPTool[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Listen for updates
-    const listener = (message: any) => {
-      if (message.type === 'webmcp/tools/updated') {
-        setTools(message.tools);
-      }
-    };
-    
-    chrome.runtime.onMessage.addListener(listener);
-    return () => chrome.runtime.onMessage.removeListener(listener);
-  }, []);
-  
-  return {
-    tools,
-    isLoading,
-    error,
-    refresh: () => triggerDiscovery(),
-    disabledTools,
-    toggleTool,
-    enabledCount,
-    currentDomain
-  };
-}
-```
+### Tab Switch Handling
 
-## For Page Developers
+On tab activation:
 
-Implement WebMCP on your site:
+1. Clear existing WebMCP tools
+2. Update active tab ID and domain
+3. Send refresh message to content script
+4. Content script re-discovers tools on new tab
 
-```typescript
-// Minimal WebMCP server
-window.addEventListener('message', (event) => {
-  if (event.data.type !== 'mcp-request') return;
-  
-  const { id, method, params } = event.data.payload;
-  
-  if (method === 'initialize') {
-    respond(id, { protocolVersion: '2024-11-05' });
-  }
-  
-  if (method === 'tools/list') {
-    respond(id, {
-      tools: [{
-        name: 'search',
-        description: 'Search the site',
-        inputSchema: {
-          type: 'object',
-          properties: { query: { type: 'string' } },
-          required: ['query']
-        }
-      }]
-    });
-  }
-  
-  if (method === 'tools/call') {
-    const result = executeTool(params.name, params.arguments);
-    respond(id, { content: [{ type: 'text', text: result }] });
-  }
-});
+### Same-Site Navigation
 
-function respond(id: number, result: any) {
-  window.postMessage({
-    type: 'mcp-response',
-    payload: { jsonrpc: '2.0', id, result }
-  }, '*');
-}
-```
+The manager detects **same-origin navigation** (staying on the same site) vs **cross-origin navigation** (moving to different site). Same-origin navigation preserves tools while triggering a refresh.
 
 ## Next Steps
 
-- [WebMCP Integration](/docs/integrations/webmcp) — User guide
-- [Tools & Approval](/docs/architecture/tools-and-approval) — Approval system
-- [MCP Client](/docs/architecture/mcp-client) — Remote MCP architecture
+- [WebMCP Integration](/docs/integrations/webmcp) — Usage guide and troubleshooting
+- [Tools & Approval](/docs/architecture/tools-and-approval) — HITL approval system
+- [MCP Client](/docs/architecture/mcp-client) — Remote MCP server architecture

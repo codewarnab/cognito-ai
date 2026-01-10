@@ -144,6 +144,36 @@ Use the `<Callout>` component from Fumadocs for notes, tips, and warnings. Do NO
 
 **Do NOT** duplicate the type in the title (e.g., `title="Note"` when `type="warn"` already shows "Note").
 
+### Images with Zoom
+
+Use the `<ImageZoom>` component from Fumadocs for architecture diagrams and screenshots. This provides click-to-zoom functionality.
+
+```mdx
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+
+<ImageZoom src="/architecture-diagram.png" alt="Architecture Diagram" width={800} height={500} />
+```
+
+**Guidelines:**
+
+| Property | Usage |
+|----------|-------|
+| `src` | Path to image in `/public` (use leading `/`) |
+| `alt` | Descriptive alt text for accessibility |
+| `width` | Recommended: 800 for full-width, 500-600 for medium |
+| `height` | Proportional to image aspect ratio |
+
+**When to use ImageZoom:**
+
+- Architecture diagrams (converted from Mermaid)
+- Screenshots of UI
+- Complex flow diagrams
+
+**When NOT to use:**
+
+- Simple icons or logos
+- Inline decorative images
+
 ---
 
 ## Page Organization
@@ -286,6 +316,9 @@ import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
 | `ServerToolsSequence` | Server tools execution flow |
 | `StdioMcpSequence` | StdIO MCP proxy flow |
 | `OAuthFlowSequence` | OAuth 2.0 authentication flow |
+| `McpOAuthSequence` | MCP OAuth connection flow |
+| `McpToolApprovalSequence` | Tool approval UI flow |
+| `McpToolExecutionSequence` | Full tool execution with approval |
 
 When adding new sequence diagrams, create a new component following the existing pattern.
 

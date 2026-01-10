@@ -41,6 +41,18 @@ import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
 
 Do NOT use Mermaid for sequence diagrams. Do NOT use images for diagrams that can be components.
 
+### Architecture Images
+
+For complex architecture diagrams (converted from Mermaid), use the `<ImageZoom>` component:
+
+```mdx
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+
+<ImageZoom src="/architecture-diagram.png" alt="Architecture Diagram" width={800} height={500} />
+```
+
+Images go in `public/` and are referenced with a leading `/`.
+
 ### Style Guide
 
 Refer to [STYLE_GUIDE.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/docs/STYLE_GUIDE.md) for full writing and formatting guidelines.

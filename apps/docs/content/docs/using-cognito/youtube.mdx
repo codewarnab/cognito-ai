@@ -3,6 +3,8 @@ title: YouTube Analysis
 description: Analyze and summarize YouTube videos with transcripts.
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 ## What You'll Learn
 
 - How YouTube video analysis works
@@ -19,29 +21,29 @@ Cognito AI can analyze YouTube videos by fetching and processing their transcrip
 
 Navigate to a YouTube video and ask:
 
-```text
+```text title="Example prompt"
 Summarize this video
 ```
 
 Or provide a URL:
 
-```text
+```text title="Example prompt"
 What are the main points in https://youtube.com/watch?v=...
 ```
 
 ### Ask Specific Questions
 
-```text
+```text title="Example prompt"
 What does the speaker say about machine learning?
 ```
 
-```text
+```text title="Example prompt"
 Give me timestamps for when they discuss pricing
 ```
 
 ### Extract Information
 
-```text
+```text title="Example prompt"
 List all the tools mentioned in this video
 ```
 
@@ -51,12 +53,12 @@ List all the tools mentioned in this video
 |------|--------|
 | 1 | AI detects YouTube video context |
 | 2 | `getYouTubeTranscript` tool fetches transcript |
-| 3 | Backend calls Supadata API |
-| 4 | Transcript returned with timestamps |
-| 5 | AI processes and responds |
+| 3 | Transcript returned with timestamps |
+| 4 | AI processes and responds |
 
-> [!NOTE]
-> Transcripts are fetched via the **Supadata API** through the backend.
+<Callout>
+Transcripts are fetched through the **backend API**. No additional setup required.
+</Callout>
 
 ## Requirements
 

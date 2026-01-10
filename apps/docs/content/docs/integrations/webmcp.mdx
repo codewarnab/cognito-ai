@@ -3,7 +3,12 @@ title: WebMCP
 description: Use tools provided directly by web pages.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts, apps/extension/src/background/webmcp/ */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts, apps/extension/src/background/webmcp/manager.ts, apps/extension/src/ai/tools/webmcpTools.ts */}
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+import { WebMcpApprovalSequence } from '@/components/diagrams/WebMcpApprovalSequence';
+import { WebMcpValidationFlow } from '@/components/diagrams/WebMcpValidationFlow';
 
 WebMCP enables websites to expose tools that Cognito can discover and execute. Unlike remote MCP servers, WebMCP tools run directly in the page context with no server infrastructure required.
 
@@ -11,22 +16,7 @@ WebMCP enables websites to expose tools that Cognito can discover and execute. U
 
 {/* MERMAID_DIAGRAM: webmcp.overview | type: component | represents: WebMCP architecture | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts */}
 
-```mermaid
-graph LR
-    subgraph Extension["Cognito Extension"]
-        SP[Side Panel]
-        BG[Background SW]
-        CS[Content Script]
-    end
-    
-    subgraph Page["Web Page"]
-        WS[WebMCP Server]
-    end
-    
-    SP --> BG
-    BG <--> CS
-    CS <-->|postMessage| WS
-```
+![WebMCP architecture flow](/webmcp-flow.png)
 
 **Discovery flow:**
 1. Content script connects to page's WebMCP server
@@ -51,7 +41,9 @@ WebMCP tools are discovered automatically when navigating to enabled websites. T
 
 ### Active Tab Focus
 
-Cognito tracks tools only from the **currently active tab**. Switching tabs clears the previous tab's tools and discovers new ones.
+<Callout>
+  Cognito tracks tools only from the **currently active tab**. Switching tabs clears the previous tab's tools and discovers new ones.
+</Callout>
 
 ## Using WebMCP Tools
 
@@ -73,15 +65,19 @@ Individual tools can be toggled on/off:
 
 Tools are prefixed to prevent conflicts:
 
-```text
-webmcp_{domain}_{originalName}
+```text title="Naming Pattern"
+webmcp_{sanitized_domain}_{originalName}
 ```
 
-**Example:** A tool named `search` on `example.com` becomes `webmcp_example.com_search`.
+A tool named `search` on `example.com` becomes `webmcp_example_com_search` (dots replaced with underscores).
 
 ## Tool Approval
 
 All WebMCP tools require user approval before execution (Human-in-the-Loop pattern).
+
+<Callout type="warn">
+  WebMCP tools execute on third-party websites and may access sensitive page data. Always review tool actions before approving.
+</Callout>
 
 ### Why Approval is Required
 
@@ -96,30 +92,13 @@ All WebMCP tools require user approval before execution (Human-in-the-Loop patte
 | Action | Scope | Storage |
 |--------|-------|---------|
 | **Allow** | Single execution | None |
-| **Trust this site** | All tools from domain | Persisted |
-| **Always allow** | This specific tool | Persisted |
-| **This session only** | Tool for session | In-memory |
+| **Trust this domain** | All WebMCP tools from this domain | Persisted |
+| **Always allow this tool** | This specific tool everywhere | Persisted |
+| **This session only** | Tool for current session | In-memory |
 
 {/* MERMAID_DIAGRAM: webmcp.approval-flow | type: sequence | represents: Tool approval flow | code_refs: apps/extension/src/ai/tools/webmcpTools.ts */}
 
-```mermaid
-sequenceDiagram
-    participant AI as AI Model
-    participant UI as Approval UI
-    participant BG as Background
-    participant CS as Content Script
-    
-    AI->>UI: Tool call (no execute)
-    UI->>UI: Check auto-approved?
-    alt Not approved
-        UI->>UI: Show approval dialog
-        UI->>UI: User clicks Allow
-    end
-    UI->>BG: Execute tool
-    BG->>CS: Forward to content script
-    CS-->>BG: Tool result
-    BG-->>AI: addToolOutput()
-```
+<WebMcpApprovalSequence />
 
 ## Security
 
@@ -129,7 +108,7 @@ WebMCP includes multiple validation layers:
 
 Tools must match the active tab's domain. Prevents tool shadowing attacks.
 
-```typescript
+```typescript title="Origin Check"
 // Tool from example.com cannot execute on other domains
 if (tool.domain !== activeDomain) {
   throw new SecurityError('Tool origin mismatch');
@@ -140,7 +119,7 @@ if (tool.domain !== activeDomain) {
 
 Tools must belong to the active tab. Prevents cross-tab execution.
 
-```typescript
+```typescript title="Tab ID Check"
 if (tool.tabId !== activeTabId) {
   throw new SecurityError('Tool tab mismatch');
 }
@@ -152,11 +131,7 @@ Tool arguments are validated against the declared schema. Prevents parameter inj
 
 ### Validation Flow
 
-```text
-Tool Call → Origin Check → Tab ID Check → Schema Check → Execute
-       ↓            ↓              ↓             ↓
-    Reject      Reject        Reject       Proceed
-```
+<WebMcpValidationFlow />
 
 ## For Website Developers
 
@@ -164,7 +139,7 @@ Implement WebMCP on your site to expose tools to Cognito users.
 
 ### Basic Implementation
 
-```typescript
+```typescript title="webmcp-server.ts"
 // Your page's WebMCP server
 window.addEventListener('message', (event) => {
   if (event.data.type === 'mcp/connect') {
@@ -213,38 +188,44 @@ function handleCallTool(name: string, args: object) {
 | Message | Direction | Purpose |
 |---------|-----------|---------|
 | `webmcp/tools/register` | CS → BG | Register discovered tools |
-| `webmcp/tools/list` | SP → BG | Get current tools |
-| `webmcp/tool/call` | BG → CS | Execute a tool |
+| `webmcp/tools/list` | SP → BG | Get enabled tools for AI |
+| `webmcp/tools/list-all` | SP → BG | Get all tools for UI (with disabled status) |
+| `webmcp/tools/state` | SP → BG | Get full WebMCP state |
+| `webmcp/tools/discover` | SP → BG | Force tool discovery on active tab |
+| `webmcp/tool/call` | SP → BG | Execute a tool |
+| `webmcp/tool/execute` | BG → CS | Forward execution to content script |
 | `webmcp/tool/result` | CS → BG | Return execution result |
-| `webmcp/tools/updated` | BG → SP | Broadcast tool updates |
+| `webmcp/tools/refresh` | BG → CS | Request tools refresh from page |
 
 ## Troubleshooting
 
-### Tools Not Appearing
+<Accordions type="single">
+  <Accordion title="Tools Not Appearing" id="tools-not-appearing">
+    **Symptoms**: WebMCP section empty or missing
 
-**Symptoms**: WebMCP section empty or missing
+    **Solutions**:
+    - Verify the website is WebMCP-enabled
+    - Check the content script loaded (extension console)
+    - Try refreshing the page
+  </Accordion>
 
-**Checks**:
-- Is the website WebMCP-enabled?
-- Is the content script loaded? (Check extension console)
-- Try refreshing the page
+  <Accordion title="Tool Execution Failed" id="tool-execution-failed">
+    **Symptoms**: Tool call returns error
 
-### Tool Execution Failed
+    **Solutions**:
+    - Check the page console for errors
+    - Verify the page's WebMCP server is functioning
+    - Check if page navigation occurred mid-execution
+  </Accordion>
 
-**Symptoms**: Tool call returns error
+  <Accordion title="Security Error" id="security-error">
+    **Symptoms**: "Tool origin mismatch" or "Tool tab mismatch"
 
-**Checks**:
-- Check page console for errors
-- Verify the page's WebMCP server is functioning
-- Check if page navigation occurred mid-execution
+    **Cause**: Tab switched during tool execution
 
-### Security Error
-
-**Symptoms**: "Tool origin mismatch" or "Tool tab mismatch"
-
-**Cause**: Tab switched during tool execution
-
-**Solution**: Stay on the tool's page during execution
+    **Solution**: Stay on the tool's page during execution
+  </Accordion>
+</Accordions>
 
 ## Next Steps
 

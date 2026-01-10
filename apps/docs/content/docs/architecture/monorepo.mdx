@@ -1,223 +1,68 @@
 ---
 title: Monorepo Structure
-description: Understanding the Cognito AI monorepo.
+description: How Cognito AI organizes its codebase.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: MONOREPO.md, pnpm-workspace.yaml */}
+Cognito AI uses a **pnpm monorepo** architecture. This structure allows multiple related packages to share code, dependencies, and tooling while staying independently deployable.
 
-Cognito AI uses a **pnpm monorepo** containing the Chrome extension, documentation, webapp, and backend services.
+## What is a Monorepo?
 
-## Workspace Structure
+A monorepo keeps all project components in a **single repository**:
 
-```text
-cognito-ai/
-├── apps/
-│   ├── extension/          # @cognito/extension - Chrome Extension
-│   ├── docs/               # @cognito/docs - Documentation (Fumadocs)
-│   └── webapp/             # @cognito/webapp - Web application
-├── packages/
-│   ├── shared/             # @cognito/shared - Shared types/constants
-│   ├── backend-cloudflare/ # @cognito/backend-cloudflare - ElevenLabs proxy
-│   └── backend-vercel/     # @cognito/backend-vercel - AI API + services
-└── [root config files]
-```
+- **Shared code** between packages avoids duplication
+- **Consistent tooling** across all packages
+- **Atomic changes** span multiple packages in one commit
+- **Simplified dependency management** with a single lockfile
 
-## Package Overview
+## Project Components
 
-| Package | Scope | Purpose | Technology |
-|---------|-------|---------|------------|
-| Extension | `@cognito/extension` | Chrome Extension | WXT + React 19 |
-| Docs | `@cognito/docs` | Documentation site | Next.js + Fumadocs |
-| Webapp | `@cognito/webapp` | Settings pages | Next.js 16 |
-| Shared | `@cognito/shared` | Types & constants | TypeScript |
-| Backend Cloudflare | `@cognito/backend-cloudflare` | ElevenLabs proxy | Hono + Workers |
-| Backend Vercel | `@cognito/backend-vercel` | AI API | Express + Vercel |
+Cognito AI consists of several packages working together:
 
-## Dependency Graph
+| Component | Purpose |
+|-----------|---------|
+| **Extension** | Chrome Extension with AI assistant |
+| **Webapp** | Settings, onboarding, and reminder pages |
+| **Docs** | Documentation site (this website) |
+| **Shared** | Common types and constants |
+| **Backend Services** | Closed-source API services |
 
-{/* MERMAID_DIAGRAM: monorepo.dependencies | type: flowchart | represents: Package dependencies | code_refs: package.json files */}
+## How Components Connect
 
-```mermaid
-graph TD
-    EXT[Extension] --> SHARED[Shared]
-    WEBAPP[Webapp] --> SHARED
-    VERCEL[Backend Vercel] --> SHARED
-    DOCS[Docs] --> SHARED
-    
-    EXT --> VERCEL
-    EXT --> CF[Backend Cloudflare]
-    WEBAPP --> VERCEL
-```
+The extension communicates with multiple services:
 
-## Package Details
+- **Webapp** — Opens for settings and configuration
+- **Backend API** — Handles AI requests, transcripts, and search
+- **Voice Service** — Powers voice conversations via ElevenLabs
 
-### Extension (`apps/extension/`)
-
-The Chrome extension built with [WXT](https://wxt.dev/) and React 19.
-
-**Key directories:**
-```text
-apps/extension/
-├── src/
-│   ├── entrypoints/     # WXT entrypoints (sidepanel, background, contents)
-│   ├── components/      # React components
-│   ├── stores/          # Zustand state
-│   ├── ai/              # AI integration
-│   ├── mcp/             # MCP client
-│   └── utils/           # Utilities
-├── wxt.config.ts        # WXT configuration
-└── package.json
-```
-
-### Webapp (`apps/webapp/`)
-
-Settings and configuration pages as a Next.js app.
-
-**Routes:**
-| Route | Purpose |
-|-------|---------|
-| `/settings` | User preferences |
-| `/onboarding` | First-time setup |
-| `/reminders` | Reminder management |
-| `/providers` | AI provider setup |
-
-### Backend Vercel (`packages/backend-vercel/`)
-
-Express API for AI chat, transcripts, and content services.
-
-**Endpoints:**
-| Path | Purpose |
-|------|---------|
-| `/api/ai/chat-with-tools` | Main chat API |
-| `/simple-transcript` | YouTube transcripts |
-| `/web-search` | Tavily web search |
-| `/retrieve` | URL content extraction |
-
-### Backend Cloudflare (`packages/backend-cloudflare/`)
-
-Cloudflare Worker proxying ElevenLabs for voice mode.
-
-**Endpoints:**
-| Path | Purpose |
-|------|---------|
-| `/api/signed-url` | Voice conversation URL |
-| `/api/voices` | Available voices |
-| `/api/text-to-speech` | TTS streaming |
-
-### Shared (`packages/shared/`)
-
-Common types and constants used by multiple packages.
-
-```typescript
-// Import types
-import type { WriteTone, RewritePreset } from '@cognito/shared';
-
-// Import constants  
-import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
-```
+All open-source components share types through the **Shared** package.
 
 ## Package Manager
 
-This project uses **pnpm** with workspace configuration.
+Cognito uses **pnpm workspaces** to manage the monorepo:
 
-### Root `pnpm-workspace.yaml`
+- Packages declare dependencies on each other
+- A single `pnpm install` sets up everything
+- Scripts run across packages with filters
 
-```yaml
-packages:
-  - 'apps/*'
-  - 'packages/*'
-```
+## Key Concepts
 
-### Common Commands
+### Workspace Dependencies
 
-```bash
-# Install all dependencies
-pnpm install
+Packages reference each other using workspace protocol. The shared package exports types that other packages import, ensuring consistency.
 
-# Run in specific package
-pnpm --filter @cognito/extension dev
-pnpm --filter @cognito/docs build
+### Parallel Development
 
-# Run in all packages
-pnpm build
-```
+Run all development servers simultaneously. Changes in shared code reflect across all dependent packages.
 
-## Development Workflow
+### Independent Deployment
 
-### Start All Services
+Each package deploys separately:
 
-```bash
-pnpm dev:all
-```
-
-This runs in parallel:
-- Extension dev server
-- Webapp dev server  
-- Backend dev server
-- Docs dev server
-
-### Start Individual Services
-
-```bash
-pnpm dev           # Extension only
-pnpm dev:docs      # Docs only
-pnpm dev:webapp    # Webapp only
-```
-
-### Building
-
-```bash
-pnpm build              # Build all
-pnpm build:extension    # Extension only
-```
-
-## Adding Dependencies
-
-### To a specific package
-
-```bash
-pnpm --filter @cognito/extension add react-query
-```
-
-### To the root (dev tools)
-
-```bash
-pnpm add -D -w prettier
-```
-
-## Root Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `pnpm-workspace.yaml` | Workspace packages |
-| `package.json` | Root scripts, shared devDeps |
-| `tsconfig.json` | Base TypeScript config |
-| `.prettierrc` | Code formatting |
-| `.gitignore` | Git ignore patterns |
-
-## Git Commits
-
-Use Conventional Commits with package scope:
-
-```bash
-feat(extension): add new feature
-fix(backend-vercel): resolve API issue
-docs: update architecture guide
-chore: update dependencies
-```
-
-## Deployment
-
-| Package | Platform | Command |
-|---------|----------|---------|
-| Extension | Manual upload | `pnpm build:extension` |
-| Docs | Vercel | Auto-deploy on push |
-| Webapp | Vercel | Auto-deploy on push |
-| Backend Vercel | Vercel | Auto-deploy on push |
-| Backend Cloudflare | Cloudflare | `pnpm deploy:cloudflare` |
+- **Extension** → Chrome Web Store
+- **Webapp** → Vercel
+- **Docs** → Vercel
 
 ## Next Steps
 
-- [Extension Architecture](/docs/architecture/extension-architecture) — Chrome extension internals
-- [Dev Setup](/docs/contributing/dev-setup) — Development environment
-- [Coding Standards](/docs/contributing/coding-standards) — Code guidelines
+- [Extension Architecture](/docs/architecture/extension-architecture) — How the extension works
+- [Dev Setup](/docs/contributing/dev-setup) — Set up your development environment

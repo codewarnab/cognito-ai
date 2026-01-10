@@ -3,6 +3,8 @@ title: Reminders
 description: Set and manage reminders with Cognito AI.
 ---
 
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/services/elevenlabs/clientTools.ts, apps/webapp/src/app/reminders/ */}
+
 ## What You'll Learn
 
 - Creating reminders via chat
@@ -11,21 +13,15 @@ description: Set and manage reminders with Cognito AI.
 
 ## Overview
 
-Cognito AI can set reminders that trigger Chrome notifications at specified times. Ask naturally to create reminders.
+Cognito AI can set reminders that trigger Chrome notifications at specified times. Ask naturally to create reminders, then manage them from the webapp.
 
 ## Create a Reminder
 
-### Natural Language
+Use natural language in the chat to create reminders:
 
-```text
+```text title="Examples"
 Remind me to check emails in 30 minutes
-```
-
-```text
 Set a reminder for 3pm to join the standup
-```
-
-```text
 Remind me tomorrow at 9am to review the PR
 ```
 
@@ -48,27 +44,27 @@ Remind me tomorrow at 9am to review the PR
 
 ## Managing Reminders
 
-### List Active Reminders
+### Via Chat
 
-```text
+Ask Cognito to list or cancel reminders:
+
+```text title="Examples"
 What reminders do I have?
-```
-
-### Cancel a Reminder
-
-```text
 Cancel my 3pm reminder
 ```
 
 ### Webapp Interface
 
-> [!NOTE]
-> Advanced reminder management is available in the webapp at `/reminders`.
+The [Reminders page](/reminders) provides full reminder management:
 
-The webapp provides:
-- Full list of all reminders
-- Edit reminder details
-- Bulk delete
+- **View** all scheduled reminders
+- **Edit** reminder title, time, and description
+- **Delete** individual reminders
+- **Pause/resume** reminders
+
+<Callout>
+  Open the reminders page from the extension's **three-dot menu** or navigate directly to `/reminders` in the webapp.
+</Callout>
 
 ## Notifications
 
@@ -79,14 +75,17 @@ Reminders trigger Chrome browser notifications:
 | **Sound** | Settings → Enable Notification Sound |
 | **Chrome notifications** | Chrome OS/system settings |
 
-> [!TIP]
-> Ensure Chrome notifications are enabled in your system settings for reminders to appear.
+<Callout type="warn">
+  Ensure Chrome notifications are enabled in your system settings for reminders to appear.
+</Callout>
 
 ## Limitations
 
-- **Browser must be open** — Chrome needs to be running
-- **Extension active** — Extension must not be disabled
-- **Time zones** — Uses your local system time
+| Limitation | Details |
+|------------|---------|
+| **Browser must be open** | Chrome needs to be running |
+| **Extension active** | Extension must not be disabled |
+| **Time zones** | Uses your local system time |
 
 ## Next Steps
 
