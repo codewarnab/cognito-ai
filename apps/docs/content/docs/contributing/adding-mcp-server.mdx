@@ -1,197 +1,274 @@
 ---
 title: Adding MCP Server
-description: How to add support for a new MCP server.
+description: How to add support for a new MCP server integration.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/constants/mcpServers.tsx */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/constants/mcpServers.tsx */}
 
 This guide walks you through adding support for a new MCP server to Cognito AI.
 
+## What You'll Learn
+
+- MCP server types and when to use each
+- Adding remote (SSE/HTTP) servers
+- Configuring authentication (OAuth, PAT, hybrid)
+- Testing your integration
+
+<Callout type="warn">
+The backend is not open source. StdIO servers that require backend proxying are configured by maintainers only. This guide focuses on remote MCP servers that connect directly from the extension.
+</Callout>
+
 ## Server Types
 
-| Type | Transport | Configuration |
-|------|-----------|---------------|
-| **Remote (SSE/HTTP)** | SSE (server→client) + HTTP (request/response) | User provides URL |
-| **Pre-configured Remote** | SSE/HTTP | Bundled in extension |
-| **StdIO (Backend-only)** | stdin/stdout | Backend proxied |
+| Type | Transport | Who Can Add |
+|------|-----------|-------------|
+| **Remote (SSE/HTTP)** | Direct browser connection | Contributors ✅ |
+| **Pre-configured Remote** | Bundled in extension | Contributors ✅ |
+| **StdIO (Backend-only)** | Requires backend proxy | Maintainers only |
 
-## Adding a Pre-configured Remote Server
+## Adding a Remote MCP Server
 
-### Step 1: Add Server Configuration
+### Add Server Configuration
 
 Edit `apps/extension/src/constants/mcpServers.tsx`:
 
-```tsx
-export const MCP_SERVERS: McpServerConfig[] = [
+```tsx title="apps/extension/src/constants/mcpServers.tsx"
+import { MyServiceIcon } from '@assets/brands/integrations/MyService';
+// Or use an image:
+import myServiceImage from '@assets/brands/integrations/myservice.png';
+
+export const MCP_SERVERS: ServerConfig[] = [
   // ... existing servers
   
   {
-    id: 'my-server',
-    name: 'My MCP Server',
-    description: 'Integration with My Service',
-    icon: <MyServiceIcon className="h-5 w-5" />,
-    serverUrl: 'https://mcp.myservice.com',
-    category: 'productivity',
-    requiresAuth: true,
-    authType: 'oauth',
-    isBackendOnly: false,
+    id: 'my-service',
+    name: 'My Service',
+    icon: <MyServiceIcon className="w-6 h-6" />,
+    // Or for images:
+    // icon: <img src={myServiceImage} alt="My Service" style={{ width: 24, height: 24 }} />,
+    initialEnabled: false,
+    initialAuthenticated: false,
+    url: 'https://mcp.myservice.com/mcp',
+    description: 'Brief description of what this integration provides.',
+    requiresAuthentication: true,  // or false if no auth needed
   },
 ];
 ```
 
-### Step 2: Configuration Schema
+### Configuration Schema
 
 ```typescript
-interface McpServerConfig {
+interface ServerConfig {
   // Required
-  id: string;                      // Unique identifier
+  id: string;                      // Unique identifier (kebab-case)
   name: string;                    // Display name
-  serverUrl: string;               // MCP endpoint URL
+  url: string;                     // MCP endpoint URL
+  description: string;             // User-facing description
+  requiresAuthentication: boolean; // Whether auth is needed
+  
+  // Required defaults
+  initialEnabled: false;           // Always start disabled
+  initialAuthenticated: false;     // Always start unauthenticated
+  
+  // Visual
+  icon: React.ReactNode;           // Icon component or image
   
   // Optional
-  description?: string;            // User-facing description
-  icon?: React.ReactNode;          // Icon component
-  category?: string;               // For grouping
-  requiresAuth?: boolean;          // Needs authentication
-  authType?: 'oauth' | 'token';    // Authentication type
-  isBackendOnly?: boolean;         // StdIO server
-  tokenLabel?: string;             // Label for token input
+  paid?: boolean;                  // Show "paid" badge
+  authConfig?: AuthConfig;         // PAT/OAuth configuration
+  oauth?: OAuthConfig;             // OAuth-specific settings
 }
 ```
 
-### Step 3: Add Icon
+## Authentication Types
 
-Import or create an icon for the server:
+### No Authentication
+
+For public MCP servers:
 
 ```tsx
-// Option 1: Use Lucide icon
-import { Database } from 'lucide-react';
+{
+  id: 'public-docs',
+  name: 'Public Docs',
+  url: 'https://mcp.docs.example.com/mcp',
+  description: 'Public documentation server.',
+  requiresAuthentication: false,
+  // ... other required fields
+}
+```
 
-// Option 2: Custom SVG component
-function MyServiceIcon({ className }: { className?: string }) {
+### OAuth Authentication
+
+For servers supporting OAuth with Dynamic Client Registration (DCR):
+
+```tsx
+{
+  id: 'oauth-service',
+  name: 'OAuth Service',
+  url: 'https://mcp.service.com/sse',
+  description: 'Service with OAuth authentication.',
+  requiresAuthentication: true,
+  // OAuth discovery happens automatically via:
+  // - RFC 9728: Protected Resource Metadata
+  // - RFC 8414: Authorization Server Metadata
+}
+```
+
+<Callout>
+Cognito uses RFC 7591 for Dynamic Client Registration. The server must support a `POST /register` endpoint that returns `client_id`.
+</Callout>
+
+### Personal Access Token (PAT)
+
+For servers using API keys or tokens:
+
+```tsx
+{
+  id: 'token-service',
+  name: 'Token Service',
+  url: 'https://mcp.service.com/mcp',
+  description: 'Service requiring API token.',
+  requiresAuthentication: true,
+  authConfig: {
+    type: 'pat',
+    patConfig: {
+      label: 'API Key',
+      placeholder: 'sk-...',
+      helpUrl: 'https://service.com/api-keys',
+    },
+  },
+}
+```
+
+### PAT Configuration Options
+
+```typescript
+interface PatConfig {
+  label: string;              // Input label ("API Key", "Access Token")
+  placeholder: string;        // Input placeholder ("sk-...", "ghp_...")
+  helpUrl?: string;           // Link to token creation docs
+  
+  // Token delivery method (pick one):
+  // Default: Authorization: Bearer <token>
+  authHeaderName?: string;    // Custom header ("X-API-Key")
+  urlTokenParam?: string;     // Query param ("?token=xxx")
+  urlPathTemplate?: string;   // Path template ("https://api.com/{API_KEY}/mcp")
+}
+```
+
+### Examples by Token Type
+
+**Custom Header:**
+
+```tsx
+authConfig: {
+  type: 'pat',
+  patConfig: {
+    label: 'API Key',
+    placeholder: 'Enter your API key',
+    authHeaderName: 'X-API-Key',  // Sends: X-API-Key: <token>
+  },
+}
+```
+
+**URL Query Parameter:**
+
+```tsx
+authConfig: {
+  type: 'pat',
+  patConfig: {
+    label: 'API Token',
+    placeholder: 'Enter your token',
+    urlTokenParam: 'token',  // Appends: ?token=<token>
+  },
+}
+```
+
+**URL Path Template:**
+
+```tsx
+authConfig: {
+  type: 'pat',
+  patConfig: {
+    label: 'API Key',
+    placeholder: 'Enter your API key',
+    urlPathTemplate: 'https://mcp.service.com/{API_KEY}/mcp',
+  },
+}
+```
+
+### Multi-Field Authentication
+
+For servers requiring multiple credentials:
+
+```tsx
+{
+  id: 'multi-field-service',
+  name: 'Multi-Field Service',
+  url: 'https://mcp.service.com/mcp',
+  requiresAuthentication: true,
+  authConfig: {
+    type: 'pat',
+    patConfig: {
+      label: 'Credentials',
+      placeholder: '',
+      fields: [
+        { id: 'apiKey', label: 'API Key', placeholder: 'key_...', required: true, secret: true },
+        { id: 'workspace', label: 'Workspace ID', placeholder: 'ws-123', required: true },
+      ],
+    },
+  },
+}
+```
+
+## Adding an Icon
+
+### Option 1: SVG Component
+
+Create a component in `apps/extension/assets/brands/integrations/`:
+
+```tsx title="apps/extension/assets/brands/integrations/MyService.tsx"
+export function MyService({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24">
-      {/* SVG path */}
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      {/* SVG paths */}
     </svg>
   );
 }
 ```
 
-## Adding an OAuth Server
+### Option 2: Image File
 
-For servers requiring OAuth authentication:
-
-### OAuth Discovery
-
-Cognito automatically discovers OAuth endpoints using:
-- RFC 9728: Protected Resource Metadata
-- RFC 8414: Authorization Server Metadata
-
-The server should expose:
-- `/.well-known/oauth-protected-resource` (optional)
-- `/.well-known/oauth-authorization-server` at the auth server
-
-### Required Endpoints
-
-| Endpoint | Purpose |
-|----------|---------|
-| `authorization_endpoint` | User consent URL |
-| `token_endpoint` | Token exchange |
-| `registration_endpoint` | Dynamic client registration |
-
-### Configuration
+Add an image to `apps/extension/assets/brands/integrations/` and import it:
 
 ```tsx
-{
-  id: 'oauth-server',
-  name: 'OAuth Protected Server',
-  serverUrl: 'https://mcp.server.com',
-  requiresAuth: true,
-  authType: 'oauth',
-}
+import myServiceImage from '@assets/brands/integrations/myservice.png';
+
+// In config:
+icon: <img src={myServiceImage} alt="My Service" style={{ width: 24, height: 24 }} />
 ```
 
-### Dynamic Client Registration
+### Update Icon Mappers
 
-Cognito uses RFC 7591 for dynamic client registration. The server must support:
-- `POST /register` endpoint
-- Returning `client_id` and optional `client_secret`
+After adding a new server, update the icon mappers:
 
-## Adding a Token-Based Server
-
-For servers using API tokens:
-
-```tsx
-{
-  id: 'token-server',
-  name: 'API Token Server',
-  serverUrl: 'https://mcp.server.com',
-  requiresAuth: true,
-  authType: 'token',
-  tokenLabel: 'API Key',  // Shown in UI
-}
-```
-
-The user enters their API token in the settings UI.
-
-## Adding a StdIO Server (Backend-Only)
-
-StdIO servers require backend proxying since browsers can't spawn processes.
-
-### Step 1: Extension Configuration
-
-```tsx
-{
-  id: 'stdio-server',
-  name: 'CLI Tool Server',
-  description: 'MCP server for CLI tool',
-  isBackendOnly: true,  // Key flag
-  requiresAuth: true,
-  authType: 'token',
-  tokenLabel: 'API Key',
-}
-```
-
-### Step 2: Backend Registry
-
-Add to backend's secure command registry at `packages/shared/src/constants/mcpRegistry.ts`:
-
-```typescript
-export const MCP_SERVER_REGISTRY: Record<string, StdioServerConfig> = {
-  'stdio-server': {
-    command: 'npx',
-    args: ['-y', '@myorg/mcp-server'],
-    env: {
-      // API key injected at runtime
-      MY_API_KEY: '${API_KEY}',
-    },
-  },
-};
-```
-
-> **Security**: Commands are stored server-side only. The frontend sends `serverId` and credentials, never the actual command.
-
-### Step 3: Backend Endpoint
-
-The backend handles StdIO servers via:
-- `POST /api/ai/mcp/discover` — List tools
-- `POST /api/ai/mcp/execute` — Execute tool
+1. `src/components/ui/tools/icons/McpIconMapper.tsx` — Add import and mapping
+2. `src/components/ui/tools/icons/ToolIconMapper.tsx` — Add server name to hints array
 
 ## Testing Your Server
 
 ### Prerequisites
 
-1. Run `pnpm dev` to start the extension
+1. Run `pnpm dev` in the extension directory
 2. Load the extension in Chrome
 
 ### Test Connection
 
-1. Open **Settings** → **MCP Servers**
+1. Open extension **Settings** → **MCP Servers**
 2. Find your server in the list
 3. Enable it
-4. If OAuth: Complete the consent flow
-5. If token: Enter your API key
-6. Verify status shows "Connected"
+4. Complete authentication if required
+5. Verify status shows "Connected"
 
 ### Test Tools
 
@@ -201,13 +278,9 @@ The backend handles StdIO servers via:
 
 ### Debugging
 
-Check the browser console for:
-- Connection errors
-- OAuth flow issues
-- Tool execution failures
+Check the browser console for MCP-related logs:
 
-```javascript
-// In DevTools console, filter by:
+```
 [MCP_CLIENT]
 [MCP_AUTH]
 [MCP_TOOLS]
@@ -223,37 +296,44 @@ Check the browser console for:
 | `tools/list` | Return available tools |
 | `tools/call` | Execute a tool |
 
-### Optional Methods
-
-| Method | Purpose |
-|--------|---------|
-| `resources/list` | List resources |
-| `prompts/list` | List prompts |
-| `resources/read` | Read a resource |
-| `notifications/tools/list_changed` | Tool updates |
-
 ### Protocol Versions
 
 Cognito supports:
 - `2025-06-18` — Streamable HTTP (preferred)
 - `2024-11-05` — HTTP+SSE (fallback)
 
-## Submitting Your Server
+## PR Checklist
 
-### PR Checklist
+Before submitting:
 
 - [ ] Server config added to `mcpServers.tsx`
-- [ ] Icon included
-- [ ] Backend registry updated (if StdIO)
-- [ ] OAuth endpoints verified
-- [ ] Tested connection and tools
-- [ ] Documentation updated (if notable)
+- [ ] Icon added and imported
+- [ ] Icon mappers updated
+- [ ] Tested connection flow
+- [ ] Tested tool execution
+- [ ] Authentication works correctly
+- [ ] No console errors
 
-### Documentation
+## Common Issues
 
-For significant servers, update:
-- `docs/integrations/remote-mcp.mdx` — Add to examples
-- Create usage documentation if needed
+### OAuth Discovery Fails
+
+The server may not support Dynamic Client Registration. Check if:
+- `/.well-known/oauth-authorization-server` is accessible
+- Registration endpoint accepts POST requests
+- Server returns valid `client_id`
+
+### Connection Timeout
+
+- Verify the URL is correct and accessible
+- Check if the server requires specific headers
+- Ensure CORS is configured on the server
+
+### Tools Not Appearing
+
+- Verify `tools/list` returns valid tool definitions
+- Check console for parsing errors
+- Ensure tool schemas are valid JSON Schema
 
 ## Next Steps
 

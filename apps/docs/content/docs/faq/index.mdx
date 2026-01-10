@@ -3,216 +3,232 @@ title: FAQ
 description: Frequently asked questions about Cognito AI.
 ---
 
+import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
+
 Answers to common questions about Cognito AI.
 
 ## General
 
-### What is Cognito AI?
+<Accordions>
+  <Accordion title="What is Cognito AI?" id="what-is-cognito">
+    Cognito AI is a privacy-first, AI-powered Chrome extension that helps you browse and work more effectively. It provides an AI assistant in a side panel that can read pages, automate tasks, and connect to external tools via MCP.
+  </Accordion>
 
-Cognito AI is a privacy-first, AI-powered Chrome extension that helps you browse and work more effectively. It provides an AI assistant in a side panel that can read pages, automate tasks, and connect to external tools via MCP.
+  <Accordion title="Is Cognito AI free?" id="is-free">
+    Yes. Cognito AI is open source and free to use. Some features require:
+    - **AI API access**: Either use Cloud mode (free with rate limits) or provide your own Google AI API key (BYOK)
+    - **Voice mode**: Requires ElevenLabs service configuration
+    - **Memory features**: Requires Supermemory API key
+  </Accordion>
 
-### Is Cognito AI free?
+  <Accordion title="What browsers are supported?" id="browsers-supported">
+    Currently Cognito AI supports **Google Chrome version 120 or later**. It may work on Chromium-based browsers like Edge and Brave, but these are not officially supported.
+  </Accordion>
 
-Yes. Cognito AI is open source and free to use. Some features require:
-- **AI API access**: Either use Backend mode (free with rate limits) or provide your own Google AI API key (BYOK)
-- **Voice mode**: Requires ElevenLabs service configuration
-- **Memory features**: Requires Supermemory API key
-
-### What browsers are supported?
-
-Currently Cognito AI supports **Google Chrome version 120 or later**. It may work on Chromium-based browsers like Edge and Brave, but these are not officially supported.
-
-### What AI models are used?
-
-| Mode | Model |
-|------|-------|
-| **Backend** | gemini-2.5-flash (fixed) |
-| **BYOK** | Any Gemini model you choose |
-| **Local** | Gemini Nano (Chrome built-in) |
+  <Accordion title="What AI models are used?" id="ai-models">
+    | Mode | Model |
+    |------|-------|
+    | **Cloud** | gemini-2.5-flash (fixed) |
+    | **BYOK** | Any Gemini model you choose |
+    | **Local** | Gemini Nano (Chrome built-in) |
+  </Accordion>
+</Accordions>
 
 ## Privacy
 
-### Does Cognito AI collect my data?
+<Accordions>
+  <Accordion title="Does Cognito AI collect my data?" id="data-collection">
+    **No.** Cognito AI is local-first:
+    - Conversations stored locally in IndexedDB
+    - Settings stored in Chrome storage
+    - No analytics or telemetry
+    - No data sent to Cognito servers (except Cloud mode)
 
-**No.** Cognito AI is local-first:
-- Conversations stored locally in IndexedDB
-- Settings stored in Chrome storage
-- No analytics or telemetry
-- No data sent to Cognito servers (except Backend mode)
+    See [Privacy Model](/docs/security/privacy-model) for details.
+  </Accordion>
 
-See [Privacy Model](/docs/security/privacy-model) for details.
+  <Accordion title="What happens to my API key in BYOK mode?" id="byok-api-key">
+    Your API key **never leaves your device**. In BYOK mode, the extension makes direct API calls to Google AI. The key is stored in Chrome's encrypted storage and used only for those direct calls.
+  </Accordion>
 
-### What happens to my API key in BYOK mode?
+  <Accordion title="What data is sent to the AI?" id="data-sent-to-ai">
+    Only data you explicitly interact with:
+    - Your message text
+    - Page content (when you ask about the page)
+    - Selected text (when using Writer/Rewriter)
 
-Your API key **never leaves your device**. In BYOK mode, the extension makes direct API calls to Google AI. The key is stored in Chrome's encrypted storage and used only for those direct calls.
+    **Never sent**: Passwords, credit card numbers, SSNs, or data from other tabs.
+  </Accordion>
 
-### What data is sent to the AI?
+  <Accordion title="Is Cloud mode private?" id="cloud-mode-privacy">
+    Cloud mode routes your messages through Cognito's Vercel backend, which then calls Google AI. Your data is:
+    - Transmitted over TLS
+    - Not stored on our servers
+    - Not used for training
 
-Only data you explicitly interact with:
-- Your message text
-- Page content (when you ask about the page)
-- Selected text (when using Writer/Rewriter)
-
-**Never sent**: Passwords, credit card numbers, SSNs, or data from other tabs.
-
-### Is Backend mode private?
-
-Backend mode routes your messages through Cognito's Vercel backend, which then calls Google AI. Your data is:
-- Transmitted over TLS
-- Not stored on our servers
-- Not used for training
-
-For maximum privacy, use BYOK mode.
+    For maximum privacy, use BYOK mode.
+  </Accordion>
+</Accordions>
 
 ## Features
 
-### What can Cognito AI do?
+<Accordions>
+  <Accordion title="What can Cognito AI do?" id="features-overview">
+    | Category | Features |
+    |----------|----------|
+    | **Chat** | AI conversations, page Q&A |
+    | **Content** | Writing, rewriting, summarizing |
+    | **Automation** | Browser tasks, form filling |
+    | **Research** | Web search, page analysis |
+    | **Voice** | Voice input and output |
+    | **Memory** | Long-term context (with Supermemory) |
+    | **MCP** | External tool integration |
+  </Accordion>
 
-| Category | Features |
-|----------|----------|
-| **Chat** | AI conversations, page Q&A |
-| **Content** | Writing, rewriting, summarizing |
-| **Automation** | Browser tasks, form filling |
-| **Research** | Web search, page analysis |
-| **Voice** | Voice input and output |
-| **Memory** | Long-term context (with Supermemory) |
-| **MCP** | External tool integration |
+  <Accordion title="Does voice mode work offline?" id="voice-offline">
+    No. Voice mode requires a network connection to the ElevenLabs service. It proxies through Cognito's Cloudflare worker.
+  </Accordion>
 
-### Does voice mode work offline?
+  <Accordion title="Can I use Cognito AI offline?" id="offline-usage">
+    **Partially.** In Local mode (Chrome built-in AI), basic chat works offline. However, most features require network access:
+    - BYOK/Cloud mode: Requires Google AI API
+    - Voice mode: Requires ElevenLabs
+    - MCP: Requires server connections
+    - Web search: Requires Tavily API
+  </Accordion>
 
-No. Voice mode requires a network connection to the ElevenLabs service. It proxies through Cognito's Cloudflare worker.
+  <Accordion title="How does browser automation work?" id="browser-automation">
+    Cognito AI can perform browser actions through the AI:
+    1. You describe what you want
+    2. AI uses tools like `navigateTo`, `clickByText`, `typeInField`
+    3. Sensitive actions require your approval
+    4. AI executes the approved actions
 
-### Can I use Cognito AI offline?
-
-**Partially.** In Local mode (Chrome built-in AI), basic chat works offline. However, most features require network access:
-- BYOK/Backend mode: Requires Google AI API
-- Voice mode: Requires ElevenLabs
-- MCP: Requires server connections
-- Web search: Requires Tavily API
-
-### How does browser automation work?
-
-Cognito AI can perform browser actions through the AI:
-1. You describe what you want
-2. AI uses tools like `navigateTo`, `clickByText`, `typeInField`
-3. Sensitive actions require your approval
-4. AI executes the approved actions
-
-See [Browser Automation](/docs/using-cognito/browser-automation).
+    See [Browser Automation](/docs/using-cognito/browser-automation).
+  </Accordion>
+</Accordions>
 
 ## API Keys
 
-### How do I get a Google AI API key?
+<Accordions>
+  <Accordion title="How do I get a Google AI API key?" id="get-api-key">
+    1. Visit [Google AI Studio](https://aistudio.google.com/)
+    2. Sign in with your Google account
+    3. Create an API key
+    4. Copy and paste into Cognito settings
 
-1. Visit [Google AI Studio](https://aistudio.google.com/)
-2. Sign in with your Google account
-3. Create an API key
-4. Copy and paste into Cognito settings
+    See [Provider Setup](/docs/getting-started/provider-setup) for details.
+  </Accordion>
 
-See [Provider Setup](/docs/getting-started/provider-setup) for details.
+  <Accordion title="Is there a free tier?" id="free-tier">
+    Yes. Google AI provides a free tier with generous limits for personal use. Check current limits at [Google AI pricing](https://ai.google.dev/pricing).
+  </Accordion>
 
-### Is there a free tier?
+  <Accordion title="Can I use other AI providers?" id="other-providers">
+    Currently, Cognito AI supports:
+    - **Google AI** (Gemini family) — Full support
+    - **Chrome built-in AI** (Gemini Nano) — Limited features
 
-Yes. Google AI provides a free tier with generous limits for personal use. Check current limits at [Google AI pricing](https://ai.google.dev/pricing).
-
-### Can I use other AI providers?
-
-Currently, Cognito AI supports:
-- **Google AI** (Gemini family) — Full support
-- **Chrome built-in AI** (Gemini Nano) — Limited features
-
-Support for other providers may be added in the future.
+    Support for other providers may be added in the future.
+  </Accordion>
+</Accordions>
 
 ## MCP (Model Context Protocol)
 
-### What is MCP?
+<Accordions>
+  <Accordion title="What is MCP?" id="what-is-mcp">
+    MCP is an open standard for connecting AI to external tools. Cognito implements an MCP client that can connect to:
+    - **Remote servers** (Notion, Linear, etc.)
+    - **StdIO servers** (command-line tools via backend)
+    - **WebMCP** (page-provided tools)
 
-MCP is an open standard for connecting AI to external tools. Cognito implements an MCP client that can connect to:
-- **Remote servers** (Notion, Linear, etc.)
-- **StdIO servers** (command-line tools via backend)
-- **WebMCP** (page-provided tools)
+    See [MCP Overview](/docs/integrations/mcp-overview).
+  </Accordion>
 
-See [MCP Overview](/docs/integrations/mcp-overview).
+  <Accordion title="How do I connect an MCP server?" id="connect-mcp">
+    1. Go to **Settings** → **MCP Servers**
+    2. Enable the server you want
+    3. Complete OAuth if required
+    4. Server tools appear in your chat
+  </Accordion>
 
-### How do I connect an MCP server?
+  <Accordion title="Are MCP tools safe?" id="mcp-safety">
+    MCP tools require approval:
+    - **Remote MCP**: Configurable per-server
+    - **WebMCP**: Always requires approval
 
-1. Go to **Settings** → **MCP Servers**
-2. Enable the server you want
-3. Complete OAuth if required
-4. Server tools appear in your chat
-
-### Are MCP tools safe?
-
-MCP tools require approval:
-- **Remote MCP**: Configurable per-server
-- **WebMCP**: Always requires approval
-
-All tool executions show the tool name and arguments before running.
+    All tool executions show the tool name and arguments before running.
+  </Accordion>
+</Accordions>
 
 ## Troubleshooting
 
-### The side panel won't open
+<Accordions>
+  <Accordion title="The side panel won't open" id="side-panel-issue">
+    **Solutions:**
+    1. Try the keyboard shortcut: `Ctrl+Shift+H` (or `Cmd+Shift+H` on Mac)
+    2. Click the Cognito icon in the extension toolbar
+    3. Check that the extension is enabled in `chrome://extensions`
+    4. Restart Chrome
+  </Accordion>
 
-**Solutions:**
-1. Try the keyboard shortcut: `Ctrl+Shift+H` (or `Cmd+Shift+H` on Mac)
-2. Click the Cognito icon in the extension toolbar
-3. Check that the extension is enabled in `chrome://extensions`
-4. Restart Chrome
+  <Accordion title="I'm getting 'Rate limit exceeded'" id="rate-limit">
+    **In Cloud mode**: The shared API has usage limits. Either:
+    - Wait a few minutes
+    - Switch to BYOK mode with your own key
 
-### I'm getting "Rate limit exceeded"
+    **In BYOK mode**: You've hit your Google AI API limits. Check your usage in Google AI Studio.
+  </Accordion>
 
-**In Backend mode**: The shared API has usage limits. Either:
-- Wait a few minutes
-- Switch to BYOK mode with your own key
+  <Accordion title="Tools aren't appearing" id="tools-not-appearing">
+    **Check:**
+    - Is the correct Tools mode selected? (Chat mode has minimal tools)
+    - Is the MCP server connected?
+    - Refresh the page for WebMCP tools
+  </Accordion>
 
-**In BYOK mode**: You've hit your Google AI API limits. Check your usage in Google AI Studio.
-
-### Tools aren't appearing
-
-**Check:**
-- Is the correct Tools mode selected? (Chat mode has minimal tools)
-- Is the MCP server connected?
-- Refresh the page for WebMCP tools
-
-### Voice mode doesn't work
-
-**Check:**
-- Is the ElevenLabs worker configured?
-- Does your browser have microphone permission?
-- Check the browser console for errors
+  <Accordion title="Voice mode doesn't work" id="voice-not-working">
+    **Check:**
+    - Is the ElevenLabs worker configured?
+    - Does your browser have microphone permission?
+    - Check the browser console for errors
+  </Accordion>
+</Accordions>
 
 ## Technical
 
-### How do I report a bug?
+<Accordions>
+  <Accordion title="How do I report a bug?" id="report-bug">
+    1. Check existing [GitHub Issues](https://github.com/codewarnab/cognito-ai/issues)
+    2. Create a new issue with:
+       - Steps to reproduce
+       - Expected vs actual behavior
+       - Chrome version
+       - Console errors (if any)
+  </Accordion>
 
-1. Check existing [GitHub Issues](https://github.com/codewarnab/cognito-ai/issues)
-2. Create a new issue with:
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - Chrome version
-   - Console errors (if any)
+  <Accordion title="How do I contribute?" id="contribute">
+    See the [Contributing](/docs/contributing) section for:
+    - Development setup
+    - Coding standards
+    - Pull request process
+  </Accordion>
 
-### How do I contribute?
+  <Accordion title="Where is the source code?" id="source-code">
+    Cognito AI is open source: [github.com/codewarnab/cognito-ai](https://github.com/codewarnab/cognito-ai)
+  </Accordion>
 
-See the [Contributing](/docs/contributing) section for:
-- Development setup
-- Coding standards
-- Pull request process
-
-### Where is the source code?
-
-Cognito AI is open source: [github.com/codewarnab/cognito-ai](https://github.com/codewarnab/cognito-ai)
-
-### What technologies are used?
-
-| Component | Technology |
-|-----------|------------|
-| Extension | WXT + React 19 |
-| State | Zustand |
-| Styling | TailwindCSS |
-| AI SDK | Vercel AI SDK v6 |
-| Backend | Express (Vercel) |
-| Voice | ElevenLabs (Cloudflare) |
+  <Accordion title="What technologies are used?" id="technologies">
+    | Component | Technology |
+    |-----------|------------|
+    | Extension | WXT + React 19 |
+    | State | Zustand |
+    | Styling | TailwindCSS |
+    | AI SDK | Vercel AI SDK v6 |
+    | Backend | Express (Vercel) |
+    | Voice | ElevenLabs (Cloudflare) |
+  </Accordion>
+</Accordions>
 
 ## Next Steps
 

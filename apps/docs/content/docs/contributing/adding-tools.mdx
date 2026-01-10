@@ -1,282 +1,292 @@
 ---
 title: Adding Tools
-description: How to add new browser automation tools.
+description: How to add new browser automation tools to the extension.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/ai/tools/ */}
+{/* VERIFIED: 2025-01-10 | code_refs: apps/extension/src/actions/, apps/extension/src/ai/tools/ */}
 
-This guide walks you through creating and registering new browser automation tools.
+This guide walks you through creating and registering new browser automation tools in the Cognito AI extension.
+
+## What You'll Learn
+
+- Tool architecture and the AI SDK v6 pattern
+- Creating tools with React hooks
+- Registering tools with schemas and UI
+- Adding approval requirements for sensitive actions
 
 ## Tool Architecture
 
-Tools are functions the AI can call to perform browser actions. They consist of:
+Tools are functions the AI can call to perform browser actions. Each tool consists of:
 
 | Component | Purpose |
 |-----------|---------|
-| **Schema** | Zod schema defining parameters |
+| **Schema** | Zod schema defining input parameters |
 | **Description** | What the tool does (shown to AI) |
-| **Execute function** | Implementation |
-| **Approval config** | Whether HITL is required |
+| **Execute function** | Implementation logic |
+| **UI Renderer** | Optional custom rendering in chat |
+
+<Callout type="warn">
+Tools execute in the browser (frontend), not on a backend server. This is the "frontend tools" pattern used throughout Cognito AI.
+</Callout>
 
 ## Creating a Tool
 
-### Step 1: Define the Schema
+Tools are created as React hooks that register with the tool system on mount.
 
-Create a file in `apps/extension/src/ai/tools/`:
+### Define the Tool Hook
 
-```typescript
-// myTool.ts
+Create a file in `apps/extension/src/actions/` (organized by category):
+
+```typescript title="apps/extension/src/actions/tabs/myTool.tsx"
+import { useEffect } from 'react';
 import { z } from 'zod';
+import { registerTool } from '@/ai/tools';
+import { useToolUI } from '@/ai/tools/components';
+import { CompactToolRenderer } from '@/ai/tools/components';
+import { createLogger } from '~logger';
+import type { ToolUIState } from '@/ai/tools/components';
 
-// Define parameters with Zod
-export const myToolSchema = z.object({
-  selector: z.string().describe('CSS selector for the element'),
-  action: z.enum(['click', 'hover']).describe('Action to perform'),
-  waitMs: z.number().optional().describe('Wait time after action'),
-});
+const log = createLogger('Tool-MyTool', 'TOOLS_EXECUTION');
 
-export type MyToolParams = z.infer<typeof myToolSchema>;
-```
+export function useMyTool() {
+  const { registerToolUI, unregisterToolUI } = useToolUI();
 
-### Step 2: Implement the Function
+  useEffect(() => {
+    log.info('🔧 Registering myTool...');
 
-```typescript
-// myTool.ts (continued)
-
-export async function myTool({ 
-  selector, 
-  action, 
-  waitMs = 0 
-}: MyToolParams): Promise<MyToolResult> {
-  // Get the active tab
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) {
-    return { success: false, error: 'No active tab' };
-  }
-  
-  // Execute via content script
-  const result = await chrome.tabs.sendMessage(tab.id, {
-    type: 'dom/action',
-    selector,
-    action,
-  });
-  
-  // Optional wait
-  if (waitMs > 0) {
-    await sleep(waitMs);
-  }
-  
-  return { success: true, result };
-}
-
-interface MyToolResult {
-  success: boolean;
-  result?: unknown;
-  error?: string;
-}
-```
-
-### Step 3: Register the Tool
-
-Add to the tool registry in `apps/extension/src/ai/tools/registry.ts`:
-
-```typescript
-// registry.ts
-import { myTool, myToolSchema } from './myTool';
-
-export const extensionTools = {
-  // ... existing tools
-  
-  myNewTool: {
-    description: 'Perform an action on a DOM element by selector',
-    parameters: myToolSchema,
-    execute: myTool,
-  },
-};
-```
-
-## Tool Types
-
-### Auto-Approved Tools
-
-Safe, read-only tools that execute immediately:
-
-```typescript
-const readPageContent = {
-  description: 'Read the visible text content of the page',
-  parameters: z.object({}),
-  execute: async () => {
-    // Read-only operation
-    return await getPageContent();
-  },
-};
-```
-
-### HITL Tools (Approval Required)
-
-Tools requiring user approval before execution:
-
-```typescript
-const clickElement = {
-  description: 'Click an element on the page',
-  parameters: z.object({
-    text: z.string().describe('Text of element to click'),
-  }),
-  // No execute function - handled via HITL
-};
-
-// Register executor separately
-registerToolExecutor('clickElement', async ({ text }) => {
-  return await performClick(text);
-});
-```
-
-Add to the approval list:
-
-```typescript
-// In approval config
-const TOOLS_REQUIRING_APPROVAL = [
-  // ... existing
-  'clickElement',
-];
-```
-
-## Content Script Integration
-
-Many tools need to interact with the page DOM via content scripts.
-
-### Sending Messages to Content Script
-
-```typescript
-// Tool implementation
-async function myTool(params: MyToolParams) {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  
-  const result = await chrome.tabs.sendMessage(tab.id!, {
-    type: 'myTool/execute',
-    params,
-  });
-  
-  return result;
-}
-```
-
-### Content Script Handler
-
-In `apps/extension/src/entrypoints/contents/`:
-
-```typescript
-// myTool.content.ts
-export default defineContentScript({
-  matches: ['<all_urls>'],
-  main() {
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.type === 'myTool/execute') {
-        handleMyTool(message.params)
-          .then(sendResponse)
-          .catch((error) => sendResponse({ error: error.message }));
-        return true; // Keep channel open for async
-      }
+    // Register the tool with AI SDK v6
+    registerTool({
+      name: 'myTool',
+      description: `Brief description of what this tool does. 
+USE FOR: When to use this tool.
+REQUIREMENTS: What the tool needs to work.
+EXAMPLE: myTool(param="value")`,
+      parameters: z.object({
+        param: z.string().describe('Description of this parameter'),
+        optional: z.boolean().optional().describe('Optional param').default(false),
+      }),
+      execute: async ({ param, optional }) => {
+        try {
+          log.info('TOOL CALL: myTool', { param, optional });
+          
+          // Your implementation here
+          const result = await doSomething(param);
+          
+          return {
+            success: true,
+            result,
+          };
+        } catch (error) {
+          log.error('[Tool] Error:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
+      },
     });
-  },
-});
 
-async function handleMyTool(params: MyToolParams) {
-  // DOM manipulation here
-  const element = document.querySelector(params.selector);
-  if (!element) {
-    throw new Error(`Element not found: ${params.selector}`);
-  }
-  // ... implementation
+    // Register UI renderer
+    registerToolUI('myTool', (state: ToolUIState) => {
+      return <CompactToolRenderer state={state} />;
+    });
+
+    log.info('✅ myTool registration complete');
+
+    // Cleanup on unmount
+    return () => {
+      unregisterToolUI('myTool');
+    };
+  }, []);
 }
+```
+
+### Register in the Actions Index
+
+Export your hook from the category's index file:
+
+```typescript title="apps/extension/src/actions/tabs/index.ts"
+export { useMyTool } from './myTool';
+```
+
+Then call it in `registerAll.ts`:
+
+```typescript title="apps/extension/src/actions/registerAll.ts"
+import { useMyTool } from './tabs';
+
+export function useRegisterAllActions() {
+  // ... existing registrations
+  useMyTool();
+}
+```
+
+### Add to Enabled Tools
+
+Add your tool name to `enabledTools.ts`:
+
+```typescript title="apps/extension/src/ai/tools/enabledTools.ts"
+export const DEFAULT_ENABLED_TOOLS: string[] = [
+  // ... existing tools
+  'myTool',
+];
 ```
 
 ## Tool Descriptions
 
-Write clear descriptions for the AI:
+Write clear descriptions that help the AI understand when and how to use the tool:
 
 ```typescript
-// ✅ Good - clear and specific
+// ✅ Good - clear, specific, with examples
 {
-  description: 'Click a button or link on the page by its visible text. ' +
-               'Use this when you need to interact with a clickable element.',
+  description: `Click elements by visible text. Searches entire page including shadow DOM.
+
+USE FOR: Clicking buttons, links, forms, navigation, menus.
+REQUIREMENTS: Text must be visible in DOM. Element must be clickable.
+LIMITATIONS: Cannot click hidden elements or image-only buttons.
+EXAMPLE: clickByText(text="Sign In", fuzzy=true, elementType="button")`,
   parameters: z.object({
-    text: z.string().describe('Exact visible text of the element'),
-    elementType: z.enum(['button', 'link', 'any']).describe('Type of element'),
+    text: z.string().describe('Visible text to search for (case-insensitive)'),
+    fuzzy: z.boolean().optional().describe('Allow partial matches').default(true),
   }),
 }
 
-// ❌ Bad - vague
+// ❌ Bad - vague, no context
 {
-  description: 'Click something',
+  description: 'Click something on the page',
   parameters: z.object({ text: z.string() }),
 }
 ```
 
-## Error Handling
+## Content Script Integration
 
-Return structured errors:
+Many tools need to interact with page DOM via content scripts.
+
+### Execute Script in Active Tab
 
 ```typescript
-async function myTool(params: MyToolParams): Promise<ToolResult> {
-  try {
-    const result = await performAction(params);
-    return { success: true, result };
-  } catch (error) {
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
+execute: async ({ selector }) => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) {
+    return { success: false, error: 'No active tab' };
   }
+
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: (sel: string) => {
+      const element = document.querySelector(sel);
+      return element ? element.textContent : null;
+    },
+    args: [selector],
+  });
+
+  return { success: true, text: results[0]?.result };
 }
 ```
 
-## Testing Tools
+### Use Safe Chrome API Helpers
+
+The codebase provides safe wrappers for Chrome APIs:
+
+```typescript
+import { safeTabCreate, safeTabsQuery, safeTabUpdate } from '../chromeApi/tabs';
+
+// These handle errors gracefully and provide typed responses
+const tabs = await safeTabsQuery({ active: true, currentWindow: true });
+const newTab = await safeTabCreate({ url: 'https://example.com' });
+```
+
+## Custom UI Renderers
+
+Customize how tool inputs/outputs appear in chat:
+
+```typescript
+registerToolUI('myTool', (state: ToolUIState, options) => {
+  return <CompactToolRenderer state={state} addToolOutput={options?.addToolOutput} />;
+}, {
+  renderInput: (rawInput: Record<string, unknown>) => {
+    const input = rawInput as { url: string };
+    return (
+      <div className="text-xs text-muted-foreground">
+        URL: <a href={input.url} target="_blank" rel="noopener noreferrer">
+          {input.url}
+        </a>
+      </div>
+    );
+  },
+  renderOutput: (rawOutput: Record<string, unknown>) => {
+    const output = rawOutput as { result?: string; error?: string };
+    if (output.error) {
+      return <div className="text-xs text-destructive">{output.error}</div>;
+    }
+    return <div className="text-xs">{output.result}</div>;
+  },
+});
+```
+
+## Adding Approval Requirements
+
+For sensitive tools that modify state or interact with pages, add approval configuration.
+
+### Add to Approval Config
+
+```typescript title="apps/extension/src/ai/tools/approvalConfig.ts"
+export const TOOL_APPROVAL_CONFIG: Record<string, ToolApprovalConfig> = {
+  // ... existing tools
+  
+  myTool: {
+    supportsWebsiteApproval: true,
+    extractDomain: (_input: any, currentTabUrl?: string) => {
+      try {
+        if (!currentTabUrl) return null;
+        return new URL(currentTabUrl).hostname;
+      } catch {
+        return null;
+      }
+    },
+  },
+};
+```
+
+### Approval Types
+
+| Type | Use Case |
+|------|----------|
+| **Auto-approved** | Read-only tools (screenshots, reading content) |
+| **Requires approval** | Tools that modify state (clicking, typing, navigation) |
+| **Website-specific** | User can approve for specific domains |
+
+## Testing Your Tool
 
 ### Manual Testing
 
-1. Run `pnpm dev`
-2. Load the extension
-3. Open the side panel
-4. Ask the AI to use your tool
-5. Verify the behavior
+1. Run `pnpm dev` in the extension directory
+2. Load the extension in Chrome (`chrome://extensions` → Load unpacked → select `dist/chrome-mv3-dev`)
+3. Open the side panel and ask the AI to use your tool
+4. Verify the behavior and check console logs
 
-### Unit Testing
+### Check Logs
 
-```typescript
-// myTool.test.ts
-describe('myTool', () => {
-  it('should perform action on element', async () => {
-    // Mock chrome.tabs
-    const mockTab = { id: 1 };
-    vi.spyOn(chrome.tabs, 'query').mockResolvedValue([mockTab]);
-    vi.spyOn(chrome.tabs, 'sendMessage').mockResolvedValue({ success: true });
-    
-    const result = await myTool({ selector: '#btn', action: 'click' });
-    
-    expect(result.success).toBe(true);
-    expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(1, {
-      type: 'dom/action',
-      selector: '#btn',
-      action: 'click',
-    });
-  });
-});
+Filter browser console by your tool's logger tag:
+
+```
+[Tool-MyTool]
 ```
 
 ## Tool Checklist
 
-Before submitting your tool:
+Before submitting:
 
-- [ ] Schema has descriptive parameter `.describe()` calls
-- [ ] Description is clear and helps AI understand when to use it
-- [ ] Error handling returns structured results
-- [ ] Content script integration tested
-- [ ] Added to `TOOLS_REQUIRING_APPROVAL` if needed
-- [ ] Documentation updated
+- [ ] Schema has descriptive `.describe()` calls on all parameters
+- [ ] Description explains when to use, requirements, and limitations
+- [ ] Error handling returns structured `{ success, error }` results
+- [ ] Added to `DEFAULT_ENABLED_TOOLS` in `enabledTools.ts`
+- [ ] Added to `TOOL_APPROVAL_CONFIG` if tool modifies state
+- [ ] UI renderer registered (use `CompactToolRenderer` as default)
+- [ ] Cleanup function unregisters UI on unmount
+- [ ] Tested manually in the extension
 
 ## Next Steps
 
-- [Tools & Approval Architecture](/docs/architecture/tools-and-approval) — HITL system
-- [Adding MCP Server](/docs/contributing/adding-mcp-server) — External tools
+- [Tools & Approval Architecture](/docs/architecture/tools-and-approval) — HITL system details
+- [Adding MCP Server](/docs/contributing/adding-mcp-server) — External tool integrations
 - [Coding Standards](/docs/contributing/coding-standards) — Code conventions

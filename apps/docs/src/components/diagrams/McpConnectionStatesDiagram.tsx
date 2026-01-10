@@ -20,7 +20,7 @@ export function McpConnectionStatesDiagram() {
                 </g>
 
                 {/* Row 1: disconnected -> error -> connected -> token_refresh */}
-                
+
                 {/* Initial state dot */}
                 <circle cx="30" cy="100" r="8" className="fill-gray-700 dark:fill-gray-300" />
                 <line x1="38" y1="100" x2="58" y2="100" className="stroke-gray-600 dark:stroke-gray-400" strokeWidth="1.5" markerEnd="url(#arrow-mcp)" />
@@ -50,7 +50,7 @@ export function McpConnectionStatesDiagram() {
                 </g>
 
                 {/* Row 2: needs_auth -> cloudflare_error -> connecting -> invalid_token */}
-                
+
                 {/* needs_auth */}
                 <g>
                     <rect x="62" y="220" width="95" height="40" rx="6" className="fill-amber-100 stroke-amber-500 dark:fill-amber-900/60 dark:stroke-amber-400" strokeWidth="1.5" />
@@ -76,7 +76,7 @@ export function McpConnectionStatesDiagram() {
                 </g>
 
                 {/* Row 3: registering -> authorizing -> authenticated */}
-                
+
                 {/* registering */}
                 <g>
                     <rect x="120" y="340" width="90" height="40" rx="6" className="fill-blue-100 stroke-blue-500 dark:fill-blue-900/60 dark:stroke-blue-400" strokeWidth="1.5" />
@@ -97,7 +97,7 @@ export function McpConnectionStatesDiagram() {
 
                 {/* === TRANSITIONS === */}
                 <g className="stroke-gray-500 dark:stroke-gray-500" strokeWidth="1.2">
-                    
+
                     {/* disconnected -> needs_auth (down) */}
                     <path d="M 90 120 L 90 215" fill="none" markerEnd="url(#arrow-mcp)" />
                     <text x="15" y="175" className="text-[9px] fill-gray-600 dark:fill-gray-400">OAuth needed</text>
