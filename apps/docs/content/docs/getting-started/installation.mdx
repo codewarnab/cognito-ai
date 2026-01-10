@@ -49,9 +49,9 @@ Update the `apps/extension/.env` file with your configuration.
 #### 2. Backend Configuration
 
 <Callout type="warn">
-  The **Vercel Backend** and **Cloudflare ElevenLabs Proxy** are currently closed-source and will be open-sourced soon.
+  The **hosted backend services** (Vercel API + Cloudflare ElevenLabs proxy) are **closed-source** and are not included when building from source.
 
-  When installing from source, the extension operates in **BYOK (Bring Your Own Key) Mode**. You do not need to configure the backend environment variables unless you are deploying your own compatible backend.
+  When installing from source, use **BYOK (Bring Your Own Key) Mode** (or **Local Mode**, if available). You do not need backend environment variables unless you are building a **compatible backend implementation** (see [Backend Services](/docs/integrations/backends)).
 </Callout>
 
 ### Configure BYOK Mode
@@ -62,7 +62,7 @@ To use the extension without the official backend:
 2. Open **Providers**
 3. Select your provider (Google, OpenAI, Anthropic, etc.)
 4. Enter your **API Key**
-5. Ensure "Backend Mode" is disabled
+5. Ensure **Cloud Mode** is disabled
 
 The extension will perform AI generation locally or via direct API calls to your chosen provider.
 
@@ -89,14 +89,14 @@ pnpm install
 pnpm build:extension
 ```
 
-This creates the extension in `dist/chrome-mv3/`.
+This creates the extension in `apps/extension/dist/chrome-mv3/`.
 
 ### Load in Chrome
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (top-right toggle)
 3. Click **Load unpacked**
-4. Select the `dist/chrome-mv3` folder
+4. Select the `apps/extension/dist/chrome-mv3` folder
 
 ## Verify Installation
 

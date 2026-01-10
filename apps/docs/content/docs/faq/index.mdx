@@ -16,8 +16,8 @@ Answers to common questions about Cognito AI.
 
   <Accordion title="Is Cognito AI free?" id="is-free">
     Yes. Cognito AI is open source and free to use. Some features require:
-    - **AI API access**: Either use Cloud mode (free with rate limits) or provide your own Google AI API key (BYOK)
-    - **Voice mode**: Requires ElevenLabs service configuration
+    - **AI API access**: Either use Cloud mode (free with rate limits) or provide your own provider API key (BYOK)
+    - **Voice mode**: Requires microphone access (and a voice provider, depending on your configuration)
     - **Memory features**: Requires Supermemory API key
   </Accordion>
 
@@ -29,7 +29,7 @@ Answers to common questions about Cognito AI.
     | Mode | Model |
     |------|-------|
     | **Cloud** | gemini-2.5-flash (fixed) |
-    | **BYOK** | Any Gemini model you choose |
+    | **BYOK** | Any model supported by your configured provider(s) |
     | **Local** | Gemini Nano (Chrome built-in) |
   </Accordion>
 </Accordions>

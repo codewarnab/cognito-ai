@@ -37,7 +37,7 @@ Cognito supports two AI processing modes:
 | **API Key Required** | No | Yes (your key) |
 | **AI Model** | Fixed (gemini-2.5-flash) | Any supported model |
 | **Rate Limits** | Shared quotas | Your API limits |
-| **StdIO MCP** | Server-side proxy | Via backend proxy |
+| **StdIO MCP** | Server-side proxy | Requires a compatible proxy (browsers can’t spawn processes) |
 
 <Callout>
   BYOK (Bring Your Own Key) mode gives you full control over model selection and avoids shared rate limits. It supports multiple providers including Google Gemini, OpenAI, Anthropic, and others.

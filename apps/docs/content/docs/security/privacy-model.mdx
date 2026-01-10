@@ -4,6 +4,9 @@ description: How Cognito AI handles your data.
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { PrivacyMindMap } from '@/components/diagrams/MindMap';
+import { PrivacyCapabilityChart } from '@/components/diagrams/QuadrantChart';
 
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/db/, apps/extension/src/ai/ */}
 
@@ -15,26 +18,7 @@ Cognito AI is designed with privacy as a core principle. This page explains what
 
 ## Core Privacy Principles
 
-```mermaid
-mindmap
-  root((Privacy First))
-    Local-First
-      Data stays on device
-      Browser storage only
-      No cloud sync by default
-    BYOK
-      Your own API keys
-      Direct API calls
-      No middleman
-    Minimal Access
-      Only what you request
-      Active tab only
-      No background scanning
-    No Telemetry
-      No analytics
-      No usage tracking
-      No error reporting
-```
+<PrivacyMindMap />
 
 | Principle | What It Means |
 |-----------|---------------|
@@ -45,26 +29,7 @@ mindmap
 
 ## What Data Does Cognito Access?
 
-```mermaid
-flowchart LR
-    subgraph allowed["✅ Accessed When You Ask"]
-        A[Page Content]
-        B[Selected Text]
-        C[Tab Info]
-        D[Form Fields]
-    end
-    
-    subgraph blocked["🚫 Never Accessed"]
-        E[Passwords]
-        F[Credit Cards]
-        G[SSN / IDs]
-        H[Other Tabs]
-        I[Browsing History]
-    end
-    
-    style allowed fill:#d4edda,stroke:#28a745
-    style blocked fill:#f8d7da,stroke:#dc3545
-```
+<ImageZoom src="/cogito-privacy-model.png" alt="Cognito Privacy Model" width={800} height={400} />
 
 ### What Cognito Accesses
 
@@ -89,48 +54,18 @@ flowchart LR
 | **Other tabs** | Active tab only |
 | **Browsing history** | Not accessed |
 
-```mermaid
-flowchart TD
-    INPUT[Form Input Detected] --> CHECK1{Is it a password field?}
-    CHECK1 -->|Yes| BLOCK[🚫 Blocked]
-    CHECK1 -->|No| CHECK2{Credit card autocomplete?}
-    CHECK2 -->|Yes| BLOCK
-    CHECK2 -->|No| CHECK3{Contains sensitive patterns?}
-    CHECK3 -->|Yes| BLOCK
-    CHECK3 -->|No| ALLOW[✅ Can be accessed]
-    
-    style BLOCK fill:#f8d7da,stroke:#dc3545
-    style ALLOW fill:#d4edda,stroke:#28a745
-```
+<ImageZoom src="/form-input.png" alt="Form Input Types" width={300} height={300} />
 
 ## Where Is Your Data Stored?
 
 All user data is stored locally on your device by default:
 
-```mermaid
-flowchart TB
-    subgraph device["🖥️ Your Device (Local Storage)"]
-        direction TB
-        CONV[("💬 Conversations<br/>IndexedDB")]
-        SETTINGS[("⚙️ Settings<br/>Chrome Storage")]
-        KEYS[("🔑 API Keys<br/>Chrome Storage")]
-        TOKENS[("🎫 OAuth Tokens<br/>Chrome Storage")]
-    end
-    
-    subgraph cloud["☁️ Cloud (Optional)"]
-        MEMORY[("🧠 Memories<br/>Supermemory")]
-    end
-    
-    device -.->|Only if enabled| cloud
-    
-    style device fill:#e7f3ff,stroke:#0066cc
-    style cloud fill:#fff3e0,stroke:#ff9800
-```
+<ImageZoom src="/where-data-stored.png" alt="Local Storage" width={800} height={400} />
 
 | Data | Storage Location | Encryption | Cloud Sync |
 |------|-----------------|------------|------------|
 | **Conversations** | Your browser (IndexedDB) | Browser-level | ❌ No |
-| **Settings** | Chrome local storage | Chrome encryption | Optional |
+| **Settings** | Chrome local storage | Chrome encryption | ❌ No |
 | **API keys** | Chrome local storage | Chrome encryption | ❌ No |
 | **OAuth tokens** | Chrome local storage | Chrome encryption | ❌ No |
 | **Memories** | Supermemory | External service | ✅ Yes (if enabled) |
@@ -148,68 +83,13 @@ This diagram shows how your data flows depending on which mode you use:
 
 {/* MERMAID_DIAGRAM: privacy.data-flow | type: flowchart | represents: Data flow paths | code_refs: apps/extension/src/ai/ */}
 
-```mermaid
-flowchart TB
-    subgraph Local["🖥️ Your Device"]
-        EXT[Cognito Extension]
-        STORAGE[(Local Storage)]
-        INDEXDB[(IndexedDB)]
-    end
-    
-    subgraph External["☁️ External Services"]
-        GOOGLE[Google AI]
-        BACKEND[Cognito Backend]
-        ELEVENLABS[ElevenLabs]
-        SUPERMEMORY[Supermemory]
-    end
-    
-    EXT --> STORAGE
-    EXT --> INDEXDB
-    
-    EXT -->|"🔑 BYOK Mode<br/>(Your API Key)"| GOOGLE
-    EXT -->|"🌐 Backend Mode<br/>(No key needed)"| BACKEND
-    EXT -->|"🎙️ Voice Mode"| ELEVENLABS
-    EXT -->|"🧠 Memory Features"| SUPERMEMORY
-    
-    BACKEND --> GOOGLE
-    
-    style Local fill:#e7f3ff,stroke:#0066cc
-    style External fill:#fff3e0,stroke:#ff9800
-```
+<ImageZoom src="/privacy-data-flow.png" alt="Data Flow Overview" width={800} height={400} />
+<Callout type="info" title="BYOK supports multiple providers">
+  In BYOK, requests go straight from your browser to whatever provider you configure (e.g., Google, OpenAI, Anthropic, Mistral). Cloud mode routes through the Cognito backend, which currently uses Google AI on the server.
+</Callout>
 
 ## Understanding the Different Modes
-
-```mermaid
-flowchart TD
-    START[Choose Your Mode] --> LOCAL
-    START --> BYOK
-    START --> BACKEND
-    
-    subgraph LOCAL["🏠 Local Mode"]
-        L1[Chrome Built-in AI]
-        L2[100% On-Device]
-        L3[Zero Network Calls]
-        L4[Limited Capabilities]
-    end
-    
-    subgraph BYOK["🔑 BYOK Mode"]
-        B1[Your Own API Key]
-        B2[Direct to Google]
-        B3[No Middleman]
-        B4[Full Capabilities]
-    end
-    
-    subgraph BACKEND["🌐 Backend Mode"]
-        C1[No API Key Needed]
-        C2[Via Cognito Servers]
-        C3[Rate Limited]
-        C4[Full Capabilities]
-    end
-    
-    style LOCAL fill:#d4edda,stroke:#28a745
-    style BYOK fill:#cce5ff,stroke:#004085
-    style BACKEND fill:#fff3cd,stroke:#856404
-```
+<ImageZoom src="/choose-mode.png" alt="Modes Overview" width={800} height={400} />
 
 ### Local Mode — Maximum Privacy
 
@@ -223,12 +103,12 @@ flowchart TD
 
 ### BYOK Mode — Your Keys, Your Control
 
-- ✅ Your API key calls Google directly
+- ✅ Your API key calls your provider directly
 - ✅ Key never leaves your browser
-- ✅ Request goes directly to `googleapis.com`
+- ✅ Requests go directly to your chosen provider's API endpoint (examples: Google — `generativelanguage.googleapis.com`, OpenAI — `api.openai.com/v1`, Anthropic — `api.anthropic.com`, Mistral — `api.mistral.ai`)
 - ✅ No intermediary servers
 
-### Backend Mode — Convenience
+### Cloud Mode — Convenience
 
 - ✅ No API key needed
 - ⚠️ Messages routed through Cognito backend
@@ -252,45 +132,18 @@ flowchart TD
 - Stored in Supermemory's cloud
 - Requires separate API key
 
+Learn more in the [Supermemory docs](https://supermemory.ai/docs/introduction).
+
 ## Privacy Comparison by Mode
 
-```mermaid
-quadrantChart
-    title Privacy vs Capability Trade-offs
-    x-axis Low Capability --> High Capability
-    y-axis Low Privacy --> High Privacy
-    quadrant-1 Ideal
-    quadrant-2 Privacy-Focused
-    quadrant-3 Avoid
-    quadrant-4 Convenience
-    Local Mode: [0.25, 0.95]
-    BYOK Mode: [0.85, 0.80]
-    Backend Mode: [0.85, 0.50]
-```
+<PrivacyCapabilityChart />
 
 | Mode | Privacy Level | Capabilities | Best For |
 |------|--------------|--------------|----------|
 | **Local** | 🟢 Highest | Limited | Sensitive tasks |
 | **BYOK** | 🟢 High | Full | Power users |
-| **Backend** | 🟡 Medium | Full | Casual users |
+| **Cloud** | 🟡 Medium | Full | Casual users |
 
-## User Controls
-
-### Managing Your Privacy
-
-```mermaid
-flowchart LR
-    subgraph controls["🎛️ Your Privacy Controls"]
-        direction TB
-        CLEAR["🗑️ Clear History"]
-        DISABLE["⛔ Disable Features"]
-        EXPORT["📤 Export Data"]
-    end
-    
-    CLEAR --> |Settings → Privacy| DONE1[All conversations deleted]
-    DISABLE --> |Switch modes| DONE2[No external calls]
-    EXPORT --> |Developer tools| DONE3[Download your data]
-```
 
 ### Clear Conversation History
 
@@ -302,12 +155,12 @@ flowchart LR
 
 | Feature | How to Disable |
 |---------|----------------|
-| Backend mode | Switch to Local or BYOK mode |
+| Cloud mode | Switch to Local or BYOK mode |
 | Voice mode | Don't enable in settings |
 | Supermemory | Don't configure API key |
 
 <Callout title="Full Control">
-  You can always switch between modes. Use Local mode for maximum privacy on sensitive tasks, and BYOK or Backend mode when you need more powerful AI capabilities.
+  You can always switch between modes. Use Local mode for maximum privacy on sensitive tasks, and BYOK or Cloud mode when you need more powerful AI capabilities.
 </Callout>
 
 ### Export Your Data

@@ -21,15 +21,16 @@ The background service worker acts as a **central router**, dispatching messages
 
 ## Message Categories
 
-Messages are organized by **type prefix**. The router examines the prefix to determine which handler processes the message.
+Messages are organized by **type patterns**. Many types are namespaced strings (like `webmcp/...`), while others are constant-style IDs (like `OPEN_SIDEBAR`).
 
-| Prefix | Handler | Purpose |
-|--------|---------|---------|
-| `mcp/` | MCP Handler | Remote MCP server connections |
-| `webmcp/` | WebMCP Handler | Web page tool discovery and execution |
-| `dom/` | DOM Handler | Page content and interactions |
-| `settings/` | Settings Handler | User preferences and sync |
-| `supermemory/` | Memory Handler | Memory search and storage |
+| Pattern | Examples | Purpose |
+|--------|----------|---------|
+| `mcp/…` and `mcp/{serverId}/…` | `mcp/tools/list`, `mcp/notion/enable` | MCP server management + tool calls |
+| `webmcp/…` | `webmcp/tools/register`, `webmcp/tool/execute` | Page-provided tool discovery + execution |
+| `ai/notification/…` | `ai/notification/create` | In-extension notifications |
+| `summarize:*` | `summarize:request` | Summarizer requests |
+| `offscreen/…` | `offscreen/summarize/request` | Offscreen document tasks |
+| (no prefix) | `GET_CURRENT_TAB_ID`, `OPEN_SIDEBAR` | Internal RPC-style messages |
 
 ---
 
@@ -41,18 +42,26 @@ Remote MCP server management uses the `mcp/` prefix with dynamic server IDs.
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
-| `mcp/{serverId}/connect` | SP → BG | Connect to MCP server |
-| `mcp/{serverId}/disconnect` | SP → BG | Disconnect from server |
+| `mcp/{serverId}/enable` | SP → BG | Enable/connect to MCP server |
+| `mcp/{serverId}/disable` | SP → BG | Disable/pause MCP server |
+| `mcp/{serverId}/disconnect` | SP → BG | Fully disconnect (logout) |
 | `mcp/{serverId}/status/get` | SP → BG | Get connection status |
 | `mcp/{serverId}/auth/start` | SP → BG | Start OAuth flow |
-| `mcp/{serverId}/tool/call` | AI → BG | Execute MCP tool |
-| `mcp/all/status` | BG → SP | Broadcast all statuses |
+| `mcp/{serverId}/auth/complete` | SP → BG | Complete OAuth flow |
+| `mcp/{serverId}/tool/call` | AI → BG | Execute an MCP tool |
+| `mcp/tools/list` | SP → BG | List tools across all connected MCP servers |
+| `mcp/servers/get` | SP → BG | List all MCP servers + current state |
+| `mcp/custom-servers/reload` | SP → BG | Reload custom MCP servers from storage |
 
 ### Server ID Pattern
 
 Server IDs are dynamic identifiers matching configured MCP servers. For example:
-- `mcp/notion/connect` — Connect to Notion
+- `mcp/notion/enable` — Enable/connect Notion
 - `mcp/github/tool/call` — Execute a GitHub tool
+
+<Callout>
+  The complete MCP action list (including tool config and resource reads) lives in `apps/extension/src/types/messaging/mcp.ts`.
+</Callout>
 
 ---
 
@@ -65,13 +74,15 @@ WebMCP enables **web pages to expose tools** that AI can invoke. Messages flow t
 | Type | Direction | Purpose |
 |------|-----------|---------|
 | `webmcp/tools/register` | CS → BG | Register discovered tools |
-| `webmcp/tools/list` | SP → BG | Get current tools |
+| `webmcp/tools/list` | SP → BG | Get enabled tools (for AI use) |
+| `webmcp/tools/list-all` | SP → BG | Get all tools + disabled list (for UI) |
 | `webmcp/tools/state` | SP → BG | Get full WebMCP state |
 | `webmcp/tools/discover` | SP → BG | Trigger discovery |
 | `webmcp/tools/updated` | BG → SP | Broadcast tool updates |
 | `webmcp/tool/call` | AI → BG | Execute WebMCP tool |
 | `webmcp/tool/execute` | BG → CS | Forward execution |
 | `webmcp/tool/result` | CS → BG | Return execution result |
+| `webmcp/tools/refresh` | BG → CS | Ask content script to re-scan the page |
 
 ### Request ID Correlation
 
@@ -95,45 +106,39 @@ Error responses **also include** the same `requestId`, allowing callers to match
 
 ---
 
-## DOM Messages
+## Other Message Groups
 
-DOM messages control **page content reading** and **element interactions**.
+Additional message types are defined in `apps/extension/src/types/messaging/index.ts`:
 
-### Message Types
-
-| Type | Direction | Purpose |
-|------|-----------|---------|
-| `dom/read` | BG → CS | Read page content |
-| `dom/click` | BG → CS | Click an element |
-| `dom/type` | BG → CS | Type in a field |
-| `dom/scroll` | BG → CS | Scroll the page |
-| `dom/screenshot` | BG → CS | Capture screenshot |
-
-These messages enable AI tools to interact with the current page through the content script.
-
----
-
-## Settings Messages
-
-Settings messages synchronize **user preferences** across contexts.
+### UI / Navigation
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
-| `settings/get` | SP → BG | Get current settings |
-| `settings/update` | SP → BG | Update settings |
-| `settings/sync` | BG → SP | Sync settings change |
+| `CHECK_SIDEBAR_STATUS` | SP → BG | Check if side panel is open |
+| `OPEN_SIDEBAR` | (any) → BG | Open the side panel |
+| `OPEN_SIDEBAR_WITH_MESSAGE` | (any) → BG | Open side panel with a prefilled message |
 
----
-
-## Supermemory Messages
-
-Memory integration uses the `supermemory/` prefix.
+### Summarizer
 
 | Type | Direction | Purpose |
 |------|-----------|---------|
-| `supermemory/search` | SP → BG | Search memories |
-| `supermemory/add` | SP → BG | Add a memory |
-| `supermemory/status` | SP → BG | Check connection |
+| `summarize:availability` | SP → BG | Check summarizer availability |
+| `summarize:request` | SP → BG | Summarize text via offscreen pipeline |
+
+### Offscreen Document
+
+| Type | Direction | Purpose |
+|------|-----------|---------|
+| `offscreen/summarize/availability` | BG → OS | Check offscreen summarizer availability |
+| `offscreen/summarize/request` | BG → OS | Run summarization in offscreen document |
+| `offscreen/geolocation/request` | BG → OS | Request geolocation from offscreen document |
+
+### Memory (Supermemory)
+
+| Type | Direction | Purpose |
+|------|-----------|---------|
+| `CHECK_SUPERMEMORY_READY` | SP → BG | Check whether Supermemory is ready |
+| `QUEUE_MEMORY_EXTRACTION` | SP → BG | Queue memory extraction for a thread |
 
 ---
 
@@ -147,6 +152,7 @@ Message directions use these abbreviations:
 | **BG** | Background Service Worker |
 | **CS** | Content Script |
 | **AI** | AI Model / Caller |
+| **OS** | Offscreen Document |
 
 Solid arrows (→) indicate **requests**. Dashed arrows indicate **responses**.
 

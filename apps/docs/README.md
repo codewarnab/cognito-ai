@@ -1,26 +1,29 @@
-# cognito-ai-docs
+# Cognito AI Docs (`@cognito/docs`)
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+This is the Cognito AI documentation site, built with **Next.js** + **Fumadocs**.
 
-Run development server:
+## Development
+
+From the **repo root**:
 
 ```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
+pnpm dev:docs
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Or run it directly via filter:
+
+```bash
+pnpm --filter @cognito/docs dev
+```
+
+Open `http://localhost:3003` in your browser.
 
 ## Explore
 
 In the project, you can see:
 
-- `lib/source.ts`: Code for content source adapter, [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
-- `lib/layout.shared.tsx`: Shared options for layouts, optional but preferred to keep.
+- `src/lib/source.ts`: Content source adapter. [`loader()`](https://fumadocs.dev/docs/headless/source-api) provides the interface to access your content.
+- `src/lib/layout.shared.tsx`: Shared layout options.
 
 | Route                     | Description                                            |
 | ------------------------- | ------------------------------------------------------ |
@@ -33,6 +36,20 @@ In the project, you can see:
 A `source.config.ts` config file has been included, you can customise different options like frontmatter schema.
 
 Read the [Introduction](https://fumadocs.dev/docs/mdx) for further details.
+
+## Typecheck
+
+```bash
+pnpm --filter @cognito/docs types:check
+```
+
+## Build
+
+From the repo root:
+
+```bash
+pnpm build:docs
+```
 
 ## Learn More
 

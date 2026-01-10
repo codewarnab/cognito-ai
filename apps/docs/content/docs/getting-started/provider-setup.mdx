@@ -24,19 +24,19 @@ In **BYOK Mode**, your API keys are stored locally and never sent to any server 
 
 ## Configure Cloud Mode
 
-Cloud mode requires no setup. Toggle it on and start chatting.
+Cloud mode requires no setup (in the official hosted version). Toggle it on and start chatting.
 
 **Rate limits apply** — the shared backend has usage quotas. If limits are exceeded and you have an API key configured, Cognito automatically falls back to BYOK mode.
 
 <Callout type="warn">
-If you have built from source, **Cloud Mode will not work** as the backend is not open-source yet. You must use **BYOK Mode** with your own API key.
+If you have built from source, **Cloud Mode will not work** because the hosted backend services are not included. You must use **BYOK Mode** with your own API key (or Local Mode, if available).
 </Callout>
 
 ### Toggle Cloud Mode
 
 1. Open the side panel (`Ctrl+Shift+H`)
 2. Click the **settings gear** icon
-3. Enable **Cloud Mode**
+3. Enable **Cloud Mode** (shown as “Cloud” in the toolbar)
 
 ### API Usage & Suggestion Actions
 
@@ -45,7 +45,7 @@ Whichever mode is selected in your chat input will consume API requests for **al
 If you're not using Suggestion Actions or want to reduce costs, you can disable them in [Settings](https://cognito-ai-one.vercel.app/settings).
 
 <Callout>
-**Coming Soon:** Hybrid mode support — mix Cloud and BYOK modes for different features. For example, use Cloud Mode for writing, rewriting, and summarization while using BYOK for chat, or use Cloud Mode only for suggestion generation.
+**Coming Soon:** Hybrid routing — mix Cloud and BYOK modes for different features. For example, use Cloud Mode for writing, rewriting, and summarization while using BYOK for chat, or use Cloud Mode only for suggestion generation.
 </Callout>
 
 ## Configure BYOK Mode

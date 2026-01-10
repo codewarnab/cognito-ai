@@ -17,28 +17,7 @@ Cognito AI is designed with **privacy as a core principle**. Your data stays on 
 ## Security Architecture
 
 {/* MERMAID_DIAGRAM: security.overview | type: component | represents: Security layers | code_refs: apps/extension/src/ */}
-
-```mermaid
-graph TB
-    subgraph User["User Control"]
-        HITL[Human-in-the-Loop]
-        Settings[Privacy Settings]
-    end
-    
-    subgraph Extension["Extension Security"]
-        Storage[Secure Storage]
-        Validation[Input Validation]
-        CSP[Content Security Policy]
-    end
-    
-    subgraph Network["Network Security"]
-        BYOK[Direct BYOK Calls]
-        OAuth[OAuth 2.0 + PKCE]
-        TLS[TLS Encryption]
-    end
-    
-    User --> Extension --> Network
-```
+<ImageZoom src="/security-layers.png" alt="Security Architecture" width={800} height={400} />
 
 ## Data Handling Summary
 
@@ -52,9 +31,9 @@ graph TB
 ## Security Topics
 
 <Cards>
-  <Card title="Privacy Model" href="/docs/security/privacy-model" />
-  <Card title="Secrets & Keys" href="/docs/security/secrets-and-keys" />
-  <Card title="Threat Model" href="/docs/security/threat-model" />
+  <Card title="Privacy Model" description="How your data flows through Cognito AI and stays protected on your device." href="/docs/security/privacy-model" />
+  <Card title="Secrets & Keys" description="How API keys and sensitive credentials are securely stored and managed." href="/docs/security/secrets-and-keys" />
+  <Card title="Threat Model" description="Security analysis, potential risks, and the mitigations in place." href="/docs/security/threat-model" />
 </Cards>
 
 ## Quick Reference

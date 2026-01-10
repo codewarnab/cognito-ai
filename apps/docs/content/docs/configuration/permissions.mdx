@@ -19,7 +19,7 @@ Cognito's permissions fall into five main categories:
 | **Tab Access** | tabs, activeTab | Read page content |
 | **Scripting** | scripting | Inject content scripts |
 | **Host** | `<all_urls>` | Access web pages |
-| **Optional** | identity | OAuth for MCP |
+| **Auth** | identity | OAuth for MCP |
 
 ---
 
@@ -61,9 +61,9 @@ The `tabs` permission provides access to tab information. Cognito uses this to r
 
 When you're actively working with Cognito, it needs to access the current tab to read page content for AI context and execute browser automation tasks you request.
 
-### tabCapture
+### Screenshots
 
-For screenshot capabilities and AI-powered visual analysis, Cognito needs the `tabCapture` permission to capture tab audio and video content.
+Cognito captures screenshots using Chrome’s tab APIs (e.g. `chrome.tabs.captureVisibleTab`). This does **not** require the `tabCapture` permission (which is for audio/video stream capture).
 
 ---
 
@@ -87,11 +87,11 @@ This permission allows Cognito to access any website you visit. It's needed to r
 
 ---
 
-## Optional Permissions
+## Auth Permissions
 
 ### identity
 
-The `identity` permission enables OAuth authentication, which is required for connecting to MCP servers that need authentication (like Notion or Linear). This permission is only requested when you actually try to connect to an OAuth-requiring MCP server.
+The `identity` permission enables OAuth authentication, which is required for connecting to MCP servers that need OAuth (like Notion or Linear). In the current manifest, this permission is granted at install time and only used when you connect an OAuth-backed MCP server.
 
 ---
 
@@ -101,11 +101,11 @@ Cognito registers keyboard shortcuts to help you work faster:
 
 | Command | Default | Description |
 |---------|---------|-------------|
-| `toggle-sidepanel` | `Ctrl+Shift+H` | Open or close the side panel |
+| `_execute_side_panel` | `Ctrl+Shift+H` | Open the side panel |
 
 ### Omnibox
 
-You can also interact with Cognito directly from Chrome's address bar using the `co` keyword. Simply type `co` in the address bar, press Tab, and enter your command or question.
+You can also interact with Cognito directly from Chrome's address bar using the `ai` keyword. Simply type `ai` in the address bar, press Tab, and enter your command or question.
 
 ---
 
@@ -137,16 +137,18 @@ When you install Cognito, these permissions are granted automatically:
 
 - `sidePanel` — Display the chat interface
 - `storage` — Save your settings and data
+- `unlimitedStorage` — Store large local data (chat history, artifacts)
 - `tabs` — Access tab information
+- `tabGroups` — Organize and manage tab groups
 - `activeTab` — Interact with the current page
 - `scripting` — Inject content scripts
+- `offscreen` — Offscreen documents for background tasks (e.g. audio/voice flows)
+- `identity` — OAuth flows for authenticated MCP servers
+- `omnibox` — Address-bar keyword integration (`ai`)
 
-### Requested at Runtime
+### Used Conditionally
 
-Some permissions are only requested when you need them:
-
-- **Host permissions** — Requested when accessing a new domain for the first time
-- **identity** — Requested when connecting to OAuth-requiring MCP servers
+Some permissions are powerful but only used when the related feature is enabled or invoked (for example: `identity` only when you connect an OAuth MCP server, or `history` only for features that need it).
 
 <Callout type="info" title="Permission Prompts">
   Chrome may show prompts like "Read and change your data on all websites" or "Sign you in with your Google account." These are standard Chrome permission dialogs — approve them to enable the corresponding features.

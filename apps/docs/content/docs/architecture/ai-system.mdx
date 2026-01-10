@@ -20,7 +20,7 @@ Cognito AI uses the **Vercel AI SDK v6** for AI integration, supporting multiple
 | Mode | Provider | Requirements | Model |
 |------|----------|--------------|-------|
 | **Local** | Chrome built-in AI | Chrome with AI | Gemini Nano |
-| **BYOK** | Google AI directly | Your API key | Any Gemini |
+| **BYOK** | Your configured provider(s) directly | Your API key | Any supported model |
 | **Cloud** | Vercel Cloud | None | gemini-2.5-flash |
 
 ### Provider Selection Flow
@@ -48,18 +48,21 @@ Tools extend AI capabilities through structured function calls.
 Aggregates tools from all sources:
 
 ```typescript title="src/ai/tools/manager.ts"
-async function setupRemoteTools() {
-  const extensionTools = await getAllTools();
-  const mcpTools = await getMCPToolsFromBackground();
-  const webmcpTools = await getWebMCPToolsFromBackground();
-  const serverTools = getServerTools();
-  
-  return {
-    ...extensionTools,
-    ...mcpTools,
-    ...webmcpTools,
-    ...serverTools,
+export async function setupRemoteTools() {
+  // Chrome extension tools
+  const extensionTools = getAllTools();
+
+  // MCP + WebMCP (fetched from the background service worker)
+  const mcpTools = (await getMCPToolsFromBackground()).tools;
+  const webmcpTools = (await getWebMCPToolsFromBackground()).tools;
+
+  // Agent tools (built-in helpers exposed as tools)
+  const agentTools = {
+    getYouTubeTranscript,
+    analyzePdfDocument: pdfAgentAsTool,
   };
+
+  return { ...extensionTools, ...agentTools, ...mcpTools, ...webmcpTools };
 }
 ```
 
@@ -72,10 +75,15 @@ const readPageContent = {
   description: 'Read the current page content',
   parameters: z.object({}),
   execute: async () => {
-    const content = await chrome.tabs.sendMessage(tabId, {
-      type: 'dom/read'
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) throw new Error('No active tab');
+
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => document.body?.innerText ?? '',
     });
-    return content;
+
+    return result;
   }
 };
 ```

@@ -108,8 +108,9 @@ function jsonSchemaToZod(schema: unknown): z.ZodTypeAny {
 function convertBridgeMessagesToAISDK(
   messages: Array<{ role: 'user' | 'assistant'; content: Array<any> }>
 ): Array<{ role: 'user' | 'assistant'; content: Array<any> }> {
-  return messages.map((m) => {
-    const parts = m.content
+  return messages
+    .map((m) => {
+      const parts = m.content
       .map((p) => {
         if (!p || typeof p !== 'object') return null;
 
@@ -136,8 +137,10 @@ function convertBridgeMessagesToAISDK(
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    return { role: m.role, content: parts };
-  });
+      return { role: m.role, content: parts };
+    })
+    // Gemini rejects empty message parts; drop empty messages defensively.
+    .filter((m) => m.content.length > 0);
 }
 
 /**

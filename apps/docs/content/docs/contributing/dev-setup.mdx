@@ -83,10 +83,10 @@ pnpm dev:all
 ```
 
 This starts:
-- **Extension** — port 8080
+- **Extension** — port 3000
 - **Webapp** — port 3002
 - **Backend** — port 3001
-- **Docs** — port 3000
+- **Docs** — port 3003
 
 ### Specific Packages
 
@@ -114,7 +114,7 @@ In Chrome:
 - Navigate to `chrome://extensions`
 - Enable **Developer mode** (toggle in top right)
 - Click **Load unpacked**
-- Select the `dist` directory
+- Select the built output directory (WXT prints the exact path in the terminal; it will be under `apps/extension/dist/`, e.g. `apps/extension/dist/chrome-mv3-dev`)
 
 ### Production Build
 
@@ -124,7 +124,7 @@ Build and load the extension:
 pnpm build:extension
 ```
 
-Load `dist` as above.
+Load `apps/extension/dist/chrome-mv3` as above.
 
 ### Verify Installation
 
@@ -155,7 +155,7 @@ WXT provides hot reload for most changes:
 pnpm build:extension
 ```
 
-Outputs to `dist`.
+Outputs to `apps/extension/dist/`.
 
 ### All Packages
 
@@ -166,7 +166,7 @@ pnpm build
 ### Type Checking
 
 ```bash title="Terminal"
-pnpm typecheck
+pnpm type:check
 ```
 
 ## Troubleshooting
@@ -208,8 +208,8 @@ Try these solutions:
 Kill the process and restart:
 
 ```bash title="Terminal"
-# Find process on port 3000 (example)
-lsof -i :3000
+# Find process on port 3003 (example)
+lsof -i :3003
 kill -9 <PID>
 ```
 

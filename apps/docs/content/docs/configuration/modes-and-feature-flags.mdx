@@ -13,7 +13,7 @@ graph LR
         A["🌐 AI Provider<br/>Where AI runs"]
         B["🔧 Tools Mode<br/>What AI can do"]
         C["🎤 Chat Mode<br/>How you talk"]
-        D["☁️ Backend Mode<br/>API routing"]
+        D["☁️ Cloud Mode<br/>API routing"]
     end
 ```
 
@@ -22,7 +22,7 @@ graph LR
 | **AI Provider** | Where the AI processing happens | Local (on device) or Remote (cloud) |
 | **Tools Mode** | What actions AI can perform | Chat, Agent, Adaptive, or Custom |
 | **Chat Mode** | How you communicate with AI | Text or Voice |
-| **Backend Mode** | How remote AI is accessed | Backend server or Your own API key |
+| **Cloud Mode** | How remote AI is accessed | Cognito servers or your own API key |
 
 ---
 
@@ -40,7 +40,7 @@ flowchart TD
     
     REMOTE --> BACKEND{"Using Backend?"}
     BACKEND -->|"Yes"| VERCEL["Cognito Servers<br/>No API key needed"]
-    BACKEND -->|"No"| BYOK["Your Own API Key<br/>Direct to Google AI"]
+    BACKEND -->|"No"| BYOK["Your Own API Key<br/>Direct to provider API"]
     
     style LOCAL fill:#e8f5e9
     style REMOTE fill:#e3f2fd
@@ -145,29 +145,29 @@ flowchart LR
 
 ---
 
-## Backend Mode
+## Cloud Mode
 
 This controls **how the AI is accessed** when using Remote mode.
 
 ```mermaid
 flowchart TD
-    subgraph "Backend Mode ON"
+    subgraph "Cloud Mode ON"
         B1["Your Request"] --> B2["Cognito Server"]
         B2 --> B3["Google AI"]
         B3 --> B2
         B2 --> B4["Response to You"]
     end
     
-    subgraph "Backend Mode OFF (BYOK)"
-        K1["Your Request"] --> K2["Direct to Google AI<br/>(using your API key)"]
+    subgraph "Cloud Mode OFF (BYOK)"
+        K1["Your Request"] --> K2["Direct to provider API<br/>(using your API key)"]
         K2 --> K3["Response to You"]
     end
 ```
 
 | Setting | What Happens | Best For |
 |---------|-------------|----------|
-| **Backend ON** | Requests go through Cognito's servers | Quick start, no setup needed |
-| **Backend OFF** (BYOK) | Direct connection with your API key | Higher limits, more privacy |
+| **Cloud ON** | Requests go through Cognito's servers | Quick start, no setup needed |
+| **Cloud OFF** (BYOK) | Direct connection with your API key | Higher limits, more privacy |
 
 ### Smart Fallback
 
@@ -196,7 +196,7 @@ All modes can be changed from **Settings**:
 flowchart LR
     SETTINGS["⚙️ Open Settings"] --> PROVIDER["AI Provider<br/>Local or Remote"]
     SETTINGS --> TOOLS["Tools Tab<br/>Mode dropdown"]
-    SETTINGS --> BACKEND["Backend Toggle<br/>On or Off"]
+    SETTINGS --> BACKEND["Cloud Toggle<br/>On or Off"]
     SETTINGS --> CHAT["Mic Button<br/>Text or Voice"]
     
     style SETTINGS fill:#f3e5f5
@@ -204,7 +204,7 @@ flowchart LR
 
 1. **AI Provider**: Settings → AI Provider section
 2. **Tools Mode**: Settings → Tools tab → Mode dropdown  
-3. **Backend Mode**: Settings → "Use Backend" toggle
+3. **Cloud Mode**: Settings → Cloud toggle
 4. **Chat Mode**: Microphone button in chat (not in settings)
 
 ---

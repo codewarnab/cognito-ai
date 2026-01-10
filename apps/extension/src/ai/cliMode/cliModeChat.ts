@@ -102,6 +102,10 @@ export async function streamCliModeChat(params: CliModeChatParams) {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
+      const messageId = 'msg-' + generateId();
+      let hasStartedText = false;
+      let textBuffer = '';
+
       try {
         // Send initial status
         writer.write({
@@ -129,10 +133,6 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           },
           abortSignal
         );
-
-        let textBuffer = '';
-        const messageId = 'msg-' + generateId();
-        let hasStartedText = false;
 
         for await (const event of eventStream) {
           // Handle status events - update store for LoadingIndicator
@@ -184,6 +184,38 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           transient: false,
         });
       } catch (error) {
+        // Treat user abort as a normal cancellation (no error card)
+        const isAbort =
+          abortSignal?.aborted ||
+          (error instanceof DOMException && error.name === 'AbortError') ||
+          (error instanceof Error && error.name === 'AbortError');
+
+        if (isAbort) {
+          log.info('Cli mode chat aborted', {
+            aborted: abortSignal?.aborted,
+            name: (error as any)?.name,
+            message: (error as any)?.message,
+          });
+
+          // Clear any “agent is doing something…” status
+          useCliModeStore.getState().setAgentStatus(null);
+
+          // Ensure we close any in-progress text message properly
+          // (UIMessageStream expects start/delta/end for a given id)
+          if (hasStartedText) {
+            writer.write({ type: 'text-end', id: messageId });
+          }
+
+          // End stream quietly
+          writer.write({
+            type: 'data-status',
+            id: 'status-' + generateId(),
+            data: { status: 'complete', timestamp: Date.now() },
+            transient: false,
+          });
+          return;
+        }
+
         log.error('Cli mode chat error', error);
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
