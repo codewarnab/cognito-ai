@@ -322,3 +322,21 @@ Toggle modes via `useSettingsStore.setUseBackendMode()`.
 - `gracefulDegradation.ts` - Auto-fallback to BYOK when rate limited
 
 See those packages' `AGENTS.md` files for their documentation.
+
+## Data Stream Protocol
+
+When using `writer.write()` for streaming responses:
+
+**CRITICAL**: Text content must be framed with `text-start` and `text-end` types:
+
+```typescript
+// ✅ CORRECT - Complete text lifecycle
+writer.write({ type: 'text-start' });
+writer.write({ type: 'text-delta', textDelta: 'Your response text...' });
+writer.write({ type: 'text-end' });
+
+// ❌ WRONG - Missing start/end causes stream errors
+writer.write({ type: 'text-delta', textDelta: 'Your response text...' });
+```
+
+Same pattern applies to other chunk types (e.g., `reasoning-start`, `reasoning-delta`, `reasoning-end`).

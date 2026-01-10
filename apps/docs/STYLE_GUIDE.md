@@ -94,6 +94,16 @@ For technical docs, code speaks louder than text.
 const apiKey = ENV.GOOGLE_AI_API_KEY; // Loaded from environment
 ```
 
+**Enhanced Code Blocks:**
+
+Add a `title` attribute to the code block to display a filename or title:
+
+````md
+```bash title="Terminal"
+pnpm install
+```
+````
+
 ### More Headings
 
 - Headings provide anchors for linking
@@ -103,6 +113,36 @@ const apiKey = ENV.GOOGLE_AI_API_KEY; // Loaded from environment
 ### Use Hyperlinks
 
 Link relevant resources when mentioning names (e.g., [Fumadocs](https://fumadocs.vercel.app)).
+
+### Callouts
+
+Use the `<Callout>` component from Fumadocs for notes, tips, and warnings. Do NOT use GitHub-style alerts (e.g., `> [!TIP]`) or blockquotes.
+
+**Available types:**
+
+| Type | Usage |
+|------|-------|
+| `info` (default) | General information |
+| `warn` | Important notes, warnings |
+| `error` | Critical warnings, breaking changes |
+
+**Examples:**
+
+```mdx
+<Callout>
+  General information or tip.
+</Callout>
+
+<Callout type="warn">
+  Important note about closed-source backend.
+</Callout>
+
+<Callout title="Custom Title">
+  Callout with a custom title instead of the default.
+</Callout>
+```
+
+**Do NOT** duplicate the type in the title (e.g., `title="Note"` when `type="warn"` already shows "Note").
 
 ---
 

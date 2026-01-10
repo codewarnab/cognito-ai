@@ -220,6 +220,28 @@ registerToolUI('toolName', (state: ToolUIState, options) => {
 
 See [TOOL_APPROVAL_SYSTEM.md](./TOOL_APPROVAL_SYSTEM.md) for full architecture and diagrams.
 
+## Data Stream Protocol
+
+When using `writer.write()` for streaming responses, always use the complete message lifecycle:
+
+**CRITICAL**: Text content must be framed with `text-start` and `text-end` types, not just `text-delta`:
+
+```typescript
+// ✅ CORRECT - Complete text lifecycle
+writer.write({ type: 'text-start' });
+writer.write({ type: 'text-delta', textDelta: 'Your response text...' });
+writer.write({ type: 'text-end' });
+
+// ❌ WRONG - Missing start/end causes stream errors
+writer.write({ type: 'text-delta', textDelta: 'Your response text...' });
+```
+
+**Key points:**
+- `text-start` must be called before any `text-delta` writes
+- `text-end` must be called after all `text-delta` writes are complete
+- Missing `text-start` or `text-end` will cause stream parsing errors
+- The same pattern applies to other chunk types (e.g., `reasoning-start`, `reasoning-delta`, `reasoning-end`)
+
 ## AI Modes
 The extension supports multiple AI operational modes configured via `ToolsMode` (`src/types/settings.ts`):
 

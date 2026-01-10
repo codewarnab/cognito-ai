@@ -1,3 +1,9 @@
 @import 'tailwindcss';
 @import 'fumadocs-ui/css/neutral.css';
 @import 'fumadocs-ui/css/preset.css';
+
+/* Fix: Add pointer cursor to sidebar links */
+[data-sidebar] a,
+.fd-sidebar a {
+  cursor: pointer;
+}

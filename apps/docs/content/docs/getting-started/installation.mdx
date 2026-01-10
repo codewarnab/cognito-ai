@@ -1,49 +1,100 @@
 ---
 title: Installation
-description: Install the Cognito AI Chrome extension from source.
+description: Step-by-step guide to installing Cognito AI from the Chrome Web Store or source.
 ---
 
 {/* NOTE: Chrome Web Store availability pending - install from source for now */}
 
-## What You'll Learn
+## Installation Options
 
-- Building and loading the extension from source
-- Verifying a successful installation
+You can install Cognito AI either through the Chrome Web Store or by building it from source.
 
-## Prerequisites
+### 1. Chrome Web Store (Recommended)
+
+The easiest way to install Cognito AI is via the Chrome Web Store.
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/cognito-ai) {/* TODO: Replace with actual ID once published */}
+
+---
+
+### 2. Install from Source
+
+Building from source allows you to contribute to the project or use the latest development features.
+
+#### Prerequisites
 
 - Google Chrome browser (version 120+)
 - Node.js 18+ and pnpm
 
-## Install from Source
+#### Clone the Repository
 
-### Clone the Repository
-
-```bash
+```bash title="Terminal"
 git clone https://github.com/codewarnab/cognito-ai.git
 cd cognito-ai
 ```
 
+### Configure Environment Variables
+
+Before installing dependencies, you need to set up the environment variables.
+
+#### 1. Extension Configuration
+
+Create a `.env` file in `apps/extension/`:
+
+```bash title="Terminal"
+cp apps/extension/.env.example apps/extension/.env
+```
+
+Update the `apps/extension/.env` file with your configuration.
+
+#### 2. Backend Configuration
+
+<Callout type="warn">
+  The **Vercel Backend** and **Cloudflare ElevenLabs Proxy** are currently closed-source and will be open-sourced soon.
+
+  When installing from source, the extension operates in **BYOK (Bring Your Own Key) Mode**. You do not need to configure the backend environment variables unless you are deploying your own compatible backend.
+</Callout>
+
+### Configure BYOK Mode
+
+To use the extension without the official backend:
+
+1. Open the extension settings
+2. Enter your **Google AI API Key** (Gemini)
+3. Ensure "Backend Mode" is disabled
+
+The extension will perform AI generation locally or via direct API calls to Google using your key.
+
+#### 3. Webapp Configuration
+
+Create a `.env` file in `apps/webapp/`:
+
+```bash title="Terminal"
+cp apps/webapp/.env.example apps/webapp/.env
+```
+
+You will need to update `NEXT_PUBLIC_EXTENSION_ID` with your local extension ID (found at `chrome://extensions`).
+
 ### Install Dependencies
 
-```bash
+
+```bash title="Terminal"
 pnpm install
 ```
 
 ### Build the Extension
 
-```bash
+```bash title="Terminal"
 pnpm build:extension
 ```
 
-This creates the extension in `.output/chrome-mv3/`.
+This creates the extension in `dist/chrome-mv3/`.
 
 ### Load in Chrome
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (top-right toggle)
 3. Click **Load unpacked**
-4. Select the `.output/chrome-mv3` folder
+4. Select the `dist/chrome-mv3` folder
 
 ## Verify Installation
 
@@ -52,8 +103,13 @@ This creates the extension in `.output/chrome-mv3/`.
 | **Toolbar icon** | Cognito AI icon appears in Chrome toolbar |
 | **Side panel** | `Ctrl+Shift+H` (Windows) or `Cmd+Shift+H` (Mac) opens the panel |
 
-> [!TIP]
-> Pin the extension to your toolbar for quick access. Click the puzzle icon in Chrome and pin Cognito AI.
+<Callout title="Tip">
+  Pin the extension to your toolbar for quick access. Find the **Cognito icon** in the extensions menu and pin it.
+</Callout>
+
+<Callout title="Shortcut not working?" type="warn">
+  You can configure it at `chrome://extensions/shortcuts`.
+</Callout>
 
 ## Next Steps
 

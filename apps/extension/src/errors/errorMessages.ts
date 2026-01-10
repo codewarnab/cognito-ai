@@ -236,11 +236,12 @@ const ERROR_MESSAGES: Record<ErrorType, ErrorMessageTemplate> = {
         ],
     },
     [ErrorType.NETWORK_UNREACHABLE]: {
-        userMessage: 'Network unreachable. Please check your connection.',
-        technicalTemplate: 'Network unreachable. Details: {details}',
+        userMessage: 'Unable to connect to the server. The backend service may not be running.',
+        technicalTemplate: 'Network unreachable / Connection refused. Details: {details}',
         suggestions: [
+            'Ensure the backend server is running',
             'Check your internet connection',
-            'Ensure you are connected to a network',
+            'Verify the server URL is correct',
             'Try disabling VPN if enabled',
         ],
     },

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createLogger } from '~logger';
 import type { CliModeState, AgentInfo } from './types';
+import { registerToolsWithBridge, connectToToolEvents } from '@/services/codeBridge/toolBridgeClient';
 
 const log = createLogger('cliModeStore', 'CLI_MODE_STORE');
 
@@ -75,6 +76,22 @@ export const useCliModeStore = create<CliModeState>()(
                 const validateData = await validateResponse.json();
                 if (validateData.valid) {
                   set({ bridgeStatus: 'connected', repoCwd });
+
+                  // Re-register tools on successful reconnection
+                  registerToolsWithBridge(bridgeBaseUrl, bridgeToken).then(result => {
+                    if (result.success) {
+                      log.info(`Re-registered ${result.count} tools with bridge`);
+                    } else {
+                      log.warn('Failed to re-register tools with bridge:', result.error);
+                    }
+                  });
+
+                  // Reconnect to tool events SSE
+                  connectToToolEvents(bridgeBaseUrl, bridgeToken, {
+                    onConnected: () => log.info('Reconnected to tool events SSE'),
+                    onDisconnected: () => log.info('Disconnected from tool events SSE'),
+                    onError: (err) => log.warn('Tool events SSE error:', err),
+                  });
                 } else {
                   // Token is invalid - clear it and require re-pairing
                   log.warn('Bridge token invalid, clearing', { reason: validateData.reason });
@@ -123,6 +140,23 @@ export const useCliModeStore = create<CliModeState>()(
           if (data.token) {
             set({ bridgeToken: data.token, bridgeStatus: 'connected' });
             log.info('Pairing successful');
+
+            // Register tools with bridge after successful pairing
+            registerToolsWithBridge(bridgeBaseUrl, data.token).then(result => {
+              if (result.success) {
+                log.info(`Registered ${result.count} tools with bridge`);
+              } else {
+                log.warn('Failed to register tools with bridge:', result.error);
+              }
+            });
+
+            // Connect to tool events SSE for tool execution
+            connectToToolEvents(bridgeBaseUrl, data.token, {
+              onConnected: () => log.info('Connected to tool events SSE'),
+              onDisconnected: () => log.info('Disconnected from tool events SSE'),
+              onError: (err) => log.warn('Tool events SSE error:', err),
+            });
+
             return true;
           }
 

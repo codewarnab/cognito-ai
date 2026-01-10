@@ -126,6 +126,13 @@ export async function setToolsMode(mode: ToolsMode): Promise<UserSettings> {
   return updateSettings({ toolsMode: mode });
 }
 
+export async function setToolsConfig(mode: ToolsMode, tools: string[]): Promise<UserSettings> {
+  return updateSettings({
+    toolsMode: mode,
+    enabledToolsOverride: tools
+  });
+}
+
 // AI Providers config helpers
 // Legacy storage key
 const LEGACY_STORAGE_KEY = 'ai_provider_config';

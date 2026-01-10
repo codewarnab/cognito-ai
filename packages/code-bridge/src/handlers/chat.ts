@@ -1,9 +1,144 @@
 import type http from 'node:http';
-import { readJson, sendJson, sendError } from '../http/json.js';
+import { readJson, sendError } from '../http/json.js';
 import { requireAuth } from '../http/auth.js';
 import { CliChatRequestSchema } from '../types.js';
 import { createACPProvider, type ACPMessage } from '../acp/acpProvider.js';
 import { findAgent } from '../agents.js';
+import { streamText, stepCountIs } from 'ai';
+import { createGeminiProvider } from 'ai-sdk-provider-gemini-cli';
+import { z } from 'zod';
+import {
+  executeToolOnExtension,
+  getRegisteredTools,
+  getToolExecutionClientCount,
+} from '../mcp/toolStore.js';
+
+type ToolNameMapping = Map<string, { originalName: string }>;
+
+function generateToolCallId(): string {
+  return `tool_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/**
+ * Gemini function names must:
+ * - start with a letter or underscore (not a digit)
+ * - contain only alphanumeric, underscores, dots, colons, dashes
+ */
+function sanitizeToolName(name: string): string {
+  let sanitized = name;
+  if (/^[0-9]/.test(sanitized)) {
+    sanitized = `fn_${sanitized}`;
+  }
+  sanitized = sanitized.replace(/[^a-zA-Z0-9_.:-]/g, '_');
+  return sanitized;
+}
+
+/**
+ * Convert JSON Schema to Zod schema (best-effort).
+ * We intentionally lean permissive to avoid rejecting model-produced arguments.
+ */
+function jsonSchemaToZod(schema: unknown): z.ZodTypeAny {
+  try {
+    if (!schema || typeof schema !== 'object') {
+      return z.any();
+    }
+
+    const s = schema as Record<string, unknown>;
+    const enumValues = s.enum as unknown;
+
+    // Enum (string-only) -> z.enum
+    if (Array.isArray(enumValues) && enumValues.every((v) => typeof v === 'string')) {
+      const values = enumValues as string[];
+      if (values.length >= 1) {
+        return z.enum(values as [string, ...string[]]);
+      }
+    }
+
+    const type = s.type as unknown;
+
+    // Union types (anyOf/oneOf) - fallback permissive
+    if (Array.isArray(s.anyOf) || Array.isArray(s.oneOf)) {
+      return z.any();
+    }
+
+    switch (type) {
+      case 'string':
+        return z.string();
+      case 'number':
+      case 'integer':
+        return z.number();
+      case 'boolean':
+        return z.boolean();
+      case 'null':
+        return z.null();
+      case 'array': {
+        const items = s.items as unknown;
+        return z.array(items ? jsonSchemaToZod(items) : z.any());
+      }
+      case 'object': {
+        const properties = s.properties as unknown;
+        const required = s.required as unknown;
+
+        if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+          return z.record(z.string(), z.any());
+        }
+
+        const requiredKeys = Array.isArray(required) ? required.filter((v) => typeof v === 'string') as string[] : [];
+        const shape: Record<string, z.ZodTypeAny> = {};
+
+        for (const [key, propSchema] of Object.entries(properties as Record<string, unknown>)) {
+          let propZod = jsonSchemaToZod(propSchema);
+          if (!requiredKeys.includes(key)) {
+            propZod = propZod.optional();
+          }
+          shape[key] = propZod;
+        }
+
+        // Passthrough to tolerate extra args that the model may include.
+        return z.object(shape).passthrough();
+      }
+      default:
+        return z.any();
+    }
+  } catch {
+    return z.any();
+  }
+}
+
+function convertBridgeMessagesToAISDK(
+  messages: Array<{ role: 'user' | 'assistant'; content: Array<any> }>
+): Array<{ role: 'user' | 'assistant'; content: Array<any> }> {
+  return messages.map((m) => {
+    const parts = m.content
+      .map((p) => {
+        if (!p || typeof p !== 'object') return null;
+
+        if (p.type === 'text') {
+          return { type: 'text' as const, text: String((p as any).text ?? '') };
+        }
+
+        // Gemini provider expects "file" parts for all non-text inputs.
+        const mimeType = String((p as any).mimeType ?? 'application/octet-stream');
+        const data = String((p as any).data ?? '');
+
+        if (m.role === 'user') {
+          return { type: 'file' as const, data, mediaType: mimeType };
+        }
+
+        // Assistant history rarely contains files; fall back to a text placeholder.
+        const name = typeof (p as any).name === 'string' ? (p as any).name : undefined;
+        return {
+          type: 'text' as const,
+          text: name
+            ? `[Attachment omitted: ${name} (${mimeType})]`
+            : `[Attachment omitted: ${mimeType}]`,
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
+
+    return { role: m.role, content: parts };
+  });
+}
 
 /**
  * Handle POST /cli/chat
@@ -57,6 +192,171 @@ export async function handleCliChat(
       res.write(`event: ${event}\n`);
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
+
+    const abortController = new AbortController();
+    req.on('close', () => {
+      console.log('[chat] Client disconnected, aborting stream');
+      abortController.abort();
+    });
+
+    const isGeminiAgent = agent.name.toLowerCase().includes('gemini');
+
+    if (isGeminiAgent) {
+      // ============================================================
+      // Option B: AI SDK + Gemini CLI Provider + extension tools
+      // ============================================================
+
+      const geminiModelId =
+        agent.acpModel ||
+        process.env.COGNITO_GEMINI_MODEL ||
+        process.env.GEMINI_MODEL ||
+        'gemini-3-flash-preview';
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+      const authType = apiKey ? 'api-key' : 'oauth-personal';
+
+      sendEvent('status', { message: `Initializing Gemini (${authType})...` });
+      sendEvent('status', { message: `Model: ${geminiModelId}` });
+
+      const gemini =
+        authType === 'api-key'
+          ? createGeminiProvider({ authType, apiKey })
+          : createGeminiProvider({ authType });
+
+      // Convert incoming messages to AI SDK format (text + file parts)
+      const aiMessages = convertBridgeMessagesToAISDK(messages as any);
+
+      // Build AI SDK tools from extension-registered tool schemas
+      const registeredTools = getRegisteredTools();
+      const toolNameMapping: ToolNameMapping = new Map();
+      const aiTools: Record<string, any> = {};
+
+      for (const t of registeredTools) {
+        const originalName = t.name;
+        const baseSanitized = sanitizeToolName(originalName);
+
+        // Resolve collisions if any
+        let sanitizedName = baseSanitized;
+        let suffix = 2;
+        while (toolNameMapping.has(sanitizedName) && toolNameMapping.get(sanitizedName)!.originalName !== originalName) {
+          sanitizedName = `${baseSanitized}_${suffix++}`;
+        }
+
+        toolNameMapping.set(sanitizedName, { originalName });
+
+        aiTools[sanitizedName] = {
+          description: t.description || `Tool: ${originalName}`,
+          inputSchema: jsonSchemaToZod(t.parameters as unknown),
+          execute: async (args: unknown, options?: any) => {
+            const toolCallId =
+              typeof options?.toolCallId === 'string' ? options.toolCallId : generateToolCallId();
+
+            const argsForEvent =
+              args && typeof args === 'object' && !Array.isArray(args)
+                ? (args as Record<string, unknown>)
+                : { value: args };
+
+            sendEvent('tool_call', {
+              toolName: originalName,
+              toolCallId,
+              args: argsForEvent,
+            });
+
+            const connectedClients = getToolExecutionClientCount();
+            if (connectedClients === 0) {
+              const error = 'No extension connected for tool execution. Pair the extension and ensure tool events are connected.';
+              sendEvent('tool_result', {
+                toolCallId,
+                result: { success: false, error },
+              });
+              return { error: true, message: error };
+            }
+
+            sendEvent('status', { message: `Running tool: ${originalName}` });
+            const start = Date.now();
+
+            const result = await executeToolOnExtension(originalName, args);
+            const durationMs = Date.now() - start;
+
+            console.log('[chat] Tool executed:', {
+              toolName: originalName,
+              toolCallId,
+              success: result.success,
+              durationMs,
+            });
+
+            sendEvent('tool_result', {
+              toolCallId,
+              result: result.success ? result.result : { success: false, error: result.error },
+            });
+
+            if (result.success) {
+              return result.result;
+            }
+
+            return {
+              error: true,
+              message: result.error || 'Tool execution failed',
+              toolName: originalName,
+              toolCallId,
+            };
+          },
+        };
+      }
+
+      sendEvent('status', {
+        message: `Tools available: ${Object.keys(aiTools).length} (execution clients: ${getToolExecutionClientCount()})`,
+      });
+
+      const systemPrompt =
+        'You are a coding agent connected to the user’s Chrome extension. ' +
+        'When you need to take actions in the browser (navigate, click, read content), call the available tools. ' +
+        'Tool results are returned as structured data; use them to proceed. ' +
+        'Be direct and pragmatic.';
+
+      try {
+        const result = await streamText({
+          model: gemini(geminiModelId),
+          messages: aiMessages as any,
+          system: systemPrompt,
+          tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
+          toolChoice: 'auto',
+          stopWhen: [stepCountIs(10)],
+          abortSignal: abortController.signal,
+        });
+
+        for await (const chunk of result.textStream) {
+          if (abortController.signal.aborted) break;
+          if (chunk) {
+            sendEvent('text', { content: chunk });
+          }
+        }
+
+        sendEvent('done', {});
+        res.end();
+        return;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('[chat] Gemini stream error:', errorMessage);
+
+        // Extra hint for missing OAuth creds
+        const hint =
+          authType === 'oauth-personal'
+            ? 'If you have not authenticated yet, run `gemini` once in your terminal and complete the login flow.'
+            : undefined;
+
+        sendEvent('error', {
+          error: hint ? `${errorMessage}\n\n${hint}` : errorMessage,
+        });
+        sendEvent('done', {});
+        res.end();
+        return;
+      }
+    }
+
+    // ============================================================
+    // Fallback: ACP agent spawning (Claude Code, Codex CLI, etc.)
+    // ============================================================
 
     // Create ACP provider
     const provider = createACPProvider({

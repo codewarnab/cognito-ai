@@ -125,6 +125,20 @@ function parseGeminiErrorCore(
     return NetworkError.connectionReset(details);
   }
 
+  // Handle "Failed to fetch" (browser) and connection refused errors
+  // These occur when the backend server is down or unreachable
+  const lowerMessage = message.toLowerCase();
+  if (
+    message.includes('Failed to fetch') ||
+    lowerMessage.includes('connection refused') ||
+    lowerMessage.includes('err_connection_refused') ||
+    error?.code === 'ECONNREFUSED' ||
+    lowerMessage.includes('network error') ||
+    (error?.name === 'TypeError' && message.includes('fetch'))
+  ) {
+    return NetworkError.connectionRefused(details);
+  }
+
   return undefined;
 }
 

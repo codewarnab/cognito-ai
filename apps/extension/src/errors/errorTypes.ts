@@ -455,6 +455,20 @@ export class NetworkError extends BaseAppError {
             errorCode: ErrorType.NETWORK_DNS_FAILED,
         });
     }
+
+    /**
+     * Create connection refused error
+     * Happens when the server is not running or unreachable (ERR_CONNECTION_REFUSED)
+     */
+    static connectionRefused(details?: string): NetworkError {
+        return new NetworkError({
+            message: 'Connection refused',
+            retryable: true,
+            userMessage: 'Unable to connect to the server. Please ensure the backend service is running.',
+            technicalDetails: details || 'Connection refused - the server may be down or unreachable.',
+            errorCode: ErrorType.NETWORK_UNREACHABLE,
+        });
+    }
 }
 
 /**

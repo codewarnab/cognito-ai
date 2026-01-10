@@ -132,8 +132,10 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const handlePairingDrawerClose = () => {
         setShowPairingDrawer(false);
         // If still not paired, revert to previous mode
-        const currentBridgeToken = useCliModeStore.getState().bridgeToken;
-        if (!currentBridgeToken && previousMode) {
+        const { bridgeToken, bridgeStatus } = useCliModeStore.getState();
+        // Fix: Check if we are properly connected purely by status as well, 
+        // to avoid race condition where token might be set but status update lags or vice versa
+        if (bridgeStatus !== 'connected' && !bridgeToken && previousMode) {
             setMode(previousMode);
             setPreviousMode(null);
         }

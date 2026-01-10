@@ -175,6 +175,14 @@ See `docs/SERVER_TOOLS_ARCHITECTURE.md` for server-side tools architecture.
 See `docs/MCP_STDIO_ARCHITECTURE.md` for backend-proxied stdio MCP servers.
 See `docs/REMOTE_MCP_INTEGRATION.md` for Remote MCP integration (SSE/HTTP with OAuth).
 
+### Data Stream Protocol
+When using `writer.write()` for streaming responses:
+- **CRITICAL**: Text content MUST be framed with `text-start` and `text-end` types, not just `text-delta`
+- Call `writer.write({ type: 'text-start' })` before any `text-delta` writes
+- Call `writer.write({ type: 'text-end' })` after all `text-delta` writes complete
+- Missing `text-start` or `text-end` causes stream parsing errors
+- Same pattern applies to other chunk types (e.g., `reasoning-start`, `reasoning-delta`, `reasoning-end`)
+
 ### Backend vs BYOK Models
 - **BYOK Mode**: Model-agnostic; supports any model the user provides a key for.
 - **Backend Mode**: Uses fixed `gemini-2.5-flash` model; user selection is ignored.

@@ -14,6 +14,7 @@ import {
   setEnabledToolsOverride,
   getToolsMode,
   setToolsMode,
+  setToolsConfig,
 } from '@/utils/settings';
 import {
   TOOL_CATEGORIES,
@@ -151,8 +152,7 @@ export const useToolsStore = create<ToolsState>()(
       });
 
       // Persist to storage
-      await setEnabledToolsOverride(toolsToEnable);
-      await setToolsMode(mode);
+      await setToolsConfig(mode, toolsToEnable);
 
       get().recalculateCounts();
       log.info('Mode changed', { mode, toolCount: toolsToEnable.length });
@@ -194,8 +194,7 @@ export const useToolsStore = create<ToolsState>()(
         .map(([k]) => k);
 
       try {
-        await setEnabledToolsOverride(enabledList);
-        await setToolsMode(matchedMode || 'custom');
+        await setToolsConfig(matchedMode || 'custom', enabledList);
       } catch (err) {
         log.error('Failed to save tool config', err);
       }
@@ -243,8 +242,7 @@ export const useToolsStore = create<ToolsState>()(
         .map(([k]) => k);
 
       try {
-        await setEnabledToolsOverride(enabledList);
-        await setToolsMode(matchedMode || 'custom');
+        await setToolsConfig(matchedMode || 'custom', enabledList);
       } catch (err) {
         log.error('Failed to save tool category config', err);
       }

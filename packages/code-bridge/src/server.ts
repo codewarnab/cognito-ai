@@ -6,6 +6,23 @@ import { validateToken } from './pairing/tokenStore.js';
 import { getAgentsWithAvailability } from './agents.js';
 import { handleCliChat } from './handlers/chat.js';
 import type { ServerConfig } from './types.js';
+import {
+  createMcpServer,
+  handleMcpRequest,
+  handleMcpSessionDelete,
+  cleanupAllTransports,
+  registerExtensionTools,
+} from './mcp/index.js';
+import {
+  registerTools,
+  getRegisteredTools,
+  addToolExecutionClient,
+  removeToolExecutionClient,
+  executeToolOnExtension,
+  handleToolResult,
+  type ExtensionToolSchema,
+  type ToolExecutionResult,
+} from './mcp/toolStore.js';
 
 const VERSION = '0.0.1';
 
@@ -33,15 +50,17 @@ function broadcastShutdown(reason: string): void {
 }
 
 // Graceful shutdown handlers
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('\n[server] Shutting down (SIGINT)...');
   broadcastShutdown('shutdown');
+  await cleanupAllTransports();
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('\n[server] Shutting down (SIGTERM)...');
   broadcastShutdown('shutdown');
+  await cleanupAllTransports();
   process.exit(0);
 });
 
@@ -50,6 +69,10 @@ process.on('SIGTERM', () => {
  */
 export async function startBridgeServer(config: ServerConfig): Promise<void> {
   const { host, port, cwd } = config;
+
+  // Initialize MCP server
+  const mcpServer = createMcpServer();
+  console.log('[server] MCP server created');
 
   // Generate initial pairing code
   const initialPairing = startPairing();
@@ -181,6 +204,143 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
       // Code chat (auth required)
       if (path === '/cli/chat' && req.method === 'POST') {
         await handleCliChat(req, res, cwd);
+        return;
+      }
+
+      // ================================================================
+      // MCP Protocol Endpoints
+      // ================================================================
+
+      // MCP HTTP Streamable Transport (POST for requests, GET for SSE, DELETE for session cleanup)
+      if (path === '/mcp') {
+        if (req.method === 'POST') {
+          await handleMcpRequest(req, res, mcpServer);
+          return;
+        }
+        if (req.method === 'DELETE') {
+          await handleMcpSessionDelete(req, res);
+          return;
+        }
+        // GET not supported for now (SSE would require different handling)
+        sendError(res, 'Method not allowed', 405);
+        return;
+      }
+
+      // ================================================================
+      // Tool Bridge Endpoints (for MCP tool registry to call extension)
+      // ================================================================
+
+      // Register tools from extension (called when extension connects)
+      if (path === '/bridge/tools/register' && req.method === 'POST') {
+        // Require authentication
+        const header = req.headers.authorization || '';
+        const match = header.match(/^Bearer\s+(.+)$/i);
+        if (!match || !(await validateToken(match[1]))) {
+          sendError(res, 'Unauthorized', 401);
+          return;
+        }
+
+        const body = await readJson(req) as { tools?: ExtensionToolSchema[] };
+        if (!body.tools || !Array.isArray(body.tools)) {
+          sendError(res, 'Invalid tools array', 400);
+          return;
+        }
+
+        registerTools(body.tools);
+        console.log(`[server] Extension registered ${body.tools.length} tools`);
+        sendJson(res, { success: true, count: body.tools.length });
+        return;
+      }
+
+      // List all available tools from extension
+      if (path === '/bridge/tools' && req.method === 'GET') {
+        const tools = getRegisteredTools();
+        sendJson(res, { tools });
+        return;
+      }
+
+      // Call a specific tool on the extension
+      if (path === '/bridge/tools/call' && req.method === 'POST') {
+        // Require authentication (local-only endpoint, but still sensitive)
+        const header = req.headers.authorization || '';
+        const match = header.match(/^Bearer\s+(.+)$/i);
+        if (!match || !(await validateToken(match[1]))) {
+          sendError(res, 'Unauthorized', 401);
+          return;
+        }
+
+        const body = await readJson(req) as { name?: string; args?: unknown };
+
+        if (!body.name || typeof body.name !== 'string') {
+          sendError(res, 'Missing tool name', 400);
+          return;
+        }
+
+        // Execute tool on extension and wait for result
+        const result = await executeToolOnExtension(body.name, body.args);
+        sendJson(res, result);
+        return;
+      }
+
+      // Receive tool result from extension
+      if (path === '/bridge/tools/result' && req.method === 'POST') {
+        // Require authentication
+        const header = req.headers.authorization || '';
+        const match = header.match(/^Bearer\s+(.+)$/i);
+        if (!match || !(await validateToken(match[1]))) {
+          sendError(res, 'Unauthorized', 401);
+          return;
+        }
+
+        const body = await readJson(req) as ToolExecutionResult;
+        if (!body.requestId) {
+          sendError(res, 'Missing requestId', 400);
+          return;
+        }
+
+        const handled = handleToolResult(body);
+        sendJson(res, { success: handled });
+        return;
+      }
+
+      // SSE endpoint for tool execution requests (extension subscribes to this)
+      if (path === '/bridge/tools/events' && req.method === 'GET') {
+        // Require authentication
+        const authHeader = req.headers.authorization || '';
+        const authMatch = authHeader.match(/^Bearer\s+(.+)$/i);
+        if (!authMatch || !(await validateToken(authMatch[1]))) {
+          sendError(res, 'Unauthorized', 401);
+          return;
+        }
+
+        res.writeHead(200, {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'Access-Control-Allow-Origin': req.headers.origin || '*',
+        });
+
+        // Send initial connected event
+        res.write(`event: connected\ndata: ${JSON.stringify({ version: VERSION })}\n\n`);
+
+        // Register this client for tool execution
+        addToolExecutionClient(res);
+
+        // Clean up on disconnect
+        req.on('close', () => {
+          removeToolExecutionClient(res);
+        });
+
+        // Keep connection alive with heartbeats
+        const heartbeat = setInterval(() => {
+          try {
+            res.write(`event: heartbeat\ndata: ${JSON.stringify({ timestamp: Date.now() })}\n\n`);
+          } catch {
+            clearInterval(heartbeat);
+          }
+        }, 30000);
+
+        req.on('close', () => clearInterval(heartbeat));
         return;
       }
 

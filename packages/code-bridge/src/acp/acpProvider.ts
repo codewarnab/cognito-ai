@@ -43,6 +43,11 @@ export interface ACPProviderConfig {
   args: string[];
   cwd: string;
   env?: Record<string, string | undefined>;
+  /**
+   * MCP servers the agent should connect to for this ACP session.
+   * This is the primary way we "give tools" to ACP agents (Gemini CLI, Claude Code, etc).
+   */
+  mcpServers?: acp.McpServer[];
 }
 
 export interface ACPMessage {
@@ -241,7 +246,7 @@ export class ACPProvider extends EventEmitter {
     this.emit('message', { type: 'status', status: 'Creating session...' } as ACPMessage);
     const sessionResult = await this.connection.newSession({
       cwd: this.config.cwd,
-      mcpServers: [],
+      mcpServers: this.config.mcpServers ?? [],
     });
 
     this.sessionId = sessionResult.sessionId;

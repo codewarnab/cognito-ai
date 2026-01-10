@@ -1,202 +1,187 @@
-# CLI Mode - Architecture & Implementation Guide
+# CLI Mode & MCP Architecture
 
-CLI Mode enables the Cognito Chrome extension to communicate with a **local agent CLI** (Gemini CLI, Claude Code, Codex CLI) via a **local bridge server**.
-
----
-
-## Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         USER'S MACHINE                                  │
-│                                                                         │
-│  ┌──────────────────┐        ┌──────────────────┐                      │
-│  │  Chrome Browser  │        │   Local Bridge   │                      │
-│  │                  │  HTTP  │   (Port 8787)    │                      │
-│  │  ┌────────────┐  │◄──────►│                  │                      │
-│  │  │ Side Panel │  │        │  ┌────────────┐  │     ┌─────────────┐  │
-│  │  │ (Extension)│  │        │  │ ACP Client │──┼────►│ Agent CLI   │  │
-│  │  └────────────┘  │        │  └────────────┘  │     │ (Gemini/    │  │
-│  │                  │        │        │         │     │  Claude/    │  │
-│  │                  │        │        ▼         │     │  Codex)     │  │
-│  │                  │        │  ┌────────────┐  │     └─────────────┘  │
-│  │                  │        │  │   Local    │  │                      │
-│  │                  │        │  │   Files    │  │                      │
-│  │                  │        │  │   (Repo)   │  │                      │
-│  │                  │        │  └────────────┘  │                      │
-│  └──────────────────┘        └──────────────────┘                      │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+This document details the architecture of the **Cognito Chrome Extension**, focusing on **CLI Mode**, **Model Context Protocol (MCP)** integration, and **WebMCP**.
 
 ---
 
-## Key Components
+## High-Level Architecture
 
-### 1. Extension (Side Panel)
-- **Mode Selector**: `ToolsMode = 'cli'` switches to CLI Mode
-- **Bridge Pairing Drawer**: 6-digit OTP input to pair with local bridge
-- **Coding Agent Selector**: Select which local CLI agent to use
+The extension acts as a central hub connecting various AI providers and tools.
 
-### 2. Local Bridge (`@cognito/code-bridge`)
-- HTTP server on `http://127.0.0.1:8787`
-- Handles pairing with extension
-- Spawns agent CLI via ACP protocol
-- **SSE `/events` endpoint** for real-time connection status:
-  - Sends `connected` event on connection
-  - Sends `bridge:closing` event immediately on shutdown (SIGINT/SIGTERM)
-  - Periodic heartbeat to keep connection alive
-- **Status streaming** during agent lifecycle (shown in LoadingIndicator):
-  - `status` events sent: "Starting agent...", "Process spawned...", "Initializing protocol...", "Connected to agent...", "Creating session...", "Session ready", "Sending message..."
+```text
+                                  User
+                                    │
+                                    ▼
+                           ┌──────────────────┐
+                           │ Chrome Extension │
+                           └────────┬─────────┘
+                                    │
+          ┌─────────────────────────┼─────────────────────────┐
+          │                         │                         │
+          ▼                         ▼                         ▼
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│ Local Environment│      │  MCP Ecosystem   │      │ Web Integration  │
+│                  │      │                  │      │                  │
+│  ┌────────────┐  │      │  ┌────────────┐  │      │  ┌────────────┐  │
+│  │ Local      │◄─┼──────┼─►│ MCP Client │  │      │  │ WebMCP     │  │
+│  │ Bridge     │  │      │  └─────┬──────┘  │      │  │ Manager    │  │
+│  └─────┬──────┘  │      │        │         │      │  └─────┬──────┘  │
+│        │         │      │        │         │      │        │         │
+│        ▼         │      │        ▼         │      │        ▼         │
+│  ┌────────────┐  │      │  ┌────────────┐  │      │  ┌────────────┐  │
+│  │ Agent CLI  │  │      │  │ MCP Servers│  │      │  │ Active Tab │  │
+│  └─────┬──────┘  │      │  │ (SSE/HTTP) │  │      │  │ Tools      │  │
+│        │         │      │  └────────────┘  │      │  └────────────┘  │
+│        ▼         │      │                  │      │                  │
+│  ┌────────────┐  │      │                  │      │                  │
+│  │ Local Files│  │      │                  │      │                  │
+│  └────────────┘  │      │                  │      │                  │
+└──────────────────┘      └──────────────────┘      └──────────────────┘
+```
 
-### 3. Agent CLI
-- Gemini CLI, Claude Code, or Codex CLI
-- Runs via ACP (Agent Control Protocol)
 
 ---
 
-## Data Flow Sequences
+## 1. CLI Mode (Local Bridge)
 
-### Sequence 1: Pairing
+Enables communication with a local agent CLI (Gemini CLI, Claude Code, Codex CLI) via a local bridge server.
 
-```
-┌──────────────┐                    ┌──────────────┐
-│   Extension  │                    │    Bridge    │
-└──────┬───────┘                    └──────┬───────┘
-       │                                   │
-       │  1. Bridge starts, prints code    │
-       │     "123-456" to terminal         │
-       │                                   │
-       │  2. User enters code in extension │
-       │                                   │
-       │  POST /pair/confirm {code}        │
-       │──────────────────────────────────►│
-       │                                   │
-       │  {token: "abc123..."}             │
-       │◄──────────────────────────────────│
-       │                                   │
-       │  3. Extension stores token        │
-       │                                   │
-```
+### Components
 
-### Sequence 2: Chat
+*   **Extension (Side Panel)**:
+    *   **Mode Selector**: Switches to `ToolsMode = 'cli'`.
+    *   **Bridge Pairing**: secure OTP pairing with `@cognito/code-bridge`.
+    *   **Chat Interface**: Streams responses from the CLI agent.
+*   **Local Bridge (`@cognito/code-bridge`)**:
+    *   Runs on `http://127.0.0.1:8787`.
+    *   **SSE `/events`**: Real-time status streaming ("Starting agent...", "Connected...").
+    *   **ACP Protocol**: Spawns and controls the agent CLI.
+    *   **StdIO MCP**: Can spawn local MCP servers via StdIO and proxy them to the extension.
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Side Panel  │     │    Bridge    │     │  Agent CLI   │
-└──────┬───────┘     └──────┬───────┘     └──────┬───────┘
-       │                    │                    │
-       │ 1. User sends      │                    │
-       │    "Hello agent"   │                    │
-       │                    │                    │
-       │ POST /code/chat    │                    │
-       │ {messages, agent}  │                    │
-       │───────────────────►│                    │
-       │                    │                    │
-       │                    │ 2. Spawns agent    │
-       │                    │    via ACP         │
-       │                    │───────────────────►│
-       │                    │                    │
-       │                    │ 3. Agent replies   │
-       │                    │◄───────────────────│
-       │                    │                    │
-       │ 4. Stream response │                    │
-       │◄───────────────────│                    │
-       │                    │                    │
-```
+### Data Flow
+
+1.  **Pairing**: User enters OTP -> Extension gets Token.
+2.  **Chat**: Extension sends message -> Bridge via HTTP POST -> Bridge spawns Agent via ACP -> Agent streams response.
+3.  **Events**: Bridge streams status/logs via SSE `/events` to Extension.
 
 ---
 
-## File Structure
+## 2. Model Context Protocol (MCP) Integration
 
-### Extension Files
+The extension implements a full **MCP Client** capable of connecting to remote MCP servers via SSE.
 
-```
-apps/extension/src/
-├── stores/cliMode/
-│   ├── cliModeStore.ts            # Zustand store
-│   └── types.ts                   # State types
-├── components/
-│   ├── features/cliMode/
-│   │   ├── CodingAgentSelector.tsx    # Agent selection UI
-│   │   └── BridgePairingDrawer.tsx    # 6-digit pairing code entry
-│   └── ui/primitives/input-otp/
-│       └── input-otp.tsx              # Animated OTP input components
-├── services/
-│   └── codeBridge.ts              # Bridge API client
-├── ai/cliMode/
-│   └── cliModeChat.ts             # CLI mode chat handler
-```
+### Directory Structure: `apps/extension/src/mcp/`
 
+*   **`types.ts`**: Core MCP type definitions (JSON-RPC, Resources, Tools).
+*   **`client/`**:
+    *   `McpSSEClient.ts`: Main client implementation.
+    *   `ConnectionManager.ts`: Handles reconnection fallback and lifecycle.
+    *   `TransportDetector.ts`: Detects `Streamable HTTP` vs legacy `HTTP+SSE`.
+    *   `discovery.ts`: Implements **RFC 9728** (Protected Resource Metadata) and **RFC 8414** (Auth Server Discovery).
+    *   `oauth.ts`: Handles Dynamic Client Registration and OAuth 2.0 flows.
 
-### Bridge Files
+### Connection Features
 
-```
-packages/code-bridge/src/
-├── cli.ts                         # CLI entrypoint
-├── server.ts                      # HTTP server
-├── agents.ts                      # Agent definitions
-├── types.ts                       # Type definitions
-├── http/
-│   ├── cors.ts                    # CORS middleware
-│   ├── json.ts                    # JSON body parser
-│   └── auth.ts                    # Token auth middleware
-├── pairing/
-│   ├── pairing.ts                 # Pairing flow
-│   └── tokenStore.ts              # Token persistence
-├── handlers/
-│   └── chat.ts                    # /code/chat handler
-└── acp/
-    └── createProvider.ts          # ACP adapter
-```
+*   **Transport Modes**:
+    *   **Streamable HTTP**: Single connection for bidirectional streaming (efficient).
+    *   **HTTP+SSE**: Separate streams for server->client and client->server (legacy).
+*   **Authentication**:
+    *   Supports OAuth 2.0 with PKCE.
+    *   Auto-discovery of auth endpoints via `.well-known/oauth-protected-resource`.
+*   **Reliability**:
+    *   Automatic reconnection with exponential backoff.
+    *   Session resumption support.
 
 ---
 
-## API Reference
+## 3. WebMCP (Web-based MCP)
 
-### Bridge Endpoints
+**WebMCP** allows the active browser tab to expose tools to the AI agent safely.
 
-| Method | Path              | Auth | Description                    |
-|--------|-------------------|------|--------------------------------|
-| GET    | /health           | No   | Health check, returns `cwd`    |
-| GET    | /events           | No   | SSE stream for real-time status |
-| POST   | /pair/start       | No   | Generate pairing code          |
-| POST   | /pair/confirm     | No   | Exchange code for token        |
-| GET    | /agents           | No   | List available agents          |
-| POST   | /code/chat        | Yes  | Stream chat with agent         |
+### Directory: `apps/extension/src/background/webmcp/`
 
-### Chat SSE Event Types
+### Key Design Principles
 
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `status` | `{message: string}` | Agent lifecycle status for LoadingIndicator |
-| `text` | `{content: string}` | Streamed text response from agent |
-| `tool_call` | `{toolName, toolCallId, args}` | Tool invocation |
-| `error` | `{error: string}` | Error message |
-| `done` | `{}` | Stream complete |
+1.  **Active Tab Only**: The manager *only* tracks tools from the currently active tab.
+    *   Reduces memory usage.
+    *   Prevents stale tools.
+    *   Improves security (user is looking at the context).
+2.  **Security Layers**:
+    *   **Origin Validation**: Tools must match the active tab's domain.
+    *   **Tab ID Validation**: Execution is restricted to the registering tab ID.
+    *   **Schema Validation**: Inputs are validated against `inputSchema` before execution.
 
-### Extension Store State
+### Discovery Flow
 
-```typescript
-interface CliModeState {
-  // Bridge connection
-  bridgeBaseUrl: string;
-  bridgeToken: string | null;
-  bridgeStatus: 'connected' | 'needs-pairing' | 'offline';
-  isCheckingBridge: boolean;
+1.  **Tab Activation**: User switches to a tab.
+2.  **Discovery**: Extension clears old tools -> requests `webmcp/tools/refresh` from content script.
+3.  **Registration**: Content script sends available tools -> Manager validates & stores them.
+4.  **Execution**: Agent calls tool -> Manager validates -> sends `webmcp/tool/execute` to tab.
 
-  // Agent selection
-  selectedAgentName: string;
-  availableAgents: AgentInfo[];
+---
 
-  // Agent status (for LoadingIndicator)
-  agentStatus: string | null;
+## 4. Background Architecture
+
+The background service worker acts as a central orchestrator.
+
+### File: `apps/extension/src/entrypoints/background.ts`
+
+Orchestrates initialization of all modules:
+*   Initializes `LoggerConfigManager`.
+*   Sets up `OAuthRedirectURI`.
+*   Starts `WebMCPManager`.
+*   Delegates message handling to **Router**.
+
+### Message Router: `apps/extension/src/background/messaging/router.ts`
+
+Centralizes all incoming `chrome.runtime.onMessage` events and routes them:
+*   **`handleMcpMessage`**: Routes `mcp/*` messages to specific MCP clients.
+*   **`handleWebMCPMessage`**: Routes WebMCP discovery/execution messages.
+*   **`handleUiMessage`**: Handles UI actions (Sidebar toggles, etc.).
+*   **`handleSummarize` / `handleWrite`**: Routes AI task requests.
+
+---
+
+## 5. Security Considerations
+
+1.  **Local Bridge**:
+    *   Binds only to `127.0.0.1`.
+    *   Requires Pairing Token for all sensitive endpoints.
+    *   CORS restricted to Extension ID.
+2.  **MCP**:
+    *   OAuth tokens stored securely in `chrome.storage.local`.
+    *   Explicit user approval flow for connecting new servers.
+3.  **WebMCP**:
+    *   Strict Origin and Tab ID checks prevent cross-site tool injection ("Tool Shadowing").
+    *   Tools are cleared immediately when the tab is closed or backgrounded.
+
+---
+
+## 6. Configuration
+
+### Gemini CLI (`~/.gemini/settings.json`)
+
+To configure the Gemini CLI to use the Cognito local bridge, update your `settings.json`.
+
+> [!WARNING]
+> Do NOT include a `type` field in the `mcpServers` configuration. This will cause an `Unrecognized key(s) in object: 'type'` error.
+
+**Correct Configuration:**
+
+```json
+{
+  "mcpServers": {
+    "cognito": {
+      "url": "http://127.0.0.1:8787/mcp",
+      "trust": true
+    }
+  }
 }
 ```
 
----
+### Protocol Details
 
-## Security Considerations
+- **Transport**: SSE (Server-Sent Events)
+- **URL**: `http://127.0.0.1:8787/mcp`
+- **Scope**: User (global)
 
-1. **Localhost Only**: Bridge binds to `127.0.0.1`, never `0.0.0.0`
-2. **Pairing Token**: Required for all `/code/*` endpoints
-3. **CORS Allowlist**: Only `chrome-extension://*` and `localhost`
