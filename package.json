@@ -26,7 +26,13 @@
     "type:check": "pnpm -r type:check",
     "build:shared": "pnpm --filter @cognito/shared build",
     "lint": "pnpm -r lint",
-    "clean": "pnpm -r clean && rimraf node_modules"
+    "clean": "pnpm -r clean && rimraf node_modules",
+    "start:docs": "pnpm --filter @cognito/docs start",
+    "start:webapp": "pnpm --filter @cognito/webapp start",
+    "start:bridge": "pnpm --filter @cognito/code-bridge start",
+    "start:backend": "pnpm --filter @cognito/backend-vercel start",
+    "start:all": "pnpm --filter @cognito/extension --filter @cognito/webapp --filter @cognito/code-bridge --filter @cognito/backend-vercel --parallel start",
+    "start:stack": "pnpm --filter @cognito/extension --filter @cognito/webapp --filter @cognito/code-bridge --filter @cognito/backend-vercel --parallel start"
   },
   "devDependencies": {
     "browserify-zlib": "^0.2.0",

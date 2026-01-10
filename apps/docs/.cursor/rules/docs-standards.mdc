@@ -1,0 +1,107 @@
+---
+alwaysApply: true
+---
+# Cognito Docs - Coding Standards
+
+## Tech Stack
+- **Framework**: Next.js with App Router
+- **Documentation**: Fumadocs (MDX-based)
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+
+## Project Structure
+- `content/docs/` - MDX documentation files
+- `src/app/` - Next.js App Router pages
+- `src/components/diagrams/` - Custom diagram React components
+- `src/lib/source.ts` - Fumadocs source configuration
+- `src/mdx-components.tsx` - MDX component registry
+- `public/` - Static assets (images)
+
+## MDX Content Rules
+
+### Code Blocks
+- **CRITICAL**: Use `bash` for shell commands; `env` is NOT supported by Shiki
+- Add titles: ` ```bash title="Terminal" `
+- Supported languages: `typescript`, `bash`, `json`, `mdx`, `tsx`
+
+### Callouts
+- **CRITICAL**: Use `<Callout>` component from Fumadocs
+- **CRITICAL**: Do NOT use GitHub-style alerts (`> [!NOTE]`, `> [!TIP]`)
+- Types: `info` (default), `warn`, `error`
+- Do NOT add redundant `title="Note"` when type already shows it
+
+```mdx
+<Callout>Info callout.</Callout>
+<Callout type="warn">Warning callout.</Callout>
+<Callout type="error">Error callout.</Callout>
+```
+
+### Sequence Diagrams
+- **CRITICAL**: Use React components from `src/components/diagrams/`
+- **CRITICAL**: Do NOT use Mermaid syntax in MDX
+- **CRITICAL**: Do NOT use images for diagrams that can be components
+
+```mdx
+import { ServerToolsSequence } from '@/components/diagrams/ServerToolsSequence';
+<ServerToolsSequence />
+```
+
+### Images
+- Use `<ImageZoom>` for **all images** (diagrams, screenshots, architecture)
+- Place images in `public/` directory
+- Reference with leading `/`
+
+```mdx
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+<ImageZoom src="/diagram.png" alt="Description" width={800} height={500} />
+```
+
+### File Trees
+- Use `<Files>`, `<Folder>`, `<File>` for directory structures
+
+```mdx
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+<Files>
+  <Folder name="src" defaultOpen>
+    <File name="index.ts" />
+  </Folder>
+</Files>
+```
+
+## Writing Style
+- Use simple words: "use" not "utilize", "help" not "facilitate"
+- Remove filler: No "please", "you can", "you may"
+- Subject first: Place subject at beginning of sentences
+- Short paragraphs: Max 10-12 words/line, 9 lines/paragraph
+- Use tables for conditions/properties
+- Use **bold** for key terms
+
+## TypeScript and Imports
+- Use path alias `@/*` for `./src/*`
+- Group imports at top of file
+- Prefer named exports
+
+## Component Development
+- Create diagram components in `src/components/diagrams/`
+- Register new components in `src/mdx-components.tsx`
+- Use TypeScript for all components
+
+## Available MDX Components
+Registered in `src/mdx-components.tsx`:
+- `Callout` - Notes, tips, warnings
+- `ImageZoom` - Zoomable images (use for ALL images)
+- `Tab`, `Tabs` - Tabbed content
+- `Accordion`, `Accordions` - Collapsible sections
+- `File`, `Folder`, `Files` - File tree displays
+- Diagram components: `ServerToolsSequence`, `StdioMcpSequence`, `OAuthFlowSequence`, `McpOAuthSequence`, `McpToolApprovalSequence`, `McpToolExecutionSequence`, `McpConnectionStatesDiagram`
+
+## Navigation
+- Edit `meta.json` files to update navigation
+- Frontmatter required: `title`, `description`
+
+## Commands
+```bash
+pnpm dev:docs      # Start dev server (port 3003)
+pnpm build         # Build for production
+pnpm types:check   # Type check
+```
