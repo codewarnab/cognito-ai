@@ -5,5 +5,6 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: 'Cognito AI',
     },
+    githubUrl: 'https://github.com/codewarnab/cognito-ai',
   };
 }

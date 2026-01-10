@@ -27,6 +27,20 @@ Use the `<Callout>` component for notes, tips, and warnings:
 
 Do NOT use GitHub-style alerts (`> [!NOTE]`) or put redundant titles like `title="Note"` when the type already displays one.
 
+### Sequence Diagrams
+
+For sequence diagrams, use custom React components from `src/components/diagrams/`:
+
+```mdx
+import { ServerToolsSequence } from '@/components/diagrams/ServerToolsSequence';
+import { StdioMcpSequence } from '@/components/diagrams/StdioMcpSequence';
+import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
+
+<StdioMcpSequence />
+```
+
+Do NOT use Mermaid for sequence diagrams. Do NOT use images for diagrams that can be components.
+
 ### Style Guide
 
 Refer to [STYLE_GUIDE.md](file:///c:/Users/User/code/hackathons/chrome-ai/apps/docs/STYLE_GUIDE.md) for full writing and formatting guidelines.

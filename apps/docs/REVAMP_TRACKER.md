@@ -31,7 +31,6 @@ This tracker shows the status of all **new IA pages** (the target structure). Ea
 | Page | Owner | Status | Blockers | Source Docs |
 |------|-------|--------|----------|-------------|
 | `using-cognito/index.mdx` | - | planned | - | - |
-| `using-cognito/sidepanel-basics.mdx` | - | planned | - | - |
 | `using-cognito/browser-automation.mdx` | - | planned | Verify tool list | `TOOL_APPROVAL_SYSTEM.md` |
 | `using-cognito/voice-mode.mdx` | - | planned | Feature status check | - |
 | `using-cognito/memory.mdx` | - | planned | Verify Dexie storage | - |

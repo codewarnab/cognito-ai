@@ -259,9 +259,39 @@ Use JSX comments in MDX files:
 
 ## Diagram Policy
 
+### Custom Sequence Diagram Components
+
+For sequence diagrams, create custom React components in `src/components/diagrams/` instead of using Mermaid or images. These provide:
+
+- **Dark mode support** — Automatic theming with Tailwind classes
+- **Accessibility** — SVG with proper text elements
+- **Consistency** — Reusable across pages
+
+**Location:** `apps/docs/src/components/diagrams/`
+
+**Example usage:**
+
+```mdx
+import { ServerToolsSequence } from '@/components/diagrams/ServerToolsSequence';
+import { StdioMcpSequence } from '@/components/diagrams/StdioMcpSequence';
+import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
+
+<ServerToolsSequence />
+```
+
+**Available components:**
+
+| Component | Purpose |
+|-----------|---------||
+| `ServerToolsSequence` | Server tools execution flow |
+| `StdioMcpSequence` | StdIO MCP proxy flow |
+| `OAuthFlowSequence` | OAuth 2.0 authentication flow |
+
+When adding new sequence diagrams, create a new component following the existing pattern.
+
 ### Mermaid Placeholders
 
-Add `MERMAID_DIAGRAM` comments before every diagram:
+For non-sequence diagrams (flowcharts, component diagrams), add `MERMAID_DIAGRAM` comments:
 
 ```mdx
 {/* MERMAID_DIAGRAM: extension.architecture | type: component | represents: WXT entrypoints | code_refs: apps/extension/src/entrypoints/ */}

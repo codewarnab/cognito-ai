@@ -1,278 +1,166 @@
 ---
 title: Backend Services
-description: AI chat, YouTube transcripts, web search, and content extraction APIs.
+description: How the Cognito backend powers AI features and how to build your own.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: packages/backend-vercel/src/routes/ */}
+import { Callout } from 'fumadocs-ui/components/callout';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 
-The Cognito backend (`@cognito/backend-vercel`) provides AI processing, YouTube transcripts, web search, and content extraction services. These enable features like Backend Mode (no API key required) and enhanced content tools.
+<Callout type="warn">
+  The backend APIs are **not open-source**. These services are only accessible through the official hosted Cognito extension.
+</Callout>
 
-## Available Services
+This page explains the architecture behind Cognito's backend services. Use this as a reference if you want to understand how the system works or build your own implementation.
 
-| Service | Endpoint | Purpose |
-|---------|----------|---------|
-| **AI Chat** | `/api/ai/chat-with-tools` | Chat with tool execution |
-| **YouTube Transcripts** | `/simple-transcript` | Video transcripts + metadata |
-| **Web Search** | `/web-search` | Search via Tavily |
-| **Content Retrieval** | `/retrieve` | Extract content from URLs |
-| **Metadata** | `/metadata` | OpenGraph metadata extraction |
+---
 
-## Backend Mode vs BYOK
+## Overview
 
-| Feature | Backend Mode | BYOK Mode |
-|---------|--------------|-----------|
+The Cognito backend provides server-side AI processing, YouTube transcripts, web search, and content extraction. This enables **Cloud Mode** where users don't need to provide their own API keys.
+
+Architecture:
+- **Direct Requests**: The Side Panel talks directly to the Backend for high-bandwidth tasks like specific chat streams.
+- **Proxied Requests**: Background services (Summarizer, Writer) route through the Service Worker.
+
+{/* MERMAID_DIAGRAM: backend.overview | type: component | represents: Backend architecture | code_refs: packages/backend-vercel/ */}
+
+<ImageZoom src="/backend-architecture.png" alt="Backend Architecture" width={800} height={400} />
+
+---
+
+## Cloud Mode vs BYOK
+
+Cognito supports two AI processing modes:
+
+| Feature | Cloud Mode | BYOK Mode |
+|---------|------------|-----------|
 | **API Key Required** | No | Yes (your key) |
 | **AI Model** | Fixed (gemini-2.5-flash) | Any supported model |
 | **Rate Limits** | Shared quotas | Your API limits |
-| **Tool Execution** | Server-side + frontend | Frontend only |
-| **StdIO MCP** | Supported | Via backend proxy |
+| **StdIO MCP** | Server-side proxy | Via backend proxy |
 
-## AI Chat
+<Callout>
+  BYOK (Bring Your Own Key) mode gives you full control over model selection and avoids shared rate limits. It supports multiple providers including Google Gemini, OpenAI, Anthropic, and others.
+</Callout>
 
-### Endpoints
+---
 
-| Endpoint | Purpose |
-|----------|---------|
-| `/api/ai/chat-with-tools` | Main chat with tool support |
-| `/api/ai/write` | AI writing with tone/platform |
-| `/api/ai/rewrite` | Text rewriting with presets |
-| `/api/ai/summarize` | Text summarization |
-| `/api/ai/suggestions` | Contextual action suggestions |
-| `/api/ai/usage` | Check usage stats |
+## Core Services
 
-### Chat Modes
+The backend provides four main services:
 
-The chat endpoint supports three modes:
+### AI Chat with Tools
 
-| Mode | Description | System Prompt |
-|------|-------------|---------------|
-| `chat` | Simple conversations | Minimal |
-| `agent` | Full agentic mode | Tool usage guidance |
-| `adaptive` | Dynamic tool discovery | executeTools + discoverTools |
+The main chat service supports tool execution with three modes:
 
-{/* VERIFIED: 2024-12-31 | code_refs: packages/backend-vercel/src/routes/ai/chat.ts */}
+| Mode | Description |
+|------|-------------|
+| `chat` | Simple conversations, minimal system prompt |
+| `agent` | Full agentic mode with tool guidance |
+| `adaptive` | Dynamic tool discovery pattern |
 
-### Example Request
+<Callout title="Key Concept: Frontend Tools">
+  The backend receives tool schemas from the extension and returns tool call requests. The extension executes tools locally and sends results back. This "frontend tools" pattern keeps browser automation client-side while enabling server-side AI.
+</Callout>
 
-```typescript
-// Chat with tools
-const response = await fetch('/api/ai/chat-with-tools', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    messages: [{ role: 'user', content: 'Hello!' }],
-    mode: 'chat',
-    frontendTools: [...],  // Tool schemas for frontend execution
-    mcpServers: [...]      // StdIO MCP server configs
-  })
-});
-```
+---
 
-## YouTube Transcripts
 
-Fetch video transcripts and metadata via Supadata:
+### Web Search
 
-### Request
+Searches the web using [Tavily](https://tavily.com). Returns structured results with:
 
-```typescript
-POST /simple-transcript
-{
-  "videoId": "dQw4w9WgXcQ"
-}
-```
+- Title and URL
+- Content snippet
+- Relevance score
 
-### Response
+---
 
-```typescript
-{
-  "transcript": [
-    { "start": 0.0, "duration": 4.2, "text": "We're no strangers..." }
-  ],
-  "metadata": {
-    "title": "Video Title",
-    "duration": 212,
-    "channel": "Channel Name"
-  }
-}
-```
+### Content Retrieval
 
-## Web Search
+Extracts readable content from URLs using [Jina Reader](https://jina.ai/reader/). This powers the "read page content" feature for URLs that need server-side fetching.
 
-Search the web via Tavily:
+---
 
-### Request
-
-```typescript
-POST /web-search
-{
-  "query": "latest AI news",
-  "limit": 5
-}
-```
-
-### Response
-
-```typescript
-{
-  "results": [
-    {
-      "title": "Result Title",
-      "url": "https://example.com",
-      "snippet": "Description..."
-    }
-  ]
-}
-```
-
-## Content Retrieval
-
-Extract content from URLs via Jina Reader:
-
-### Request
-
-```typescript
-POST /retrieve
-{
-  "url": "https://example.com/article"
-}
-```
-
-### Response
-
-```typescript
-{
-  "content": "Extracted article text...",
-  "title": "Article Title"
-}
-```
-
-## Rate Limiting
+## Rate Limiting Architecture
 
 The backend implements trust-based tiered rate limiting:
 
-### Trust Levels
-
-| Level | Client Type | Per-Minute | Daily | Monthly |
-|-------|-------------|------------|-------|---------|
+| Trust Level | Client Type | Per-Minute | Daily | Monthly |
+|-------------|-------------|:----------:|:-----:|:-------:|
 | 3 | Extension Token | 30 | 200 | 2000 |
 | 2 | Fingerprint + IP | 20 | 100 | 1000 |
 | 1 | IP only | 10 | 50 | 500 |
 
-### Rate Limit Headers
+**Implementation details:**
+- Uses sliding window algorithm with Redis sorted sets
+- Groups IPv4 /24 and IPv6 /56 prefixes for shared IP detection
+- Returns `X-RateLimit-Remaining` and `Retry-After` headers
 
-```http
-X-RateLimit-Remaining: 15
-Retry-After: 60
-X-RateLimit-Degraded: true
-```
-
-### Check Usage
-
-```typescript
-GET /api/ai/usage
-
-// Response
-{
-  "remaining": {
-    "minute": 25,
-    "daily": 180,
-    "monthly": 1800
-  },
-  "limits": {
-    "minute": 30,
-    "daily": 200,
-    "monthly": 2000
-  }
-}
-```
+---
 
 ## Graceful Degradation
 
-When backend rate limits are exceeded:
+When backend rate limits are exceeded, the extension automatically falls back to BYOK mode:
 
-1. Extension detects rate limit response
-2. If user has BYOK API key configured:
-   - Automatically switches to BYOK mode
-   - Shows notification to user
-3. If no API key:
-   - Shows rate limit error
-   - Suggests adding API key
+<ImageZoom src="/backend-rate-limit.png" alt="Backend Rate Limit Flowchart" width={600} height={400} />
+
+<Callout type="warn">
+  If you don't have an API key configured, you'll see rate limit errors when quotas are exceeded. Configure a BYOK key for your preferred provider in Settings → AI Provider to avoid interruptions.
+</Callout>
+
+---
 
 ## StdIO MCP via Backend
 
-The backend enables StdIO MCP servers (command-line tools) that browsers cannot spawn:
+Browsers cannot spawn command-line processes. The backend proxies StdIO MCP servers (like filesystem tools):
 
-{/* MERMAID_DIAGRAM: backend.stdio-mcp | type: sequence | represents: StdIO MCP flow | code_refs: packages/backend-vercel/src/routes/ai/mcp.ts */}
+<StdioMcpSequence />
 
-```mermaid
-sequenceDiagram
-    participant E as Extension
-    participant B as Backend
-    participant M as MCP Process
-    
-    E->>B: POST /api/ai/mcp/discover
-    Note over E,B: serverId + credentials
-    B->>B: Lookup in secure registry
-    B->>M: Spawn process
-    M-->>B: Tool schemas
-    B-->>E: { tools: [...] }
-    
-    E->>B: POST /api/ai/mcp/execute
-    Note over E,B: toolName + args
-    B->>M: Call tool via stdin
-    M-->>B: Result via stdout
-    B-->>E: { result: ... }
-```
+<Callout title="Note">
+  Currently, you cannot add your own custom StdIO MCP servers, but we will soon be adding that feature.
+</Callout>
 
-> **Security**: Commands are stored in a secure server-side registry, not sent from the frontend.
+<Callout>
+  **Security**: MCP server commands are stored in a secure server-side registry. The extension sends only server IDs, never raw commands.
+</Callout>
 
-### Endpoints
+---
 
-| Endpoint | Purpose |
-|----------|---------|
-| `/api/ai/mcp/discover` | Discover tools from StdIO server |
-| `/api/ai/mcp/execute` | Execute a tool |
+## Building Your Own Backend
 
-### Caching
+If you're building from source or want to self-host, you'll need to implement these services:
 
-Tool discovery results are cached in Redis:
-- **Key format**: `mcp:tools:{sha256(cmd+args)}`
-- **TTL**: 24 hours
-- **Bypass**: `?skipCache=true`
+### Required Components
 
-## External Dependencies
+| Component | Purpose | External API |
+|-----------|---------|--------------|
+| AI Chat | Process chat with tool schemas | Google Gemini API |
+| Transcripts | YouTube video transcripts | Supadata or YouTube API |
+| Rate Limiting | Protect shared resources | Redis (Upstash) |
 
-| Service | Purpose | Required |
-|---------|---------|----------|
-| **Google AI (Gemini)** | Primary AI provider | Yes |
-| **Supadata** | YouTube transcripts | Yes |
-| **Tavily** | Web search | Optional |
-| **Jina Reader** | URL content extraction | Optional |
-| **Upstash Redis** | Rate limiting, caching | Optional |
+### Optional Components
 
-## Environment Variables
+| Component | Purpose | Alternatives |
+|-----------|---------|--------------|
+| Web Search | Search integration | Tavily, SerpAPI, Bing |
+| Content Retrieval | URL extraction | Jina Reader, Readability |
 
-| Variable | Purpose |
-|----------|---------|
-| `GOOGLE_AI_API_KEY` | Required for AI endpoints |
-| `SUPADATA_API_KEY` | Required for transcripts |
-| `TAVILY_API_KEY` | Optional for web search |
-| `JINA_API_KEY` | Optional for URL retrieval |
-| `UPSTASH_REDIS_REST_URL` | For rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | For rate limiting |
+### Frontend Tools Pattern
 
-## Error Responses
+The key architectural pattern is **frontend tools**:
 
-| Status | Meaning |
-|--------|---------|
-| 200 | Success |
-| 400 | Bad request (missing params) |
-| 401 | Unauthorized |
-| 429 | Rate limit exceeded |
-| 500 | Server error |
+1. Extension sends tool schemas to backend
+2. Backend AI generates tool call requests
+3. Extension executes tools locally (browser access)
+4. Extension sends tool results back
+5. Backend continues the conversation
+
+This keeps sensitive browser operations client-side while using server-side AI.
+
+---
 
 ## Next Steps
 
-- [Backend Mode](/docs/architecture/ai-system) — How backend AI works
-- [MCP StdIO Architecture](/docs/architecture/mcp-client) — StdIO proxy details
-- [Rate Limiting](/docs/troubleshooting/rate-limits) — Managing quotas
+- [AI System Architecture](/docs/architecture/ai-system) — How the AI system works
+- [MCP Client](/docs/architecture/mcp-client) — MCP integration details

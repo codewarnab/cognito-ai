@@ -3,42 +3,31 @@ title: MCP Client
 description: Model Context Protocol client architecture.
 ---
 
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
+import { StdioMcpSequence } from '@/components/diagrams/StdioMcpSequence';
+
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/mcp/client/ */}
 
-Cognito AI implements a full MCP client supporting multiple transport mechanisms. This page covers the client architecture.
+Cognito AI implements a full [MCP](https://modelcontextprotocol.io/docs/getting-started/intro) client supporting multiple transport mechanisms. This page covers the client architecture.
+
+<Callout>
+  MCP (Model Context Protocol) is an open-source standard for connecting AI applications to external systems. Learn more in the [official MCP documentation](https://modelcontextprotocol.io/docs/learn/architecture).
+</Callout>
 
 ## Architecture Overview
 
 {/* MERMAID_DIAGRAM: mcp.client-architecture | type: component | represents: MCP client components | code_refs: apps/extension/src/mcp/ */}
 
-```mermaid
-graph TB
-    subgraph Extension["Chrome Extension"]
-        UI[MCP Settings UI]
-        BG[Background SW]
-        subgraph Client["MCP Client"]
-            SSE[McpSSEClient]
-            Backend[McpBackendClient]
-            State[State Manager]
-            OAuth[OAuth Handler]
-        end
-    end
-    
-    subgraph External["External"]
-        Remote[Remote MCP Servers]
-        Stdio[StdIO Servers]
-        Vercel[Backend Proxy]
-    end
-    
-    UI --> BG
-    BG --> SSE
-    BG --> Backend
-    SSE --> Remote
-    Backend --> Vercel
-    Vercel --> Stdio
-    BG --> State
-    BG --> OAuth
-```
+<ImageZoom src="/mcp-client.png" alt="MCP Client Architecture" width={800} height={500} />
+
+The MCP client consists of several components working together:
+
+- **McpSSEClient** — Handles Streamable HTTP and HTTP+SSE transports for remote servers
+- **McpBackendClient** — Proxies StdIO servers through the backend
+- **State Manager** — Tracks connection state for all servers
+- **OAuth Handler** — Manages OAuth 2.0 authentication flows
 
 ## Transport Types
 
@@ -48,73 +37,54 @@ graph TB
 | **HTTP+SSE** | GET + SSE | McpSSEClient | Legacy servers |
 | **StdIO** | stdin/stdout | McpBackendClient | CLI tools |
 
+<Callout type="info">
+  For details on MCP transports, see the [official transport documentation](https://modelcontextprotocol.io/docs/learn/transports).
+</Callout>
+
 ## Module Structure
 
-```text
-apps/extension/src/mcp/
-├── client/                  # SSE client components
-│   ├── McpSSEClient.ts      # Main SSE client
-│   ├── transportDetector.ts # Protocol detection
-│   ├── streamProcessor.ts   # SSE stream parsing
-│   ├── requestManager.ts    # Request/response
-│   ├── connectionManager.ts # Reconnection
-│   ├── messageHandler.ts    # Message routing
-│   └── errorHandler.ts      # Error handling
-├── discovery.ts             # OAuth discovery
-├── oauth.ts                 # OAuth 2.0 flow
-├── authHelpers.ts           # Token utilities
-├── scopeHandler.ts          # Scope management
-├── state.ts                 # Connection state
-├── types.ts                 # Type definitions
-└── events.ts                # Event system
-```
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="mcp" >
+      <Folder name="client" >
+        <File name="McpSSEClient.ts" />
+        <File name="transportDetector.ts" />
+        <File name="streamProcessor.ts" />
+        <File name="requestManager.ts" />
+        <File name="connectionManager.ts" />
+        <File name="messageHandler.ts" />
+        <File name="errorHandler.ts" />
+        <File name="config.ts" />
+        <File name="index.ts" />
+      </Folder>
+      <File name="discovery.ts" />
+      <File name="oauth.ts" />
+      <File name="authHelpers.ts" />
+      <File name="scopeHandler.ts" />
+      <File name="state.ts" />
+      <File name="types.ts" />
+      <File name="events.ts" />
+      <File name="toolsConfig.ts" />
+      <File name="validation.ts" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## McpSSEClient
 
-The main client for SSE/HTTP transport:
+The main client for SSE/HTTP transport. Handles:
 
-```typescript
-import { McpSSEClient } from '@/mcp/client';
-
-const client = new McpSSEClient({
-  serverUrl: 'https://mcp.example.com',
-  serverId: 'example-server',
-  accessToken: '...'
-});
-
-// Connect and initialize
-await client.connect();
-await client.initialize();
-
-// List available tools
-const { tools } = await client.listTools();
-
-// Execute a tool
-const result = await client.callTool('tool_name', { arg: 'value' });
-```
+- **Connection** — Establishes SSE connection to the server
+- **Initialization** — Exchanges protocol capabilities
+- **Tool discovery** — Lists available tools from the server
+- **Tool execution** — Calls tools and returns results
 
 ### Transport Detection
 
-The client auto-detects transport protocol:
+The client auto-detects the transport protocol:
 
-```typescript
-// transportDetector.ts
-async detectAndConnect(messageId: number) {
-  // Try POST first (Streamable HTTP - newer)
-  const postResponse = await fetch(url, { method: 'POST', ... });
-  if (postResponse.ok) {
-    this.transportType = 'streamable-http';
-    return postResponse;
-  }
-  
-  // Fall back to GET (HTTP+SSE - older)
-  if (postResponse.status === 405) {
-    const getResponse = await fetch(url, { method: 'GET', ... });
-    this.transportType = 'http-sse';
-    return getResponse;
-  }
-}
-```
+1. **Try POST first** — Streamable HTTP (newer protocol)
+2. **Fall back to GET** — HTTP+SSE (legacy protocol) if POST returns 405
 
 ### Connection States
 
@@ -132,165 +102,70 @@ async detectAndConnect(messageId: number) {
 
 ## McpBackendClient
 
-Proxy client for StdIO servers:
+Proxy client for StdIO servers. Since Chrome extensions cannot spawn local processes, StdIO servers are proxied through the backend.
 
-```typescript
-// McpBackendClient.ts
-export class McpBackendClient implements McpClient {
-  constructor(serverId: string, accessToken: string | null) {
-    this.serverId = serverId;
-    this.accessToken = accessToken;
-  }
-  
-  async initialize() {
-    // Discover tools via backend
-    const response = await fetch('/api/ai/mcp/discover', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        serverId: this.serverId,
-        credentials: { apiKey: this.accessToken }
-      })
-    });
-    this.tools = await response.json();
-  }
-  
-  async callTool(name: string, args: object) {
-    // Execute via backend
-    return fetch('/api/ai/mcp/execute', {
-      method: 'POST',
-      body: JSON.stringify({ 
-        serverId: this.serverId,
-        credentials: { apiKey: this.accessToken },
-        toolName: name,
-        toolArgs: args
-      })
-    });
-  }
-}
-```
+<StdioMcpSequence />
 
-> **Security**: Backend client sends only `serverId` + credentials. Commands are stored in a secure server-side registry.
+<Callout type="warn">
+  The backend client sends only `serverId` + credentials. Commands are stored in a secure server-side registry, never exposed to the extension.
+</Callout>
 
 ## OAuth Flow
 
-OAuth 2.0 with Dynamic Client Registration (RFC 7591):
+OAuth 2.0 with Dynamic Client Registration ([RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591)):
 
-{/* MERMAID_DIAGRAM: mcp.oauth-detailed | type: sequence | represents: OAuth flow | code_refs: apps/extension/src/mcp/oauth.ts */}
+<OAuthFlowSequence />
 
-```mermaid
-sequenceDiagram
-    participant E as Extension
-    participant D as Discovery
-    participant A as Auth Server
-    participant M as MCP Server
-    
-    E->>D: discoverOAuthEndpoints(mcpUrl)
-    D->>M: GET /.well-known/oauth-protected-resource
-    D->>A: GET /.well-known/oauth-authorization-server
-    D-->>E: OAuthEndpoints
-    
-    E->>A: POST registration_endpoint
-    Note over E,A: Dynamic Client Registration
-    A-->>E: client_id, client_secret
-    
-    E->>A: Open authorization URL
-    Note over A: User consent screen
-    A-->>E: authorization_code
-    
-    E->>A: POST token_endpoint
-    A-->>E: access_token, refresh_token
-    
-    E->>M: Connect with Bearer token
-```
+### OAuth Discovery
 
-### OAuth Discovery (`discovery.ts`)
+Implements [RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728) (Protected Resource Metadata) and [RFC 8414](https://datatracker.ietf.org/doc/html/rfc8414) (Authorization Server Metadata):
 
-Implements RFC 9728 and RFC 8414:
-
-```typescript
-async function discoverOAuthEndpoints(mcpUrl: string) {
-  // Try Protected Resource Metadata (RFC 9728)
-  const prm = await fetch(`${origin}/.well-known/oauth-protected-resource${path}`);
-  
-  // Get Authorization Server Metadata (RFC 8414)
-  const asm = await fetch(`${authServer}/.well-known/oauth-authorization-server`);
-  
-  return {
-    authorization_endpoint,
-    token_endpoint,
-    registration_endpoint,
-    scopes_supported
-  };
-}
-```
+1. **Protected Resource Metadata** — Fetch `/.well-known/oauth-protected-resource` from MCP server
+2. **Authorization Server Metadata** — Fetch `/.well-known/oauth-authorization-server` from auth server
+3. **Return endpoints** — `authorization_endpoint`, `token_endpoint`, `registration_endpoint`
 
 ## State Management
 
-Centralized state for all MCP connections:
+Centralized state for all MCP connections. Each server maintains:
 
-```typescript
-// state.ts
-interface ServerState {
-  client: McpSSEClient | McpBackendClient | null;
-  tokens: McpOAuthTokens | null;
-  credentials: DynamicClientCredentials | null;
-  status: McpServerStatus;
-  oauthEndpoints: OAuthEndpoints | null;
-  oauthState: OAuthState | null;
-  isEnabled: boolean;
-}
-
-const serverStates = new Map<string, ServerState>();
-```
+- **Client instance** — `McpSSEClient` or `McpBackendClient`
+- **OAuth tokens** — Access token, refresh token, expiry
+- **Client credentials** — From dynamic registration
+- **Connection status** — Current state
+- **Enabled flag** — User preference
 
 ### State Persistence
 
-- **Tokens**: Stored in `chrome.storage.local`
-- **Credentials**: Stored in `chrome.storage.local`
-- **Enable state**: Stored in `chrome.storage.local`
-- **Runtime state**: In-memory only
+| Data | Storage |
+|------|---------|
+| OAuth tokens | `chrome.storage.local` |
+| Client credentials | `chrome.storage.local` |
+| Enable state | `chrome.storage.local` |
+| Runtime state | In-memory only |
 
 ## Background Handlers
 
-### Message Router
+The background service worker routes MCP messages using a pattern-based system.
 
-```typescript
-// mcpHandler.ts
-function handleMcpMessage(message) {
-  // Parse: mcp/{serverId}/{action}
-  const [, serverId, ...actionParts] = type.split('/');
-  const action = actionParts.join('/');
-  
-  switch (action) {
-    case 'auth/start': return startOAuthFlow(serverId);
-    case 'disconnect': return disconnectServer(serverId);
-    case 'tool/call': return callTool(serverId, payload);
-    case 'status/get': return getServerStatus(serverId);
-  }
-}
-```
+### Message Routing
+
+Messages follow the pattern `mcp/{serverId}/{action}`:
+
+| Action | Purpose |
+|--------|---------|
+| `auth/start` | Initiate OAuth flow |
+| `disconnect` | Disconnect server |
+| `tool/call` | Execute a tool |
+| `status/get` | Get server status |
 
 ### Manager Functions
 
-```typescript
-// manager.ts
-export async function connectMcpServer(serverId: string) {
-  const config = getServerConfig(serverId);
-  
-  if (config.isBackendOnly) {
-    // StdIO server via backend
-    const client = new McpBackendClient(serverId, accessToken);
-  } else {
-    // SSE/HTTP server
-    const client = new McpSSEClient(config);
-  }
-  
-  await client.connect();
-  await client.initialize();
-  
-  updateServerState(serverId, { client, status: 'connected' });
-}
-```
+The manager handles server lifecycle:
+
+1. **Get server config** — Load from registry
+2. **Select client type** — `McpBackendClient` for StdIO, `McpSSEClient` otherwise
+3. **Connect and initialize** — Establish connection
+4. **Update state** — Track connection status
 
 ## Error Handling
 
@@ -305,47 +180,22 @@ export async function connectMcpServer(serverId: string) {
 
 ### Reconnection Strategy
 
-```typescript
-// connectionManager.ts
-const BACKOFF = [1000, 2000, 4000, 8000, 16000, 30000];
+Exponential backoff with delays: 1s → 2s → 4s → 8s → 16s → 30s (max).
 
-async function reconnect(attempt: number) {
-  const delay = BACKOFF[Math.min(attempt, BACKOFF.length - 1)];
-  await sleep(delay);
-  
-  try {
-    await client.connect();
-  } catch (error) {
-    if (attempt < MAX_RETRIES) {
-      return reconnect(attempt + 1);
-    }
-    throw error;
-  }
-}
-```
+After max retries, the connection enters the `error` state.
 
 ## Tool Execution Proxy
 
-MCP tools are proxied through the background:
+MCP tools are proxied through the background service worker. The proxy:
 
-```typescript
-// proxy.ts
-function createMcpProxyTool(tool: McpTool, serverId: string) {
-  return {
-    description: tool.description,
-    parameters: convertMCPSchemaToZod(tool.inputSchema),
-    execute: async (args) => {
-      return chrome.runtime.sendMessage({
-        type: `mcp/${serverId}/tool/call`,
-        payload: { name: tool.name, arguments: args }
-      });
-    }
-  };
-}
-```
+1. **Receives tool schema** from the MCP server
+2. **Converts to AI SDK format** using Zod schema
+3. **Intercepts calls** and routes to the appropriate client
+4. **Returns results** to the AI model
 
 ## Next Steps
 
 - [Remote MCP](/docs/integrations/remote-mcp) — User guide
 - [MCP Overview](/docs/integrations/mcp-overview) — Protocol introduction
 - [WebMCP Architecture](/docs/architecture/webmcp-architecture) — Page-provided tools
+- [Official MCP Docs](https://modelcontextprotocol.io/docs/getting-started/intro) — Protocol specification

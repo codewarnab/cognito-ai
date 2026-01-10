@@ -254,7 +254,6 @@ apps/docs/content/docs/
   using-cognito/
     meta.json
     index.mdx
-    sidepanel-basics.mdx
     browser-automation.mdx
     voice-mode.mdx
     memory.mdx

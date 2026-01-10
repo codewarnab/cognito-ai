@@ -3,6 +3,8 @@ title: AI System
 description: AI integration architecture using Vercel AI SDK.
 ---
 
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+
 {/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/ai/ */}
 
 Cognito AI uses the **Vercel AI SDK v6** for AI integration, supporting multiple providers and execution modes.
@@ -11,33 +13,7 @@ Cognito AI uses the **Vercel AI SDK v6** for AI integration, supporting multiple
 
 {/* MERMAID_DIAGRAM: ai.overview | type: component | represents: AI system architecture | code_refs: apps/extension/src/ai/ */}
 
-```mermaid
-graph TB
-    subgraph UI["User Interface"]
-        Chat[Chat Component]
-        Composer[Message Composer]
-    end
-    
-    subgraph AI["AI Layer"]
-        SDK[Vercel AI SDK]
-        Tools[Tool Manager]
-        Prompts[System Prompts]
-    end
-    
-    subgraph Providers["AI Providers"]
-        Local[Chrome Built-in AI]
-        BYOK[Google AI Direct]
-        Backend[Vercel Backend]
-    end
-    
-    Chat --> SDK
-    Composer --> SDK
-    SDK --> Tools
-    SDK --> Prompts
-    SDK --> Local
-    SDK --> BYOK
-    SDK --> Backend
-```
+<ImageZoom src="/ai-system-architecture.png" alt="AI System Architecture" width={800} height={500} />
 
 ## AI Provider Modes
 
@@ -45,28 +21,12 @@ graph TB
 |------|----------|--------------|-------|
 | **Local** | Chrome built-in AI | Chrome with AI | Gemini Nano |
 | **BYOK** | Google AI directly | Your API key | Any Gemini |
-| **Backend** | Vercel backend | None | gemini-2.5-flash |
+| **Cloud** | Vercel Cloud | None | gemini-2.5-flash |
 
 ### Provider Selection Flow
 
-```mermaid
-graph TD
-    A[User Request] --> B{AIProviderMode?}
-    B -->|local| C[Chrome Built-in AI]
-    B -->|remote| D{Backend Mode?}
-    D -->|true| E[Vercel Backend]
-    D -->|false| F[BYOK - Direct API]
-```
+<ImageZoom src="/provider-selecttion.png" alt="Provider Selection Flow" width={500} height={600} />
 
-### Switching Providers
-
-```typescript
-// Via store
-useModelStore.getState().setMode('remote');
-useSettingsStore.getState().setUseBackendMode(true);
-
-// Result: Uses Vercel backend
-```
 
 ## Tool Architecture
 
@@ -87,7 +47,7 @@ Tools extend AI capabilities through structured function calls.
 
 Aggregates tools from all sources:
 
-```typescript
+```typescript title="src/ai/tools/manager.ts"
 async function setupRemoteTools() {
   const extensionTools = await getAllTools();
   const mcpTools = await getMCPToolsFromBackground();
@@ -107,7 +67,7 @@ async function setupRemoteTools() {
 
 Executed in the browser with full DOM access:
 
-```typescript
+```typescript title="Frontend Tool Example"
 const readPageContent = {
   description: 'Read the current page content',
   parameters: z.object({}),
@@ -120,31 +80,13 @@ const readPageContent = {
 };
 ```
 
-### Server Tools (Backend Mode)
+### Server Tools (Cloud Mode)
 
 Schema sent to backend, executed server-side:
 
 {/* MERMAID_DIAGRAM: ai.server-tools | type: sequence | represents: Server tools pattern | code_refs: apps/extension/src/ai/backend/ */}
 
-```mermaid
-sequenceDiagram
-    participant E as Extension
-    participant B as Backend
-    participant S as External Service
-    
-    E->>B: POST /api/ai/chat-with-tools
-    Note over E,B: frontendTools: [schemas]
-    B->>B: AI selects tool
-    alt Frontend tool
-        B-->>E: SSE: tool-input-available
-        E->>E: Execute locally
-        E->>B: addToolOutput()
-    else Server tool
-        B->>S: Execute (Tavily, Jina, etc.)
-        S-->>B: Result
-    end
-    B-->>E: SSE: text-delta
-```
+<ServerToolsSequence />
 
 ## Tools Mode
 
@@ -161,7 +103,7 @@ Controls which tools are available:
 
 Uses meta-tools for on-demand discovery:
 
-```typescript
+```typescript title="Adaptive Mode Meta-Tools"
 const discoverTools = {
   description: 'Discover available tools based on task',
   parameters: z.object({ task: z.string() }),
@@ -195,18 +137,29 @@ Different prompts for different modes:
 
 ### Prompt Structure (`src/ai/prompts/`)
 
-```text
-src/ai/prompts/
-├── systemPrompts.ts     # Mode-specific prompts
-├── contextBuilder.ts    # Page context formatting
-└── memoryPrompts.ts     # Supermemory integration
-```
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="ai" defaultOpen>
+      <Folder name="prompts" defaultOpen>
+        <Folder name="templates" defaultOpen>
+          <File name="local.ts" />
+          <File name="remote.ts" />
+          <File name="adaptivePrompt.ts" />
+        </Folder>
+        <Folder name="website">
+          <File name="..." />
+        </Folder>
+        <File name="utils.ts" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
 
 ## Streaming Architecture
 
 Uses AI SDK's streaming for real-time responses:
 
-```typescript
+```typescript title="AI SDK Streaming"
 const { textStream, toolCalls } = await streamText({
   model: googleModel,
   messages,
@@ -220,11 +173,11 @@ for await (const chunk of textStream) {
 }
 ```
 
-### Backend Streaming
+### Cloud Streaming
 
-Backend streams responses via SSE:
+Cloud streams responses via SSE:
 
-```text
+```text title="SSE Event Types"
 SSE Events:
 - text-delta: Partial text
 - tool-input-available: Tool was called
@@ -244,15 +197,17 @@ Specialized AI features for content generation and transformation.
 
 Each uses the shared `@cognito/shared` constants:
 
-```typescript
+```typescript title="Shared Constants Usage"
 import { TONE_INSTRUCTIONS, PRESET_PROMPTS } from '@cognito/shared';
 ```
 
 ## Graceful Degradation
 
-When backend rate limits are exceeded:
+<Callout type="info">
+  When cloud rate limits are exceeded, the system automatically degrades to BYOK mode if an API key is present.
+</Callout>
 
-```typescript
+```typescript title="Graceful Degradation Logic"
 // In backend response
 if (status === 429 && hasApiKey) {
   // Auto-switch to BYOK
@@ -263,34 +218,72 @@ if (status === 429 && hasApiKey) {
 
 ## Module Structure
 
-```text
-src/ai/
-├── agents/            # Specialized agents (YouTube, PDF)
-├── backend/           # Backend mode streaming
-│   └── streamBackend.ts
-├── core/              # Core AI functionality
-├── hooks/             # React hooks for AI
-├── mcp/               # MCP tool proxy
-│   └── proxy.ts       # MCP tool execution
-├── models/            # Model configuration
-├── planning/          # Task planning
-├── prompts/           # System prompts
-│   ├── systemPrompts.ts
-│   └── contextBuilder.ts
-├── setup/             # AI initialization
-├── stream/            # Streaming utilities
-├── suggestions/       # Action suggestions
-├── tools/             # Tool management
-│   ├── manager.ts     # Tool aggregation
-│   ├── registry.ts    # Tool definitions
-│   └── webmcpTools.ts # WebMCP integration
-├── transport/         # Communication layer
-├── types/             # Type definitions
-└── utils/             # AI utilities
-```
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="ai" >
+      <Folder name="agents">
+        <File name="youtube.ts" />
+        <File name="pdf.ts" />
+      </Folder>
+      <Folder name="backend">
+        <File name="streamBackend.ts" />
+      </Folder>
+      <Folder name="cliMode">
+        <File name="..." />
+      </Folder>
+      <Folder name="core">
+        <File name="..." />
+      </Folder>
+      <Folder name="errors">
+        <File name="..." />
+      </Folder>
+      <Folder name="fileApi">
+        <File name="..." />
+      </Folder>
+      <Folder name="hooks">
+        <File name="..." />
+      </Folder>
+      <Folder name="mcp">
+        <File name="proxy.ts" />
+      </Folder>
+      <Folder name="models">
+        <File name="..." />
+      </Folder>
+      <Folder name="planning">
+        <File name="..." />
+      </Folder>
+      <Folder name="prompts">
+        <File name="..." />
+      </Folder>
+      <Folder name="setup">
+        <File name="..." />
+      </Folder>
+      <Folder name="stream">
+        <File name="..." />
+      </Folder>
+      <Folder name="suggestions">
+        <File name="..." />
+      </Folder>
+      <Folder name="tools" defaultOpen>
+        <File name="manager.ts" />
+        <File name="registry.ts" />
+        <File name="webmcpTools.ts" />
+      </Folder>
+      <Folder name="transport">
+        <File name="..." />
+      </Folder>
+      <Folder name="types">
+        <File name="..." />
+      </Folder>
+      <Folder name="utils">
+        <File name="..." />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
 
 ## Next Steps
 
 - [Tools & Approval](/docs/architecture/tools-and-approval) — Tool approval system
 - [MCP Client](/docs/architecture/mcp-client) — MCP architecture
-- [Backend Services](/docs/integrations/backends) — Backend API details
+- [Cloud Services](/docs/integrations/backends) — Cloud API details

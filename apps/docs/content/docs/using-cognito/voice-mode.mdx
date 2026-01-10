@@ -3,7 +3,9 @@ title: Voice Mode
 description: Interact with Cognito AI using voice.
 ---
 
-{/* VERIFIED: 2024-12-31 | code_refs: apps/extension/src/services/elevenlabs/, packages/backend-cloudflare/ */}
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
+
+{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/services/elevenlabs/, packages/backend-cloudflare/ */}
 
 ## What You'll Learn
 
@@ -15,8 +17,15 @@ description: Interact with Cognito AI using voice.
 
 Voice mode allows spoken interaction with Cognito AI. Speak your questions and hear responses through ElevenLabs text-to-speech.
 
-> [!NOTE]
-> Voice mode uses the ElevenLabs integration via a backend proxy.
+<Callout title="Backend Required">
+  Voice mode uses the ElevenLabs integration via a backend proxy.
+</Callout>
+
+<Callout type="warn" title="Building from Source">
+  If you are building the extension from source (not using the store version), Voice Mode might not work out of the box because it requires backend authentication. 
+  
+  Please refer to the [Installation Guide](/docs/getting-started/installation) to set up your own backend or configure the necessary environment variables.
+</Callout>
 
 ## Prerequisites
 
@@ -45,6 +54,10 @@ Click the microphone button again or press **Escape**.
 
 ## Technical Details
 
+The voice architecture ensures security and low latency:
+
+<ImageZoom src="/voice-architecture.png" alt="Voice Architecture Diagram" width={800} height={400} />
+
 | Component | Technology |
 |-----------|------------|
 | **Voice synthesis** | ElevenLabs API |
@@ -72,5 +85,4 @@ See [Voice Troubleshooting](/docs/troubleshooting/voice) for more help.
 
 ## Next Steps
 
-- [Side Panel Basics](/docs/using-cognito/sidepanel-basics) — Text-based chat
 - [Backend Services](/docs/integrations/backends) — ElevenLabs proxy details

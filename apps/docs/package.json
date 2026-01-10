@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "fumadocs-core": "16.2.4",
-    "fumadocs-mdx": "14.1.0",
+    "fumadocs-mdx": "14.2.4",
     "fumadocs-ui": "16.2.4",
     "lucide-react": "catalog:",
     "next": "catalog:",
@@ -21,6 +21,7 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
     "@tailwindcss/postcss": "catalog:",
     "@types/mdx": "^2.0.13",
     "@types/node": "^24.10.2",
@@ -28,7 +29,6 @@
     "@types/react-dom": "^19.2.3",
     "postcss": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:",
-    "@biomejs/biome": "^2.3.8"
+    "typescript": "catalog:"
   }
 }
