@@ -10,7 +10,6 @@ import { getToolsForMode } from '../tools/registry';
 import { enabledTools } from '../tools/enabledTools';
 import { downloadLanguageModel, downloadSummarizer, type DownloadProgressEvent } from '../models/downloader';
 import { BrowserAPIError, ErrorType } from '../../errors/errorTypes';
-import { writeErrorToStream } from '../stream/streamHelpers';
 import type { WorkflowDefinition } from '../../workflows/types';
 
 const log = createLogger('LocalMode', 'AI_CHAT_SETUP');
@@ -29,8 +28,7 @@ export interface LocalModeSetup {
 export async function setupLocalMode(
     writer: any,
     workflowConfig: WorkflowDefinition | null,
-    localSystemPrompt: string,
-    onError?: (error: Error) => void
+    localSystemPrompt: string
 ): Promise<LocalModeSetup> {
     log.info('🔧 Using LOCAL Gemini Nano');
 
@@ -62,12 +60,6 @@ export async function setupLocalMode(
         // Check if it's our storage error
         if (error instanceof BrowserAPIError &&
             error.errorCode === ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR) {
-            // Write storage error to chat stream
-            writeErrorToStream(writer, error, 'Model download - insufficient storage');
-
-            // Call onError callback to potentially show toast
-            onError?.(error);
-
             // Throw the error instead of returning null
             // This ensures the error is properly propagated through the stream
             throw error;

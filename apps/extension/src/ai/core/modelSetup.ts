@@ -49,7 +49,6 @@ export interface RemoteModelSetup {
  */
 export async function setupLocalModel(
   writer: any,
-  onError?: (error: Error) => void
 ): Promise<LocalModelSetup> {
   log.info('🔧 Using LOCAL Gemini Nano');
 
@@ -89,9 +88,6 @@ export async function setupLocalModel(
       error.errorCode === ErrorType.BROWSER_AI_MODEL_STORAGE_ERROR) {
       // Write storage error to chat stream
       writeErrorToStream(writer, error, 'Model download - insufficient storage');
-
-      // Call onError callback to potentially show toast
-      onError?.(error);
 
       return { model: null, success: false, error: error as Error };
     }

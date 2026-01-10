@@ -36,6 +36,7 @@ interface CopilotChatWindowProps {
     onRecordingChange?: (isRecording: boolean) => void;
     voiceInputRef?: React.RefObject<VoiceInputHandle | null>;
     onContinue?: () => void;
+    onRetry?: () => void;
     usage?: AppUsage | null;
     localPdfInfo?: LocalPdfInfo | null;
     threadId?: string | null;
@@ -64,6 +65,7 @@ export function CopilotChatWindow({
     onRecordingChange,
     voiceInputRef,
     onContinue,
+    onRetry,
     usage,
     localPdfInfo,
     threadId,
@@ -183,6 +185,7 @@ export function CopilotChatWindow({
                 isLocalMode={!ENV.HIDE_LOCAL_MODE && modelState.mode === 'local'}
                 onConfigureApiKey={handleOpenApiKeyDialog}
                 onContinue={onContinue}
+                onRetry={onRetry}
                 threadId={threadId}
                 onQuoteText={(quotedText) => {
                     // Prepend quoted text to current input

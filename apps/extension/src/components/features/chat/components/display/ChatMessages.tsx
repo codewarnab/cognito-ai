@@ -8,6 +8,7 @@ import type { Message } from '../../types';
 import { getMessageContent, hasToolCalls, hasAttachments } from '../../utils';
 import { EmptyState } from '../states/EmptyState';
 import { LoadingIndicator } from '../feedback/LoadingIndicator';
+import { ErrorCard, type ChatErrorCardData } from '../feedback/ErrorCard';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
 import { UserMessageCopyButton } from '../buttons/UserMessageCopyButton';
@@ -76,6 +77,7 @@ interface ChatMessagesProps {
     threadId?: string | null; // Current thread ID for brain button
     onQuoteText?: (text: string) => void; // Callback to insert quoted text into composer
     addToolOutput?: (params: { tool: string; toolCallId: string; output: any }) => void; // Human-in-the-loop approval
+    onRetry?: () => void; // Retry last request
 }
 
 /**
@@ -195,6 +197,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
     threadId,
     onQuoteText,
     addToolOutput,
+    onRetry,
 }) => {
     const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
@@ -440,9 +443,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                             const hasText = typeof content === 'string' && content.trim().length > 0;
                             const hasTools = hasToolCalls(message);
                             const hasFiles = hasAttachments(message);
+                            const hasRenderableStatus = message.parts?.some((part: any) =>
+                                part?.type === 'data-status' && part?.data?.status === 'error'
+                            );
 
                             // Show message if it has text OR tool calls OR attachments
-                            return hasText || hasTools || hasFiles;
+                            return hasText || hasTools || hasFiles || hasRenderableStatus;
                         })
                         .map((message, index) => {
                             // Check if this is the pending message (currently animating)
@@ -640,6 +646,19 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
 
                                                         // Skip rendering data-status parts (they're metadata)
                                                         if (part.type === 'data-status') {
+                                                            // Render error card for error status
+                                                            if (part.data?.status === 'error') {
+                                                                const data = part.data as ChatErrorCardData;
+                                                                return (
+                                                                    <div key={`status-error-${partIndex}`} className="mt-1">
+                                                                        <ErrorCard
+                                                                            data={data}
+                                                                            onRetry={onRetry}
+                                                                            isLoading={isLoading}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            }
                                                             return null;
                                                         }
 

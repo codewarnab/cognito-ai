@@ -268,6 +268,8 @@ function AIChatContent() {
     const {
         messages,
         sendMessage,
+        regenerate,
+        clearError,
         status,
         stop,
         usage,
@@ -275,6 +277,24 @@ function AIChatContent() {
     } = aiChat;
 
     const isLoading = status === 'submitted' || status === 'streaming';
+
+    // Retry the last request (used by error card)
+    const handleRetry = useCallback(async () => {
+        try {
+            // Reset error state so UI can re-enter streaming
+            clearError?.();
+            if (typeof regenerate === 'function') {
+                await regenerate();
+                return;
+            }
+
+            log.warn('Retry unavailable: regenerate() not found on useChat result');
+            showStoreErrorToast('Retry is not available in this mode.');
+        } catch (error) {
+            log.error('Retry failed', error);
+            showStoreErrorToast('Retry failed. Please try again.');
+        }
+    }, [clearError, regenerate, showStoreErrorToast]);
 
     // Thread management using store actions
     const handleNewThread = useCallback(async (forceCreate: boolean = false) => {
@@ -523,6 +543,7 @@ function AIChatContent() {
                                 onNewThreadClick={handleNewThread}
                                 onStop={stop}
                                 onContinue={handleContinue}
+                                onRetry={handleRetry}
                                 isLoading={isLoading}
                                 messagesEndRef={messagesEndRef}
                                 isRecording={isRecording}

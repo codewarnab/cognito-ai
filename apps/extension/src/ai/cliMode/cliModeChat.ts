@@ -191,17 +191,6 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           errorMessage.includes('Failed to start agent') ||
           errorMessage.includes('AGENT_START_FAILED');
 
-        writer.write({
-          type: 'data-status',
-          id: 'status-' + generateId(),
-          data: {
-            status: 'error',
-            errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
-            timestamp: Date.now(),
-          },
-          transient: false,
-        });
-
         // Build helpful error message
         let displayMessage = `\n\n❌ **Error:** ${errorMessage}\n\n`;
 
@@ -215,13 +204,24 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           displayMessage += `Make sure the code bridge is running and you're paired.\n`;
         }
 
-        // Write error as text with proper start/delta/end pattern
-        const errorId = 'error-' + generateId();
-        writer.write({ type: 'text-start', id: errorId });
-        writer.write({ type: 'text-delta', id: errorId, delta: displayMessage });
-        writer.write({ type: 'text-end', id: errorId });
+        // Render as structured error status for the UI (error card).
+        writer.write({
+          type: 'data-status',
+          id: 'error-status-' + generateId(),
+          data: {
+            status: 'error',
+            title: isAgentStartError ? 'Agent failed to start' : 'Bridge error',
+            errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
+            userMessage: isAgentStartError
+              ? 'The selected agent could not be started.'
+              : 'Unable to reach the code bridge.',
+            technicalDetails: displayMessage,
+            retryable: true,
+            timestamp: Date.now(),
+          },
+          transient: false,
+        });
 
-        onError?.(error instanceof Error ? error : new Error(String(error)));
       }
     },
   });
@@ -277,11 +277,23 @@ function handleBridgeEvent(
         displayMessage += `4. **Try a different agent** - Select another agent from the dropdown\n`;
       }
 
-      // Write error as text (need text-start/delta/end)
-      const errorId = 'error-' + generateId();
-      writer.write({ type: 'text-start', id: errorId });
-      writer.write({ type: 'text-delta', id: errorId, delta: displayMessage });
-      writer.write({ type: 'text-end', id: errorId });
+      // Render as structured error status for the UI (error card).
+      writer.write({
+        type: 'data-status',
+        id: 'error-status-' + generateId(),
+        data: {
+          status: 'error',
+          title: isAgentStartError ? 'Agent failed to start' : 'Bridge error',
+          errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
+          userMessage: isAgentStartError
+            ? 'The selected agent could not be started.'
+            : 'Unable to reach the code bridge.',
+          technicalDetails: displayMessage,
+          retryable: true,
+          timestamp: Date.now(),
+        },
+        transient: false,
+      });
       break;
     }
 

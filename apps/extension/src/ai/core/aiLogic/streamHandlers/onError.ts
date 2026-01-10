@@ -3,10 +3,10 @@
  * Handles various error types during AI streaming
  */
 
-import { generateId } from 'ai';
 import { createLogger } from '~logger';
 
 import {
+    BaseAppError,
     EmptyResponseError,
     isEmptyResponseError,
 } from '../../../../errors/errorTypes';
@@ -148,7 +148,7 @@ function handleEmptyResponseError(error: unknown, errorMessage: string, errorNam
  * Create the onError callback for UI message stream
  */
 export function createOnErrorCallback(context: OnErrorContext) {
-    const { writer, provider, tools, initialActiveTools, onError } = context;
+    const { writer, provider, tools, initialActiveTools } = context;
 
     return (error: unknown) => {
         // Clone error properties BEFORE logging to avoid frozen object mutation
@@ -192,7 +192,9 @@ export function createOnErrorCallback(context: OnErrorContext) {
         });
 
         try {
-            const enhancedError = parseProviderError(error, provider);
+            const enhancedError = error instanceof BaseAppError
+                ? error
+                : parseProviderError(error, provider);
 
             log.info('✓ Error parsed successfully', {
                 provider,
@@ -202,7 +204,6 @@ export function createOnErrorCallback(context: OnErrorContext) {
             });
 
             writeErrorToStream(writer, enhancedError, 'Stream processing');
-            onError?.(error instanceof Error ? error : new Error(errorMessage));
 
             return `❌ Error: ${enhancedError.userMessage}`;
         } catch (parseError) {
@@ -214,18 +215,8 @@ export function createOnErrorCallback(context: OnErrorContext) {
             });
 
             const fallbackMessage = `Error processing AI response: ${errorMessage}`;
-
-            // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
-            const messageId = 'error-msg-' + generateId();
-            writer.write({ type: 'text-start', id: messageId });
-            writer.write({
-                type: 'text-delta',
-                id: messageId,
-                delta: `⚠️ ${fallbackMessage}\n`,
-            });
-            writer.write({ type: 'text-end', id: messageId });
-
-            onError?.(new Error(fallbackMessage));
+            // Render as structured error status for the UI (error card).
+            writeErrorToStream(writer, new Error(fallbackMessage), 'Stream processing (fallback)');
 
             return `❌ ${fallbackMessage}`;
         }

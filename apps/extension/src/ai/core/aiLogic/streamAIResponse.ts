@@ -17,7 +17,7 @@ import { getMaxToolCallLimit } from '@/utils/settings';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 import { SEARCH_TOOL_NAMES } from '../../tools/searchToolFilter';
-import { APIError, NetworkError } from '../../../errors/errorTypes';
+import { APIError, BaseAppError, NetworkError } from '../../../errors/errorTypes';
 import { executeStreamText } from '../../stream/streamExecutor';
 import { parseProviderError } from '../../errors/handlers';
 import { writeErrorToStream } from '../../stream/streamHelpers';
@@ -29,6 +29,7 @@ import { handleBackendMode } from './backendMode';
 import { buildSystemPromptForMode } from './promptBuilder';
 import { createOnErrorCallback, createOnFinishCallback, createPrepareStepCallback } from './streamHandlers';
 import { streamCliModeChat } from '../../cliMode/cliModeChat';
+import { ToolsMode } from '~types/settings';
 
 const log = createLogger('AI-Chat', 'AI_CHAT');
 
@@ -137,7 +138,7 @@ export async function streamAIResponse(params: StreamAIParams) {
                     // Setup model based on mode
                     try {
                         if (effectiveMode === 'local') {
-                            const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt, onError);
+                            const localSetup = await setupLocalMode(writer, workflowConfig || null, localSystemPrompt);
                             state.model = localSetup.model;
                             state.tools = localSetup.tools;
                             state.enhancedPrompt = localSetup.systemPrompt;
@@ -177,7 +178,7 @@ export async function streamAIResponse(params: StreamAIParams) {
                             );
                         }
                     } catch (setupError) {
-                        handleSetupError(writer, setupError, effectiveMode, state.provider, onError);
+                        handleSetupError(writer, setupError, effectiveMode, state.provider);
                         return;
                     }
 
@@ -251,7 +252,7 @@ export async function streamAIResponse(params: StreamAIParams) {
                         })
                     );
                 } catch (error) {
-                    handleStreamError(writer, error, state.provider, onError);
+                    handleStreamError(writer, error, state.provider);
                 }
             },
         });
@@ -273,7 +274,7 @@ export async function streamAIResponse(params: StreamAIParams) {
  */
 function determineActiveTools(
     tools: Record<string, any>,
-    toolsMode: 'chat' | 'agent' | 'adaptive' | 'custom' | 'cli',
+    toolsMode: ToolsMode,
     isSearchModeActive: boolean,
     isWorkflow: boolean
 ): string[] {
@@ -302,8 +303,7 @@ function handleSetupError(
     writer: any,
     error: unknown,
     effectiveMode: 'local' | 'remote',
-    provider: AIProvider,
-    onError?: (error: Error) => void
+    provider: AIProvider
 ) {
     log.error('❌ Model setup failed:', {
         error,
@@ -312,24 +312,11 @@ function handleSetupError(
         message: error instanceof Error ? error.message : String(error)
     });
 
-    const enhancedError = error instanceof APIError || error instanceof NetworkError
+    const enhancedError = error instanceof BaseAppError
         ? error
         : parseProviderError(error, provider);
 
     writeErrorToStream(writer, enhancedError, 'Model setup');
-
-    writer.write({
-        type: 'data-status',
-        id: 'status-' + generateId(),
-        data: {
-            status: 'error',
-            errorCode: enhancedError instanceof APIError ? enhancedError.errorCode : 'UNKNOWN',
-            timestamp: Date.now()
-        },
-        transient: false,
-    });
-
-    onError?.(enhancedError);
 }
 
 /**
@@ -338,27 +325,13 @@ function handleSetupError(
 function handleStreamError(
     writer: any,
     error: unknown,
-    provider: AIProvider,
-    onError?: (error: Error) => void
+    provider: AIProvider
 ) {
     log.error('Stream execution error', { error, provider });
 
-    const enhancedError = error instanceof APIError || error instanceof NetworkError
+    const enhancedError = error instanceof BaseAppError
         ? error
         : parseProviderError(error, provider);
 
     writeErrorToStream(writer, enhancedError, 'Stream execution');
-
-    writer.write({
-        type: 'data-status',
-        id: 'status-' + generateId(),
-        data: {
-            status: 'error',
-            errorCode: enhancedError instanceof APIError ? enhancedError.errorCode : 'UNKNOWN',
-            timestamp: Date.now()
-        },
-        transient: false,
-    });
-
-    onError?.(enhancedError);
 }

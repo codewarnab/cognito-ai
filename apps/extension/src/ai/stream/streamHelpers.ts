@@ -5,8 +5,7 @@
 
 import { generateId } from 'ai';
 import { createLogger } from '~logger';
-import { formatErrorInline } from '../../errors/errorMessages';
-import { isRetryableError, APIError, NetworkError } from '../../errors/errorTypes';
+import { BaseAppError, isRetryableError, NetworkError } from '../../errors/errorTypes';
 import { parseGeminiError } from '../errors/handlers';
 
 const log = createLogger('StreamHelpers', 'AI_CHAT_STREAM');
@@ -21,39 +20,41 @@ export function writeErrorToStream(
   context?: string
 ): void {
   // Parse error into our error types
-  const appError = error instanceof APIError || error instanceof NetworkError
+  const appError = error instanceof BaseAppError
     ? error
     : parseGeminiError(error);
 
-  // Format error message for inline display
-  const errorMarkdown = formatErrorInline(appError);
-
-  // Write a complete assistant message with the error content
-  // This prevents the AI SDK from trying to access undefined properties
-  const messageId = 'error-msg-' + generateId();
-
-  // IMPORTANT: UIMessageStream requires text-start -> text-delta -> text-end for a given id.
-  // If we emit a text-delta without a preceding text-start, the AI SDK stream processor
-  // will throw (activeTextParts[id] is undefined) which masks the original error.
-  writer.write({
-    type: 'text-start',
-    id: messageId,
-  });
-
-  // Write text content
-  writer.write({
-    type: 'text-delta',
-    id: messageId,
-    delta: `${errorMarkdown}\n`,
-  });
+  // Write a structured error status event for the UI.
+  // This avoids relying on markdown text blocks for errors and enables richer rendering
+  // (e.g. custom error cards with Retry buttons).
+  const statusId = 'error-status-' + generateId();
+  const statusCode = (appError as any)?.statusCode as number | undefined;
+  const title =
+    appError instanceof NetworkError ? 'Network error' :
+      typeof statusCode === 'number' ? `Request failed (${statusCode})` :
+        'Request failed';
 
   writer.write({
-    type: 'text-end',
-    id: messageId,
+    type: 'data-status',
+    id: statusId,
+    data: {
+      status: 'error',
+      title,
+      context,
+      errorCode: (appError as any)?.errorCode ?? 'UNKNOWN_ERROR',
+      statusCode,
+      message: appError.message,
+      userMessage: (appError as any)?.userMessage ?? appError.message,
+      technicalDetails: (appError as any)?.technicalDetails ?? appError.message,
+      retryable: isRetryableError(appError),
+      retryAfter: (appError as any)?.retryAfter,
+      timestamp: Date.now(),
+    },
+    transient: false,
   });
 
   log.error(`AI Stream Error [${context || 'unknown'}]:`, {
-    errorCode: appError instanceof APIError ? appError.errorCode : 'UNKNOWN',
+    errorCode: (appError as any)?.errorCode ?? 'UNKNOWN_ERROR',
     message: appError.message,
     retryable: isRetryableError(appError),
   });

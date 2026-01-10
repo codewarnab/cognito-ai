@@ -20,7 +20,7 @@ import {
 import { createBackendController, clearBackendController } from '../streamingOptimizations';
 import { writeErrorToStream } from '../../stream/streamHelpers';
 import { parseGeminiError } from '../../errors/handlers';
-import { APIError, NetworkError } from '../../../errors/errorTypes';
+import { BaseAppError } from '../../../errors/errorTypes';
 import { ENV } from '@/utils/env';
 import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
 import { isMcpTool, isWebmcpTool } from '../../tools/mcpApprovalConfig';
@@ -533,22 +533,12 @@ export async function streamBackendChatWithTools(
                     }
 
                     // Parse error into our error types for consistent UX across BYOK and backend modes
-                    const appError = error instanceof APIError || error instanceof NetworkError
+                    const appError = error instanceof BaseAppError
                         ? error
                         : parseGeminiError(error);
 
                     // Write unified error to stream
                     writeErrorToStream(writer, appError, 'Backend chat');
-
-                    // Send error status
-                    writer.write({
-                        type: 'data-status',
-                        id: 'status-' + generateId(),
-                        data: { status: 'error', timestamp: Date.now() },
-                        transient: false,
-                    });
-
-                    onError?.(appError);
                 }
             },
         });
