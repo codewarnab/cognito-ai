@@ -1,0 +1,146 @@
+import React, { useState } from 'react';
+import { Globe, ChevronDown, ChevronUp, RotateCcw, Shield } from 'lucide-react';
+import type { BaseErrorCardProps } from './types';
+
+/**
+ * Browser Error Card
+ * Displayed for browser API and permission errors
+ * Uses slate/gray theme
+ */
+export const BrowserErrorCard: React.FC<BaseErrorCardProps> = ({ data, onRetry, isLoading }) => {
+    const [showDetails, setShowDetails] = useState(false);
+
+    const title = data.title || 'Browser Error';
+    const message = data.userMessage || data.message || 'A browser-related error occurred.';
+
+    const hasDetails = Boolean(
+        (data.technicalDetails && data.technicalDetails.trim().length > 0) ||
+        data.errorCode ||
+        data.statusCode ||
+        data.context
+    );
+
+    // Determine specific browser error type
+    const getBrowserErrorInfo = () => {
+        switch (data.errorCode) {
+            case 'BROWSER_PERMISSION_DENIED':
+                return {
+                    icon: <Shield size={18} />,
+                    hint: 'Permission was denied. Grant the required permission in browser settings.',
+                    action: 'Grant Permission',
+                };
+            case 'BROWSER_AUDIO_CONTEXT_ERROR':
+                return {
+                    icon: <Globe size={18} />,
+                    hint: 'Audio access issue. Check microphone permissions.',
+                    action: 'Check Audio',
+                };
+            case 'BROWSER_WEBSOCKET_ERROR':
+                return {
+                    icon: <Globe size={18} />,
+                    hint: 'WebSocket connection failed. Check network or firewall settings.',
+                    action: 'Reconnect',
+                };
+            case 'BROWSER_TAB_ACCESS_DENIED':
+                return {
+                    icon: <Shield size={18} />,
+                    hint: 'Cannot access this tab. Browser internal pages are restricted.',
+                    action: null,
+                };
+            case 'BROWSER_CONTENT_SCRIPT_FAILED':
+                return {
+                    icon: <Globe size={18} />,
+                    hint: 'Content script injection failed. Try refreshing the page.',
+                    action: 'Refresh Page',
+                };
+            default:
+                return {
+                    icon: <Globe size={18} />,
+                    hint: 'An error occurred with the browser API.',
+                    action: 'Retry',
+                };
+        }
+    };
+
+    const errorInfo = getBrowserErrorInfo();
+
+    return (
+        <div className="w-full max-w-[560px] rounded-xl border border-slate-500/20 bg-gradient-to-b from-slate-500/10 to-gray-500/5 p-4 shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+            <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg border border-slate-500/25 bg-slate-500/10 text-slate-200">
+                    {errorInfo.icon}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <div className="text-[13px] font-semibold text-white/95">{title}</div>
+                        {data.errorCode && (
+                            <div className="rounded-md border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-medium text-white/60">
+                                {data.errorCode.replace('BROWSER_', '').replace(/_/g, ' ')}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-1 text-[12px] leading-relaxed text-white/80">
+                        {message}
+                    </div>
+
+                    {/* Error-specific hint */}
+                    <div className="mt-2 rounded-lg bg-slate-500/5 p-2 text-[11px] text-slate-200/80">
+                        <p>{errorInfo.hint}</p>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {onRetry && errorInfo.action && (
+                            <button
+                                type="button"
+                                disabled={isLoading}
+                                onClick={onRetry}
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-500/20 px-3 py-2 text-[12px] font-medium text-slate-100 ring-1 ring-inset ring-slate-500/30 transition hover:bg-slate-500/30 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <RotateCcw size={14} className={isLoading ? 'animate-spin' : ''} />
+                                {errorInfo.action}
+                            </button>
+                        )}
+
+                        {hasDetails && (
+                            <button
+                                type="button"
+                                onClick={() => setShowDetails(v => !v)}
+                                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-transparent px-3 py-2 text-[12px] font-medium text-white/65 ring-1 ring-inset ring-white/10 transition hover:bg-white/5 hover:text-white/85"
+                            >
+                                {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                Details
+                            </button>
+                        )}
+                    </div>
+
+                    {showDetails && hasDetails && (
+                        <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 text-[11px] leading-relaxed text-white/65">
+                            {data.context && (
+                                <div className="mb-2">
+                                    <span className="text-white/55">Context:</span> {data.context}
+                                </div>
+                            )}
+                            {data.errorCode && (
+                                <div className="mb-2">
+                                    <span className="text-white/55">Error Code:</span> {data.errorCode}
+                                </div>
+                            )}
+                            {typeof data.statusCode === 'number' && (
+                                <div className="mb-2">
+                                    <span className="text-white/55">Status:</span> {data.statusCode}
+                                </div>
+                            )}
+                            {data.technicalDetails && (
+                                <pre className="whitespace-pre-wrap break-words font-mono text-[11px] text-white/65">
+                                    {data.technicalDetails}
+                                </pre>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};

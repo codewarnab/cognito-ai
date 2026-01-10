@@ -8,7 +8,7 @@ import type { Message } from '../../types';
 import { getMessageContent, hasToolCalls, hasAttachments } from '../../utils';
 import { EmptyState } from '../states/EmptyState';
 import { LoadingIndicator } from '../feedback/LoadingIndicator';
-import { ErrorCard, type ChatErrorCardData } from '../feedback/ErrorCard';
+import { ErrorCardFactory, type ErrorCardData } from '../feedback/error-cards';
 import { ContinueButton } from '../buttons/ContinueButton';
 import { CopyButton } from '../buttons/CopyButton';
 import { UserMessageCopyButton } from '../buttons/UserMessageCopyButton';
@@ -648,10 +648,10 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                                                         if (part.type === 'data-status') {
                                                             // Render error card for error status
                                                             if (part.data?.status === 'error') {
-                                                                const data = part.data as ChatErrorCardData;
+                                                                const data = part.data as ErrorCardData;
                                                                 return (
                                                                     <div key={`status-error-${partIndex}`} className="mt-1">
-                                                                        <ErrorCard
+                                                                        <ErrorCardFactory
                                                                             data={data}
                                                                             onRetry={onRetry}
                                                                             isLoading={isLoading}
