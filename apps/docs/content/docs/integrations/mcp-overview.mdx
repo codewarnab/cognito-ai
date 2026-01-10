@@ -4,6 +4,8 @@ description: Introduction to the Model Context Protocol in Cognito AI.
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { McpConnectionStatesDiagram } from '@/components/diagrams/McpConnectionStatesDiagram';
 
 {/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/mcp/ */}
 
@@ -36,7 +38,7 @@ Cognito supports three MCP transport mechanisms:
 
 The MCP client automatically detects which transport the server supports:
 
-```typescript
+```typescript title="Transport Detection"
 // Simplified detection logic
 async function detectTransport(serverUrl: string) {
   // Try POST first (Streamable HTTP - newer protocol)
@@ -66,31 +68,7 @@ async function detectTransport(serverUrl: string) {
 
 {/* MERMAID_DIAGRAM: mcp.connection-states | type: state | represents: MCP connection state machine | code_refs: apps/extension/src/mcp/types.ts */}
 
-```mermaid
-stateDiagram-v2
-    [*] --> disconnected
-    disconnected --> needs_auth: Requires OAuth
-    disconnected --> connecting: No auth required
-    
-    needs_auth --> registering: Start OAuth
-    registering --> authorizing: Client registered
-    authorizing --> authenticated: User approved
-    authenticated --> connecting: Auto-connect
-    
-    connecting --> connected: Success
-    connecting --> error: Failed
-    connecting --> cloudflare_error: Worker error
-    
-    connected --> token_refresh: Token expiring
-    token_refresh --> connected: Refreshed
-    token_refresh --> invalid_token: Bad token format
-    token_refresh --> needs_auth: Refresh failed
-    
-    invalid_token --> needs_auth: Re-authenticate
-    cloudflare_error --> disconnected: Reset
-    connected --> disconnected: Disconnect
-    error --> disconnected: Reset
-```
+<McpConnectionStatesDiagram />
 
 ## MCP Server Types
 
@@ -140,27 +118,29 @@ Tools provided directly by web pages. Pages implementing the WebMCP specificatio
 
 {/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/mcp/ */}
 
-```text
-apps/extension/src/mcp/
-├── client/                  # SSE-based MCP client
-│   ├── McpSSEClient.ts      # Main client class
-│   ├── config.ts            # Client configuration
-│   ├── connectionManager.ts # Reconnection logic
-│   ├── errorHandler.ts      # Error handling and recovery
-│   ├── messageHandler.ts    # MCP message processing
-│   ├── requestManager.ts    # Request/response handling
-│   ├── streamProcessor.ts   # SSE stream parsing
-│   └── transportDetector.ts # POST vs GET detection
-├── authHelpers.ts           # Authentication utilities
-├── discovery.ts             # OAuth endpoint discovery (RFC 9728, RFC 8414)
-├── events.ts                # Event types and emitters
-├── oauth.ts                 # OAuth 2.0 with Dynamic Client Registration
-├── scopeHandler.ts          # OAuth scope management
-├── state.ts                 # Connection state management
-├── toolsConfig.ts           # Tool enable/disable configuration
-├── types.ts                 # Type definitions
-└── validation.ts            # Input validation
-```
+<Files>
+  <Folder name="apps/extension/src/mcp" >
+    <Folder name="client" >
+      <File name="McpSSEClient.ts" />
+      <File name="config.ts" />
+      <File name="connectionManager.ts" />
+      <File name="errorHandler.ts" />
+      <File name="messageHandler.ts" />
+      <File name="requestManager.ts" />
+      <File name="streamProcessor.ts" />
+      <File name="transportDetector.ts" />
+    </Folder>
+    <File name="authHelpers.ts" />
+    <File name="discovery.ts" />
+    <File name="events.ts" />
+    <File name="oauth.ts" />
+    <File name="scopeHandler.ts" />
+    <File name="state.ts" />
+    <File name="toolsConfig.ts" />
+    <File name="types.ts" />
+    <File name="validation.ts" />
+  </Folder>
+</Files>
 
 ## Next Steps
 

@@ -10,6 +10,7 @@ import { OAuthFlowSequence } from '@/components/diagrams/OAuthFlowSequence';
 import { McpOAuthSequence } from '@/components/diagrams/McpOAuthSequence';
 import { McpToolApprovalSequence } from '@/components/diagrams/McpToolApprovalSequence';
 import { McpToolExecutionSequence } from '@/components/diagrams/McpToolExecutionSequence';
+import { McpConnectionStatesDiagram } from '@/components/diagrams/McpConnectionStatesDiagram';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -26,6 +27,7 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     McpOAuthSequence,
     McpToolApprovalSequence,
     McpToolExecutionSequence,
+    McpConnectionStatesDiagram,
     ...components,
   };
 }
