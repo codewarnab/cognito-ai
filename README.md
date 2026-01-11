@@ -105,7 +105,6 @@ The production bundle will be in `apps/extension/build/chrome-mv3-prod/`.
 # Work with specific packages
 pnpm --filter @cognito/extension dev
 pnpm --filter @cognito/docs dev
-pnpm --filter @cognito/backend-cloudflare deploy
 
 # Add dependencies to specific package
 pnpm --filter @cognito/extension add react-query
@@ -138,13 +137,14 @@ cognito-ai/
 │   │   │   └── workflows/      # Automation workflows
 │   │   ├── assets/             # Icons and graphics
 │   │   └── build/              # Build output
-│   └── docs/                   # @cognito/docs - Documentation site (Next.js + Fumadocs)
+│   ├── docs/                   # @cognito/docs - Documentation site (Next.js + Fumadocs)
+│   └── webapp/                 # @cognito/webapp - Settings & onboarding webapp (Next.js)
 ├── packages/
-│   ├── shared/                 # @cognito/shared - Shared types and constants
-│   ├── backend-cloudflare/     # @cognito/backend-cloudflare - ElevenLabs proxy (CF Workers)
-│   └── backend-vercel/         # @cognito/backend-vercel - AI Chat Backend + YouTube transcripts (Express)
+│   └── shared/                 # @cognito/shared - Shared types and constants
 └── [root config files]         # pnpm-workspace.yaml, turbo.json, etc.
 ```
+
+> **Note:** The backend services (`backend-cloudflare` and `backend-vercel`) are not open source. If building from source, you must use **BYOK mode** (Bring Your Own Key) with your own API keys.
 
 ## Configuration
 
@@ -162,10 +162,12 @@ Cognito requires the following permissions:
 
 ### API Keys
 
-For AI features, you may need to configure API keys in the extension options.
+For AI features, you need to configure API keys in the extension settings.
 
 - **BYOK Mode**: Model-agnostic (supports any model when using your own key)
-- **Backend Mode**: Uses fixed `gemini-2.5-flash` model (no key required)
+- **Cloud Mode**: Uses fixed `gemini-2.5-flash` model (no key required, available in official release only)
+
+> **Building from source?** The backend services are not open source, so Cloud Mode will not work. You must use BYOK mode with your own API keys. See [Provider Setup](https://cognito-ai-docs.vercel.app/docs/getting-started/provider-setup) for supported providers.
 
 ## Contributing
 

@@ -25,7 +25,7 @@ Options:
   --port <number>   Port to listen on (default: 8787)
   --host <string>   Host to bind to (default: 127.0.0.1)
   --cwd <path>      Working directory for file operations (default: current directory)
-  --gemini-model <id> Gemini model id for local chat (default: gemini-3-flash-preview)
+  --gemini-model <id> Gemini model id for local chat (default: gemini-2.5-flash)
   --no-auto-setup   Skip automatic CLI tool configuration (Gemini CLI, Claude Code)
   --help, -h        Show this help message
 
@@ -33,7 +33,7 @@ Examples:
   cognito-bridge
   cognito-bridge --port 9000
   cognito-bridge --cwd /path/to/project
-  cognito-bridge --gemini-model gemini-3-pro-preview
+  cognito-bridge --gemini-model gemini-2.5-pro
 `);
     process.exit(0);
   }

@@ -213,13 +213,28 @@ export async function handleCliChat(
         agent.acpModel ||
         process.env.COGNITO_GEMINI_MODEL ||
         process.env.GEMINI_MODEL ||
-        'gemini-3-flash-preview';
+        'gemini-2.5-flash';
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
       const authType = apiKey ? 'api-key' : 'oauth-personal';
 
       sendEvent('status', { message: `Initializing Gemini (${authType})...` });
-      sendEvent('status', { message: `Model: ${geminiModelId}` });
+      // Gemini 3 models require thought signatures for function calls (tools) in some environments.
+      // AI SDK tool calling does not currently expose/roundtrip these signatures, so tool use fails.
+      // Fall back to Gemini 2.5 models for reliable tool calling.
+      const requestedModelId = geminiModelId;
+      const usingGemini3 = requestedModelId.toLowerCase().startsWith('gemini-3');
+      const effectiveModelId = usingGemini3 ? 'gemini-2.5-flash' : requestedModelId;
+
+      if (usingGemini3) {
+        sendEvent('status', {
+          message:
+            `Model "${requestedModelId}" requires thought-signatures for tool calls; ` +
+            `falling back to "${effectiveModelId}" for CLI Mode tools.`,
+        });
+      } else {
+        sendEvent('status', { message: `Model: ${requestedModelId}` });
+      }
 
       const gemini =
         authType === 'api-key'
@@ -319,7 +334,7 @@ export async function handleCliChat(
 
       try {
         const result = await streamText({
-          model: gemini(geminiModelId),
+          model: gemini(effectiveModelId),
           messages: aiMessages as any,
           system: systemPrompt,
           tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
