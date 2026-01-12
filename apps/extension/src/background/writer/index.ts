@@ -1,16 +1,122 @@
 /**
  * Writer Module
- * Exports all writer-related functionality
+ * 
+ * Exports all writer-related functionality for text generation.
+ * This module provides a unified interface for generating text across
+ * multiple AI providers (Gemini, OpenAI, xAI, Claude).
+ * 
+ * @module writer
+ * 
+ * @example
+ * ```typescript
+ * import { writer, type WriterOptions } from '@/background/writer';
+ * 
+ * // Generate text
+ * const text = await writer.generate("Write about AI", {
+ *   tone: 'professional',
+ *   enableGoogleSearch: true,
+ * });
+ * 
+ * // Stream text
+ * for await (const chunk of writer.generateStream("Tell a story")) {
+ *   console.log(chunk);
+ * }
+ * ```
  */
 
-// Primary exports (new names)
-export { writer, Writer } from './writer';
-export type { WriterOptions } from './writer';
+// =============================================================================
+// Core Writer Exports
+// =============================================================================
 
-// Backward compatibility aliases
-export { geminiWriter, GeminiWriter } from './writer';
+/** Main writer instance and class */
+export { writer, Writer, geminiWriter, GeminiWriter } from './core/writer';
 
+/** Writer options type */
+export type { WriterOptions } from './core/types';
+
+// =============================================================================
+// Core Types and Utilities
+// =============================================================================
+
+/**
+ * Type definitions for writer module
+ * @see {@link ./core/types}
+ */
+export type {
+    AttachmentData,
+    GeminiRequestPart,
+    GeminiContentPart,
+    OpenAIContentPart,
+    AnthropicContentPart,
+    OpenAIMessage,
+    AnthropicMessage,
+    AnthropicToolResult,
+    GeminiMessage,
+} from './core/types';
+
+/** Generation constants */
+export {
+    MAX_FUNCTION_CALLS,
+    DEFAULT_MAX_TOKENS,
+    DEFAULT_TEMPERATURE,
+    DEFAULT_TOP_P,
+} from './core/types';
+
+/** System prompt builders */
+export {
+    buildSystemPrompt,
+    buildMemoryEnrichedPrompt,
+} from './core/prompts';
+
+// =============================================================================
+// Content Builders
+// =============================================================================
+
+/**
+ * Content builders for multimodal requests
+ * @see {@link ./content-builders}
+ */
+export {
+    buildGeminiRequestParts,
+    buildOpenAIMessageContent,
+    buildAnthropicMessageContent,
+} from './content-builders';
+
+// =============================================================================
+// Provider-Specific Generation
+// =============================================================================
+
+/**
+ * Provider-specific generation functions for advanced use cases.
+ * Most users should use the main `writer` instance instead.
+ * @see {@link ./generation}
+ */
+export {
+    generateWithOpenAI,
+    streamWithOpenAI,
+    generateWithXAI,
+    streamWithXAI,
+    generateWithAnthropic,
+    streamWithAnthropic,
+    generateWithGemini,
+    streamWithGemini,
+} from './generation';
+
+// =============================================================================
+// Handler Exports
+// =============================================================================
+
+/** Message handler for write generation requests */
 export { handleWriteGenerate } from './handler';
+
+// =============================================================================
+// Context Builder Exports
+// =============================================================================
+
+/**
+ * Context builder utilities for platform detection and context extraction
+ * @see {@link ./contextBuilder}
+ */
 export {
     detectPlatform,
     extractDomain,
@@ -20,11 +126,25 @@ export {
 } from './contextBuilder';
 export type { PlatformInfo } from './contextBuilder';
 
-// Backend writer exports
+// =============================================================================
+// Backend Writer Exports
+// =============================================================================
+
+/**
+ * Backend writer for server-side generation
+ * @see {@link ./backendWriter}
+ */
 export { generateWithBackend, generateTextWithBackend } from './backendWriter';
 export type { BackendWriteOptions } from './backendWriter';
 
-// Stream parser exports
+// =============================================================================
+// Stream Parser Exports
+// =============================================================================
+
+/**
+ * SSE stream parsing utilities
+ * @see {@link ./streamParser}
+ */
 export {
     parseGeminiSSE,
     parseGeminiSSEWithMetadata,
