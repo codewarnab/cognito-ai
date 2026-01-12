@@ -2,13 +2,17 @@
  * Tool Bridge Client
  *
  * Handles the bi-directional communication for tool sharing:
- * 1. Registers extension tools with the code-bridge
+ * 1. Registers extension tools with the cli-bridge
  * 2. Subscribes to tool execution requests via SSE
  * 3. Executes tools locally and sends results back
  */
 
 import { createLogger } from '~logger';
 import { getToolSchemas, executeToolLocally, type ToolCall } from '@/ai/backend/frontendToolExecutor';
+import { TOOLS_REQUIRING_APPROVAL } from '@/ai/setup/remoteMode';
+import { isMcpTool, isWebmcpTool } from '@/ai/tools/mcpApprovalConfig';
+import { waitForCliToolApproval } from './cliToolApproval';
+import { useToolsStore } from '@/stores';
 
 const log = createLogger('toolBridgeClient', 'CLI_MODE_BRIDGE');
 
@@ -19,6 +23,7 @@ interface ToolExecuteEvent {
     requestId: string;
     toolName: string;
     args: unknown;
+    interactive?: boolean;
 }
 
 /**
@@ -106,6 +111,47 @@ async function handleToolExecuteEvent(
     });
 
     try {
+        const requiresApproval =
+            TOOLS_REQUIRING_APPROVAL.includes(event.toolName) ||
+            isWebmcpTool(event.toolName) ||
+            isMcpTool(event.toolName);
+
+        const toolsMode = useToolsStore.getState().currentMode;
+        const isCliMode = toolsMode === 'cli';
+        const shouldWaitForUiApproval = event.interactive === true && isCliMode;
+
+        if (requiresApproval && shouldWaitForUiApproval) {
+            log.info('🛡️ Tool requires approval (CLI mode bridge)', {
+                requestId: event.requestId,
+                toolName: event.toolName,
+                toolsMode,
+                interactive: event.interactive,
+            });
+
+            try {
+                // Wait until the UI approves/denies this specific requestId.
+                // NOTE: requestId is aligned with toolCallId by the cli-bridge for AI SDK tools.
+                await waitForCliToolApproval(event.requestId);
+            } catch (approvalError) {
+                const reason =
+                    approvalError instanceof Error ? approvalError.message : String(approvalError);
+
+                const isDenied = reason.toLowerCase().includes('denied');
+                if (isDenied) {
+                    // Send a structured denial result back so the model + UI can react gracefully.
+                    await sendToolResult(baseUrl, token, event.requestId, true, {
+                        denied: true,
+                        message: reason || 'User denied this action.',
+                    });
+                    return;
+                }
+
+                // Non-denial errors: surface as tool failure
+                await sendToolResult(baseUrl, token, event.requestId, false, undefined, reason);
+                return;
+            }
+        }
+
         // Convert to ToolCall format
         const toolCall: ToolCall = {
             id: event.requestId,

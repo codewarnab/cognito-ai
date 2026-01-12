@@ -269,7 +269,9 @@ function extractErrorInfo(error: unknown): { message: string; type: string; stac
 // ============================================================================
 
 /** Timeout for waiting for tool results */
-const TOOL_CALL_TIMEOUT_MS = 60_000;
+// In Adaptive Mode, some tools require human approval and may pause execution.
+// Keep this generous to avoid false timeouts while waiting for user interaction.
+const TOOL_CALL_TIMEOUT_MS = 15 * 60_000;
 
 /**
  * Execute the provided code with the tools proxy available.

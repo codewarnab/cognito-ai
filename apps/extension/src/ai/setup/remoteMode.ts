@@ -53,12 +53,14 @@ export const TOOLS_REQUIRING_APPROVAL = [
  * @param modelName - Model name (e.g., 'gemini-2.5-flash', 'gemini-2.5-pro')
  * @param workflowConfig - Optional workflow configuration
  * @param remoteSystemPrompt - Base system prompt for remote mode
+ * @param toolsMode - Optional tools mode ('adaptive' skips MCP tools, they're discoverable via discoverTools)
  * @returns Remote mode setup with model, tools, system prompt, and provider
  */
 export async function setupRemoteMode(
     modelName: string,
     workflowConfig: WorkflowDefinition | null,
     remoteSystemPrompt: string,
+    toolsMode?: 'chat' | 'agent' | 'adaptive' | 'custom' | 'cli',
 ): Promise<RemoteModeSetup> {
     log.info('🔧 Setting up REMOTE mode with model:', modelName);
 
@@ -136,9 +138,12 @@ export async function setupRemoteMode(
         names: Object.keys(extensionTools)
     });
 
-    // Get MCP tools from background service worker (not in workflow mode)
+    // Get MCP tools from background service worker
+    // NOT loaded when: workflow mode OR adaptive mode
+    // In adaptive mode, MCP tools are discoverable via discoverTools and executable via executeTools
     let mcpTools: Record<string, any> = {};
-    if (!workflowConfig) {
+    const isAdaptiveMode = toolsMode === 'adaptive';
+    if (!workflowConfig && !isAdaptiveMode) {
         try {
             const mcpManager = await getMCPToolsFromBackground();
             mcpTools = mcpManager.tools;
@@ -148,6 +153,8 @@ export async function setupRemoteMode(
         } catch (error) {
             log.warn('⚠️ MCP tools unavailable:', error);
         }
+    } else if (isAdaptiveMode) {
+        log.info('🔄 ADAPTIVE MODE - Skipping MCP tools (discoverable via discoverTools)');
     }
 
     // Get WebMCP tools from active tab (not in workflow mode)

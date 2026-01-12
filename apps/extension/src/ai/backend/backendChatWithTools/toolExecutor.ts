@@ -126,7 +126,10 @@ export function buildToolResultMessages(
 
     // Build assistant content with tool calls
     // Properly formatted using AI SDK Core Message format
-    const assistantContent: Array<unknown> = [];
+    const assistantContent: Array<
+        | { type: 'text'; text: string }
+        | { type: 'tool-call'; toolCallId: string; toolName: string; input: Record<string, unknown> }
+    > = [];
 
     if (accumulatedText) {
         assistantContent.push({ type: 'text', text: accumulatedText });
@@ -137,14 +140,14 @@ export function buildToolResultMessages(
             type: 'tool-call',
             toolCallId: tc.id,
             toolName: tc.name,
-            args: tc.arguments,
+            input: tc.arguments,
         });
     }
 
     messages.push({
         role: 'assistant',
         content: assistantContent,
-    });
+    } as ModelMessage);
 
     // Add tool results as tool messages
     // AI SDK v6: ToolResultPart uses 'output' with LanguageModelV2ToolResultOutput format
@@ -168,8 +171,8 @@ export function buildToolResultMessages(
                     ? { type: 'error-text' as const, value: resultValue }
                     : { type: 'text' as const, value: resultValue },
             };
-        }) as unknown as ModelMessage['content'],
-    });
+        }),
+    } as ModelMessage);
 
     return messages;
 }
@@ -206,13 +209,15 @@ export function buildErrorFeedbackMessages(
     const messages: ModelMessage[] = [];
 
     // Build assistant content with attempted tool calls
-    const assistantContent: Array<unknown> = [];
+    const assistantContent: Array<
+        { type: 'tool-call'; toolCallId: string; toolName: string; input: Record<string, unknown> }
+    > = [];
     for (const error of toolErrors) {
         assistantContent.push({
             type: 'tool-call',
             toolCallId: error.id,
             toolName: error.name,
-            args: error.input || {},
+            input: (error.input || {}) as Record<string, unknown>,
         });
     }
 
@@ -220,7 +225,7 @@ export function buildErrorFeedbackMessages(
     messages.push({
         role: 'assistant',
         content: assistantContent,
-    });
+    } as ModelMessage);
 
     // Add tool result with error feedback
     messages.push({
@@ -230,8 +235,8 @@ export function buildErrorFeedbackMessages(
             toolCallId: error.id,
             toolName: error.name,
             output: { type: 'error-text' as const, value: error.result },
-        })) as unknown as ModelMessage['content'],
-    });
+        })),
+    } as ModelMessage);
 
     return messages;
 }

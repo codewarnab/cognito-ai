@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSuggestions } from '@/hooks/suggestions';
 import { TextMorph } from '@/components/ui/feedback';
-import { CodingAgentSelector } from '@/components/features/cliMode';
+import { CliAgentSelector } from '@/components/features/cliMode';
 import { useToolsStore } from '@/stores';
 import type { ToolsState } from '@/stores/tools/types';
 import type { Message, ModelState } from '../../types';
@@ -76,7 +76,8 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     // Track if user has manually dismissed suggestions
     const [userDismissed, setUserDismissed] = useState(false);
     // Track if suggestions are enabled in settings
-    const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
+    // Start with null to indicate "not yet loaded" - prevents API calls before we know the setting
+    const [suggestionsEnabled, setSuggestionsEnabled] = useState<boolean | null>(null);
 
     // Check if we're in code mode - show agent selector instead of suggestions
     const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
@@ -91,11 +92,12 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         loadSetting();
     }, []);
 
-    // Use AI suggestions hook - only when enabled
+    // Use AI suggestions hook - only when enabled AND setting has been loaded
+    // Pass false while loading (null) to prevent premature API calls
     const { suggestions: aiSuggestions, isGenerating, error: suggestionError } = useSuggestions(
         modelState,
         messages.length,
-        suggestionsEnabled
+        suggestionsEnabled === true // Only enable when explicitly true (not null or false)
     );
 
     // Debug logging
@@ -134,7 +136,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     }, [shouldShowSuggestions, userDismissed]);
 
     const showSuggestedActions =
-        suggestionsEnabled &&
+        suggestionsEnabled === true &&
         messages.length === 0 &&
         !input.trim() &&
         !isLoading &&
@@ -152,7 +154,7 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
 
     // In code mode, show the coding agent selector instead of suggestions
     if (isCodeMode) {
-        return <CodingAgentSelector />;
+        return <CliAgentSelector />;
     }
 
     return (

@@ -18,7 +18,7 @@ export interface TrackedToolCall {
     /** Output from the tool (undefined while executing) */
     output?: Record<string, unknown>;
     /** Execution state */
-    state: 'loading' | 'success' | 'error';
+    state: 'loading' | 'pending-approval' | 'success' | 'error';
     /** Error message if state is 'error' */
     errorText?: string;
     /** Timestamp when tool call started */

@@ -343,11 +343,21 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
                 // Show loading if no assistant message yet
                 if (lastMessage?.role !== 'assistant') return true;
                 // Show loading if assistant message has no content yet
-                const hasContent = lastMessage.parts?.some((part: any) =>
-                    (part.type === 'text' && part.text?.trim()) ||
-                    part.type === 'tool-call' ||
-                    part.type === 'tool-result'
-                );
+                const hasContent = lastMessage.parts?.some((part: any) => {
+                    if (part?.type === 'text' && part.text?.trim()) return true;
+
+                    // Tool parts (AI SDK v6 + legacy)
+                    if (part?.type === 'tool-call' || part?.type === 'tool-result') return true;
+                    if (part?.type === 'tool-input-available' || part?.type === 'tool-output-available') return true;
+
+                    // Generic tool part formats (e.g. "tool-<name>")
+                    if (typeof part?.type === 'string' && part.type.startsWith('tool-')) return true;
+
+                    // Dynamic tools
+                    if (part?.type === 'dynamic-tool') return true;
+
+                    return false;
+                });
                 return !hasContent;
             })() && <LoadingIndicator />}
 

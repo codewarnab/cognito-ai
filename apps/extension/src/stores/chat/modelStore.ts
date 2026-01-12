@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { chromeStorageSync } from '../middleware/chromeStorageSync';
 import { STORAGE_KEYS } from '../constants';
 import type { ModelState, AIMode, RemoteModel } from './types';
+import { useSettingsStore } from '../settings/settingsStore';
 
 export const useModelStore = create<ModelState>()(
   chromeStorageSync<ModelState>({
@@ -58,15 +59,8 @@ export const useModelStore = create<ModelState>()(
      * Updates the `hasApiKey` state.
      */
     refreshApiKeyStatus: async () => {
-      try {
-        const result = await chrome.storage.local.get(STORAGE_KEYS.LEGACY_PROVIDER_CONFIG);
-        const config = result[STORAGE_KEYS.LEGACY_PROVIDER_CONFIG];
-        const hasKey = !!(config?.google?.apiKey);
-        set({ hasApiKey: hasKey });
-      } catch (error) {
-        console.error('[ModelStore] Failed to refresh API key status:', error);
-        set({ hasApiKey: false });
-      }
+      const settings = useSettingsStore.getState();
+      set({ hasApiKey: !!settings.googleApiKey });
     },
 
     initialize: async () => {

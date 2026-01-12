@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
@@ -15,7 +15,7 @@ import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
 
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import type { CliModeState } from '@/stores/cliMode/types';
-import { BridgePairingDrawer } from '../../../../cliMode/BridgePairingDrawer';
+import { BridgeStatusDrawer } from '../../../../cliMode/BridgeStatusDrawer';
 import type { AIMode, ModelState } from '@/ai/types/types';
 import type { WorkflowDefinition } from '@/workflows/types';
 import type { McpToolWithServer, ToolMode } from '@/stores/tools/types';
@@ -82,60 +82,42 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
     const checkBridgeHealth = useCliModeStore((s: CliModeState) => s.checkBridgeHealth);
 
-    const [showPairingDrawer, setShowPairingDrawer] = useState(false);
+    const [showBridgeStatusDrawer, setShowBridgeStatusDrawer] = useState(false);
     const [previousMode, setPreviousMode] = useState<ToolMode | null>(null);
     const setMode = useToolsStore((s: ToolsState) => s.setMode);
 
-    // Track mode changes to store previous mode and show pairing drawer immediately
+    // Track mode changes to store previous mode and show bridge drawer immediately
     const prevToolsModeRef = React.useRef<ToolMode | null>(null);
     useEffect(() => {
         // When entering cli mode
         if (toolsMode === 'cli' && prevToolsModeRef.current !== 'cli') {
-            // Store previous mode for reverting if pairing is cancelled
+            // Store previous mode for reverting if the user cancels
             if (prevToolsModeRef.current) {
                 setPreviousMode(prevToolsModeRef.current);
             }
-            // Check bridge health and show pairing if not already paired
-            checkBridgeHealth().then(() => {
-                // Need to check bridgeToken since bridgeStatus may not have updated yet
-                const currentStore = useCliModeStore.getState();
-                if (currentStore.bridgeStatus === 'needs-pairing' || !currentStore.bridgeToken) {
-                    setShowPairingDrawer(true);
-                }
-            });
+
+            // Show status drawer and kick off an immediate connect attempt
+            setShowBridgeStatusDrawer(true);
+            checkBridgeHealth();
         }
         prevToolsModeRef.current = toolsMode as ToolMode;
     }, [toolsMode, checkBridgeHealth]);
 
-    // Also show pairing drawer if bridge status changes to needs-pairing while in cli mode
+    // Also show the status drawer if the bridge drops while in cli mode
     useEffect(() => {
-        if (toolsMode === 'cli' && bridgeStatus === 'needs-pairing') {
-            setShowPairingDrawer(true);
+        if (toolsMode === 'cli' && bridgeStatus !== 'connected') {
+            setShowBridgeStatusDrawer(true);
         }
     }, [toolsMode, bridgeStatus]);
 
-    // Bridge heartbeat - polls bridge health every 30s when in cli mode
-    const handleBridgeDisconnect = useCallback(() => {
-        log.warn('Bridge disconnected (detected by heartbeat)');
-        // Show pairing drawer if bridge goes offline
-        if (toolsMode === 'cli') {
-            setShowPairingDrawer(true);
-        }
-    }, [toolsMode]);
+    // Bridge heartbeat - uses SSE /events to detect online/offline + triggers auto-connect
+    useBridgeHeartbeat({ enabled: toolsMode === 'cli' });
 
-    useBridgeHeartbeat({
-        enabled: toolsMode === 'cli',
-        onDisconnect: handleBridgeDisconnect,
-    });
-
-    // Handle drawer close - revert to previous mode if not paired
-    const handlePairingDrawerClose = () => {
-        setShowPairingDrawer(false);
-        // If still not paired, revert to previous mode
-        const { bridgeToken, bridgeStatus } = useCliModeStore.getState();
-        // Fix: Check if we are properly connected purely by status as well, 
-        // to avoid race condition where token might be set but status update lags or vice versa
-        if (bridgeStatus !== 'connected' && !bridgeToken && previousMode) {
+    // Handle drawer close - revert to previous mode if still not connected
+    const handleBridgeStatusDrawerClose = () => {
+        setShowBridgeStatusDrawer(false);
+        const { bridgeStatus: currentBridgeStatus } = useCliModeStore.getState();
+        if (currentBridgeStatus !== 'connected' && previousMode) {
             setMode(previousMode);
             setPreviousMode(null);
         }
@@ -194,11 +176,11 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 />
             )}
 
-            {/* CLI Mode: Pairing Drawer (rendered before tools, but it's a modal overlay) */}
+            {/* CLI Mode: Bridge Status Drawer (rendered before tools, but it's a modal overlay) */}
             {toolsMode === 'cli' && (
-                <BridgePairingDrawer
-                    isOpen={showPairingDrawer}
-                    onClose={handlePairingDrawerClose}
+                <BridgeStatusDrawer
+                    isOpen={showBridgeStatusDrawer}
+                    onClose={handleBridgeStatusDrawerClose}
                 />
             )}
 

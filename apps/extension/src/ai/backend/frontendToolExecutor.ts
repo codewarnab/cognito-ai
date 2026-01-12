@@ -13,6 +13,7 @@ import { isWebmcpTool } from '../tools/mcpApprovalConfig';
 import { getYouTubeTranscript } from '../agents/youtube';
 import { zodToJsonSchema } from '../utils/toolConverter';
 import { useToolsStore } from '@/stores';
+import { getMcpToolExecutor, isMcpTool as isMcpToolFromRegistry } from '@/utils/mcp/toolMetadataStore';
 import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/searchSettings';
 import { SEARCH_TOOL_NAMES } from '../tools/searchToolFilter';
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
@@ -206,7 +207,25 @@ export async function executeToolLocally(
         // Execute the tool
         let result: unknown;
 
-        if (isWebmcpTool(toolCall.name)) {
+        const isMcpTool = isMcpToolFromRegistry(toolCall.name) || !!getMcpToolExecutor(toolCall.name);
+
+        if (isMcpTool) {
+            // MCP tools don't have execute() - they use executor registry
+            // (similar to WebMCP). In CLI mode, the bridge may request MCP tools.
+            let executor = getMcpToolExecutor(toolCall.name);
+
+            // Rehydrate executor registry if missing (e.g. sidepanel reload)
+            if (!executor) {
+                await getMCPToolsFromBackground();
+                executor = getMcpToolExecutor(toolCall.name);
+            }
+
+            if (!executor) {
+                throw new Error(`MCP tool executor not found: ${toolCall.name}`);
+            }
+
+            result = await executor(toolCall.arguments);
+        } else if (isWebmcpTool(toolCall.name)) {
             // WebMCP tools don't have execute() - they use executor registry
             const executor = getWebmcpToolExecutor(toolCall.name);
             if (!executor) {

@@ -47,6 +47,24 @@ If you try to call a tool directly (e.g., \`navigateTo\`, \`createReminder\`, \`
 3. Use executeTools to call one or more tools in sequence
 4. Report results to the user
 
+## MCP Tool Discovery
+
+When users mention "MCP tools", "MCP servers", or specific service names (like "Notion", "GitHub", "Slack", etc.):
+
+**ALWAYS use discoverTools FIRST** to search for MCP-provided tools before using other tools like webSearch.
+
+Examples:
+- User says "search notion" → Use \`discoverTools("notion")\` to find notion-related tools
+- User says "use the MCP tool" → Use \`discoverTools\` with relevant keywords
+- User says "find my notes in Notion" → First discover Notion tools, then use them
+
+MCP tools are dynamically discovered from connected servers. They often have names like:
+- \`notion-search\`, \`notion-createPage\`
+- \`github-createIssue\`, \`github-listRepos\`
+- \`slack-sendMessage\`, \`slack-listChannels\`
+
+The discoverTools function normalizes hyphens and underscores, so searching for "notion search" will find "notion-search".
+
 ## Key Rules
 
 - ALWAYS check the tool index before searching - the tool must exist in the index
@@ -169,6 +187,16 @@ If you try to call a tool directly (e.g., \`navigateTo\`, \`createReminder\`, \`
 1. Use discoverTools("keyword") to find relevant tools
 2. Use executeTools to write JavaScript that calls those tools
 3. Pre-loaded tools (readPageContent, takeScreenshot, getActiveTab) can be called directly
+
+## MCP Tool Discovery
+
+When users mention "MCP tools", "MCP servers", or service names (Notion, GitHub, Slack, etc.):
+**ALWAYS use discoverTools FIRST** before using webSearch or other tools.
+
+Examples:
+- "search notion" → Use \`discoverTools("notion")\` first
+- "use MCP tool" → Use discoverTools with relevant keywords
+- MCP tool names: notion-search, github-createIssue, slack-sendMessage
 
 ## Key Rules
 

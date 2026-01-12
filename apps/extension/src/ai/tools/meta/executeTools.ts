@@ -13,14 +13,18 @@ import { createLogger } from '~logger';
 import { validateCode } from './validateCode';
 import { getAllTools } from '../registryUtils';
 import { getMCPToolsFromBackground } from '../../mcp/proxy';
-import { getWebMCPToolsFromBackground } from '../webmcpTools';
+import { getWebMCPToolsFromBackground, getWebmcpToolExecutor } from '../webmcpTools';
 import { executeInSandbox, type ExecutionResult } from './SandboxBridge';
 import type { TrackedToolCall } from './types';
+import { getMcpToolExecutor, isMcpTool as isMcpToolFromRegistry } from '@/utils/mcp/toolMetadataStore';
 
 const log = createLogger('ExecuteTools', 'TOOLS_EXECUTION');
 
 /** Store for active abort controllers to cancel pending sandbox operations */
 const pendingOperations = new Map<string, { cancelled: boolean }>();
+
+// Human approval can pause execution; keep sandbox timeouts generous.
+const EXECUTE_TOOLS_SANDBOX_TIMEOUT_MS = 15 * 60_000;
 
 /**
  * Execute validated JavaScript code with access to tools via sandbox.
@@ -110,16 +114,39 @@ async function executeToolsCode(
                 };
             }
 
+            log.info(`Executing tool from sandbox: ${toolName}`, { args });
+
+            // MCP tools: execute is stripped (HITL). Execute via stored executor.
+            if (isMcpToolFromRegistry(toolName)) {
+                const executor = getMcpToolExecutor(toolName);
+                if (!executor) {
+                    throw new Error(`MCP tool executor not found: ${toolName}`);
+                }
+                const input = args?.[0];
+                return await executor(input);
+            }
+
+            // WebMCP tools: execute is stripped (HITL). Execute via stored executor.
+            if (toolName.startsWith('webmcp_')) {
+                const executor = getWebmcpToolExecutor(toolName);
+                if (!executor) {
+                    throw new Error(`WebMCP tool executor not found: ${toolName}`);
+                }
+                const input = (args?.[0] ?? {}) as Record<string, unknown>;
+                return await executor(input);
+            }
+
             const tool = allTools[toolName];
             if (!tool) {
                 throw new Error(`Tool not found: ${toolName}`);
             }
 
-            log.info(`Executing tool from sandbox: ${toolName}`, { args });
+            if (typeof (tool as any).execute !== 'function') {
+                throw new Error(`Tool "${toolName}" has no execute function`);
+            }
 
             // Execute the tool - args is an array, typically with a single object argument
-            const result = await tool.execute(...args);
-            return result;
+            return await (tool as any).execute(...args);
         };
 
         // Step 4: Set up abort signal listener
@@ -138,7 +165,7 @@ async function executeToolsCode(
                 code,
                 availableToolNames,
                 toolExecutor,
-                { abortSignal }
+                { abortSignal, timeoutMs: EXECUTE_TOOLS_SANDBOX_TIMEOUT_MS }
             );
 
             // Step 6: Format and return the result

@@ -13,7 +13,7 @@
  * - Always/Tool approval (persisted, permanent)
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { CompactToolCard } from '@/components/ui/tools/cards';
 import type { ToolUIState } from './ToolUIContext';
 import { useToolUI } from './ToolUIContext';
@@ -21,22 +21,22 @@ import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
 import { getTool } from '../registryUtils';
 import { createLogger } from '~logger';
 import { useApprovalStore } from '@/stores/approval';
+import { useToolsStore } from '@/stores';
 import { extractDomainFromInput, supportsWebsiteApproval } from '../approvalConfig';
 import {
     isMcpTool,
     isWebmcpTool,
-    getMcpServerId,
     getWebmcpDomain,
     getMcpApprovalOptions,
     getWebmcpApprovalOptions,
-    isMcpAutoApproved,
     isWebmcpAutoApproved,
-    getMcpApprovalReason,
     getWebmcpApprovalReason,
 } from '../mcpApprovalConfig';
-import { getMcpToolExecutor } from '@/utils/mcp/toolMetadataStore';
-import { getWebmcpToolExecutor } from '../webmcpTools';
+import { getOriginalToolName, sanitizeToolName } from '@/utils/mcp/toolNameSanitizer';
+import { getMcpToolExecutor, getToolServerId, registerMcpToolExecutor } from '@/utils/mcp/toolMetadataStore';
+import { getWebMCPToolsFromBackground, getWebmcpToolExecutor } from '../webmcpTools';
 import type { ApprovalOption } from '@/components/ui/tools/cards/ApprovalDropdown';
+import { approveCliToolCall, denyCliToolCall } from '@/services/codeBridge/cliToolApproval';
 
 const log = createLogger('CompactToolRenderer', 'TOOLS_EXECUTION');
 
@@ -57,11 +57,19 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
     // Approval store integration (for built-in tools)
     const isAutoApproved = useApprovalStore((s) => s.isAutoApproved);
+    const isMcpAutoApproved = useApprovalStore((s) => s.isMcpAutoApproved);
+    const getMcpApprovalReason = useApprovalStore((s) => s.getMcpApprovalReason);
     const addSessionApproval = useApprovalStore((s) => s.addSessionApproval);
     const addWebsiteApproval = useApprovalStore((s) => s.addWebsiteApproval);
     const addAlwaysApproval = useApprovalStore((s) => s.addAlwaysApproval);
     const initializeApprovalStore = useApprovalStore((s) => s.initialize);
     const getApprovalReason = useApprovalStore((s) => s.getApprovalReason);
+    const approvalStoreInitialized = useApprovalStore((s) => s.isInitialized);
+
+    // Tools store integration (for MCP tool metadata rehydration)
+    const mcpTools = useToolsStore((s) => s.mcpTools);
+    const toolsMode = useToolsStore((s) => s.currentMode);
+    const isCliMode = toolsMode === 'cli';
 
     // Initialize approval store on mount
     useEffect(() => {
@@ -72,7 +80,33 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
     // Tool Type Detection
     // ═══════════════════════════════════════════════════════════════════════════
 
-    const isMcp = isMcpTool(toolName);
+    // MCP tool detection can break after sidepanel reload because the in-memory
+    // tool metadata registry resets. Use the tools store as a fallback source
+    // of truth so pending approvals rehydrate correctly.
+    const mcpToolMatch = useMemo(() => {
+        if (!mcpTools || mcpTools.length === 0) return null;
+
+        const normalized = toolName.toLowerCase();
+        const original = getOriginalToolName(toolName).toLowerCase();
+        const sanitized = sanitizeToolName(toolName).toLowerCase();
+
+        return (
+            mcpTools.find((t) => {
+                const tName = String(t.name ?? '').toLowerCase();
+                const tSanitized = sanitizeToolName(String(t.name ?? '')).toLowerCase();
+                return (
+                    tName === normalized ||
+                    tName === original ||
+                    tSanitized === normalized ||
+                    tSanitized === sanitized
+                );
+            }) ?? null
+        );
+    }, [mcpTools, toolName]);
+
+    const mcpServerIdFromStore = mcpToolMatch?.serverId ?? null;
+
+    const isMcp = isMcpTool(toolName) || !!mcpServerIdFromStore;
     const isWebmcp = isWebmcpTool(toolName);
     const isBuiltinApproval = TOOLS_REQUIRING_APPROVAL.includes(toolName);
 
@@ -106,7 +140,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
     }, [requiresApproval, isWaitingForResult]);
 
     // Extract domain/server for approval options
-    const mcpServerId = isMcp ? getMcpServerId(toolName) : null;
+    const mcpServerId = isMcp ? (mcpServerIdFromStore ?? getToolServerId(toolName) ?? null) : null;
     const webmcpDomain = isWebmcp ? getWebmcpDomain(toolName) : null;
     const builtinDomain = isBuiltinApproval ? extractDomainFromInput(toolName, input, currentTabUrl ?? undefined) : null;
     const showWebsiteOption = isBuiltinApproval && supportsWebsiteApproval(toolName) && !!builtinDomain;
@@ -127,8 +161,8 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         let reason: string | null = null;
 
         if (isMcp && mcpServerId) {
-            isApproved = isMcpAutoApproved(toolName);
-            reason = getMcpApprovalReason(toolName);
+            isApproved = isMcpAutoApproved(toolName, mcpServerId);
+            reason = getMcpApprovalReason(toolName, mcpServerId);
         } else if (isWebmcp && webmcpDomain) {
             isApproved = isWebmcpAutoApproved(toolName);
             reason = getWebmcpApprovalReason(toolName);
@@ -144,7 +178,16 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
             handleApprove();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [requiresApproval, isWaitingForResult, approvalState, toolName, mcpServerId, webmcpDomain, builtinDomain]);
+    }, [
+        requiresApproval,
+        isWaitingForResult,
+        approvalState,
+        toolName,
+        mcpServerId,
+        webmcpDomain,
+        builtinDomain,
+        approvalStoreInitialized,
+    ]);
 
     const isPendingApproval = requiresApproval && isWaitingForResult && approvalState === 'pending' && !hasAutoExecutedRef.current;
 
@@ -161,19 +204,64 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         log.info('🛡️ User approved tool execution:', { toolName, toolCallId, input, isMcp, isWebmcp });
         setApprovalState('executing');
 
+        // CLI mode: tool execution is driven by the local cli-bridge.
+        // The UI must ONLY signal approval; the bridge will execute and stream back tool_result.
+        if (isCliMode) {
+            approveCliToolCall(toolCallId);
+            return;
+        }
+
         try {
             let result: any;
 
             if (isMcp) {
                 // Execute MCP tool via stored executor
-                const executor = getMcpToolExecutor(toolName);
+                const lookupNames = [toolName, mcpToolMatch?.name].filter(Boolean) as string[];
+                let executor =
+                    lookupNames.map((n) => getMcpToolExecutor(n)).find(Boolean) ??
+                    undefined;
+
+                // If executor registry was reset (sidepanel reload), rebuild it lazily.
+                // We can construct a proxy executor from the MCP tools store (serverId + tool name).
+                if (!executor && mcpServerId) {
+                    const executableToolName = mcpToolMatch?.name ?? toolName;
+                    executor = async (toolInput: any) => {
+                        log.info(`🔧 Executing ${executableToolName} via background proxy (rehydrated)`, {
+                            serverId: mcpServerId,
+                            input: toolInput,
+                        });
+
+                        const response = await chrome.runtime.sendMessage({
+                            type: `mcp/${mcpServerId}/tool/call`,
+                            payload: {
+                                name: executableToolName,
+                                arguments: toolInput,
+                            },
+                        });
+
+                        if (!response?.success) {
+                            throw new Error(response?.error || 'Tool execution failed');
+                        }
+
+                        return response.data;
+                    };
+
+                    // Register under the canonical tool name so future lookups work
+                    registerMcpToolExecutor(executableToolName, executor);
+                }
+
                 if (!executor) {
                     throw new Error(`MCP tool executor not found: ${toolName}`);
                 }
                 result = await executor(input);
             } else if (isWebmcp) {
                 // Execute WebMCP tool via stored executor
-                const executor = getWebmcpToolExecutor(toolName);
+                let executor = getWebmcpToolExecutor(toolName);
+                // WebMCP executors are also in-memory; rehydrate from background if missing.
+                if (!executor) {
+                    await getWebMCPToolsFromBackground();
+                    executor = getWebmcpToolExecutor(toolName);
+                }
                 if (!executor) {
                     throw new Error(`WebMCP tool executor not found: ${toolName}`);
                 }
@@ -220,6 +308,11 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
         log.info('🛡️ User denied tool execution:', { toolName, toolCallId });
         setApprovalState('denied');
+
+        if (isCliMode) {
+            denyCliToolCall(toolCallId, 'User denied this action.');
+            return;
+        }
 
         addToolOutput?.({
             tool: toolName,
@@ -272,8 +365,17 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
     const hasError = output && (output.success === false || output.error === true || output.error);
 
+    const toolCompleted = toolState === 'output-available' || toolState === 'output-error';
+
     let uiState: 'loading' | 'success' | 'error' | 'pending-approval';
-    if (isPendingApproval) {
+    if (toolCompleted) {
+        // Never let local "executing" state mask a real streamed result.
+        if (toolState === 'output-error') {
+            uiState = 'error';
+        } else {
+            uiState = hasError ? 'error' : 'success';
+        }
+    } else if (isPendingApproval) {
         uiState = 'pending-approval';
     } else if (approvalState === 'executing') {
         uiState = 'loading';
@@ -283,8 +385,6 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         uiState = executionError ? 'error' : 'success';
     } else if (toolState === 'input-streaming' || toolState === 'input-available') {
         uiState = 'loading';
-    } else if (toolState === 'output-available') {
-        uiState = hasError ? 'error' : 'success';
     } else {
         uiState = 'error';
     }
@@ -298,7 +398,8 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         displayErrorText = typeof output.error === 'string' ? output.error : output.answer || errorText;
     }
 
-    const displayOutput = approvalState === 'approved' ? executionResult : output;
+    // In CLI mode, tool execution happens externally (bridge), so always display streamed output.
+    const displayOutput = isCliMode ? output : (approvalState === 'approved' ? executionResult : output);
     const customRenderers = getCustomRenderers(toolName);
 
     // Determine which approval props to pass

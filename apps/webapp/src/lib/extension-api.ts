@@ -74,7 +74,7 @@ class ExtensionAPI {
 
     async sendMessage<T>(message: ExternalMessage): Promise<ExternalResponse<T>> {
         console.log('[ExtensionAPI] sendMessage: Sending', message.type);
-        
+
         const available = await this.isAvailable();
         if (!available) {
             console.error('[ExtensionAPI] sendMessage: Chrome extension API not available');

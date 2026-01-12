@@ -20,6 +20,10 @@
 import { createLogger } from '~logger';
 import { safeSerialize, safeDeserialize, formatError } from '../serializationUtils';
 import type { TrackedToolCall } from '../types';
+import { TOOLS_REQUIRING_APPROVAL } from '@/ai/setup/remoteMode';
+import { isMcpTool as isMcpToolFromRegistry } from '@/utils/mcp/toolMetadataStore';
+import { waitForSandboxToolApproval } from '../executeToolsApproval';
+import { useExecuteToolsLiveStore } from '../executeToolsLiveStore';
 import {
     DEFAULT_TIMEOUT_MS,
     SANDBOX_READY_TIMEOUT_MS,
@@ -38,6 +42,15 @@ import {
 } from './types';
 
 const log = createLogger('SandboxBridge', 'TOOLS_EXECUTION');
+
+function requiresHumanApproval(toolName: string): boolean {
+    // WebMCP tools always require approval
+    if (toolName.startsWith('webmcp_')) return true;
+    // MCP server tools always require approval
+    if (isMcpToolFromRegistry(toolName)) return true;
+    // Built-in sensitive tools require approval
+    return TOOLS_REQUIRING_APPROVAL.includes(toolName);
+}
 
 // ============================================================================
 // SandboxBridge Singleton
@@ -229,12 +242,14 @@ export class SandboxBridge {
             callId: request.callId,
         });
 
+        const approvalRequired = requiresHumanApproval(request.toolName);
+
         // Track this tool call for UI rendering
         const trackedCall: TrackedToolCall = {
             callId: request.callId,
             toolName: request.toolName,
             input: (request.args[0] ?? {}) as Record<string, unknown>, // First arg is usually the input object
-            state: 'loading',
+            state: approvalRequired ? 'pending-approval' : 'loading',
             startTime,
         };
 
@@ -243,6 +258,9 @@ export class SandboxBridge {
             pending.trackedToolCalls.push(trackedCall);
         }
 
+        // Push initial state to live store (so ExecuteToolsRenderer can render while loading)
+        useExecuteToolsLiveStore.getState().updateToolCalls(pending.requestId, pending.trackedToolCalls ?? []);
+
         try {
             // Check if request was aborted
             if (pending.abortController?.signal.aborted) {
@@ -250,9 +268,24 @@ export class SandboxBridge {
                 trackedCall.state = 'error';
                 trackedCall.errorText = 'Request was aborted';
                 trackedCall.durationMs = Date.now() - startTime;
+                useExecuteToolsLiveStore.getState().updateToolCalls(pending.requestId, pending.trackedToolCalls ?? []);
 
                 this.sendToolResult(request.callId, undefined, 'Request was aborted');
                 return;
+            }
+
+            // Human-in-the-loop: wait for user approval for sensitive tools
+            if (approvalRequired) {
+                log.info('🛡️ Tool requires human approval (sandbox)', {
+                    toolName: request.toolName,
+                    callId: request.callId,
+                });
+
+                await waitForSandboxToolApproval(request.callId, pending.abortController?.signal);
+
+                // After approval, transition to loading/executing
+                trackedCall.state = 'loading';
+                useExecuteToolsLiveStore.getState().updateToolCalls(pending.requestId, pending.trackedToolCalls ?? []);
             }
 
             // Execute with timeout
@@ -276,6 +309,7 @@ export class SandboxBridge {
             trackedCall.output = result as Record<string, unknown> | undefined;
             trackedCall.state = 'success';
             trackedCall.durationMs = duration;
+            useExecuteToolsLiveStore.getState().updateToolCalls(pending.requestId, pending.trackedToolCalls ?? []);
 
             log.debug('Tool execution completed:', {
                 toolName: request.toolName,
@@ -296,6 +330,7 @@ export class SandboxBridge {
             trackedCall.state = 'error';
             trackedCall.errorText = errorInfo.message;
             trackedCall.durationMs = duration;
+            useExecuteToolsLiveStore.getState().updateToolCalls(pending.requestId, pending.trackedToolCalls ?? []);
 
             // Send detailed error message
             const errorMessage = `${errorInfo.type}: ${errorInfo.message}`;
@@ -401,6 +436,9 @@ export class SandboxBridge {
 
         // Phase 2 (Option B): Track tool calls for this execution
         const trackedToolCalls: TrackedToolCall[] = [];
+
+        // Initialize live tracking for this execution
+        useExecuteToolsLiveStore.getState().startExecution(requestId);
 
         return new Promise<ExecutionResult>((resolve) => {
             // Set up timeout

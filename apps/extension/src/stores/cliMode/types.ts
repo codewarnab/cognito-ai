@@ -1,4 +1,4 @@
-export type BridgeStatus = 'connected' | 'needs-pairing' | 'offline';
+export type BridgeStatus = 'connected' | 'connecting' | 'offline';
 
 export interface AgentInfo {
   name: string;
@@ -28,7 +28,6 @@ export interface CliModeState {
   setBridgeToken: (token: string | null) => void;
   setBridgeStatus: (status: BridgeStatus) => void;
   checkBridgeHealth: () => Promise<void>;
-  pairWithBridge: (code: string) => Promise<boolean>;
   fetchAvailableAgents: () => Promise<void>;
 
   // Actions - Agent

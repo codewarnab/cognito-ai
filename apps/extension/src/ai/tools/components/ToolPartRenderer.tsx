@@ -57,8 +57,14 @@ export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRen
         toolCallId = part.toolCallId;
         output = part.result || part.output;
 
+        const isDenied =
+          !!output &&
+          typeof output === 'object' &&
+          'denied' in output &&
+          (output as any).denied === true;
+
         // Check if this is an error result
-        if (part.isError || (output && typeof output === 'object' && output.error)) {
+        if (isDenied || part.isError || (output && typeof output === 'object' && (output as any).error)) {
           state = 'output-error';
         } else {
           state = 'output-available'; // Success
@@ -96,7 +102,13 @@ export function ToolPartRenderer({ part, messageId, addToolOutput }: ToolPartRen
         state,
         input,
         output,
-        errorText: part.errorText || (part.isError ? String(output) : undefined),
+        errorText:
+          part.errorText ||
+          ((output && typeof output === 'object' && (output as any).denied === true)
+            ? ((output as any).message as string | undefined) || 'Action denied by user'
+            : part.isError
+              ? String(output)
+              : undefined),
       } as ToolUIState;
     } catch (error) {
       log.error('Error processing tool part:', error, part);

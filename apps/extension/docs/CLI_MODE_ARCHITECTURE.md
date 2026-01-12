@@ -50,9 +50,9 @@ Enables communication with a local agent CLI (Gemini CLI, Claude Code, Codex CLI
 
 *   **Extension (Side Panel)**:
     *   **Mode Selector**: Switches to `ToolsMode = 'cli'`.
-    *   **Bridge Pairing**: secure OTP pairing with `@cognito/code-bridge`.
+    *   **Bridge Pairing**: secure OTP pairing with `@cognito/cli-bridge`.
     *   **Chat Interface**: Streams responses from the CLI agent.
-*   **Local Bridge (`@cognito/code-bridge`)**:
+*   **Local Bridge (`@cognito/cli-bridge`)**:
     *   Runs on `http://127.0.0.1:8787`.
     *   **SSE `/events`**: Real-time status streaming ("Starting agent...", "Connected...").
     *   **ACP Protocol**: Spawns and controls the agent CLI.

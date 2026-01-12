@@ -35,30 +35,38 @@ export function McpToolApprovalSequence() {
                     <line x1="190" y1="100" x2="315" y2="100" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
                     <text x="252" y="93" textAnchor="middle" className="text-[10px]">notion_create_page (pending)</text>
 
-                    {/* 3. Show approval buttons */}
-                    <line x1="320" y1="135" x2="80" y2="135" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
-                    <text x="200" y="128" textAnchor="middle" className="text-[10px]">Show approval buttons</text>
+                    {/* 3. Auto-approve check */}
+                    <rect x="250" y="118" width="140" height="26" rx="3" className="fill-blue-50 stroke-blue-400 dark:fill-blue-900/25 dark:stroke-blue-500" strokeWidth="1" />
+                    <text x="320" y="134" textAnchor="middle" className="text-[9px] fill-blue-700 dark:fill-blue-300">Auto-approved? (store)</text>
+
+                    {/* 3a. Auto-approved path (skip prompt) */}
+                    <line x1="320" y1="155" x2="445" y2="155" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
+                    <text x="382" y="148" textAnchor="middle" className="text-[9px]">Yes → Execute</text>
+
+                    {/* 3b. Not auto-approved → show approval buttons */}
+                    <line x1="320" y1="180" x2="80" y2="180" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
+                    <text x="200" y="173" textAnchor="middle" className="text-[9px]">No → Show approval buttons</text>
 
                     {/* Note: Approval options */}
-                    <rect x="30" y="145" width="120" height="28" rx="2" className="fill-amber-50 stroke-amber-400 dark:fill-amber-900/30 dark:stroke-amber-500" strokeWidth="1" />
-                    <text x="90" y="158" textAnchor="middle" className="text-[8px] fill-amber-700 dark:fill-amber-400">Allow | Trust Server</text>
-                    <text x="90" y="168" textAnchor="middle" className="text-[8px] fill-amber-700 dark:fill-amber-400">Always Allow | Deny</text>
+                    <rect x="30" y="190" width="120" height="28" rx="2" className="fill-amber-50 stroke-amber-400 dark:fill-amber-900/30 dark:stroke-amber-500" strokeWidth="1" />
+                    <text x="90" y="203" textAnchor="middle" className="text-[8px] fill-amber-700 dark:fill-amber-400">Allow | Trust Server</text>
+                    <text x="90" y="213" textAnchor="middle" className="text-[8px] fill-amber-700 dark:fill-amber-400">Always Allow | Deny</text>
 
                     {/* 4. Click Allow */}
-                    <line x1="75" y1="195" x2="315" y2="195" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
-                    <text x="195" y="188" textAnchor="middle" className="text-[10px]">Click "Allow"</text>
+                    <line x1="75" y1="235" x2="315" y2="235" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
+                    <text x="195" y="228" textAnchor="middle" className="text-[10px]">Click "Allow"</text>
 
-                    {/* 5. Execute tool */}
-                    <line x1="320" y1="225" x2="445" y2="225" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
-                    <text x="382" y="218" textAnchor="middle" className="text-[10px]">Execute tool</text>
+                    {/* 5. Execute tool (after approval) */}
+                    <line x1="320" y1="260" x2="445" y2="260" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-approval)" />
+                    <text x="382" y="253" textAnchor="middle" className="text-[10px]">Execute tool</text>
 
                     {/* 6. Result */}
-                    <line x1="450" y1="255" x2="195" y2="255" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
-                    <text x="322" y="248" textAnchor="middle" className="text-[10px]">Result</text>
+                    <line x1="450" y1="285" x2="195" y2="285" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
+                    <text x="322" y="278" textAnchor="middle" className="text-[10px]">Result</text>
 
                     {/* 7. Response to user */}
-                    <line x1="190" y1="290" x2="80" y2="290" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
-                    <text x="135" y="283" textAnchor="middle" className="text-[10px]">"I've created the page"</text>
+                    <line x1="190" y1="310" x2="80" y2="310" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-approval)" />
+                    <text x="135" y="303" textAnchor="middle" className="text-[10px]">"I've created the page"</text>
                 </g>
 
                 {/* Arrow marker */}

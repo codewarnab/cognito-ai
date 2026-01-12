@@ -3,5 +3,5 @@
  */
 
 
-export { BridgePairingDrawer } from './BridgePairingDrawer';
-export { CodingAgentSelector } from './CodingAgentSelector';
+export { BridgeStatusDrawer } from './BridgeStatusDrawer';
+export { CliAgentSelector } from './cliAgentSelector';

@@ -161,8 +161,8 @@ export async function streamAIResponse(params: StreamAIParams) {
                             // Build system prompt
                             const promptResult = await buildSystemPromptForMode(workflowConfig ?? null as WorkflowDefinition | null, state.isSearchModeActive);
 
-                            // Setup remote mode
-                            const remoteSetup = await setupRemoteMode(modelName, workflowConfig ?? null as WorkflowDefinition | null, promptResult.systemPrompt);
+                            // Setup remote mode (pass toolsMode to skip MCP tools in adaptive mode)
+                            const remoteSetup = await setupRemoteMode(modelName, workflowConfig ?? null as WorkflowDefinition | null, promptResult.systemPrompt, promptResult.toolsMode);
 
                             state.model = remoteSetup.model;
                             state.tools = remoteSetup.tools;

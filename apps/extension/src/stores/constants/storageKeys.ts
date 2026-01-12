@@ -16,7 +16,6 @@ export const STORAGE_KEYS = {
   TOOL_APPROVAL: 'toolApprovalPreferences',
 
   // Legacy keys (for migration)
-  LEGACY_PROVIDER_CONFIG: 'ai_provider_config',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

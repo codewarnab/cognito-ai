@@ -75,13 +75,6 @@ export const useSettingsStore = create<SettingsState>()(
           (provider !== 'openai' && state.openaiApiKey)
         ),
       } as Partial<SettingsState>);
-
-      // Also update legacy storage for backward compatibility during migration
-      if (provider === 'google') {
-        await chrome.storage.local.set({
-          [STORAGE_KEYS.LEGACY_PROVIDER_CONFIG]: { google: { apiKey: key } },
-        });
-      }
     },
 
     setPreferredModel: (model) => set({ preferredModel: model }),
@@ -120,45 +113,10 @@ export const useSettingsStore = create<SettingsState>()(
 
     setProvidersConfig: (config) => set({ providersConfig: config }),
 
-    /**
-     * Loads settings from Chrome storage, including migration from legacy keys.
-     * Called automatically on store initialization.
-     */
-    loadFromStorage: async () => {
-      // Load from legacy storage locations for migration
-      const [providerConfig, modelConfig] = await Promise.all([
-        chrome.storage.local.get(STORAGE_KEYS.LEGACY_PROVIDER_CONFIG),
-        chrome.storage.local.get(STORAGE_KEYS.MODEL_CONFIG),
-      ]);
-
-      const updates: Partial<SettingsState> = {};
-
-      // Migrate provider config
-      const providers = providerConfig[STORAGE_KEYS.LEGACY_PROVIDER_CONFIG];
-      if (providers?.google?.apiKey) {
-        updates.googleApiKey = providers.google.apiKey;
-        updates.hasAnyProviderConfigured = true;
-      }
-
-      // Migrate model config
-      const model = modelConfig[STORAGE_KEYS.MODEL_CONFIG];
-      if (model?.mode) {
-        updates.preferredMode = model.mode;
-      }
-      if (model?.remoteModel) {
-        updates.preferredModel = model.remoteModel;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        set(updates);
-      }
-    },
-
     // Computed helpers
     hasGoogleApiKey: () => !!get().googleApiKey,
     needsProviderSetup: () => !get().hasAnyProviderConfigured,
   }))
 );
 
-// Initialize: load from legacy storage on first import
-useSettingsStore.getState().loadFromStorage();
+

@@ -68,7 +68,7 @@ export interface SettingsState {
   setUseBackendMode: (value: boolean) => void;
   setBackendModel: (model: BackendModel) => void;
   setProvidersConfig: (config: AIProviderConfig) => void;
-  loadFromStorage: () => Promise<void>;
+
 
   // Computed helpers
   hasGoogleApiKey: () => boolean;

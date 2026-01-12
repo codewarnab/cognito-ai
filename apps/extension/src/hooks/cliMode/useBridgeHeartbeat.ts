@@ -6,17 +6,8 @@ import { createLogger } from '~logger';
 
 const log = createLogger('useBridgeHeartbeat', 'CLI_MODE_BRIDGE');
 
-/**
- * Retry configuration for aggressive reconnection when offline
- */
-const RETRY_CONFIG = {
-    /** Initial retry delay when offline (faster for quick reconnection) */
-    initialDelayMs: 3_000,
-    /** Maximum delay between retries */
-    maxDelayMs: 30_000,
-    /** Backoff multiplier */
-    backoffMultiplier: 2,
-};
+// NOTE: We rely on EventSource's built-in retry behavior.
+// This keeps overhead low and avoids long backoff delays when the bridge starts.
 
 interface UseBridgeHeartbeatOptions {
     /**
@@ -58,75 +49,22 @@ export function useBridgeHeartbeat(options: UseBridgeHeartbeatOptions = {}) {
     // Track connection state
     const prevStatusRef = useRef(bridgeStatus);
     const sseCleanupRef = useRef<(() => void) | null>(null);
-    const fallbackIntervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isUsingSSERef = useRef(false);
-    const retryDelayRef = useRef(RETRY_CONFIG.initialDelayMs);
 
-    // Handle status transitions for callbacks
-    const handleStatusChange = useCallback((newStatus: 'connected' | 'needs-pairing' | 'offline') => {
+    // Fire callbacks on bridgeStatus transitions (store is the source of truth)
+    useEffect(() => {
         const previousStatus = prevStatusRef.current;
 
-        log.info('Status transition', { from: previousStatus, to: newStatus });
-
-        if (previousStatus === 'connected' && newStatus !== 'connected') {
-            log.warn('Bridge disconnected', { newStatus });
+        if (previousStatus === 'connected' && bridgeStatus !== 'connected') {
+            log.warn('Bridge disconnected', { newStatus: bridgeStatus });
             onDisconnect?.();
-        } else if (previousStatus !== 'connected' && newStatus === 'connected') {
-            log.info('Bridge reconnected');
+        } else if (previousStatus !== 'connected' && bridgeStatus === 'connected') {
+            log.info('Bridge connected');
             onReconnect?.();
         }
 
-        prevStatusRef.current = newStatus;
-        setBridgeStatus(newStatus);
-    }, [onDisconnect, onReconnect, setBridgeStatus]);
-
-    // Start fallback HTTP polling with exponential backoff
-    const startFallbackPolling = useCallback(() => {
-        if (fallbackIntervalRef.current) return; // Already polling
-
-        log.info('Starting fallback HTTP polling with exponential backoff', {
-            initialDelay: RETRY_CONFIG.initialDelayMs,
-        });
-        isUsingSSERef.current = false;
-
-        // Initial check immediately
-        checkBridgeHealth();
-
-        // Schedule first retry
-        const scheduleNextRetry = () => {
-            const currentDelay = retryDelayRef.current;
-            log.debug('Scheduling next retry', { delayMs: currentDelay });
-
-            fallbackIntervalRef.current = setTimeout(() => {
-                checkBridgeHealth().then(() => {
-                    // If still not connected, schedule next retry with backoff
-                    const currentStatus = prevStatusRef.current;
-                    if (currentStatus !== 'connected') {
-                        // Increase delay with backoff
-                        retryDelayRef.current = Math.min(
-                            retryDelayRef.current * RETRY_CONFIG.backoffMultiplier,
-                            RETRY_CONFIG.maxDelayMs
-                        );
-                        scheduleNextRetry();
-                    }
-                });
-            }, currentDelay);
-        };
-
-        // Initialize retry delay and start
-        retryDelayRef.current = RETRY_CONFIG.initialDelayMs;
-        scheduleNextRetry();
-    }, [checkBridgeHealth]);
-
-    // Stop fallback polling and reset retry delay
-    const stopFallbackPolling = useCallback(() => {
-        if (fallbackIntervalRef.current) {
-            clearTimeout(fallbackIntervalRef.current);
-            fallbackIntervalRef.current = null;
-            retryDelayRef.current = RETRY_CONFIG.initialDelayMs; // Reset for next time
-            log.info('Stopped fallback HTTP polling');
-        }
-    }, []);
+        prevStatusRef.current = bridgeStatus;
+    }, [bridgeStatus, onDisconnect, onReconnect]);
 
 
     // Connect to SSE stream
@@ -143,8 +81,10 @@ export function useBridgeHeartbeat(options: UseBridgeHeartbeatOptions = {}) {
             onConnected: (event) => {
                 log.info('SSE connected', { version: event.version });
                 isUsingSSERef.current = true;
-                stopFallbackPolling();
-                handleStatusChange('connected');
+
+                // Bridge is online; attempt (auto)connect + tool registration.
+                // This call is idempotent and will reuse a stored token if valid.
+                checkBridgeHealth();
             },
             onHeartbeat: () => {
                 // SSE heartbeat confirms connection is alive
@@ -152,25 +92,17 @@ export function useBridgeHeartbeat(options: UseBridgeHeartbeatOptions = {}) {
             },
             onClosing: (event) => {
                 log.warn('Bridge closing via SSE', { reason: event.reason });
-                handleStatusChange('offline');
-                // SSE will error after this, which triggers reconnect logic
+                isUsingSSERef.current = false;
+                setBridgeStatus('offline');
             },
             onError: () => {
-                log.warn('SSE connection failed, falling back to HTTP polling');
+                // EventSource will keep retrying automatically; we just reflect offline state.
+                log.warn('SSE connection failed (will retry automatically)');
                 isUsingSSERef.current = false;
-                handleStatusChange('offline');
-
-                // Clean up SSE
-                if (sseCleanupRef.current) {
-                    sseCleanupRef.current();
-                    sseCleanupRef.current = null;
-                }
-
-                // Fall back to HTTP polling
-                startFallbackPolling();
+                setBridgeStatus('offline');
             },
         });
-    }, [bridgeBaseUrl, handleStatusChange, startFallbackPolling, stopFallbackPolling]);
+    }, [bridgeBaseUrl, checkBridgeHealth, setBridgeStatus]);
 
     // Main effect: manage SSE connection
     useEffect(() => {
@@ -180,29 +112,27 @@ export function useBridgeHeartbeat(options: UseBridgeHeartbeatOptions = {}) {
                 sseCleanupRef.current();
                 sseCleanupRef.current = null;
             }
-            stopFallbackPolling();
             log.info('Bridge connection monitoring disabled');
             return;
         }
 
         // Start with SSE connection attempt
-        log.info('Hook enabled, starting SSE connection', { bridgeBaseUrl, currentBridgeStatus: bridgeStatus });
+        log.info('Hook enabled, starting SSE connection', {
+            bridgeBaseUrl,
+            currentBridgeStatus: useCliModeStore.getState().bridgeStatus,
+        });
         connectSSE();
+        // Also attempt an immediate connect (fast path if bridge is already running)
+        checkBridgeHealth();
 
         return () => {
             if (sseCleanupRef.current) {
                 sseCleanupRef.current();
                 sseCleanupRef.current = null;
             }
-            stopFallbackPolling();
             log.info('Bridge connection monitoring stopped');
         };
-    }, [enabled, connectSSE, stopFallbackPolling]);
-
-    // Update previous status ref when bridgeStatus changes externally
-    useEffect(() => {
-        prevStatusRef.current = bridgeStatus;
-    }, [bridgeStatus]);
+    }, [enabled, connectSSE, checkBridgeHealth, bridgeBaseUrl]);
 
     return {
         /**

@@ -5,7 +5,8 @@
  */
 
 import { createLogger } from '~logger';
-import { rewriter, type RewriterOptions } from './rewriter';
+import { rewriter } from './rewriter';
+import type { RewriterOptions } from './types';
 import { rewriteWithBackend } from './backendRewriter';
 import { queueContentMemoryForRewriter } from '../supermemory/contentMemory/hooks';
 import { useSettingsStore } from '@/stores/settings/settingsStore';

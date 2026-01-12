@@ -56,7 +56,6 @@ const AnimatedConnectButton: React.FC<AnimatedConnectButtonProps> = ({ status, o
                         {text.split("").map((char, i) => (
                             <motion.span
                                 key={`${char}-${i}-${status}`}
-                                layout
                                 initial={{ opacity: 0, scale: 0, filter: "blur(4px)" }}
                                 animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                                 exit={{ opacity: 0, scale: 0, filter: "blur(4px)" }}

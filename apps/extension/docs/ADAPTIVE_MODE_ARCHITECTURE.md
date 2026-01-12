@@ -150,9 +150,14 @@ async function buildAdaptiveSystemPrompt(): Promise<string>
 | Tool | Purpose | Input | Output |
 |------|---------|-------|--------|
 | `discoverTools` | Search for tools by keyword | `{ query: string, includeSchema?: boolean }` | List of matching tools |
-| `executeTools` | Execute JavaScript orchestration code | `{ code: string }` | Execution result |
+| `executeTools` | Execute JavaScript orchestration code (sandboxed) | `{ code: string }` | `{ output, success, error?, toolCalls? }` |
 
-### 3. SandboxBridge (`SandboxBridge.ts`)
+**Supporting modules (HITL + live rendering):**
+- `executeToolsApproval.ts`: Approval promise bridge used to pause/resume sandbox tool calls
+- `executeToolsLiveStore.ts`: Zustand store for live sub-tool call updates while `executeTools` is still running
+- `types.ts`: `TrackedToolCall.state` includes `'pending-approval'` for paused tool calls
+
+### 3. SandboxBridge (`SandboxBridge/SandboxBridge.ts`)
 
 Singleton class managing iframe communication:
 
@@ -172,6 +177,11 @@ class SandboxBridge {
     destroy(): void
 }
 ```
+
+**Key behaviors (Adaptive Mode):**
+- **Tool call tracking**: records `TrackedToolCall[]` and returns them as `ExecutionResult.toolCalls`
+- **Live streaming to UI**: pushes tool call updates into `useExecuteToolsLiveStore` so the UI can render sub-calls before `executeTools` completes
+- **Human-in-the-loop approvals**: pauses sensitive tool calls (`pending-approval`) until the user approves/denies, then resumes execution
 
 ### 4. Sandbox Executor (`sandbox-executor/executor.ts`)
 
@@ -471,8 +481,15 @@ interface ExecuteResultMessage {
 │   │  Step 3: Create Tool Executor Callback                           │      │
 │   │                                                                   │      │
 │   │  toolExecutor = async (toolName, args) => {                      │      │
-│   │    const tool = allTools[toolName];                              │      │
-│   │    return await tool.execute(...args);                           │      │
+│   │    // MCP tools: execute is stripped (HITL) → use stored executor │      │
+│   │    if (isMcpToolFromRegistry(toolName))                           │      │
+│   │      return await getMcpToolExecutor(toolName)(args[0]);          │      │
+│   │    // WebMCP tools: execute is stripped (HITL) → use stored exec  │      │
+│   │    if (toolName.startsWith('webmcp_'))                            │      │
+│   │      return await getWebmcpToolExecutor(toolName)(args[0] ?? {}); │      │
+│   │    // Built-in / extension tools                                  │      │
+│   │    const tool = allTools[toolName];                               │      │
+│   │    return await tool.execute(...args);                             │      │
 │   │  }                                                                │      │
 │   └────────────────────────────────────────────────────────┬─────────┘      │
 │                                                            │                 │
@@ -484,7 +501,7 @@ interface ExecuteResultMessage {
 │   │    │                                                              │      │
 │   │    ├─► Initialize sandbox if needed                              │      │
 │   │    ├─► Send EXECUTE_CODE message                                 │      │
-│   │    ├─► Handle TOOL_REQUEST messages (execute real tools)         │      │
+│   │    ├─► Handle TOOL_REQUEST messages (may pause for approval)     │      │
 │   │    ├─► Send TOOL_RESULT back to sandbox                          │      │
 │   │    └─► Receive EXECUTE_RESULT when complete                      │      │
 │   └────────────────────────────────────────────────────────┬─────────┘      │
@@ -492,11 +509,62 @@ interface ExecuteResultMessage {
 │                                                            ▼                 │
 │   Output: {                                                                  │
 │     output: "[{title: 'Google', url: '...'}]",                              │
-│     success: true                                                            │
+│     success: true,                                                           │
+│     toolCalls: [ /* TrackedToolCall[] */ ]                                    │
 │   }                                                                          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+#### Tool Execution Routing (Built-in vs MCP vs WebMCP)
+
+In Adaptive Mode, **MCP** and **WebMCP** tool objects are intentionally exposed without an `.execute` function (because execution is gated by approvals). `executeTools` therefore routes execution via stored executors:
+
+- **MCP tools**: `@/utils/mcp/toolMetadataStore` → `getMcpToolExecutor(toolName)`
+- **WebMCP tools**: `src/ai/tools/webmcpTools` → `getWebmcpToolExecutor(toolName)`
+- **Built-in / extension tools**: `tool.execute(...)` as usual
+
+This fixes the root issue where sandbox tool execution previously assumed every tool had `tool.execute`.
+
+#### Human-in-the-Loop Approval for Sandbox Tool Calls
+
+When sandboxed code calls `tools.<name>()`, the sandbox sends a `TOOL_REQUEST`. The main thread (`SandboxBridge`) decides whether to pause for approval:
+
+- **Approval required for:**
+  - WebMCP tools: `toolName.startsWith('webmcp_')`
+  - MCP tools: `isMcpTool(toolName)` from the tool metadata registry
+  - Built-in sensitive tools: `TOOLS_REQUIRING_APPROVAL`
+
+**Flow inside `SandboxBridge` (on each `TOOL_REQUEST`):**
+1. Create a `TrackedToolCall` with `state: 'pending-approval'` (or `'loading'` for safe tools)
+2. Push live updates to `useExecuteToolsLiveStore` (so UI can render immediately)
+3. If approval is required, await `waitForSandboxToolApproval(callId, abortSignal?)`
+4. On approve → switch to `'loading'`, execute the tool, then `'success'`
+5. On deny → send `TOOL_RESULT` back to the sandbox with `error`, and mark the tracked call as `'error'`
+
+**Approval bridge API (`executeToolsApproval.ts`):**
+- `waitForSandboxToolApproval(callId, abortSignal?)`
+- `approveSandboxToolCall(callId)`
+- `denySandboxToolCall(callId, reason?)`
+
+#### Live Sub-Tool Call UI (while `executeTools` is still running)
+
+Unlike normal tool calls (which render directly as their own tool cards), `executeTools` can contain **multiple** sub-tool calls. To keep the UI responsive:
+
+- `executeToolsLiveStore.ts` exposes `useExecuteToolsLiveStore` with:
+  - `startExecution(requestId)` – clears previous live calls
+  - `updateToolCalls(requestId, toolCalls)` – publishes live updates
+  - `clear()` – resets store
+- `ExecuteToolsRenderer.tsx` renders `useExecuteToolsLiveStore().toolCalls` while `executeTools` is still in its loading state.
+- `ExecuteToolsRenderer.tsx` uses an internal `ExecuteToolsToolCallCard` that mirrors `CompactToolRenderer` approval UX and resolves sandbox approvals via `approveSandboxToolCall(callId)` / `denySandboxToolCall(callId)`.
+- When any sub-call is `pending-approval`, the header switches from **"Executing code..."** to **"Waiting for approval..."** to reflect the paused state.
+
+#### Loading Indicator Behavior (avoid “Analyzing…” under approvals)
+
+The chat-level loading shimmer (“Thinking… / Analyzing…”) is only shown when the last assistant message has **no renderable parts**. To prevent noisy UI while `executeTools` is paused:
+
+- In `src/components/features/chat/components/display/ChatMessages/ChatMessages.tsx`, we treat AI SDK v6 tool parts (`tool-input-available`, `tool-output-available`, `tool-*`, `dynamic-tool`) as message content.
+- Result: while a tool approval card is visible, the global loading indicator stays hidden (matching the non-adaptive approval experience).
 
 ---
 
@@ -588,6 +656,8 @@ function validateCode(code: string): ValidationResult {
 
 ### Tool Collection and Filtering
 
+> **Note:** In Adaptive mode, **remote/stdio MCP tools are excluded** from the upfront tool index to keep the system prompt lightweight. They remain fully accessible via `discoverTools` and `executeTools`. WebMCP tools (page-specific) are included in the index because they're contextual to the current page.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      TOOL AGGREGATION FOR ADAPTIVE MODE                      │
@@ -597,44 +667,58 @@ function validateCode(code: string): ValidationResult {
 │   │                         Tool Sources                                │    │
 │   │                                                                     │    │
 │   │   ┌──────────────┐   ┌──────────────┐   ┌──────────────────────┐  │    │
-│   │   │  Extension   │   │     MCP      │   │      WebMCP          │  │    │
+│   │   │  Extension   │   │  Remote MCP  │   │      WebMCP          │  │    │
 │   │   │    Tools     │   │    Tools     │   │      Tools           │  │    │
 │   │   │              │   │              │   │                      │  │    │
 │   │   │ getAllTools()│   │getMCPTools() │   │getWebMCPTools()      │  │    │
-│   │   │              │   │    From      │   │   From Active        │  │    │
-│   │   │ ~45 tools    │   │   Background │   │      Tab             │  │    │
+│   │   │              │   │  (Notion,    │   │   From Active        │  │    │
+│   │   │ ~45 tools    │   │   etc.)      │   │      Tab             │  │    │
 │   │   └──────┬───────┘   └──────┬───────┘   └──────────┬───────────┘  │    │
 │   │          │                  │                       │              │    │
 │   └──────────┼──────────────────┼───────────────────────┼──────────────┘    │
 │              │                  │                       │                    │
-│              └──────────────────┼───────────────────────┘                    │
-│                                 ▼                                            │
-│   ┌────────────────────────────────────────────────────────────────────┐    │
-│   │                      Tool Index Builder                             │    │
-│   │                       getToolIndex()                                │    │
-│   │                                                                     │    │
-│   │   For each tool:                                                   │    │
-│   │   - Extract name                                                    │    │
-│   │   - Extract first line of description (max 100 chars)              │    │
-│   │   - Sort alphabetically                                             │    │
-│   └────────────────────────────────────────────────────────────────────┘    │
+│   ───────────┴──────────────────┴───────────────────────┴──────────────────  │
+│                                 │                                            │
+│   ┌─────────────────────────────┼─────────────────────────────────────────┐  │
+│   │                             │                                         │  │
+│   │  ┌──────────────────────────▼─────────────────────────────────────┐  │  │
+│   │  │               discoverToolsInMemory()                           │  │  │
+│   │  │                                                                 │  │  │
+│   │  │   ✓ Extension Tools    ✓ MCP Tools    ✓ WebMCP Tools           │  │  │
+│   │  │                                                                 │  │  │
+│   │  │   Used by discoverTools to search ALL available tools          │  │  │
+│   │  └─────────────────────────────────────────────────────────────────┘  │  │
+│   │                                                                       │  │
+│   │  ┌─────────────────────────────────────────────────────────────────┐  │  │
+│   │  │                   getToolIndex()                                 │  │  │
+│   │  │                                                                  │  │  │
+│   │  │   ✓ Extension Tools    ✗ MCP Tools    ✓ WebMCP Tools            │  │  │
+│   │  │                       (EXCLUDED)      (page-specific)           │  │  │
+│   │  │                                                                  │  │  │
+│   │  │   Used to build lightweight system prompt tool index             │  │  │
+│   │  └─────────────────────────────────────────────────────────────────┘  │  │
+│   │                                                                       │  │
+│   └───────────────────────────────────────────────────────────────────────┘  │
 │                                 │                                            │
 │                                 ▼                                            │
 │   ┌────────────────────────────────────────────────────────────────────┐    │
 │   │                    System Prompt Construction                       │    │
 │   │                                                                     │    │
-│   │   ## Available Tools Index (45 tools)                               │    │
+│   │   ## Available Tools Index (~45 tools, excludes remote MCP)         │    │
 │   │   Use discoverTools("keyword") to get full details:                │    │
 │   │                                                                     │    │
 │   │   - **addMemory**: Add information to long-term memory             │    │
 │   │   - **readPageContent**: Extract page content with modes...        │    │
 │   │   - **applyTabGroups**: Group browser tabs...                      │    │
-│   │   - **chromeSearch**: Search in Chrome...                          │    │
 │   │   - ...                                                             │    │
+│   │                                                                     │    │
+│   │   Note: Remote MCP tools (Notion, etc.) can be discovered          │    │
+│   │   on-demand via discoverTools("notion")                            │    │
 │   └────────────────────────────────────────────────────────────────────┘    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
 
 ### Sandbox Lifecycle
 
@@ -755,7 +839,8 @@ function validateCode(code: string): ValidationResult {
    │            │                 │                     │                 │ For each
    │            │                 │                     │◄─TOOL_REQUEST───│ tool call
    │            │                 │                     │                 │
-   │            │                 │                     │ Execute tool    │
+   │            │                 │                     │ Wait approval   │
+   │            │                 │                     │ then execute    │
    │            │                 │                     │─────────┐       │
    │            │                 │                     │◄────────┘       │
    │            │                 │                     │                 │
@@ -819,8 +904,8 @@ function validateCode(code: string): ValidationResult {
 │   └─────────────────────────────────────────────────────────────────────┘  │
 │        │                                                                    │
 │        ▼                                                                    │
-│   Main extension receives, executes real tool, sends back:                  │
-│   { type: 'TOOL_RESULT', callId: 'req-123-1', result: { success: true } }  │
+│   Main extension receives TOOL_REQUEST (HITL may pause), then sends back:   │
+│   { type: 'TOOL_RESULT', callId: 'req-123-1', result?: ..., error?: ... }  │
 │        │                                                                    │
 │        ▼                                                                    │
 │   Sandbox receives:                                                         │
@@ -849,11 +934,21 @@ apps/extension/src/
 │       │   ├── index.ts               # Exports discoverTools, executeTools
 │       │   ├── discoverTools.ts       # Tool search functionality
 │       │   ├── executeTools.ts        # Code orchestration
+│       │   ├── executeToolsApproval.ts # HITL approval bridge for sandbox calls
+│       │   ├── executeToolsLiveStore.ts # Live sub-tool call store (UI streaming)
+│       │   ├── types.ts               # Tool call tracking types (TrackedToolCall)
 │       │   ├── validateCode.ts        # AST security validation
-│       │   ├── SandboxBridge.ts       # Iframe communication
-│       │   └── serializationUtils.ts  # Safe JSON serialization
+│       │   ├── serializationUtils.ts  # Safe JSON serialization
+│       │   └── SandboxBridge/
+│       │       ├── SandboxBridge.ts   # Iframe communication + HITL gating
+│       │       ├── constants.ts       # Sandbox timeouts
+│       │       └── types.ts           # postMessage protocol types
 │       │
 │       └── registryUtils.ts           # getAllTools() for extension tools
+│
+├── actions/
+│   └── meta/
+│       └── ExecuteToolsRenderer.tsx   # Renders live executeTools sub-calls + approval UI
 │
 ├── entrypoints/
 │   └── sandbox-executor/
@@ -899,14 +994,21 @@ export const ADAPTIVE_ONLY_TOOLS: string[] = [
 ];
 ```
 
-### Sandbox Configuration (`SandboxBridge.ts`)
+### Sandbox Configuration (timeouts)
 
 ```typescript
-const DEFAULT_TIMEOUT_MS = 30_000;          // Code execution timeout
-const SANDBOX_READY_TIMEOUT_MS = 5_000;     // Init timeout
-const HEALTH_CHECK_INTERVAL_MS = 10_000;    // Health monitoring
+// src/ai/tools/meta/SandboxBridge/constants.ts
+const DEFAULT_TIMEOUT_MS = 150_000;          // Default code execution timeout
+const SANDBOX_READY_TIMEOUT_MS = 5_000;      // Init timeout
+const HEALTH_CHECK_INTERVAL_MS = 10_000;     // Health monitoring
 const MAX_CONSECUTIVE_FAILURES = 3;          // Before auto-restart
-const TOOL_EXECUTION_TIMEOUT_MS = 60_000;    // Per-tool timeout
+const TOOL_EXECUTION_TIMEOUT_MS = 120_000;   // Per-tool execution timeout (after approval)
+
+// src/ai/tools/meta/executeTools.ts
+const EXECUTE_TOOLS_SANDBOX_TIMEOUT_MS = 15 * 60_000; // Extra time for HITL approvals
+
+// src/entrypoints/sandbox-executor/executor.ts
+const TOOL_CALL_TIMEOUT_MS = 15 * 60_000;    // Sandbox waits this long for TOOL_RESULT
 ```
 
 ---

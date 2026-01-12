@@ -8,6 +8,9 @@ const log = createLogger('cliModeStore', 'CLI_MODE_STORE');
 
 const DEFAULT_BRIDGE_URL = 'http://127.0.0.1:8787';
 
+// Keep at most one active tool-events SSE connection per sidepanel session
+let toolEventsCleanup: (() => void) | null = null;
+
 export const useCliModeStore = create<CliModeState>()(
   persist(
     (set, get) => ({
@@ -60,110 +63,107 @@ export const useCliModeStore = create<CliModeState>()(
           const data = await response.json().catch(() => ({}));
           const repoCwd = data.cwd || null;
 
-          // Bridge is reachable - now validate token if we have one
-          if (bridgeToken) {
-            // Validate the token with the bridge
+          // Bridge is reachable
+          set({ bridgeStatus: 'connecting', repoCwd });
+
+          // 1) Validate existing token if present
+          let activeToken: string | null = bridgeToken;
+          let tokenIsValid = false;
+
+          if (activeToken) {
             try {
               const validateResponse = await fetch(`${bridgeBaseUrl}/validate`, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${bridgeToken}`,
+                  'Authorization': `Bearer ${activeToken}`,
                 },
                 signal: AbortSignal.timeout(3000),
               });
 
               if (validateResponse.ok) {
                 const validateData = await validateResponse.json();
-                if (validateData.valid) {
-                  set({ bridgeStatus: 'connected', repoCwd });
-
-                  // Re-register tools on successful reconnection
-                  registerToolsWithBridge(bridgeBaseUrl, bridgeToken).then(result => {
-                    if (result.success) {
-                      log.info(`Re-registered ${result.count} tools with bridge`);
-                    } else {
-                      log.warn('Failed to re-register tools with bridge:', result.error);
-                    }
-                  });
-
-                  // Reconnect to tool events SSE
-                  connectToToolEvents(bridgeBaseUrl, bridgeToken, {
-                    onConnected: () => log.info('Reconnected to tool events SSE'),
-                    onDisconnected: () => log.info('Disconnected from tool events SSE'),
-                    onError: (err) => log.warn('Tool events SSE error:', err),
-                  });
-                } else {
-                  // Token is invalid - clear it and require re-pairing
+                tokenIsValid = !!validateData.valid;
+                if (!tokenIsValid) {
                   log.warn('Bridge token invalid, clearing', { reason: validateData.reason });
-                  set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+                  activeToken = null;
+                  set({ bridgeToken: null });
                 }
               } else {
-                // Validation endpoint error - assume token is invalid
                 log.warn('Bridge token validation failed');
-                set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+                activeToken = null;
+                set({ bridgeToken: null });
               }
             } catch (validateError) {
-              // If validation fails but health passed, token might still be valid
-              // Be conservative and mark as needs-pairing
               log.warn('Bridge token validation error', validateError);
-              set({ bridgeToken: null, bridgeStatus: 'needs-pairing', repoCwd });
+              activeToken = null;
+              set({ bridgeToken: null });
             }
-          } else {
-            set({ bridgeStatus: 'needs-pairing', repoCwd });
           }
+
+          // 2) If no valid token, auto-connect to get one
+          if (!tokenIsValid) {
+            try {
+              const connectResponse = await fetch(`${bridgeBaseUrl}/connect`, {
+                method: 'POST',
+                signal: AbortSignal.timeout(3000),
+              });
+
+              if (!connectResponse.ok) {
+                const errorText = await connectResponse.text().catch(() => '');
+                log.warn('Bridge auto-connect failed', { status: connectResponse.status, errorText });
+                set({ bridgeStatus: 'connecting', repoCwd });
+                return;
+              }
+
+              const connectData = await connectResponse.json().catch(() => ({}));
+              if (!connectData.token || typeof connectData.token !== 'string') {
+                log.warn('Bridge auto-connect missing token');
+                set({ bridgeStatus: 'connecting', repoCwd });
+                return;
+              }
+
+              activeToken = connectData.token;
+              set({ bridgeToken: activeToken });
+              log.info('Bridge auto-connect successful');
+            } catch (connectError) {
+              log.warn('Bridge auto-connect request failed', connectError);
+              set({ bridgeStatus: 'connecting', repoCwd });
+              return;
+            }
+          }
+
+          if (!activeToken) {
+            set({ bridgeStatus: 'connecting', repoCwd });
+            return;
+          }
+
+          // Connected (token is present + valid or freshly issued)
+          set({ bridgeStatus: 'connected', repoCwd });
+
+          // (Re)register tools
+          registerToolsWithBridge(bridgeBaseUrl, activeToken).then(result => {
+            if (result.success) {
+              log.info(`Registered ${result.count} tools with bridge`);
+            } else {
+              log.warn('Failed to register tools with bridge:', result.error);
+            }
+          });
+
+          // (Re)connect to tool events SSE (ensure only one connection)
+          if (toolEventsCleanup) {
+            toolEventsCleanup();
+            toolEventsCleanup = null;
+          }
+          toolEventsCleanup = connectToToolEvents(bridgeBaseUrl, activeToken, {
+            onConnected: () => log.info('Connected to tool events SSE'),
+            onDisconnected: () => log.info('Disconnected from tool events SSE'),
+            onError: (err) => log.warn('Tool events SSE error:', err),
+          });
         } catch (error) {
           log.warn('Bridge health check failed', error);
           set({ bridgeStatus: 'offline' });
         } finally {
           set({ isCheckingBridge: false });
-        }
-      },
-
-      pairWithBridge: async (code) => {
-        const { bridgeBaseUrl } = get();
-        log.info('Attempting to pair with bridge', { code });
-
-        try {
-          const response = await fetch(`${bridgeBaseUrl}/pair/confirm`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-            log.error('Pairing failed', new Error(error.error));
-            return false;
-          }
-
-          const data = await response.json();
-          if (data.token) {
-            set({ bridgeToken: data.token, bridgeStatus: 'connected' });
-            log.info('Pairing successful');
-
-            // Register tools with bridge after successful pairing
-            registerToolsWithBridge(bridgeBaseUrl, data.token).then(result => {
-              if (result.success) {
-                log.info(`Registered ${result.count} tools with bridge`);
-              } else {
-                log.warn('Failed to register tools with bridge:', result.error);
-              }
-            });
-
-            // Connect to tool events SSE for tool execution
-            connectToToolEvents(bridgeBaseUrl, data.token, {
-              onConnected: () => log.info('Connected to tool events SSE'),
-              onDisconnected: () => log.info('Disconnected from tool events SSE'),
-              onError: (err) => log.warn('Tool events SSE error:', err),
-            });
-
-            return true;
-          }
-
-          return false;
-        } catch (error) {
-          log.error('Pairing request failed', error);
-          return false;
         }
       },
 

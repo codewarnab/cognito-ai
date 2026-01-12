@@ -87,7 +87,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
 
   // Validate bridge connection
   if (bridgeStatus !== 'connected' || !bridgeToken) {
-    const error = new Error('Bridge not connected. Please pair with the bridge first.');
+    const error = new Error('Bridge not connected. Start the code bridge and wait for auto-connect.');
     onError?.(error);
     throw error;
   }
@@ -233,7 +233,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           displayMessage += `3. **Check your API key** - Make sure the required environment variable is set\n`;
           displayMessage += `4. **Try a different agent** - Select another agent from the dropdown\n`;
         } else {
-          displayMessage += `Make sure the code bridge is running and you're paired.\n`;
+          displayMessage += `Make sure the code bridge is running and the extension is connected.\n`;
         }
 
         // Render as structured error status for the UI (error card).
