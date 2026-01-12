@@ -9,10 +9,14 @@ import {
 } from '@/components/ui/primitives/drawer';
 import { CheckCircle, Loader2, Terminal, WifiOff } from 'lucide-react';
 import { cn } from '@/utils/ui';
+import { ENV } from '@/utils/env';
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { useUINavigationStore } from '@/stores';
 import type { CliModeState } from '@/stores/cliMode/types';
 import type { UINavigationState } from '@/stores';
+
+/** Command to start the bridge - differs between dev and production builds */
+const BRIDGE_START_COMMAND = ENV.DEV ? 'pnpm dev:bridge' : 'npx @cognito/cli-bridge';
 
 interface BridgeStatusDrawerProps {
     isOpen: boolean;
@@ -113,7 +117,7 @@ export const BridgeStatusDrawer: React.FC<BridgeStatusDrawerProps> = ({ isOpen, 
                             <Terminal className="w-3 h-3" />
                             <span>
                                 Start the bridge:{' '}
-                                <code className="text-blue-400 font-mono">pnpm dev:bridge</code>
+                                <code className="text-blue-400 font-mono">{BRIDGE_START_COMMAND}</code>
                             </span>
                         </div>
                         <div className="text-xs text-[var(--text-tertiary)] text-center px-6">

@@ -34,6 +34,40 @@ const sseClients = new Set<http.ServerResponse>();
 const lastValidationTime = new Map<string, number>();
 const VALIDATION_DEBOUNCE_MS = 10_000; // Only show message once per 10 seconds
 
+// Track current extension status for unified status display
+interface ExtensionStatus {
+  connected: boolean;
+  reconnected: boolean;
+  toolsCount: number;
+}
+const extensionStatus: ExtensionStatus = {
+  connected: false,
+  reconnected: false,
+  toolsCount: 0,
+};
+
+/**
+ * Update the unified extension status box
+ */
+function updateExtensionStatusBox(): void {
+  const lines: Array<{ text: string; type?: 'success' | 'info' | 'warning' | 'dim' }> = [];
+
+  if (extensionStatus.reconnected) {
+    lines.push({ text: '✓ Extension reconnected (stored token valid)', type: 'success' });
+  } else if (extensionStatus.connected) {
+    lines.push({ text: '✓ Extension authenticated', type: 'success' });
+  }
+
+  if (extensionStatus.toolsCount > 0) {
+    lines.push({ text: '✓ Extension tools registered', type: 'success' });
+    lines.push({ text: `Tools available: ${extensionStatus.toolsCount}` });
+  }
+
+  if (lines.length > 0) {
+    logger.persistentBox('extension-status', { lines });
+  }
+}
+
 /**
  * Broadcast a shutdown event to all connected SSE clients
  */
@@ -147,11 +181,9 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
 
           // Only show message if enough time has passed since last validation
           if (now - lastTime > VALIDATION_DEBOUNCE_MS) {
-            logger.box({
-              lines: [
-                { text: '✓ Extension reconnected (stored token valid)', type: 'success' },
-              ],
-            });
+            extensionStatus.reconnected = true;
+            extensionStatus.connected = true;
+            updateExtensionStatusBox();
           }
           lastValidationTime.set(tokenKey, now);
         }
@@ -182,12 +214,9 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
         const token = generateToken();
         await addToken(token);
 
-        logger.box({
-          lines: [
-            { text: '✓ Extension authenticated', type: 'success' },
-            { text: `Extension ID: ${(auth.extensionId || '').slice(0, 32)}`, type: 'dim' },
-          ],
-        });
+        extensionStatus.connected = true;
+        extensionStatus.reconnected = false;
+        updateExtensionStatusBox();
 
         sendJson(res, { token, extensionId: auth.extensionId });
         return;
@@ -246,12 +275,8 @@ export async function startBridgeServer(config: ServerConfig): Promise<void> {
         }
 
         registerTools(body.tools);
-        logger.box({
-          lines: [
-            { text: '✓ Extension tools registered', type: 'success' },
-            { text: `Tools available: ${logger.count(body.tools.length)}` },
-          ],
-        });
+        extensionStatus.toolsCount = body.tools.length;
+        updateExtensionStatusBox();
         sendJson(res, { success: true, count: body.tools.length });
         return;
       }

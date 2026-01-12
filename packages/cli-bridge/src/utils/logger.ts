@@ -2,6 +2,10 @@ import chalk from 'chalk';
 
 const BOX_WIDTH = 62;
 
+// Track the last persistent box to enable overwriting
+let lastPersistentBoxLines = 0;
+let lastPersistentBoxId: string | null = null;
+
 /**
  * Logger utility with chalk styling for consistent CLI output
  */
@@ -92,6 +96,71 @@ export const logger = {
      */
     separator(): void {
         console.log(chalk.dim('─'.repeat(60)));
+    },
+
+    /**
+     * Create a persistent box that overwrites the previous one with same ID.
+     * Useful for status updates that shouldn't spam the console.
+     */
+    persistentBox(id: string, options: {
+        title?: string;
+        lines: Array<{ text: string; type?: 'success' | 'info' | 'warning' | 'dim' }>;
+        footer?: { text: string; type?: 'success' | 'info' | 'warning' | 'dim' };
+    }): void {
+        const { title, lines, footer } = options;
+        const horizontal = '═'.repeat(BOX_WIDTH - 2);
+
+        // Calculate how many lines this box will take
+        let totalLines = 3; // top border + bottom border + empty line before
+        if (title) totalLines += 2; // title + separator
+        totalLines += lines.length;
+        if (footer) totalLines += 2; // separator + footer
+        totalLines += 1; // empty line after
+
+        // If same ID, move cursor up and clear previous box
+        if (lastPersistentBoxId === id && lastPersistentBoxLines > 0) {
+            // Move cursor up and clear each line
+            process.stdout.write(`\x1b[${lastPersistentBoxLines}A`);
+            for (let i = 0; i < lastPersistentBoxLines; i++) {
+                process.stdout.write('\x1b[2K\n');
+            }
+            process.stdout.write(`\x1b[${lastPersistentBoxLines}A`);
+        }
+
+        console.log('');
+        console.log(chalk.cyan(`╔${horizontal}╗`));
+
+        if (title) {
+            const paddedTitle = title.padStart((BOX_WIDTH - 2 + title.length) / 2).padEnd(BOX_WIDTH - 2);
+            console.log(chalk.cyan('║') + chalk.bold.white(paddedTitle) + chalk.cyan('║'));
+            console.log(chalk.cyan(`╠${horizontal}╣`));
+        }
+
+        for (const line of lines) {
+            const paddedContent = line.text.padEnd(BOX_WIDTH - 4);
+            console.log(chalk.cyan('║  ') + formatLine(paddedContent, line.type) + chalk.cyan('║'));
+        }
+
+        if (footer) {
+            console.log(chalk.cyan(`╠${horizontal}╣`));
+            const paddedFooter = footer.text.padEnd(BOX_WIDTH - 4);
+            console.log(chalk.cyan('║  ') + formatLine(paddedFooter, footer.type) + chalk.cyan('║'));
+        }
+
+        console.log(chalk.cyan(`╚${horizontal}╝`));
+        console.log('');
+
+        // Track for next update
+        lastPersistentBoxId = id;
+        lastPersistentBoxLines = totalLines;
+    },
+
+    /**
+     * Clear the persistent box tracking (call when context changes)
+     */
+    clearPersistentBox(): void {
+        lastPersistentBoxId = null;
+        lastPersistentBoxLines = 0;
     },
 
     /**

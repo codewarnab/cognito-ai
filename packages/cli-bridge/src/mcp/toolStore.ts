@@ -86,7 +86,7 @@ export const toolStoreEvents = new EventEmitter();
  */
 export function registerTools(tools: ExtensionToolSchema[]): void {
     registeredTools = tools;
-    console.log(`[toolStore] Registered ${tools.length} tools from extension`);
+    // Debug log removed - server.ts handles the user-facing notification
     toolStoreEvents.emit('tools:registered', tools);
 }
 
@@ -102,7 +102,6 @@ export function getRegisteredTools(): ExtensionToolSchema[] {
  */
 export function clearTools(): void {
     registeredTools = [];
-    console.log('[toolStore] Cleared all tools');
 }
 
 /**
@@ -110,7 +109,6 @@ export function clearTools(): void {
  */
 export function addToolExecutionClient(res: http.ServerResponse): void {
     toolExecutionClients.add(res);
-    console.log(`[toolStore] Added tool execution client, total: ${toolExecutionClients.size}`);
 }
 
 /**
@@ -118,7 +116,6 @@ export function addToolExecutionClient(res: http.ServerResponse): void {
  */
 export function removeToolExecutionClient(res: http.ServerResponse): void {
     toolExecutionClients.delete(res);
-    console.log(`[toolStore] Removed tool execution client, total: ${toolExecutionClients.size}`);
 }
 
 /**

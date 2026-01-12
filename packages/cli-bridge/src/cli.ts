@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-import 'dotenv/config'; import { startBridgeServer } from './server';
+import 'dotenv/config';
+import { startBridgeServer } from './server';
 import { autoSetupCLIs } from './cli/autoSetup';
+import { logger } from './utils/logger';
 
 function getArg(name: string): string | undefined {
   const idx = process.argv.indexOf(name);
@@ -25,7 +27,7 @@ Options:
   --host <string>   Host to bind to (default: 127.0.0.1)
   --cwd <path>      Working directory for file operations (default: current directory)
   --gemini-model <id> Gemini model id for local chat (default: gemini-2.5-flash)
-  --no-auto-setup   Skip automatic CLI tool configuration (Gemini CLI, Claude Code)
+  --no-auto-setup   Skip automatic CLI tool configuration (Gemini CLI, Claude Code, Codex CLI)
   --help, -h        Show this help message
 
 Examples:
@@ -56,29 +58,30 @@ Examples:
 
   await startBridgeServer({ host, port, cwd });
 
-  // Auto-setup CLI tools (Gemini CLI, Claude Code)
+  // Auto-setup CLI tools (Gemini CLI, Claude Code, Codex CLI)
   if (!skipAutoSetup) {
-    console.log('');
-    console.log('CLI Integration:');
     const results = autoSetupCLIs(port);
 
-    for (const result of results) {
-      const icon =
-        result.status === 'configured' ? '✓' :
-          result.status === 'already_configured' ? '✓' :
-            result.status === 'not_installed' ? '○' : '⚠';
-
+    const cliLines = results.map((result) => {
       const status =
         result.status === 'configured' ? 'Auto-configured' :
           result.status === 'already_configured' ? 'Already configured' :
             result.status === 'not_installed' ? 'Not installed' : `Error: ${result.message}`;
 
-      console.log(`  ${icon} ${result.cli}: ${status}`);
-    }
+      const type: 'success' | 'warning' | 'dim' =
+        result.status === 'configured' || result.status === 'already_configured' ? 'success' :
+          result.status === 'not_installed' ? 'dim' : 'warning';
 
-    console.log('');
-    console.log('Tip: If you use Gemini OAuth, run "gemini" once to complete login.');
-    console.log('');
+      const icon = type === 'success' ? '✓' : type === 'dim' ? '○' : '⚠';
+
+      return { text: `${icon} ${result.cli}: ${status}`, type };
+    });
+
+    logger.box({
+      title: 'CLI Integration',
+      lines: cliLines,
+      footer: { text: 'Tip: Run CLI tool once to complete OAuth login', type: 'dim' },
+    });
   }
 }
 

@@ -24,6 +24,7 @@ export function autoSetupCLIs(port: number): SetupResult[] {
 
     results.push(setupGeminiCLI(port));
     results.push(setupClaudeCLI(port));
+    results.push(setupCodexCLI(port));
 
     return results;
 }
@@ -159,6 +160,75 @@ function setupClaudeCLI(port: number): SetupResult {
     } catch (e) {
         return {
             cli: 'Claude Code',
+            status: 'error',
+            message: e instanceof Error ? e.message : String(e),
+        };
+    }
+}
+
+/**
+ * Check if Codex CLI is installed
+ */
+function isCodexCLIInstalled(): boolean {
+    try {
+        execSync('codex --version', { stdio: 'ignore' });
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Setup Codex CLI (OpenAI) with MCP server
+ */
+function setupCodexCLI(port: number): SetupResult {
+    // Check if codex CLI is installed
+    if (!isCodexCLIInstalled()) {
+        return { cli: 'Codex CLI', status: 'not_installed' };
+    }
+
+    const configDir = join(homedir(), '.codex');
+    const configPath = join(configDir, 'config.json');
+    const mcpUrl = `http://127.0.0.1:${port}/mcp`;
+
+    try {
+        // Ensure directory exists
+        mkdirSync(configDir, { recursive: true });
+
+        // Read or initialize config
+        let config: any = {};
+        if (existsSync(configPath)) {
+            try {
+                config = JSON.parse(readFileSync(configPath, 'utf-8'));
+            } catch {
+                // If invalid JSON, start fresh
+            }
+        }
+
+        // Initialize mcpServers if missing
+        if (!config.mcpServers) {
+            config.mcpServers = {};
+        }
+
+        const existingConfig = config.mcpServers.cognito;
+
+        // Check if already configured with same URL
+        if (existingConfig && existingConfig.url === mcpUrl) {
+            return { cli: 'Codex CLI', status: 'already_configured' };
+        }
+
+        // Update configuration
+        config.mcpServers.cognito = {
+            url: mcpUrl,
+        };
+
+        // Write back to file
+        writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+        return { cli: 'Codex CLI', status: 'configured' };
+    } catch (e) {
+        return {
+            cli: 'Codex CLI',
             status: 'error',
             message: e instanceof Error ? e.message : String(e),
         };

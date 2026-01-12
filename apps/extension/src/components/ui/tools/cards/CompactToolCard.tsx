@@ -9,6 +9,7 @@ import { CircleCheckIcon, type CircleCheckIconHandle } from '@assets/icons/chat/
 import { ChevronRightIcon, type ChevronRightIconHandle } from '@assets/icons/chat/chevron-right';
 import { ChevronDownIcon, type ChevronDownIconHandle } from '@assets/icons/chat/chevrown-down';
 import { UploadIcon, type UploadIconHandle } from '@/components/shared/icons/UploadIcon';
+import { FaviconImage } from '@/components/shared/icons/FaviconImage';
 import { getToolIcon } from '../icons/ToolIconMapper';
 import { McpServerIcon } from '../icons/McpIconMapper';
 import { formatToolAction } from '../formatters';
@@ -151,25 +152,15 @@ export function CompactToolCard({
                     <div className={`flex items-center justify-center shrink-0 transition-opacity duration-200 text-[var(--text-secondary)] ${isHovered ? 'opacity-80' : ''}`}>
                         {/* Use favicon for WebMCP tools, MCP server icon for MCP tools, UploadIcon for uploads, otherwise default tool icon */}
                         {formattedAction.faviconUrl ? (
-                            <img
-                                src={formattedAction.faviconUrl}
-                                alt=""
-                                className="w-4 h-4 rounded-sm object-contain"
-                                onError={(e) => {
-                                    // Hide favicon and show fallback icon on error
-                                    e.currentTarget.style.display = 'none';
-                                    const fallback = e.currentTarget.nextElementSibling;
-                                    if (fallback) (fallback as HTMLElement).style.display = 'flex';
-                                }}
+                            <FaviconImage
+                                faviconUrl={formattedAction.faviconUrl}
+                                size={16}
+                                className="rounded-sm object-contain"
+                                fallback={<ToolIcon ref={toolIconRef} size={16} />}
                             />
                         ) : formattedAction.mcpServerId ? (
                             <McpServerIcon serverId={formattedAction.mcpServerId} size={16} />
-                        ) : null}
-                        {formattedAction.faviconUrl ? (
-                            <div style={{ display: 'none' }}>
-                                <ToolIcon ref={toolIconRef} size={16} />
-                            </div>
-                        ) : formattedAction.mcpServerId ? null : formattedAction.customIcon === 'upload' ? (
+                        ) : formattedAction.customIcon === 'upload' ? (
                             <UploadIcon ref={uploadIconRef} size={16} />
                         ) : (
                             <ToolIcon ref={toolIconRef} size={16} />

@@ -5,6 +5,7 @@ import { SearchControls } from '../../search/SearchControls';
 import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Wrench, Cloud, Key, Globe } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
+import { FaviconImage } from '@/components/shared/icons/FaviconImage';
 import { HIDE_MODEL_SELECTOR } from '@/constants';
 import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
@@ -88,6 +89,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
     // Track mode changes to store previous mode and show bridge drawer immediately
     const prevToolsModeRef = React.useRef<ToolMode | null>(null);
+    const prevBridgeStatusRef = React.useRef(bridgeStatus);
     useEffect(() => {
         // When entering cli mode
         if (toolsMode === 'cli' && prevToolsModeRef.current !== 'cli') {
@@ -96,18 +98,28 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 setPreviousMode(prevToolsModeRef.current);
             }
 
-            // Show status drawer and kick off an immediate connect attempt
-            setShowBridgeStatusDrawer(true);
-            checkBridgeHealth();
+            // Only show status drawer if bridge is NOT already connected
+            // (e.g., user switched away and came back while bridge stayed connected)
+            const currentBridgeStatus = useCliModeStore.getState().bridgeStatus;
+            if (currentBridgeStatus !== 'connected') {
+                setShowBridgeStatusDrawer(true);
+                checkBridgeHealth();
+            }
         }
         prevToolsModeRef.current = toolsMode as ToolMode;
     }, [toolsMode, checkBridgeHealth]);
 
-    // Also show the status drawer if the bridge drops while in cli mode
+    // Show the status drawer if the bridge DROPS while in cli mode
+    // (only when transitioning from 'connected' to something else, not intermediate states)
     useEffect(() => {
-        if (toolsMode === 'cli' && bridgeStatus !== 'connected') {
+        const wasConnected = prevBridgeStatusRef.current === 'connected';
+        const isNowDisconnected = bridgeStatus !== 'connected';
+
+        if (toolsMode === 'cli' && wasConnected && isNowDisconnected) {
             setShowBridgeStatusDrawer(true);
         }
+
+        prevBridgeStatusRef.current = bridgeStatus;
     }, [toolsMode, bridgeStatus]);
 
     // Bridge heartbeat - uses SSE /events to detect online/offline + triggers auto-connect
@@ -139,7 +151,6 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // Get WebMCP tools data including favicon
     const { tools: webMcpTools } = useWebMCPTools();
     const webMcpFavicon = webMcpTools[0]?.favicon;
-    const [faviconError, setFaviconError] = useState(false);
 
     // Debug logging for tools display
     log.info('🔧 ComposerToolbar render', {
@@ -248,14 +259,12 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                             {webMcpToolsCount > 0 && (
                                 <>
                                     <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.5, margin: '0 2px' }}>+</span>
-                                    {webMcpFavicon && !faviconError ? (
-                                        <img
-                                            src={webMcpFavicon}
-                                            alt=""
-                                            width={12}
-                                            height={12}
-                                            style={{ opacity: 0.9, borderRadius: '2px' }}
-                                            onError={() => setFaviconError(true)}
+                                    {webMcpFavicon ? (
+                                        <FaviconImage
+                                            faviconUrl={webMcpFavicon}
+                                            size={12}
+                                            className="opacity-90 rounded-[2px]"
+                                            fallback={<Globe size={12} style={{ opacity: 0.7 }} />}
                                         />
                                     ) : (
                                         <Globe size={12} style={{ opacity: 0.7 }} />

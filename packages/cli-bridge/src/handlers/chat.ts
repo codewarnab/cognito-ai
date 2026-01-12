@@ -26,6 +26,11 @@ import {
   getExtensionToolNames,
   isExtensionTool,
 } from '../mcp/extensionToolsMcpServer';
+import {
+  getCapabilityMessage,
+  createEngagingMessageSender,
+  DEFAULT_MESSAGE_INTERVAL,
+} from './engagingMessages';
 
 /**
  * Convert Bridge messages to AI SDK format
@@ -123,24 +128,38 @@ async function handleGeminiAgent(
 
   // Build AI SDK tools from extension-registered tool schemas
   const { aiTools } = buildAISDKTools(sendEvent);
+  const toolCount = Object.keys(aiTools).length;
 
-  sendEvent('status', {
-    message: `Tools available: ${Object.keys(aiTools).length} (execution clients: ${getToolExecutionClientCount()})`,
-  });
+  // Send engaging capability message instead of boring "Tools available: X"
+  sendEvent('status', { message: getCapabilityMessage(toolCount) });
+
+  // Start sending engaging messages while waiting for AI response
+  const engagingMessages = createEngagingMessageSender(sendEvent, DEFAULT_MESSAGE_INTERVAL);
+  engagingMessages.start();
 
   try {
     const result = await streamText({
       model: gemini(effectiveModelId),
       messages: aiMessages as any,
       system: CODING_AGENT_SYSTEM_PROMPT,
-      tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
+      tools: toolCount > 0 ? aiTools : undefined,
       toolChoice: 'auto',
       stopWhen: [stepCountIs(10)],
       abortSignal: abortController.signal,
     });
 
+    // Stop engaging messages once we start receiving the response
+    let firstChunkReceived = false;
+
     for await (const chunk of result.textStream) {
       if (abortController.signal.aborted) break;
+
+      // Stop engaging messages on first chunk
+      if (!firstChunkReceived) {
+        engagingMessages.stop();
+        firstChunkReceived = true;
+      }
+
       if (chunk) {
         sendEvent('text', { content: chunk });
       }
@@ -149,6 +168,9 @@ async function handleGeminiAgent(
     sendEvent('done', {});
     res.end();
   } catch (err) {
+    // Stop engaging messages on error
+    engagingMessages.stop();
+
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error('[chat] Gemini stream error:', errorMessage);
 
@@ -206,24 +228,38 @@ async function handleCodexAgent(
 
   // Build AI SDK tools from extension-registered tool schemas
   const { aiTools } = buildAISDKTools(sendEvent);
+  const toolCount = Object.keys(aiTools).length;
 
-  sendEvent('status', {
-    message: `Tools available: ${Object.keys(aiTools).length} (execution clients: ${getToolExecutionClientCount()})`,
-  });
+  // Send engaging capability message instead of boring "Tools available: X"
+  sendEvent('status', { message: getCapabilityMessage(toolCount) });
+
+  // Start sending engaging messages while waiting for AI response
+  const engagingMessages = createEngagingMessageSender(sendEvent, DEFAULT_MESSAGE_INTERVAL);
+  engagingMessages.start();
 
   try {
     const result = await streamText({
       model: codexProvider(codexModelId),
       messages: aiMessages as any,
       system: CODING_AGENT_SYSTEM_PROMPT,
-      tools: Object.keys(aiTools).length > 0 ? aiTools : undefined,
+      tools: toolCount > 0 ? aiTools : undefined,
       toolChoice: 'auto',
       stopWhen: [stepCountIs(10)],
       abortSignal: abortController.signal,
     });
 
+    // Stop engaging messages once we start receiving the response
+    let firstChunkReceived = false;
+
     for await (const chunk of result.textStream) {
       if (abortController.signal.aborted) break;
+
+      // Stop engaging messages on first chunk
+      if (!firstChunkReceived) {
+        engagingMessages.stop();
+        firstChunkReceived = true;
+      }
+
       if (chunk) {
         sendEvent('text', { content: chunk });
       }
@@ -232,6 +268,9 @@ async function handleCodexAgent(
     sendEvent('done', {});
     res.end();
   } catch (err) {
+    // Stop engaging messages on error
+    engagingMessages.stop();
+
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error('[chat] CodeX stream error:', errorMessage);
 
@@ -395,8 +434,12 @@ async function handleClaudeCodeAgent(
   ];
 
   sendEvent('status', {
-    message: `Loaded ${extensionToolNames.length} extension tools`,
+    message: getCapabilityMessage(extensionToolNames.length),
   });
+
+  // Start sending engaging messages while waiting for AI response
+  const engagingMessages = createEngagingMessageSender(sendEvent, DEFAULT_MESSAGE_INTERVAL);
+  engagingMessages.start();
 
   // Create Claude Code provider with MCP server configuration
   const claudeCodeProvider = createClaudeCode({
@@ -435,9 +478,18 @@ async function handleClaudeCodeAgent(
     // so we can skip their tool-result events even if toolName is missing.
     const extensionProviderToolCallIds = new Set<string>();
 
+    // Stop engaging messages once we start receiving the response
+    let firstPartReceived = false;
+
     // Process the full stream for complete tool event handling
     for await (const part of result.fullStream) {
       if (abortController.signal.aborted) break;
+
+      // Stop engaging messages on first part
+      if (!firstPartReceived) {
+        engagingMessages.stop();
+        firstPartReceived = true;
+      }
 
       // Use type assertion for extended stream parts from Claude Code SDK
       const streamPart = part as any;
@@ -513,6 +565,9 @@ async function handleClaudeCodeAgent(
     sendEvent('done', {});
     res.end();
   } catch (err) {
+    // Stop engaging messages on error
+    engagingMessages.stop();
+
     const errorMessage = err instanceof Error ? err.message : String(err);
     const metadata = getClaudeErrorMetadata(err);
 

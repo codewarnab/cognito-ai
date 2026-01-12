@@ -2,6 +2,7 @@
 export { AudioLinesIcon } from './AudioLinesIcon';
 export { CloudCogIcon } from './CloudCogIcon';
 export { CopyIcon } from './CopyIcon';
+export { FaviconImage } from './FaviconImage';
 export { FoldersIcon } from './FoldersIcon';
 export { HeartPulseIcon } from './HeartPulseIcon';
 export { LaptopMinimalCheckIcon } from './LaptopMinimalCheckIcon';
@@ -16,6 +17,7 @@ export { UploadIconMinimal } from './minimal_upload';
 // Re-export types
 export type { AudioLinesIconHandle } from './AudioLinesIcon';
 export type { CopyIconHandle } from './CopyIcon';
+export type { FaviconImageProps } from './FaviconImage';
 export type { PaperclipIconHandle } from './PaperclipIcon';
 export type { UploadIconHandle } from './UploadIcon';
 
