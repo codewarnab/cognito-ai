@@ -64,6 +64,8 @@ export const CliChatRequestSchema = z.object({
     acpMode: z.string().optional(),
     acpModel: z.string().optional(),
   }),
+  /** List of enabled tool names - bridge will filter available tools to only these */
+  enabledTools: z.array(z.string()).optional(),
   sessionId: z.string().optional(),
 });
 

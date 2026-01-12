@@ -14,6 +14,8 @@ export interface CliBridgeChatParams {
     command: string;
     args: string[];
   };
+  /** List of enabled tool names - bridge will filter available tools to only these */
+  enabledTools?: string[];
   sessionId?: string;
 }
 

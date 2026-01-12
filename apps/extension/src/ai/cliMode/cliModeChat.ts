@@ -5,6 +5,7 @@
 import { createUIMessageStream, generateId } from 'ai';
 import { createLogger } from '~logger';
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
+import { useToolsStore } from '@/stores';
 import { streamCodeBridgeChat, type BridgeEvent } from '@/services/codeBridge';
 import type { UIMessage } from 'ai';
 
@@ -118,6 +119,14 @@ export async function streamCliModeChat(params: CliModeChatParams) {
         // Convert messages
         const bridgeMessages = convertMessages(messages);
 
+        // Get enabled tools from store
+        const { enabledMap } = useToolsStore.getState();
+        const enabledTools = Object.entries(enabledMap)
+          .filter(([_, enabled]) => enabled)
+          .map(([name]) => name);
+
+        log.info('Sending enabled tools to bridge', { count: enabledTools.length });
+
         // Stream from bridge
         const eventStream = streamCodeBridgeChat(
           bridgeBaseUrl,
@@ -130,6 +139,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
               command: agent.command,
               args: agent.args,
             },
+            enabledTools,
           },
           abortSignal
         );

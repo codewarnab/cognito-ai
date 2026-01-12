@@ -8,7 +8,7 @@ export const CODE_MODE_AGENTS: AgentDefinition[] = [
   {
     name: 'Gemini CLI',
     command: 'gemini',
-    args: ['--experimental-acp'],
+    args: [],
     envHints: ['GEMINI_API_KEY'],
     aiSdkProvider: 'gemini-cli',
     supportsCustomTools: true,
@@ -16,15 +16,15 @@ export const CODE_MODE_AGENTS: AgentDefinition[] = [
   {
     name: 'Claude Code',
     command: 'claude',
-    args: [],  // Claude Code uses SDK, not CLI args
+    args: [],
     envHints: ['ANTHROPIC_API_KEY'],
     aiSdkProvider: 'claude-code',
-    supportsCustomTools: true,  // Supports custom MCP tools via in-process server
+    supportsCustomTools: true,
   },
   {
     name: 'Codex CLI',
     command: 'codex',
-    args: ['--acp'],
+    args: [],
     envHints: ['OPENAI_API_KEY'],
     aiSdkProvider: 'codex-cli',
     supportsCustomTools: true,

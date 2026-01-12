@@ -127,18 +127,34 @@ export function jsonSchemaToZod(schema: unknown): z.ZodTypeAny {
 }
 
 /**
+ * Options for building AI SDK tools
+ */
+export interface BuildAISDKToolsOptions {
+    /** If provided, only include tools whose names are in this list */
+    enabledTools?: string[];
+}
+
+/**
  * Build AI SDK tools from extension-registered tool schemas.
  * 
  * This function converts tool schemas registered by the Chrome extension
  * into AI SDK compatible tools that can be used with streamText().
  * 
  * @param sendEvent - Function to send SSE events to the client
+ * @param options - Optional configuration including tool filtering
  * @returns Object containing aiTools record and toolNameMapping
  */
 export function buildAISDKTools(
-    sendEvent: SSEEventSender
+    sendEvent: SSEEventSender,
+    options?: BuildAISDKToolsOptions
 ): { aiTools: Record<string, any>; toolNameMapping: ToolNameMapping } {
-    const registeredTools = getRegisteredTools();
+    let registeredTools = getRegisteredTools();
+
+    // Filter tools if enabledTools list is provided
+    if (options?.enabledTools && options.enabledTools.length > 0) {
+        const enabledSet = new Set(options.enabledTools);
+        registeredTools = registeredTools.filter(t => enabledSet.has(t.name));
+    }
     const toolNameMapping: ToolNameMapping = new Map();
     const aiTools: Record<string, any> = {};
 
