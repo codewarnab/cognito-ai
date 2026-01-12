@@ -164,11 +164,13 @@ export async function handleClaudeCodeAgent({
     // Get extension tool names for allowedTools configuration
     const extensionToolNames = getExtensionToolNames();
 
-    // Combine Claude's built-in coding tools with extension tools
+    // SECURITY: Only allow extension tools - no file system or shell access
+    // This prevents agents from reading/writing local files or running arbitrary commands.
+    // Combined with sandbox isolation (in cli.ts), this ensures agents can only
+    // interact with the browser extension tools.
     const allowedTools = [
-        // Claude's built-in tools for file operations and shell commands
-        'Read', 'Write', 'Edit', 'Bash', 'LS', 'Grep', 'Glob',
-        // Extension tools (prefixed with mcp__extension__)
+        // Extension tools only (prefixed with mcp__extension__)
+        // No built-in tools: Read, Write, Edit, Bash, LS, Grep, Glob are intentionally excluded
         ...extensionToolNames,
     ];
 

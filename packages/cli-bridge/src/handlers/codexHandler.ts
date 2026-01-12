@@ -40,13 +40,16 @@ export async function handleCodexAgent({
     sendEvent('status', { message: `Model: ${codexModelId}` });
 
     // Create CodeX CLI provider with appropriate settings
+    // SECURITY: Use 'off' sandbox mode by default - combined with isolated CWD,
+    // this prevents any file system writes. The sandboxed temp directory is empty,
+    // so even if writes were allowed, there's nothing sensitive to overwrite.
     const codexProvider = createCodexCli({
         defaultSettings: {
             allowNpx: true, // Allow npx fallback if codex CLI is not installed
             skipGitRepoCheck: true, // Skip git repo safety check for non-repo contexts
-            cwd, // Use bridge working directory
+            cwd, // Use isolated sandbox directory (set in cli.ts)
             approvalMode: process.env.CODEX_APPROVAL_MODE as any || 'on-failure',
-            sandboxMode: process.env.CODEX_SANDBOX_MODE as any || 'workspace-write',
+            sandboxMode: process.env.CODEX_SANDBOX_MODE as any || 'off', // Disable writes by default for security
             env: apiKey ? { OPENAI_API_KEY: apiKey } : undefined,
             verbose: process.env.CODEX_VERBOSE === 'true',
         },

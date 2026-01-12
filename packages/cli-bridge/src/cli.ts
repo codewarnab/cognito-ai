@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { startBridgeServer } from './server';
 import { autoSetupCLIs } from './cli/autoSetup';
 import { logger } from './utils/logger';
+import { getAgentCwd, isIsolatedMode } from './utils/sandbox';
 
 function getArg(name: string): string | undefined {
   const idx = process.argv.indexOf(name);
@@ -25,15 +26,23 @@ Usage:
 Options:
   --port <number>   Port to listen on (default: 8787)
   --host <string>   Host to bind to (default: 127.0.0.1)
-  --cwd <path>      Working directory for file operations (default: current directory)
+
   --gemini-model <id> Gemini model id for local chat (default: gemini-2.5-flash)
   --no-auto-setup   Skip automatic CLI tool configuration (Gemini CLI, Claude Code, Codex CLI)
   --help, -h        Show this help message
 
+Environment Variables:
+  COGNITO_BRIDGE_ALLOW_LOCAL_ACCESS=true   Disable sandbox isolation (NOT recommended)
+
+Security:
+  By default, agents run in an isolated sandbox and cannot access your local files.
+  This prevents agents from reading project files (GEMINI.md, CLAUDE.md, source code)
+  or executing dangerous shell commands in your project directory.
+
 Examples:
   cognito-bridge
   cognito-bridge --port 9000
-  cognito-bridge --cwd /path/to/project
+
   cognito-bridge --gemini-model gemini-2.5-pro
 `);
     process.exit(0);
@@ -41,7 +50,8 @@ Examples:
 
   const port = Number(getArg('--port') || '8787');
   const host = getArg('--host') || '127.0.0.1';
-  const cwd = getArg('--cwd') || process.cwd();
+  const userCwd = process.cwd();
+  const cwd = getAgentCwd(userCwd); // Use isolated sandbox by default
   const skipAutoSetup = hasFlag('--no-auto-setup');
   const geminiModel = getArg('--gemini-model');
 
@@ -54,6 +64,14 @@ Examples:
   // Chat handler reads COGNITO_GEMINI_MODEL as a default model id.
   if (geminiModel) {
     process.env.COGNITO_GEMINI_MODEL = geminiModel;
+  }
+
+  // Log isolation mode status
+  if (isIsolatedMode()) {
+    logger.info(`🔒 Sandbox isolation ENABLED - agents cannot access local files`);
+    logger.debug('security', `Sandbox CWD: ${cwd}`);
+  } else {
+    logger.warn(`⚠️ Sandbox isolation DISABLED - agents have local file access!`);
   }
 
   await startBridgeServer({ host, port, cwd });
