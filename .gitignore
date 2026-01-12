@@ -67,13 +67,6 @@ yarn-error.log*
 # ===================
 # Project-specific (not for version control)
 # ===================
-VIDEO_SCRIPT.md
-promotion.md
 todo.txt
 TODO.md
 test-mcp-discovery.js
-.shadow/
-watcher.ps1
-CHANGELOG.md
-
-docs/AWESOME_MCP_SERVERS.md
