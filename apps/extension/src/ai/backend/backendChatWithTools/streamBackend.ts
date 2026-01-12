@@ -1,42 +1,81 @@
 /**
  * Backend Chat with Frontend Tools - Main Stream Function
- * 
- * Handles the full tool execution loop:
- * 1. Send message + tool schemas to backend
+ *
+ * Orchestrates the full tool execution loop for backend-powered AI chat:
+ * 1. Prepare tool schemas and send to backend
  * 2. Stream response, intercepting tool calls
  * 3. Execute tools locally
  * 4. Send results back to continue generation
+ *
+ * This is the main entry point for backend chat with tools functionality.
+ *
+ * @module backendChatWithTools/streamBackend
  */
 
-import { createUIMessageStream, generateId, convertToModelMessages, type ModelMessage } from 'ai';
+import { createUIMessageStream, convertToModelMessages, type ModelMessage } from 'ai';
 import { createLogger } from '~logger';
-import {
-    executeToolLocally,
-    getToolSchemas,
-    SERVER_EXECUTED_TOOLS,
-    type ToolCall,
-    type ToolResult,
-} from '../frontendToolExecutor';
 import { createBackendController, clearBackendController } from '../streamingOptimizations';
 import { writeErrorToStream } from '../../stream/streamHelpers';
 import { parseGeminiError } from '../../errors/handlers';
 import { BaseAppError } from '../../../errors/errorTypes';
-import { ENV } from '@/utils/env';
-import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
-import { isMcpTool, isWebmcpTool } from '../../tools/mcpApprovalConfig';
 
-import type { BackendChatWithToolsParams, ToolErrorInfo } from './types';
-import { parseStreamChunk } from './streamParser';
+import type { BackendChatWithToolsParams } from './types';
+import { DEFAULT_MAX_STEPS, DEFAULT_MODE } from './constants';
+import { prepareTools } from './prepareTool';
+import { makeBackendRequest } from './requestHandler';
 import { sanitizeMessagesForBackend } from './messageSanitizer';
-import { prepareToolSchemasForBackend, mapToolNameBack } from './toolNameSanitizer';
+import {
+    processStream,
+    writeMaxStepsWarning,
+    writeStatus,
+} from './streamProcessor';
 
 const log = createLogger('BackendChatWithTools', 'AI_CHAT_BACKEND');
 
-// Backend API URL from centralized ENV
-const BACKEND_URL = ENV.BACKEND_API_URL;
-
 /**
- * Stream AI response through backend with frontend tool execution
+ * Streams an AI response through the backend with frontend tool execution.
+ *
+ * This function implements a client-side tool execution loop:
+ * 1. Sends conversation + tool schemas to the backend
+ * 2. Streams the response and intercepts tool calls
+ * 3. Executes tools locally when the AI requests them
+ * 4. Sends tool results back to the backend for continuation
+ * 5. Repeats until no more tool calls or max steps reached
+ *
+ * @param params - Configuration parameters for the chat stream.
+ *
+ * @returns A readable stream of UI message events for the chat interface.
+ *
+ * @throws If the backend request fails or stream processing errors.
+ *
+ * @example
+ * ```typescript
+ * const stream = await streamBackendChatWithTools({
+ *     messages: chatMessages,
+ *     systemPrompt: 'You are a helpful assistant.',
+ *     mode: 'agent',
+ *     maxSteps: 20,
+ *     searchEnabled: true,
+ *     onToolCall: (tc) => console.log('Tool called:', tc.name),
+ *     onToolResult: (result) => console.log('Tool result:', result.id),
+ *     onFinishCallback: () => console.log('Stream completed'),
+ * });
+ *
+ * // Consume the stream
+ * for await (const chunk of stream) {
+ *     // Handle chunk...
+ * }
+ * ```
+ *
+ * @remarks
+ * **Backend Mode**: The backend uses a fixed model (gemini-2.5-flash).
+ * Model selection is not supported in backend mode.
+ *
+ * **Server-Executed Tools**: When `searchEnabled` or `youtubeEnabled` is true,
+ * those tools are executed server-side and results are streamed back.
+ *
+ * **Tool Approval**: Some tools require human approval (HITL pattern).
+ * MCP tools, WebMCP tools, and certain built-in tools will not be auto-executed.
  */
 export async function streamBackendChatWithTools(
     params: BackendChatWithToolsParams
@@ -44,22 +83,20 @@ export async function streamBackendChatWithTools(
     const {
         messages,
         systemPrompt,
-        // Note: model is NOT extracted - backend uses fixed model (gemini-2.5-flash)
-        mode = 'agent', // Default to agent mode for full tool access
-        maxSteps: userMaxSteps = 20, // Default to 20 if not specified
+        mode = DEFAULT_MODE,
+        maxSteps: userMaxSteps = DEFAULT_MAX_STEPS,
         abortSignal,
         onError,
         onFinishCallback,
         onToolCall,
         onToolResult,
         initialPageContext,
-        searchEnabled, // Whether search mode is enabled
-        youtubeEnabled, // Whether YouTube transcript should be server-executed
+        searchEnabled,
+        youtubeEnabled,
     } = params;
 
     log.info('Starting backend chat with tools', {
         messageCount: messages.length,
-        // model is fixed by backend (gemini-2.5-flash)
         mode,
         hasPageContext: !!initialPageContext,
         pageContextLength: initialPageContext?.length || 0,
@@ -70,35 +107,20 @@ export async function streamBackendChatWithTools(
     const controller = createBackendController();
 
     try {
-        // Get tool schemas to send to backend
-        // Exclude server-executed tools when searchEnabled (backend will add them)
-        const toolSchemas = await getToolSchemas(searchEnabled);
-
-        // Sanitize tool names for Gemini compatibility
-        const { sanitizedSchemas, toolNameMapping } = prepareToolSchemasForBackend(toolSchemas);
-
-        const toolCount = Object.keys(sanitizedSchemas).length;
-        log.info('Tool schemas prepared', { toolCount, searchEnabled: !!searchEnabled });
+        // Prepare tool schemas for backend
+        const { sanitizedSchemas, toolNameMapping, toolCount } = await prepareTools(searchEnabled);
+        log.info('Tools prepared', { toolCount });
 
         const stream = createUIMessageStream({
             execute: async ({ writer }) => {
                 try {
                     // Send initial processing status
-                    writer.write({
-                        type: 'data-status',
-                        id: 'status-' + generateId(),
-                        data: { status: 'processing', timestamp: Date.now() },
-                        transient: true,
-                    });
+                    writeStatus(writer, 'processing');
 
-                    // Convert UIMessages to ModelMessages to preserve full history including tool invocations
-                    // This fixes the issue where previous tool calls were dropped/malformed
-                    // Note: convertToModelMessages is async in AI SDK 6
+                    // Convert UIMessages to ModelMessages to preserve full history
                     const rawMessages = await convertToModelMessages(messages);
 
                     // Sanitize messages to fix malformed conversation structure
-                    // This handles cases where assistant messages contain both tool-calls AND text
-                    // responses that were generated AFTER the tool result was received
                     const initialMessages = sanitizeMessagesForBackend(rawMessages);
 
                     // Tool execution loop
@@ -113,378 +135,33 @@ export async function streamBackendChatWithTools(
                             messageCount: conversationMessages.length,
                         });
 
-                        // Debug: Log the full messages structure for debugging
-                        console.log('[BACKEND-DEBUG] Messages being sent:', JSON.stringify(conversationMessages, null, 2));
-
                         // Make request to backend
-                        const response = await fetch(
-                            `${BACKEND_URL}/api/ai/chat-with-tools`,
-                            {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Connection': 'keep-alive',
-                                    'Accept': 'text/event-stream',
-                                },
-                                body: JSON.stringify({
-                                    messages: conversationMessages,
-                                    system: systemPrompt,
-                                    tools: sanitizedSchemas, // Send sanitized schemas
-                                    // Note: model is NOT sent - backend uses fixed model (gemini-2.5-flash)
-                                    mode, // Send mode so backend can use appropriate prompt
-                                    maxSteps: 1, // One step at a time for tool execution
-                                    // Only send page context on first request, not on tool result follow-ups
-                                    pageContext: stepCount === 1 ? initialPageContext : undefined,
-                                    // Tell backend to add and execute server-side tools
-                                    searchEnabled: searchEnabled,
-                                    youtubeEnabled: youtubeEnabled,
-                                }),
-                                signal: abortSignal || controller.signal,
-                            }
-                        );
+                        const request = await makeBackendRequest({
+                            messages: conversationMessages,
+                            systemPrompt,
+                            tools: sanitizedSchemas,
+                            mode,
+                            maxSteps: 1, // One step at a time for tool execution
+                            pageContext: stepCount === 1 ? initialPageContext : undefined,
+                            searchEnabled,
+                            youtubeEnabled,
+                            signal: abortSignal || controller.signal,
+                        });
 
-                        if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({}));
-                            throw new Error(
-                                errorData.message || `Backend error: ${response.status}`
-                            );
-                        }
+                        // Process the streaming response
+                        const result = await processStream(request, {
+                            writer,
+                            toolNameMapping,
+                            searchEnabled,
+                            abortSignal,
+                            onToolCall,
+                            onToolResult,
+                        });
 
-                        if (!response.body) {
-                            throw new Error('No response body from backend');
-                        }
-
-                        // Process streaming response
-                        const reader = response.body.getReader();
-                        const decoder = new TextDecoder();
-                        const pendingToolCalls: ToolCall[] = [];
-                        // Track tool errors for feedback loop (extended info for proper messages)
-                        const pendingToolErrors: ToolErrorInfo[] = [];
-                        let accumulatedText = '';
-
-                        // Generate a consistent message ID for this response
-                        const messageId = 'msg-' + generateId();
-                        let hasStartedText = false;
-
-                        while (true) {
-                            const { done, value } = await reader.read();
-                            if (done) break;
-
-                            const chunk = decoder.decode(value, { stream: true });
-
-                            // Debug: Log raw chunk from backend
-                            console.log('[BACKEND-DEBUG] Raw chunk received:', chunk);
-
-                            const events = parseStreamChunk(chunk);
-
-                            log.info('🔍 [STREAM DEBUG] Events from chunk:', { eventCount: events.length, types: events.map(e => e.type) });
-
-                            for (const event of events) {
-                                log.info('🔍 [STREAM DEBUG] Processing event:', { type: event.type, hasData: !!event.data });
-
-                                switch (event.type) {
-                                    case 'text':
-                                        // Send text-start if this is the first text chunk
-                                        if (!hasStartedText) {
-                                            log.info('🔍 [STREAM DEBUG] Sending text-start:', { messageId });
-                                            writer.write({
-                                                type: 'text-start',
-                                                id: messageId,
-                                            });
-                                            hasStartedText = true;
-                                        }
-
-                                        accumulatedText += event.data;
-                                        log.info('🔍 [STREAM DEBUG] Writing text-delta:', { text: event.data, accumulatedLength: accumulatedText.length, messageId });
-                                        writer.write({
-                                            type: 'text-delta',
-                                            id: messageId, // Use same ID for all deltas
-                                            delta: event.data,
-                                        });
-                                        break;
-
-                                    case 'tool_call':
-                                        // Map sanitized name back to original name for execution
-                                        const originalName = mapToolNameBack(event.data.name, toolNameMapping);
-
-                                        if (event.data.name !== originalName) {
-                                            log.info('🔧 Mapping tool call name back:', { receivedName: event.data.name, originalName });
-                                        }
-
-                                        const toolCall: ToolCall = {
-                                            id: event.data.id,
-                                            name: originalName,
-                                            arguments: event.data.arguments,
-                                        };
-
-                                        // Check if this is a server-executed tool (backend handles execution)
-                                        const isServerExecuted = searchEnabled && SERVER_EXECUTED_TOOLS.includes(toolCall.name);
-
-                                        if (isServerExecuted) {
-                                            // Server-executed tool - backend will send tool-output-available
-                                            // Just show in UI, don't add to pendingToolCalls
-                                            log.info('🔄 Server-executed tool (backend will send result):', {
-                                                name: toolCall.name,
-                                                id: toolCall.id,
-                                            });
-                                            onToolCall?.(toolCall);
-                                            writer.write({
-                                                type: 'tool-input-available',
-                                                toolCallId: toolCall.id,
-                                                toolName: toolCall.name,
-                                                input: toolCall.arguments,
-                                            });
-                                            break;
-                                        }
-
-                                        // Check if tool requires human approval (HITL pattern)
-                                        // Built-in tools: check TOOLS_REQUIRING_APPROVAL
-                                        // MCP/WebMCP tools: ALL require approval
-                                        const isMcp = isMcpTool(toolCall.name);
-                                        const isWebmcp = isWebmcpTool(toolCall.name);
-                                        const isBuiltinApproval = TOOLS_REQUIRING_APPROVAL.includes(toolCall.name);
-                                        const requiresApproval = isMcp || isWebmcp || isBuiltinApproval;
-
-                                        if (!requiresApproval) {
-                                            // Safe tool - add to pending for auto-execution
-                                            pendingToolCalls.push(toolCall);
-                                        } else {
-                                            log.info('🛡️ Tool requires human approval:', {
-                                                name: toolCall.name,
-                                                id: toolCall.id,
-                                                reason: isMcp ? 'MCP tool' : isWebmcp ? 'WebMCP tool' : 'built-in approval',
-                                            });
-                                        }
-
-                                        onToolCall?.(toolCall);
-
-                                        log.info('Tool call received:', {
-                                            id: toolCall.id,
-                                            name: toolCall.name,
-                                            requiresApproval,
-                                        });
-
-                                        // Write structured tool-input-available event for proper UI rendering
-                                        // This is written for ALL tools so UI can display them
-                                        writer.write({
-                                            type: 'tool-input-available',
-                                            toolCallId: toolCall.id,
-                                            toolName: toolCall.name,
-                                            input: toolCall.arguments,
-                                        });
-                                        break;
-
-                                    case 'error':
-                                        log.error('Stream error:', event.data);
-                                        throw new Error(
-                                            event.data.message || 'Stream error from backend'
-                                        );
-
-                                    case 'finish':
-                                        log.info('Stream finished signal received');
-                                        break;
-
-                                    case 'tool_result':
-                                        // Server-executed tool result from backend
-                                        // Forward to UI so the tool card updates (spinner stops)
-                                        const resultData = event.data;
-                                        log.info('🔄 Server tool result received:', {
-                                            toolCallId: resultData.toolCallId,
-                                            hasOutput: !!resultData.output,
-                                        });
-
-                                        // Write tool-output-available to UI stream
-                                        writer.write({
-                                            type: 'tool-output-available',
-                                            toolCallId: resultData.toolCallId,
-                                            output: resultData.output,
-                                        });
-
-                                        // Also notify callback if provided
-                                        if (onToolResult) {
-                                            onToolResult({
-                                                id: resultData.toolCallId,
-                                                result: resultData.output,
-                                                isError: false,
-                                            });
-                                        }
-                                        break;
-
-                                    case 'text_start':
-                                    case 'text_end':
-                                        // These are handled by our manual hasStartedText logic
-                                        // Ignore the events from the parser
-                                        break;
-
-                                    case 'tool_error':
-                                        // Backend reports tool was unavailable
-                                        const errorData = event.data;
-
-                                        // Map name back for consistent UI
-                                        const errOriginalName = mapToolNameBack(errorData.name, toolNameMapping);
-
-                                        log.warn('🔧 Backend reports tool error:', {
-                                            toolName: errOriginalName,
-                                            errorText: errorData.errorText,
-                                        });
-
-                                        // Write tool events to UI for visual feedback
-                                        writer.write({
-                                            type: 'tool-input-available',
-                                            toolCallId: errorData.id,
-                                            toolName: errOriginalName,
-                                            input: errorData.input,
-                                        });
-
-                                        writer.write({
-                                            type: 'tool-output-available',
-                                            toolCallId: errorData.id,
-                                            output: {
-                                                error: true,
-                                                message: errorData.errorText,
-                                                feedback: errorData.errorText,
-                                            },
-                                        });
-
-                                        // Track error for AI feedback loop (include name and input for proper message)
-                                        pendingToolErrors.push({
-                                            id: errorData.id,
-                                            name: errOriginalName,
-                                            input: errorData.input,
-                                            result: errorData.errorText,
-                                        });
-                                        break;
-                                }
-                            }
-                        }
-
-                        // Send text-end if we sent any text
-                        if (hasStartedText) {
-                            log.info('🔍 [STREAM DEBUG] Sending text-end:', { messageId, accumulatedLength: accumulatedText.length });
-                            writer.write({
-                                type: 'text-end',
-                                id: messageId,
-                            });
-                        }
-
-                        // If there are tool errors (and no successful calls), add feedback for AI self-correction
-                        if (pendingToolErrors.length > 0 && pendingToolCalls.length === 0) {
-                            log.info('Adding tool error feedback to conversation for AI self-correction', {
-                                errorCount: pendingToolErrors.length,
-                            });
-
-                            // Build assistant content with attempted tool calls (same pattern as successful calls)
-                            const assistantContent: Array<any> = [];
-                            for (const error of pendingToolErrors) {
-                                assistantContent.push({
-                                    type: 'tool-call',
-                                    toolCallId: error.id,
-                                    toolName: error.name,
-                                    args: error.input || {},
-                                });
-                            }
-
-                            // Add as assistant message that attempted the tool call
-                            conversationMessages.push({
-                                role: 'assistant',
-                                content: assistantContent,
-                            });
-
-                            // Add tool result with error feedback
-                            conversationMessages.push({
-                                role: 'tool',
-                                content: pendingToolErrors.map((error) => ({
-                                    type: 'tool-result' as const,
-                                    toolCallId: error.id,
-                                    toolName: error.name,
-                                    output: { type: 'error-text' as const, value: error.result },
-                                })) as any,
-                            });
-
-                            // Continue loop so AI can retry with correct tools
-                            pendingToolErrors.length = 0; // Clear for next iteration
-                            accumulatedText = '';
-                            continue;
-                        }
-
-                        // If there are tool calls, execute them and continue
-                        if (pendingToolCalls.length > 0) {
-                            log.info(
-                                `Executing ${pendingToolCalls.length} tool calls locally`
-                            );
-
-                            const toolResults: ToolResult[] = [];
-
-                            for (const toolCall of pendingToolCalls) {
-                                // Execute tool locally
-                                const result = await executeToolLocally(
-                                    toolCall,
-                                    abortSignal
-                                );
-                                toolResults.push(result);
-                                onToolResult?.(result);
-
-                                log.info('Tool result:', {
-                                    id: result.id,
-                                    isError: result.isError,
-                                });
-
-                                // Write structured tool-output-available event for proper UI rendering
-                                writer.write({
-                                    type: 'tool-output-available',
-                                    toolCallId: result.id,
-                                    output: result.result,
-                                });
-                            }
-
-                            // Add assistant message with tool calls to conversation
-                            // Properly formatted using AI SDK Core Message format
-                            const assistantContent: Array<any> = [];
-                            if (accumulatedText) {
-                                assistantContent.push({ type: 'text', text: accumulatedText });
-                            }
-
-                            for (const tc of pendingToolCalls) {
-                                assistantContent.push({
-                                    type: 'tool-call',
-                                    toolCallId: tc.id,
-                                    toolName: tc.name, // Will be original name
-                                    args: tc.arguments, // Using args as AI SDK v6 convertToModelMessages uses args for tool calls usually
-                                });
-                            }
-
-                            conversationMessages.push({
-                                role: 'assistant',
-                                content: assistantContent,
-                            });
-
-                            // Add tool results as tool messages
-                            // AI SDK v6: ToolResultPart uses 'output' with LanguageModelV2ToolResultOutput format
-                            conversationMessages.push({
-                                role: 'tool',
-                                content: toolResults.map((result) => {
-                                    const tc = pendingToolCalls.find(t => t.id === result.id);
-
-                                    const resultValue = typeof result.result === 'string'
-                                        ? result.result
-                                        : JSON.stringify(result.result);
-
-                                    // AI SDK v6 ToolResultPart format with LanguageModelV2ToolResultOutput
-                                    return {
-                                        type: 'tool-result' as const,
-                                        toolCallId: result.id,
-                                        toolName: tc?.name || 'unknown',
-                                        // output must be LanguageModelV2ToolResultOutput:
-                                        // { type: 'text' | 'json' | 'error-text' | 'error-json', value: ... }
-                                        output: result.isError
-                                            ? { type: 'error-text' as const, value: resultValue }
-                                            : { type: 'text' as const, value: resultValue },
-                                    };
-                                }) as any,
-                            });
-
-                            // Continue the loop for more generation
-                            accumulatedText = '';
+                        // Handle tool execution continuation
+                        if (result.hasToolCalls || result.hasToolErrors) {
+                            conversationMessages.push(...result.messagesToAppend);
+                            // Continue loop for more generation
                         } else {
                             // No tool calls, we're done
                             continueLoop = false;
@@ -492,25 +169,11 @@ export async function streamBackendChatWithTools(
                     }
 
                     if (stepCount >= maxSteps) {
-                        log.warn('Max steps reached, stopping tool execution loop');
-                        // UIMessageStream requires text-start -> text-delta -> text-end for a given id.
-                        const warningId = 'warning-' + generateId();
-                        writer.write({ type: 'text-start', id: warningId });
-                        writer.write({
-                            type: 'text-delta',
-                            id: warningId,
-                            delta: '\n\n⚠️ Maximum tool execution steps reached.',
-                        });
-                        writer.write({ type: 'text-end', id: warningId });
+                        writeMaxStepsWarning(writer);
                     }
 
                     // Send completion status
-                    writer.write({
-                        type: 'data-status',
-                        id: 'status-' + generateId(),
-                        data: { status: 'completed', timestamp: Date.now() },
-                        transient: true,
-                    });
+                    writeStatus(writer, 'completed');
 
                     // Clear controller on completion
                     clearBackendController();
@@ -523,16 +186,11 @@ export async function streamBackendChatWithTools(
                     // Check if aborted
                     if (error instanceof Error && error.name === 'AbortError') {
                         log.info('Backend chat was aborted by user');
-                        writer.write({
-                            type: 'data-status',
-                            id: 'status-' + generateId(),
-                            data: { status: 'aborted', timestamp: Date.now() },
-                            transient: true,
-                        });
+                        writeStatus(writer, 'aborted');
                         return;
                     }
 
-                    // Parse error into our error types for consistent UX across BYOK and backend modes
+                    // Parse error into our error types for consistent UX
                     const appError = error instanceof BaseAppError
                         ? error
                         : parseGeminiError(error);
