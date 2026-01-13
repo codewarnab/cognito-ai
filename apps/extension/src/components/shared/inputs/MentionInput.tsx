@@ -98,7 +98,7 @@ export function MentionInput({
 
     // Use cli mode specific placeholder when connected
     const actualPlaceholder = isCliMode
-        ? "Describe your code changes..."
+        ? "Describe your task..."
         : placeholder;
 
     const [showDropdown, setShowDropdown] = useState(false);

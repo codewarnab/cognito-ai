@@ -113,7 +113,7 @@ export const Composer: React.FC<ComposerProps> = ({
     // Tools state from store - use selective subscriptions to avoid re-render loops
     const showToolsModal = useToolsStore((s) => s.showToolsModal);
     const setShowToolsModal = useToolsStore((s) => s.setShowToolsModal);
-    const mcpTools = useToolsStore((s) => s.mcpTools);
+    const enabledMcpCount = useToolsStore((s) => s.enabledMcpCount);
     const webMcpToolsCount = useToolsStore((s) => s.webMcpToolsCount);
     const totalEnabledCount = useToolsStore((s) => s.totalEnabledCount);
     const isTooManyTools = useToolsStore((s) => s.isTooManyTools);
@@ -213,7 +213,7 @@ export const Composer: React.FC<ComposerProps> = ({
                     showModeDropdown={showModeDropdown}
                     onToggleModeDropdown={onToggleModeDropdown}
                     onError={onError}
-                    mcpToolsCount={mcpTools.length}
+                    mcpToolsCount={enabledMcpCount}
                     webMcpToolsCount={webMcpToolsCount}
                     totalEnabledCount={totalEnabledCount}
                     isTooManyTools={isTooManyTools}

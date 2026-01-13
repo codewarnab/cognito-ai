@@ -222,7 +222,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                                                                         type="button"
                                                                         onClick={() => handleModelChange(model.id, provider.id)}
                                                                         disabled={isLoading}
-                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
+                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg cursor-pointer ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
                                                                             }`}
                                                                     >
                                                                         <div className="flex-1 min-w-0">

@@ -38,16 +38,13 @@ export const TIPS = [
 // Tips specific to cli mode
 export const CLI_MODE_TIPS = [
     "Use the element picker to select any UI component on the page",
-    "The code bridge connects Cognito to your local development environment",
-    "Describe the change you want and I'll generate a patch for your codebase",
-    "Patches can be previewed before applying to your files",
-    "Make sure the bridge server is running before using code mode",
-    "I can see your project structure and modify files locally",
-    "Select an element to provide visual context for your coding request",
-    "Rejected patches won't affect your codebase",
-    "Ask me to refactor, fix bugs, or add new features to your code",
-    "The bridge runs locally - your code never leaves your machine",
+    "The CLI bridge connects Cognito to your cli agents ",
+    "Describe the task you want and I'll help automate browser actions",
+    "Make sure the bridge server is running before using CLI mode",
+    "Select an element to provide visual context for your request",
+    "The bridge runs locally - your data stays on your machine",
     "Pair with the bridge using the code shown in your terminal",
     "I can explain the selected element's styling and structure",
-    "Applied patches can be undone using git",
+    "Ask me to navigate, click, fill forms, or extract information",
+    "Use CLI mode for complex multi-step browser automation",
 ];

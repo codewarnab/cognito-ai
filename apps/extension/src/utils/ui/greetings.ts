@@ -109,55 +109,55 @@ const greetings = {
   ]
 };
 
-// Code mode specific greetings - developer-focused
-const codeModeGreetings = {
+// CLI mode specific greetings - browser automation focused
+const cliModeGreetings = {
   morning: [
-    "Good morning! Ready to ship some code?",
-    "Morning! Let's squash some bugs today.",
-    "Coffee + code = productivity. What are we building?",
-    "Fresh morning, fresh commits. Let's go!",
-    "Good morning! What feature are we working on?",
-    "Rise and code! What's the first task?",
-    "Morning! Time to turn ideas into code.",
-    "Ready to write some clean code today?",
+    "Good morning! Ready to automate some tasks?",
+    "Morning! Let's streamline your workflow today.",
+    "Coffee + automation = productivity. What's the task?",
+    "Fresh morning, fresh automations. Let's go!",
+    "Good morning! What should we automate?",
+    "Rise and automate! What's the first task?",
+    "Morning! Time to turn tasks into actions.",
+    "Ready to tackle some browser automation today?",
     "Good morning! Let's make some magic happen.",
-    "New day, new code. What's the plan?"
+    "New day, new possibilities. What's the plan?"
   ],
   afternoon: [
-    "Good afternoon! Let's keep the code flowing.",
-    "Afternoon coding session. What's the focus?",
-    "Post-lunch productivity! What are we fixing?",
-    "Good afternoon! Ready to refactor?",
-    "Let's debug and deploy. What's up?",
-    "Afternoon! Time for some focused coding.",
-    "Good afternoon! Let's push some commits.",
+    "Good afternoon! Let's keep the automation flowing.",
+    "Afternoon automation session. What's the focus?",
+    "Post-lunch productivity! What needs automating?",
+    "Good afternoon! Ready to streamline something?",
+    "Let's automate and accelerate. What's up?",
+    "Afternoon! Time for some focused automation.",
+    "Good afternoon! Let's get things done.",
     "Keeping the momentum. What needs work?",
-    "Good afternoon! Ready to tackle that feature?",
-    "Code review time? Or maybe a new feature?"
+    "Good afternoon! Ready to tackle that task?",
+    "Automation time? Or maybe some data extraction?"
   ],
   evening: [
-    "Evening! Perfect time for focused coding.",
-    "Good evening! Let's wrap up that feature.",
+    "Evening! Perfect time for focused automation.",
+    "Good evening! Let's wrap up those tasks.",
     "Quiet evening, perfect for deep work.",
-    "Evening coding session. What are we building?",
-    "Good evening! Time for some uninterrupted coding.",
+    "Evening automation session. What's the goal?",
+    "Good evening! Time for some uninterrupted work.",
     "Let's make progress before the day ends.",
-    "Evening! The best time for complex problems.",
-    "Good evening! Ready to ship something?",
-    "Winding down with some code. What's next?",
-    "Golden hour for coding. Let's do this."
+    "Evening! The best time for complex tasks.",
+    "Good evening! Ready to accomplish something?",
+    "Winding down with some automation. What's next?",
+    "Golden hour for productivity. Let's do this."
   ],
   night: [
-    "Late night coding? The best bugs are found now.",
-    "Midnight commits hit different. Let's go!",
-    "Night owl mode: ON. What are we hacking?",
-    "The world sleeps, we code. What's the task?",
-    "Late night inspiration? Let's capture it in code.",
-    "Silence is golden for debugging. What's broken?",
-    "Night shift coding. Where's the problem?",
+    "Late night automation? Let's make it count!",
+    "Midnight productivity hits different. Let's go!",
+    "Night owl mode: ON. What are we automating?",
+    "The world sleeps, we automate. What's the task?",
+    "Late night inspiration? Let's capture it.",
+    "Silence is golden for focus. What needs doing?",
+    "Night shift productivity. What's the mission?",
     "Burning the midnight oil? Let's be efficient.",
-    "Late night, bright screens. What are we building?",
-    "The night is young. Let's write some code."
+    "Late night, bright screens. What's the goal?",
+    "The night is young. Let's get things done."
   ]
 };
 
@@ -174,11 +174,11 @@ const getRandomGreeting = (list: string[]): string => {
  * - Afternoon: 12 PM - 5 PM
  * - Evening: 5 PM - 10 PM
  * - Night: 10 PM - 5 AM
- * @param isCodeMode - If true, use developer-focused greetings
+ * @param isCliMode - If true, use CLI/automation-focused greetings
  */
-export const getTimeBasedGreeting = (isCodeMode = false): string => {
+export const getTimeBasedGreeting = (isCliMode = false): string => {
   const hour = new Date().getHours();
-  const greetingSet = isCodeMode ? codeModeGreetings : greetings;
+  const greetingSet = isCliMode ? cliModeGreetings : greetings;
 
   if (hour >= 5 && hour < 12) {
     return getRandomGreeting(greetingSet.morning);
