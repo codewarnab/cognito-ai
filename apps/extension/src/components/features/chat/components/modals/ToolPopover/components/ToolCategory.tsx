@@ -162,6 +162,6 @@ export const ToolCategory: React.FC<ToolCategoryProps> = ({
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </div >
     );
 };

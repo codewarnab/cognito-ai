@@ -15,6 +15,8 @@ export interface CliModeChatParams {
   messages: UIMessage[];
   abortSignal?: AbortSignal;
   onError?: (error: Error) => void;
+  /** Initial page context captured at thread start */
+  initialPageContext?: string;
 }
 
 /**
@@ -78,9 +80,9 @@ function convertMessages(messages: UIMessage[]): Array<{
  * Returns a UIMessageStream compatible with useChat
  */
 export async function streamCliModeChat(params: CliModeChatParams) {
-  const { messages, abortSignal, onError } = params;
+  const { messages, abortSignal, onError, initialPageContext } = params;
 
-  log.info('Starting cli mode chat', { messageCount: messages.length });
+  log.info('Starting cli mode chat', { messageCount: messages.length, hasPageContext: !!initialPageContext });
 
   // Get bridge state
   const state = useCliModeStore.getState();
@@ -124,8 +126,31 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           transient: true,
         });
 
-        // Convert messages
-        const bridgeMessages = convertMessages(messages);
+        // Convert messages and prepend page context if available
+        let bridgeMessages = convertMessages(messages);
+
+        // Prepend page context to first user message if available
+        if (initialPageContext && bridgeMessages.length > 0) {
+          const firstUserMsgIndex = bridgeMessages.findIndex(m => m.role === 'user');
+          if (firstUserMsgIndex !== -1) {
+            const pageContextText = `[INITIAL PAGE CONTEXT - Captured at conversation start]\n${initialPageContext}\n\nNote: This is the page context from when this conversation started.\n\n`;
+
+            // Get the first user message (we know it exists since index !== -1)
+            const firstUserMsg = bridgeMessages[firstUserMsgIndex]!;
+            const firstTextPartIndex = firstUserMsg.content.findIndex(p => p.type === 'text');
+
+            if (firstTextPartIndex !== -1) {
+              // Prepend to existing text part
+              const textPart = firstUserMsg.content[firstTextPartIndex] as { type: 'text'; text: string };
+              textPart.text = pageContextText + textPart.text;
+            } else {
+              // Add new text part at beginning
+              firstUserMsg.content.unshift({ type: 'text', text: pageContextText });
+            }
+
+            log.info('Prepended page context to first user message', { contextLength: initialPageContext.length });
+          }
+        }
 
         // Get enabled tools from store
         const { enabledMap } = useToolsStore.getState();

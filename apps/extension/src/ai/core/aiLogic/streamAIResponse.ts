@@ -59,11 +59,12 @@ export async function streamAIResponse(params: StreamAIParams) {
     // Check if CLI provider is selected - route to local bridge
     const isCliProviderSelected = useCliModeStore.getState().isCliProviderSelected;
     if (isCliProviderSelected) {
-        log.info('🔧 Using CLI PROVIDER - routing to local bridge');
+        log.info('🔧 Using CLI PROVIDER - routing to local bridge', { hasPageContext: !!initialPageContext });
         return streamCliModeChat({
             messages,
             abortSignal,
             onError,
+            initialPageContext,
         });
     }
 

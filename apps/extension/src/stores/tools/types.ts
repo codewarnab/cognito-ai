@@ -110,6 +110,9 @@ export interface ToolsState {
   setToolSearchQuery: (query: string) => void;
   setJustModified: (val: boolean) => void;
 
+  // Actions - Reset
+  resetModeToDefault: () => Promise<void>;
+
   // Actions - Initialization
   initialize: () => Promise<void>;
   loadFromStorage: () => Promise<void>;

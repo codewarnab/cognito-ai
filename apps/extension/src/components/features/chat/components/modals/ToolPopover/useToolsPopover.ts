@@ -15,7 +15,7 @@ import {
 } from '@/stores';
 import { TOOL_CATEGORIES, SUPERMEMORY_TOOLS } from '@/constants/toolDescriptions';
 import { useWebMCPTools } from '@/hooks/webmcp';
-import { ADAPTIVE_ONLY_TOOLS } from './constants';
+import { ADAPTIVE_ONLY_TOOLS, CHAT_MODE_TOOLS, AGENT_MODE_TOOLS } from './constants';
 import type { ToolMode, McpToolWithServer } from './types';
 
 const log = createLogger('ToolsPopover', 'UI_CHAT_HOOKS');
@@ -51,6 +51,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   const toggleCategoryExpanded = useToolsStore((state: ToolsState) => state.toggleCategoryExpanded);
   const setExpandedCategories = useToolsStore((state: ToolsState) => state.setExpandedCategories);
   const checkSupermemory = useToolsStore((state: ToolsState) => state.checkSupermemory);
+  const resetModeToDefault = useToolsStore((state: ToolsState) => state.resetModeToDefault);
 
   // Local UI state (not persisted)
   const [showInfoTooltip, setShowInfoTooltip] = useState(false);
@@ -321,6 +322,32 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toolSearchQuery]);
 
+  // Check if current mode's tools differ from defaults
+  const isModeModified = useMemo(() => {
+    // Adaptive mode is read-only, never modified
+    if (currentMode === 'adaptive') {
+      return false;
+    }
+
+    const defaultTools = currentMode === 'chat' ? CHAT_MODE_TOOLS : AGENT_MODE_TOOLS;
+    const defaultSet = new Set(defaultTools);
+    const enabledTools = Object.entries(enabledMap).filter(([, v]) => v).map(([k]) => k);
+    const enabledSet = new Set(enabledTools);
+
+    // Check if they differ
+    if (defaultSet.size !== enabledSet.size) return true;
+    for (const tool of defaultSet) {
+      if (!enabledSet.has(tool)) return true;
+    }
+    return false;
+  }, [currentMode, enabledMap]);
+
+  // Handler for resetting mode to default
+  const handleResetModeToDefault = useCallback(async () => {
+    await resetModeToDefault();
+    log.info('Reset mode to defaults', { mode: currentMode });
+  }, [resetModeToDefault, currentMode]);
+
   return {
     popoverRef,
     enabledMap,
@@ -352,12 +379,14 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     totalEnabledCount,
     totalToolCount,
     isTooManyTools,
+    isModeModified,
     handleModeChange,
     handleToggleTool,
     handleToggleCategory,
     handleToggleMcpTool,
     handleToggleMcpCategory,
     handleToggleWebMcpCategoryAll,
+    handleResetModeToDefault,
     toggleCategory: toggleCategoryExpanded,
   };
 }

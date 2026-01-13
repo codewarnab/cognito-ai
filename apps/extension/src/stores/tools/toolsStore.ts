@@ -263,6 +263,55 @@ export const useToolsStore = create<ToolsState>()(
       get().recalculateCounts();
     },
 
+    /**
+     * Resets the current mode's tools to their default configuration.
+     * For 'chat' and 'agent' modes, resets to mode defaults.
+     * Adaptive mode is read-only, so this is a no-op for adaptive.
+     */
+    resetModeToDefault: async () => {
+      const { currentMode, supermemoryConfigured } = get();
+
+      // Adaptive mode is read-only
+      if (currentMode === 'adaptive') {
+        log.warn('Cannot reset adaptive mode - it is read-only');
+        return;
+      }
+
+      // Build default map for the current mode
+      const defaultMap = buildDefaultMap(currentMode, supermemoryConfigured);
+
+      // Update state
+      const updatedMaps: Partial<ToolsState> = {
+        enabledMap: defaultMap,
+        justModified: true,
+      };
+
+      if (currentMode === 'chat') {
+        updatedMaps.chatModeMap = defaultMap;
+      } else if (currentMode === 'agent') {
+        updatedMaps.agentModeMap = defaultMap;
+      }
+
+      set(updatedMaps);
+
+      // Clear justModified after a short delay for fade effect
+      setTimeout(() => {
+        set({ justModified: false });
+      }, 1500);
+
+      // Persist to storage
+      const enabledList = mapToList(defaultMap);
+
+      try {
+        await setModeTools(currentMode, enabledList);
+        log.info('Reset mode to defaults', { mode: currentMode, toolCount: enabledList.length });
+      } catch (err) {
+        log.error('Failed to save reset tool config', err);
+      }
+
+      get().recalculateCounts();
+    },
+
     setEnabledMap: (map) => {
       set({ enabledMap: map });
       get().recalculateCounts();
@@ -493,7 +542,7 @@ export const useToolsStore = create<ToolsState>()(
         } else if (currentMode === 'agent') {
           enabledMap = { ...agentModeMap };
         } else {
-          // Adaptive mode uses fixed tools
+          // Adaptive mode uses fixed tools (read-only)
           enabledMap = buildDefaultMap('adaptive', supermemoryConfigured);
         }
 
@@ -505,7 +554,11 @@ export const useToolsStore = create<ToolsState>()(
         });
 
         get().recalculateCounts();
-        log.info('Loaded tools from storage', { mode: currentMode, chatTools: mapToList(chatModeMap).length, agentTools: mapToList(agentModeMap).length });
+        log.info('Loaded tools from storage', {
+          mode: currentMode,
+          chatTools: mapToList(chatModeMap).length,
+          agentTools: mapToList(agentModeMap).length
+        });
       } catch (err) {
         log.error('Failed to load enabled tools', err);
       }

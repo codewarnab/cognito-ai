@@ -47,6 +47,8 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
         handleToggleMcpCategory,
         handleToggleWebMcpCategoryAll,
         toggleCategory,
+        isModeModified,
+        handleResetModeToDefault,
     } = useToolsPopover(isOpen, onClose);
 
     useEffect(() => {
@@ -111,7 +113,9 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     <ModeSelector
                         currentMode={currentMode}
                         justModified={justModified}
+                        isModeModified={isModeModified}
                         onModeChange={handleModeChange}
+                        onResetToDefault={handleResetModeToDefault}
                     />
 
                     <div
@@ -225,99 +229,102 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                                 </div>
                             </div>
                         ) : (
-                            <>
-                                {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
-                                    <WebMcpSection
-                                        tools={filteredWebMCPTools}
-                                        disabledTools={webmcpDisabledTools}
-                                        isLoading={webmcpLoading}
-                                        enabledCount={enabledWebMCPCount}
-                                        isExpanded={expandedCategories['webmcp-active'] ?? false}
-                                        searchQuery={toolSearchQuery}
-                                        onToggleCategory={toggleCategory}
-                                        onToggleTool={toggleWebMCPTool}
-                                        onToggleCategoryAll={handleToggleWebMcpCategoryAll}
-                                    />
-                                )}
+                            <div className="p-2">
+                                {/* Standard view for chat/agent modes */}
+                                <>
+                                    {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
+                                        <WebMcpSection
+                                            tools={filteredWebMCPTools}
+                                            disabledTools={webmcpDisabledTools}
+                                            isLoading={webmcpLoading}
+                                            enabledCount={enabledWebMCPCount}
+                                            isExpanded={expandedCategories['webmcp-active'] ?? false}
+                                            searchQuery={toolSearchQuery}
+                                            onToggleCategory={toggleCategory}
+                                            onToggleTool={toggleWebMCPTool}
+                                            onToggleCategoryAll={handleToggleWebMcpCategoryAll}
+                                        />
+                                    )}
 
-                                {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
-                                    <div style={{
-                                        height: '1px',
-                                        backgroundColor: 'var(--border-color, rgba(255, 255, 255, 0.08))',
-                                        margin: '8px 0',
-                                    }} />
-                                )}
-
-                                {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
-                                    <div style={{
-                                        marginBottom: '8px',
-                                        paddingBottom: '8px',
-                                        borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
-                                    }}>
+                                    {(filteredWebMCPTools.length > 0 || webmcpLoading) && (
                                         <div style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            padding: '4px 8px 6px',
-                                            fontSize: '10px',
-                                            fontWeight: 600,
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.5px',
-                                            color: 'var(--text-tertiary, #6b7280)',
+                                            height: '1px',
+                                            backgroundColor: 'var(--border-color, rgba(255, 255, 255, 0.08))',
+                                            margin: '8px 0',
+                                        }} />
+                                    )}
+
+                                    {(Object.keys(mcpServerGroups).length > 0 || mcpLoading) && (
+                                        <div style={{
+                                            marginBottom: '8px',
+                                            paddingBottom: '8px',
+                                            borderBottom: '1px solid var(--border-color, rgba(255, 255, 255, 0.08))',
                                         }}>
-                                            <Server size={12} />
-                                            <span>MCP Servers</span>
-                                            {mcpLoading && (
-                                                <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
-                                                    Loading...
-                                                </span>
-                                            )}
+                                            <div style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                padding: '4px 8px 6px',
+                                                fontSize: '10px',
+                                                fontWeight: 600,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.5px',
+                                                color: 'var(--text-tertiary, #6b7280)',
+                                            }}>
+                                                <Server size={12} />
+                                                <span>MCP Servers</span>
+                                                {mcpLoading && (
+                                                    <span style={{ fontSize: '9px', fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>
+                                                        Loading...
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {Object.entries(mcpServerGroups).map(([serverId, { name, tools: serverTools }]) => (
+                                                <McpCategory
+                                                    key={serverId}
+                                                    serverId={serverId}
+                                                    serverName={name}
+                                                    tools={serverTools}
+                                                    disabledTools={mcpDisabledTools[serverId] || []}
+                                                    isExpanded={expandedCategories[`mcp-${serverId}`] ?? false}
+                                                    searchQuery={toolSearchQuery}
+                                                    onToggleCategory={toggleCategory}
+                                                    onToggleTool={handleToggleMcpTool}
+                                                    onToggleCategoryAll={handleToggleMcpCategory}
+                                                />
+                                            ))}
                                         </div>
-                                        {Object.entries(mcpServerGroups).map(([serverId, { name, tools: serverTools }]) => (
-                                            <McpCategory
-                                                key={serverId}
-                                                serverId={serverId}
-                                                serverName={name}
-                                                tools={serverTools}
-                                                disabledTools={mcpDisabledTools[serverId] || []}
-                                                isExpanded={expandedCategories[`mcp-${serverId}`] ?? false}
-                                                searchQuery={toolSearchQuery}
-                                                onToggleCategory={toggleCategory}
-                                                onToggleTool={handleToggleMcpTool}
-                                                onToggleCategoryAll={handleToggleMcpCategory}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
+                                    )}
 
-                                {Object.entries(groupedTools).map(([category, tools]) => (
-                                    <ToolCategory
-                                        key={category}
-                                        category={category}
-                                        tools={tools}
-                                        enabledMap={enabledMap}
-                                        isExpanded={expandedCategories[category] ?? false}
-                                        supermemoryConfigured={supermemoryConfigured}
-                                        showSupermemoryTooltip={showSupermemoryTooltip}
-                                        searchQuery={toolSearchQuery}
-                                        onToggleCategory={toggleCategory}
-                                        onToggleTool={handleToggleTool}
-                                        onToggleCategoryAll={handleToggleCategory}
-                                        onSetSupermemoryTooltip={setShowSupermemoryTooltip}
-                                    />
-                                ))}
+                                    {Object.entries(groupedTools).map(([category, tools]) => (
+                                        <ToolCategory
+                                            key={category}
+                                            category={category}
+                                            tools={tools}
+                                            enabledMap={enabledMap}
+                                            isExpanded={expandedCategories[category] ?? false}
+                                            supermemoryConfigured={supermemoryConfigured}
+                                            showSupermemoryTooltip={showSupermemoryTooltip}
+                                            searchQuery={toolSearchQuery}
+                                            onToggleCategory={toggleCategory}
+                                            onToggleTool={handleToggleTool}
+                                            onToggleCategoryAll={handleToggleCategory}
+                                            onSetSupermemoryTooltip={setShowSupermemoryTooltip}
+                                        />
+                                    ))}
 
-                                {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
-                                    <div style={{
-                                        padding: '16px',
-                                        textAlign: 'center',
-                                        color: 'var(--text-tertiary, #6b7280)',
-                                        fontSize: '11px',
-                                    }}>
-                                        No tools found
-                                    </div>
-                                )}
-                            </>
+                                    {Object.keys(groupedTools).length === 0 && Object.keys(mcpServerGroups).length === 0 && (
+                                        <div style={{
+                                            padding: '16px',
+                                            textAlign: 'center',
+                                            color: 'var(--text-tertiary, #6b7280)',
+                                            fontSize: '11px',
+                                        }}>
+                                            No tools found
+                                        </div>
+                                    )}
+                                </>
+                            </div>
                         )}
                     </div>
 
