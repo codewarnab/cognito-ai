@@ -17,7 +17,7 @@ import { useSettingsStore } from '../settings/settingsStore';
 export const useModelStore = create<ModelState>()(
   chromeStorageSync<ModelState>({
     storageKey: STORAGE_KEYS.MODEL_CONFIG,
-    persistFields: ['mode', 'remoteModel'],
+    persistFields: ['mode', 'remoteModel', 'remoteProvider'],
     onHydrate: () => {
       useModelStore.setState({ isHydrated: true });
     },
@@ -25,6 +25,7 @@ export const useModelStore = create<ModelState>()(
     // Initial state
     mode: 'remote',
     remoteModel: 'gemini-3-flash-preview',
+    remoteProvider: 'google',
     hasApiKey: false,
     conversationStartMode: null,
     isLoading: true,
@@ -44,6 +45,13 @@ export const useModelStore = create<ModelState>()(
      */
     setRemoteModel: (remoteModel: RemoteModel) => {
       set({ remoteModel });
+    },
+
+    /**
+     * Sets the selected remote provider.
+     */
+    setRemoteProvider: (remoteProvider: string) => {
+      set({ remoteProvider });
     },
 
     setConversationStartMode: (mode: AIMode | null) => {

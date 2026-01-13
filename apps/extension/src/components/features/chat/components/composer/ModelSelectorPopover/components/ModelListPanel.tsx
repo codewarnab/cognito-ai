@@ -50,7 +50,7 @@ const ModelRow: React.FC<{
             type="button"
             onClick={onSelect}
             disabled={isLoading}
-            className={`group flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
+            className={`group flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
                 } ${isFocused ? 'bg-accent/50' : ''}`}
         >
             <div className="flex-1 min-w-0">
@@ -119,7 +119,7 @@ export const ModelListPanel: React.FC<ModelListPanelProps> = ({
     const isUnavailable = !providerGroup.isAvailable;
 
     return (
-        <div className="flex-1 flex flex-col min-w-0 relative">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0 relative">
             {/* Provider header */}
             <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
                 <providerGroup.icon className="w-3.5 h-3.5 text-muted-foreground" />

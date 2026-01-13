@@ -30,7 +30,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Search models..."
-                    className="w-full h-8 pl-8 pr-3 bg-input border border-border rounded-lg text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring focus:bg-accent transition-all"
+                    className="w-full h-8 pl-8 pr-3 bg-input border border-border rounded-xl text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring focus:bg-accent transition-all"
                     onKeyDown={onKeyDown}
                 />
             </div>

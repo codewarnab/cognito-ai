@@ -19,6 +19,8 @@ import {
     ConfigureProvidersFooter,
 } from './components';
 import type { AIProviderType } from './types';
+import { useSettingsStore, type SettingsState, useCliModeStore, type CliModeState } from '@/stores';
+import { Cloud, Key } from 'lucide-react';
 
 export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
     className,
@@ -58,6 +60,14 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
         handleKeyDown,
     } = useModelSelector({ isOpen, setIsOpen });
 
+    const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
+    const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
+
+    // Check if CLI mode is active (Cloud toggle should be hidden in CLI mode)
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+
+    const showCloudToggle = !isCliProviderSelected;
+
     const ProviderIcon = currentProviderInfo.icon;
 
     // Get the currently viewing provider group - default to selected provider or first available
@@ -93,14 +103,18 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
             >
-                <ProviderIcon className="w-4 h-4 shrink-0" />
+                {useBackendMode ? (
+                    <Cloud className="w-4 h-4 shrink-0 text-violet-400" />
+                ) : (
+                    <ProviderIcon className="w-4 h-4 shrink-0" />
+                )}
                 <span className="flex items-center gap-1 min-w-0">
                     <span className="text-[12px] font-medium text-white/90 whitespace-nowrap">
-                        {currentProviderInfo.name}
+                        {useBackendMode ? 'Cloud Backend' : currentProviderInfo.name}
                     </span>
                     <span className="text-white/40">·</span>
                     <span className="text-[12px] text-white/70 truncate max-w-[140px]">
-                        {currentModel?.name || selectedModelId}
+                        {useBackendMode ? 'Auto-selected' : (currentModel?.name || selectedModelId)}
                     </span>
                 </span>
                 <ChevronDown
@@ -118,108 +132,155 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, y: 8, scale: 0.96, filter: 'blur(6px)' }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="absolute bottom-[calc(100%+8px)] left-0 w-[300px] bg-popover border border-border rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-1000 overflow-hidden"
+                        className="absolute bottom-[calc(100%+8px)] left-0 w-[300px] max-h-[340px] bg-popover border border-border rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-1000 overflow-hidden flex flex-col"
                         role="listbox"
                         aria-label="Select AI model"
                     >
-                        {/* Search Input - Full width at top */}
-                        <SearchInput
-                            value={searchQuery}
-                            onChange={(value) => {
-                                setSearchQuery(value);
-                                setFocusedIndex(0);
-                            }}
-                            onKeyDown={handleKeyDown}
-                            inputRef={searchInputRef}
-                        />
+                        <div className="flex flex-col min-h-0 flex-1">
+                            {useBackendMode ? (
+                                // Cloud Mode View
+                                <div className="p-4 flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto mcp-scrollable">
+                                    <div className="flex items-start gap-3 p-3 rounded-xl bg-violet-500/10 border border-violet-500/20">
+                                        <Cloud className="w-5 h-5 text-violet-400 shrink-0 mt-0.5" />
+                                        <div className="flex flex-col gap-1">
+                                            <div className="text-sm font-medium text-violet-100">Cloud Backend Active</div>
+                                            <div className="text-xs text-muted-foreground leading-normal">
+                                                Using Cognito&apos;s hosted API. No API key required.
+                                            </div>
+                                        </div>
+                                    </div>
 
-                        {/* Empty state when no models are enabled */}
-                        {modelsByProvider.length === 0 && !searchQuery && <NoModelsEnabled />}
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2 text-xs text-amber-500/90 font-medium bg-amber-500/10 px-2 py-1.5 rounded-md w-fit">
+                                            <span>Rate limits apply</span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            Model selection is managed automatically by the backend in this mode.
+                                        </div>
+                                    </div>
 
-                        {/* No search results */}
-                        {filteredBySearch.length === 0 && searchQuery && (
-                            <NoSearchResults query={searchQuery} />
-                        )}
+                                    {showCloudToggle && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setUseBackendMode(false)}
+                                            className="mt-2 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] transition-colors cursor-pointer text-xs font-medium text-white/80"
+                                        >
+                                            <Key size={14} className="text-emerald-500" />
+                                            Switch to BYOK Mode
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                // BYOK View (Standard)
+                                <>
+                                    {/* Search Input - Full width at top */}
+                                    <SearchInput
+                                        value={searchQuery}
+                                        onChange={(value) => {
+                                            setSearchQuery(value);
+                                            setFocusedIndex(0);
+                                        }}
+                                        onKeyDown={handleKeyDown}
+                                        inputRef={searchInputRef}
+                                    />
 
-                        {/* Split Panel Layout */}
-                        {modelsByProvider.length > 0 && (
-                            <div className="flex h-[280px]">
-                                {/* Left Sidebar - Provider Icons */}
-                                <ProviderSidebar
-                                    providers={modelsByProvider}
-                                    selectedProviderId={searchQuery.trim() ? (modelsByProvider[0]?.id || null) : effectiveViewingId}
-                                    onProviderSelect={handleProviderSidebarSelect}
-                                />
+                                    {/* Empty state when no models are enabled */}
+                                    {modelsByProvider.length === 0 && !searchQuery && <NoModelsEnabled />}
 
-                                {/* Right Panel - Model List */}
-                                {searchQuery.trim() ? (
-                                    // When searching, show all matching models
-                                    <div className="flex-1 overflow-y-auto mcp-scrollable">
-                                        {filteredBySearch.map(provider => (
-                                            <div key={provider.id}>
-                                                <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
-                                                    <provider.icon className="w-3 h-3 text-muted-foreground" />
-                                                    <span className="text-[10px] text-muted-foreground">
-                                                        {provider.name}
-                                                    </span>
-                                                </div>
-                                                {provider.models.map((model) => {
-                                                    const isSelected = selectedModelId === model.id && selectedProvider === provider.id;
-                                                    return (
-                                                        <button
-                                                            key={`${provider.id}-${model.id}`}
-                                                            type="button"
-                                                            onClick={() => handleModelChange(model.id, provider.id)}
-                                                            disabled={isLoading}
-                                                            className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
-                                                                }`}
-                                                        >
-                                                            <div className="flex-1 min-w-0">
-                                                                <span className={`text-[12px] block truncate ${isSelected ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
-                                                                    {model.name}
-                                                                </span>
-                                                                <span className="text-[10px] text-muted-foreground block truncate">
-                                                                    {model.description}
+                                    {/* No search results */}
+                                    {filteredBySearch.length === 0 && searchQuery && (
+                                        <NoSearchResults query={searchQuery} />
+                                    )}
+
+                                    {/* Split Panel Layout */}
+                                    {modelsByProvider.length > 0 && (
+                                        <div className="flex flex-1 min-h-0">
+                                            {/* Left Sidebar - Provider Icons */}
+                                            <ProviderSidebar
+                                                providers={modelsByProvider}
+                                                selectedProviderId={searchQuery.trim() ? (modelsByProvider[0]?.id || null) : effectiveViewingId}
+                                                onProviderSelect={handleProviderSidebarSelect}
+                                            />
+
+                                            {/* Right Panel - Model List */}
+                                            {searchQuery.trim() ? (
+                                                // When searching, show all matching models
+                                                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mcp-scrollable">
+                                                    {filteredBySearch.map(provider => (
+                                                        <div key={provider.id}>
+                                                            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
+                                                                <provider.icon className="w-3 h-3 text-muted-foreground" />
+                                                                <span className="text-[10px] text-muted-foreground">
+                                                                    {provider.name}
                                                                 </span>
                                                             </div>
-                                                            {isSelected && (
-                                                                <svg className="w-3.5 h-3.5 shrink-0 text-foreground/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                                </svg>
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={effectiveViewingId}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.12, ease: 'easeOut' }}
-                                            className="flex-1 overflow-hidden"
-                                        >
-                                            <ModelListPanel
-                                                providerGroup={viewingProviderGroup}
-                                                selectedModelId={selectedModelId}
-                                                selectedProvider={selectedProvider}
-                                                isLoading={isLoading}
-                                                focusedIndex={focusedIndex}
-                                                itemRefs={itemRefs}
-                                                onModelSelect={handleModelChange}
-                                            />
-                                        </motion.div>
-                                    </AnimatePresence>
-                                )}
-                            </div>
-                        )}
+                                                            {provider.models.map((model) => {
+                                                                const isSelected = selectedModelId === model.id && selectedProvider === provider.id;
+                                                                return (
+                                                                    <button
+                                                                        key={`${provider.id}-${model.id}`}
+                                                                        type="button"
+                                                                        onClick={() => handleModelChange(model.id, provider.id)}
+                                                                        disabled={isLoading}
+                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
+                                                                            }`}
+                                                                    >
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <span className={`text-[12px] block truncate ${isSelected ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                                                                                {model.name}
+                                                                            </span>
+                                                                            <span className="text-[10px] text-muted-foreground block truncate">
+                                                                                {model.description}
+                                                                            </span>
+                                                                        </div>
+                                                                        {isSelected && (
+                                                                            <svg className="w-3.5 h-3.5 shrink-0 text-foreground/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                            </svg>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <AnimatePresence mode="wait">
+                                                    <motion.div
+                                                        key={effectiveViewingId}
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        transition={{ duration: 0.12, ease: 'easeOut' }}
+                                                        className="flex-1 min-h-0 overflow-hidden flex"
+                                                    >
+                                                        <ModelListPanel
+                                                            providerGroup={viewingProviderGroup}
+                                                            selectedModelId={selectedModelId}
+                                                            selectedProvider={selectedProvider}
+                                                            isLoading={isLoading}
+                                                            focusedIndex={focusedIndex}
+                                                            itemRefs={itemRefs}
+                                                            onModelSelect={handleModelChange}
+                                                        />
+                                                    </motion.div>
+                                                </AnimatePresence>
+                                            )}
+                                        </div>
+                                    )}
 
-                        {/* Configure Providers Footer */}
-                        <ConfigureProvidersFooter onClose={() => setIsOpen(false)} />
+                                </>
+                            )}
+                        </div>
+
+                        <div className="shrink-0">
+                            {/* Configure Providers Footer */}
+                            <ConfigureProvidersFooter
+                                onClose={() => setIsOpen(false)}
+                                showCloudToggle={!useBackendMode && showCloudToggle}
+                                onSwitchToCloudMode={() => setUseBackendMode(true)}
+                            />
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>

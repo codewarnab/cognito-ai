@@ -43,6 +43,8 @@ export interface ModelState {
   mode: AIProviderMode;
   /** Selected remote model */
   remoteModel: RemoteModel;
+  /** Selected remote provider */
+  remoteProvider: string;
   /** Whether API key is configured */
   hasApiKey: boolean;
   /** Mode at conversation start (for agent mode detection) */
@@ -55,6 +57,7 @@ export interface ModelState {
   // Actions
   setMode: (mode: AIProviderMode) => void;
   setRemoteModel: (model: RemoteModel) => void;
+  setRemoteProvider: (provider: string) => void;
   setConversationStartMode: (mode: AIProviderMode | null) => void;
   clearConversationStartMode: () => void;
   refreshApiKeyStatus: () => Promise<void>;

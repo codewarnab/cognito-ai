@@ -2,12 +2,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
-import { Wrench, Cloud, Key, Globe } from 'lucide-react';
+import { Wrench, Globe } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { FaviconImage } from '@/components/shared/icons/FaviconImage';
 import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
-import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
+import { useToolsStore, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { useBridgeHeartbeat } from '@/hooks/cliMode';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
@@ -70,8 +70,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     const mcpTools = useToolsStore((s: ToolsState) => s.mcpTools);
     const mcpDisabledTools = useToolsStore((s: ToolsState) => s.mcpDisabledTools);
 
-    // Backend mode state
-    const useBackendMode = useSettingsStore((s: SettingsState) => s.useBackendMode);
+
 
     // CLI Mode bridge state
     const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
@@ -149,7 +148,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                     setModelConfig({
                         remoteModel: previousCloudModelConfig.remoteModel as any,
                         remoteProvider: previousCloudModelConfig.remoteProvider,
-                    }).catch(() => {});
+                    }).catch(() => { });
                     setPreviousCloudModelConfig(null);
                 }
             }
@@ -185,7 +184,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         aiProviderMode: modelState.mode
     });
 
-    const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
+
 
     const getTooltipText = () => {
         if (activeWorkflow) return "Tools are managed by the active workflow";
@@ -327,97 +326,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
             {/* Model selector moved above chat input (ComposerHeader). */}
 
-            {/* Backend Mode Toggle - Icon only, expands on hover (hidden in cli mode) */}
-            {!isCliBridgeMode && (
-                <>
-                    <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button
-                                    type="button"
-                                    onClick={() => setUseBackendMode(!useBackendMode)}
-                                    className="cursor-pointer backend-mode-btn"
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0px',
-                                        padding: '6px',
-                                        borderRadius: '6px',
-                                        border: 'none',
-                                        background: useBackendMode
-                                            ? 'rgba(139, 92, 246, 0.1)'
-                                            : 'rgba(156, 163, 175, 0.1)',
-                                        color: useBackendMode
-                                            ? 'rgb(139, 92, 246)'
-                                            : 'var(--text-secondary, #9ca3af)',
-                                        fontSize: '12px',
-                                        fontWeight: 500,
-                                        transition: 'all 0.2s ease',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    {useBackendMode ? <Cloud size={14} /> : <Key size={14} />}
-                                    <span
-                                        className="whitespace-nowrap"
-                                        style={{
-                                            display: 'inline-block',
-                                            maxWidth: '0px',
-                                            opacity: 0,
-                                            overflow: 'hidden',
-                                            transition: 'max-width 0.2s ease, opacity 0.2s ease, margin-left 0.2s ease',
-                                            marginLeft: '0px',
-                                        }}
-                                    >
-                                        {useBackendMode ? 'Cloud' : 'BYOK'}
-                                    </span>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[210px] p-3">
-                                <div className="flex flex-col gap-1.5">
-                                    {useBackendMode ? (
-                                        <>
-                                            <div className="font-semibold text-sm flex items-center gap-1.5">
-                                                <Cloud size={14} className="text-violet-500" />
-                                                Cloud Backend
-                                            </div>
-                                            <div className="text-xs text-muted-foreground leading-normal">
-                                                Using Cognito's hosted API. No API key required to get started.
-                                            </div>
-                                            <div className="text-[10px] text-amber-500/90 font-medium bg-amber-500/10 px-1.5 py-0.5 rounded-sm w-fit">
-                                                Rate limits apply
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="font-semibold text-sm flex items-center gap-1.5">
-                                                <Key size={14} className="text-emerald-500" />
-                                                BYOK Mode
-                                            </div>
-                                            <div className="text-xs text-muted-foreground leading-normal">
-                                                Using your own API key for unlimited usage and higher rate limits.
-                                            </div>
-                                            <div className="text-[10px] text-emerald-600/90 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-sm flex items-start gap-1.5">
-                                                <span className="w-1 h-1 rounded-full bg-emerald-500 input-pulse mt-1 shrink-0" />
-                                                <span className="leading-tight">Your API key never leaves your device</span>
-                                            </div>
-                                        </>
-                                    )}
-                                    <div className="text-[10px] text-muted-foreground/60 pt-1 border-t border-border/50 mt-0.5">
-                                        Click to switch modes
-                                    </div>
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
-                    </div>
-                    <style>{`
-                .backend-mode-btn:hover span {
-                    max-width: 50px !important;
-                    opacity: 1 !important;
-                    margin-left: 6px !important;
-                }
-            `}</style>
-                </>
-            )}
+
         </div>
     );
 };
