@@ -12,7 +12,6 @@
  * - `chat`: Minimal tools, focused on reading and Q&A
  * - `agent`: Full browser automation capabilities
  * - `adaptive`: On-demand tool discovery via `discoverTools` + `executeTools`
- * - `custom`: User has customized the tool selection
  */
 
 import type { ToolsMode } from '@/types/settings';
@@ -45,12 +44,18 @@ export interface WebMcpTool {
 }
 
 export interface ToolsState {
-  // Built-in tools enabled state
+  // Built-in tools enabled state (active view based on current mode)
   enabledMap: Record<string, boolean>;
+
+  // Per-mode tool maps for independent persistence
+  chatModeMap: Record<string, boolean>;
+  agentModeMap: Record<string, boolean>;
 
   // Mode management
   currentMode: ToolMode;
-  hasUserModified: boolean;
+
+  // Transient UI state for "modified" fade indicator
+  justModified: boolean;
 
   // MCP tools
   mcpTools: McpToolWithServer[];
@@ -81,7 +86,6 @@ export interface ToolsState {
 
   // Actions - Mode
   setMode: (mode: ToolMode) => Promise<void>;
-  getDisplayMode: () => ToolMode;
 
   // Actions - Built-in tools
   toggleTool: (toolName: string, enabled: boolean) => Promise<void>;
@@ -104,9 +108,11 @@ export interface ToolsState {
   setExpandedCategories: (categories: Record<string, boolean>) => void;
   toggleCategoryExpanded: (category: string) => void;
   setToolSearchQuery: (query: string) => void;
+  setJustModified: (val: boolean) => void;
 
   // Actions - Initialization
   initialize: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
   recalculateCounts: () => void;
 }
+

@@ -4,14 +4,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import type { ToolMode } from '../types';
 
 interface ModeSelectorProps {
-    displayMode: ToolMode;
-    hasUserModified: boolean;
+    currentMode: ToolMode;
+    justModified: boolean;
     onModeChange: (mode: ToolMode) => void;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({
-    displayMode,
-    hasUserModified,
+    currentMode,
+    justModified,
     onModeChange,
 }) => {
     const [showAdaptiveInfo, setShowAdaptiveInfo] = useState(false);
@@ -53,7 +53,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         }}>
             <button
                 type="button"
-                style={getButtonStyle(displayMode === 'chat')}
+                style={getButtonStyle(currentMode === 'chat')}
                 onClick={() => onModeChange('chat')}
             >
                 <MessageSquare size={12} />
@@ -61,7 +61,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             </button>
             <button
                 type="button"
-                style={getButtonStyle(displayMode === 'agent')}
+                style={getButtonStyle(currentMode === 'agent')}
                 onClick={() => onModeChange('agent')}
             >
                 <Bot size={12} />
@@ -70,13 +70,13 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             <div style={{ display: 'flex', alignItems: 'center' }}>
                 <button
                     type="button"
-                    style={getAdaptiveButtonStyle(displayMode === 'adaptive')}
+                    style={getAdaptiveButtonStyle(currentMode === 'adaptive')}
                     onClick={() => onModeChange('adaptive')}
                 >
                     <Sparkles size={12} />
                     <span>Adaptive</span>
                 </button>
-                {displayMode === 'adaptive' && (
+                {currentMode === 'adaptive' && (
                     <div style={{ position: 'relative' }}>
                         <button
                             type="button"
@@ -144,22 +144,32 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
                     </div>
                 )}
             </div>
-            {hasUserModified && (
-                <div style={{
-                    marginLeft: 'auto',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '9px',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    color: 'var(--color-warning, #f59e0b)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                }}>
-                    Custom
-                </div>
-            )}
+            {/* Subtle fade-out Modified indicator */}
+            <AnimatePresence>
+                {justModified && (
+                    <motion.div
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1.2, delay: 0.3 }}
+                        style={{
+                            marginLeft: 'auto',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '8px',
+                            fontWeight: 500,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.3px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            color: 'var(--color-primary, #3b82f6)',
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                        }}
+                    >
+                        Saved
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
+

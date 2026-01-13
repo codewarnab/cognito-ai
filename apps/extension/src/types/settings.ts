@@ -38,23 +38,29 @@ export type { TTSProvider, VoiceName, VoiceSettings } from '@cognito/shared/type
  * - `chat`: Minimal tools, focused on reading and Q&A (simpler system prompt)
  * - `agent`: Full browser automation capabilities (full system prompt)
  * - `adaptive`: On-demand tool discovery via `discoverTools` + `executeTools` meta-tools
- * - `custom`: User has customized the tool selection manually
  * 
  * **Related constants:**
  * - `CHAT_MODE_TOOLS` - tools enabled in chat mode
  * - `AGENT_MODE_TOOLS` - tools enabled in agent mode
  * - `ADAPTIVE_MODE_TOOLS` - tools enabled in adaptive mode (discoverTools, executeTools + basics)
  */
-export type ToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
+export type ToolsMode = 'chat' | 'agent' | 'adaptive';
 
 
 export interface UserSettings {
   version: number;
   /**
-   * When defined, this list represents the user-selected enabled tools.
-   * When undefined, the app should fall back to defaults.
+   * @deprecated Use chatModeTools/agentModeTools instead. Kept for backward compatibility.
    */
   enabledToolsOverride?: string[];
+  /**
+   * Per-mode tool selections: tools enabled when in chat mode.
+   */
+  chatModeTools?: string[];
+  /**
+   * Per-mode tool selections: tools enabled when in agent mode.
+   */
+  agentModeTools?: string[];
   voice?: VoiceSettings;
   ttsProvider?: TTSProvider;
   suggestionsEnabled?: boolean;
@@ -98,6 +104,8 @@ export interface UserSettings {
 export const DEFAULT_USER_SETTINGS: UserSettings = {
   version: 1,
   enabledToolsOverride: undefined,
+  chatModeTools: undefined,
+  agentModeTools: undefined,
   voice: {
     voiceName: 'Aoede',
   },

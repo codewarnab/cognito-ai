@@ -121,10 +121,10 @@ export async function getToolsMode(): Promise<ToolsMode> {
   const settings = await getSettings();
   const raw = (settings.toolsMode ?? DEFAULT_USER_SETTINGS.toolsMode!) as unknown as string;
 
-  // Backward-compat: legacy 'cli' tools mode was removed (CLI is now a provider selection).
-  if (raw === 'cli') return 'agent';
+  // Backward-compat: legacy 'cli' and 'custom' tools modes were removed.
+  if (raw === 'cli' || raw === 'custom') return 'agent';
 
-  if (raw === 'chat' || raw === 'agent' || raw === 'adaptive' || raw === 'custom') {
+  if (raw === 'chat' || raw === 'agent' || raw === 'adaptive') {
     return raw;
   }
 
@@ -135,11 +135,54 @@ export async function setToolsMode(mode: ToolsMode): Promise<UserSettings> {
   return updateSettings({ toolsMode: mode });
 }
 
+// Per-mode tool storage helpers
+export async function getChatModeTools(): Promise<string[] | undefined> {
+  const settings = await getSettings();
+  return settings.chatModeTools;
+}
+
+export async function setChatModeTools(tools: string[]): Promise<UserSettings> {
+  return updateSettings({ chatModeTools: tools });
+}
+
+export async function getAgentModeTools(): Promise<string[] | undefined> {
+  const settings = await getSettings();
+  return settings.agentModeTools;
+}
+
+export async function setAgentModeTools(tools: string[]): Promise<UserSettings> {
+  return updateSettings({ agentModeTools: tools });
+}
+
+/**
+ * Set tools for a specific mode and optionally update the current mode.
+ * @param mode - The mode to set tools for
+ * @param tools - Array of enabled tool names
+ * @param setAsCurrent - If true, also sets this mode as the current toolsMode
+ */
+export async function setModeTools(mode: ToolsMode, tools: string[], setAsCurrent = false): Promise<UserSettings> {
+  const patch: Partial<UserSettings> = {};
+
+  if (mode === 'chat') {
+    patch.chatModeTools = tools;
+  } else if (mode === 'agent') {
+    patch.agentModeTools = tools;
+  }
+  // adaptive mode is read-only, no custom storage
+
+  if (setAsCurrent) {
+    patch.toolsMode = mode;
+  }
+
+  // Also update legacy field for backward compatibility
+  patch.enabledToolsOverride = tools;
+
+  return updateSettings(patch);
+}
+
+/** @deprecated Use setModeTools instead */
 export async function setToolsConfig(mode: ToolsMode, tools: string[]): Promise<UserSettings> {
-  return updateSettings({
-    toolsMode: mode,
-    enabledToolsOverride: tools
-  });
+  return setModeTools(mode, tools, true);
 }
 
 // AI Providers config helpers

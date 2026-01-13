@@ -23,8 +23,8 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
         supermemoryConfigured,
         showSupermemoryTooltip,
         setShowSupermemoryTooltip,
-        displayMode,
-        hasUserModified,
+        currentMode,
+        justModified,
         mcpTools,
         mcpDisabledTools,
         mcpLoading,
@@ -101,7 +101,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     />
 
                     {/* Hide search bar in Adaptive mode */}
-                    {displayMode !== 'adaptive' && (
+                    {currentMode !== 'adaptive' && (
                         <SearchBar
                             value={toolSearchQuery}
                             onChange={setToolSearchQuery}
@@ -109,8 +109,8 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                     )}
 
                     <ModeSelector
-                        displayMode={displayMode}
-                        hasUserModified={hasUserModified}
+                        currentMode={currentMode}
+                        justModified={justModified}
                         onModeChange={handleModeChange}
                     />
 
@@ -124,7 +124,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         }}
                     >
                         {/* Adaptive mode: Show simple read-only list of enabled tools */}
-                        {displayMode === 'adaptive' ? (
+                        {currentMode === 'adaptive' ? (
                             <div className="p-2">
                                 {(() => {
                                     const hasMcp = Object.keys(mcpServerGroups).length > 0;

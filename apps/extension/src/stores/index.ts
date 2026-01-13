@@ -42,7 +42,7 @@ export {
   useToolsStore,
   selectEnabledMap,
   selectCurrentMode,
-  selectDisplayMode,
+  selectJustModified,
   selectMcpTools,
   selectMcpDisabledTools,
   selectTotalEnabledCount,

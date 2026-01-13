@@ -24,7 +24,7 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   // Store state
   const enabledMap = useToolsStore((state: ToolsState) => state.enabledMap);
   const currentMode = useToolsStore((state: ToolsState) => state.currentMode);
-  const hasUserModified = useToolsStore((state: ToolsState) => state.hasUserModified);
+  const justModified = useToolsStore((state: ToolsState) => state.justModified);
   const mcpTools = useToolsStore((state: ToolsState) => state.mcpTools);
   const mcpDisabledTools = useToolsStore((state: ToolsState) => state.mcpDisabledTools);
   const mcpLoading = useToolsStore((state: ToolsState) => state.mcpLoading);
@@ -76,9 +76,6 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   useEffect(() => {
     setWebMcpToolsCount(enabledWebMCPCount);
   }, [enabledWebMCPCount, setWebMcpToolsCount]);
-
-  // Computed display mode
-  const displayMode: ToolMode = hasUserModified ? 'custom' : currentMode;
 
   // Initialize store when popover opens
   useEffect(() => {
@@ -170,7 +167,6 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
   // Handler for mode change
   const handleModeChange = useCallback(
     async (mode: ToolMode) => {
-      if (mode === 'custom') return;
       await setMode(mode);
       log.info('Mode changed via handler', { mode });
     },
@@ -336,8 +332,8 @@ export function useToolsPopover(isOpen: boolean, onClose: () => void) {
     supermemoryConfigured,
     showSupermemoryTooltip,
     setShowSupermemoryTooltip,
-    displayMode,
-    hasUserModified,
+    currentMode,
+    justModified,
     mcpTools,
     mcpDisabledTools,
     mcpLoading,

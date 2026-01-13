@@ -11,10 +11,11 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import { DEFAULT_ENABLED_TOOLS, TOOLS_DISABLED_BY_DEFAULT } from '@/ai/tools/enabledTools';
 import {
   getEnabledToolsOverride,
-  setEnabledToolsOverride,
   getToolsMode,
   setToolsMode,
-  setToolsConfig,
+  getChatModeTools,
+  getAgentModeTools,
+  setModeTools,
 } from '@/utils/settings';
 import {
   TOOL_CATEGORIES,
@@ -43,51 +44,36 @@ const getAllTools = (): string[] =>
     (t) => !WORKFLOW_ONLY_TOOLS.includes(t) && !WEB_SEARCH_ONLY_TOOLS.includes(t)
   );
 
-
-// Helper to detect which mode matches the current enabled tools
-const getToolsMatchingMode = (enabledMap: Record<string, boolean>): ToolMode | null => {
-  const enabledList = Object.entries(enabledMap)
-    .filter(([, v]) => v)
-    .map(([k]) => k);
-
-  const chatSet = new Set(CHAT_MODE_TOOLS);
-  const isChatMode =
-    enabledList.length === CHAT_MODE_TOOLS.length && enabledList.every((t) => chatSet.has(t));
-  if (isChatMode) return 'chat';
-
-  const agentSet = new Set(AGENT_MODE_TOOLS);
-  const isAgentMode =
-    enabledList.length === AGENT_MODE_TOOLS.length && enabledList.every((t) => agentSet.has(t));
-  if (isAgentMode) return 'agent';
-
-  const adaptiveSet = new Set(ADAPTIVE_MODE_TOOLS);
-  const isAdaptiveMode =
-    enabledList.length === ADAPTIVE_MODE_TOOLS.length &&
-    enabledList.every((t) => adaptiveSet.has(t));
-  if (isAdaptiveMode) return 'adaptive';
-
-  return null;
-};
-
-// Get tools for a specific mode
-const getToolsForMode = (mode: ToolMode, supermemoryConfigured: boolean): string[] => {
-  let tools: string[] = [];
+// Build an enabled map from a mode preset
+const buildDefaultMap = (mode: ToolMode, supermemoryConfigured: boolean): Record<string, boolean> => {
+  const allTools = getAllTools();
+  let toolsToEnable: string[] = [];
 
   if (mode === 'chat') {
-    tools = [...CHAT_MODE_TOOLS];
+    toolsToEnable = [...CHAT_MODE_TOOLS];
   } else if (mode === 'agent') {
-    tools = [...AGENT_MODE_TOOLS];
+    toolsToEnable = [...AGENT_MODE_TOOLS];
   } else if (mode === 'adaptive') {
-    tools = [...ADAPTIVE_MODE_TOOLS];
+    toolsToEnable = [...ADAPTIVE_MODE_TOOLS];
   }
 
   // Filter out supermemory tools if not configured
   if (!supermemoryConfigured) {
-    tools = tools.filter((t) => !SUPERMEMORY_TOOLS.includes(t));
+    toolsToEnable = toolsToEnable.filter((t) => !SUPERMEMORY_TOOLS.includes(t));
   }
 
-  return tools;
+  const map: Record<string, boolean> = {};
+  allTools.forEach((t) => {
+    map[t] = toolsToEnable.includes(t);
+  });
+  return map;
 };
+
+// Convert an enabled map to a list of enabled tool names
+const mapToList = (map: Record<string, boolean>): string[] =>
+  Object.entries(map)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
 
 // Calculate initial tool count synchronously for initial state
 const getInitialToolCount = (): number => {
@@ -99,8 +85,10 @@ export const useToolsStore = create<ToolsState>()(
   subscribeWithSelector((set, get) => ({
     // Initial state
     enabledMap: {},
+    chatModeMap: {},
+    agentModeMap: {},
     currentMode: 'agent',
-    hasUserModified: false,
+    justModified: false,
     mcpTools: [],
     mcpDisabledTools: {},
     mcpLoading: false,
@@ -120,48 +108,49 @@ export const useToolsStore = create<ToolsState>()(
 
     // Actions - Mode
     /**
-     * Sets the tool mode and updates enabled tools accordingly.
+     * Sets the tool mode and switches to that mode's persisted tools.
      * @param mode - The tool mode to set ('chat', 'agent', or 'adaptive')
      */
     setMode: async (mode) => {
-      if (mode === 'custom') return;
+      const { chatModeMap, agentModeMap, supermemoryConfigured } = get();
 
-      const { supermemoryConfigured } = get();
-      const toolsToEnable = getToolsForMode(mode, supermemoryConfigured);
-      const allTools = getAllTools();
+      // Get the appropriate map for this mode
+      let newEnabledMap: Record<string, boolean>;
 
-      const newMap: Record<string, boolean> = {};
-      allTools.forEach((t) => {
-        newMap[t] = toolsToEnable.includes(t);
-      });
+      if (mode === 'chat') {
+        // If chat mode has saved tools, use them; otherwise use defaults
+        const hasCustomChatTools = Object.keys(chatModeMap).length > 0;
+        newEnabledMap = hasCustomChatTools ? { ...chatModeMap } : buildDefaultMap('chat', supermemoryConfigured);
+      } else if (mode === 'agent') {
+        // If agent mode has saved tools, use them; otherwise use defaults
+        const hasCustomAgentTools = Object.keys(agentModeMap).length > 0;
+        newEnabledMap = hasCustomAgentTools ? { ...agentModeMap } : buildDefaultMap('agent', supermemoryConfigured);
+      } else {
+        // Adaptive mode uses fixed tools (read-only)
+        newEnabledMap = buildDefaultMap('adaptive', supermemoryConfigured);
+      }
 
       set({
-        enabledMap: newMap,
+        enabledMap: newEnabledMap,
         currentMode: mode,
-        hasUserModified: false,
       });
 
-      // Persist to storage
-      await setToolsConfig(mode, toolsToEnable);
+      // Persist mode change
+      await setToolsMode(mode);
 
       get().recalculateCounts();
-      log.info('Mode changed', { mode, toolCount: toolsToEnable.length });
-    },
-
-    getDisplayMode: () => {
-      const { hasUserModified, currentMode } = get();
-      return hasUserModified ? 'custom' : currentMode;
+      log.info('Mode changed', { mode, toolCount: Object.values(newEnabledMap).filter(Boolean).length });
     },
 
     // Actions - Built-in tools
     /**
      * Toggles a built-in tool's enabled state.
+     * Persists to the current mode's tool map.
      * @param toolName - The tool identifier
      * @param enabled - Whether to enable or disable the tool
-     * @throws If storage persistence fails
      */
     toggleTool: async (toolName, enabled) => {
-      const { enabledMap, supermemoryConfigured } = get();
+      const { enabledMap, currentMode, supermemoryConfigured } = get();
 
       // Block enabling supermemory tools if not configured
       if (enabled && SUPERMEMORY_TOOLS.includes(toolName) && !supermemoryConfigured) {
@@ -169,14 +158,32 @@ export const useToolsStore = create<ToolsState>()(
         return;
       }
 
-      const newMap = { ...enabledMap, [toolName]: enabled };
-      const matchedMode = getToolsMatchingMode(newMap);
+      // Adaptive mode is read-only
+      if (currentMode === 'adaptive') {
+        log.warn('Cannot toggle tools in adaptive mode');
+        return;
+      }
 
-      set({
+      const newMap = { ...enabledMap, [toolName]: enabled };
+
+      // Update the mode-specific map
+      const updatedMaps: Partial<ToolsState> = {
         enabledMap: newMap,
-        currentMode: matchedMode || get().currentMode,
-        hasUserModified: !matchedMode,
-      });
+        justModified: true,
+      };
+
+      if (currentMode === 'chat') {
+        updatedMaps.chatModeMap = newMap;
+      } else if (currentMode === 'agent') {
+        updatedMaps.agentModeMap = newMap;
+      }
+
+      set(updatedMaps);
+
+      // Clear justModified after a short delay for fade effect
+      setTimeout(() => {
+        set({ justModified: false });
+      }, 1500);
 
       // Persist to storage
       const enabledList = Object.entries(newMap)
@@ -184,7 +191,7 @@ export const useToolsStore = create<ToolsState>()(
         .map(([k]) => k);
 
       try {
-        await setToolsConfig(matchedMode || 'custom', enabledList);
+        await setModeTools(currentMode, enabledList);
       } catch (err) {
         log.error('Failed to save tool config', err);
       }
@@ -197,10 +204,15 @@ export const useToolsStore = create<ToolsState>()(
      * @param category - The category name
      * @param tools - Array of tool names in the category
      * @param enabled - Whether to enable or disable the tools
-     * @throws If storage persistence fails
      */
     toggleCategory: async (category, tools, enabled) => {
-      const { enabledMap, supermemoryConfigured } = get();
+      const { enabledMap, currentMode, supermemoryConfigured } = get();
+
+      // Adaptive mode is read-only
+      if (currentMode === 'adaptive') {
+        log.warn('Cannot toggle tools in adaptive mode');
+        return;
+      }
 
       // Filter out supermemory tools if enabling and not configured
       const toolsToUpdate =
@@ -218,13 +230,24 @@ export const useToolsStore = create<ToolsState>()(
         newMap[t] = enabled;
       });
 
-      const matchedMode = getToolsMatchingMode(newMap);
-
-      set({
+      // Update the mode-specific map
+      const updatedMaps: Partial<ToolsState> = {
         enabledMap: newMap,
-        currentMode: matchedMode || get().currentMode,
-        hasUserModified: !matchedMode,
-      });
+        justModified: true,
+      };
+
+      if (currentMode === 'chat') {
+        updatedMaps.chatModeMap = newMap;
+      } else if (currentMode === 'agent') {
+        updatedMaps.agentModeMap = newMap;
+      }
+
+      set(updatedMaps);
+
+      // Clear justModified after a short delay for fade effect
+      setTimeout(() => {
+        set({ justModified: false });
+      }, 1500);
 
       // Persist to storage
       const enabledList = Object.entries(newMap)
@@ -232,7 +255,7 @@ export const useToolsStore = create<ToolsState>()(
         .map(([k]) => k);
 
       try {
-        await setToolsConfig(matchedMode || 'custom', enabledList);
+        await setModeTools(currentMode, enabledList);
       } catch (err) {
         log.error('Failed to save tool category config', err);
       }
@@ -243,6 +266,10 @@ export const useToolsStore = create<ToolsState>()(
     setEnabledMap: (map) => {
       set({ enabledMap: map });
       get().recalculateCounts();
+    },
+
+    setJustModified: (val) => {
+      set({ justModified: val });
     },
 
 
@@ -415,60 +442,70 @@ export const useToolsStore = create<ToolsState>()(
     },
 
     loadFromStorage: async () => {
-      const allTools = getAllTools();
-
       try {
-        const override = await getEnabledToolsOverride();
         const savedMode = await getToolsMode();
+        const chatTools = await getChatModeTools();
+        const agentTools = await getAgentModeTools();
+        const legacyOverride = await getEnabledToolsOverride();
         const { supermemoryConfigured } = get();
 
-        const initialMap: Record<string, boolean> = {};
+        const allTools = getAllTools();
 
-        if (override && Array.isArray(override)) {
-          const overrideSet = new Set(override);
+        // Build chat mode map
+        let chatModeMap: Record<string, boolean>;
+        if (chatTools && chatTools.length > 0) {
+          const chatSet = new Set(chatTools);
+          chatModeMap = {};
           allTools.forEach((t) => {
-            initialMap[t] = overrideSet.has(t);
+            chatModeMap[t] = chatSet.has(t);
           });
-
-          if (savedMode && savedMode !== 'custom') {
-            set({
-              enabledMap: initialMap,
-              currentMode: savedMode,
-              hasUserModified: false,
-            });
-          } else if (savedMode === 'custom') {
-            set({
-              enabledMap: initialMap,
-              hasUserModified: true,
-            });
-          } else {
-            const detectedMode = getToolsMatchingMode(initialMap);
-            set({
-              enabledMap: initialMap,
-              currentMode: detectedMode || 'agent',
-              hasUserModified: !detectedMode,
-            });
-          }
         } else {
-          // No override - use default mode
-          const modeToUse = savedMode || 'agent';
-          const toolsToEnable = getToolsForMode(
-            modeToUse === 'custom' ? 'agent' : modeToUse,
-            supermemoryConfigured
-          );
-
-          allTools.forEach((t) => {
-            initialMap[t] = toolsToEnable.includes(t);
-          });
-
-          set({
-            enabledMap: initialMap,
-            currentMode: modeToUse === 'custom' ? 'agent' : modeToUse,
-            hasUserModified: modeToUse === 'custom',
-          });
+          // Use defaults for chat mode
+          chatModeMap = buildDefaultMap('chat', supermemoryConfigured);
         }
 
+        // Build agent mode map
+        let agentModeMap: Record<string, boolean>;
+        if (agentTools && agentTools.length > 0) {
+          const agentSet = new Set(agentTools);
+          agentModeMap = {};
+          allTools.forEach((t) => {
+            agentModeMap[t] = agentSet.has(t);
+          });
+        } else if (legacyOverride && legacyOverride.length > 0) {
+          // Migrate from legacy storage - assume it was agent mode
+          const legacySet = new Set(legacyOverride);
+          agentModeMap = {};
+          allTools.forEach((t) => {
+            agentModeMap[t] = legacySet.has(t);
+          });
+        } else {
+          // Use defaults for agent mode
+          agentModeMap = buildDefaultMap('agent', supermemoryConfigured);
+        }
+
+        // Determine which mode to use and set the active map
+        const currentMode = savedMode || 'agent';
+        let enabledMap: Record<string, boolean>;
+
+        if (currentMode === 'chat') {
+          enabledMap = { ...chatModeMap };
+        } else if (currentMode === 'agent') {
+          enabledMap = { ...agentModeMap };
+        } else {
+          // Adaptive mode uses fixed tools
+          enabledMap = buildDefaultMap('adaptive', supermemoryConfigured);
+        }
+
+        set({
+          chatModeMap,
+          agentModeMap,
+          enabledMap,
+          currentMode,
+        });
+
         get().recalculateCounts();
+        log.info('Loaded tools from storage', { mode: currentMode, chatTools: mapToList(chatModeMap).length, agentTools: mapToList(agentModeMap).length });
       } catch (err) {
         log.error('Failed to load enabled tools', err);
       }
@@ -545,8 +582,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
 // Selectors for optimized subscriptions
 export const selectEnabledMap = (state: ToolsState) => state.enabledMap;
 export const selectCurrentMode = (state: ToolsState) => state.currentMode;
-export const selectDisplayMode = (state: ToolsState) =>
-  state.hasUserModified ? 'custom' : state.currentMode;
+export const selectJustModified = (state: ToolsState) => state.justModified;
 export const selectMcpTools = (state: ToolsState) => state.mcpTools;
 export const selectMcpDisabledTools = (state: ToolsState) => state.mcpDisabledTools;
 export const selectTotalEnabledCount = (state: ToolsState) => state.totalEnabledCount;
@@ -556,3 +592,4 @@ export const selectToolSearchQuery = (state: ToolsState) => state.toolSearchQuer
 export const selectExpandedCategories = (state: ToolsState) => state.expandedCategories;
 export const selectSupermemoryConfigured = (state: ToolsState) => state.supermemoryConfigured;
 export const selectIsInitialized = (state: ToolsState) => state.isInitialized;
+
