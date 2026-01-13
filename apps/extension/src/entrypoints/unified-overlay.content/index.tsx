@@ -24,7 +24,8 @@ export default defineContentScript({
             mode: 'open',
             onMount: (container) => {
                 const app = document.createElement('div');
-                app.className = 'cognito-overlay-root';
+                // Ensure Tailwind `.dark` variant + dark CSS vars apply inside shadow root
+                app.className = 'cognito-overlay-root dark';
                 container.append(app);
                 const root = ReactDOM.createRoot(app);
                 root.render(<UnifiedOverlayApp ctx={ctx} />);

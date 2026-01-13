@@ -23,14 +23,14 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     return (
         <div className="px-2.5 pt-2.5 pb-1.5">
             <div className="relative">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/30" />
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                     ref={inputRef}
                     type="text"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder="Search models..."
-                    className="w-full h-8 pl-8 pr-3 bg-white/[0.04] border border-white/[0.08] rounded-lg text-[12px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/20 focus:bg-white/[0.06] transition-all"
+                    className="w-full h-8 pl-8 pr-3 bg-input border border-border rounded-lg text-[12px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring focus:bg-accent transition-all"
                     onKeyDown={onKeyDown}
                 />
             </div>

@@ -19,14 +19,14 @@ export const ConfigureProvidersFooter: React.FC<ConfigureProvidersFooterProps> =
     };
 
     return (
-        <div className="border-t border-white/[0.06]">
+        <div className="border-t border-border">
             <button
                 type="button"
                 onClick={handleClick}
-                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-transparent border-0 cursor-pointer transition-all duration-200 hover:bg-white/[0.04] group"
+                className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-transparent border-0 cursor-pointer transition-all duration-200 hover:bg-accent/50 group"
             >
-                <Settings2 size={13} className="text-white/40 group-hover:text-white/60 transition-colors" />
-                <span className="text-[11px] font-medium text-white/50 group-hover:text-white/70 transition-colors">
+                <Settings2 size={13} className="text-muted-foreground group-hover:text-foreground/60 transition-colors" />
+                <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground/70 transition-colors">
                     Configure Providers
                 </span>
             </button>

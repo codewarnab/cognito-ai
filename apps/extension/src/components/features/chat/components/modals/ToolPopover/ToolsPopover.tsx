@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Server } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'motion/react';
+import BlurFade from '@/components/ui/blur-fade';
 import { useToolsPopover } from './useToolsPopover';
 import { SearchBar } from './components/SearchBar';
 import { ModeSelector } from './components/ModeSelector';
@@ -57,13 +58,18 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div
+                <BlurFade
                     key="tools-popover"
                     ref={popoverRef}
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    delay={0}
+                    yOffset={8}
+                    duration={0.2}
+                    blur="6px"
+                    className="tools-popover"
+                    variant={{
+                        hidden: { y: 6, opacity: 0, filter: 'blur(6px)' },
+                        visible: { y: 0, opacity: 1, filter: 'blur(0px)' }
+                    }}
                     style={{
                         position: 'absolute',
                         bottom: 'calc(100% + 8px)',
@@ -326,7 +332,7 @@ export const ToolsPopover: React.FC<ToolsPopoverProps> = ({ isOpen, onClose, onC
                         showInfoTooltip={showInfoTooltip}
                         onSetShowInfoTooltip={setShowInfoTooltip}
                     />
-                </motion.div>
+                </BlurFade>
             )}
         </AnimatePresence>
     );

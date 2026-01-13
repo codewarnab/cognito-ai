@@ -7,3 +7,5 @@ export { ProviderGroup } from './ProviderGroup';
 export { SearchInput } from './SearchInput';
 export { NoModelsEnabled, NoSearchResults } from './EmptyStates';
 export { ConfigureProvidersFooter } from './ConfigureProvidersFooter';
+export { ProviderSidebar } from './ProviderSidebar';
+export { ModelListPanel } from './ModelListPanel';

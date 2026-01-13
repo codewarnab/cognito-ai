@@ -36,6 +36,10 @@ import '../../styles/components/mcp-scrollbar.css';
 import { LoggerConfigManager } from '~logger';
 
 const init = async () => {
+    // Force dark mode tokens (we don't support multiple themes)
+    // This enables Tailwind's `dark:` variant and the `.dark` CSS variable palette from `@assets/tailwind.css`.
+    document.documentElement.classList.add('dark');
+
     // Initialize logger configuration from storage
     await LoggerConfigManager.initialize();
 
