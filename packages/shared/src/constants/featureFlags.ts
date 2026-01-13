@@ -27,3 +27,15 @@ export const WEB_SEARCH_SELF_API_KEY_HIDDEN = true;
  * - Prevents extraction triggers from content scripts
  */
 export const HIDE_AUTO_EXTRACT_INSIGHTS = true;
+
+/**
+ * Hide Voice FAB Configuration
+ * When enabled (true), the extension hides the Voice Mode floating action button (FAB)
+ * in the sidepanel chat interface. This:
+ * - Hides the microphone FAB button that switches to voice mode
+ * - Voice mode remains accessible via other means if needed
+ * 
+ * Set to `true` to hide the voice FAB.
+ * Set to `false` to show the voice FAB (default behavior).
+ */
+export const HIDE_VOICE_FAB = true;

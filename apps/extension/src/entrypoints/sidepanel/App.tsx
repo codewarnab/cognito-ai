@@ -65,8 +65,10 @@ import { useSandbox } from "@/hooks/sandbox";
 import { handleAPIError } from "@/utils/errors";
 
 // Constants
-// Constants
 import { WEBAPP_ROUTES, openWebappRoute } from "@/constants/webapp";
+
+// Feature Flags
+import { HIDE_VOICE_FAB } from "@cognito/shared";
 
 /**
  * Inner component that uses AI SDK v6
@@ -121,8 +123,6 @@ function AIChatContent() {
 
     // Tools Store - initialize on mount for accurate tool counts
     const initializeToolsStore = useToolsStore((state: ToolsState) => state.initialize);
-    const currentToolsMode = useToolsStore((state: ToolsState) => state.currentMode);
-
     // Local UI state (transient - not persisted)
     const [contextWarning, setContextWarning] = useState<ContextWarningState | null>(null);
     const [lastBrowserError, setLastBrowserError] = useState<number | null>(null);
@@ -563,8 +563,8 @@ function AIChatContent() {
                                 }}
                             />
 
-                            {/* Voice Mode FAB - Only in text mode, hidden in code mode */}
-                            {!isImagePreviewOpen && isVoiceFabVisible && currentToolsMode !== 'cli' && (
+                            {/* Voice Mode FAB */}
+                            {!HIDE_VOICE_FAB && !isImagePreviewOpen && isVoiceFabVisible && (
                                 <motion.button
                                     className={`fixed bottom-[120px] right-4 w-[44px] h-11 rounded-full 
                                         bg-white/5 border border-white/10 text-white/60 

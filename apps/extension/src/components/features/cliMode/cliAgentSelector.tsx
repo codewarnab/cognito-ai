@@ -8,6 +8,7 @@ import { createLogger } from '~logger';
 import { Gemini } from '@assets/brands/integrations/Gemini';
 import { ClaudeAI } from '@assets/brands/integrations/ClaudeAI';
 import { OpenAI } from '@assets/brands/integrations/OpenAI';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/primitives/tooltip';
 
 const log = createLogger('CodingAgentSelector', 'CLI_MODE_UI');
 
@@ -37,6 +38,8 @@ const getAgentColor = (agentName: string): string => {
 
 interface CodingAgentSelectorProps {
     className?: string;
+    /** When true, renders without absolute positioning (for embedding in other components) */
+    inline?: boolean;
 }
 
 /**
@@ -44,7 +47,7 @@ interface CodingAgentSelectorProps {
  * Allows selecting which coding agent CLI to use (Gemini CLI, Claude Code, etc.)
  * Shows in place of SuggestedActions when toolsMode === 'cli'
  */
-export const CliAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className }) => {
+export const CliAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className, inline = false }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -106,12 +109,13 @@ export const CliAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                    'absolute bottom-full left-0 right-0 mb-2 px-3 z-0 pointer-events-auto ml-2',
-                    'max-[480px]:mb-1.5 max-[480px]:px-2.5',
+                    inline
+                        ? 'pointer-events-auto'
+                        : 'absolute bottom-full left-0 right-0 mb-2 px-3 z-0 pointer-events-auto ml-2 max-[480px]:mb-1.5 max-[480px]:px-2.5',
                     className
                 )}
             >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                     {/* Agent Selector Dropdown */}
                     <div ref={dropdownRef} className="relative">
                         <button
@@ -119,28 +123,27 @@ export const CliAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className
                             onClick={() => isConnected && setIsOpen(!isOpen)}
                             disabled={!isConnected}
                             className={cn(
-                                'flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-lg',
-                                'bg-white/[0.06] hover:bg-white/[0.10] transition-all duration-150',
-                                'text-white/80 hover:text-white text-[13px] font-medium',
-                                'border border-white/[0.06] hover:border-white/[0.12] cursor-pointer',
-                                'backdrop-blur-sm shadow-sm',
+                                'flex items-center  ml-1 gap-1 px-2 py-1 rounded-md',
+                                'bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-150',
+                                'text-white/60 hover:text-white/80 text-xs font-normal',
+                                'border border-white/[0.08] hover:border-white/[0.12] cursor-pointer',
                                 !isConnected && 'opacity-50 cursor-not-allowed'
                             )}
                         >
-                            <SelectedIcon className="w-3.5 h-3.5 shrink-0" />
+                            <SelectedIcon className="w-3 h-3 shrink-0" />
                             <span className="whitespace-nowrap leading-none">
                                 {isConnecting ? 'Connecting...' : selectedAgent?.name || 'Select Agent'}
                             </span>
                             {isConnected && (
                                 <ChevronDown
                                     className={cn(
-                                        'w-3 h-3 opacity-60 transition-transform duration-150',
+                                        'w-2.5 h-2.5 opacity-50 transition-transform duration-150',
                                         isOpen && 'rotate-180'
                                     )}
                                 />
                             )}
                             {isConnecting && (
-                                <Loader2 className="w-3 h-3 animate-spin opacity-60" />
+                                <Loader2 className="w-2.5 h-2.5 animate-spin opacity-50" />
                             )}
                         </button>
 
@@ -206,22 +209,24 @@ export const CliAgentSelector: React.FC<CodingAgentSelectorProps> = ({ className
                         </AnimatePresence>
                     </div>
 
-                    {/* Bridge Status Indicator */}
-                    <div className="flex items-center gap-1 text-[10px] text-white/35">
-                        <div
-                            className={cn(
-                                'w-1 h-1 rounded-full',
-                                bridgeStatus === 'connected' && 'bg-emerald-400/80',
-                                bridgeStatus === 'connecting' && 'bg-amber-400/80 animate-pulse',
-                                bridgeStatus === 'offline' && 'bg-red-400/80'
-                            )}
-                        />
-                        <span className="opacity-80">
+                    {/* Bridge Status Indicator - small dot with tooltip */}
+                    <Tooltip delayDuration={200}>
+                        <TooltipTrigger asChild>
+                            <div
+                                className={cn(
+                                    'w-1.5 h-1.5 rounded-full cursor-default',
+                                    bridgeStatus === 'connected' && 'bg-emerald-400/50',
+                                    bridgeStatus === 'connecting' && 'bg-amber-400/50 animate-pulse',
+                                    bridgeStatus === 'offline' && 'bg-red-400/50'
+                                )}
+                            />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
                             {bridgeStatus === 'connected' && 'Connected'}
-                            {bridgeStatus === 'connecting' && 'Connecting'}
+                            {bridgeStatus === 'connecting' && 'Connecting...'}
                             {bridgeStatus === 'offline' && 'Offline'}
-                        </span>
-                    </div>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </motion.div>
         </AnimatePresence>
