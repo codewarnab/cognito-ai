@@ -30,7 +30,6 @@ import {
   CHAT_MODE_TOOLS,
   AGENT_MODE_TOOLS,
   ADAPTIVE_MODE_TOOLS,
-  CLI_MODE_TOOLS,
 } from '@/components/features/chat/components/modals/ToolPopover/constants';
 import type { ToolsState, ToolMode, McpToolWithServer } from './types';
 
@@ -67,13 +66,6 @@ const getToolsMatchingMode = (enabledMap: Record<string, boolean>): ToolMode | n
     enabledList.every((t) => adaptiveSet.has(t));
   if (isAdaptiveMode) return 'adaptive';
 
-  // CLI mode
-  const cliSet = new Set(CLI_MODE_TOOLS);
-  const isCliMode =
-    enabledList.length === CLI_MODE_TOOLS.length &&
-    enabledList.every((t) => cliSet.has(t));
-  if (isCliMode) return 'cli';
-
   return null;
 };
 
@@ -87,8 +79,6 @@ const getToolsForMode = (mode: ToolMode, supermemoryConfigured: boolean): string
     tools = [...AGENT_MODE_TOOLS];
   } else if (mode === 'adaptive') {
     tools = [...ADAPTIVE_MODE_TOOLS];
-  } else if (mode === 'cli') {
-    tools = [...CLI_MODE_TOOLS];
   }
 
   // Filter out supermemory tools if not configured

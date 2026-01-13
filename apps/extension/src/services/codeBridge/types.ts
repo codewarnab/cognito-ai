@@ -1,4 +1,6 @@
 
+export type CliBridgeToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
+
 export interface CliBridgeChatParams {
   messages: Array<{
     role: 'user' | 'assistant';
@@ -16,6 +18,11 @@ export interface CliBridgeChatParams {
   };
   /** List of enabled tool names - bridge will filter available tools to only these */
   enabledTools?: string[];
+  /**
+   * Tools mode (chat/agent/adaptive/custom) to help the bridge pick the right system prompt.
+   * NOTE: This is NOT the provider selection (cloud vs CLI). Provider selection is handled separately.
+   */
+  toolsMode?: CliBridgeToolsMode;
   sessionId?: string;
 }
 

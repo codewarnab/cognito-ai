@@ -2,17 +2,16 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ModeSelector } from '../../../dropdowns/ModeSelector';
 import { ToolsModal } from '../../modals/ToolPopover';
 import { SearchControls } from '../../search/SearchControls';
-import { ModelSelectorPopover } from '../ModelSelectorPopover';
 import { Wrench, Cloud, Key, Globe } from 'lucide-react';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/primitives/tooltip';
 import { FaviconImage } from '@/components/shared/icons/FaviconImage';
-import { HIDE_MODEL_SELECTOR } from '@/constants';
 import { ENV } from '@/utils/env';
 import { createLogger } from '~logger';
 import { useSettingsStore, useToolsStore, type SettingsState, type ToolsState } from '@/stores';
 import { useWebMCPTools } from '@/hooks/webmcp';
 import { useBridgeHeartbeat } from '@/hooks/cliMode';
 import { McpServerIcon } from '@/components/ui/tools/icons/McpIconMapper';
+import { setModelConfig } from '@/utils/ai/modelSettings';
 
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import type { CliModeState } from '@/stores/cliMode/types';
@@ -41,9 +40,6 @@ interface ComposerToolbarProps {
     setMcpToolsCount: () => void;
     // Workflow state
     activeWorkflow: WorkflowDefinition | null;
-    // Model selector state
-    isModelSelectorOpen?: boolean;
-    setIsModelSelectorOpen?: (isOpen: boolean) => void;
 }
 
 /**
@@ -65,8 +61,6 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     setEnabledToolsCount,
     setMcpToolsCount,
     activeWorkflow,
-    isModelSelectorOpen,
-    setIsModelSelectorOpen
 }) => {
     // Get ToolsMode (chat/agent/adaptive/custom) - different from AIProviderMode (local/remote)
     const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
@@ -82,6 +76,8 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
     // CLI Mode bridge state
     const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
     const checkBridgeHealth = useCliModeStore((s: CliModeState) => s.checkBridgeHealth);
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+    const isCliBridgeMode = isCliProviderSelected;
 
     const [showBridgeStatusDrawer, setShowBridgeStatusDrawer] = useState(false);
     const [previousMode, setPreviousMode] = useState<ToolMode | null>(null);
@@ -89,10 +85,13 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
     // Track mode changes to store previous mode and show bridge drawer immediately
     const prevToolsModeRef = React.useRef<ToolMode | null>(null);
+    const prevCliBridgeModeRef = React.useRef(false);
     const prevBridgeStatusRef = React.useRef(bridgeStatus);
     useEffect(() => {
-        // When entering cli mode
-        if (toolsMode === 'cli' && prevToolsModeRef.current !== 'cli') {
+        const wasCliBridgeMode = prevCliBridgeModeRef.current;
+
+        // When entering CLI provider mode (or legacy cli tools mode)
+        if (isCliBridgeMode && !wasCliBridgeMode) {
             // Store previous mode for reverting if the user cancels
             if (prevToolsModeRef.current) {
                 setPreviousMode(prevToolsModeRef.current);
@@ -106,8 +105,9 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 checkBridgeHealth();
             }
         }
+        prevCliBridgeModeRef.current = isCliBridgeMode;
         prevToolsModeRef.current = toolsMode as ToolMode;
-    }, [toolsMode, checkBridgeHealth]);
+    }, [isCliBridgeMode, toolsMode, checkBridgeHealth]);
 
     // Show the status drawer if the bridge DROPS while in cli mode
     // (only when transitioning from 'connected' to something else, not intermediate states)
@@ -115,23 +115,44 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
         const wasConnected = prevBridgeStatusRef.current === 'connected';
         const isNowDisconnected = bridgeStatus !== 'connected';
 
-        if (toolsMode === 'cli' && wasConnected && isNowDisconnected) {
+        if (isCliBridgeMode && wasConnected && isNowDisconnected) {
             setShowBridgeStatusDrawer(true);
         }
 
         prevBridgeStatusRef.current = bridgeStatus;
-    }, [toolsMode, bridgeStatus]);
+    }, [isCliBridgeMode, bridgeStatus]);
 
     // Bridge heartbeat - uses SSE /events to detect online/offline + triggers auto-connect
-    useBridgeHeartbeat({ enabled: toolsMode === 'cli' });
+    useBridgeHeartbeat({ enabled: isCliBridgeMode });
 
     // Handle drawer close - revert to previous mode if still not connected
     const handleBridgeStatusDrawerClose = () => {
         setShowBridgeStatusDrawer(false);
-        const { bridgeStatus: currentBridgeStatus } = useCliModeStore.getState();
-        if (currentBridgeStatus !== 'connected' && previousMode) {
-            setMode(previousMode);
-            setPreviousMode(null);
+        const {
+            bridgeStatus: currentBridgeStatus,
+            isCliProviderSelected: currentlyCliSelected,
+            previousCloudModelConfig,
+            setIsCliProviderSelected,
+            setPreviousCloudModelConfig,
+        } = useCliModeStore.getState();
+        if (currentBridgeStatus !== 'connected') {
+            // If the user was trying CLI mode and cancels, revert legacy toolsMode and/or provider selection.
+            if (previousMode) {
+                setMode(previousMode);
+                setPreviousMode(null);
+            }
+            if (currentlyCliSelected) {
+                setIsCliProviderSelected(false);
+
+                // Restore the user's last cloud selection (if we captured one).
+                if (previousCloudModelConfig) {
+                    setModelConfig({
+                        remoteModel: previousCloudModelConfig.remoteModel as any,
+                        remoteProvider: previousCloudModelConfig.remoteProvider,
+                    }).catch(() => {});
+                    setPreviousCloudModelConfig(null);
+                }
+            }
         }
     };
 
@@ -166,9 +187,6 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
 
     const setUseBackendMode = useSettingsStore((s: SettingsState) => s.setUseBackendMode);
 
-    // Hide model picker when toolbar is crowded (MCP servers + WebMCP taking space)
-    const shouldHideModelPicker = enabledMcpServers.length > 0 || webMcpToolsCount > 0;
-
     const getTooltipText = () => {
         if (activeWorkflow) return "Tools are managed by the active workflow";
         if (isTooManyTools) return "Too many tools enabled - may slow AI responses";
@@ -188,7 +206,7 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
             )}
 
             {/* CLI Mode: Bridge Status Drawer (rendered before tools, but it's a modal overlay) */}
-            {toolsMode === 'cli' && (
+            {isCliBridgeMode && (
                 <BridgeStatusDrawer
                     isOpen={showBridgeStatusDrawer}
                     onClose={handleBridgeStatusDrawerClose}
@@ -307,18 +325,10 @@ export const ComposerToolbar: React.FC<ComposerToolbarProps> = ({
                 isCliMode={false}
             />
 
-            {/* Model Selector - Gemini icon with model popover (hidden when toolbar is crowded, in backend mode, or in cli mode) */}
-            {/* In backend mode, model is fixed to gemini-2.5-flash by the server */}
-            {/* In cli mode, the agent selector is shown instead */}
-            {!HIDE_MODEL_SELECTOR && !shouldHideModelPicker && !useBackendMode && toolsMode !== 'cli' && (
-                <ModelSelectorPopover
-                    isOpen={isModelSelectorOpen}
-                    onOpenChange={setIsModelSelectorOpen}
-                />
-            )}
+            {/* Model selector moved above chat input (ComposerHeader). */}
 
             {/* Backend Mode Toggle - Icon only, expands on hover (hidden in cli mode) */}
-            {toolsMode !== 'cli' && (
+            {!isCliBridgeMode && (
                 <>
                     <div className="flex items-center gap-1 border-l border-border/50 pl-2 ml-2">
                         <Tooltip>

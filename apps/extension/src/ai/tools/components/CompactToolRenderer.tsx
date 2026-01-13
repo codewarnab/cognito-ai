@@ -21,7 +21,7 @@ import { TOOLS_REQUIRING_APPROVAL } from '../../setup/remoteMode';
 import { getTool } from '../registryUtils';
 import { createLogger } from '~logger';
 import { useApprovalStore } from '@/stores/approval';
-import { useToolsStore } from '@/stores';
+import { useCliModeStore, useToolsStore, type CliModeState } from '@/stores';
 import { extractDomainFromInput, supportsWebsiteApproval } from '../approvalConfig';
 import {
     isMcpTool,
@@ -68,8 +68,8 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
     // Tools store integration (for MCP tool metadata rehydration)
     const mcpTools = useToolsStore((s) => s.mcpTools);
-    const toolsMode = useToolsStore((s) => s.currentMode);
-    const isCliMode = toolsMode === 'cli';
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+    const isCliBridgeMode = isCliProviderSelected;
 
     // Initialize approval store on mount
     useEffect(() => {
@@ -206,7 +206,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
 
         // CLI mode: tool execution is driven by the local cli-bridge.
         // The UI must ONLY signal approval; the bridge will execute and stream back tool_result.
-        if (isCliMode) {
+        if (isCliBridgeMode) {
             approveCliToolCall(toolCallId);
             return;
         }
@@ -309,7 +309,7 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         log.info('🛡️ User denied tool execution:', { toolName, toolCallId });
         setApprovalState('denied');
 
-        if (isCliMode) {
+        if (isCliBridgeMode) {
             denyCliToolCall(toolCallId, 'User denied this action.');
             return;
         }
@@ -398,8 +398,8 @@ export function CompactToolRenderer({ state, messageId, addToolOutput }: Compact
         displayErrorText = typeof output.error === 'string' ? output.error : output.answer || errorText;
     }
 
-    // In CLI mode, tool execution happens externally (bridge), so always display streamed output.
-    const displayOutput = isCliMode ? output : (approvalState === 'approved' ? executionResult : output);
+    // In CLI provider mode, tool execution happens externally (bridge), so always display streamed output.
+    const displayOutput = isCliBridgeMode ? output : (approvalState === 'approved' ? executionResult : output);
     const customRenderers = getCustomRenderers(toolName);
 
     // Determine which approval props to pass

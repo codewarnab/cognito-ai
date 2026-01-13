@@ -2,6 +2,7 @@ export { streamCodeBridgeChat, checkBridgeHealth, connectToEventStream } from '.
 export { registerToolsWithBridge, connectToToolEvents } from './toolBridgeClient';
 export type {
   CliBridgeChatParams,
+  CliBridgeToolsMode,
   BridgeEvent,
   BridgeTextEvent,
   BridgeToolCallEvent,

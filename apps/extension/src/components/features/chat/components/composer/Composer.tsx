@@ -98,7 +98,6 @@ export const Composer: React.FC<ComposerProps> = ({
     const [showAttachmentDropdown, setShowAttachmentDropdown] = useState(false);
     const [showAddTabsModal, setShowAddTabsModal] = useState(false);
     const [showAddYouTubeVideoModal, setShowAddYouTubeVideoModal] = useState(false);
-    const [isModelSelectorOpen, setIsModelSelectorOpen] = useState(false);
 
     // Attachments from store
     const fileAttachments = useAttachmentsStore((s) => s.fileAttachments);
@@ -126,16 +125,15 @@ export const Composer: React.FC<ComposerProps> = ({
     // Voice FAB visibility management via store
     const setVoiceFabVisibility = useUINavigationStore((state: UINavigationState) => state.setVoiceFabVisibility);
 
-    // CLI mode - get bridge status and current mode to hide FAB when in CLI mode
-    const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
-    const currentMode = useToolsStore((s) => s.currentMode);
-    const isCliMode = bridgeStatus === 'connected' && currentMode === 'cli';
+    // CLI mode - hide FAB when using CLI bridge provider
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+    const isCliMode = isCliProviderSelected;
 
     useEffect(() => {
         // Hide FAB when dropdown/attachments/recording are active, or when in CLI mode
-        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isModelSelectorOpen || isRecording || isCliMode;
+        const shouldHide = showAttachmentDropdown || fileAttachments.length > 0 || tabAttachments.length > 0 || isRecording || isCliMode;
         setVoiceFabVisibility(!shouldHide);
-    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isModelSelectorOpen, isRecording, isCliMode, setVoiceFabVisibility]);
+    }, [showAttachmentDropdown, fileAttachments.length, tabAttachments.length, isRecording, isCliMode, setVoiceFabVisibility]);
 
     // Debug logging
     log.info('🎨 Composer render - search mode state', {
@@ -225,8 +223,6 @@ export const Composer: React.FC<ComposerProps> = ({
                     setEnabledToolsCount={recalculateCounts}
                     setMcpToolsCount={recalculateCounts}
                     activeWorkflow={activeWorkflow}
-                    isModelSelectorOpen={isModelSelectorOpen}
-                    setIsModelSelectorOpen={setIsModelSelectorOpen}
                 />
 
                 {/* Right actions: attachments, voice/send/stop */}

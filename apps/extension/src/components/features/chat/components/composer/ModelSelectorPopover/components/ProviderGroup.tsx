@@ -8,7 +8,6 @@ import React from 'react';
 import { Check, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { AIProviderType, ProviderGroup as ProviderGroupType, VisibleItem } from '../types';
-import { CONFIG_TO_POPOVER } from '../constants';
 import { ModelItem } from './ModelItem';
 
 interface ProviderGroupProps {
@@ -39,8 +38,11 @@ export const ProviderGroup: React.FC<ProviderGroupProps> = ({
     onModelSelect,
 }) => {
     const GroupIcon = providerGroup.icon;
+    const isUnavailable = !providerGroup.isAvailable;
+    // Check if this provider group has the selected model
+    // Use the provider group ID directly to ensure CLI providers don't show checkmarks for cloud providers
     const hasSelectedModel = providerGroup.models.some(
-        m => m.id === selectedModelId && CONFIG_TO_POPOVER[m.providerId] === selectedProvider
+        m => m.id === selectedModelId && providerGroup.id === selectedProvider
     );
 
     // Calculate global index for this provider header
@@ -50,13 +52,15 @@ export const ProviderGroup: React.FC<ProviderGroupProps> = ({
     const isFocused = providerGlobalIndex === focusedIndex;
 
     return (
-        <div>
+        <div className={isUnavailable ? 'opacity-50' : ''}>
             {/* Provider Header - Clickable to expand/collapse */}
             <button
                 type="button"
                 ref={el => { itemRefs.current[providerGlobalIndex] = el; }}
-                onClick={() => onToggle(providerGroup.id)}
-                className={`group flex items-center gap-2.5 w-full px-3 py-2.5 bg-transparent border-0 cursor-pointer transition-all duration-200 hover:bg-white/[0.04] ${groupIndex > 0 ? 'border-t border-white/[0.06]' : ''} ${isFocused ? 'ring-1 ring-inset ring-white/10' : ''}`}
+                onClick={() => !isUnavailable && onToggle(providerGroup.id)}
+                disabled={isUnavailable}
+                title={isUnavailable ? `${providerGroup.name} is not installed or available` : undefined}
+                className={`group flex items-center gap-2.5 w-full px-3 py-2.5 bg-transparent border-0 transition-all duration-200 ${isUnavailable ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-white/[0.04]'} ${groupIndex > 0 ? 'border-t border-white/[0.06]' : ''} ${isFocused ? 'ring-1 ring-inset ring-white/10' : ''}`}
             >
                 <motion.span
                     animate={{ rotate: isExpanded ? 90 : 0 }}
@@ -73,6 +77,12 @@ export const ProviderGroup: React.FC<ProviderGroupProps> = ({
                 >
                     {providerGroup.name}
                 </span>
+                {/* Show unavailable badge for CLI providers that aren't installed */}
+                {isUnavailable && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white/50 uppercase tracking-wider">
+                        Not installed
+                    </span>
+                )}
                 {/* Show selected model indicator when collapsed */}
                 {!isExpanded && hasSelectedModel && (
                     <div

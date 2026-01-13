@@ -1,4 +1,5 @@
 export { DragOverlay } from './DragOverlay';
+export { ComposerHeader } from './ComposerHeader';
 export { SuggestionsArea } from './SuggestionsArea';
 export { WorkflowSection } from './WorkflowSection';
 export { AttachmentsArea } from './AttachmentsArea';

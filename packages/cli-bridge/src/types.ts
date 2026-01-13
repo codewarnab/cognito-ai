@@ -66,6 +66,11 @@ export const CliChatRequestSchema = z.object({
   }),
   /** List of enabled tool names - bridge will filter available tools to only these */
   enabledTools: z.array(z.string()).optional(),
+  /**
+   * Tools mode (chat/agent/adaptive/custom) - controls system prompt behavior.
+   * Note: Provider selection (cloud vs CLI) is handled separately in the extension.
+   */
+  toolsMode: z.enum(['chat', 'agent', 'adaptive', 'custom']).optional().default('agent'),
   sessionId: z.string().optional(),
 });
 

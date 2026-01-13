@@ -3,13 +3,34 @@
  */
 
 import type { SSEEventSender } from './aiSdkTools';
+import {
+    ADAPTIVE_MODE_SYSTEM_PROMPT,
+    AGENT_MODE_SYSTEM_PROMPT,
+    CHAT_MODE_SYSTEM_PROMPT,
+} from '@cognito/shared';
 
-/** Default system prompt for coding agents */
-export const CODING_AGENT_SYSTEM_PROMPT =
-    'You are a coding agent connected to the user\'s Chrome extension. ' +
-    'When you need to take actions in the browser (navigate, click, read content), call the available tools. ' +
-    'Tool results are returned as structured data; use them to proceed. ' +
-    'Be direct and pragmatic.';
+/**
+ * Tools mode as sent by the extension to the CLI bridge.
+ * Controls which shared system prompt is used.
+ */
+export type CliToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
+
+/**
+ * Select the shared system prompt for a given tools mode.
+ * Custom mode uses the Agent prompt (tool availability is still controlled by enabledTools).
+ */
+export function getSystemPromptForToolsMode(toolsMode: CliToolsMode | undefined): string {
+    switch (toolsMode) {
+        case 'chat':
+            return CHAT_MODE_SYSTEM_PROMPT;
+        case 'adaptive':
+            return ADAPTIVE_MODE_SYSTEM_PROMPT;
+        case 'custom':
+        case 'agent':
+        default:
+            return AGENT_MODE_SYSTEM_PROMPT;
+    }
+}
 
 /**
  * Convert Bridge messages to AI SDK format
@@ -60,6 +81,7 @@ export interface AgentHandlerParams {
     abortController: AbortController;
     res: import('http').ServerResponse;
     enabledTools?: string[];
+    toolsMode?: CliToolsMode;
 }
 
 /** Extended params that include cwd */

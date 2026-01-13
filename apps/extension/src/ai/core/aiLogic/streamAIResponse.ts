@@ -22,7 +22,7 @@ import { executeStreamText } from '../../stream/streamExecutor';
 import { parseProviderError } from '../../errors/handlers';
 import { writeErrorToStream } from '../../stream/streamHelpers';
 import { createStreamRetryManager, writeMissingApiKeyError, setupLocalMode, setupRemoteMode } from '../../setup';
-import { useSettingsStore, useToolsStore } from '@/stores';
+import { useSettingsStore, useCliModeStore } from '@/stores';
 
 import type { StreamAIParams, AIProvider, StreamState } from './types';
 import { handleBackendMode } from './backendMode';
@@ -56,10 +56,10 @@ export async function streamAIResponse(params: StreamAIParams) {
 
     log.info('Starting AI stream', { messageCount: messages.length, workflowId: workflowId || 'none' });
 
-    // Check if cli mode is active - route to local bridge
-    const currentToolsMode = useToolsStore.getState().currentMode;
-    if (currentToolsMode === 'cli') {
-        log.info('🔧 Using CLI MODE - routing to local bridge');
+    // Check if CLI provider is selected - route to local bridge
+    const isCliProviderSelected = useCliModeStore.getState().isCliProviderSelected;
+    if (isCliProviderSelected) {
+        log.info('🔧 Using CLI PROVIDER - routing to local bridge');
         return streamCliModeChat({
             messages,
             abortSignal,

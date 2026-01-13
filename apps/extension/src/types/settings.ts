@@ -39,15 +39,13 @@ export type { TTSProvider, VoiceName, VoiceSettings } from '@cognito/shared/type
  * - `agent`: Full browser automation capabilities (full system prompt)
  * - `adaptive`: On-demand tool discovery via `discoverTools` + `executeTools` meta-tools
  * - `custom`: User has customized the tool selection manually
- * - `cli`: Local CLI agent mode (requires local bridge, browser tools opional)
  * 
  * **Related constants:**
  * - `CHAT_MODE_TOOLS` - tools enabled in chat mode
  * - `AGENT_MODE_TOOLS` - tools enabled in agent mode
  * - `ADAPTIVE_MODE_TOOLS` - tools enabled in adaptive mode (discoverTools, executeTools + basics)
- * - `CLI_MODE_TOOLS` - tools enabled in cli mode (same as agent mode)
  */
-export type ToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom' | 'cli';
+export type ToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
 
 
 export interface UserSettings {

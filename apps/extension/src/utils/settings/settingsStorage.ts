@@ -119,7 +119,16 @@ export async function setSupermemoryEnabled(enabled: boolean): Promise<UserSetti
 // Tools mode helpers
 export async function getToolsMode(): Promise<ToolsMode> {
   const settings = await getSettings();
-  return settings.toolsMode ?? DEFAULT_USER_SETTINGS.toolsMode!;
+  const raw = (settings.toolsMode ?? DEFAULT_USER_SETTINGS.toolsMode!) as unknown as string;
+
+  // Backward-compat: legacy 'cli' tools mode was removed (CLI is now a provider selection).
+  if (raw === 'cli') return 'agent';
+
+  if (raw === 'chat' || raw === 'agent' || raw === 'adaptive' || raw === 'custom') {
+    return raw;
+  }
+
+  return DEFAULT_USER_SETTINGS.toolsMode!;
 }
 
 export async function setToolsMode(mode: ToolsMode): Promise<UserSettings> {

@@ -37,12 +37,13 @@ export async function handleCliChat(
       return;
     }
 
-    const { messages, agent, sessionId, enabledTools } = parsed.data;
+    const { messages, agent, sessionId, enabledTools, toolsMode } = parsed.data;
 
     console.log('[chat] Agent:', agent.name);
     console.log('[chat] Messages:', messages.length);
     console.log('[chat] Session:', sessionId || 'new');
     console.log('[chat] Enabled tools:', enabledTools?.length ?? 'all');
+    console.log('[chat] Tools mode:', toolsMode);
 
     // Find the agent definition
     const agentDef = findAgent(agent.name);
@@ -87,6 +88,7 @@ export async function handleCliChat(
       abortController,
       res,
       enabledTools,
+      toolsMode,
     };
 
     // ============================================================

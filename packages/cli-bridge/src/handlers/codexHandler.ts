@@ -11,8 +11,8 @@ import {
     DEFAULT_MESSAGE_INTERVAL,
 } from './engagingMessages';
 import {
-    CODING_AGENT_SYSTEM_PROMPT,
     convertBridgeMessagesToAISDK,
+    getSystemPromptForToolsMode,
     type AgentHandlerParamsWithCwd,
 } from './chatUtils';
 
@@ -27,6 +27,7 @@ export async function handleCodexAgent({
     res,
     cwd,
     enabledTools,
+    toolsMode,
 }: AgentHandlerParamsWithCwd): Promise<void> {
     const codexModelId =
         agent.acpModel ||
@@ -62,6 +63,8 @@ export async function handleCodexAgent({
     const { aiTools } = buildAISDKTools(sendEvent, { enabledTools });
     const toolCount = Object.keys(aiTools).length;
 
+    const systemPrompt = getSystemPromptForToolsMode(toolsMode);
+
     // Send engaging capability message instead of boring "Tools available: X"
     sendEvent('status', { message: getCapabilityMessage(toolCount) });
 
@@ -73,7 +76,7 @@ export async function handleCodexAgent({
         const result = await streamText({
             model: codexProvider(codexModelId),
             messages: aiMessages as any,
-            system: CODING_AGENT_SYSTEM_PROMPT,
+            system: systemPrompt,
             tools: toolCount > 0 ? aiTools : undefined,
             toolChoice: 'auto',
             stopWhen: [stepCountIs(10)],

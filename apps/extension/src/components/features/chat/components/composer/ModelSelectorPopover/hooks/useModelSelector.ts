@@ -14,6 +14,7 @@ import {
 import { createLogger } from '~logger';
 import type { AIProviderType, ProviderGroup, VisibleItem } from '../types';
 import { PROVIDERS, CONFIG_TO_POPOVER } from '../constants';
+import { useCliModeStore, type CliModeState } from '@/stores';
 
 const log = createLogger('ModelSelectorPopover', 'UI_CHAT_COMPONENTS');
 
@@ -36,6 +37,57 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
     const searchInputRef = useRef<HTMLInputElement>(null);
     const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
+    // CLI provider selection state (decoupled from ToolsMode)
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+    const setIsCliProviderSelected = useCliModeStore((s: CliModeState) => s.setIsCliProviderSelected);
+    const setPreviousCloudModelConfig = useCliModeStore((s: CliModeState) => s.setPreviousCloudModelConfig);
+    const selectedAgentName = useCliModeStore((s: CliModeState) => s.selectedAgentName);
+    const setSelectedAgentName = useCliModeStore((s: CliModeState) => s.setSelectedAgentName);
+    const availableAgents = useCliModeStore((s: CliModeState) => s.availableAgents);
+
+    const isCliProviderId = useCallback((providerId: AIProviderType): boolean => {
+        return providerId.startsWith('cli-');
+    }, []);
+
+    const mapCliProviderToCloudProvider = useCallback((providerId: AIProviderType): AIProviderType => {
+        switch (providerId) {
+            case 'cli-gemini-cli':
+                return 'google';
+            case 'cli-claude-code':
+                return 'anthropic';
+            case 'cli-codex-cli':
+                return 'openai';
+            default:
+                return 'google';
+        }
+    }, []);
+
+    const mapCliProviderToAgentName = useCallback((providerId: AIProviderType): string => {
+        switch (providerId) {
+            case 'cli-gemini-cli':
+                return 'Gemini CLI';
+            case 'cli-claude-code':
+                return 'Claude Code';
+            case 'cli-codex-cli':
+                return 'Codex CLI';
+            default:
+                return 'Gemini CLI';
+        }
+    }, []);
+
+    const mapAgentNameToCliProviderId = useCallback((name: string): AIProviderType => {
+        switch (name) {
+            case 'Gemini CLI':
+                return 'cli-gemini-cli';
+            case 'Claude Code':
+                return 'cli-claude-code';
+            case 'Codex CLI':
+                return 'cli-codex-cli';
+            default:
+                return 'cli-gemini-cli';
+        }
+    }, []);
+
     // Toggle provider section expansion (only one at a time)
     const toggleProvider = useCallback((providerId: AIProviderType) => {
         setExpandedProviders(prev => {
@@ -54,12 +106,15 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
                 ? (mapConfigToPopover(config.remoteProvider) || 'google')
                 : 'google';
             setSelectedModelId(config.remoteModel);
-            setSelectedProvider(storedProvider);
-            setExpandedProviders(new Set([storedProvider]));
+            const providerToSelect = isCliProviderSelected
+                ? mapAgentNameToCliProviderId(selectedAgentName)
+                : storedProvider;
+            setSelectedProvider(providerToSelect);
+            setExpandedProviders(new Set([providerToSelect]));
         } catch (error) {
             log.error('Failed to load model config', error);
         }
-    }, []);
+    }, [isCliProviderSelected, mapAgentNameToCliProviderId, selectedAgentName]);
 
     // Load enabled models from providers config
     const loadEnabledModels = useCallback(async (forceRefresh = false) => {
@@ -84,12 +139,17 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
                 if (changes.ai_model_config) {
                     const newConfig = changes.ai_model_config.newValue;
                     if (newConfig?.remoteModel) {
-                        const provider = newConfig.remoteProvider
-                            ? (mapConfigToPopover(newConfig.remoteProvider) || 'google')
-                            : 'google';
                         setSelectedModelId(newConfig.remoteModel);
-                        setSelectedProvider(provider);
-                        log.info('Model synced from storage', { model: newConfig.remoteModel, provider });
+                        if (!isCliProviderSelected) {
+                            const provider = newConfig.remoteProvider
+                                ? (mapConfigToPopover(newConfig.remoteProvider) || 'google')
+                                : 'google';
+                            setSelectedProvider(provider);
+                            setExpandedProviders(new Set([provider]));
+                            log.info('Model synced from storage', { model: newConfig.remoteModel, provider });
+                        } else {
+                            log.info('Model synced from storage (CLI provider active)', { model: newConfig.remoteModel });
+                        }
                     }
                 }
                 // Sync enabled models when webapp updates providersConfig
@@ -104,7 +164,7 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
         return () => {
             chrome.storage.onChanged.removeListener(handleStorageChange);
         };
-    }, [loadModel, loadEnabledModels]);
+    }, [loadModel, loadEnabledModels, isCliProviderSelected]);
 
     // Close on click outside
     useEffect(() => {
@@ -145,18 +205,53 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
 
         setIsLoading(true);
         try {
-            const configProvider = mapPopoverToConfig(provider as PopoverProviderType);
-            await setModelConfig({ remoteModel: modelId as any, remoteProvider: configProvider });
+            if (isCliProviderId(provider)) {
+                // CLI provider selection: route through CLI bridge, but mirror the cloud provider's model list.
+                const agentName = mapCliProviderToAgentName(provider);
+                const cloudProviderId = mapCliProviderToCloudProvider(provider);
+                const configProvider = mapPopoverToConfig(cloudProviderId as PopoverProviderType);
+
+                // Snapshot current cloud selection so we can restore it if the user cancels CLI mode.
+                if (!isCliProviderSelected) {
+                    const previousConfig = await getModelConfig();
+                    setPreviousCloudModelConfig({
+                        remoteModel: previousConfig.remoteModel,
+                        remoteProvider: previousConfig.remoteProvider,
+                    });
+                }
+
+                setSelectedAgentName(agentName);
+                setIsCliProviderSelected(true);
+                await setModelConfig({ remoteModel: modelId as any, remoteProvider: configProvider });
+            } else {
+                // Cloud provider selection
+                const configProvider = mapPopoverToConfig(provider as PopoverProviderType);
+                setIsCliProviderSelected(false);
+                setPreviousCloudModelConfig(null);
+                await setModelConfig({ remoteModel: modelId as any, remoteProvider: configProvider });
+            }
             setSelectedModelId(modelId);
             setSelectedProvider(provider);
-            log.info('Model changed', { model: modelId, provider, configProvider });
+            log.info('Model changed', { model: modelId, provider });
             setIsOpen(false);
         } catch (error) {
             log.error('Failed to save model config', error);
         } finally {
             setIsLoading(false);
         }
-    }, [selectedModelId, selectedProvider, isLoading, setIsOpen]);
+    }, [
+        selectedModelId,
+        selectedProvider,
+        isLoading,
+        setIsOpen,
+        isCliProviderId,
+        mapCliProviderToAgentName,
+        mapCliProviderToCloudProvider,
+        setIsCliProviderSelected,
+        setPreviousCloudModelConfig,
+        setSelectedAgentName,
+        isCliProviderSelected,
+    ]);
 
     // Find current model info from enabledModels
     const currentModel = enabledModels.find(m => m.id === selectedModelId);
@@ -171,13 +266,28 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
         }
 
         const query = searchQuery.toLowerCase().trim();
+        const hasAgentIndex = availableAgents.length > 0;
 
         return PROVIDERS.map(provider => {
-            // Filter enabled models for this provider
+            // Filter enabled models for this provider (CLI providers mirror cloud provider models)
+            const sourceProviderId = isCliProviderId(provider.id)
+                ? mapCliProviderToCloudProvider(provider.id)
+                : provider.id;
+
             let providerModels = enabledModels.filter(m => {
                 const popoverProvider = CONFIG_TO_POPOVER[m.providerId];
-                return popoverProvider === provider.id;
+                return popoverProvider === sourceProviderId;
             });
+
+            // Check CLI provider availability (for disabling in UI)
+            let isAvailable = true;
+            if (isCliProviderId(provider.id) && hasAgentIndex) {
+                const agentName = mapCliProviderToAgentName(provider.id);
+                const agent = availableAgents.find((a) => a.name === agentName);
+                if (agent && !agent.available) {
+                    isAvailable = false;
+                }
+            }
 
             // Apply search filter if query exists
             if (query) {
@@ -190,9 +300,17 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
             return {
                 ...provider,
                 models: providerModels,
+                isAvailable,
             };
         }).filter(p => p.models.length > 0); // Hide providers with no enabled/matching models
-    }, [enabledModels, searchQuery]);
+    }, [
+        enabledModels,
+        searchQuery,
+        isCliProviderId,
+        mapCliProviderToCloudProvider,
+        mapCliProviderToAgentName,
+        availableAgents,
+    ]);
 
     // Auto-expand all providers when searching
     useEffect(() => {

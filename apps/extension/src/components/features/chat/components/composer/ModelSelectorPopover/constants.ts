@@ -3,6 +3,7 @@
  */
 
 import { Gemini } from '@assets/brands/integrations/Gemini';
+import { GeminiCLI } from '@assets/brands/integrations/GeminiCLI';
 import { ClaudeAI } from '@assets/brands/integrations/ClaudeAI';
 import { Grok } from '@assets/brands/integrations/Grok';
 import { OpenAI } from '@assets/brands/integrations/OpenAI';
@@ -16,8 +17,15 @@ export const PROVIDERS: ProviderInfo[] = [
     {
         id: 'google',
         configName: 'google_gemini',
-        name: 'Google Gemini',
+        name: 'Gemini',
         icon: Gemini,
+        color: '#4285F4',
+    },
+    {
+        id: 'cli-gemini-cli',
+        configName: 'google_gemini',
+        name: 'Gemini CLI',
+        icon: GeminiCLI,
         color: '#4285F4',
     },
     {
@@ -30,7 +38,14 @@ export const PROVIDERS: ProviderInfo[] = [
     {
         id: 'anthropic',
         configName: 'anthropic',
-        name: 'Anthropic Claude',
+        name: 'Claude',
+        icon: ClaudeAI,
+        color: '#D97757',
+    },
+    {
+        id: 'cli-claude-code',
+        configName: 'anthropic',
+        name: 'Claude Code',
         icon: ClaudeAI,
         color: '#D97757',
     },
@@ -45,6 +60,13 @@ export const PROVIDERS: ProviderInfo[] = [
         id: 'openai',
         configName: 'openai',
         name: 'OpenAI',
+        icon: OpenAI,
+        color: '#10A37F',
+    },
+    {
+        id: 'cli-codex-cli',
+        configName: 'openai',
+        name: 'Codex CLI',
         icon: OpenAI,
         color: '#10A37F',
     },

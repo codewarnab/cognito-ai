@@ -12,7 +12,7 @@ import { getToolSchemas, executeToolLocally, type ToolCall } from '@/ai/backend/
 import { TOOLS_REQUIRING_APPROVAL } from '@/ai/setup/remoteMode';
 import { isMcpTool, isWebmcpTool } from '@/ai/tools/mcpApprovalConfig';
 import { waitForCliToolApproval } from './cliToolApproval';
-import { useToolsStore } from '@/stores';
+import { useCliModeStore, useToolsStore } from '@/stores';
 
 const log = createLogger('toolBridgeClient', 'CLI_MODE_BRIDGE');
 
@@ -117,8 +117,9 @@ async function handleToolExecuteEvent(
             isMcpTool(event.toolName);
 
         const toolsMode = useToolsStore.getState().currentMode;
-        const isCliMode = toolsMode === 'cli';
-        const shouldWaitForUiApproval = event.interactive === true && isCliMode;
+        const isCliProviderSelected = useCliModeStore.getState().isCliProviderSelected;
+        const isCliBridgeMode = isCliProviderSelected;
+        const shouldWaitForUiApproval = event.interactive === true && isCliBridgeMode;
 
         if (requiresApproval && shouldWaitForUiApproval) {
             log.info('🛡️ Tool requires approval (CLI mode bridge)', {
@@ -126,6 +127,7 @@ async function handleToolExecuteEvent(
                 toolName: event.toolName,
                 toolsMode,
                 interactive: event.interactive,
+                isCliProviderSelected,
             });
 
             try {

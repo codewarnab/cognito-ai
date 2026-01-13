@@ -58,6 +58,11 @@ export interface BackendRequestParams {
     youtubeEnabled?: boolean;
 
     /**
+     * Names of enabled MCP servers (sent to backend for system prompt).
+     */
+    enabledMcpServerNames?: string[];
+
+    /**
      * Abort signal for cancellation support.
      */
     signal?: AbortSignal;
@@ -146,6 +151,7 @@ export async function makeBackendRequest(
         pageContext,
         searchEnabled,
         youtubeEnabled,
+        enabledMcpServerNames,
         signal,
     } = params;
 
@@ -173,6 +179,7 @@ export async function makeBackendRequest(
                 pageContext,
                 searchEnabled,
                 youtubeEnabled,
+                enabledMcpServerNames,
             }),
             signal,
         }
@@ -212,5 +219,6 @@ export function buildRequestBody(params: Omit<BackendRequestParams, 'signal'>): 
         pageContext: params.pageContext,
         searchEnabled: params.searchEnabled,
         youtubeEnabled: params.youtubeEnabled,
+        enabledMcpServerNames: params.enabledMcpServerNames,
     };
 }

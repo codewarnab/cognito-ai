@@ -10,7 +10,7 @@ import { getSearchSettings, hasApiKeyForProvider } from '@/utils/settings/search
 import { WEB_SEARCH_SELF_API_KEY_HIDDEN } from '@/constants';
 import { SEARCH_TOOL_NAMES } from '../../../tools/searchToolFilter';
 import { getCurrentWebsite, getWebsiteTools, augmentSystemPrompt } from '../../../prompts/website';
-import { remoteSystemPrompt, chatModeSystemPrompt } from '../../../prompts/templates/remote';
+import { AGENT_MODE_SYSTEM_PROMPT, CHAT_MODE_SYSTEM_PROMPT } from '@cognito/shared';
 import { getSearchPromptAddition } from '../../../prompts/searchPrompt';
 
 import type { WorkflowDefinition } from '../../../../workflows/types';
@@ -55,7 +55,7 @@ export function createPrepareStepCallback(context: PrepareStepContext) {
         // Skip mode change detection when in workflow mode - workflow prompt should be preserved
         const modeChanged = currentSearchModeActive !== isSearchModeActive;
         const toolsModeChanged = !workflowConfig && !currentSearchModeActive && !isSearchModeActive &&
-            ((currentToolsMode === 'chat') !== (enhancedPrompt === chatModeSystemPrompt));
+            ((currentToolsMode === 'chat') !== (enhancedPrompt === CHAT_MODE_SYSTEM_PROMPT));
 
         let stepPrompt: string | undefined;
         let stepActiveTools: string[] | undefined;
@@ -80,7 +80,7 @@ export function createPrepareStepCallback(context: PrepareStepContext) {
                 // Preserve workflow prompt if in workflow mode
                 stepPrompt = workflow
                     ? workflow.systemPrompt
-                    : (currentToolsMode === 'chat' ? chatModeSystemPrompt : remoteSystemPrompt);
+                    : (currentToolsMode === 'chat' ? CHAT_MODE_SYSTEM_PROMPT : AGENT_MODE_SYSTEM_PROMPT);
                 stepPrompt += '\n\n' + getSearchPromptAddition(true);
                 stepActiveTools = Object.keys(tools);
                 log.info('🔍 Switched to SEARCH MODE (additive)');
@@ -88,7 +88,7 @@ export function createPrepareStepCallback(context: PrepareStepContext) {
                 // Preserve workflow prompt if in workflow mode
                 stepPrompt = workflow
                     ? workflow.systemPrompt
-                    : (currentToolsMode === 'chat' ? chatModeSystemPrompt : remoteSystemPrompt);
+                    : (currentToolsMode === 'chat' ? CHAT_MODE_SYSTEM_PROMPT : AGENT_MODE_SYSTEM_PROMPT);
                 // In non-search mode, exclude search tools
                 stepActiveTools = Object.keys(tools).filter(t => !SEARCH_TOOL_NAMES.includes(t as any));
                 log.info(`📝 Switched to ${currentToolsMode.toUpperCase()} MODE`);

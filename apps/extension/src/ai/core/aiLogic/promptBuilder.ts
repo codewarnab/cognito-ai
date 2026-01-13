@@ -5,7 +5,7 @@
 
 import { createLogger } from '~logger';
 
-import { remoteSystemPrompt, chatModeSystemPrompt } from '../../prompts/templates/remote';
+import { AGENT_MODE_SYSTEM_PROMPT, CHAT_MODE_SYSTEM_PROMPT } from '@cognito/shared';
 import { buildAdaptiveSystemPrompt, adaptiveSystemPromptStatic } from '../../prompts/templates/adaptivePrompt';
 import { getSearchPromptAddition } from '../../prompts/searchPrompt';
 import { getToolsMode } from '@/utils/settings';
@@ -35,7 +35,7 @@ export async function buildSystemPromptForMode(
     let usePrompt: string;
 
     if (toolsMode === 'chat' && !workflowConfig) {
-        usePrompt = chatModeSystemPrompt;
+        usePrompt = CHAT_MODE_SYSTEM_PROMPT;
     } else if (toolsMode === 'adaptive' && !workflowConfig) {
         // Adaptive mode: Build dynamic prompt with tool index
         try {
@@ -45,7 +45,7 @@ export async function buildSystemPromptForMode(
             usePrompt = adaptiveSystemPromptStatic;
         }
     } else {
-        usePrompt = remoteSystemPrompt;
+        usePrompt = AGENT_MODE_SYSTEM_PROMPT;
     }
 
     // Append search instructions if search mode enabled (non-adaptive only)

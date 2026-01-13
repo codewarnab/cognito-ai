@@ -21,6 +21,10 @@ export const useCliModeStore = create<CliModeState>()(
       isCheckingBridge: false,
       repoCwd: null,
 
+      // Initial State - Provider selection
+      isCliProviderSelected: false,
+      previousCloudModelConfig: null,
+
       // Initial State - Agent
       selectedAgentName: 'Gemini CLI',
       availableAgents: [],
@@ -140,6 +144,9 @@ export const useCliModeStore = create<CliModeState>()(
           // Connected (token is present + valid or freshly issued)
           set({ bridgeStatus: 'connected', repoCwd });
 
+          // Fetch available agents for provider selection UI
+          get().fetchAvailableAgents();
+
           // (Re)register tools
           registerToolsWithBridge(bridgeBaseUrl, activeToken).then(result => {
             if (result.success) {
@@ -191,6 +198,15 @@ export const useCliModeStore = create<CliModeState>()(
         }
       },
 
+      // Actions - Provider selection
+      setIsCliProviderSelected: (selected) => {
+        set({ isCliProviderSelected: selected });
+        log.info('CLI provider selection changed', { selected });
+      },
+      setPreviousCloudModelConfig: (config) => {
+        set({ previousCloudModelConfig: config });
+      },
+
       // Actions - Agent
       setSelectedAgentName: (name) => {
         set({ selectedAgentName: name });
@@ -206,6 +222,7 @@ export const useCliModeStore = create<CliModeState>()(
       partialize: (state) => ({
         bridgeBaseUrl: state.bridgeBaseUrl,
         bridgeToken: state.bridgeToken,
+        isCliProviderSelected: state.isCliProviderSelected,
         selectedAgentName: state.selectedAgentName,
       }),
     }

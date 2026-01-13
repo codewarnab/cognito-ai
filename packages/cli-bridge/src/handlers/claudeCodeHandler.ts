@@ -34,6 +34,7 @@ import {
 } from './engagingMessages';
 import {
     convertBridgeMessagesToAISDK,
+    getSystemPromptForToolsMode,
     type AgentHandlerParamsWithCwd,
 } from './chatUtils';
 
@@ -48,6 +49,7 @@ export async function handleClaudeCodeAgent({
     res,
     cwd,
     enabledTools,
+    toolsMode,
 }: AgentHandlerParamsWithCwd): Promise<void> {
     const claudeCodeModel =
         agent.acpModel ||
@@ -200,11 +202,8 @@ export async function handleClaudeCodeAgent({
     // Convert messages to AI SDK format
     const aiMessages = convertBridgeMessagesToAISDK(messages as any);
 
-    // System prompt for the coding agent with extension capabilities
-    const systemPrompt =
-        'You are a coding agent helping the user via a Chrome extension. ' +
-        'You have access to both file system tools (Read, Write, Bash) and browser tools (navigateTo, clickByText, typeInField, readPageContent, takeScreenshot). ' +
-        'Use the appropriate tools for the task at hand. Browser tools are prefixed with mcp__extension__.';
+    // Shared system prompt (mode-aware)
+    const systemPrompt = getSystemPromptForToolsMode(toolsMode);
 
     try {
         const result = await streamText({

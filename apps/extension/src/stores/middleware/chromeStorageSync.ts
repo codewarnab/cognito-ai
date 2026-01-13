@@ -65,9 +65,22 @@ export const chromeStorageSync = <T extends object>(
         
         debounceTimer = setTimeout(() => {
           const persistable = getPersistableState(state);
-          storage.set({ [storageKey]: persistable }).catch((err) => {
-            console.error(`[chromeStorageSync] Failed to save ${storageKey}:`, err);
-          });
+          // Merge with any existing stored value so we don't clobber fields that are
+          // written by other parts of the app (or older versions) under the same key.
+          storage
+            .get(storageKey)
+            .then((result) => {
+              const existing = result[storageKey];
+              const merged =
+                existing && typeof existing === 'object'
+                  ? { ...(existing as Record<string, unknown>), ...(persistable as Record<string, unknown>) }
+                  : persistable;
+
+              return storage.set({ [storageKey]: merged });
+            })
+            .catch((err) => {
+              console.error(`[chromeStorageSync] Failed to save ${storageKey}:`, err);
+            });
         }, debounceMs);
       };
 

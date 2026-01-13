@@ -93,6 +93,7 @@ export async function streamBackendChatWithTools(
         initialPageContext,
         searchEnabled,
         youtubeEnabled,
+        enabledMcpServerNames,
     } = params;
 
     log.info('Starting backend chat with tools', {
@@ -101,6 +102,7 @@ export async function streamBackendChatWithTools(
         hasPageContext: !!initialPageContext,
         pageContextLength: initialPageContext?.length || 0,
         searchEnabled: !!searchEnabled,
+        enabledMcpServerNames: enabledMcpServerNames?.length || 0,
     });
 
     // Create abort controller for this request
@@ -145,6 +147,7 @@ export async function streamBackendChatWithTools(
                             pageContext: stepCount === 1 ? initialPageContext : undefined,
                             searchEnabled,
                             youtubeEnabled,
+                            enabledMcpServerNames,
                             signal: abortSignal || controller.signal,
                         });
 

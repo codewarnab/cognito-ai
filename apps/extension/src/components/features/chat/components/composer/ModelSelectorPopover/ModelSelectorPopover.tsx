@@ -64,16 +64,25 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
             <button
                 ref={buttonRef}
                 type="button"
-                className="model-selector-btn flex items-center gap-1 h-[26px] px-1.5 rounded-md bg-transparent border-0 cursor-pointer transition-all duration-150 opacity-70 hover:opacity-100 hover:bg-white/[0.06] focus-visible:outline-2 focus-visible:outline-(--color-primary,#3b82f6) focus-visible:outline-offset-2 focus-visible:opacity-100"
+                className="model-selector-btn flex items-center gap-2 h-8 px-3 rounded-lg bg-white/[0.06] border border-white/[0.08] cursor-pointer transition-all duration-150 hover:bg-white/[0.09] focus-visible:outline-2 focus-visible:outline-(--color-primary,#3b82f6) focus-visible:outline-offset-2"
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={`Current model: ${currentModel?.name || selectedModelId}. Click to change.`}
                 aria-expanded={isOpen}
                 aria-haspopup="listbox"
             >
-                <ProviderIcon className="w-4 h-4" />
+                <ProviderIcon className="w-4 h-4 shrink-0" />
+                <span className="flex items-center gap-1 min-w-0">
+                    <span className="text-[12px] font-medium text-white/90 whitespace-nowrap">
+                        {currentProviderInfo.name}
+                    </span>
+                    <span className="text-white/40">·</span>
+                    <span className="text-[12px] text-white/70 truncate max-w-[140px]">
+                        {currentModel?.name || selectedModelId}
+                    </span>
+                </span>
                 <ChevronDown
                     size={10}
-                    className="text-(--text-tertiary,#6b7280) transition-transform duration-150"
+                    className="ml-auto shrink-0 text-(--text-tertiary,#6b7280) transition-transform duration-150"
                     style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
                 />
             </button>

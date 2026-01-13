@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useSuggestions } from '@/hooks/suggestions';
-import { CliAgentSelector } from '@/components/features/cliMode';
-import { useToolsStore } from '@/stores';
-import type { ToolsState } from '@/stores/tools/types';
+import { useCliModeStore, type CliModeState } from '@/stores';
 import type { Message, ModelState } from '../../types';
 import type { FileAttachmentData } from '../attachments/FileAttachment';
 import type { WorkflowDefinition } from '@/workflows/types';
@@ -89,8 +87,8 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
     const [suggestionsEnabled, setSuggestionsEnabled] = useState<boolean | null>(null);
 
     // Check if we're in code mode - show agent selector instead of suggestions
-    const toolsMode = useToolsStore((s: ToolsState) => s.currentMode);
-    const isCodeMode = toolsMode === 'cli';
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
+    const isCodeMode = isCliProviderSelected;
 
     // Load suggestions enabled setting
     useEffect(() => {
@@ -125,10 +123,9 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
             activeWorkflow: !!activeWorkflow,
             isRecording,
             suggestionsEnabled,
-            isCodeMode,
-            toolsMode
+            isCodeMode
         });
-    }, [aiSuggestions, isGenerating, suggestionError, messages.length, modelState.mode, input, attachments.length, tabAttachments.length, userDismissed, isLoading, activeWorkflow, isRecording, suggestionsEnabled, isCodeMode, toolsMode]);
+    }, [aiSuggestions, isGenerating, suggestionError, messages.length, modelState.mode, input, attachments.length, tabAttachments.length, userDismissed, isLoading, activeWorkflow, isRecording, suggestionsEnabled, isCodeMode]);
 
     // Determine which suggestions to show:
     // - If generating: show skeleton/loading (no suggestions yet)
@@ -164,77 +161,11 @@ export const SuggestedActions: React.FC<SuggestedActionsProps> = ({
         setUserDismissed(true);
     };
 
-    // In CLI mode, show both agent selector and suggestions together
-    const showCliAgentSelector = isCodeMode;
     const showSuggestionPills = showSuggestedActions && !isRecording;
 
-    // Don't render anything if neither should show
-    if (!showCliAgentSelector && !showSuggestionPills) {
+    // Don't render anything if suggestions shouldn't show
+    if (!showSuggestionPills) {
         return null;
-    }
-
-    // CLI mode layout - agent selector on left, right-aligned suggestion pills
-    if (isCodeMode) {
-        return (
-            <div className="absolute bottom-full left-0 right-0 mb-2 px-3 z-[-1] pointer-events-auto max-[480px]:mb-1.5 max-[480px]:px-2.5">
-                <div className="flex items-end gap-3">
-                    {/* CLI Agent Selector - aligned to bottom */}
-                    <div className="flex-shrink-0">
-                        <CliAgentSelector inline />
-                    </div>
-
-                    {/* Right-aligned suggestion pills */}
-                    {showSuggestionPills && suggestedActions.length > 0 && (
-                        <div className="flex-1 flex justify-end">
-                            <AnimatePresence>
-                                <motion.div
-                                    key="cli-suggestions-container"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 20 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="max-w-[60%] max-[480px]:max-w-[55%]"
-                                >
-                                    <div className="flex flex-col items-end gap-1 max-[480px]:gap-[5px]">
-                                        {suggestedActions.map((suggestedAction, index) => (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: 20 }}
-                                                transition={{ delay: 0.05 * index }}
-                                                key={`cli-suggestion-${index}`}
-                                            >
-                                                <Tooltip delayDuration={300}>
-                                                    <TooltipTrigger asChild>
-                                                        <button
-                                                            onClick={() => handleSuggestionClick(suggestedAction.action)}
-                                                            className={`
-                                                                inline-flex items-center text-left bg-white/[0.04] border-none rounded-full 
-                                                                text-white/60 font-normal leading-[1.3] cursor-pointer transition-all duration-150 
-                                                                whitespace-nowrap w-auto min-h-auto max-h-none h-auto flex-row hover:bg-white/[0.08] 
-                                                                hover:text-white/85 hover:transform-none hover:shadow-none active:bg-white/[0.06] active:scale-98
-                                                                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white/[0.04] disabled:hover:transform-none
-                                                                ${getPillSizeClasses(index)}
-                                                            `}
-                                                            style={getFadeMaskStyle()}
-                                                        >
-                                                            {suggestedAction.title}
-                                                        </button>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="top" className="max-w-[280px] text-wrap">
-                                                        {suggestedAction.title}
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
     }
 
     // Standard mode - vertical pill layout aligned to the right

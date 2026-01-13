@@ -8,7 +8,6 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import type { EnabledModel } from '@/utils/ai/modelSelectorUtils';
 import type { AIProviderType } from '../types';
-import { CONFIG_TO_POPOVER } from '../constants';
 
 interface ModelItemProps {
     model: EnabledModel;
@@ -33,8 +32,9 @@ export const ModelItem: React.FC<ModelItemProps> = ({
     itemRef,
     onSelect,
 }) => {
-    const modelProvider = CONFIG_TO_POPOVER[model.providerId];
-    const isSelected = selectedModelId === model.id && selectedProvider === modelProvider;
+    // Use the providerId passed from the parent (the provider group this model belongs to)
+    // This ensures CLI provider models are only selected when the CLI provider is active
+    const isSelected = selectedModelId === model.id && selectedProvider === providerId;
 
     return (
         <button

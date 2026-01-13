@@ -138,6 +138,16 @@ export interface BackendChatWithToolsParams {
      * This keeps the Supadata token secure on the server.
      */
     youtubeEnabled?: boolean;
+
+    /**
+     * Names of enabled MCP servers.
+     *
+     * @remarks
+     * Sent to backend to inform the AI about available integrations.
+     * The backend will add this to the system prompt so the AI knows
+     * what MCP servers are connected (useful for adaptive mode discovery).
+     */
+    enabledMcpServerNames?: string[];
 }
 
 /**

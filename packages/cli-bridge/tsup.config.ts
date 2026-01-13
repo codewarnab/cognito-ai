@@ -18,6 +18,7 @@ export default defineConfig({
   },
   // Don't bundle dependencies - they should be installed by npm
   external: [
+    '@cognito/shared',
     '@modelcontextprotocol/sdk',
     'ai',
     'ai-sdk-provider-claude-code',

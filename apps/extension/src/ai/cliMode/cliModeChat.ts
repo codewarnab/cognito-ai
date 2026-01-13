@@ -6,7 +6,7 @@ import { createUIMessageStream, generateId } from 'ai';
 import { createLogger } from '~logger';
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { useToolsStore } from '@/stores';
-import { streamCodeBridgeChat, type BridgeEvent } from '@/services/codeBridge';
+import { streamCodeBridgeChat, type BridgeEvent, type CliBridgeToolsMode } from '@/services/codeBridge';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('cliModeChat', 'CLI_MODE_CHAT');
@@ -84,7 +84,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
 
   // Get bridge state
   const state = useCliModeStore.getState();
-  const { bridgeBaseUrl, bridgeToken, bridgeStatus, selectedAgentName, availableAgents } = state;
+  const { bridgeBaseUrl, bridgeToken, bridgeStatus, selectedAgentName } = state;
 
   // Validate bridge connection
   if (bridgeStatus !== 'connected' || !bridgeToken) {
@@ -93,8 +93,16 @@ export async function streamCliModeChat(params: CliModeChatParams) {
     throw error;
   }
 
-  // Find selected agent
-  const agent = availableAgents.find((a) => a.name === selectedAgentName);
+  // Find selected agent (fetch on-demand if needed)
+  let agent = useCliModeStore.getState().availableAgents.find((a) => a.name === selectedAgentName);
+  if (!agent) {
+    try {
+      await useCliModeStore.getState().fetchAvailableAgents();
+      agent = useCliModeStore.getState().availableAgents.find((a) => a.name === selectedAgentName);
+    } catch {
+      // ignore; handled below
+    }
+  }
   if (!agent) {
     const error = new Error(`Agent "${selectedAgentName}" not found`);
     onError?.(error);
@@ -125,7 +133,11 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           .filter(([_, enabled]) => enabled)
           .map(([name]) => name);
 
-        log.info('Sending enabled tools to bridge', { count: enabledTools.length });
+        const rawToolsMode = useToolsStore.getState().currentMode;
+        // Bridge protocol supports chat/agent/adaptive/custom (CLI provider selection is separate).
+        const toolsMode: CliBridgeToolsMode = rawToolsMode;
+
+        log.info('Sending enabled tools to bridge', { count: enabledTools.length, toolsMode });
 
         // Stream from bridge
         const eventStream = streamCodeBridgeChat(
@@ -140,6 +152,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
               args: agent.args,
             },
             enabledTools,
+            toolsMode,
           },
           abortSignal
         );

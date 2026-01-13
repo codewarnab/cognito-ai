@@ -60,7 +60,7 @@ export async function setupRemoteMode(
     modelName: string,
     workflowConfig: WorkflowDefinition | null,
     remoteSystemPrompt: string,
-    toolsMode?: 'chat' | 'agent' | 'adaptive' | 'custom' | 'cli',
+    toolsMode?: 'chat' | 'agent' | 'adaptive' | 'custom',
 ): Promise<RemoteModeSetup> {
     log.info('🔧 Setting up REMOTE mode with model:', modelName);
 

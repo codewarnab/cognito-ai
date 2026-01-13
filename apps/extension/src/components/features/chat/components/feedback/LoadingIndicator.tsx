@@ -6,6 +6,7 @@ import { TextShimmer } from '@/components/ui/TextShimmer';
 const THINKING_MESSAGES = [
     'Thinking...',
     'Still thinking...',
+    'Planning next moves..',
     'Processing...',
     'Analyzing...',
     'Almost there...',

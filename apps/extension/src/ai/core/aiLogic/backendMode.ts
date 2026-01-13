@@ -7,7 +7,7 @@ import { createLogger } from '~logger';
 
 import { getMaxToolCallLimit, getToolsMode } from '@/utils/settings';
 import { getSearchSettings } from '@/utils/settings/searchSettings';
-import { useToolsStore } from '@/stores';
+import { useToolsStore, useMcpStore } from '@/stores';
 import { streamBackendChatWithTools } from '../../backend';
 
 import type { StreamAIParams } from './types';
@@ -44,6 +44,14 @@ export async function handleBackendMode(params: StreamAIParams) {
 
     log.info('📺 Backend YouTube mode:', { youtubeEnabled });
 
+    // Get enabled MCP server names to inform the AI about available integrations
+    const serverStatuses = useMcpStore.getState().serverStatuses;
+    const enabledMcpServerNames = Object.values(serverStatuses)
+        .filter((status) => status.isEnabled)
+        .map((status) => status.serverId);
+
+    log.info('🔌 Enabled MCP servers:', { count: enabledMcpServerNames.length, names: enabledMcpServerNames });
+
     return streamBackendChatWithTools({
         messages,
         systemPrompt: undefined, // Backend will use mode-appropriate prompt
@@ -56,6 +64,7 @@ export async function handleBackendMode(params: StreamAIParams) {
         initialPageContext, // Pass page context for page-aware conversations
         searchEnabled, // Tell backend to add webSearch tool
         youtubeEnabled, // Tell backend to add getYouTubeTranscript tool
+        enabledMcpServerNames, // Tell backend about enabled MCP integrations
         onToolCall: (tc) => log.info('Tool call:', { name: tc.name, id: tc.id }),
         onToolResult: (tr) => log.info('Tool result:', { id: tr.id, isError: tr.isError }),
     });

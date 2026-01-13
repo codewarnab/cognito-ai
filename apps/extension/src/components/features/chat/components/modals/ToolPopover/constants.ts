@@ -57,5 +57,3 @@ export const ADAPTIVE_ONLY_TOOLS: string[] = [
     'executeTools',
 ];
 
-// CLI mode - use same tools as agent mode (browser operation via CLI agent)
-export const CLI_MODE_TOOLS: string[] = [...AGENT_MODE_TOOLS];

@@ -13,7 +13,7 @@ import {
     getCursorPosition
 } from '@/utils/chat';
 import { detectSlashCommand, getSlashSearchQuery } from '@/utils/chat';
-import { useCliModeStore, useToolsStore, type CliModeState } from '@/stores';
+import { useCliModeStore, type CliModeState } from '@/stores';
 
 /**
  * Animated placeholder with letter-by-letter morphing effect.
@@ -91,11 +91,10 @@ export function MentionInput({
 }: MentionInputProps) {
     // Check if cli mode is active for placeholder
     const bridgeStatus = useCliModeStore((s: CliModeState) => s.bridgeStatus);
-    const currentMode = useToolsStore((s) => s.currentMode);
+    const isCliProviderSelected = useCliModeStore((s: CliModeState) => s.isCliProviderSelected);
 
-    // Only show cli placeholder if bridge is connected AND we are actually in cli mode
-    // The user can be connected to bridge but be in 'chat' or 'agent' mode
-    const isCliMode = bridgeStatus === 'connected' && currentMode === 'cli';
+    // Only show CLI placeholder if bridge is connected AND the CLI provider is selected.
+    const isCliMode = bridgeStatus === 'connected' && isCliProviderSelected;
 
     // Use cli mode specific placeholder when connected
     const actualPlaceholder = isCliMode

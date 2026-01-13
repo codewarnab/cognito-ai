@@ -628,6 +628,9 @@ importers:
 
   packages/cli-bridge:
     dependencies:
+      '@cognito/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@modelcontextprotocol/sdk':
         specifier: ^1.24.3
         version: 1.24.3(zod@4.2.1)

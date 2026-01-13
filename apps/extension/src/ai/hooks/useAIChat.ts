@@ -19,7 +19,14 @@ import { debounce } from '@/utils/general';
 import { calculateUsageFromMessages } from '../utils/calculateUsageFromMessages';
 import { useWindowVisibility } from '../../contexts/WindowVisibilityContext';
 import { playNotificationSound } from '@/utils/notifications';
-import { useChatStore, type ChatState, useSettingsStore, type SettingsState, useToolsStore, type ToolsState } from '@/stores';
+import {
+  useChatStore,
+  type ChatState,
+  useSettingsStore,
+  type SettingsState,
+  useCliModeStore,
+  type CliModeState,
+} from '@/stores';
 
 const log = createLogger('useAIChat');
 
@@ -46,10 +53,10 @@ export function useAIChat(options: UseAIChatOptions) {
   // so we should NOT auto-send when tool results are available (would cause double-loop)
   const useBackendMode = useSettingsStore((state: SettingsState) => state.useBackendMode);
 
-  // Tools mode (chat/agent/adaptive/cli)
-  // In CLI mode, the tool loop is handled by the local bridge, so we must NOT auto-send
-  // when tool results are present (otherwise useChat will loop requests indefinitely).
-  const toolsMode = useToolsStore((state: ToolsState) => state.currentMode);
+  // When using the CLI provider, the tool loop is handled by the local bridge,
+  // so we must NOT auto-send when tool results are present (would cause loops).
+  const isCliProviderSelected = useCliModeStore((state: CliModeState) => state.isCliProviderSelected);
+  const isCliBridgeMode = isCliProviderSelected;
 
   // Get chat store actions for syncing state
   const setStoreStatus = useChatStore((state: ChatState) => state.setStatus);
@@ -254,7 +261,7 @@ export function useAIChat(options: UseAIChatOptions) {
     // In backend mode, we only auto-send when NOT streaming.
     // - During streaming: backend's internal loop handles auto-executed tools, don't auto-send
     // - When ready: user approved an HITL tool, auto-send to get AI's response
-    sendAutomaticallyWhen: toolsMode === 'cli'
+    sendAutomaticallyWhen: isCliBridgeMode
       ? () => false
       : useBackendMode
         ? (args) => {

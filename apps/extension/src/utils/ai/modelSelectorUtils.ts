@@ -39,9 +39,9 @@ const CONFIG_TO_POPOVER_MAP: Record<string, PopoverProviderType> = {
 };
 
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
-    google_gemini: 'Google Gemini',
+    google_gemini: 'Gemini',
     vertex: 'Vertex AI',
-    anthropic: 'Anthropic Claude',
+    anthropic: 'Claude',
     xai: 'xAI Grok',
     openai: 'OpenAI',
 };

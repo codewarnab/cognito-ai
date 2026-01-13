@@ -11,8 +11,8 @@ import {
     DEFAULT_MESSAGE_INTERVAL,
 } from './engagingMessages';
 import {
-    CODING_AGENT_SYSTEM_PROMPT,
     convertBridgeMessagesToAISDK,
+    getSystemPromptForToolsMode,
     type AgentHandlerParams,
 } from './chatUtils';
 
@@ -26,6 +26,7 @@ export async function handleGeminiAgent({
     abortController,
     res,
     enabledTools,
+    toolsMode,
 }: AgentHandlerParams): Promise<void> {
     const geminiModelId =
         agent.acpModel ||
@@ -67,6 +68,8 @@ export async function handleGeminiAgent({
     const { aiTools } = buildAISDKTools(sendEvent, { enabledTools });
     const toolCount = Object.keys(aiTools).length;
 
+    const systemPrompt = getSystemPromptForToolsMode(toolsMode);
+
     // Send engaging capability message instead of boring "Tools available: X"
     sendEvent('status', { message: getCapabilityMessage(toolCount) });
 
@@ -78,7 +81,7 @@ export async function handleGeminiAgent({
         const result = await streamText({
             model: gemini(effectiveModelId),
             messages: aiMessages as any,
-            system: CODING_AGENT_SYSTEM_PROMPT,
+            system: systemPrompt,
             tools: toolCount > 0 ? aiTools : undefined,
             toolChoice: 'auto',
             stopWhen: [stepCountIs(10)],

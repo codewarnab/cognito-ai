@@ -16,6 +16,20 @@ export interface CliModeState {
   isCheckingBridge: boolean;
   repoCwd: string | null;  // Working directory from bridge for editor links
 
+  // Provider selection (decoupled from ToolsMode)
+  // When true, chat requests are routed to the local CLI bridge provider.
+  isCliProviderSelected: boolean;
+
+  /**
+   * Snapshot of the last cloud (non-CLI) model selection.
+   * Used to restore the user's prior selection if they cancel out of CLI provider mode.
+   * Not persisted.
+   */
+  previousCloudModelConfig: {
+    remoteModel: string;
+    remoteProvider?: string;
+  } | null;
+
   // Agent selection
   selectedAgentName: string;
   availableAgents: AgentInfo[];
@@ -29,6 +43,12 @@ export interface CliModeState {
   setBridgeStatus: (status: BridgeStatus) => void;
   checkBridgeHealth: () => Promise<void>;
   fetchAvailableAgents: () => Promise<void>;
+
+  // Actions - Provider selection
+  setIsCliProviderSelected: (selected: boolean) => void;
+  setPreviousCloudModelConfig: (
+    config: { remoteModel: string; remoteProvider?: string } | null
+  ) => void;
 
   // Actions - Agent
   setSelectedAgentName: (name: string) => void;

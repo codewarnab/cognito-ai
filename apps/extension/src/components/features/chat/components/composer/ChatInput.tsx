@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { type VoiceInputHandle } from '@/audio/VoiceInput';
-import { SuggestedActions } from '../suggestions/SuggestedActions';
 import { Composer } from './Composer';
+import { ComposerHeader } from './sections';
 import type { AIMode, RemoteModelType, ModelState, Message } from '../../types';
 import type { AppUsage } from '@/ai/types/usage';
 import type { LocalPdfInfo } from '@/hooks/browser';
@@ -267,32 +267,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         setVoiceFabVisibility(!input.trim());
     }, [input]);
 
-    const handleSuggestionClick = (action: string) => {
-        setInput(action);
-        textareaRef.current?.focus();
-    };
-
-    // Derive suggestion visibility from store
-    const isYouTubeDismissed = useAttachmentsStore((s) => s.isYouTubeDismissed);
-    const isSelectedTextDismissed = useAttachmentsStore((s) => s.isSelectedTextDismissed);
-    const shouldShowYouTubeVideoSuggestion = youtubeVideoInfo.isYouTubeVideo && !isYouTubeDismissed;
-    const shouldShowSelectedTextSuggestion = hasSelectedText && !isSelectedTextDismissed;
-
     return (
-        <div className="px-4 pb-2 bg-[rgba(10,14,26,0.85)] backdrop-blur-[20px] shrink-0 relative shadow-[0_-4px_24px_rgba(0,0,0,0.3)] z-10">
-            <SuggestedActions
-                messages={messages}
-                input={input}
-                isLoading={isLoading}
-                activeWorkflow={activeWorkflow}
-                attachments={fileAttachments}
-                isRecording={isRecording}
-                modelState={modelState}
-                onSuggestionClick={handleSuggestionClick}
-                tabAttachments={tabAttachments}
-                shouldShowYouTubeVideoSuggestion={shouldShowYouTubeVideoSuggestion}
-                shouldShowSelectedTextSuggestion={shouldShowSelectedTextSuggestion}
-            />
+        <div className="px-4 pb-2 shrink-0 relative z-10">
+            {/* Unified model selector (cloud + CLI providers) */}
+            <ComposerHeader />
 
             <form
                 onSubmit={(e) => {

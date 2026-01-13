@@ -5,7 +5,17 @@
 import type { EnabledModel } from '@/utils/ai/modelSelectorUtils';
 
 /** Supported AI providers for display */
-export type AIProviderType = 'google' | 'vertex' | 'anthropic' | 'xai' | 'openai';
+export type AIProviderType =
+    // Cloud providers
+    | 'google'
+    | 'vertex'
+    | 'anthropic'
+    | 'xai'
+    | 'openai'
+    // CLI bridge providers
+    | 'cli-gemini-cli'
+    | 'cli-claude-code'
+    | 'cli-codex-cli';
 
 export interface ProviderInfo {
     id: AIProviderType;
@@ -17,6 +27,7 @@ export interface ProviderInfo {
 
 export interface ProviderGroup extends ProviderInfo {
     models: EnabledModel[];
+    isAvailable: boolean; // For CLI providers: whether the agent is installed/available
 }
 
 export interface ModelSelectorPopoverProps {
