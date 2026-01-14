@@ -7,6 +7,7 @@ description: Human-in-the-loop approval for AI tool execution.
 
 import { ToolApprovalSequence } from '@/components/diagrams/ToolApprovalSequence';
 import { ToolFlowDiagram } from '@/components/diagrams/ToolFlowDiagram';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 Cognito AI implements a **Human-in-the-Loop (HITL)** approval system that gives you control over AI actions. Before the AI executes sensitive operations, you see exactly what it wants to do and can approve or reject.
 
@@ -39,6 +40,10 @@ When the AI wants to use a sensitive tool, here's what happens:
 3. If not auto-approved, you see approval buttons with the tool details
 4. After you click **Allow**, the tool executes and returns results to the AI
 5. If you click **Deny**, the AI is told the action was rejected
+
+<Callout type="info" title="Adaptive Mode">
+In **Adaptive Mode**, tools are executed inside a sandboxed iframe via `executeTools`. When sandboxed code calls multiple tools, each sensitive tool pauses execution and shows approval buttons as a **sub-tool call**. The sandbox waits for your approval before continuing to the next tool. This means you may see several approval prompts in sequence during a single `executeTools` run.
+</Callout>
 
 ## Approval Options
 
@@ -91,6 +96,10 @@ These browser automation tools always require approval:
 
 **All WebMCP tools require approval** because they come from third-party websites. The page you're visiting defines what tools are available, so approval ensures you know what code will run.
 
+<Callout type="warn" title="External Code Warning">
+WebMCP tools are defined by the website you're visiting, not by Cognito. Always verify you trust the site before approving WebMCP tools, as they can execute code with access to page data.
+</Callout>
+
 ## Auto-Approved Tools
 
 These read-only tools execute immediately without prompts:
@@ -100,6 +109,10 @@ These read-only tools execute immediately without prompts:
 - `getCurrentUrl` — Get the current page URL  
 - `getAllTabs` — List all open tabs
 - `findSearchBar` — Locate search inputs
+
+<Callout>
+Read-only tools cannot modify anything — they only observe. This is why they don't need approval.
+</Callout>
 
 ## Security Design
 
@@ -139,6 +152,10 @@ You can reset approval preferences in Settings. This clears:
 - All trusted MCP servers
 
 Session approvals clear automatically when you close the browser.
+
+<Callout type="warn">
+Resetting approvals means you'll need to re-approve tools again. Use this if you accidentally trusted something you shouldn't have.
+</Callout>
 
 ## Related Pages
 

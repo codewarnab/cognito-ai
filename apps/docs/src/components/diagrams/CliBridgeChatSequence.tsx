@@ -46,7 +46,7 @@ export function CliBridgeChatSequence() {
 
                     {/* 2. Route to handler */}
                     <line x1="190" y1="118" x2="330" y2="118" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-chat)" />
-                    <text x="260" y="111" textAnchor="middle" className="text-[10px]">handleGeminiAgent()</text>
+                    <text x="260" y="111" textAnchor="middle" className="text-[10px]">Route to Agent Handler</text>
 
                     {/* 3. Build AI SDK tools */}
                     <path d="M 335 138 Q 375 138 375 153 Q 375 168 335 168" className="fill-none stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-chat)" />

@@ -23,6 +23,7 @@ Cognito AI consists of several packages working together:
 | **Extension** | Chrome Extension with AI assistant |
 | **Webapp** | Settings, onboarding, and reminder pages |
 | **Docs** | Documentation site (this website) |
+| **CLI Bridge** | Local server for Code Mode (CLI agents) |
 | **Shared** | Common types and constants |
 | **Backend Services** | Closed-source API services |
 
@@ -33,6 +34,7 @@ The extension communicates with multiple services:
 - **Webapp** — Opens for settings and configuration
 - **Backend API** — Handles AI requests, transcripts, and search
 - **Voice Service** — Powers voice conversations via ElevenLabs
+- **CLI Bridge** — Enables Code Mode with local CLI agents (Gemini CLI, Claude Code, Codex)
 
 All open-source components share types through the **Shared** package.
 
@@ -61,8 +63,10 @@ Each package deploys separately:
 - **Extension** → Chrome Web Store
 - **Webapp** → Vercel
 - **Docs** → Vercel
+- **CLI Bridge** → Local installation (runs on user's machine)
 
 ## Next Steps
 
 - [Extension Architecture](/docs/architecture/extension-architecture) — How the extension works
+- [CLI Bridge Architecture](/docs/architecture/cli-bridge) — How Code Mode connects to local CLI agents
 - [Dev Setup](/docs/contributing/dev-setup) — Set up your development environment

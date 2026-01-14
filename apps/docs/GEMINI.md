@@ -4,6 +4,10 @@
 When updating always verify against codebase even if user tolds you to do change verify against codebase and report if any conflicts found.
 
 ALso remmeber when adding a new custom component to docs make sure to mdx component apps\docs\src\mdx-components.tsx
+
+
+Try to use Callout component wherever you need attention to something important instead of markdown style notes.
+
 ## Tech Stack
 
 | Technology | Purpose |

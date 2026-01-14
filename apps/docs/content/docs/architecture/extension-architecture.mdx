@@ -4,6 +4,7 @@ description: High-level overview of the Cognito Chrome extension architecture.
 ---
 
 import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { Callout } from 'fumadocs-ui/components/callout';
 
 The Cognito Chrome extension is built with [WXT](https://wxt.dev/) and React 19. This page explains the key architectural concepts.
 
@@ -67,6 +68,10 @@ The **side panel** is where users interact with Cognito. It's a React applicatio
 
 The side panel calls the AI backend directly for chat—it doesn't route through the background for AI requests.
 
+<Callout type="info" title="Direct API Calls">
+Unlike typical extensions that route everything through the background, Cognito's side panel makes direct API calls to the AI backend. This reduces latency and simplifies the streaming architecture.
+</Callout>
+
 ## Background Service Worker
 
 The **background worker** handles coordination and features that need persistent connections or Chrome APIs.
@@ -78,6 +83,10 @@ The **background worker** handles coordination and features that need persistent
 - **Chrome API Access**: Tabs, storage, alarms, identity
 
 The background does **not** handle chat AI requests—those go directly from the side panel to the backend.
+
+<Callout>
+The background worker is a service worker, meaning it can be suspended when idle and restarted when needed. MCP connections use reconnection logic to handle this.
+</Callout>
 
 ## Content Scripts
 
@@ -102,6 +111,10 @@ Key state domains:
 - **MCP**: Connected servers and their tools
 
 Components subscribe to specific state slices they need, keeping the UI responsive.
+
+<Callout type="warn" title="Selective Subscriptions">
+Always use selectors when subscribing to Zustand stores. Subscribing to the entire store causes re-renders on every state change, leading to performance issues.
+</Callout>
 
 ## Communication Patterns
 
