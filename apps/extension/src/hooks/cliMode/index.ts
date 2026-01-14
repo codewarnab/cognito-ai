@@ -1,7 +1,7 @@
 /**
- * Code Mode Hooks
+ * CLI Mode Hooks
  * 
- * Hooks for code bridge functionality and Code Mode features.
+ * Hooks for CLI bridge functionality and CLI Mode features.
  */
 
 export { useBridgeHeartbeat } from './useBridgeHeartbeat';

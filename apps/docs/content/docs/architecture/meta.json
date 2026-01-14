@@ -6,6 +6,7 @@
         "extension-architecture",
         "ai-system",
         "tools-and-approval",
+        "cli-bridge",
         "mcp-client",
         "webmcp-architecture"
     ]

@@ -15,6 +15,16 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 Cognito AI can search the web and extract content from URLs to answer questions and research topics.
 
+<Callout type="info" title="API Search vs Browser Search">
+  This web search feature uses **external APIs** (Tavily, Jina) for search results. This is different from the browser automation where the AI navigates to Google and opens links manually.
+  
+  **API Search benefits:**
+  - Faster results without page navigation
+  - More relevant and structured data
+  - Access to recent information
+  - Doesn't interfere with your current browsing
+</Callout>
+
 ## Search Tools
 
 | Tool | Provider | Description |
@@ -76,6 +86,18 @@ Web search uses the **backend API**. No additional API keys required.
 | **Page context** | Asking about the current webpage |
 | **Web search** | Finding external information |
 | **URL retrieve** | Deep-diving into a specific URL |
+
+## Prompting Tips
+
+<Callout type="warn" title="Web Search Not Triggering?">
+  If the AI isn't using web search when you expect it to, try being explicit in your prompt:
+  
+  > "Use web search to find recent information about [topic]"
+  
+  > "Search the web for the latest updates on [topic]"
+  
+  This helps the AI understand you want external search results rather than relying on its training data.
+</Callout>
 
 ## Limitations
 

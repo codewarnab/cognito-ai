@@ -75,6 +75,38 @@ Cognito AI is **multi-provider** and supports the following AI providers:
 Cloud mode uses a fixed model (currently Gemini 2.5 Flash). BYOK mode lets you choose any model from your configured providers.
 </Callout>
 
+## CLI Mode (Experimental)
+
+Cognito AI can connect to local CLI coding agents, allowing you to use your existing CLI subscriptions with no extra cost.
+
+<Callout type="warn">
+  **Experimental Feature**: CLI Mode is currently experimental and may have bugs or limited functionality. The integration relies on ACP (Agent Communication Protocol) which is still evolving.
+</Callout>
+
+### Supported CLI Agents
+
+**Gemini CLI** — Google Gemini coding agent
+**Claude Code** — Anthropic Claude coding agent
+**Codex CLI** — OpenAI Codex coding agent
+
+
+### Setup
+
+1. Install the CLI Bridge:
+   ```bash
+   pnpm dev:bridge
+   ```
+
+2. The bridge runs on `localhost:8787` by default
+
+3. Pair the extension with the bridge using the pairing code
+
+4. Select CLI mode in the extension settings
+
+<Callout>
+  CLI Mode uses your existing CLI subscriptions—no additional API costs are incurred.
+</Callout>
+
 ## Next Steps
 
 - [Quickstart](/docs/getting-started/quickstart) — Start your first conversation

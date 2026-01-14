@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createLogger } from '~logger';
 import type { CliModeState, AgentInfo } from './types';
-import { registerToolsWithBridge, connectToToolEvents } from '@/services/codeBridge/toolBridgeClient';
+import { registerToolsWithBridge, connectToToolEvents } from '@/services/cliBridge/toolBridgeClient';
 
 const log = createLogger('cliModeStore', 'CLI_MODE_STORE');
 

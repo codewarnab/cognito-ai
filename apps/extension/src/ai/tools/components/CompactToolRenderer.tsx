@@ -36,7 +36,7 @@ import { getOriginalToolName, sanitizeToolName } from '@/utils/mcp/toolNameSanit
 import { getMcpToolExecutor, getToolServerId, registerMcpToolExecutor } from '@/utils/mcp/toolMetadataStore';
 import { getWebMCPToolsFromBackground, getWebmcpToolExecutor } from '../webmcpTools';
 import type { ApprovalOption } from '@/components/ui/tools/cards/ApprovalDropdown';
-import { approveCliToolCall, denyCliToolCall } from '@/services/codeBridge/cliToolApproval';
+import { approveCliToolCall, denyCliToolCall } from '@/services/cliBridge/cliToolApproval';
 
 const log = createLogger('CompactToolRenderer', 'TOOLS_EXECUTION');
 

@@ -17,6 +17,14 @@ import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 
 Voice mode allows spoken interaction with Cognito AI. Speak your questions and hear responses through ElevenLabs text-to-speech.
 
+<Callout type="warn" title="Experimental Feature">
+  Voice Mode is an **experimental feature** behind a feature flag and may not be available to all users. The feature is still under active development.
+</Callout>
+
+<Callout type="error" title="Known Issue: Double Execution">
+  Voice Mode currently has a **double execution problem** where commands may be executed twice. We are actively working on a fix. Use with caution for actions that shouldn't be repeated.
+</Callout>
+
 <Callout title="Backend Required">
   Voice mode uses the ElevenLabs integration via a backend proxy.
 </Callout>

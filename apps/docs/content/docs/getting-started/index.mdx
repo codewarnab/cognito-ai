@@ -10,6 +10,7 @@ description: Install and configure Cognito AI in minutes.
 - Installing the Chrome extension
 - Configuring an AI provider (BYOK or Cloud mode)
 - Opening the side panel and starting your first conversation
+- (Optional) Connecting to CLI agents via the CLI Bridge
 
 ## Quick Navigation
 
@@ -18,6 +19,17 @@ description: Install and configure Cognito AI in minutes.
   <Card title="Provider Setup" href="/docs/getting-started/provider-setup" description="Configure BYOK or Cloud mode" />
   <Card title="Quickstart" href="/docs/getting-started/quickstart" description="Start your first conversation" />
 </Cards>
+
+## CLI Bridge (Optional)
+
+Cognito AI can connect to local CLI coding agents like **Gemini CLI**, **Claude Code**, and **Codex CLI** through the CLI Bridge. This enables you to use your existing CLI agent subscriptions directly from the browser.
+
+The CLI Bridge is a lightweight local server that:
+- Spawns local agent CLIs via ACP (Agent Communication Protocol)
+- Streams responses back to the extension
+- Manages code patches and applies them via `git apply`
+
+See [Provider Setup](/docs/getting-started/provider-setup#cli-mode-experimental) for configuration details.
 
 ## System Requirements
 

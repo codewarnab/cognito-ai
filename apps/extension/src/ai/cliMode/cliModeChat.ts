@@ -1,12 +1,12 @@
 /**
- * Code Mode Chat - Streams AI responses from the local code bridge
+ * CLI Mode Chat - Streams AI responses from the local CLI bridge
  */
 
 import { createUIMessageStream, generateId } from 'ai';
 import { createLogger } from '~logger';
 import { useCliModeStore } from '@/stores/cliMode/cliModeStore';
 import { useToolsStore } from '@/stores';
-import { streamCodeBridgeChat, type BridgeEvent, type CliBridgeToolsMode } from '@/services/codeBridge';
+import { streamCliBridgeChat, type BridgeEvent, type CliBridgeToolsMode } from '@/services/cliBridge';
 import type { UIMessage } from 'ai';
 
 const log = createLogger('cliModeChat', 'CLI_MODE_CHAT');
@@ -76,7 +76,7 @@ function convertMessages(messages: UIMessage[]): Array<{
 }
 
 /**
- * Stream AI response from the code bridge
+ * Stream AI response from the CLI bridge
  * Returns a UIMessageStream compatible with useChat
  */
 export async function streamCliModeChat(params: CliModeChatParams) {
@@ -90,7 +90,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
 
   // Validate bridge connection
   if (bridgeStatus !== 'connected' || !bridgeToken) {
-    const error = new Error('Bridge not connected. Start the code bridge and wait for auto-connect.');
+    const error = new Error('Bridge not connected. Start the CLI bridge and wait for auto-connect.');
     onError?.(error);
     throw error;
   }
@@ -165,7 +165,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
         log.info('Sending enabled tools to bridge', { count: enabledTools.length, toolsMode });
 
         // Stream from bridge
-        const eventStream = streamCodeBridgeChat(
+        const eventStream = streamCliBridgeChat(
           bridgeBaseUrl,
           bridgeToken,
           {
@@ -281,7 +281,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
           displayMessage += `3. **Check your API key** - Make sure the required environment variable is set\n`;
           displayMessage += `4. **Try a different agent** - Select another agent from the dropdown\n`;
         } else {
-          displayMessage += `Make sure the code bridge is running and the extension is connected.\n`;
+          displayMessage += `Make sure the CLI bridge is running and the extension is connected.\n`;
         }
 
         // Render as structured error status for the UI (error card).
@@ -294,7 +294,7 @@ export async function streamCliModeChat(params: CliModeChatParams) {
             errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
             userMessage: isAgentStartError
               ? 'The selected agent could not be started.'
-              : 'Unable to reach the code bridge.',
+              : 'Unable to reach the CLI bridge.',
             technicalDetails: displayMessage,
             retryable: true,
             timestamp: Date.now(),
@@ -367,7 +367,7 @@ function handleBridgeEvent(
           errorCode: isAgentStartError ? 'AGENT_START_FAILED' : 'BRIDGE_ERROR',
           userMessage: isAgentStartError
             ? 'The selected agent could not be started.'
-            : 'Unable to reach the code bridge.',
+            : 'Unable to reach the CLI bridge.',
           technicalDetails: displayMessage,
           retryable: true,
           timestamp: Date.now(),

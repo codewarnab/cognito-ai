@@ -16,20 +16,59 @@ import {
 export type CliToolsMode = 'chat' | 'agent' | 'adaptive' | 'custom';
 
 /**
+ * CLI-specific instructions appended to system prompts.
+ * These override or extend base behavior for the CLI bridge environment.
+ */
+const CLI_BRIDGE_INSTRUCTIONS = `
+
+## CLI BRIDGE MODE - CRITICAL INSTRUCTIONS
+
+You are running through the CLI Bridge. Follow these MANDATORY rules:
+
+**TOOL PARAMETERS - NEVER ASK THE USER:**
+- ALWAYS choose tool parameters automatically based on context and user intent
+- NEVER ask the user "which parameter should I use?" or "what value do you want for X?"
+- NEVER ask for confirmation before calling tools - just execute them
+- Use your best judgment to infer the most appropriate values from the user's request
+- If a parameter is ambiguous, choose the most reasonable default that fulfills the user's goal
+- If multiple options exist, pick the one most likely to satisfy the user's intent
+
+**AUTONOMOUS EXECUTION:**
+- Execute tools immediately without asking for parameter clarification
+- If information is missing, use sensible defaults or search/gather the information yourself
+- Chain multiple tool calls as needed to complete the task
+- Only ask the user if you truly cannot proceed (e.g., need credentials, password, or sensitive personal data)
+
+**EXAMPLES:**
+- User says "search for cats" → Use webSearch with query "cats" (don't ask "what search engine?")
+- User says "open YouTube" → Navigate to youtube.com (don't ask "which URL?")
+- User says "set a reminder" → Ask only for the essential info like time if not provided
+- User says "click the button" → Identify and click the most relevant button (don't ask "which button?")
+`;
+
+/**
  * Select the shared system prompt for a given tools mode.
  * Custom mode uses the Agent prompt (tool availability is still controlled by enabledTools).
+ * Appends CLI-specific instructions for autonomous tool execution.
  */
 export function getSystemPromptForToolsMode(toolsMode: CliToolsMode | undefined): string {
+    let basePrompt: string;
     switch (toolsMode) {
         case 'chat':
-            return CHAT_MODE_SYSTEM_PROMPT;
+            basePrompt = CHAT_MODE_SYSTEM_PROMPT;
+            break;
         case 'adaptive':
-            return ADAPTIVE_MODE_SYSTEM_PROMPT;
+            basePrompt = ADAPTIVE_MODE_SYSTEM_PROMPT;
+            break;
         case 'custom':
         case 'agent':
         default:
-            return AGENT_MODE_SYSTEM_PROMPT;
+            basePrompt = AGENT_MODE_SYSTEM_PROMPT;
+            break;
     }
+
+    // Append CLI-specific instructions to ensure autonomous tool execution
+    return basePrompt + CLI_BRIDGE_INSTRUCTIONS;
 }
 
 /**

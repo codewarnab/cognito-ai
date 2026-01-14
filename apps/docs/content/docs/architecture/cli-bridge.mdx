@@ -1,0 +1,307 @@
+---
+title: CLI Bridge Architecture
+description: Deep dive into the CLI Bridge server that enables Code Mode in the Cognito extension.
+---
+
+import { File, Folder, Files } from 'fumadocs-ui/components/files';
+import { CliBridgeConnectionSequence } from '@/components/diagrams/CliBridgeConnectionSequence';
+import { CliBridgeToolRegistrationSequence } from '@/components/diagrams/CliBridgeToolRegistrationSequence';
+import { CliBridgeChatSequence } from '@/components/diagrams/CliBridgeChatSequence';
+import { CliBridgeToolApprovalSequence } from '@/components/diagrams/CliBridgeToolApprovalSequence';
+import { CliBridgeArchitectureDiagram } from '@/components/diagrams/CliBridgeArchitectureDiagram';
+
+{/* VERIFIED: 2025-01-14 | code_refs: packages/cli-bridge/, apps/extension/src/services/codeBridge/ */}
+
+The **CLI Bridge** is a local Node.js server that enables **Code Mode** in Cognito. Since Chrome extensions cannot spawn local processes directly, this bridge acts as an intermediary between the extension and local CLI coding agents (Gemini CLI, Claude Code, Codex CLI).
+
+<Callout>
+  The CLI Bridge runs on `localhost:8787` by default and only accepts connections from the Cognito extension via origin validation.
+</Callout>
+
+## Architecture Overview
+
+<CliBridgeArchitectureDiagram />
+
+Code Mode allows developers to use powerful CLI-based AI coding agents directly from the Cognito extension sidepanel. The bridge handles:
+
+- **Secure pairing** with the extension via token-based authentication
+- **Spawning local agents** (Gemini CLI, Claude Code, Codex)
+- **Streaming responses** back to the extension via Server-Sent Events (SSE)
+- **Tool execution** — extension tools are exposed to CLI agents via bidirectional communication
+- **MCP server exposure** — extension tools can be consumed by any MCP-compatible client
+
+## Architecture Components
+
+### Extension Side
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `cliModeStore` | `stores/cliMode/` | Manages bridge connection state |
+| `cliBridgeClient` | `services/cliBridge/` | HTTP/SSE client for chat streaming |
+| `toolBridgeClient` | `services/codeBridge/` | Tool registration and execution |
+| `cliToolApproval` | `services/codeBridge/` | Human-in-the-loop approval handling |
+
+### Bridge Side
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `server.ts` | `src/` | HTTP server with all endpoints |
+| `handlers/` | `src/handlers/` | Agent-specific handlers (Gemini, Claude, Codex) |
+| `mcp/` | `src/mcp/` | MCP server for external tool consumption |
+| `pairing/` | `src/pairing/` | Token generation and validation |
+
+## Module Structure
+
+<Files>
+  <Folder name="packages" defaultOpen>
+    <Folder name="cli-bridge" defaultOpen>
+      <Folder name="src" defaultOpen>
+        <File name="server.ts" />
+        <File name="agents.ts" />
+        <File name="types.ts" />
+        <File name="cli.ts" />
+        <Folder name="handlers">
+          <File name="chat.ts" />
+          <File name="aiSdkTools.ts" />
+          <File name="geminiHandler.ts" />
+          <File name="claudeCodeHandler.ts" />
+          <File name="codexHandler.ts" />
+        </Folder>
+        <Folder name="mcp">
+          <File name="mcpServer.ts" />
+          <File name="toolStore.ts" />
+          <File name="extensionToolsMcpServer.ts" />
+        </Folder>
+        <Folder name="pairing">
+          <File name="tokenStore.ts" />
+        </Folder>
+        <Folder name="auth">
+          <File name="extensionAuth.ts" />
+        </Folder>
+        <Folder name="http">
+          <File name="cors.ts" />
+          <File name="json.ts" />
+          <File name="auth.ts" />
+        </Folder>
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
+
+## Connection Flow
+
+When the extension starts Code Mode, it establishes a connection with the CLI Bridge through a health check and authentication sequence.
+
+<CliBridgeConnectionSequence />
+
+### Connection Steps
+
+1. **Health Check** — Extension calls `GET /health` to verify the bridge is running
+2. **Token Validation** — If a stored token exists, validate it via `POST /validate`
+3. **Auto-Connect** — If no valid token, call `POST /connect` with origin validation
+4. **Store Token** — Token is stored in extension and hashed in `~/.cognito/bridge/tokens.json`
+5. **Fetch Agents** — Query `GET /agents` to list available CLI agents
+
+### Bridge Status States
+
+| State | Description |
+|-------|-------------|
+| `offline` | Bridge not reachable |
+| `connecting` | Health check passed, authenticating |
+| `connected` | Fully authenticated and ready |
+
+## Tool Registration Flow
+
+After connecting, the extension registers its browser tools with the bridge. These tools become available to CLI agents and can be consumed via MCP.
+
+<CliBridgeToolRegistrationSequence />
+
+### Registration Steps
+
+1. **Get Tool Schemas** — Extension collects all available tool definitions
+2. **POST /bridge/tools/register** — Send tool schemas to the bridge
+3. **Store in toolStore** — Bridge stores tools in memory for agent access
+4. **MCP Exposure** — Tools are exposed via the bridge's MCP server
+5. **Connect SSE** — Extension subscribes to `/bridge/tools/events` for execution requests
+
+### Tool Schema Format
+
+```typescript
+interface ExtensionToolSchema {
+  name: string;           // e.g., "readPageContent"
+  description: string;    // Tool description for the LLM
+  parameters: {
+    type: 'object';
+    properties: Record<string, JSONSchema>;
+    required?: string[];
+  };
+}
+```
+
+## Chat Flow (Tool Execution)
+
+When the user sends a message in Code Mode, the extension streams the conversation to the bridge, which routes it to the appropriate agent handler.
+
+<CliBridgeChatSequence />
+
+### Chat Flow Steps
+
+1. **POST /cli/chat** — Extension sends messages, agent selection, and enabled tools
+2. **Route to Handler** — Bridge selects `handleGeminiAgent`, `handleClaudeCodeAgent`, etc.
+3. **Build AI SDK Tools** — Convert extension tool schemas to AI SDK format
+4. **streamText()** — Use Vercel AI SDK to stream the completion
+5. **Tool Loop** — For each tool call:
+   - LLM requests tool execution
+   - SSE `tool_call` event sent to extension UI
+   - Bridge sends `tool:execute` via SSE to extension
+   - Extension executes tool locally
+   - Result posted back via `/bridge/tools/result`
+   - SSE `tool_result` event updates UI
+6. **Final Response** — Text stream and `done` event complete the request
+
+### SSE Event Types
+
+| Event | Direction | Data |
+|-------|-----------|------|
+| `text` | Bridge → Extension | `{ content: string }` |
+| `tool_call` | Bridge → Extension | `{ toolName, toolCallId, args }` |
+| `tool_result` | Bridge → Extension | `{ toolCallId, result }` |
+| `status` | Bridge → Extension | `{ message: string }` |
+| `error` | Bridge → Extension | `{ error: string }` |
+| `done` | Bridge → Extension | `{}` |
+| `tool:execute` | Bridge → Extension | `{ requestId, toolName, args }` |
+
+## Tool Approval Flow (Human-in-the-Loop)
+
+Sensitive tools require user approval before execution. This implements a human-in-the-loop pattern for safe browser automation.
+
+<CliBridgeToolApprovalSequence />
+
+### Approval Flow Steps
+
+1. **Receive tool:execute** — Extension receives execution request with `interactive: true`
+2. **Check Approval Requirement** — Determine if tool needs user approval
+3. **Wait for Approval** — Call `waitForCliToolApproval(requestId)` which returns a Promise
+4. **Show Approval Card** — UI renders an approval card with tool details
+5. **User Decision** — User clicks Approve or Deny
+6. **Resolve Promise** — `approveCliToolCall(id)` or `denyCliToolCall(id)` called
+7. **Execute or Return Denial** — Tool executes locally or denial result is sent
+
+### Tools Requiring Approval
+
+- Browser automation tools (click, type, navigate)
+- MCP tools from external servers
+- Web MCP tools from page context
+
+## Supported Agents
+
+The bridge supports multiple CLI coding agents via the AI SDK:
+
+| Agent | Command | Provider | Environment Variable |
+|-------|---------|----------|---------------------|
+| Gemini CLI | `gemini` | `ai-sdk-provider-gemini-cli` | `GEMINI_API_KEY` |
+| Claude Code | `claude` | Claude via MCP | `ANTHROPIC_API_KEY` |
+| Codex CLI | `codex` | OpenAI Codex | `OPENAI_API_KEY` |
+
+### Agent Selection
+
+```typescript
+const CODE_MODE_AGENTS: AgentDefinition[] = [
+  {
+    name: 'Gemini CLI',
+    command: 'gemini',
+    args: [],
+    envHints: ['GEMINI_API_KEY'],
+    aiSdkProvider: 'gemini-cli',
+    supportsCustomTools: true,
+  },
+  // ... other agents
+];
+```
+
+## API Endpoints
+
+### Public Endpoints (No Auth)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check with version and cwd |
+| GET | `/agents` | List available agents |
+| GET | `/events` | SSE stream for bridge status |
+| POST | `/connect` | Auto-connect with origin validation |
+| POST | `/validate` | Validate existing token |
+
+### Authenticated Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/cli/chat` | Stream chat with agent (SSE response) |
+| POST | `/bridge/tools/register` | Register extension tools |
+| GET | `/bridge/tools` | List registered tools |
+| POST | `/bridge/tools/call` | Call a tool directly |
+| POST | `/bridge/tools/result` | Return tool execution result |
+| GET | `/bridge/tools/events` | SSE for tool execution requests |
+| POST | `/mcp` | MCP protocol endpoint |
+
+## Security Model
+
+### Origin Validation
+
+Only requests from known Chrome extension origins are accepted:
+
+```typescript
+function validateExtensionOrigin(origin?: string): { 
+  valid: boolean; 
+  extensionId?: string; 
+  error?: string; 
+} {
+  // Validates chrome-extension://<id> origins
+}
+```
+
+### Token Storage
+
+Tokens are hashed using SHA-256 before storage:
+
+```typescript
+// ~/.cognito/bridge/tokens.json
+[
+  {
+    "tokenHash": "sha256-hash-of-token",
+    "createdAt": 1705234567890,
+    "lastUsedAt": 1705234567890
+  }
+]
+```
+
+### Localhost Only
+
+The server binds exclusively to `127.0.0.1`:
+
+```typescript
+server.listen(port, '127.0.0.1', () => { ... });
+```
+
+## Running the Bridge
+
+```bash title="Terminal"
+# From monorepo root
+pnpm dev:bridge
+
+# With options
+pnpm dev:bridge -- --port 9000 --cwd /path/to/project
+```
+
+### CLI Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--port` | `8787` | Port to listen on |
+| `--host` | `127.0.0.1` | Host to bind to |
+| `--cwd` | Current directory | Working directory for file operations |
+
+## Related Documentation
+
+- [Extension Architecture](/docs/architecture/extension-architecture) — Overall extension structure
+- [Tools and Approval](/docs/architecture/tools-and-approval) — Tool approval system
+- [MCP Client](/docs/architecture/mcp-client) — MCP client for remote servers

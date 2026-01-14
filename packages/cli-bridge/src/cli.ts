@@ -18,7 +18,7 @@ function hasFlag(name: string): boolean {
 async function main() {
   if (hasFlag('--help') || hasFlag('-h')) {
     console.log(`
-Cognito Code Bridge - Local coding agent server
+Cognito CLI Bridge - Local coding agent server
 
 Usage:
   cognito-bridge [options]

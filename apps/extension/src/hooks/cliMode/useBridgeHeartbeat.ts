@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useCliModeStore } from '@/stores';
 import type { CliModeState } from '@/stores/cliMode/types';
-import { connectToEventStream } from '@/services/codeBridge';
+import { connectToEventStream } from '@/services/cliBridge';
 import { createLogger } from '~logger';
 
 const log = createLogger('useBridgeHeartbeat', 'CLI_MODE_BRIDGE');

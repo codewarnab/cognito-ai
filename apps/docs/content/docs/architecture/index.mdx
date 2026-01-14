@@ -2,57 +2,55 @@
 title: Architecture
 description: Technical architecture documentation for contributors.
 ---
+import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
 
 Deep dive into Cognito AI's technical architecture. This section covers the monorepo structure, extension internals, AI integration, and protocol implementations.
+
 
 ## Architecture Overview
 
 {/* MERMAID_DIAGRAM: architecture.overview | type: component | represents: High-level system architecture | code_refs: MONOREPO.md */}
 
-```mermaid
-graph TB
-    subgraph Apps["Applications"]
-        EXT[Chrome Extension]
-        WEBAPP[Webapp]
-        DOCS[Documentation]
-    end
-    
-    subgraph Backend["Backend Services"]
-        VERCEL[Vercel Backend]
-        CF[Cloudflare Worker]
-    end
-    
-    subgraph External["External Services"]
-        GEMINI[Google AI]
-        MCP[MCP Servers]
-        SM[Supermemory]
-        EL[ElevenLabs]
-    end
-    
-    subgraph Shared["Shared"]
-        TYPES[@cognito/shared]
-    end
-    
-    EXT --> VERCEL
-    EXT --> CF
-    EXT --> MCP
-    EXT --> SM
-    WEBAPP --> VERCEL
-    VERCEL --> GEMINI
-    CF --> EL
-    EXT --> TYPES
-    VERCEL --> TYPES
-```
+<ImageZoom src="/complete-architecutre.png" alt="Architecture Overview" width={800} height={500} />
 
 ## Architecture Topics
 
 <Cards>
-  <Card title="Monorepo Structure" href="/docs/architecture/monorepo" />
-  <Card title="Extension Architecture" href="/docs/architecture/extension-architecture" />
-  <Card title="AI System" href="/docs/architecture/ai-system" />
-  <Card title="Tools & Approval" href="/docs/architecture/tools-and-approval" />
-  <Card title="MCP Client" href="/docs/architecture/mcp-client" />
-  <Card title="WebMCP Architecture" href="/docs/architecture/webmcp-architecture" />
+  <Card 
+    title="Monorepo Structure" 
+    href="/docs/architecture/monorepo"
+    description="pnpm workspace organization with apps/, packages/, and shared dependencies"
+  />
+  <Card 
+    title="Extension Architecture" 
+    href="/docs/architecture/extension-architecture"
+    description="WXT framework, content scripts, background workers, and sidepanel UI"
+  />
+  <Card 
+    title="AI System" 
+    href="/docs/architecture/ai-system"
+    description="Multi-provider AI integration with Vercel AI SDK v6 and streaming"
+  />
+  <Card 
+    title="Tools & Approval" 
+    href="/docs/architecture/tools-and-approval"
+    description="Browser automation tools with human-in-the-loop approval system"
+  />
+  <Card 
+    title="CLI Bridge" 
+    href="/docs/architecture/cli-bridge"
+    description="Local server enabling Code Mode with Gemini CLI, Claude Code, and Codex"
+  />
+  <Card 
+    title="MCP Client" 
+    href="/docs/architecture/mcp-client"
+    description="Model Context Protocol client for SSE/HTTP and StdIO transports"
+  />
+  <Card 
+    title="WebMCP Architecture" 
+    href="/docs/architecture/webmcp-architecture"
+    description="Page-provided MCP tools via postMessage with security validation"
+  />
 </Cards>
 
 ## Technology Stack

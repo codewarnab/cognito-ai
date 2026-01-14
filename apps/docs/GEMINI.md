@@ -1,7 +1,9 @@
 # Cognito Docs
 
 **@cognito/docs** is the documentation site for Cognito AI, built with [Fumadocs](https://fumadocs.vercel.app) and **Next.js**.
+When updating always verify against codebase even if user tolds you to do change verify against codebase and report if any conflicts found.
 
+ALso remmeber when adding a new custom component to docs make sure to mdx component apps\docs\src\mdx-components.tsx
 ## Tech Stack
 
 | Technology | Purpose |

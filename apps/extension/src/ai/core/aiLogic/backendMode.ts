@@ -22,14 +22,12 @@ export async function handleBackendMode(params: StreamAIParams) {
     const { messages, abortSignal, onError, onFinishCallback, initialPageContext } = params;
 
     // Get current tools mode (chat/agent/adaptive)
-    // 'custom' mode is treated as 'agent' for backend purposes
     const toolsMode = await getToolsMode();
-    const backendMode = toolsMode === 'custom' ? 'agent' : toolsMode;
 
     // Get user's max tool call limit
     const userMaxSteps = await getMaxToolCallLimit();
 
-    log.info('📡 Backend mode configuration:', { toolsMode: backendMode, maxSteps: userMaxSteps });
+    log.info('📡 Backend mode configuration:', { toolsMode, maxSteps: userMaxSteps });
 
     // Check if search mode should be enabled for backend
     // When searchEnabled is true, backend will add and execute webSearch tool server-side
@@ -56,7 +54,7 @@ export async function handleBackendMode(params: StreamAIParams) {
         messages,
         systemPrompt: undefined, // Backend will use mode-appropriate prompt
         // Note: model is NOT sent - backend uses fixed model (gemini-2.5-flash)
-        mode: backendMode,
+        mode: toolsMode,
         maxSteps: userMaxSteps,
         abortSignal,
         onError,

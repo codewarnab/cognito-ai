@@ -121,6 +121,29 @@ These tools allow the AI to:
 - Store new facts you explicitly want remembered
 - Provide personalized responses based on your history
 
+## Automatic Memory Middleware
+
+When Supermemory is enabled, Cognito uses a **memory middleware** in the ModelFactory that automatically enriches your prompts with relevant context.
+
+### How It Works
+
+1. When you send a message, the middleware analyzes your prompt
+2. It searches your Supermemory for relevant memories
+3. Matching context is automatically added to the conversation
+4. The AI receives enriched context for better responses
+
+<Callout type="info">
+  The memory middleware increases token usage because it adds relevant context to each prompt. However, this typically improves response quality when your stored memories are relevant to the conversation.
+</Callout>
+
+### Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Personalization** | AI remembers your preferences without explicit reminders |
+| **Context continuity** | Related past conversations inform current responses |
+| **Automatic retrieval** | No need to manually search or reference memories |
+
 ## Data Architecture
 
 <ImageZoom src="/supermemory-dataflow.png" alt="Supermemory Data Flow" width={600} height={500} />

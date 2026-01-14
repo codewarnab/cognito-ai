@@ -11,6 +11,12 @@ import { McpOAuthSequence } from '@/components/diagrams/McpOAuthSequence';
 import { McpToolApprovalSequence } from '@/components/diagrams/McpToolApprovalSequence';
 import { McpToolExecutionSequence } from '@/components/diagrams/McpToolExecutionSequence';
 import { McpConnectionStatesDiagram } from '@/components/diagrams/McpConnectionStatesDiagram';
+import { CliBridgeConnectionSequence } from '@/components/diagrams/CliBridgeConnectionSequence';
+import { CliBridgeToolRegistrationSequence } from '@/components/diagrams/CliBridgeToolRegistrationSequence';
+import { CliBridgeChatSequence } from '@/components/diagrams/CliBridgeChatSequence';
+import { CliBridgeToolApprovalSequence } from '@/components/diagrams/CliBridgeToolApprovalSequence';
+import { CliBridgeArchitectureDiagram } from '@/components/diagrams/CliBridgeArchitectureDiagram';
+import { ExtensionContextsDiagram } from '@/components/diagrams/ExtensionContextsDiagram';
 
 export function getMDXComponents(components?: MDXComponents): MDXComponents {
   return {
@@ -28,6 +34,12 @@ export function getMDXComponents(components?: MDXComponents): MDXComponents {
     McpToolApprovalSequence,
     McpToolExecutionSequence,
     McpConnectionStatesDiagram,
+    CliBridgeConnectionSequence,
+    CliBridgeToolRegistrationSequence,
+    CliBridgeChatSequence,
+    CliBridgeToolApprovalSequence,
+    CliBridgeArchitectureDiagram,
+    ExtensionContextsDiagram,
     ...components,
   };
 }
