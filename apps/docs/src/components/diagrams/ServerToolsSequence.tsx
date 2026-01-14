@@ -1,91 +1,205 @@
 export function ServerToolsSequence() {
     return (
-        <div className="not-prose my-6 font-mono text-sm">
-            <svg viewBox="0 0 620 520" className="w-full max-w-2xl">
-                {/* Participants */}
-                <g className="fill-current text-gray-800 dark:text-gray-200">
-                    <rect x="60" y="10" width="80" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="100" y="30" textAnchor="middle" className="text-xs font-medium">Extension</text>
+        <div className="not-prose my-6">
+            <svg viewBox="0 0 1150 780" className="w-full max-w-5xl">
+                {/* Participants - ~200px spacing between centers */}
+                <g className="fill-white dark:fill-gray-800 stroke-gray-300 dark:stroke-gray-600">
+                    <rect x={40} y={10} width={130} height={44} rx={6} strokeWidth={1.5} />
+                    <rect x={235} y={10} width={130} height={44} rx={6} strokeWidth={1.5} />
+                    <rect x={430} y={10} width={130} height={44} rx={6} strokeWidth={1.5} />
+                    <rect x={625} y={10} width={130} height={44} rx={6} strokeWidth={1.5} />
+                    <rect x={820} y={10} width={130} height={44} rx={6} strokeWidth={1.5} />
+                </g>
 
-                    <rect x="260" y="10" width="80" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="300" y="30" textAnchor="middle" className="text-xs font-medium">Backend</text>
-
-                    <rect x="460" y="10" width="80" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="500" y="30" textAnchor="middle" className="text-xs font-medium">External API</text>
+                {/* Participant Labels - text-base (16px) */}
+                <g className="fill-gray-800 dark:fill-gray-200 text-base font-bold font-sans">
+                    <text x={105} y={38} textAnchor="middle">Extension</text>
+                    <text x={300} y={38} textAnchor="middle">Backend</text>
+                    <text x={495} y={38} textAnchor="middle">Gemini AI</text>
+                    <text x={690} y={38} textAnchor="middle">Tavily/Jina</text>
+                    <text x={885} y={38} textAnchor="middle">Browser</text>
                 </g>
 
                 {/* Lifelines */}
-                <g className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="1" strokeDasharray="4 3">
-                    <line x1="100" y1="40" x2="100" y2="510" />
-                    <line x1="300" y1="40" x2="300" y2="510" />
-                    <line x1="500" y1="40" x2="500" y2="510" />
+                <g className="stroke-gray-300 dark:stroke-gray-600" strokeWidth={1.5} strokeDasharray="6 4">
+                    <line x1={105} y1={54} x2={105} y2={760} />
+                    <line x1={300} y1={54} x2={300} y2={760} />
+                    <line x1={495} y1={54} x2={495} y2={760} />
+                    <line x1={690} y1={54} x2={690} y2={760} />
+                    <line x1={885} y1={54} x2={885} y2={760} />
                 </g>
 
-                {/* Messages */}
-                <g className="fill-current text-gray-700 dark:text-gray-300">
-                    {/* 1. Prepare tools */}
-                    <path d="M 100 60 Q 60 60 60 75 Q 60 90 100 90" className="fill-none stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="15" y="78" className="text-[9px]">prepareTools()</text>
+                {/* Step 1: POST request to backend - Y=90 */}
+                <line x1={105} y1={90} x2={290} y2={90} 
+                      className="stroke-blue-600 dark:stroke-blue-400" 
+                      strokeWidth={1.5} 
+                      markerEnd="url(#arrow-st-blue)" />
+                <text x={197} y={82} textAnchor="middle" 
+                      className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">
+                    POST /api/ai/chat-with-tools
+                </text>
+                <text x={197} y={108} textAnchor="middle" 
+                      className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans italic">
+                    messages, toolSchemas, searchEnabled
+                </text>
 
-                    {/* 2. POST request */}
-                    <line x1="100" y1="115" x2="295" y2="115" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="200" y="108" textAnchor="middle" className="text-[10px]">POST /api/ai/chat-with-tools</text>
+                {/* Note: Request payload - Y=125 */}
+                <rect x={110} y={125} width={180} height={55} rx={4} 
+                      className="fill-blue-50 stroke-blue-200 dark:fill-blue-900/30 dark:stroke-blue-700" 
+                      strokeWidth={1} />
+                <text x={200} y={148} textAnchor="middle" 
+                      className="text-xs fill-blue-700 dark:fill-blue-300 font-mono">
+                    {`{ messages, tools,`}
+                </text>
+                <text x={200} y={168} textAnchor="middle" 
+                      className="text-xs fill-blue-700 dark:fill-blue-300 font-mono">
+                    {`  searchEnabled, mode }`}
+                </text>
 
-                    {/* Note: request body */}
-                    <rect x="115" y="125" width="170" height="35" rx="2" className="fill-gray-50 stroke-gray-300 dark:fill-gray-800/50 dark:stroke-gray-600" strokeWidth="1" />
-                    <text x="200" y="140" textAnchor="middle" className="text-[9px] fill-gray-600 dark:fill-gray-400">messages, toolSchemas,</text>
-                    <text x="200" y="152" textAnchor="middle" className="text-[9px] fill-gray-600 dark:fill-gray-400">searchEnabled, systemPrompt</text>
+                {/* Step 2: Backend merges tools - Y=210 */}
+                <path d="M 300 210 Q 360 210 360 235 Q 360 260 300 260" 
+                      className="fill-none stroke-gray-600 dark:stroke-gray-400" 
+                      strokeWidth={1.5} 
+                      markerEnd="url(#arrow-st-gray)" />
+                <text x={375} y={228} 
+                      className="text-sm fill-gray-700 dark:fill-gray-300 font-sans font-medium">
+                    Merge frontend + server tools
+                </text>
+                <text x={375} y={250} 
+                      className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans italic">
+                    webSearch, retrieve, deepWebSearch
+                </text>
 
-                    {/* 3. Backend merges tools */}
-                    <path d="M 300 175 Q 340 175 340 190 Q 340 205 300 205" className="fill-none stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="355" y="188" className="text-[10px]">Merge frontend +</text>
-                    <text x="355" y="200" className="text-[10px]">server tools</text>
+                {/* Step 3: Backend calls AI - Y=300 */}
+                <line x1={300} y1={300} x2={485} y2={300} 
+                      className="stroke-blue-600 dark:stroke-blue-400" 
+                      strokeWidth={1.5} 
+                      markerEnd="url(#arrow-st-blue)" />
+                <text x={392} y={292} textAnchor="middle" 
+                      className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">
+                    streamText()
+                </text>
+                <text x={392} y={318} textAnchor="middle" 
+                      className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans italic">
+                    AI decides which tool to use
+                </text>
 
-                    {/* 4. AI selects tool */}
-                    <path d="M 300 225 Q 340 225 340 240 Q 340 255 300 255" className="fill-none stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="355" y="243" className="text-[10px]">AI selects tool</text>
+                {/* ALT block for tool execution paths - Y=355 to Y=740 */}
+                <rect x={30} y={355} width={1090} height={385} rx={4} 
+                      className="fill-amber-50/50 dark:fill-amber-900/10" />
+                <rect x={30} y={355} width={55} height={26} rx={0} 
+                      className="fill-amber-100 dark:fill-amber-900/40" />
+                <text x={42} y={373} className="text-sm font-bold fill-amber-800 dark:fill-amber-200">
+                    ALT
+                </text>
+                <text x={95} y={373} className="text-[13px] fill-amber-700 dark:fill-amber-300 italic font-sans">
+                    [tool execution path depends on tool type]
+                </text>
+                <rect x={30} y={355} width={1090} height={385} rx={4} 
+                      className="fill-none stroke-amber-200 dark:stroke-amber-800" strokeWidth={1} />
 
-                    {/* Alt box */}
-                    <rect x="50" y="275" width="520" height="200" rx="3" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1" />
-                    <text x="60" y="290" className="text-[10px] font-semibold fill-gray-600 dark:fill-gray-400">alt</text>
+                {/* Path A: Server tool - Y=400 */}
+                <line x1={30} y1={400} x2={1120} y2={400} 
+                      className="stroke-amber-300 dark:stroke-amber-700" strokeWidth={1} strokeDasharray="4 2" />
+                <text x={50} y={422} className="text-[13px] fill-amber-700 dark:fill-amber-300 font-sans">
+                    [Server tool: webSearch, retrieve, deepWebSearch]
+                </text>
 
-                    {/* Frontend tool path */}
-                    <line x1="50" y1="305" x2="570" y2="305" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="1" strokeDasharray="3 2" />
-                    <text x="60" y="320" className="text-[9px] fill-gray-500 dark:fill-gray-400">[Frontend tool - browser, MCP, WebMCP]</text>
+                {/* Server tool: AI returns tool call - Y=455 */}
+                <line x1={495} y1={455} x2={310} y2={455} 
+                      className="stroke-gray-500 dark:stroke-gray-400" 
+                      strokeWidth={1.5} 
+                      strokeDasharray="4 2"
+                      markerEnd="url(#arrow-st-open)" />
+                <text x={402} y={447} textAnchor="middle" 
+                      className="text-sm fill-gray-600 dark:fill-gray-400 font-sans font-medium">
+                    tool_call: webSearch
+                </text>
 
-                    {/* SSE to extension */}
-                    <line x1="300" y1="340" x2="105" y2="340" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrowST)" />
-                    <text x="200" y="333" textAnchor="middle" className="text-[10px]">SSE: tool-input-available</text>
+                {/* Backend executes server tool - Y=510 */}
+                <line x1={300} y1={510} x2={680} y2={510} 
+                      className="stroke-blue-600 dark:stroke-blue-400" 
+                      strokeWidth={1.5} 
+                      markerEnd="url(#arrow-st-blue)" />
+                <text x={490} y={502} textAnchor="middle" 
+                      className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">
+                    Tavily API / Jina API
+                </text>
+                <text x={490} y={528} textAnchor="middle" 
+                      className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans italic">
+                    Backend executes tool directly
+                </text>
 
-                    {/* Execute locally */}
-                    <path d="M 100 360 Q 60 360 60 375 Q 60 390 100 390" className="fill-none stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="10" y="378" className="text-[9px]">executeToolLocally()</text>
+                {/* API returns results - Y=565 */}
+                <line x1={690} y1={565} x2={310} y2={565} 
+                      className="stroke-green-600 dark:stroke-green-400" 
+                      strokeWidth={1.5} 
+                      strokeDasharray="4 2"
+                      markerEnd="url(#arrow-st-open-green)" />
+                <text x={500} y={557} textAnchor="middle" 
+                      className="text-sm fill-green-600 dark:fill-green-400 font-sans font-medium">
+                    Search results
+                </text>
 
-                    {/* addToolOutput */}
-                    <line x1="100" y1="410" x2="295" y2="410" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="200" y="403" textAnchor="middle" className="text-[10px]">POST tool result (continue stream)</text>
+                {/* Path B: Frontend tool - Y=605 */}
+                <line x1={30} y1={605} x2={1120} y2={605} 
+                      className="stroke-amber-300 dark:stroke-amber-700" strokeWidth={1} strokeDasharray="4 2" />
+                <text x={50} y={627} className="text-[13px] fill-amber-700 dark:fill-amber-300 font-sans">
+                    [Frontend tool: browser, MCP, WebMCP]
+                </text>
 
-                    {/* Server tool path */}
-                    <line x1="50" y1="430" x2="570" y2="430" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="1" strokeDasharray="3 2" />
-                    <text x="60" y="445" className="text-[9px] fill-gray-500 dark:fill-gray-400">[Server tool - webSearch, retrieve, deepWebSearch]</text>
+                {/* SSE to extension - Y=660 */}
+                <line x1={300} y1={660} x2={115} y2={660} 
+                      className="stroke-amber-600 dark:stroke-amber-400" 
+                      strokeWidth={1.5} 
+                      strokeDasharray="5 3"
+                      markerEnd="url(#arrow-st-amber)" />
+                <text x={207} y={652} textAnchor="middle" 
+                      className="text-sm fill-amber-700 dark:fill-amber-300 font-sans font-medium">
+                    SSE: tool-input-available
+                </text>
+                <text x={207} y={678} textAnchor="middle" 
+                      className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans italic">
+                    Frontend tool needs local execution
+                </text>
 
-                    {/* Execute on service */}
-                    <line x1="300" y1="465" x2="495" y2="465" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrowST)" />
-                    <text x="400" y="458" textAnchor="middle" className="text-[10px]">Tavily / Jina API call</text>
+                {/* Extension executes in browser - Y=715 */}
+                <line x1={105} y1={715} x2={875} y2={715} 
+                      className="stroke-blue-600 dark:stroke-blue-400" 
+                      strokeWidth={1.5} 
+                      markerEnd="url(#arrow-st-blue)" />
+                <text x={490} y={707} textAnchor="middle" 
+                      className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">
+                    Execute tool locally (DOM, screenshot, etc.)
+                </text>
 
-                    {/* Result back to backend */}
-                    <line x1="500" y1="485" x2="305" y2="485" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrowST)" />
-                    <text x="400" y="500" textAnchor="middle" className="text-[10px]">Result</text>
+                {/* Final response - Y=760 */}
+                <line x1={300} y1={760} x2={115} y2={760} 
+                      className="stroke-green-600 dark:stroke-green-400" 
+                      strokeWidth={1.5} 
+                      strokeDasharray="4 2"
+                      markerEnd="url(#arrow-st-open-green)" />
+                <text x={207} y={752} textAnchor="middle" 
+                      className="text-sm fill-green-600 dark:fill-green-400 font-sans font-medium">
+                    SSE: text-delta (AI response)
+                </text>
 
-                    {/* Final response */}
-                    <line x1="300" y1="505" x2="105" y2="505" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrowST)" />
-                    <text x="200" y="518" textAnchor="middle" className="text-[10px]">SSE: text-delta (AI response)</text>
-                </g>
-
-                {/* Arrow marker */}
+                {/* Arrow markers with unique IDs */}
                 <defs>
-                    <marker id="arrowST" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <path d="M 0 0 L 8 4 L 0 8 z" className="fill-gray-800 dark:fill-gray-300" />
+                    <marker id="arrow-st-blue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-blue-600 dark:fill-blue-400" />
+                    </marker>
+                    <marker id="arrow-st-gray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-gray-600 dark:fill-gray-400" />
+                    </marker>
+                    <marker id="arrow-st-amber" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-amber-600 dark:fill-amber-400" />
+                    </marker>
+                    <marker id="arrow-st-open" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" />
+                    </marker>
+                    <marker id="arrow-st-open-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-green-600 dark:stroke-green-400" strokeWidth="1.5" />
                     </marker>
                 </defs>
             </svg>

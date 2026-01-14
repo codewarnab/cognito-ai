@@ -1,91 +1,112 @@
 export function CliBridgeConnectionSequence() {
     return (
         <div className="not-prose my-6 font-mono text-sm">
-            <svg viewBox="0 0 700 420" className="w-full max-w-3xl">
+            <svg viewBox="0 0 800 550" className="w-full max-w-4xl">
+                {/* Backgrounds for Alt/Opt blocks to make them solid areas */}
+                <rect x={20} y={160} width={760} height={130} rx={4} className="fill-blue-50/50 dark:fill-blue-900/10" />
+                <rect x={20} y={310} width={760} height={150} rx={4} className="fill-amber-50/50 dark:fill-amber-900/10" />
+
                 {/* Participants */}
-                <g className="fill-current text-gray-800 dark:text-gray-200">
-                    <rect x="40" y="10" width="90" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="85" y="30" textAnchor="middle" className="text-[11px] font-medium">Extension UI</text>
+                <g className="fill-white dark:fill-gray-800 stroke-gray-300 dark:stroke-gray-600">
+                    <rect x={50} y={10} width={120} height={40} rx={6} className="shadow-sm" strokeWidth={1.5} />
+                    <rect x={220} y={10} width={120} height={40} rx={6} className="shadow-sm" strokeWidth={1.5} />
+                    <rect x={420} y={10} width={120} height={40} rx={6} className="shadow-sm" strokeWidth={1.5} />
+                    <rect x={620} y={10} width={120} height={40} rx={6} className="shadow-sm" strokeWidth={1.5} />
+                </g>
 
-                    <rect x="180" y="10" width="110" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="235" y="30" textAnchor="middle" className="text-[11px] font-medium">cliModeStore</text>
-
-                    <rect x="350" y="10" width="100" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="400" y="30" textAnchor="middle" className="text-[11px] font-medium">CLI Bridge</text>
-
-                    <rect x="510" y="10" width="110" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="565" y="30" textAnchor="middle" className="text-[11px] font-medium">Token Storage</text>
+                {/* Participant Labels */}
+                <g className="fill-gray-800 dark:fill-gray-200 text-xs font-bold font-sans">
+                    <text x={110} y={35} textAnchor="middle">Extension UI</text>
+                    <text x={280} y={35} textAnchor="middle">cliModeStore</text>
+                    <text x={480} y={35} textAnchor="middle">CLI Bridge Server</text>
+                    <text x={680} y={35} textAnchor="middle">Token Storage</text>
                 </g>
 
                 {/* Lifelines */}
-                <g className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="1" strokeDasharray="4 3">
-                    <line x1="85" y1="40" x2="85" y2="410" />
-                    <line x1="235" y1="40" x2="235" y2="410" />
-                    <line x1="400" y1="40" x2="400" y2="410" />
-                    <line x1="565" y1="40" x2="565" y2="410" />
+                <g className="stroke-gray-300 dark:stroke-gray-600" strokeWidth={1.5} strokeDasharray="6 4">
+                    <line x1={110} y1={50} x2={110} y2={520} />
+                    <line x1={280} y1={50} x2={280} y2={520} />
+                    <line x1={480} y1={50} x2={480} y2={520} />
+                    <line x1={680} y1={50} x2={680} y2={520} />
                 </g>
 
-                {/* Messages */}
-                <g className="fill-current text-gray-700 dark:text-gray-300">
-                    {/* 1. Check bridge health */}
-                    <line x1="85" y1="65" x2="230" y2="65" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="157" y="58" textAnchor="middle" className="text-[10px]">checkBridgeHealth()</text>
+                {/* Connection check phase */}
+                <g>
+                    <text x={195} y={70} className="text-[10px] font-semibold uppercase fill-gray-400 dark:fill-gray-500 tracking-wider">Health Check</text>
 
-                    {/* 2. GET /health */}
-                    <line x1="235" y1="95" x2="395" y2="95" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="315" y="88" textAnchor="middle" className="text-[10px]">GET /health</text>
+                    <line x1={110} y1={85} x2={280} y2={85} className="stroke-gray-600 dark:stroke-gray-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-seq)" />
+                    <text x={195} y={80} textAnchor="middle" className="text-[11px] fill-gray-700 dark:fill-gray-300 font-sans">1. checkBridgeHealth()</text>
 
-                    {/* 3. Return cwd, version */}
-                    <line x1="400" y1="125" x2="240" y2="125" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="320" y="118" textAnchor="middle" className="text-[10px]">{`{ok, version, cwd}`}</text>
+                    <line x1={280} y1={115} x2={480} y2={115} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-blue-seq)" />
+                    <text x={380} y={110} textAnchor="middle" className="text-[11px] fill-blue-700 dark:fill-blue-300 font-sans font-medium">2. GET /health</text>
 
-                    {/* Alt box for token validation */}
-                    <rect x="30" y="145" width="600" height="110" rx="3" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1" />
-                    <text x="40" y="160" className="text-[10px] font-semibold fill-gray-600 dark:fill-gray-400">opt</text>
-                    <text x="70" y="160" className="text-[9px] fill-gray-500 dark:fill-gray-400">[existing token]</text>
-
-                    {/* 4. POST /validate */}
-                    <line x1="235" y1="180" x2="395" y2="180" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="315" y="173" textAnchor="middle" className="text-[10px]">POST /validate + Bearer token</text>
-
-                    {/* 5. Validate hash */}
-                    <line x1="400" y1="205" x2="560" y2="205" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="480" y="198" textAnchor="middle" className="text-[10px]">validateToken()</text>
-
-                    {/* 6. Return valid */}
-                    <line x1="565" y1="230" x2="405" y2="230" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="485" y="245" textAnchor="middle" className="text-[10px]">valid: true/false</text>
-
-                    {/* Alt box for new token */}
-                    <rect x="30" y="265" width="600" height="80" rx="3" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1" />
-                    <text x="40" y="280" className="text-[10px] font-semibold fill-gray-600 dark:fill-gray-400">alt</text>
-                    <text x="65" y="280" className="text-[9px] fill-gray-500 dark:fill-gray-400">[no valid token]</text>
-
-                    {/* 7. POST /connect */}
-                    <line x1="235" y1="295" x2="395" y2="295" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="315" y="288" textAnchor="middle" className="text-[10px]">POST /connect (Origin validated)</text>
-
-                    {/* 8. Generate & store token */}
-                    <line x1="400" y1="318" x2="560" y2="318" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="480" y="311" textAnchor="middle" className="text-[10px]">addToken(hash)</text>
-
-                    {/* 9. Return token */}
-                    <line x1="400" y1="335" x2="240" y2="335" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="320" y="328" textAnchor="middle" className="text-[10px]">{`{token, extensionId}`}</text>
-
-                    {/* 10. Set bridgeStatus = connected */}
-                    <line x1="235" y1="365" x2="90" y2="365" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="162" y="358" textAnchor="middle" className="text-[10px]">bridgeStatus: connected</text>
-
-                    {/* 11. Fetch agents */}
-                    <line x1="235" y1="390" x2="395" y2="390" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-cli-conn)" />
-                    <text x="315" y="383" textAnchor="middle" className="text-[10px]">GET /agents</text>
+                    <line x1={480} y1={145} x2={280} y2={145} className="stroke-gray-500 dark:stroke-gray-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-seq)" />
+                    <text x={380} y={140} textAnchor="middle" className="text-[11px] fill-gray-600 dark:fill-gray-400 font-mono">{`{ ok: true, version, cwd }`}</text>
                 </g>
 
-                {/* Arrow marker */}
+                {/* Opt Block - Existing Token */}
+                <g>
+                    <rect x={20} y={160} width={70} height={20} rx={0} className="fill-blue-100 dark:fill-blue-900/40 opacity-80" />
+                    <path d="M 20 160 L 90 160 L 90 174 L 80 180 L 20 180 Z" className="fill-blue-100 dark:fill-blue-900/40 stroke-none" />
+                    <text x={30} y={174} className="text-[10px] font-bold fill-blue-800 dark:fill-blue-200">OPT</text>
+                    <text x={100} y={174} className="text-[10px] fill-blue-700 dark:fill-blue-300 italic">[Has Saved Token]</text>
+                    <rect x={20} y={160} width={760} height={130} rx={4} className="fill-none stroke-blue-200 dark:stroke-blue-800" strokeWidth={1} />
+
+                    <line x1={280} y1={205} x2={480} y2={205} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-blue-seq)" />
+                    <text x={380} y={200} textAnchor="middle" className="text-[11px] fill-blue-700 dark:fill-blue-300 font-sans">3. POST /validate</text>
+                    <text x={380} y={215} textAnchor="middle" className="text-[9px] fill-gray-500 font-mono">Header: Authorization: Bearer &lt;token&gt;</text>
+
+                    <line x1={480} y1={235} x2={680} y2={235} className="stroke-gray-600 dark:stroke-gray-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-seq)" />
+                    <text x={580} y={230} textAnchor="middle" className="text-[11px] fill-gray-700 dark:fill-gray-300 font-sans">4. validateToken(hash)</text>
+
+                    <line x1={680} y1={265} x2={280} y2={265} className="stroke-green-600 dark:stroke-green-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-green-seq)" />
+                    <text x={480} y={260} textAnchor="middle" className="text-[11px] fill-green-700 dark:fill-green-300 font-mono">{`{ valid: true }`}</text>
+                </g>
+
+                {/* Alt Block - New Connection */}
+                <g>
+                    <rect x={20} y={310} width={70} height={20} rx={0} className="fill-amber-100 dark:fill-amber-900/40 opacity-80" />
+                    <text x={30} y={324} className="text-[10px] font-bold fill-amber-800 dark:fill-amber-200">ALT</text>
+                    <text x={100} y={324} className="text-[10px] fill-amber-700 dark:fill-amber-300 italic">[No Valid Token / Reconnect]</text>
+                    <rect x={20} y={310} width={760} height={150} rx={4} className="fill-none stroke-amber-200 dark:stroke-amber-800" strokeWidth={1} />
+
+                    {/* FIXED: Explicitly use numeric values for coordinates to prevent diagonal artifact */}
+                    <line x1={280} y1={350} x2={480} y2={350} className="stroke-amber-600 dark:stroke-amber-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-amber-seq)" />
+                    <text x={380} y={345} textAnchor="middle" className="text-[11px] fill-amber-700 dark:fill-amber-300 font-sans">5. POST /connect</text>
+                    <text x={380} y={360} textAnchor="middle" className="text-[9px] fill-gray-500 font-mono">Origin Checked (chrome-extension://...)</text>
+
+                    <line x1={480} y1={380} x2={680} y2={380} className="stroke-gray-600 dark:stroke-gray-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-seq)" />
+                    <text x={580} y={375} textAnchor="middle" className="text-[11px] fill-gray-700 dark:fill-gray-300 font-sans">6. addToken(hash)</text>
+
+                    <line x1={480} y1={410} x2={280} y2={410} className="stroke-gray-500 dark:stroke-gray-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-seq)" />
+                    <text x={380} y={405} textAnchor="middle" className="text-[11px] fill-gray-600 dark:fill-gray-400 font-mono">{`{ token: "...", extensionId }`}</text>
+                </g>
+
+                {/* Final Success State */}
+                <g>
+                    <line x1={280} y1={480} x2={110} y2={480} className="stroke-green-600 dark:stroke-green-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-green-seq)" />
+                    <text x={195} y={475} textAnchor="middle" className="text-[11px] fill-green-700 dark:fill-green-300 font-bold">Bridge Connected</text>
+
+                    <line x1={280} y1={500} x2={480} y2={500} className="stroke-gray-600 dark:stroke-gray-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-seq)" />
+                    <text x={380} y={495} textAnchor="middle" className="text-[11px] fill-gray-700 dark:fill-gray-300 font-sans">7. GET /agents (Fetch Tools)</text>
+                </g>
+
+                {/* Definitions - Renamed IDs to prevent caching collisions */}
                 <defs>
-                    <marker id="arrow-cli-conn" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <path d="M 0 0 L 8 4 L 0 8 z" className="fill-gray-800 dark:fill-gray-300" />
+                    <marker id="arrow-filled-seq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-gray-600 dark:fill-gray-400" />
+                    </marker>
+                    <marker id="arrow-filled-blue-seq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-blue-600 dark:fill-blue-400" />
+                    </marker>
+                    <marker id="arrow-filled-amber-seq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-amber-600 dark:fill-amber-400" />
+                    </marker>
+                    <marker id="arrow-open-seq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" />
+                    </marker>
+                    <marker id="arrow-open-green-seq" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-green-600 dark:stroke-green-400" strokeWidth="1.5" />
                     </marker>
                 </defs>
             </svg>

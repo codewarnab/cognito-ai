@@ -9,26 +9,39 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Accordion, Accordions } from 'fumadocs-ui/components/accordion';
 import { WebMcpApprovalSequence } from '@/components/diagrams/WebMcpApprovalSequence';
 import { WebMcpValidationFlow } from '@/components/diagrams/WebMcpValidationFlow';
+import { WebMcpDiscoverySequence } from '@/components/diagrams/WebMcpDiscoverySequence';
+import { WebMcpExecutionSequence } from '@/components/diagrams/WebMcpExecutionSequence';
 
 WebMCP enables websites to expose tools that Cognito can discover and execute. Unlike remote MCP servers, WebMCP tools run directly in the page context with no server infrastructure required.
 
 ## How WebMCP Works
 
-{/* MERMAID_DIAGRAM: webmcp.overview | type: component | represents: WebMCP architecture | code_refs: apps/extension/src/entrypoints/webmcp-proxy.content.ts */}
+WebMCP uses a content script (`webmcp-proxy.content.ts`) that injects into web pages and acts as a bridge between the page's MCP server and the extension.
 
-![WebMCP architecture flow](/webmcp-flow.png)
+### Discovery Flow
 
-**Discovery flow:**
-1. Content script connects to page's WebMCP server
-2. Discovers available tools via `listTools()`
-3. Reports tools to background service worker
-4. Tools appear in the chat interface
+<WebMcpDiscoverySequence />
 
-**Execution flow:**
-1. AI selects a WebMCP tool
-2. Request routes through background to content script
-3. Content script calls `callTool()` on page's server
-4. Result returns to AI
+The discovery process:
+1. Content script loads when page reaches `document_idle`
+2. Attempts MCP connection via `TabClientTransport` (postMessage)
+3. On successful connection, calls `listTools()` to discover available tools
+4. Tools are enriched with metadata (domain, tabId, favicon, URL)
+5. Registered with background service worker via `webmcp/tools/register`
+6. Background broadcasts `webmcp/tools/updated` to all UI contexts
+
+### Execution Flow
+
+<WebMcpExecutionSequence />
+
+When AI selects a WebMCP tool:
+1. Tool call arrives without execute function (HITL pattern)
+2. Approval store checks if tool is auto-approved
+3. If not approved, user sees approval dialog with options
+4. After approval, request goes to background for security validation
+5. Background validates origin, tabId, and schema before forwarding
+6. Content script executes via `client.callTool()` on the page
+7. Result returns through the chain, calling `addToolOutput()` to resume AI
 
 ## Tool Discovery
 

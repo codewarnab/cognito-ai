@@ -1,0 +1,2 @@
+http://localhost:3003/docs/architecture/monorepo update this page this does not mentiosn about cli bridge which helps the extension to communicate with cli agents such claude code , Gemini cli and Codex cli 
+

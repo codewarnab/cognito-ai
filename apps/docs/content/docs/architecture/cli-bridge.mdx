@@ -1,6 +1,6 @@
 ---
 title: CLI Bridge
-description: Local bridge server enabling Code Mode in Cognito - connect CLI coding agents to browser tools.
+description: Local bridge server enabling CLI Agents in Cognito - connect CLI coding agents to browser tools.
 ---
 
 import { File, Folder, Files } from 'fumadocs-ui/components/files';
@@ -12,7 +12,7 @@ import { CliBridgeArchitectureDiagram } from '@/components/diagrams/CliBridgeArc
 
 {/* VERIFIED: 2025-01-14 | code_refs: packages/cli-bridge/, apps/extension/src/services/codeBridge/ */}
 
-The **CLI Bridge** is a local server that enables **Code Mode** in Cognito. It connects CLI-based AI coding agents (Gemini CLI, Claude Code, Codex CLI) to your browser, allowing them to use Cognito's browser automation tools.
+The **CLI Bridge** is a local server that enables **CLI Agents** in Cognito. It connects CLI-based AI coding agents (Gemini CLI, Claude Code, Codex CLI) to your browser, allowing them to use Cognito's browser automation tools.
 
 ## Getting Started
 
@@ -20,7 +20,7 @@ The **CLI Bridge** is a local server that enables **Code Mode** in Cognito. It c
 npx @cognito/cli-bridge
 ```
 
-That's it! The bridge starts on `localhost:8787` and the extension auto-connects when you enable Code Mode.
+That's it! The bridge starts on `localhost:8787` and the extension auto-connects when you select a **CLI Provider** (like Gemini CLI) from the model picker.
 
 <Callout type="info">
   **Sandbox Mode**: By default, agents run in an isolated sandbox with **no access to your local file system**. This prevents agents from reading your project files or executing dangerous commands.
@@ -60,7 +60,7 @@ The bridge handles:
 
 <CliBridgeChatSequence />
 
-When you send a message in Code Mode:
+When you send a message using a CLI Provider:
 
 1. **Extension → Bridge**: POST `/cli/chat` with messages and agent selection
 2. **Bridge routes to handler**: Based on agent type (Gemini, Claude Code, or Codex)

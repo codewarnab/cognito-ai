@@ -1,120 +1,107 @@
 export function CliBridgeArchitectureDiagram() {
     return (
         <div className="not-prose my-6 font-mono text-sm">
-            <svg viewBox="0 0 700 450" className="w-full max-w-3xl">
-                {/* Title */}
-                <text x="350" y="25" textAnchor="middle" className="text-sm font-bold fill-gray-800 dark:fill-gray-200">CLI Bridge Architecture Overview</text>
+            <svg viewBox="0 0 750 500" className="w-full max-w-3xl">
+                {/* Background groupings with solid look */}
+                <rect x="20" y="40" width="220" height="380" rx="8" className="fill-blue-50/50 stroke-blue-200 dark:fill-blue-900/10 dark:stroke-blue-800" strokeWidth="1" />
+                <rect x="280" y="40" width="220" height="380" rx="8" className="fill-green-50/50 stroke-green-200 dark:fill-green-900/10 dark:stroke-green-800" strokeWidth="1" />
+                <rect x="530" y="40" width="160" height="230" rx="8" className="fill-purple-50/50 stroke-purple-200 dark:fill-purple-900/10 dark:stroke-purple-800" strokeWidth="1" />
+                <rect x="530" y="290" width="160" height="130" rx="8" className="fill-orange-50/50 stroke-orange-200 dark:fill-orange-900/10 dark:stroke-orange-800" strokeWidth="1" />
 
-                {/* Extension Box */}
-                <rect x="30" y="50" width="200" height="350" rx="8" className="fill-blue-50 stroke-blue-400 dark:fill-blue-900/20 dark:stroke-blue-500" strokeWidth="2" />
-                <text x="130" y="75" textAnchor="middle" className="text-xs font-semibold fill-blue-700 dark:fill-blue-400">Chrome Extension</text>
+                {/* Main Titles */}
+                <text x="375" y="25" textAnchor="middle" className="text-sm font-bold fill-gray-800 dark:fill-gray-200 uppercase tracking-widest">Architecture Overview</text>
 
-                {/* Extension Components */}
-                <rect x="50" y="95" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="130" y="117" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Extension UI (Sidepanel)</text>
+                {/* Group Labels */}
+                <text x="130" y="65" textAnchor="middle" className="text-xs font-bold fill-blue-700 dark:fill-blue-400">Chrome Extension</text>
+                <text x="390" y="65" textAnchor="middle" className="text-xs font-bold fill-green-700 dark:fill-green-400">CLI Bridge (localhost:8787)</text>
+                <text x="610" y="65" textAnchor="middle" className="text-xs font-bold fill-purple-700 dark:fill-purple-400">External LLMs</text>
+                <text x="610" y="315" textAnchor="middle" className="text-xs font-bold fill-orange-700 dark:fill-orange-400">MCP Clients</text>
 
-                <rect x="50" y="145" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="130" y="167" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">cliModeStore (Zustand)</text>
+                {/* Extension Components - Cleaner solid blocks with shadows */}
+                <g className="filter drop-shadow-sm">
+                    <rect x="40" y="90" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="130" y="115" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">Extension UI (Sidepanel)</text>
 
-                <rect x="50" y="195" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="130" y="217" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">toolBridgeClient</text>
+                    <rect x="40" y="145" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="130" y="170" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">cliModeStore</text>
 
-                <rect x="50" y="245" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="130" y="267" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">cliBridgeClient</text>
+                    <rect x="40" y="200" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="130" y="225" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">toolBridgeClient</text>
 
-                <rect x="50" y="295" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="130" y="317" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">cliToolApproval</text>
+                    <rect x="40" y="255" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="130" y="280" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">cliBridgeClient</text>
 
-                <rect x="50" y="345" width="160" height="35" rx="4" className="fill-amber-50 stroke-amber-400 dark:fill-amber-900/30 dark:stroke-amber-500" strokeWidth="1" />
-                <text x="130" y="367" textAnchor="middle" className="text-[10px] fill-amber-700 dark:fill-amber-400">Browser Tools</text>
+                    <rect x="40" y="310" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="130" y="335" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">cliToolApproval</text>
 
-                {/* CLI Bridge Box */}
-                <rect x="290" y="50" width="200" height="350" rx="8" className="fill-green-50 stroke-green-400 dark:fill-green-900/20 dark:stroke-green-500" strokeWidth="2" />
-                <text x="390" y="75" textAnchor="middle" className="text-xs font-semibold fill-green-700 dark:fill-green-400">CLI Bridge (localhost:8787)</text>
+                    <rect x="40" y="365" width="180" height="40" rx="6" className="fill-amber-50 dark:fill-amber-900/20 stroke-amber-200 dark:stroke-amber-800" strokeWidth="1" />
+                    <text x="130" y="390" textAnchor="middle" className="text-[11px] font-medium fill-amber-700 dark:fill-amber-400">Browser Tools</text>
+                </g>
 
                 {/* Bridge Components */}
-                <rect x="310" y="95" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="117" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">HTTP Server</text>
+                <g className="filter drop-shadow-sm">
+                    <rect x="300" y="90" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="115" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">HTTP Server</text>
 
-                <rect x="310" y="145" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="167" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Token Store</text>
+                    <rect x="300" y="145" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="170" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">Token Store</text>
 
-                <rect x="310" y="195" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="217" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Agent Handlers</text>
+                    <rect x="300" y="200" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="225" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">Agent Handlers</text>
 
-                <rect x="310" y="245" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="267" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Tool Store</text>
+                    <rect x="300" y="255" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="280" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">Tool Store</text>
 
-                <rect x="310" y="295" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="317" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">MCP Server</text>
+                    <rect x="300" y="310" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="335" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">MCP Server</text>
 
-                <rect x="310" y="345" width="160" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="390" y="367" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">AI SDK Tools Builder</text>
-
-                {/* External Box */}
-                <rect x="550" y="50" width="130" height="200" rx="8" className="fill-purple-50 stroke-purple-400 dark:fill-purple-900/20 dark:stroke-purple-500" strokeWidth="2" />
-                <text x="615" y="75" textAnchor="middle" className="text-xs font-semibold fill-purple-700 dark:fill-purple-400">External</text>
+                    <rect x="300" y="365" width="180" height="40" rx="6" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="390" y="390" textAnchor="middle" className="text-[11px] font-medium fill-gray-700 dark:fill-gray-300">AI SDK Tools Builder</text>
+                </g>
 
                 {/* External Components */}
-                <rect x="560" y="95" width="110" height="30" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="615" y="114" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Gemini CLI</text>
+                <g className="filter drop-shadow-sm">
+                    <rect x="540" y="90" width="140" height="30" rx="4" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="610" y="109" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Gemini CLI</text>
 
-                <rect x="560" y="135" width="110" height="30" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="615" y="154" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Claude Code</text>
+                    <rect x="540" y="130" width="140" height="30" rx="4" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="610" y="149" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Claude Code</text>
 
-                <rect x="560" y="175" width="110" height="30" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="615" y="194" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Codex CLI</text>
+                    <rect x="540" y="170" width="140" height="30" rx="4" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="610" y="189" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Codex CLI</text>
 
-                <rect x="560" y="215" width="110" height="25" rx="4" className="fill-gray-100 stroke-gray-400 dark:fill-gray-700 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="615" y="231" textAnchor="middle" className="text-[9px] fill-gray-600 dark:fill-gray-400">LLM APIs</text>
+                    <rect x="540" y="210" width="140" height="30" rx="4" className="fill-gray-100 dark:fill-gray-700 stroke-gray-300 dark:stroke-gray-600" strokeWidth="1" />
+                    <text x="610" y="229" textAnchor="middle" className="text-[10px] fill-gray-600 dark:fill-gray-400">LLM APIs</text>
+                </g>
 
-                {/* MCP Clients Box */}
-                <rect x="550" y="270" width="130" height="80" rx="8" className="fill-orange-50 stroke-orange-400 dark:fill-orange-900/20 dark:stroke-orange-500" strokeWidth="2" />
-                <text x="615" y="295" textAnchor="middle" className="text-xs font-semibold fill-orange-700 dark:fill-orange-400">MCP Clients</text>
+                {/* MCP Clients */}
+                <g className="filter drop-shadow-sm">
+                    <rect x="540" y="340" width="140" height="40" rx="4" className="fill-white dark:fill-gray-800 stroke-gray-200 dark:stroke-gray-700" strokeWidth="1" />
+                    <text x="610" y="364" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Any MCP Client</text>
+                </g>
 
-                <rect x="560" y="305" width="110" height="35" rx="4" className="fill-white stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                <text x="615" y="327" textAnchor="middle" className="text-[10px] fill-gray-700 dark:fill-gray-300">Any MCP Client</text>
+                {/* Connections */}
+                <g className="stroke-gray-400 dark:stroke-gray-500">
+                    {/* Extension to Bridge (HTTP) */}
+                    <line x1="220" y1="110" x2="300" y2="110" strokeWidth="2" markerEnd="url(#arrow-solid)" />
+                    <text x="260" y="100" textAnchor="middle" className="text-[9px] fill-gray-500">HTTP</text>
 
-                {/* Arrows */}
-                {/* Extension to Bridge */}
-                <line x1="210" y1="112" x2="308" y2="112" className="stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" markerEnd="url(#arrow-arch)" />
-                <text x="259" y="105" textAnchor="middle" className="text-[8px] fill-gray-500">HTTP/SSE</text>
+                    {/* Tool Sync (SSE) */}
+                    <path d="M 220 220 L 260 220 L 260 275 L 300 275" fill="none" strokeWidth="1.5" strokeDasharray="4 2" markerEnd="url(#arrow-solid)" />
+                    <text x="260" y="215" textAnchor="middle" className="text-[9px] fill-gray-500">SSE</text>
 
-                {/* toolBridgeClient to Tool Store */}
-                <line x1="210" y1="212" x2="308" y2="262" className="stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" markerEnd="url(#arrow-arch)" />
+                    {/* Bridge to External Agents */}
+                    <path d="M 480 220 L 510 220 L 510 145 L 540 145" fill="none" strokeWidth="1.5" markerEnd="url(#arrow-solid)" />
 
-                {/* Tool Store bidirectional */}
-                <line x1="308" y1="270" x2="210" y2="220" className="stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" strokeDasharray="4 2" markerEnd="url(#arrow-arch)" />
-                <text x="259" y="250" textAnchor="middle" className="text-[8px] fill-gray-500">Tools SSE</text>
+                    {/* MCP Connection */}
+                    <line x1="480" y1="330" x2="530" y2="360" strokeWidth="1.5" markerEnd="url(#arrow-solid)" />
+                    <text x="505" y="340" textAnchor="middle" className="text-[9px] fill-gray-500">MCP Protocol</text>
+                </g>
 
-                {/* Bridge to Agents */}
-                <line x1="470" y1="212" x2="558" y2="130" className="stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" markerEnd="url(#arrow-arch)" />
-
-                {/* MCP Server to MCP Clients */}
-                <line x1="470" y1="312" x2="558" y2="320" className="stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" markerEnd="url(#arrow-arch)" />
-                <text x="514" y="305" textAnchor="middle" className="text-[8px] fill-gray-500">MCP</text>
-
-                {/* Legend */}
-                <rect x="30" y="415" width="640" height="30" rx="4" className="fill-gray-50 stroke-gray-300 dark:fill-gray-800 dark:stroke-gray-600" strokeWidth="1" />
-                <line x1="50" y1="430" x2="80" y2="430" className="stroke-gray-500" strokeWidth="1.5" />
-                <text x="90" y="434" className="text-[9px] fill-gray-600 dark:fill-gray-400">HTTP Request</text>
-
-                <line x1="170" y1="430" x2="200" y2="430" className="stroke-gray-500" strokeWidth="1.5" strokeDasharray="4 2" />
-                <text x="210" y="434" className="text-[9px] fill-gray-600 dark:fill-gray-400">SSE Stream</text>
-
-                <rect x="290" y="423" width="40" height="14" rx="2" className="fill-blue-50 stroke-blue-400 dark:fill-blue-900/30" strokeWidth="1" />
-                <text x="340" y="434" className="text-[9px] fill-gray-600 dark:fill-gray-400">Extension</text>
-
-                <rect x="410" y="423" width="40" height="14" rx="2" className="fill-green-50 stroke-green-400 dark:fill-green-900/30" strokeWidth="1" />
-                <text x="460" y="434" className="text-[9px] fill-gray-600 dark:fill-gray-400">Bridge</text>
-
-                <rect x="520" y="423" width="40" height="14" rx="2" className="fill-purple-50 stroke-purple-400 dark:fill-purple-900/30" strokeWidth="1" />
-                <text x="570" y="434" className="text-[9px] fill-gray-600 dark:fill-gray-400">External</text>
-
-                {/* Arrow marker */}
+                {/* Markers */}
                 <defs>
-                    <marker id="arrow-arch" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <path d="M 0 0 L 8 4 L 0 8 z" className="fill-gray-500 dark:fill-gray-400" />
+                    <marker id="arrow-solid" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-gray-400 dark:fill-gray-500" />
                     </marker>
                 </defs>
             </svg>

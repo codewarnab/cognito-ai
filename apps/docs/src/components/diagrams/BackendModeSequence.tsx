@@ -1,65 +1,87 @@
+/**
+ * Backend/Cloud Mode Flow Sequence Diagram
+ * 
+ * Shows how requests flow through the Cognito backend in Cloud mode,
+ * where the server handles API key management.
+ */
 export function BackendModeSequence() {
     return (
         <div className="not-prose my-6 font-mono text-sm">
-            <svg viewBox="0 0 600 280" className="w-full max-w-2xl">
+            <svg viewBox="0 0 900 480" className="w-full max-w-4xl">
                 {/* Participants */}
-                <g className="fill-current text-gray-800 dark:text-gray-200">
-                    <rect x="40" y="10" width="90" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="85" y="30" textAnchor="middle" className="text-[11px] font-medium">Your Browser</text>
+                <g className="fill-white dark:fill-gray-800 stroke-gray-300 dark:stroke-gray-600">
+                    <rect x={50} y={10} width={130} height={50} rx={6} strokeWidth={1.5} />
+                    <rect x={250} y={10} width={120} height={50} rx={6} strokeWidth={1.5} />
+                    <rect x={460} y={10} width={160} height={50} rx={6} strokeWidth={1.5} />
+                    <rect x={710} y={10} width={140} height={50} rx={6} strokeWidth={1.5} />
+                </g>
 
-                    <rect x="180" y="10" width="90" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="225" y="30" textAnchor="middle" className="text-[11px] font-medium">Extension</text>
-
-                    <rect x="330" y="10" width="110" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="385" y="30" textAnchor="middle" className="text-[11px] font-medium">Cognito Backend</text>
-
-                    <rect x="490" y="10" width="90" height="30" rx="4" className="fill-gray-100 stroke-gray-800 dark:fill-gray-800 dark:stroke-gray-300" strokeWidth="1.5" />
-                    <text x="535" y="30" textAnchor="middle" className="text-[11px] font-medium">Google AI API</text>
+                {/* Participant Labels - text-base (16px) */}
+                <g className="fill-gray-800 dark:fill-gray-200 text-base font-bold font-sans">
+                    <text x={115} y={40} textAnchor="middle">Your Browser</text>
+                    <text x={310} y={40} textAnchor="middle">Extension</text>
+                    <text x={540} y={40} textAnchor="middle">Cognito Backend</text>
+                    <text x={780} y={40} textAnchor="middle">Google AI API</text>
                 </g>
 
                 {/* Lifelines */}
-                <g className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="1" strokeDasharray="4 3">
-                    <line x1="85" y1="40" x2="85" y2="265" />
-                    <line x1="225" y1="40" x2="225" y2="265" />
-                    <line x1="385" y1="40" x2="385" y2="265" />
-                    <line x1="535" y1="40" x2="535" y2="265" />
+                <g className="stroke-gray-300 dark:stroke-gray-600" strokeWidth={1.5} strokeDasharray="6 4">
+                    <line x1={115} y1={60} x2={115} y2={460} />
+                    <line x1={310} y1={60} x2={310} y2={460} />
+                    <line x1={540} y1={60} x2={540} y2={460} />
+                    <line x1={780} y1={60} x2={780} y2={460} />
                 </g>
 
-                {/* Messages */}
-                <g className="fill-current text-gray-700 dark:text-gray-300">
-                    {/* 1. Send message */}
-                    <line x1="85" y1="70" x2="220" y2="70" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-backend)" />
-                    <text x="152" y="63" textAnchor="middle" className="text-[10px]">Send message</text>
-
-                    {/* 2. Request (no key) */}
-                    <line x1="225" y1="105" x2="380" y2="105" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-backend)" />
-                    <text x="302" y="98" textAnchor="middle" className="text-[10px]">Request (no key)</text>
-
-                    {/* Note: Uses server-side key */}
-                    <rect x="315" y="115" width="140" height="22" rx="2" className="fill-amber-50 stroke-amber-400 dark:fill-amber-900/30 dark:stroke-amber-500" strokeWidth="1" />
-                    <text x="385" y="130" textAnchor="middle" className="text-[10px] fill-amber-700 dark:fill-amber-400">Uses server-side key</text>
-
-                    {/* 3. API call */}
-                    <line x1="385" y1="155" x2="530" y2="155" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" markerEnd="url(#arrow-backend)" />
-                    <text x="457" y="148" textAnchor="middle" className="text-[10px]">API call</text>
-
-                    {/* 4. Response from Google */}
-                    <line x1="535" y1="190" x2="390" y2="190" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-backend)" />
-                    <text x="462" y="183" textAnchor="middle" className="text-[10px]">Response</text>
-
-                    {/* 5. Response to extension */}
-                    <line x1="385" y1="220" x2="230" y2="220" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-backend)" />
-                    <text x="307" y="213" textAnchor="middle" className="text-[10px]">Response</text>
-
-                    {/* 6. Display response */}
-                    <line x1="225" y1="250" x2="90" y2="250" className="stroke-gray-800 dark:stroke-gray-300" strokeWidth="1.5" strokeDasharray="5 3" markerEnd="url(#arrow-backend)" />
-                    <text x="157" y="243" textAnchor="middle" className="text-[10px]">Display response</text>
+                {/* 1. Send message */}
+                <g>
+                    <line x1={115} y1={100} x2={305} y2={100} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-blue-backend)" />
+                    <text x={210} y={90} textAnchor="middle" className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">Send message</text>
                 </g>
 
-                {/* Arrow marker */}
+                {/* 2. Request (no key) */}
+                <g>
+                    <line x1={310} y1={160} x2={535} y2={160} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-blue-backend)" />
+                    <text x={422} y={150} textAnchor="middle" className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">Request (no key)</text>
+                </g>
+
+                {/* Note: Uses server-side key */}
+                <rect x={450} y={180} width={180} height={35} rx={4} className="fill-amber-50 stroke-amber-200 dark:fill-amber-900/30 dark:stroke-amber-700" strokeWidth={1} />
+                <text x={540} y={203} textAnchor="middle" className="text-sm fill-amber-700 dark:fill-amber-300 font-sans">Uses server-side key</text>
+
+                {/* 3. API call */}
+                <g>
+                    <line x1={540} y1={250} x2={775} y2={250} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1.5} markerEnd="url(#arrow-filled-blue-backend)" />
+                    <text x={657} y={240} textAnchor="middle" className="text-sm fill-blue-700 dark:fill-blue-300 font-sans font-medium">API call</text>
+                </g>
+
+                {/* 4. Response from Google */}
+                <g>
+                    <line x1={780} y1={310} x2={545} y2={310} className="stroke-gray-500 dark:stroke-gray-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-backend)" />
+                    <text x={662} y={300} textAnchor="middle" className="text-sm fill-gray-600 dark:fill-gray-400 font-sans">Response</text>
+                </g>
+
+                {/* 5. Response to extension */}
+                <g>
+                    <line x1={540} y1={370} x2={315} y2={370} className="stroke-gray-500 dark:stroke-gray-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-backend)" />
+                    <text x={427} y={360} textAnchor="middle" className="text-sm fill-gray-600 dark:fill-gray-400 font-sans">Response</text>
+                </g>
+
+                {/* 6. Display response */}
+                <g>
+                    <line x1={310} y1={430} x2={120} y2={430} className="stroke-green-600 dark:stroke-green-400" strokeWidth={1.5} strokeDasharray="4 2" markerEnd="url(#arrow-open-green-backend)" />
+                    <text x={215} y={420} textAnchor="middle" className="text-sm fill-green-700 dark:fill-green-300 font-sans font-medium">Display response</text>
+                </g>
+
+                {/* Arrow Definitions - unique IDs for this component */}
                 <defs>
-                    <marker id="arrow-backend" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <path d="M 0 0 L 8 4 L 0 8 z" className="fill-gray-800 dark:fill-gray-300" />
+                    <marker id="arrow-filled-blue-backend" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-blue-600 dark:fill-blue-400" />
+                    </marker>
+                    <marker id="arrow-open-backend" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-gray-500 dark:stroke-gray-400" strokeWidth="1.5" />
+                    </marker>
+                    <marker id="arrow-open-green-backend" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                        <path d="M0,0 L0,6 L9,3 z" className="fill-none stroke-green-600 dark:stroke-green-400" strokeWidth="1.5" />
                     </marker>
                 </defs>
             </svg>

@@ -1,68 +1,123 @@
 export function ToolFlowDiagram() {
     return (
         <div className="not-prose my-6">
-            <svg viewBox="0 0 500 220" className="w-full max-w-xl">
-                {/* Step boxes */}
+            <svg viewBox="0 0 580 250" className="w-full max-w-2xl">
+                {/* Step 1: User Request */}
                 <g>
-                    {/* Step 1: User Request */}
-                    <rect x="20" y="80" width="90" height="60" rx="8" className="fill-blue-100 stroke-blue-500 dark:fill-blue-900/40 dark:stroke-blue-400" strokeWidth="1.5" />
-                    <text x="65" y="105" textAnchor="middle" className="text-xs font-medium fill-blue-700 dark:fill-blue-300">User</text>
-                    <text x="65" y="120" textAnchor="middle" className="text-xs font-medium fill-blue-700 dark:fill-blue-300">Request</text>
-                    <text x="65" y="35" textAnchor="middle" className="text-[10px] font-semibold fill-gray-500 dark:fill-gray-400">1</text>
-                    <circle cx="65" cy="55" r="15" className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                    <text x="65" y="59" textAnchor="middle" className="text-xs font-bold fill-gray-600 dark:fill-gray-300">1</text>
+                    <circle cx="75" cy="55" r="18" 
+                            className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" 
+                            strokeWidth="1.5" />
+                    <text x="75" y="60" textAnchor="middle" 
+                          className="text-sm font-bold fill-gray-600 dark:fill-gray-300">
+                        1
+                    </text>
+                    <rect x="25" y="85" width="100" height="65" rx="8" 
+                          className="fill-blue-100 stroke-blue-500 dark:fill-blue-900/40 dark:stroke-blue-400" 
+                          strokeWidth="1.5" />
+                    <text x="75" y="115" textAnchor="middle" 
+                          className="text-sm font-medium fill-blue-700 dark:fill-blue-300">
+                        User
+                    </text>
+                    <text x="75" y="135" textAnchor="middle" 
+                          className="text-sm font-medium fill-blue-700 dark:fill-blue-300">
+                        Request
+                    </text>
                 </g>
 
+                {/* Step 2: AI Analysis */}
                 <g>
-                    {/* Step 2: AI Analysis */}
-                    <rect x="140" y="80" width="90" height="60" rx="8" className="fill-purple-100 stroke-purple-500 dark:fill-purple-900/40 dark:stroke-purple-400" strokeWidth="1.5" />
-                    <text x="185" y="105" textAnchor="middle" className="text-xs font-medium fill-purple-700 dark:fill-purple-300">AI</text>
-                    <text x="185" y="120" textAnchor="middle" className="text-xs font-medium fill-purple-700 dark:fill-purple-300">Analysis</text>
-                    <circle cx="185" cy="55" r="15" className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                    <text x="185" y="59" textAnchor="middle" className="text-xs font-bold fill-gray-600 dark:fill-gray-300">2</text>
+                    <circle cx="205" cy="55" r="18" 
+                            className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" 
+                            strokeWidth="1.5" />
+                    <text x="205" y="60" textAnchor="middle" 
+                          className="text-sm font-bold fill-gray-600 dark:fill-gray-300">
+                        2
+                    </text>
+                    <rect x="155" y="85" width="100" height="65" rx="8" 
+                          className="fill-purple-100 stroke-purple-500 dark:fill-purple-900/40 dark:stroke-purple-400" 
+                          strokeWidth="1.5" />
+                    <text x="205" y="115" textAnchor="middle" 
+                          className="text-sm font-medium fill-purple-700 dark:fill-purple-300">
+                        AI
+                    </text>
+                    <text x="205" y="135" textAnchor="middle" 
+                          className="text-sm font-medium fill-purple-700 dark:fill-purple-300">
+                        Analysis
+                    </text>
                 </g>
 
+                {/* Step 3: Tool Selection */}
                 <g>
-                    {/* Step 3: Tool Selection */}
-                    <rect x="260" y="80" width="90" height="60" rx="8" className="fill-green-100 stroke-green-500 dark:fill-green-900/40 dark:stroke-green-400" strokeWidth="1.5" />
-                    <text x="305" y="105" textAnchor="middle" className="text-xs font-medium fill-green-700 dark:fill-green-300">Tool</text>
-                    <text x="305" y="120" textAnchor="middle" className="text-xs font-medium fill-green-700 dark:fill-green-300">Selection</text>
-                    <circle cx="305" cy="55" r="15" className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                    <text x="305" y="59" textAnchor="middle" className="text-xs font-bold fill-gray-600 dark:fill-gray-300">3</text>
+                    <circle cx="335" cy="55" r="18" 
+                            className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" 
+                            strokeWidth="1.5" />
+                    <text x="335" y="60" textAnchor="middle" 
+                          className="text-sm font-bold fill-gray-600 dark:fill-gray-300">
+                        3
+                    </text>
+                    <rect x="285" y="85" width="100" height="65" rx="8" 
+                          className="fill-green-100 stroke-green-500 dark:fill-green-900/40 dark:stroke-green-400" 
+                          strokeWidth="1.5" />
+                    <text x="335" y="115" textAnchor="middle" 
+                          className="text-sm font-medium fill-green-700 dark:fill-green-300">
+                        Tool
+                    </text>
+                    <text x="335" y="135" textAnchor="middle" 
+                          className="text-sm font-medium fill-green-700 dark:fill-green-300">
+                        Selection
+                    </text>
                 </g>
 
+                {/* Step 4: Execution */}
                 <g>
-                    {/* Step 4: Execution */}
-                    <rect x="380" y="80" width="90" height="60" rx="8" className="fill-amber-100 stroke-amber-500 dark:fill-amber-900/40 dark:stroke-amber-400" strokeWidth="1.5" />
-                    <text x="425" y="105" textAnchor="middle" className="text-xs font-medium fill-amber-700 dark:fill-amber-300">Execute</text>
-                    <text x="425" y="120" textAnchor="middle" className="text-xs font-medium fill-amber-700 dark:fill-amber-300">& Respond</text>
-                    <circle cx="425" cy="55" r="15" className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" strokeWidth="1" />
-                    <text x="425" y="59" textAnchor="middle" className="text-xs font-bold fill-gray-600 dark:fill-gray-300">4</text>
+                    <circle cx="465" cy="55" r="18" 
+                            className="fill-gray-100 stroke-gray-400 dark:fill-gray-800 dark:stroke-gray-500" 
+                            strokeWidth="1.5" />
+                    <text x="465" y="60" textAnchor="middle" 
+                          className="text-sm font-bold fill-gray-600 dark:fill-gray-300">
+                        4
+                    </text>
+                    <rect x="415" y="85" width="100" height="65" rx="8" 
+                          className="fill-amber-100 stroke-amber-500 dark:fill-amber-900/40 dark:stroke-amber-400" 
+                          strokeWidth="1.5" />
+                    <text x="465" y="115" textAnchor="middle" 
+                          className="text-sm font-medium fill-amber-700 dark:fill-amber-300">
+                        Execute
+                    </text>
+                    <text x="465" y="135" textAnchor="middle" 
+                          className="text-sm font-medium fill-amber-700 dark:fill-amber-300">
+                        & Respond
+                    </text>
                 </g>
 
                 {/* Arrows */}
-                <g className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="2" markerEnd="url(#arrowTool)">
-                    <line x1="110" y1="110" x2="135" y2="110" />
-                    <line x1="230" y1="110" x2="255" y2="110" />
-                    <line x1="350" y1="110" x2="375" y2="110" />
+                <g className="stroke-gray-400 dark:stroke-gray-500" strokeWidth="2" markerEnd="url(#arrowToolFlow)">
+                    <line x1="125" y1="117" x2="150" y2="117" />
+                    <line x1="255" y1="117" x2="280" y2="117" />
+                    <line x1="385" y1="117" x2="410" y2="117" />
                 </g>
 
                 {/* Labels below */}
-                <g className="text-[9px] fill-gray-500 dark:fill-gray-400">
-                    <text x="65" y="160" textAnchor="middle">"Search for X"</text>
-                    <text x="185" y="160" textAnchor="middle">Determines intent</text>
-                    <text x="305" y="160" textAnchor="middle">Picks web_search</text>
-                    <text x="425" y="160" textAnchor="middle">Returns results</text>
+                <g className="text-[13px] fill-gray-500 dark:fill-gray-400 font-sans">
+                    <text x="75" y="175" textAnchor="middle">"Search for X"</text>
+                    <text x="205" y="175" textAnchor="middle">Determines intent</text>
+                    <text x="335" y="175" textAnchor="middle">Picks web_search</text>
+                    <text x="465" y="175" textAnchor="middle">Returns results</text>
                 </g>
 
                 {/* Loop indicator */}
-                <path d="M 425 145 C 425 190 65 190 65 145" className="fill-none stroke-gray-300 dark:stroke-gray-600" strokeWidth="1" strokeDasharray="4 2" />
-                <text x="245" y="200" textAnchor="middle" className="text-[9px] fill-gray-400 dark:fill-gray-500">Multi-step tasks loop back</text>
+                <path d="M 465 160 C 465 210 75 210 75 160" 
+                      className="fill-none stroke-gray-300 dark:stroke-gray-600" 
+                      strokeWidth="1.5" strokeDasharray="5 3" />
+                <text x="270" y="225" textAnchor="middle" 
+                      className="text-[13px] fill-gray-400 dark:fill-gray-500 italic">
+                    Multi-step tasks loop back
+                </text>
 
                 {/* Arrow marker */}
                 <defs>
-                    <marker id="arrowTool" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-                        <path d="M 0 0 L 8 4 L 0 8 z" className="fill-gray-400 dark:fill-gray-500" />
+                    <marker id="arrowToolFlow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+                        <path d="M 0 0 L 10 4 L 0 8 z" className="fill-gray-400 dark:fill-gray-500" />
                     </marker>
                 </defs>
             </svg>

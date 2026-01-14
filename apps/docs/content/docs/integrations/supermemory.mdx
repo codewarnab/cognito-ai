@@ -5,8 +5,9 @@ description: Store and retrieve user memories with Supermemory integration.
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { MemoryExtractionSequence } from '@/components/diagrams/MemoryExtractionSequence';
+import { MemorySearchSequence } from '@/components/diagrams/MemorySearchSequence';
 
-{/* VERIFIED: 2026-01-10 | code_refs: apps/extension/src/background/supermemory/ */}
+{/* VERIFIED: 2026-01-14 | code_refs: apps/extension/src/background/supermemory/ */}
 
 [Supermemory](https://supermemory.ai) is a memory API service that stores user facts, preferences, and personal context. Cognito integrates with Supermemory to enable personalized AI responses across all features.
 
@@ -52,13 +53,19 @@ Cognito searches your memories to personalize AI responses across features:
 | **Writer** | Matches your established writing style |
 | **Rewriter** | Applies consistent tone preferences |
 
+### How Memory Search Works
+
+When you request content generation, the AI model can decide to search your memories for relevant context. This happens automatically via function calling — the LLM determines when personal context would improve the response.
+
+<MemorySearchSequence />
+
 ### AI Memory Tools
 
 The AI has access to memory tools during chat:
 
 | Tool | Purpose |
 |------|---------|
-| `searchMemories` | Semantic search across your memory store |
+| `search_memories` | Semantic search across your memory store |
 | `addMemory` | Manually save important information |
 
 ## Auto Memory Extraction
@@ -72,6 +79,10 @@ Automatically extract facts from chat conversations:
 1. Enable **Auto-Extract Insights** in Settings → Advanced → Supermemory
 2. Facts are extracted when you switch threads or create new chats
 3. Minimum 4 messages required before extraction triggers
+
+### How Extraction Works
+
+When you finish a conversation (switch threads or create a new chat), the extension checks if the thread is eligible for extraction. If so, it queues the thread for background processing. A Chrome Alarm periodically processes the queue, using Gemini to extract facts which are then stored in Supermemory.
 
 <MemoryExtractionSequence />
 
