@@ -22,6 +22,83 @@ interface UseYouTubeVideoAttachmentOptions {
 const DISMISSED_VIDEOS_KEY = 'dismissedYouTubeVideos';
 
 /**
+ * In-memory cache for dismissed videos
+ * - null means cache is uninitialized or invalidated
+ * - Record<string, number> maps videoId to dismissedTime
+ */
+let dismissedVideosCache: Record<string, number> | null = null;
+
+/**
+ * Track if event listeners have been registered
+ */
+let dismissedVideosListenersRegistered = false;
+
+/**
+ * Invalidate the dismissed videos cache
+ */
+function invalidateDismissedVideosCache(): void {
+    dismissedVideosCache = null;
+    log.debug('Dismissed videos cache invalidated');
+}
+
+/**
+ * Register event listeners for cache invalidation
+ */
+function ensureDismissedVideosListenersRegistered(): void {
+    if (dismissedVideosListenersRegistered) return;
+    if (typeof window === 'undefined') return;
+
+    // Invalidate cache when other tabs modify localStorage
+    window.addEventListener('storage', (event: StorageEvent) => {
+        if (event.key === DISMISSED_VIDEOS_KEY || event.key === null) {
+            invalidateDismissedVideosCache();
+        }
+    });
+
+    // Invalidate cache when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            invalidateDismissedVideosCache();
+        }
+    });
+
+    dismissedVideosListenersRegistered = true;
+    log.debug('Dismissed videos cache listeners registered');
+}
+
+/**
+ * Get dismissed videos from localStorage with caching
+ */
+function getDismissedVideos(): Record<string, number> {
+    ensureDismissedVideosListenersRegistered();
+
+    if (dismissedVideosCache !== null) {
+        return dismissedVideosCache;
+    }
+
+    try {
+        // SSR safety check
+        if (typeof localStorage === 'undefined') {
+            return {};
+        }
+
+        const dismissed = localStorage.getItem(DISMISSED_VIDEOS_KEY);
+        if (!dismissed) {
+            dismissedVideosCache = {};
+            return {};
+        }
+
+        const parsed = JSON.parse(dismissed) as Record<string, number>;
+        dismissedVideosCache = parsed;
+        return parsed;
+    } catch (error) {
+        log.error('Error reading dismissed videos', error);
+        dismissedVideosCache = {};
+        return {};
+    }
+}
+
+/**
  * Transcript segment with timing information
  */
 interface TranscriptSegment {
@@ -75,10 +152,7 @@ export interface YouTubeVideoMetadata {
  */
 function isVideoDismissed(videoId: string): boolean {
     try {
-        const dismissed = localStorage.getItem(DISMISSED_VIDEOS_KEY);
-        if (!dismissed) return false;
-
-        const dismissedVideos = JSON.parse(dismissed) as Record<string, number>;
+        const dismissedVideos = getDismissedVideos();
         const dismissedTime = dismissedVideos[videoId];
 
         if (!dismissedTime) return false;
@@ -97,11 +171,17 @@ function isVideoDismissed(videoId: string): boolean {
  */
 function dismissVideo(videoId: string): void {
     try {
-        const dismissed = localStorage.getItem(DISMISSED_VIDEOS_KEY);
-        const dismissedVideos = dismissed ? JSON.parse(dismissed) : {};
+        const dismissedVideos = getDismissedVideos();
 
         dismissedVideos[videoId] = Date.now();
-        localStorage.setItem(DISMISSED_VIDEOS_KEY, JSON.stringify(dismissedVideos));
+
+        // SSR safety check
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem(DISMISSED_VIDEOS_KEY, JSON.stringify(dismissedVideos));
+        }
+
+        // Update cache immediately (write-through)
+        dismissedVideosCache = { ...dismissedVideos };
     } catch (error) {
         log.error('Error dismissing video', error);
     }
