@@ -70,3 +70,9 @@ yarn-error.log*
 todo.txt
 TODO.md
 test-mcp-discovery.js
+
+# ===================
+# Backend packages (not tracked in public repo)
+# ===================
+packages/backend-cloudflare/
+packages/backend-vercel/
