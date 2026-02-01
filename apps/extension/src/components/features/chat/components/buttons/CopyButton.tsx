@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CopyIcon, type CopyIconHandle } from '@/components/shared/icons/CopyIcon';
+import { Button } from '@/components/ui/primitives/button';
 import { VoiceButton } from './VoiceButton';
 import { DownloadButton } from './DownloadButton';
 // import { BrainButton } from './BrainButton';
@@ -52,9 +53,11 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
 
     return (
         <div className="flex items-center gap-0.5">
-            <button
+            <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleCopy}
-                className="flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
+                className="h-7 w-7 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10"
                 title={copied ? 'Copied!' : 'Copy message'}
                 aria-label={copied ? 'Copied!' : 'Copy message'}
             >
@@ -98,7 +101,7 @@ export const CopyButton: React.FC<CopyButtonProps> = ({ content, previousMessage
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </button>
+            </Button>
             <VoiceButton
                 content={content}
                 onAudioBufferChange={setAudioBuffer}

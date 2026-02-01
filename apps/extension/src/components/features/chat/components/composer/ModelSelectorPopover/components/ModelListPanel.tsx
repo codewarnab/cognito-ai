@@ -50,19 +50,23 @@ const ModelRow: React.FC<{
             type="button"
             onClick={onSelect}
             disabled={isLoading}
-            className={`group flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg cursor-pointer ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
-                } ${isFocused ? 'bg-accent/50' : ''}`}
+            className={`group flex items-center gap-2.5 px-2.5 py-2 text-left transition-all duration-150 mx-1 w-[calc(100%-8px)] rounded-lg cursor-pointer ${isSelected
+                ? 'bg-white/[0.08]'
+                : isFocused
+                    ? 'bg-white/[0.05]'
+                    : 'hover:bg-white/[0.04]'
+                }`}
         >
             <div className="flex-1 min-w-0">
-                <span className={`text-[12px] block truncate ${isSelected ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                <span className={`text-[12px] block truncate ${isSelected ? 'text-white font-medium' : 'text-white/85'}`}>
                     {model.name}
                 </span>
-                <span className="text-[10px] text-muted-foreground block truncate">
+                <span className="text-[10px] text-white/45 block truncate">
                     {model.description}
                 </span>
             </div>
             {isSelected && (
-                <Check size={14} className="shrink-0 text-foreground/70" />
+                <Check size={14} className="shrink-0 text-white/70" />
             )}
         </button>
     );
@@ -121,18 +125,18 @@ export const ModelListPanel: React.FC<ModelListPanelProps> = ({
     return (
         <div className="flex-1 flex flex-col min-h-0 min-w-0 relative">
             {/* Provider header */}
-            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
-                <providerGroup.icon className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-[11px] font-medium text-muted-foreground">
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/[0.06]">
+                <providerGroup.icon className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-medium text-white/70">
                     {providerGroup.name}
                 </span>
-                <span className="text-[10px] text-muted-foreground/60 ml-auto">
+                <span className="text-[10px] text-white/35 ml-auto tabular-nums">
                     {models.length}
                 </span>
             </div>
 
             {/* Model list */}
-            <div className="flex-1 overflow-y-auto mcp-scrollable">
+            <div className="flex-1 overflow-y-auto mcp-scrollable py-1">
                 {models.length === 0 ? (
                     <div className="p-4 text-center">
                         <p className="text-[11px] text-white/40">No models enabled</p>

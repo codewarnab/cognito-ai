@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import AnimatedVolumeIcon from '@assets/icons/ui/volume-icon';
 import { AudioLinesIcon, type AudioLinesIconHandle } from '@assets/icons/ui/audio-lines';
 import { generateSpeech, playAudioBuffer } from '@/utils/ai/geminiTTS';
+import { Button } from '@/components/ui/primitives/button';
 import { getGoogleApiKey } from '@/utils/credentials';
 import { getTTSProvider } from '@/utils/settings';
 import type { TTSProvider } from '~types/settings';
@@ -171,8 +172,10 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 
     return (
         <div className="relative inline-block">
-            <button
-                className={`flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors ${isGenerating ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+            <Button
+                variant="ghost"
+                size="icon"
+                className={`h-7 w-7 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 ${isGenerating ? 'cursor-not-allowed opacity-60' : ''}`}
                 onClick={handleVoiceToggle}
                 title={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
                 aria-label={isGenerating ? 'Generating audio...' : isReading ? 'Stop reading' : 'Read message'}
@@ -195,7 +198,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
                         <AnimatedVolumeIcon size={14} />
                     )}
                 </motion.div>
-            </button>
+            </Button>
             <AnimatePresence>
                 {showTooltip && (
                     <motion.div

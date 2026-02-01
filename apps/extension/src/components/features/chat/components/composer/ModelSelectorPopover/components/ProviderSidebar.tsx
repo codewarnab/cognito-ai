@@ -20,8 +20,8 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({
     onProviderSelect,
 }) => {
     return (
-        <div className="relative w-14 min-h-0 border-r border-border bg-secondary/30 overflow-hidden">
-            <div className="mcp-scrollable flex flex-col items-center gap-3 py-2 px-1.5 h-full overflow-y-auto overflow-x-hidden">
+        <div className="relative w-14 min-h-0 border-r border-white/[0.06] overflow-hidden">
+            <div className="mcp-scrollable flex flex-col items-center gap-1.5 py-2 px-1.5 h-full overflow-y-auto overflow-x-hidden">
                 {/* Provider Icons */}
                 {providers.map((provider) => {
                     const ProviderIcon = provider.icon;
@@ -33,15 +33,15 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({
                                 <button
                                     type="button"
                                     onClick={() => onProviderSelect(provider.id)}
-                                    className={`relative flex items-center justify-center w-9 h-9 rounded-xl transition-all duration-150 cursor-pointer ${isSelected
-                                        ? 'bg-accent'
-                                        : 'hover:bg-accent/50 opacity-50 hover:opacity-80'
+                                    className={`relative flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-150 cursor-pointer ${isSelected
+                                        ? 'bg-white/[0.08]'
+                                        : 'opacity-50 hover:opacity-90 hover:bg-white/[0.04]'
                                         }`}
                                 >
                                     <ProviderIcon className="w-5 h-5" />
                                     {/* Selection indicator */}
                                     {isSelected && (
-                                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-6 rounded-r-full bg-foreground/60" />
+                                        <div className="absolute -left-[1.5px] top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full bg-white/60" />
                                     )}
                                 </button>
                             </TooltipTrigger>
@@ -52,10 +52,6 @@ export const ProviderSidebar: React.FC<ProviderSidebarProps> = ({
                     );
                 })}
             </div>
-
-            {/* Subtle fades to hint overflow */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-secondary/60 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-secondary/60 to-transparent" />
         </div>
     );
 };

@@ -84,7 +84,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
     // Handle provider sidebar selection
     const handleProviderSidebarSelect = (providerId: AIProviderType) => {
         setViewingProviderId(providerId);
-        setFocusedIndex(0);
+        setFocusedIndex(-1);
     };
 
     // Filter models by search query across all providers when searching
@@ -132,7 +132,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                         animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
                         exit={{ opacity: 0, y: 8, scale: 0.96, filter: 'blur(6px)' }}
                         transition={{ duration: 0.2, ease: 'easeOut' }}
-                        className="absolute bottom-[calc(100%+8px)] left-0 w-[300px] max-h-[340px] bg-popover border border-border rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] z-1000 overflow-hidden flex flex-col"
+                        className="absolute bottom-[calc(100%+8px)] left-0 w-[300px] max-h-[340px] bg-[#1a1a1f] border border-white/[0.08] rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.6)] z-1000 overflow-hidden flex flex-col"
                         role="listbox"
                         aria-label="Select AI model"
                     >
@@ -178,7 +178,7 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                                         value={searchQuery}
                                         onChange={(value) => {
                                             setSearchQuery(value);
-                                            setFocusedIndex(0);
+                                            setFocusedIndex(-1);
                                         }}
                                         onKeyDown={handleKeyDown}
                                         inputRef={searchInputRef}
@@ -205,12 +205,12 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                                             {/* Right Panel - Model List */}
                                             {searchQuery.trim() ? (
                                                 // When searching, show all matching models
-                                                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mcp-scrollable">
+                                                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden mcp-scrollable py-1">
                                                     {filteredBySearch.map(provider => (
                                                         <div key={provider.id}>
-                                                            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
-                                                                <provider.icon className="w-3 h-3 text-muted-foreground" />
-                                                                <span className="text-[10px] text-muted-foreground">
+                                                            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-white/[0.06]">
+                                                                <provider.icon className="w-3 h-3" />
+                                                                <span className="text-[10px] font-medium text-white/60">
                                                                     {provider.name}
                                                                 </span>
                                                             </div>
@@ -222,19 +222,21 @@ export const ModelSelectorPopover: React.FC<ModelSelectorPopoverProps> = ({
                                                                         type="button"
                                                                         onClick={() => handleModelChange(model.id, provider.id)}
                                                                         disabled={isLoading}
-                                                                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors mx-1 w-[calc(100%-8px)] rounded-lg cursor-pointer ${isSelected ? 'bg-accent' : 'hover:bg-accent/50'
+                                                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 text-left transition-all duration-150 mx-1 w-[calc(100%-8px)] rounded-lg cursor-pointer ${isSelected
+                                                                            ? 'bg-white/[0.08]'
+                                                                            : 'hover:bg-white/[0.04]'
                                                                             }`}
                                                                     >
                                                                         <div className="flex-1 min-w-0">
-                                                                            <span className={`text-[12px] block truncate ${isSelected ? 'text-foreground font-medium' : 'text-foreground/80'}`}>
+                                                                            <span className={`text-[12px] block truncate ${isSelected ? 'text-white font-medium' : 'text-white/85'}`}>
                                                                                 {model.name}
                                                                             </span>
-                                                                            <span className="text-[10px] text-muted-foreground block truncate">
+                                                                            <span className="text-[10px] text-white/45 block truncate">
                                                                                 {model.description}
                                                                             </span>
                                                                         </div>
                                                                         {isSelected && (
-                                                                            <svg className="w-3.5 h-3.5 shrink-0 text-foreground/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <svg className="w-3.5 h-3.5 shrink-0 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                                                             </svg>
                                                                         )}

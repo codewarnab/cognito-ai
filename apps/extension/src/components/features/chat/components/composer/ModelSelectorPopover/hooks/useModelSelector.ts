@@ -30,7 +30,7 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
     const [isLoading, setIsLoading] = useState(false);
     const [enabledModels, setEnabledModels] = useState<EnabledModel[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [focusedIndex, setFocusedIndex] = useState(0);
+    const [focusedIndex, setFocusedIndex] = useState(-1);
 
     const popoverRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -323,7 +323,7 @@ export function useModelSelector({ isOpen, setIsOpen }: UseModelSelectorOptions)
     // Focus search input when popover opens and reset focus
     useEffect(() => {
         if (isOpen) {
-            setFocusedIndex(0);
+            setFocusedIndex(-1);
             if (searchInputRef.current) {
                 // Small delay to let animation start
                 setTimeout(() => searchInputRef.current?.focus(), 50);

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DownloadIcon, type DownloadIconHandle } from '@assets/icons/ui/download';
+import { Button } from '@/components/ui/primitives/button';
 
 interface DownloadButtonProps {
     audioBuffer: ArrayBuffer | null;
@@ -52,24 +53,30 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
     return (
         <div className="relative inline-block">
-            <motion.button
+            <Button
+                asChild
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10"
                 onClick={handleDownload}
                 onMouseEnter={() => setShowTooltip(true)}
                 onMouseLeave={() => setShowTooltip(false)}
-                className="flex items-center justify-center p-1 rounded-md text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors cursor-pointer"
-                title="Download audio"
-                aria-label="Download audio"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{
-                    type: 'spring',
-                    stiffness: 200,
-                    damping: 15
-                }}
             >
-                <DownloadIcon ref={iconRef} size={14} />
-            </motion.button>
+                <motion.button
+                    title="Download audio"
+                    aria-label="Download audio"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{
+                        type: 'spring',
+                        stiffness: 200,
+                        damping: 15
+                    }}
+                >
+                    <DownloadIcon ref={iconRef} size={14} />
+                </motion.button>
+            </Button>
             <AnimatePresence>
                 {showTooltip && (
                     <motion.div
