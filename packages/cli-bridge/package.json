@@ -23,6 +23,8 @@
     "dev": "tsx watch src/cli.ts",
     "build": "tsup",
     "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "type:check": "tsc",
     "prepublishOnly": "pnpm run build"
   },
@@ -62,6 +64,7 @@
     "@types/node": "^22.10.2",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.18"
   }
 }
