@@ -1,6 +1,6 @@
 {
-  "name": "@cognito/cli-bridge",
-  "version": "0.1.0",
+  "name": "cognito-cli-bridge",
+  "version": "0.1.5",
   "description": "Local bridge server connecting CLI coding agents (Gemini CLI, Claude Code, Codex CLI) to Cognito Chrome extension tools",
   "type": "module",
   "main": "./dist/cli.js",
@@ -50,17 +50,17 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@cognito/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.24.3",
-    "ai": "catalog:",
+    "ai": "^6.0.3",
     "ai-sdk-provider-claude-code": "^3.2.1",
     "ai-sdk-provider-codex-cli": "^1.0.4",
     "ai-sdk-provider-gemini-cli": "^2.0.1",
     "chalk": "^5.6.2",
     "dotenv": "^16.4.7",
-    "zod": "catalog:"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
+    "@cognito/shared": "workspace:*",
     "@types/node": "^22.10.2",
     "tsup": "^8.5.0",
     "tsx": "^4.19.2",

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import 'dotenv/config';
 import { startBridgeServer } from './server';
 import { autoSetupCLIs } from './cli/autoSetup';

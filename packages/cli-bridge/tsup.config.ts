@@ -17,8 +17,9 @@ export default defineConfig({
     js: '#!/usr/bin/env node',
   },
   // Don't bundle dependencies - they should be installed by npm
+  // NOTE: @cognito/shared is intentionally NOT external — it's bundled inline
+  // because it's a workspace-only package not published to npm.
   external: [
-    '@cognito/shared',
     '@modelcontextprotocol/sdk',
     'ai',
     'ai-sdk-provider-claude-code',
